@@ -1,0 +1,500 @@
+<?php
+
+/**
+ * Unit tests for AccrualNoticeService.
+ *
+ * Drives the AWB 4:17 registration through valid + premature + duplicate
+ * notices, verifies DwangsomBerekening creation, and asserts the
+ * one-dwangsom guard semantics.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Money;
+
+use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\Dossiq\Tests\Unit\Service\SlaCalculatorFake;
+use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarFake;
+use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarServiceFake;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+
+/**
+ * @covers \OCA\Dossiq\Service\Money\AccrualNoticeService
+ *
+ * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
+ */
+class AccrualNoticeServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
+	private FakeTermijnStore $objects;
+	private TermijnService $termService;
+	private AccrualNoticeService $service;
+	/**
+	 * The settings mock, reused when a second service is built on a calendar.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The logger, reused for the same reason.
+	 *
+	 * @var LoggerInterface
+	 */
+	private LoggerInterface $logger;
+
+	protected function setUp(): void {
+		$this->objects = new FakeTermijnStore();
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'dossiq',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
+					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+					'notice_of_default_schema' => 'noticeOfDefault',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					default => '',
+				};
+			},
+		);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$this->settings = $settings;
+		$this->logger = $logger;
+		$this->termService = new TermijnService($settings, $logger);
+		$this->service = new AccrualNoticeService($settings, $this->termService, $logger);
+
+		// Seed an AWB-default definition.
+		$this->objects->seed('deadlineDefinition', [
+			'id' => 'td-ov',
+			'caseType' => 'omgevingsvergunning-regulier',
+			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
+			'standardDurationDays' => 56,
+			'countExtensions' => 1,
+			'validFrom' => '2026-01-01',
+		]);
+
+		// Seed an overdue TermijnInstance.
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-1',
+			'case' => 'Z/2026/300',
+			'deadlineDefinition' => 'td-ov',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-25',
+			'endDateCurrent' => '2026-02-25',
+			'status' => 'exceeded',
+			'notificatiesVerstuurd' => [],
+		]);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testValidNoticeCreatesBerekeningWithCorrectGrace(): void {
+		$row = $this->service->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-03-15'),
+			'email',
+			'doc:1'
+		);
+
+		self::assertTrue($row['gevalideerd']);
+		self::assertSame('valid', $row['validityStatus']);
+		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
+
+		$b = $row['penaltyPaymentCalculation'];
+		self::assertSame('2026-03-29', $b['startDate']);
+		self::assertSame(144200, $b['plafondCalculated']);
+		self::assertSame('awb-default', $b['regime']);
+		self::assertSame('lopend', $b['status']);
+
+		// Instance has the notice linked.
+		$updated = $this->objects->store['deadlineInstance']['ti-1'];
+		self::assertSame((string)$row['id'], $updated['relevantIngbrekes']);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testPrematureNoticeIsRejected(): void {
+		// Use a different instance still in lopend (not overschreden).
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-lopend',
+			'case' => 'Z/2026/301',
+			'deadlineDefinition' => 'td-ov',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-12-31',
+			'endDateCurrent' => '2026-12-31',
+			'status' => 'lopend',
+			'notificatiesVerstuurd' => [],
+		]);
+
+		$row = $this->service->registerNotice(
+			'ti-lopend',
+			new DateTimeImmutable('2026-03-15'),
+			'post'
+		);
+
+		self::assertFalse($row['gevalideerd']);
+		self::assertSame('premaat', $row['validityStatus']);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $row);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testSecondNoticeDoesNotSpawnSecondBerekening(): void {
+		$first = $this->service->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-03-15'),
+			'email'
+		);
+		self::assertArrayHasKey('penaltyPaymentCalculation', $first);
+
+		$second = $this->service->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-03-20'),
+			'post'
+		);
+		self::assertTrue($second['gevalideerd']);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $second);
+
+		// Only one berekening in the store.
+		self::assertCount(1, $this->objects->store['penaltyPaymentCalculation'] ?? []);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testCustomRegimeIsResolvedFromDefinition(): void {
+		$this->objects->seed('deadlineDefinition', [
+			'id' => 'td-woo',
+			'caseType' => 'woo-verzoek',
+			'wettelijkeGrondslag' => 'Woo art 4.4',
+			'standardDurationDays' => 28,
+			'countExtensions' => 1,
+			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
+			'validFrom' => '2026-01-01',
+		]);
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-woo',
+			'case' => 'Z/2026/302',
+			'deadlineDefinition' => 'td-woo',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-01-29',
+			'endDateCurrent' => '2026-01-29',
+			'status' => 'exceeded',
+			'notificatiesVerstuurd' => [],
+		]);
+
+		$row = $this->service->registerNotice(
+			'ti-woo',
+			new DateTimeImmutable('2026-02-15'),
+			'post'
+		);
+		$b = $row['penaltyPaymentCalculation'];
+		self::assertSame('afwijkend', $b['regime']);
+		self::assertSame(50000, $b['plafondCalculated']);
+	}
+
+	/**
+	 * The same service, with the engine calendar reachable.
+	 *
+	 * @param array<int, string> $closed Non-working dates as `Y-m-d`.
+	 *
+	 * @return AccrualNoticeService The service under test.
+	 */
+	private function serviceOnCalendar(array $closed): AccrualNoticeService {
+		$calendars = new WorkingCalendarServiceFake(new WorkingCalendarFake('nl-national', $closed));
+		$calculator = new SlaCalculatorFake();
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturnCallback(
+			static function (string $class) use ($calendars, $calculator): ?object {
+				return match ($class) {
+					TermijnTimerService::CALENDAR_SERVICE_CLASS => $calendars,
+					TermijnTimerService::SLA_CALCULATOR_CLASS => $calculator,
+					default => null,
+				};
+			}
+		);
+		$timers = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
+
+		return new AccrualNoticeService($this->settings, $this->termService, $this->logger, $timers);
+	}
+
+	/**
+	 * Awb 4:17: fourteen days from a receipt on 7 June 2026 is a Sunday, and
+	 * the dwangsom cannot start running on one. The window opens the Monday.
+	 *
+	 * @return void
+	 */
+	public function testTheGracePeriodEndingOnASundayMovesToTheMonday(): void {
+		$row = $this->serviceOnCalendar([])->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-06-07'),
+			'email',
+			'doc:1'
+		);
+
+		self::assertSame('2026-06-22', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The fixture pair: the same receipt with the engine calendar out of
+	 * reach keeps the raw Sunday, so the assertion above is about the roll
+	 * and not about the fourteen days.
+	 *
+	 * @return void
+	 */
+	public function testTheSameGracePeriodWithoutTheCalendarKeepsTheSunday(): void {
+		$row = $this->service->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-06-07'),
+			'email',
+			'doc:1'
+		);
+
+		self::assertSame('2026-06-21', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The grace counts on the calendar the ORGANISATION administers: a day it
+	 * closes moves the window even though no national list names it.
+	 *
+	 * @return void
+	 */
+	public function testTheGracePeriodCountsOnTheAdministeredCalendar(): void {
+		$row = $this->serviceOnCalendar(['2026-03-30'])->registerNotice(
+			'ti-1',
+			new DateTimeImmutable('2026-03-15'),
+			'post'
+		);
+
+		// 2026-03-29 is a Sunday and 2026-03-30 is a local closure.
+		self::assertSame('2026-03-31', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The regime's validity rules are untouched by the roll: a premature
+	 * notice is still premature and still spawns nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheRollDoesNotChangeTheValidityRules(): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-lopend-2',
+			'case' => 'Z/2026/303',
+			'deadlineDefinition' => 'td-ov',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-12-31',
+			'endDateCurrent' => '2026-12-31',
+			'status' => 'lopend',
+			'notificatiesVerstuurd' => [],
+		]);
+
+		$row = $this->serviceOnCalendar([])->registerNotice(
+			'ti-lopend-2',
+			new DateTimeImmutable('2026-06-07'),
+			'post'
+		);
+
+		self::assertFalse($row['gevalideerd']);
+		self::assertSame('premaat', $row['validityStatus']);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $row);
+	}
+
+	/**
+	 * The case's statutory term is the one a notice is given on; a planned or
+	 * internal clock on the same case is not.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testTheStatutoryTermOfACaseIsFound(): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-internal',
+			'case' => 'Z/2026/300',
+			'kind' => 'internal',
+			'startDate' => '2026-02-01T10:00:00+00:00',
+			'endDateCurrent' => '2026-02-10',
+			'status' => 'exceeded',
+		]);
+
+		self::assertSame('ti-1', $this->service->statutoryTermOf('Z/2026/300')['id'] ?? null);
+		self::assertNull($this->service->statutoryTermOf('Z/2026/999'));
+		self::assertSame('ti-1', $this->service->termInstance('ti-1')['id'] ?? null);
+	}
+
+	/**
+	 * A notice while the term runs gets the reason naming the end date; one
+	 * after the term has passed gets none.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testAPrematureNoticeGetsTheReason(): void {
+		$running = ['status' => 'lopend', 'endDateCurrent' => '2026-12-31'];
+		self::assertStringContainsString('2026-12-31', $this->service->prematureReason($running, new DateTimeImmutable('2026-03-15')));
+		self::assertStringContainsString('no end date', $this->service->prematureReason(['status' => 'lopend'], new DateTimeImmutable('2026-03-15')));
+
+		$passed = ['status' => 'exceeded', 'endDateCurrent' => '2026-02-25'];
+		self::assertSame('', $this->service->prematureReason($passed, new DateTimeImmutable('2026-03-15')));
+		self::assertNotSame('', $this->service->prematureReason($passed, new DateTimeImmutable('2026-02-25')));
+	}
+
+	/**
+	 * Who sent the notice is stored with it.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 *
+	 * @return void
+	 */
+	public function testTheSenderIsStored(): void {
+		$row = $this->service->registerNotice('ti-1', new DateTimeImmutable('2026-03-15'), 'post', '', 'J. de Vries');
+
+		self::assertSame('J. de Vries', $row['sender']);
+		self::assertSame('J. de Vries', $this->objects->store['noticeOfDefault'][(string)$row['id']]['sender'] ?? null);
+	}
+	/**
+	 * A first valid notice stores the whole notice and calculation rows, and both events in order.
+	 *
+	 * @return void
+	 */
+	public function testAFirstValidNoticeStoresTheWholeRowsAndBothEvents(): void {
+		$row = $this->service->registerNotice('ti-1', new DateTimeImmutable('2026-03-15'), 'email', 'doc:1');
+		$calculation = $row['penaltyPaymentCalculation'];
+		unset($row['penaltyPaymentCalculation']);
+
+		self::assertSame(
+			['deadlineInstance' => 'ti-1', 'receiptDate' => '2026-03-15', 'notificationChannel' => 'email', 'gevalideerd' => true, 'documentLink' => 'doc:1', 'validityStatus' => 'valid', 'id' => $row['id']],
+			$row
+		);
+		unset($calculation['id']);
+		self::assertSame(
+			['noticeOfDefault' => $row['id'], 'deadlineInstance' => 'ti-1', 'startDate' => '2026-03-29', 'plafondCalculated' => 144200, 'status' => 'lopend', 'regime' => 'awb-default', 'rateBands' => []],
+			array_intersect_key($calculation, array_flip(['noticeOfDefault', 'deadlineInstance', 'startDate', 'plafondCalculated', 'status', 'regime', 'rateBands']))
+		);
+
+		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
+		self::assertSame(['ingebrekestelling-received', 'penaltypayment-gestart'], array_column($events, 'type'));
+		self::assertSame('Ingebrekestelling ontvangen via email', $events[0]['rationale']);
+		self::assertSame('Dwangsom-berekening gestart na grace period', $events[1]['rationale']);
+	}
+
+	/**
+	 * Seed an exceeded term on the given definition.
+	 *
+	 * @param string $id           The instance id.
+	 * @param string $definitionId The definition it points at, '' for none.
+	 *
+	 * @return void
+	 */
+	private function seedExceeded(string $id, string $definitionId): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => $id,
+			'case' => 'Z/2026/310',
+			'deadlineDefinition' => $definitionId,
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-25',
+			'endDateCurrent' => '2026-02-25',
+			'status' => 'exceeded',
+			'notificatiesVerstuurd' => [],
+		]);
+	}
+
+	/**
+	 * A notice on a term that does not exist is refused, naming the term.
+	 *
+	 * @return void
+	 */
+	public function testANoticeOnAnUnknownTermIsRefused(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('TermijnInstance not found: ti-missing');
+
+		$this->service->registerNotice('ti-missing', new DateTimeImmutable('2026-03-15'), 'post');
+	}
+
+	/**
+	 * A term without a definition, or with one that cannot be read, gets the Awb default regime.
+	 *
+	 * @return void
+	 */
+	public function testATermWithoutAReadableDefinitionGetsTheAwbRegime(): void {
+		$this->seedExceeded(id: 'ti-nodef', definitionId: '');
+		$this->seedExceeded(id: 'ti-gone', definitionId: 'td-gone');
+
+		foreach (['ti-nodef', 'ti-gone'] as $id) {
+			$b = $this->service->registerNotice($id, new DateTimeImmutable('2026-03-15'), 'post')['penaltyPaymentCalculation'];
+
+			self::assertSame('awb-default', $b['regime'], $id);
+			self::assertSame(144200, $b['plafondCalculated'], $id);
+			self::assertSame([], $b['rateBands'], $id);
+		}
+	}
+
+	/**
+	 * A deviating regime naming no daily tariff charges the Awb first-band rate as one flat band.
+	 *
+	 * @return void
+	 */
+	public function testADeviatingRegimeWithoutATariffUsesTheAwbFirstBand(): void {
+		$this->objects->seed('deadlineDefinition', [
+			'id' => 'td-flat',
+			'caseType' => 'woo-verzoek',
+			'standardDurationDays' => 28,
+			'countExtensions' => 1,
+			'deviatingPenaltyPaymentRegime' => ['plafond' => 40000],
+			'validFrom' => '2026-01-01',
+		]);
+		$this->seedExceeded(id: 'ti-flat', definitionId: 'td-flat');
+
+		$b = $this->service->registerNotice('ti-flat', new DateTimeImmutable('2026-03-15'), 'post')['penaltyPaymentCalculation'];
+
+		self::assertSame('afwijkend', $b['regime']);
+		self::assertSame(40000, $b['plafondCalculated']);
+		self::assertSame([['rate' => AccrualNoticeService::TARIFF_AWB_FIRST_BAND]], $b['rateBands']);
+	}
+}

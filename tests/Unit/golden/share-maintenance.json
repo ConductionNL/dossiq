@@ -1,0 +1,24 @@
+{
+    "openregister not installed": [],
+    "object service unavailable": [
+        "error: Dossiq: ShareMaintenanceJob could not get ObjectService {\"exception\":\"no service\"}"
+    ],
+    "no register": [],
+    "no share schema": [],
+    "fetch fails": [
+        "findAll {\"filters\":{\"register\":7,\"schema\":12}}",
+        "error: Dossiq: ShareMaintenanceJob failed {\"exception\":\"register offline\"}"
+    ],
+    "no shares": [
+        "findAll {\"filters\":{\"register\":7,\"schema\":12}}"
+    ],
+    "shares": [
+        "findAll {\"filters\":{\"register\":7,\"schema\":12}}",
+        "info: Dossiq: Share expiring soon {\"shareId\":\"share-soon\",\"expiresAt\":\"<in a day>\",\"createdBy\":\"alice\"}",
+        "info: Dossiq: Share expiring soon {\"shareId\":\"unknown\",\"expiresAt\":\"<in a day>\",\"createdBy\":\"unknown\"}"
+    ],
+    "a share with a bad date": [
+        "findAll {\"filters\":{\"register\":7,\"schema\":12}}",
+        "error: Dossiq: ShareMaintenanceJob failed {\"exception\":\"Failed to parse time string (not a date) at position 0 (n): The timezone could not be found in the database\"}"
+    ]
+}

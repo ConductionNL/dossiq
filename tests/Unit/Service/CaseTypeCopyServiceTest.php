@@ -30,19 +30,30 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for CaseTypeCopyService.
  *
  * @covers \OCA\Dossiq\Service\CaseTypeCopyService
  *
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeChildCopy
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeDerivation
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeCopyServiceTest extends TestCase {
 
@@ -80,6 +91,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 					'property_definition_schema' => 'propertyDefinition',
 					'document_type_schema' => 'documentType',
 					'decision_type_schema' => 'decisionType',
+					'workflow_template_schema' => 'workflowTemplate',
 					default => $default,
 				};
 			}
@@ -113,7 +125,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -168,7 +182,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$id = ($object['id'] ?? null);
 				if ($id === null) {
 					$id = 'generated-' . (count($this->store) + 1);
@@ -202,7 +218,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, $register = null, $schema = null): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				if (isset($this->store[$uuid]) === false) {
 					return false;
 				}
@@ -265,6 +284,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 				'__schema' => 'decisionType',
 				'data' => ['id' => 'dec-1', 'caseType' => 'ct-1', 'name' => 'Verlenen'],
 			],
+			'workflow-v3' => [
+				'__schema' => 'workflowTemplate',
+				'data' => ['id' => 'workflow-v3', 'caseType' => 'ct-1', 'title' => 'Reguliere route', 'isActive' => true, 'version' => 3],
+			],
 			// Decoy: same schema, different (unrelated) case type.
 			'st-99' => [
 				'__schema' => 'statusType',
@@ -288,6 +311,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$copy = $service->copy('ct-1');
@@ -370,6 +397,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$next = $service->newVersion('ct-1');
@@ -414,6 +445,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$service->newVersion('ct-1');
@@ -441,6 +476,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$next = $service->newVersion('ct-1');
@@ -463,6 +502,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -483,6 +526,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -505,12 +552,15 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
 		$this->assertNull($service->copy('ct-1'));
 		$this->assertNull($service->newVersion('ct-1'));
-		$this->assertFalse($service->deleteDraft('ct-1')['ok']);
 	}//end testBothGesturesRefuseWithoutAnObjectService()
 
 	/**
@@ -536,7 +586,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -552,7 +604,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new \RuntimeException('unwritable');
 			}//end saveObject()
 		};
@@ -562,6 +616,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -595,7 +653,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -637,7 +697,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if (($schema === 'documentType') === true) {
 					throw new \RuntimeException('unwritable child');
 				}
@@ -659,6 +721,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -696,6 +762,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -724,6 +794,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -737,17 +811,20 @@ class CaseTypeCopyServiceTest extends TestCase {
 	}//end testAnExpandedInitialStatusReferenceStillRepoints()
 
 	/**
-	 * deleteDraft() deletes a draft case type.
+	 * 🔴 A NEW VERSION CARRIES THE WORKFLOW, AND THE PIN POINTS AT ITS OWN COPY.
+	 *
+	 * This is the caveat the version chain closed. A new version copied the
+	 * statuses, results, roles, attributes, document types and decision types
+	 * and NOT the workflow templates, so the only honest thing the payload could
+	 * do with `workflowDefinition` was clear it, and every new version of a case
+	 * type lost its process. Both halves move together: the templates are copied
+	 * and the pin is repointed at the copy. Asserting the pin CHANGED is not
+	 * enough, so this asserts the row it now names belongs to the new version.
 	 *
 	 * @return void
 	 */
-	public function testDeleteDraftDeletesDraftCaseType(): void {
-		$store = [
-			'ct-draft' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-draft', 'title' => 'Testtype', 'isDraft' => true],
-			],
-		];
+	public function testANewVersionCarriesTheWorkflowAndRepointsThePin(): void {
+		$store = $this->seedStore();
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
@@ -755,26 +832,42 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
-		$result = $service->deleteDraft('ct-draft');
 
-		$this->assertTrue($result['ok']);
-		$this->assertArrayNotHasKey('ct-draft', $store);
-	}//end testDeleteDraftDeletesDraftCaseType()
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$newId = $next['id'];
+
+		$copiedTemplates = array_filter(
+			$store,
+			static fn (array $entry): bool => $entry['__schema'] === 'workflowTemplate'
+				&& ($entry['data']['caseType'] ?? null) === $newId
+		);
+		$this->assertCount(1, $copiedTemplates);
+
+		$pin = $store[$newId]['data']['workflowDefinition'];
+		$this->assertIsString($pin);
+		$this->assertNotSame('workflow-v3', $pin);
+		$this->assertSame($newId, $store[$pin]['data']['caseType']);
+	}//end testANewVersionCarriesTheWorkflowAndRepointsThePin()
 
 	/**
-	 * deleteDraft() refuses to delete a published case type (409-equivalent).
+	 * A DUPLICATE carries no workflow, and that is a different gesture.
+	 *
+	 * A duplicate is a second case type and starts with no process. Copying the
+	 * templates for it too would have changed that gesture as a side effect of
+	 * fixing the version one.
 	 *
 	 * @return void
 	 */
-	public function testDeleteDraftBlocksPublishedCaseType(): void {
-		$store = [
-			'ct-pub' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-pub', 'title' => 'Omgevingsvergunning', 'isDraft' => false],
-			],
-		];
+	public function testADuplicateStillCarriesNoWorkflow(): void {
+		$store = $this->seedStore();
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
@@ -782,22 +875,40 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
-		$result = $service->deleteDraft('ct-pub');
 
-		$this->assertFalse($result['ok']);
-		$this->assertSame('published', $result['reason']);
-		$this->assertArrayHasKey('ct-pub', $store);
-	}//end testDeleteDraftBlocksPublishedCaseType()
+		$copy = $service->copy('ct-1');
+
+		$this->assertNotNull($copy);
+		$copyId = $copy['id'];
+
+		$copiedTemplates = array_filter(
+			$store,
+			static fn (array $entry): bool => $entry['__schema'] === 'workflowTemplate'
+				&& ($entry['data']['caseType'] ?? null) === $copyId
+		);
+		$this->assertSame([], $copiedTemplates);
+		$this->assertNull($store[$copyId]['data']['workflowDefinition']);
+	}//end testADuplicateStillCarriesNoWorkflow()
 
 	/**
-	 * deleteDraft() reports not_found when the case type does not resolve.
+	 * A pin with nothing to map to is CLEARED, not left pointing backwards.
+	 *
+	 * `caseType.workflowDefinition` is filtered on the case type's own id, so a
+	 * pin at another version's template is a route the type's own Workflow tab
+	 * cannot show: the field reads filled in, the picker reads empty, and
+	 * nothing says which is right.
 	 *
 	 * @return void
 	 */
-	public function testDeleteDraftReportsNotFound(): void {
-		$store = [];
+	public function testAnUnmappableWorkflowPinIsCleared(): void {
+		$store = $this->seedStore();
+		$store['ct-1']['data']['workflowDefinition'] = 'workflow-elsewhere';
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
@@ -805,11 +916,19 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
-		$result = $service->deleteDraft('does-not-exist');
 
-		$this->assertFalse($result['ok']);
-		$this->assertSame('not_found', $result['reason']);
-	}//end testDeleteDraftReportsNotFound()
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$this->assertNull($store[$next['id']]['data']['workflowDefinition']);
+	}//end testAnUnmappableWorkflowPinIsCleared()
+
+
+
 }//end class

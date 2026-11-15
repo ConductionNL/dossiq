@@ -38,6 +38,7 @@ use OCA\Dossiq\BackgroundJob\DailyDigestJob;
 use OCA\Dossiq\Service\Queue\DailyDigestComposer;
 use OCA\Dossiq\Service\Queue\DigestDispatcher;
 use OCA\Dossiq\Service\Notification\NotificationRouting;
+use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCP\App\IAppManager;
@@ -52,8 +53,12 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\BackgroundJob\DailyDigestJob
  * @covers \OCA\Dossiq\Service\Queue\DailyDigestComposer
  * @covers \OCA\Dossiq\Service\Queue\DigestPreferences
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class DailyDigestJobTest extends TestCase {
+	use MakesBackgroundServiceAccount;
+
 	/**
 	 * The per-user preferences this run holds.
 	 *
@@ -69,6 +74,27 @@ class DailyDigestJobTest extends TestCase {
 	private array $sent = [];
 
 	/**
+	 * What reading the queue throws, if anything.
+	 *
+	 * @var \Throwable|null
+	 */
+	private ?\Throwable $queueFailure = null;
+
+	/**
+	 * What sending the digest throws, if anything.
+	 *
+	 * @var \Throwable|null
+	 */
+	private ?\Throwable $sendFailure = null;
+
+	/**
+	 * Every warning the job logged.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $warnings = [];
+
+	/**
 	 * Reset the run.
 	 *
 	 * @return void
@@ -76,6 +102,9 @@ class DailyDigestJobTest extends TestCase {
 	protected function setUp(): void {
 		$this->prefs = [];
 		$this->sent = [];
+		$this->queueFailure = null;
+		$this->sendFailure = null;
+		$this->warnings = [];
 	}
 
 	/**
@@ -123,6 +152,22 @@ class DailyDigestJobTest extends TestCase {
 	}
 
 	/**
+	 * A logger that records the warnings it is given.
+	 *
+	 * @return LoggerInterface The logger.
+	 */
+	private function recordingLogger(): LoggerInterface {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			function (string $message): void {
+				$this->warnings[] = $message;
+			}
+		);
+
+		return $logger;
+	}
+
+	/**
 	 * Run the job once for one person whose queue holds these items.
 	 *
 	 * @param array<int, array<string, mixed>> $items  What is waiting on them.
@@ -132,6 +177,10 @@ class DailyDigestJobTest extends TestCase {
 	 */
 	private function runJobFor(array $items, string $userId = 'alice'): void {
 		$queue = $this->createMock(PersonalQueueService::class);
+		if ($this->queueFailure !== null) {
+			$queue->method('forPerson')->willThrowException($this->queueFailure);
+		}
+
 		$queue->method('forPerson')->willReturn([
 			'items' => $items,
 			'groups' => [],
@@ -144,6 +193,10 @@ class DailyDigestJobTest extends TestCase {
 		$dispatcher = $this->createMock(DigestDispatcher::class);
 		$dispatcher->method('send')->willReturnCallback(
 			function (array $digest): string {
+				if ($this->sendFailure !== null) {
+					throw $this->sendFailure;
+				}
+
 				$this->sent[] = $digest;
 
 				return 'digest-1';
@@ -174,7 +227,9 @@ class DailyDigestJobTest extends TestCase {
 			),
 			composer: new DailyDigestComposer(queue: $queue),
 			dispatcher: $dispatcher,
-			logger: $this->createMock(LoggerInterface::class)
+			logger: $this->recordingLogger(),
+			serviceAccount: $this->backgroundAccount(),
+			userSession: $this->backgroundSession(),
 		);
 
 		$run = new \ReflectionMethod(DailyDigestJob::class, 'run');
@@ -185,7 +240,7 @@ class DailyDigestJobTest extends TestCase {
 	 * One waiting item, as the queue answers it.
 	 *
 	 * @param string $id   The item id.
-	 * @param string $tier Its urgency tier.
+	 * @param string $tier Its deadline tier.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
@@ -194,7 +249,7 @@ class DailyDigestJobTest extends TestCase {
 			'id' => $id,
 			'title' => 'Waiting ' . $id,
 			'source' => 'assigned-cases',
-			'tier' => $tier,
+			'deadlineTier' => $tier,
 		];
 	}
 
@@ -312,7 +367,9 @@ class DailyDigestJobTest extends TestCase {
 			),
 			composer: new DailyDigestComposer(queue: $this->createMock(PersonalQueueService::class)),
 			dispatcher: $this->createMock(DigestDispatcher::class),
-			logger: $this->createMock(LoggerInterface::class)
+			logger: $this->createMock(LoggerInterface::class),
+			serviceAccount: $this->backgroundAccount(),
+			userSession: $this->backgroundSession(),
 		);
 
 		$run = new \ReflectionMethod(DailyDigestJob::class, 'run');
@@ -356,4 +413,40 @@ class DailyDigestJobTest extends TestCase {
 
 		return $routing;
 	}//end unrouted()
-}//end class
+
+	/**
+	 * A digest that cannot be composed is logged, nothing is sent and the day stays open.
+	 *
+	 * @return void
+	 */
+	public function testADigestThatCannotBeComposedIsLoggedAndTheDayStaysOpen(): void {
+		$this->prefs['alice|' . DigestPreferences::PREF_HOUR] = (int)(new DateTimeImmutable())->format('G');
+		$this->queueFailure = new \RuntimeException('queue down');
+
+		$this->runJobFor([$this->waiting('a')]);
+
+		self::assertSame([], $this->sent);
+		self::assertSame(['Dossiq: could not compose a digest for alice: queue down'], $this->warnings);
+		self::assertArrayNotHasKey('alice|' . DigestPreferences::PREF_LAST_SENT, $this->prefs);
+	}
+
+	/**
+	 * A digest that cannot be sent is logged and the day stays open, so a later run tries again.
+	 *
+	 * @return void
+	 */
+	public function testADigestThatCannotBeSentIsLoggedAndTheDayStaysOpen(): void {
+		$this->prefs['alice|' . DigestPreferences::PREF_HOUR] = (int)(new DateTimeImmutable())->format('G');
+		$this->sendFailure = new \RuntimeException('mail down');
+
+		$this->runJobFor([$this->waiting('a')]);
+
+		self::assertSame(['Dossiq: could not send a digest to alice: mail down'], $this->warnings);
+		self::assertArrayNotHasKey('alice|' . DigestPreferences::PREF_LAST_SENT, $this->prefs);
+
+		$this->sendFailure = null;
+		$this->runJobFor([$this->waiting('a')]);
+
+		self::assertCount(1, $this->sent);
+	}
+}

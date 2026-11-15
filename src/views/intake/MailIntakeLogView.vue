@@ -130,12 +130,31 @@
 									@click="markNotJunk(entry)">
 									{{ t('dossiq', 'Not junk') }}
 								</NcButton>
+								<!-- Offered on EVERY entry, not only on one that
+								     became no case: a wrong match is the common
+								     reason somebody reaches for this, and an
+								     entry that became case 2026-090 when it
+								     belonged on 2026-114 looks exactly like a
+								     successful match until a person reads it. -->
+								<NcButton
+									variant="tertiary"
+									:data-testid="`intake-log-file-on-case-${entryId(entry)}`"
+									@click="openFileOnCase(entry)">
+									{{ t('dossiq', 'File on a case') }}
+								</NcButton>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</template>
 		</div>
+
+		<MailIntakeFileOnCaseDialog
+			v-if="filing !== null"
+			:entry="filing"
+			:entryId="entryId(filing)"
+			@close="filing = null"
+			@filed="onFiled" />
 	</NcAppContent>
 </template>
 
@@ -150,6 +169,49 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog.vue'
+
+/**
+ * Read the intake log, filtered by sender and outcome when they are set.
+ *
+ * @param {string} sender The sender to find, or ''.
+ * @param {string} outcome The outcome to find, or ''.
+ * @return {Promise<Response>} The response.
+ */
+function fetchLog(sender, outcome) {
+	const params = new URLSearchParams()
+	if (sender) {
+		params.set('sender', sender)
+	}
+	if (outcome) {
+		params.set('outcome', outcome)
+	}
+	return fetch(generateUrl('/apps/dossiq/api/mail-intake/log?' + params.toString()), { headers: { 'OCS-APIRequest': 'true' } })
+}
+
+/**
+ * Keep what the log answered on the view.
+ *
+ * @param {object} view The log view.
+ * @param {object|null} data The answer.
+ * @return {void}
+ */
+function showLog(view, data) {
+	view.entries = data?.results || []
+	view.filterOrder = data?.filterOrder || []
+	view.junkRules = data?.junkRules || []
+}
+
+/**
+ * Show a reader without the intake role that they may not read the log, and nothing of it.
+ *
+ * @param {object} view The log view.
+ * @return {void}
+ */
+function refuseLog(view) {
+	view.forbidden = true
+	view.entries = []
+}
 
 /**
  * The intake log as a surface rather than a log file.
@@ -172,6 +234,7 @@ export default {
 	name: 'MailIntakeLogView',
 	components: {
 		NcAppContent,
+		MailIntakeFileOnCaseDialog,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
@@ -189,6 +252,9 @@ export default {
 			junkRules: [],
 			sender: '',
 			outcome: '',
+			// The entry a handler is filing by hand, or null. The fields,
+			// the refusal and the write live in the dialog itself.
+			filing: null,
 		}
 	},
 
@@ -251,29 +317,12 @@ export default {
 		async reload() {
 			this.loading = true
 			try {
-				const params = new URLSearchParams()
-				if (this.sender) {
-					params.set('sender', this.sender)
-				}
-				if (this.outcome) {
-					params.set('outcome', this.outcome)
-				}
-				const response = await fetch(
-					generateUrl(
-						'/apps/dossiq/api/mail-intake/log?' + params.toString(),
-					),
-					{ headers: { 'OCS-APIRequest': 'true' } },
-				)
+				const response = await fetchLog(this.sender, this.outcome)
 				if (response.status === 403) {
-					this.forbidden = true
-					this.entries = []
-					return
+					return refuseLog(this)
 				}
 				this.forbidden = false
-				const data = await response.json()
-				this.entries = data?.results || []
-				this.filterOrder = data?.filterOrder || []
-				this.junkRules = data?.junkRules || []
+				showLog(this, await response.json())
 			} catch {
 				// A read that failed shows nothing rather than a stale list. The
 				// empty state says a message that was never received leaves no
@@ -302,6 +351,28 @@ export default {
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 		 */
+		/**
+		 * Open the picker on one entry.
+		 *
+		 * @param {object} entry The log entry.
+		 * @return {void}
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		openFileOnCase(entry) {
+			this.filing = entry
+		},
+
+		/**
+		 * The dialog filed the message: close it and re-read the log.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		async onFiled() {
+			this.filing = null
+			await this.reload()
+		},
+
 		async release(entry) {
 			await this.post(`${this.entryId(entry)}/release`, {})
 			await this.reload()

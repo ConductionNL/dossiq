@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides the Jeugdwet (`jeugdwet-melding`) zaaktype for municipal youth-care casework, with a family-centered status lifecycle, gezinsplan drafting and consent workflow, and Multi-Disciplinary Overleg coordination. Because every case concerns minors, it enforces mandatory AVG classification, jeugdteam-scoped access with logged child-safety overrides, automatic anonymization of unconsented minutes, 20-year statutory retention, comprehensive audit logging, and subject-access-request support for both the child and parents.
+
 ## Requirements
+
 ### Requirement: Jeugdwet zaaktype definition and family-centered status lifecycle
 The system MUST support a `jeugdwet-melding` zaaktype backed entirely by OpenRegister with a family-centered status flow declared as `x-openregister-lifecycle` (`melding` → `gezinsplan-opstellen` → `gezinsplan-gereed` → `ondersteuning-gestart` → `ondersteuning-loopt` → `evaluatie` → `afgesloten`, with a `verlenging-aangevraagd` branch). The `JeugdwetZaak` entity carries `zaaktype` (fixed `jeugdwet-melding`), `gezinId`, `jeugdigeBsn`, `jeugdigeLeeftijd`, `verzoekKanaal`, `verzoekDatum`, `verwijzer`, `ondersteuningsvraag`, `wijkteam`, `behandelaarId`, `status`, `avgClassificatie` (required), `gezinsplanId` (optional), `mdoOverlegIds` (optional array), `ondertoezichtstellingActief` (optional), and `verlengingHistorie` (optional array).
 
@@ -159,3 +161,178 @@ The implementation chain MUST load three realistic Jeugdwet seed cases (OpenRegi
 - **AND** a school-refusal-with-depression case (`zaak-2026-jeugd-01847`, age 16, status `gezinsplan-gereed` awaiting the 16+ jeugdige's signature, jeugdteam-zuid, AVG medisch + gezinssituatie) is present
 - **AND** a toddler early-intervention case (`zaak-2026-jeugd-02456`, age 2, single parent, status `ondersteuning-gestart`, jeugdteam-west, AVG medisch + gezinssituatie) is present
 
+### Requirement: A case plan holds interventions with a goal, a provider and dates (REQ-CPN-01)
+
+A case plan SHALL hold interventions. Each intervention SHALL name what it
+is, the goal it serves, its provider, its start date, its target date, its
+state and its outcome. Several interventions SHALL be able to serve one
+goal. A goal SHALL name what would count as met. A plain string SHALL NOT
+stand in for a goal or an intervention.
+
+#### Scenario: A plan with two goals and three interventions
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** a household with a case plan
+- **WHEN** two goals are set and three interventions are planned against them
+- **THEN** each intervention SHALL name its goal, its provider and its target date
+- **AND** one goal SHALL be able to carry two of the interventions
+
+#### Scenario: An overdue intervention is visible as overdue
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** an intervention whose target date has passed and which is not complete
+- **WHEN** the plan is opened
+- **THEN** the intervention SHALL be shown as overdue
+
+#### Scenario: The provider is a party, not a name typed twice
+@e2e exclude unit; InterventionProviderTest
+
+- **GIVEN** an intervention with a provider
+- **WHEN** the provider is read
+- **THEN** it SHALL be a party in the platform's contact model with its contact details
+
+#### Scenario: A goal can be evaluated
+@e2e exclude unit; CasePlanGoalTest
+
+- **GIVEN** a goal naming what would count as met
+- **WHEN** a review records that it was met
+- **THEN** the goal SHALL be closed with that observation
+- **AND** a goal naming nothing measurable SHALL be refused on save
+
+### Requirement: The existing plan text is migrated, not discarded (REQ-CPN-02)
+
+Every string in `gezinsplan.goals` and `deploymentTrajectories` SHALL be
+migrated into a goal or an intervention with its text intact, its unmapped
+fields empty and its origin marked. No string SHALL be dropped and no value
+SHALL be invented for a field the old shape did not carry.
+
+#### Scenario: An old goal survives the migration
+@e2e exclude unit; CasePlanStringMigrationTest
+
+- **GIVEN** a gezinsplan with four goal strings and two trajectory strings
+- **WHEN** the migration runs
+- **THEN** six records SHALL exist carrying those exact texts
+- **AND** each SHALL be marked as migrated from the old shape
+- **AND** no provider or target date SHALL have been invented
+
+### Requirement: A plan is reviewed, and the review is recorded (REQ-CPN-03)
+
+A case plan SHALL carry a review date. A review SHALL record who reviewed it
+and what changed. A plan whose review date has passed SHALL be visible as
+due for review.
+
+#### Scenario: A stale plan says it is stale
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** a plan whose review date passed last month
+- **WHEN** the case is opened
+- **THEN** the plan SHALL be shown as due for review
+
+#### Scenario: A review records what changed
+@e2e exclude unit; CasePlanReviewTest
+
+- **GIVEN** a plan under review
+- **WHEN** one goal is closed and one intervention is added
+- **THEN** the review SHALL record both changes, the reviewer and the date
+
+### Requirement: A Jeugdwet report is a case of the Melding Jeugdwet case type (REQ-JW-CT-001)
+
+The `jeugdwet` package SHALL install on every instance and its case type `melding-jeugdwet` SHALL be
+the one Jeugdwet case type (no second one): category Jeugdhulp (the Jeugdwet domain, and still a
+category the family-plan panel shows for), handled by `dossiq-sociaal-domein`, with statuses for
+every status of the old `jeugdwetZaak` lifecycle (Jeugdhulp loopt, Evaluatie and Verlenging
+aangevraagd added) and the record's data as fields. The support question, the family plan and
+case meeting references and a supervision order SHALL be fields flagged `sensitive`.
+
+#### Scenario: The young person's BSN stays restricted
+- **GIVEN** the old record restricted `jeugdigeBsn` to dossiq-sensitive
+- **THEN** on the case it SHALL be `subjectBsn`, restricted to the same group
+
+### Requirement: Stored Jeugdwet reports move onto cases without loss or duplicates (REQ-JW-CT-002)
+
+On upgrade every stored `jeugdwetZaak` SHALL become one case per case number on its mapped status,
+with the young person's BSN as `subjectBsn`, the referrer as initiator and the youth worker as
+assignee. Family plans (`gezinsplan.caseId`), consents (`toestemming.caseId`) and case meetings
+(`mdoOverleg.caseIds`, a list) pointing at the record SHALL point at the case, so the family plan
+shows on the case. The record SHALL be left as it was apart from `migratedTo` and `migratedAt`
+(`jeugdwetZaak` 1.3.0).
+
+#### Scenario: The family plan follows the report
+- **GIVEN** a family plan whose caseId is a stored Jeugdwet report
+- **WHEN** the report moves
+- **THEN** the plan's caseId SHALL be the new case
+
+### Requirement: A Jeugdwet report follows a flow (REQ-JW-CT-003)
+
+The Melding Jeugdwet case type SHALL name a published flow from Melding ontvangen through Onderzoek,
+Indicatie, Overleg and Besluit to Jeugdhulp loopt, Evaluatie, Verlenging aangevraagd and Afgehandeld.
+The move to Indicatie SHALL require the support question and the move to Besluit the family plan,
+both checked as the system so the mover need not read them.
+
+#### Scenario: Every status can be reached
+- **GIVEN** the shipped flow
+- **THEN** every status of the case type SHALL be reachable from Melding ontvangen
+
+### Requirement: A Jeugdwet report runs on an eight-week decision term (REQ-JW-CT-004)
+
+Ruben (23 Oct 2026): a statutory term definition (Awb 4:13 lid 2, the Jeugdwet setting no decision
+term of its own) SHALL bind to Melding Jeugdwet for eight weeks, without extension, and the record
+import SHALL carry the term of a report still before its decision onto its case.
+
+#### Scenario: A migrated report before its decision is tracked
+- **GIVEN** a stored report in the family-plan stage
+- **WHEN** it moves onto a case
+- **THEN** the case SHALL carry a running statutory term ending eight weeks after the request date
+
+### Requirement: A write on a family plan needs the right to change its case
+
+Saving a goal, closing a goal, saving an intervention and recording a review SHALL check, before anything is written,
+that the caller may change the case the plan (or the goal) belongs to. A write that names an existing goal or
+intervention by id SHALL also need the right to change that record's case. A plan without a case SHALL NOT be written.
+
+#### Scenario: A caller without access to the case
+
+- **GIVEN** a family plan of case A and a signed-in user who may not change case A
+- **WHEN** they `POST /api/family-plans/{planId}/goals`, `/interventions` or `/reviews`, or close one of its goals
+- **THEN** the answer is 403
+- **AND** nothing is written
+
+#### Scenario: Another family's goal named by id
+
+- **GIVEN** a user who may change case A but not case B
+- **WHEN** they save a goal on case A's plan with the `id` of a goal on case B's plan
+- **THEN** the answer is 403 and case B's goal is unchanged
+
+### Requirement: A family plan is read only by whoever may read its case
+
+`GET /api/family-plans/{planId}` SHALL answer the plan only when the caller may read the case the plan points at, and
+`GET /api/cases/{caseId}/family-plan` only when the caller may read that case, checked before any plan, goal or
+intervention is read. A plan without a case SHALL NOT be answered.
+
+#### Scenario: A caller without access to the case
+
+- **GIVEN** a family plan of case A and a signed-in user who may not read case A
+- **WHEN** they ask `/api/family-plans/{planId}` or `/api/cases/A/family-plan`
+- **THEN** the answer is 403 and holds no plan, goal or intervention
+
+### Requirement: An intervention serves a goal of its own plan
+
+Saving an intervention that names a `goal` SHALL be refused with 404 before anything is written when that goal is not
+there, belongs to another plan, or belongs to a case rather than to this plan. The goal written is the goal checked.
+
+#### Scenario: Another plan's goal
+
+- **GIVEN** a user who may change cases A and B
+- **WHEN** they save an intervention on case A's plan naming a goal of case B's plan
+- **THEN** the answer is 404 and nothing is written
+
+### Requirement: The family plan answer names its plan
+
+`GET /api/cases/{caseId}/family-plan` and `GET /api/family-plans/{planId}` SHALL answer `planId` at the top level,
+so a manifest URL token can address the plan. Without a plan, `planId` SHALL be `null`.
+
+#### Scenario: Doel toevoegen
+
+- **GIVEN** a case whose gezinsplan has id `plan-new`
+- **THEN** the family plan answer carries `planId: "plan-new"`
+- **AND** Doel toevoegen posts to `/api/family-plans/plan-new/goals`

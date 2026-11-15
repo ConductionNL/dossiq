@@ -18,7 +18,7 @@
  *  - a `false` filter value is dropped by the LEGACY list path, so the chip
  *    carries `true` and never `{_unread: false}`;
  *  - an index row action knows only `navigate`, `open-page` and a handler
- *    NAME out of customComponents, so both marks are asserted to resolve to
+ *    NAME out of the registry, so both marks are asserted to resolve to
  *    functions that are actually exported;
  *  - an icon that is not registered in `src/icons.js` renders no glyph at all
  *    rather than a fallback, so all three new names are asserted registered;
@@ -52,14 +52,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
-	'utf8',
-)
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 /**
  * One page out of the manifest, by id.
@@ -86,19 +79,6 @@ function action(list, id) {
 	return found
 }
 
-/**
- * The unread column of one index page.
- *
- * @param {string} id The page id.
- * @return {object} The column entry.
- */
-function unreadColumn(id) {
-	const found = page(id).config.columns.find(
-		(c) => typeof c === 'object' && c.key === '@self.unread',
-	)
-	expect(found, `${id} carries no unread column`).toBeTruthy()
-	return found
-}
 
 describe('the Unread lens on the Cases index', () => {
 	const chips = page('Cases').config.quickFilters
@@ -136,38 +116,21 @@ describe('the Unread lens on the Cases index', () => {
 		expect(defaults[0].label).toBe('All')
 	})
 
-	it('leaves the Queue page without a chip of its own', () => {
-		// The Queue's base filter IS the page. A chip narrowing it further
-		// would leave a reader unable to tell an empty queue from an empty
-		// lens, and the base filter is what makes the queue trustworthy.
-		expect(page('Queue').config.quickFilters).toBeUndefined()
-	})
 })
 
-describe('the Unread column on both case lists', () => {
-	it('sits first on Cases and on Queue', () => {
-		for (const id of ['Cases', 'Queue']) {
-			const first = page(id).config.columns[0]
-			expect(typeof first).toBe('object')
-			expect(first.key).toBe('@self.unread')
-		}
+describe('unread rows on the case lists', () => {
+	it('are marked by the library table on Cases, in the board look too', () => {
+		// CnDataTable reads `@self.unread`, draws the unread marker on the
+		// title cell and the row in bold. The board look marks them only on a
+		// page that asks, and the Cases page asks.
+		expect(page('Cases').config.showUnreadRows).toBe(true)
 	})
 
-	it('renders through a cell widget that is registered', () => {
-		for (const id of ['Cases', 'Queue']) {
-			expect(unreadColumn(id).widget).toBe('unreadIndicator')
-		}
-		expect(cellWidgetsSource).toMatch(
-			/\n\tunreadIndicator: UnreadIndicatorCell,\n/,
-		)
-		expect(cellWidgetsSource).toContain(
-			"import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'",
-		)
-	})
-
-	it('is not sortable, because there is no column to sort on', () => {
-		for (const id of ['Cases', 'Queue']) {
-			expect(unreadColumn(id).sortable).toBe(false)
+	it('carry no unread column of their own, which nothing could sort on', () => {
+		const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.json'), 'utf8'))
+		const teamQueue = layout.pages.find((p) => p.id === 'Cases').configPatch.defaultSavedViews['team-queue'].overrides
+		for (const columns of [page('Cases').config.columns, teamQueue.columns]) {
+			expect(columns.find((c) => typeof c === 'object' && c.key === '@self.unread')).toBeUndefined()
 		}
 	})
 })
@@ -201,8 +164,8 @@ describe('an absent unread flag reads as read', () => {
 })
 
 describe('both marks are offered on a row', () => {
-	it('declares them on Cases and on Queue', () => {
-		for (const id of ['Cases', 'Queue']) {
+	it('declares them on Cases', () => {
+		for (const id of ['Cases']) {
 			const unread = action(page(id).config.actions, 'mark-unread')
 			expect(unread.type).toBe('handler')
 			expect(unread.handler).toBe('markCaseUnread')
@@ -216,7 +179,7 @@ describe('both marks are offered on a row', () => {
 	})
 
 	it('names icons that are registered', () => {
-		for (const id of ['Cases', 'Queue']) {
+		for (const id of ['Cases']) {
 			for (const actionId of ['mark-unread', 'mark-read']) {
 				const icon = action(page(id).config.actions, actionId).icon
 				expect(
@@ -229,14 +192,17 @@ describe('both marks are offered on a row', () => {
 
 	it('resolves both handlers to functions in the custom-component registry', () => {
 		// Asserted against the SOURCE rather than by importing the module:
-		// customComponents.js imports every surviving page and tab, so a unit
-		// test that imported it would mount the component tree to reach two
-		// functions.
+		// registry.js imports every surviving page and tab, so a unit test that
+		// imported it would mount the component tree to reach two functions.
 		expect(registrySource).toContain(
 			"import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'",
 		)
-		expect(registrySource).toMatch(/\n\tmarkCaseRead,\n/)
-		expect(registrySource).toMatch(/\n\tmarkCaseUnread,\n/)
+		expect(registrySource).toMatch(
+			/\n\tmarkCaseRead: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseRead,\n/,
+		)
+		expect(registrySource).toMatch(
+			/\n\tmarkCaseUnread: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseUnread,\n/,
+		)
 		expect(typeof markCaseRead).toBe('function')
 		expect(typeof markCaseUnread).toBe('function')
 	})

@@ -21,14 +21,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
+use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\PenaltyPaymentRowsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,38 +49,107 @@ use Throwable;
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingController extends Controller {
+	use ReportingAudienceGuard;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param DeadlineReportingService $service Reporting service.
+	 * @param DeadlineReportingServiceInterface $service Reporting service.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
+	 * @param ReportingAudienceInterface $audience Who may read a figure about every case.
+	 * @param FirstResponseOutcomeInterface|null $firstResponse The first-response figures.
+	 * @param PenaltyPaymentRowsInterface|null   $penaltyPayments The forfeited penalty payments by case.
+	 *        Nullable so an instance that never wired it answers "not available"
+	 *        rather than failing to construct the three reports beside it.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DeadlineReportingService $service,
+		private readonly DeadlineReportingServiceInterface $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly ?FirstResponseOutcomeInterface $firstResponse = null,
+		private readonly ?PenaltyPaymentRowsInterface $penaltyPayments = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Per-object authorization guard.
+	 * How the first response is doing, per case type or per organisation.
 	 *
-	 * @return JSONResponse|null
+	 * The count and the average come out of the numbers stored on the cases,
+	 * not out of dates recomputed now: a case decided a year ago was late by
+	 * what it was late by, whatever the configuration says today.
+	 *
+	 * It is an aggregate over cases the caller was never granted, exactly like
+	 * the three beside it, so it goes through the same audience gate: an
+	 * average overrun across every case is not a figure OpenRegister's
+	 * per-object refusal ever gets a chance to speak about.
+	 *
+	 * @param string $caseType     Optional case type filter.
+	 * @param string $organisation Optional organisation filter.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse The report.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
-	private function ensureAuthenticated(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+	public function firstResponseReport(string $caseType = '', string $organisation = ''): JSONResponse {
+		$denied = $this->ensureMayReadReports();
+		if ($denied !== null) {
+			return $denied;
 		}
 
-		return null;
-	}//end ensureAuthenticated()
+		if ($this->firstResponse === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$filters = [];
+		if ($caseType !== '') {
+			$filters['caseType'] = $caseType;
+		}
+
+		if ($organisation !== '') {
+			$filters['competentAuthority'] = $organisation;
+		}
+
+		try {
+			return new JSONResponse($this->firstResponse->report(filters: $filters));
+		} catch (Throwable $e) {
+			$this->logger->error('First-response report failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end firstResponseReport()
+
+	/**
+	 * Refuse a caller who may not read a figure about every case.
+	 *
+	 * 🔴 THIS USED TO ASK ONLY WHETHER THERE WAS A SESSION, AND THE DOCBLOCK
+	 * CALLED IT A "per-object authorization guard" WHEN THERE IS NO OBJECT.
+	 * Measured 2026-09-18 by deriving the reporting endpoints from
+	 * `appinfo/routes.php` rather than from anyone's list: all the methods
+	 * around it carried `@NoAdminRequired` and no group check, so
+	 * `GET /api/termijn/reports/jaarrekening` -- the ANNUAL DWANGSOM STATEMENT,
+	 * what the organisation paid out for missing its own deadlines -- answered
+	 * every authenticated account on the instance.
+	 *
+	 * They answer AGGREGATES over cases the caller was never granted, so
+	 * OpenRegister's per-object refusal never gets a chance to speak. That is
+	 * what separates them from an ordinary endpoint and what earns them a gate.
+	 *
+	 * @return JSONResponse|null The refusal, or null to proceed.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function ensureMayReadReports(): ?JSONResponse {
+		return $this->refuseOutsideReportingAudience(userSession: $this->userSession, audience: $this->audience);
+	}//end ensureMayReadReports()
 
 	/**
 	 * Dashboard KPI snapshot.
@@ -85,22 +158,43 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function dashboard(): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}
 
 		try {
-			$row = $this->service->getTermijnKpi();
+			$row = $this->service->getTermijnKpi(
+				filters: [],
+				today: null,
+				from: $this->stringParam(name: 'from'),
+				until: $this->stringParam(name: 'to')
+			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			$this->logger->error('Termijn dashboard failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end dashboard()
+
+	/**
+	 * A request parameter as a string, or null when it is absent or not a string.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function stringParam(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end stringParam()
 
 	/**
 	 * Quarterly KPI report.
@@ -112,10 +206,10 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReport(string $period = '', ?string $department = null): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -145,10 +239,10 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function annualStatement(int $year = 0): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -168,4 +262,114 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end annualStatement()
+
+	/**
+	 * The penalty payments forfeited in a year, each named by its case.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 */
+	public function penaltyPayments(int $year = 0): JSONResponse {
+		$denied = $this->ensureMayReadReports();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		if ($this->penaltyPayments === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($year < 2020 || $year > 2100) {
+			return new JSONResponse(['message' => 'year is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			return new JSONResponse($this->penaltyPayments->forYear(year: $year));
+		} catch (Throwable $e) {
+			$this->logger->error('Penalty payment report failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end penaltyPayments()
+
+	/**
+	 * dashboard() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/dashboard/kpi; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
+	 */
+	public function dashboardLegacyPath(): JSONResponse {
+		return $this->dashboard();
+	}//end dashboardLegacyPath()
+
+	/**
+	 * quarterlyReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/quarterly; remove after the next major.
+	 *
+	 * @param string $period Period (YYYY-Qn).
+	 * @param string|null $department Optional department filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
+	 */
+	public function quarterlyReportLegacyPath(string $period = '', ?string $department = null): JSONResponse {
+		return $this->quarterlyReport(period: $period, department: $department);
+	}//end quarterlyReportLegacyPath()
+
+	/**
+	 * annualStatement() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/annual; remove after the next major.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
+	 */
+	public function annualStatementLegacyPath(int $year = 0): JSONResponse {
+		return $this->annualStatement(year: $year);
+	}//end annualStatementLegacyPath()
+
+	/**
+	 * firstResponseReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/first-response; remove after the next major.
+	 *
+	 * @param string $caseType     Optional case type filter.
+	 * @param string $organisation Optional organisation filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 *
+	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
+	 */
+	public function firstResponseReportLegacyPath(string $caseType = '', string $organisation = ''): JSONResponse {
+		return $this->firstResponseReport(caseType: $caseType, organisation: $organisation);
+	}//end firstResponseReportLegacyPath()
 }//end class

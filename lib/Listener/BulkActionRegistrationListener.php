@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq: declare the four case bulk actions to OpenRegister.
+ * Dossiq: declare the five case bulk actions to OpenRegister.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\BulkAction\LifecycleCasesAction;
+use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
@@ -39,29 +40,30 @@ use Throwable;
  *
  * Every action is resolved lazily from the container, one at a time, and a
  * single action that cannot be built is logged and left out rather than
- * taking the other three with it: a registry that answers nothing looks
+ * taking the others with it: a registry that answers nothing looks
  * exactly like an instance where dossiq is not installed.
  *
  * @template-implements IEventListener<Event>
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BulkActionRegistrationListener implements IEventListener {
 
 	/**
-	 * The four actions, in the order an operator meets them.
+	 * The five actions, in the order an operator meets them.
 	 *
 	 * @var array<int, class-string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const ACTIONS = [
 		TransitionCasesAction::class,
 		LifecycleCasesAction::class,
 		ReassignCasesAction::class,
 		SetCaseAttributeAction::class,
+		MoveCaseTypeVersionAction::class,
 	];
 
 	/**
@@ -72,7 +74,7 @@ class BulkActionRegistrationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -81,13 +83,13 @@ class BulkActionRegistrationListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Register dossiq's four case actions.
+	 * Register dossiq's five case actions.
 	 *
 	 * @param Event $event The registration event.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (method_exists($event, 'registerAction') === false) {

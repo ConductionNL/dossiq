@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -63,9 +64,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
-class RefusalOutcome {
+class RefusalOutcome implements RefusalOutcomeInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;
@@ -120,7 +121,7 @@ class RefusalOutcome {
 	 *
 	 * @return array{department: string, role: string} The destination, blank when undeclared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function destinationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -141,7 +142,7 @@ class RefusalOutcome {
 	 *
 	 * @return boolean True when a department and a role are declared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function canRefuse(array $caseType): bool {
 		$destination = $this->destinationFor(caseType: $caseType);
@@ -160,9 +161,37 @@ class RefusalOutcome {
 	 *
 	 * @throws RefusedException When there is no reason, no destination, or no readable case.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refuse(string $caseId, string $reason, string $refusedBy): array {
+		$why = $this->requiredReason(reason: $reason);
+		$case = $this->readableCase(caseId: $caseId);
+		$destination = $this->declaredDestination(case: $case);
+
+		$record = [
+			'refused' => true,
+			'reason' => $why,
+			'refusedBy' => $refusedBy,
+			'refusedAt' => $this->time->getDateTime()->format(DATE_ATOM),
+			'department' => $destination['department'],
+			'role' => $destination['role'],
+		];
+
+		$this->write(caseId: $caseId, changes: $this->refusalChanges(record: $record, destination: $destination));
+
+		return $record;
+	}//end refuse()
+
+	/**
+	 * The trimmed reason; a refusal without one is itself refused.
+	 *
+	 * @param string $reason The reason given.
+	 *
+	 * @return string
+	 *
+	 * @throws RefusedException When the reason is empty.
+	 */
+	private function requiredReason(string $reason): string {
 		$why = trim($reason);
 		if ($why === '') {
 			throw new RefusedException(
@@ -173,6 +202,19 @@ class RefusalOutcome {
 			);
 		}
 
+		return $why;
+	}//end requiredReason()
+
+	/**
+	 * The case, or a refusal when it cannot be read.
+	 *
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When the case cannot be read.
+	 */
+	private function readableCase(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
 		if ($case === null) {
 			throw new RefusedException(
@@ -182,6 +224,19 @@ class RefusalOutcome {
 			);
 		}
 
+		return $case;
+	}//end readableCase()
+
+	/**
+	 * Where the case's type sends a refused case, or a refusal when it declares no department and role.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array{department: string, role: string}
+	 *
+	 * @throws RefusedException When the destination is not declared.
+	 */
+	private function declaredDestination(array $case): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(
 			caseTypeId: $this->caseTypeIdOf(case: $case)
 		);
@@ -195,30 +250,39 @@ class RefusalOutcome {
 			);
 		}
 
-		$record = [
-			'refused' => true,
-			'reason' => $why,
-			'refusedBy' => $refusedBy,
-			'refusedAt' => $this->time->getDateTime()->format(DATE_ATOM),
-			'department' => $destination['department'],
-			'role' => $destination['role'],
-		];
+		return $destination;
+	}//end declaredDestination()
 
-		// 🔴 THE CASE IS NOT HIDDEN AND NOT DELETED. Only the refusal record and
-		// the team are written. `statusHiddenInLists` is deliberately untouched:
-		// a refused case a handler cannot find is the lost case this whole
-		// outcome exists to prevent, and search reads the same rows the list
-		// does.
-		$this->write(
-			caseId: $caseId,
-			changes: [
-				self::CASE_FIELD => $record,
-				'assignedGroup' => $destination['department'],
-			]
-		);
+	/**
+	 * What the refusal writes on the case: the record, and the team when one resolves.
+	 *
+	 * 🔴 THE CASE IS NOT HIDDEN AND NOT DELETED. Only the refusal record and
+	 * the team are written. `statusHiddenInLists` is deliberately untouched:
+	 * a refused case a handler cannot find is the lost case this whole
+	 * outcome exists to prevent, and search reads the same rows the list
+	 * does.
+	 * 🔴 `assignedGroup` IS A NEXTCLOUD GROUP ID, NOT A DEPARTMENT NAME
+	 * (one-team-model). `refusalDestination.department` is a plain
+	 * department name, and this line once wrote one into the other. The
+	 * team is resolved from the declared department and role to the
+	 * group that role names (`organisatieRol.ncGroupId`), and when
+	 * nothing resolves the refusal is still RECORDED, just unassigned. A
+	 * refused case a handler can find beats a refusal that did not happen.
+	 *
+	 * @param array<string, mixed>                    $record      The refusal record.
+	 * @param array{department: string, role: string} $destination The declared destination.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function refusalChanges(array $record, array $destination): array {
+		$changes = [self::CASE_FIELD => $record];
+		$team = $this->teamFor(destination: $destination);
+		if ($team !== '') {
+			$changes['assignedGroup'] = $team;
+		}
 
-		return $record;
-	}//end refuse()
+		return $changes;
+	}//end refusalChanges()
 
 	/**
 	 * The refusal recorded on one case.
@@ -227,7 +291,7 @@ class RefusalOutcome {
 	 *
 	 * @return array<string, mixed> The refusal record, empty when it was not refused.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refusalOn(array $case): array {
 		$record = ($case[self::CASE_FIELD] ?? null);
@@ -255,6 +319,123 @@ class RefusalOutcome {
 	}//end caseTypeIdOf()
 
 	/**
+	 * The Nextcloud group a declared refusal destination names.
+	 *
+	 * The destination is a department and a role, in words an administrator
+	 * typed on the case type. `case.assignedGroup` is a Nextcloud group id, so
+	 * the words are joined to the `organisatieRol` they describe (on
+	 * `department` plus `roleName`) and the case gets that role's
+	 * `ncGroupId`, the one link from a role to a team.
+	 *
+	 * Returns an empty string when the register is unconfigured, when nothing
+	 * matches, when the matching role names no group, or when the search
+	 * throws. Every one of those means the case is refused and left
+	 * unassigned, which is the recoverable outcome: an administrator assigns
+	 * it, and the refusal record already says where it was meant to go. A
+	 * role's `team` or `roleName` is never tried as a group id: a wrong guess
+	 * hands the case to a team that never sees it.
+	 *
+	 * @param array{department: string, role: string} $destination The declared destination.
+	 *
+	 * @return string The Nextcloud group id, or '' when none resolves.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
+	 */
+	private function teamFor(array $destination): string {
+		$rows = $this->roleRowsFor(destination: $destination);
+		if ($rows === null) {
+			return '';
+		}
+
+		if ($rows === []) {
+			$this->logger->warning(
+				'Dossiq refusal: no organisatieRol answers to {department}/{role}, so the refused case is unassigned',
+				['department' => $destination['department'], 'role' => $destination['role']],
+			);
+
+			return '';
+		}
+
+		$group = trim((string)($rows[0]['ncGroupId'] ?? ''));
+		if ($group === '') {
+			$this->logger->warning(
+				'Dossiq refusal: the organisatieRol for {department}/{role} names no Nextcloud group, so the refused case is unassigned',
+				['department' => $destination['department'], 'role' => $destination['role']],
+			);
+		}
+
+		return $group;
+	}//end teamFor()
+
+	/**
+	 * The organisatieRol rows of the destination's department and role, or null when they cannot be read.
+	 *
+	 * @param array{department: string, role: string} $destination The declared destination.
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 */
+	private function roleRowsFor(array $destination): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
+
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
+			return null;
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: [
+					'department' => $destination['department'],
+					'roleName' => $destination['role'],
+					'_limit' => 1,
+				],
+			);
+		} catch (Throwable $e) {
+			$this->logUnresolvedTeam(destination: $destination, exception: $e);
+			$rows = null;
+		}
+
+		return $rows;
+	}//end roleRowsFor()
+
+	/**
+	 * Whether the object service, register and organisation role schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The organisation role schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
+
+	/**
+	 * Log that the team of a destination could not be resolved.
+	 *
+	 * @param array{department: string, role: string} $destination The declared destination.
+	 * @param Throwable                               $exception   Why the read failed.
+	 *
+	 * @return void
+	 */
+	private function logUnresolvedTeam(array $destination, Throwable $exception): void {
+		$this->logger->warning(
+			'Dossiq refusal: could not resolve the team for {department}/{role}',
+			[
+				'department' => $destination['department'],
+				'role' => $destination['role'],
+				'reason' => $exception->getMessage(),
+			],
+		);
+	}//end logUnresolvedTeam()
+
+	/**
 	 * Read one case.
 	 *
 	 * @param string $caseId The case UUID.
@@ -263,6 +444,7 @@ class RefusalOutcome {
 	 *
 	 * @throws RefusedException When the register is configured but the read fails.
 	 */
+
 	private function readCase(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
@@ -303,21 +485,7 @@ class RefusalOutcome {
 	 * @throws RefusedException When the register is absent or the write failed.
 	 */
 	private function write(string $caseId, array $changes): void {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			$this->logger->error(
-				'Dossiq refusal: the register is not configured, so case {case} records nothing',
-				['case' => $caseId],
-			);
-
-			throw RefusedException::indeterminate(
-				rule: self::RULE_CASE_UNREADABLE,
-				sentence: 'The register is not configured, so the refusal was not recorded.',
-			);
-		}
+		[$objectService, $register, $schema] = $this->caseStore(caseId: $caseId);
 
 		try {
 			$this->writer->write(
@@ -340,4 +508,33 @@ class RefusalOutcome {
 			);
 		}
 	}//end write()
+
+	/**
+	 * The object service, the register and the case schema; a refusal when any is missing.
+	 *
+	 * @param string $caseId The case the refusal is for, for the log.
+	 *
+	 * @return array{0: object, 1: string, 2: string}
+	 *
+	 * @throws RefusedException When the register is not configured.
+	 */
+	private function caseStore(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+
+		if ($objectService === null || $register === '' || $schema === '') {
+			$this->logger->error(
+				'Dossiq refusal: the register is not configured, so case {case} records nothing',
+				['case' => $caseId],
+			);
+
+			throw RefusedException::indeterminate(
+				rule: self::RULE_CASE_UNREADABLE,
+				sentence: 'The register is not configured, so the refusal was not recorded.',
+			);
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
 }//end class

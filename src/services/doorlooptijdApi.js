@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T04
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'

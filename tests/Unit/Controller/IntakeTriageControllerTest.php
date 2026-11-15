@@ -44,21 +44,27 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
+use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
+use OCA\Dossiq\Service\Intake\TriageChannel;
 use OCA\Dossiq\Service\Intake\TriageSleep;
 use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -71,6 +77,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
+ * @uses \OCA\Dossiq\Service\Intake\TriageChannel
+ * @uses \OCA\Dossiq\Controller\Support\IntakeRoleGate
  */
 final class IntakeTriageControllerTest extends TestCase {
 
@@ -124,6 +133,18 @@ final class IntakeTriageControllerTest extends TestCase {
 	private IntakeLog $log;
 
 	/**
+	 * The admissibility judgement.
+	 *
+	 * @var AdmissibilityJudgement&MockObject
+	 */
+	private AdmissibilityJudgement $admissibility;
+
+	/**
+	 * @var CaseMatchSuggestion&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseMatchSuggestion $suggestions;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
@@ -146,6 +167,12 @@ final class IntakeTriageControllerTest extends TestCase {
 		$this->sleep = $this->createMock(TriageSleep::class);
 		$this->fanOut = $this->createMock(IntakeFanOut::class);
 		$this->log = $this->createMock(IntakeLog::class);
+		$this->admissibility = $this->createMock(AdmissibilityJudgement::class);
+		$this->suggestions = $this->createMock(CaseMatchSuggestion::class);
+		$this->suggestions->method('annotate')->willReturnCallback(
+			static fn (array $items): array => array_map(static fn (array $item): array => $item + ['suggestion' => null], $items)
+		);
+		$this->suggestions->method('narrow')->willReturnArgument(0);
 	}//end setUp()
 
 	/**
@@ -194,7 +221,13 @@ final class IntakeTriageControllerTest extends TestCase {
 			),
 			schemes: new ClassificationSchemes(appConfig: $appConfig),
 			narrowing: new AssigneeNarrowing(),
+			duplicates: new DuplicatePolicy(
+				container: $this->createMock(originalClassName: ContainerInterface::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class),
+				logger: new NullLogger()
+			),
 			refusal: $this->refusal,
+			admissibility: $this->admissibility,
 			sleep: $this->sleep,
 			fanOut: $this->fanOut,
 			log: $this->log,
@@ -202,6 +235,8 @@ final class IntakeTriageControllerTest extends TestCase {
 			caseAccessGuard: $guard,
 			userSession: $session,
 			logger: new NullLogger(),
+			suggestions: $this->suggestions,
+			channels: new TriageChannel(),
 		);
 	}//end controller()
 
@@ -216,14 +251,14 @@ final class IntakeTriageControllerTest extends TestCase {
 		$response = $this->controller()->requirements(caseTypeId: 'ct-1');
 		$body = $response->getData();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			['communicationChannel', 'confidentiality'],
-			$body['intakeRequirements']['requiredBeforeCreation']
+			expected: ['communicationChannel', 'confidentiality'],
+			actual: $body['intakeRequirements']['requiredBeforeCreation']
 		);
 		$this->assertSame(
-			['requesterAddress'],
-			$body['intakeRequirements']['requiredBeforeComplete']
+			expected: ['requesterAddress'],
+			actual: $body['intakeRequirements']['requiredBeforeComplete']
 		);
 	}//end testTheRequirementsEndpointAnswersTheDeclaration()
 
@@ -238,10 +273,10 @@ final class IntakeTriageControllerTest extends TestCase {
 		$body = $this->controller()->requirements(caseTypeId: 'ct-1')->getData();
 
 		$this->assertSame(
-			['handhaving', 'juridische-zaken'],
-			$body['assigneeNarrowing']['allowedGroups']
+			expected: ['handhaving', 'juridische-zaken'],
+			actual: $body['assigneeNarrowing']['allowedGroups']
 		);
-		$this->assertFalse($body['narrowsNothing']);
+		$this->assertFalse(condition: $body['narrowsNothing']);
 	}//end testTheRequirementsEndpointCarriesTheNarrowing()
 
 	/**
@@ -259,8 +294,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->requirements(caseTypeId: 'ct-1')->getData();
 
-		$this->assertFalse($body['schemeResolves']);
-		$this->assertSame([], $body['classificationValues']);
+		$this->assertFalse(condition: $body['schemeResolves']);
+		$this->assertSame(expected: [], actual: $body['classificationValues']);
 	}//end testTheRequirementsEndpointReportsAnUnresolvableScheme()
 
 	/**
@@ -278,7 +313,7 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->requirements(caseTypeId: 'ct-gone');
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
 	}//end testAnUnknownCaseTypeAnswersNotFound()
 
 	/**
@@ -291,7 +326,7 @@ final class IntakeTriageControllerTest extends TestCase {
 	public function testTheDeclarationReadNeedsASession(): void {
 		$response = $this->controller(signedIn: false)->requirements(caseTypeId: 'ct-1');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testTheDeclarationReadNeedsASession()
 
 	/**
@@ -314,8 +349,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('Juridische Zaken', $response->getData()['department']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: 'Juridische Zaken', actual: $response->getData()['department']);
 	}//end testRefusingACaseAnswersTheRecord()
 
 	/**
@@ -336,8 +371,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $response->getStatus());
-		$this->assertSame(RefusalOutcome::RULE_NO_DESTINATION, $response->getData()['error']);
+		$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $response->getStatus());
+		$this->assertSame(expected: RefusalOutcome::RULE_NO_DESTINATION, actual: $response->getData()['error']);
 		$this->assertStringContainsString(
 			'where a refused case goes',
 			$response->getData()['message']
@@ -357,7 +392,7 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testACallerWithoutCaseAccessCannotRefuse()
 
 	/**
@@ -379,9 +414,64 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->queue()->getData();
 
-		$this->assertSame([['id' => 'e-quarantined']], $body['results']);
-		$this->assertSame(1, $body['sleeping']);
+		$this->assertSame(expected: [['id' => 'e-quarantined', 'suggestion' => null, 'channel' => 'email']], actual: $body['results']);
+		$this->assertSame(expected: 1, actual: $body['sleeping']);
+		$this->assertSame(expected: 1, actual: $body['total']);
 	}//end testTheQueueLeavesOutTheSleepingItems()
+
+	/**
+	 * The queue narrows to one channel and counts every channel of the lens.
+	 *
+	 * The facet is counted before the channel narrows, so the menu still offers
+	 * the other channels while one is chosen.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	public function testTheQueueNarrowsToAChannelAndCountsEveryChannel(): void {
+		$this->log->method('search')->willReturnCallback(
+			static function (array $filters = []): array {
+				if (($filters['outcome'] ?? '') !== 'inbox') {
+					return [];
+				}
+
+				return [
+					['id' => 'm1', 'mailMessageId' => '<m1@x>'],
+					['id' => 'p1', 'channel' => 'portal'],
+					['id' => 'm2', 'mailMessageId' => '<m2@x>'],
+				];
+			}
+		);
+		$this->sleep->method('awake')->willReturnArgument(0);
+
+		$body = $this->controller()->queue(channel: 'portal')->getData();
+
+		$this->assertSame(expected: ['p1'], actual: array_column($body['results'], 'id'));
+		$this->assertSame(expected: 1, actual: $body['total']);
+		$this->assertSame(
+			expected: [['value' => 'email', 'count' => 2], ['value' => 'portal', 'count' => 1]],
+			actual: $body['channels']
+		);
+	}//end testTheQueueNarrowsToAChannelAndCountsEveryChannel()
+
+	/**
+	 * Every channel, the default lens, keeps the whole queue.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	public function testAllChannelsKeepsTheWholeQueue(): void {
+		$this->log->method('search')->willReturnCallback(
+			static fn (array $filters = []): array => (($filters['outcome'] ?? '') === 'inbox') ? [['id' => 'm1'], ['id' => 'p1', 'channel' => 'portal']] : []
+		);
+		$this->sleep->method('awake')->willReturnArgument(0);
+
+		$body = $this->controller()->queue(channel: 'all')->getData();
+
+		$this->assertSame(expected: ['m1', 'p1'], actual: array_column($body['results'], 'id'));
+	}//end testAllChannelsKeepsTheWholeQueue()
 
 	/**
 	 * Sleeping an item answers the record the sleep produced.
@@ -406,8 +496,8 @@ final class IntakeTriageControllerTest extends TestCase {
 			reason: 'Wachten op het bestemmingsplan.'
 		);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('2027-03-01', $response->getData()['sleepUntil']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: '2027-03-01', actual: $response->getData()['sleepUntil']);
 	}//end testSleepingAnItemAnswersTheRecord()
 
 	/**
@@ -432,7 +522,7 @@ final class IntakeTriageControllerTest extends TestCase {
 			reason: 'Wachten.'
 		);
 
-		$this->assertSame(TriageSleep::RULE_ALREADY_A_CASE, $response->getData()['error']);
+		$this->assertSame(expected: TriageSleep::RULE_ALREADY_A_CASE, actual: $response->getData()['error']);
 	}//end testASleepOnAnAcceptedCaseCarriesItsRule()
 
 	/**
@@ -453,14 +543,14 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$controller = $this->controller();
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->queue()->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->queue()->getStatus());
 		$this->assertSame(
-			Http::STATUS_FORBIDDEN,
-			$controller->sleepItem(entryId: 'e-1', until: '2027-03-01', reason: 'x')->getStatus()
+			expected: Http::STATUS_FORBIDDEN,
+			actual: $controller->sleepItem(entryId: 'e-1', until: '2027-03-01', reason: 'x')->getStatus()
 		);
 		$this->assertSame(
-			Http::STATUS_FORBIDDEN,
-			$controller->fanOut(caseTypeId: 'ct-1')->getStatus()
+			expected: Http::STATUS_FORBIDDEN,
+			actual: $controller->fanOut(caseTypeId: 'ct-1')->getStatus()
 		);
 	}//end testTheTriageActsAreGatedOnTheIntakeRole()
 
@@ -485,8 +575,88 @@ final class IntakeTriageControllerTest extends TestCase {
 			submissionId: 'sub-1'
 		)->getData();
 
-		$this->assertCount(1, $body['created']);
-		$this->assertSame('Onderhoud', $body['failed'][0]['destination']);
-		$this->assertArrayNotHasKey('relationHasNoInverse', $body);
+		$this->assertCount(expectedCount: 1, haystack: $body['created']);
+		$this->assertSame(expected: 'Onderhoud', actual: $body['failed'][0]['destination']);
+		$this->assertArrayNotHasKey(key: 'relationHasNoInverse', array: $body);
 	}//end testTheFanOutReportsTheFailedDestinationBesideTheCreated()
+	/**
+	 * An anonymous caller cannot judge admissibility.
+	 *
+	 * Contract coverage for `intakeTriage#judgeAdmissibility` (gate-25). The
+	 * unauthenticated arm is 401 and the unauthorised arm is 403, and the two
+	 * are different answers on purpose: a client that has no session should
+	 * log in, a client that has one should not retry.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRefusesAnAnonymousCallerWith401(): void {
+		$response = $this->controller(signedIn: false)
+			->judgeAdmissibility(caseId: 'case-1', verdict: 'ontvankelijk', reason: 'compleet');
+
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testJudgeAdmissibilityRefusesAnAnonymousCallerWith401()
+
+	/**
+	 * A caller who may not write the case is refused before the service is asked.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRefusesACallerWhoMayNotWriteTheCase(): void {
+		$this->mayMutate = false;
+		$this->admissibility->expects(self::never())->method('judge');
+
+		$response = $this->controller()
+			->judgeAdmissibility(caseId: 'case-1', verdict: 'ontvankelijk', reason: 'compleet');
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame('not-authorized', $response->getData()['error']);
+	}//end testJudgeAdmissibilityRefusesACallerWhoMayNotWriteTheCase()
+
+	/**
+	 * A verdict is recorded against the SESSION user, not a parameter.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRecordsTheVerdictAgainstTheSessionUser(): void {
+		$seen = [];
+		$this->admissibility->method('judge')->willReturnCallback(
+			static function (string $caseId, string $verdict, string $reason, string $judgedBy) use (&$seen): array {
+				$seen = compact('caseId', 'verdict', 'reason', 'judgedBy');
+				return ($seen + ['recordedAt' => '2026-09-19T10:00:00+02:00']);
+			}
+		);
+
+		$response = $this->controller()->judgeAdmissibility(
+			caseId: 'case-1',
+			verdict: 'niet-ontvankelijk',
+			reason: 'De aanvraag is te laat ingediend.',
+		);
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('niet-ontvankelijk', $seen['verdict']);
+		self::assertSame('De aanvraag is te laat ingediend.', $seen['reason']);
+		// WHO JUDGED comes from the session. A verdict anybody can attribute to
+		// anybody is not a verdict.
+		self::assertSame('jdevries', $seen['judgedBy']);
+	}//end testJudgeAdmissibilityRecordsTheVerdictAgainstTheSessionUser()
+
+	/**
+	 * A refused verdict keeps the refusal's own status and rule.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRelaysTheRefusalsOwnStatus(): void {
+		$this->admissibility->method('judge')->willThrowException(
+			new RefusedException(
+				rule: 'admissibility-verdict-unknown',
+				sentence: 'Say whether the aanvraag is ontvankelijk or niet-ontvankelijk.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			)
+		);
+
+		$response = $this->controller()->judgeAdmissibility(caseId: 'case-1', verdict: 'misschien');
+
+		self::assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		self::assertSame('admissibility-verdict-unknown', $response->getData()['error']);
+	}//end testJudgeAdmissibilityRelaysTheRefusalsOwnStatus()
 }//end class

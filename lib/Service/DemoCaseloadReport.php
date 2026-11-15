@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DemoCaseloadReportInterface;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\IUserSession;
 use RuntimeException;
@@ -43,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
-class DemoCaseloadReport {
+class DemoCaseloadReport implements DemoCaseloadReportInterface {
 	/**
 	 * Constructor.
 	 *

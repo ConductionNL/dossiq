@@ -10,8 +10,8 @@
  *  - which stages the stepper shows, and in what order (the case type's
  *    status types, which arrive unordered and carry `order` as a number,
  *    a numeric string, or not at all);
- *  - whether a transition closes the case, which decides whether the
- *    confirm dialog asks for a result and whether it may be confirmed;
+ *  - what body a transition POST carries, shared by the lifecycle menu and
+ *    the workflow board so both post the same move;
  *  - what a refusal from the server means in words. The endpoints answer
  *    with a short static code on purpose — a message a server writes is a
  *    message no translator ever sees — so turning the code into a sentence
@@ -24,6 +24,16 @@
 import { stateFieldRefusal } from './statusFieldRules.js'
 
 /**
+ * The given translate function, or one that hands the key back unchanged.
+ *
+ * @param {(key: string) => string} translate The bound t(), or anything else.
+ * @return {(key: string) => string} A translate function.
+ */
+function translatorFor(translate) {
+	return typeof translate === 'function' ? translate : (s) => s
+}
+
+/**
  * Read an object's id whichever shape OpenRegister handed it back in.
  *
  * @param {object} row An object row.
@@ -34,7 +44,17 @@ export function rowId(row) {
 	if (!row || typeof row !== 'object') {
 		return ''
 	}
-	return String(row.id ?? row['@self']?.id ?? row.uuid ?? '')
+	return String(firstIdOf(row))
+}
+
+/**
+ * The first id an object row carries: its own, its `@self` one, its uuid.
+ *
+ * @param {object} row An object row.
+ * @return {string|number} The id as found, or the empty string.
+ */
+function firstIdOf(row) {
+	return row.id ?? row['@self']?.id ?? row.uuid ?? ''
 }
 
 /**
@@ -74,61 +94,6 @@ export function toStages(rows) {
 }
 
 /**
- * Whether the status a transition targets closes the case.
- *
- * @param {Array<object>} statusRows The case type's statusType rows.
- * @param {string} toStatus The target status id.
- * @return {boolean} True when that status carries isFinal.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function isClosingTransition(statusRows, toStatus) {
-	if (!toStatus) {
-		return false
-	}
-	const target = (Array.isArray(statusRows) ? statusRows : []).find(
-		(row) => rowId(row) === String(toStatus),
-	)
-	if (!target) {
-		return false
-	}
-	return (
-		target.isFinal === true
-		|| target.isFinal === 1
-		|| target.isFinal === '1'
-		|| target.isFinal === 'true'
-	)
-}
-
-/**
- * Whether the confirm button may be pressed.
- *
- * A closing transition on a case type that offers result types cannot be
- * confirmed until one is picked — the server refuses it anyway, and a button
- * that submits a request it knows will be refused is a worse answer than a
- * disabled one.
- *
- * @param {object} params The dialog's current state.
- * @param {boolean} params.closing Whether the target status is final.
- * @param {Array<object>} params.resultTypes The result types on offer.
- * @param {string} params.resultTypeId The picked result type, if any.
- * @param {boolean} params.busy Whether a request is already in flight.
- * @return {boolean} True when the transition may be confirmed.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function canConfirmTransition({ closing, resultTypes, resultTypeId, busy }) {
-	if (busy === true) {
-		return false
-	}
-	if (closing !== true) {
-		return true
-	}
-	if (!Array.isArray(resultTypes) || resultTypes.length === 0) {
-		return true
-	}
-	return Boolean(resultTypeId)
-}
-
-/**
  * The body a transition POST carries.
  *
  * Empty optional fields are left out rather than sent as empty strings: the
@@ -154,75 +119,127 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
 }
 
 /**
- * The lifecycle actions the case's state allows, in menu order.
+ * Whether the requester was told about an extension, as one sentence.
  *
- * The server decides; this only reads its answer. An unreadable state offers
- * nothing, which is the safe reading of "the case did not say".
+ * The extension stands either way. A notice that did not go out is said with
+ * its reason, so the handler can tell the requester another way before the
+ * first term ends.
  *
- * @param {object} state The `/lifecycle` response.
- * @return {Array<string>} The action ids to offer.
- * @spec openspec/specs/status-transition-engine/spec.md
+ * @param {object|null} body The extend answer (`{..., notice: {noticeStatus, noticeReason}}`).
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
  */
-export function offeredLifecycleActions(state) {
-	if (!state || typeof state !== 'object') {
-		return []
+export function extensionNotice(body, translate) {
+	const t = translatorFor(translate)
+	const notice = body?.notice
+	if (isMissingNotice(notice)) {
+		return null
 	}
-	const offered = []
-	if (state.canSuspend === true) {
-		offered.push('suspend')
+
+	if (noticeWasSent(notice)) {
+		return {
+			told: true,
+			text: t('The term is extended. The requester was told.'),
+		}
 	}
-	if (state.canResume === true) {
-		offered.push('resume')
-	}
-	if (state.canExtend === true) {
-		offered.push('extend')
-	}
-	if (state.canReopen === true) {
-		offered.push('reopen')
-	}
-	return offered
+
+	const text = t('The term is extended. The requester was not told.')
+	return { told: false, text: text + noticeReasonSuffix(notice, t) }
 }
 
 /**
- * Whether one lifecycle gesture is honest to offer on this case.
+ * Whether the requester was told that the archived case is completed, as one sentence.
  *
- * The dialog asks before it posts. The reason is not politeness: the four
- * gestures sit in a menu that cannot read the case type — an `open-modal`
- * action's `visibleWhen` sees the case record, and `suspensionAllowed` lives
- * on the case TYPE — so the menu offers what the record alone can justify and
- * this is where the case type gets its say.
- *
- * A state that could not be read refuses nothing. The endpoint is the
- * authority on the gesture either way, and a dialog that blocks on its own
- * failed request would hide a gesture the case does allow.
- *
- * @param {string} action One of suspend, resume, extend, reopen.
- * @param {object|null} state The `/lifecycle` response, or null when unread.
- * @return {string} The refusal code, or the empty string when allowed.
- * @spec openspec/specs/status-transition-engine/spec.md
+ * @param {object|null} body The archive answer (`{..., notice: {noticeStatus, noticeReason}}`).
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
+ * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
-export function lifecycleRefusalCode(action, state) {
-	if (!state || typeof state !== 'object') {
-		return ''
+export function archiveNotice(body, translate) {
+	const t = translatorFor(translate)
+	const notice = body?.notice
+	if (isMissingNotice(notice)) {
+		return null
 	}
-	if (offeredLifecycleActions(state).includes(String(action))) {
-		return ''
+
+	if (noticeWasSent(notice)) {
+		return { told: true, text: t('The case is archived. The requester was told.') }
 	}
-	switch (String(action)) {
-		case 'suspend':
-			return state.suspended === true
-				? 'already_suspended'
-				: 'suspension_not_allowed'
-		case 'resume':
-			return 'not_suspended'
-		case 'extend':
-			return 'extension_not_allowed'
-		case 'reopen':
-			return 'case_not_closed'
-		default:
-			return ''
-	}
+
+	const text = t('The case is archived. The requester was not told.')
+	return { told: false, text: text + noticeReasonSuffix(notice, t) }
 }
+
+/**
+ * Whether an answer's notice is absent or not an object.
+ *
+ * @param {object|null|undefined} notice The answer's `notice`.
+ * @return {boolean} True when there is no notice to speak of.
+ */
+function isMissingNotice(notice) {
+	return !notice || typeof notice !== 'object'
+}
+
+/**
+ * Whether a notice went out to the requester.
+ *
+ * @param {object} notice The answer's `notice`.
+ * @return {boolean} True when its status is `sent`.
+ */
+function noticeWasSent(notice) {
+	return String(notice.noticeStatus ?? '') === 'sent'
+}
+
+/**
+ * The reason a notice did not go out, as a suffix to the not-told sentence.
+ *
+ * The reasons dossiq writes itself are catalogue keys; a reason another
+ * sender wrote passes through t() unchanged.
+ *
+ * @param {object} notice The answer's `notice`.
+ * @param {(key: string) => string} t The translate function.
+ * @return {string} ' ' plus the translated reason, or '' when there is none.
+ */
+function noticeReasonSuffix(notice, t) {
+	const reason = String(notice.noticeReason ?? '').trim()
+	return reason === '' ? '' : ' ' + t(reason)
+}
+
+// The translated sentence per refusal code. Each entry calls t() itself
+// so the sentence stays a literal the string extraction can read.
+const REFUSAL_SENTENCES = new Map([
+	['result_type_required', (t) => t('Pick a result before closing this case.')],
+	['suspension_not_allowed', (t) => t('This case type does not allow suspension.')],
+	['extension_not_allowed', (t) => t('This case type does not allow an extension.')],
+	['extension_limit_reached', (t) => t(
+		'The term of this case was already extended as often as its case type allows.',
+	)],
+	['extension_period_not_configured', (t) => t('This case type states no extension period.')],
+	['extension_period_unreadable', (t) => t('This case type states no extension period.')],
+	['already_suspended', (t) => t('This case is already suspended.')],
+	['not_suspended', (t) => t('This case is not suspended.')],
+	['case_not_closed', (t) => t('Only a closed case can be reopened.')],
+	['initial_status_not_configured', (t) => t('This case type has no first status to reopen into.')],
+	['initial_status_not_of_case_type', (t) => t('This case type has no first status to reopen into.')],
+	['case_not_found', (t) => t('This case could not be found.')],
+	['reason_required', (t) => t('Give a reason first.')],
+	['pause_reason_not_declared', (t) => t('This case type has no such pause reason. Pick one of its reasons.')],
+	// A gesture the server could not save answers this code with an
+	// English `error` beside it. The code is what is translated, so a
+	// Dutch handler does not read "The case could not be changed." in
+	// English (dutch-copy-on-the-case-page, finding F4).
+	['change_failed', (t) => t('The case could not be changed.')],
+	// The three approval refusals (REQ-DEC-01). The sentence naming the
+	// approval and the people it waits on rides on the blocked act itself,
+	// where there is room for it; these are what a handler sees when they
+	// posted the act anyway and the write path refused it.
+	['approval_outstanding', (t) => t('This act waits for an approval that is still open.')],
+	['approval_rejected', (t) => t('The approval for this act was refused.')],
+	['approval_unreadable', (t) => t(
+		'We could not reach the approval service, so this act stays closed.',
+	)],
+])
 
 /**
  * Turn a server refusal into a sentence.
@@ -231,10 +248,10 @@ export function lifecycleRefusalCode(action, state) {
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 export function refusalMessage(body, translate) {
-	const t = typeof translate === 'function' ? translate : (s) => s
+	const t = translatorFor(translate)
 
 	// A state's field rules are the platform's refusal, and it arrives one
 	// level down under `errors` with the sentence beside the code. It is read
@@ -248,54 +265,49 @@ export function refusalMessage(body, translate) {
 		return stateField.message
 	}
 
-	const guards = Array.isArray(body?.failedGuards) ? body.failedGuards : []
-	if (guards.length > 0) {
-		// `failureMessage` is the key GuardRegistry::evaluateAll writes. Reading
-		// `message` — which nothing sets — degraded every guard refusal to its
-		// bare type name ("requiredDocument"), so the one sentence the handler
-		// needed was the one sentence that never rendered.
-		const named = guards
-			.map((guard) =>
-				String(guard?.failureMessage ?? guard?.message ?? guard?.type ?? ''),
-			)
-			.filter(Boolean)
-		if (named.length > 0) {
-			return named.join(' ')
-		}
+	const named = failedGuardNames(body)
+	if (named.length > 0) {
+		return named.join(' ')
 	}
 
-	switch (String(body?.code ?? '')) {
-		case 'result_type_required':
-			return t('Pick a result before closing this case.')
-		case 'suspension_not_allowed':
-			return t('This case type does not allow suspension.')
-		case 'extension_not_allowed':
-			return t('This case type does not allow an extension.')
-		case 'extension_period_not_configured':
-		case 'extension_period_unreadable':
-			return t('This case type states no extension period.')
-		case 'already_suspended':
-			return t('This case is already suspended.')
-		case 'not_suspended':
-			return t('This case is not suspended.')
-		case 'case_not_closed':
-			return t('Only a closed case can be reopened.')
-		case 'initial_status_not_configured':
-		case 'initial_status_not_of_case_type':
-			return t('This case type has no first status to reopen into.')
-		case 'case_not_found':
-			return t('This case could not be found.')
-		case 'reason_required':
-			return t('Give a reason first.')
-		default:
-			// `message` before `error`: since refusals-carry-a-status, `error`
-			// is a kebab-case rule slug meant for code, and `message` is the
-			// sentence the refusal authored. Reading `error` first would put
-			// "transition-from-status-mismatch" in front of a handler.
-			return String(
-				body?.message ?? body?.error ?? t('The case could not be changed.'),
-			)
-	}
+	const sentence = REFUSAL_SENTENCES.get(String(body?.code ?? ''))
+	return sentence ? sentence(t) : authoredRefusal(body, t)
+}
+
+/**
+ * The names of the failed guards on a refusal, in order, empty ones dropped.
+ *
+ * @param {object} body The refusal body.
+ * @return {Array<string>} The guard sentences.
+ */
+function failedGuardNames(body) {
+	const guards = Array.isArray(body?.failedGuards) ? body.failedGuards : []
+	// `failureMessage` is the key GuardRegistry::evaluateAll writes. Reading
+	// `message` — which nothing sets — degraded every guard refusal to its
+	// bare type name ("requiredDocument"), so the one sentence the handler
+	// needed was the one sentence that never rendered.
+	return guards
+		.map((guard) =>
+			String(guard?.failureMessage ?? guard?.message ?? guard?.type ?? ''),
+		)
+		.filter(Boolean)
+}
+
+/**
+ * The sentence a refusal authored itself, for a code without its own.
+ *
+ * @param {object} body The refusal body.
+ * @param {(key: string) => string} t The translate function.
+ * @return {string} What to show the handler.
+ */
+function authoredRefusal(body, t) {
+	// `message` before `error`: since refusals-carry-a-status, `error`
+	// is a kebab-case rule slug meant for code, and `message` is the
+	// sentence the refusal authored. Reading `error` first would put
+	// "transition-from-status-mismatch" in front of a handler.
+	return String(
+		body?.message ?? body?.error ?? t('The case could not be changed.'),
+	)
 }
 
 /**
@@ -320,14 +332,31 @@ export function transitionBlockReason(transition) {
 	if (transition.guardsPassed !== false) {
 		return ''
 	}
+	const named = blockingGuardNames(transition)
+	return named.length > 0 ? named[0] : ''
+}
+
+/**
+ * The names of a transition's failed guards, the unnamed ones left out.
+ *
+ * @param {object} transition One entry of the available-transitions answer.
+ * @return {Array<string>} The names, in the engine's order.
+ */
+function blockingGuardNames(transition) {
 	const guards = Array.isArray(transition.failedGuards)
 		? transition.failedGuards
 		: []
-	const named = guards
-		.map((guard) => String(guard?.failureMessage ?? guard?.type ?? '').trim())
-		.filter(Boolean)
+	return guards.map(blockingGuardName).filter(Boolean)
+}
 
-	return named.length > 0 ? named[0] : ''
+/**
+ * A failed guard's name: its message, else its type.
+ *
+ * @param {object|null} guard One failed guard.
+ * @return {string} The trimmed name, or the empty string.
+ */
+function blockingGuardName(guard) {
+	return String(guard?.failureMessage ?? guard?.type ?? '').trim()
 }
 
 /**
@@ -370,12 +399,18 @@ export function findTransitionToStatus(transitions, toStatusId) {
 	if (wanted === '' || Array.isArray(transitions) === false) {
 		return null
 	}
-	return (
-		transitions.find(
-			(transition) =>
-				transition
-				&& typeof transition === 'object'
-				&& String(transition.toStatus ?? '') === wanted,
-		) ?? null
-	)
+	return transitions.find((transition) => landsOn(transition, wanted)) ?? null
+}
+
+/**
+ * Whether an offered transition ends on the wanted status.
+ *
+ * @param {object|null} transition One entry of the `transitions` answer.
+ * @param {string} wanted The statusType id, as a string.
+ * @return {boolean} True when it is an object whose `toStatus` matches.
+ */
+function landsOn(transition, wanted) {
+	return Boolean(transition)
+		&& typeof transition === 'object'
+		&& String(transition.toStatus ?? '') === wanted
 }

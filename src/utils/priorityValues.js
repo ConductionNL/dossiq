@@ -20,7 +20,7 @@
 // a themed install repoints one token and every badge follows. `statusColour.js`
 // resolves these names for the whole app; nothing here defines a colour.
 //
-// @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+// @spec openspec/specs/case-priority/spec.md
 
 import { translate as t } from '@nextcloud/l10n'
 
@@ -53,7 +53,7 @@ export const PRIORITY_COLOURS = {
  * @return {string} A name from the NL Design System palette; grey when the
  *   value is not one the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityColour(priority) {
 	return PRIORITY_COLOURS[String(priority ?? '')] || 'grey'
@@ -65,7 +65,7 @@ export function priorityColour(priority) {
  * @param {unknown} priority The stored `case.priority`.
  * @return {number} The order, 0 when the value is not one the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityOrder(priority) {
 	return PRIORITY_ORDER[String(priority ?? '')] || 0
@@ -82,7 +82,7 @@ export function priorityOrder(priority) {
  * @return {string} The translated label, or the raw value when it is not one
  *   the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityLabel(priority) {
 	switch (String(priority ?? '')) {
@@ -96,5 +96,28 @@ export function priorityLabel(priority) {
 			return t('dossiq', 'Urgent')
 		default:
 			return String(priority ?? '')
+	}
+}
+
+/**
+ * The badge tone of a priority that asks for attention, or '' for one that
+ * does not.
+ *
+ * DqTaak draws a "Hoog" pill beside the state of a high-priority task. Low and
+ * normal draw no pill: every task has a priority, and a pill on all of them
+ * says nothing. The full priority stays in the task card either way.
+ *
+ * @param {unknown} priority The stored priority.
+ * @return {string} 'warning' for high, 'error' for urgent, else ''.
+ * @spec openspec/specs/case-priority/spec.md
+ */
+export function priorityPillTone(priority) {
+	switch (String(priority ?? '')) {
+		case 'high':
+			return 'warning'
+		case 'urgent':
+			return 'error'
+		default:
+			return ''
 	}
 }

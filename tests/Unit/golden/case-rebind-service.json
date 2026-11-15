@@ -1,0 +1,5782 @@
+{
+    "options / targets": {
+        "answer": {
+            "current": {
+                "caseType": "ct-a",
+                "title": "tr:{\"nl\":\"Melding\"}",
+                "status": "Nieuw"
+            },
+            "targets": [
+                {
+                    "id": "ct-b",
+                    "title": "Bezwaar",
+                    "identifier": "bezwaar",
+                    "version": 2,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-c",
+                    "title": "Melding v2",
+                    "identifier": "melding",
+                    "version": 3,
+                    "sameChain": true
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.everyCaseType": []
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-a",
+                        "title": {
+                            "nl": "Melding"
+                        },
+                        "identifier": "melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-b",
+                        "title": "Bezwaar",
+                        "identifier": "bezwaar",
+                        "version": 2
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-c",
+                        "title": "Melding v2",
+                        "identifier": "melding",
+                        "version": 3
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Melding v2"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-d",
+                        "title": "Concept",
+                        "identifier": "concept",
+                        "isDraft": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "title": "No id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            }
+        ]
+    },
+    "options / own type without identifier": {
+        "answer": {
+            "current": {
+                "caseType": "ct-a",
+                "title": "A",
+                "status": "Nieuw"
+            },
+            "targets": [
+                {
+                    "id": "ct-b",
+                    "title": "Bezwaar",
+                    "identifier": "bezwaar",
+                    "version": 2,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-c",
+                    "title": "Melding v2",
+                    "identifier": "melding",
+                    "version": 3,
+                    "sameChain": false
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.everyCaseType": []
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-a",
+                        "title": "A"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-b",
+                        "title": "Bezwaar",
+                        "identifier": "bezwaar",
+                        "version": 2
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-c",
+                        "title": "Melding v2",
+                        "identifier": "melding",
+                        "version": 3
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Melding v2"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-d",
+                        "title": "Concept",
+                        "identifier": "concept",
+                        "isDraft": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "title": "No id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "A"
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            }
+        ]
+    },
+    "options / no status": {
+        "answer": {
+            "current": {
+                "caseType": "ct-a",
+                "title": "tr:{\"nl\":\"Melding\"}",
+                "status": ""
+            },
+            "targets": [
+                {
+                    "id": "ct-b",
+                    "title": "Bezwaar",
+                    "identifier": "bezwaar",
+                    "version": 2,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-c",
+                    "title": "Melding v2",
+                    "identifier": "melding",
+                    "version": 3,
+                    "sameChain": true
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "status": "",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.everyCaseType": []
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-a",
+                        "title": {
+                            "nl": "Melding"
+                        },
+                        "identifier": "melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-b",
+                        "title": "Bezwaar",
+                        "identifier": "bezwaar",
+                        "version": 2
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-c",
+                        "title": "Melding v2",
+                        "identifier": "melding",
+                        "version": 3
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Melding v2"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-d",
+                        "title": "Concept",
+                        "identifier": "concept",
+                        "isDraft": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "title": "No id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": ""
+                }
+            }
+        ]
+    },
+    "options / unknown status": {
+        "answer": {
+            "current": {
+                "caseType": "ct-a",
+                "title": "tr:{\"nl\":\"Melding\"}",
+                "status": ""
+            },
+            "targets": [
+                {
+                    "id": "ct-b",
+                    "title": "Bezwaar",
+                    "identifier": "bezwaar",
+                    "version": 2,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-c",
+                    "title": "Melding v2",
+                    "identifier": "melding",
+                    "version": 3,
+                    "sameChain": true
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "status": "st-zz",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.everyCaseType": []
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-a",
+                        "title": {
+                            "nl": "Melding"
+                        },
+                        "identifier": "melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-b",
+                        "title": "Bezwaar",
+                        "identifier": "bezwaar",
+                        "version": 2
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-c",
+                        "title": "Melding v2",
+                        "identifier": "melding",
+                        "version": 3
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Melding v2"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-d",
+                        "title": "Concept",
+                        "identifier": "concept",
+                        "isDraft": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "title": "No id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-zz"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a2",
+                        "name": {
+                            "nl": "Klaar"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "options / no case type": {
+        "answer": {
+            "current": {
+                "caseType": "",
+                "title": "No id",
+                "status": ""
+            },
+            "targets": [
+                {
+                    "id": "ct-b",
+                    "title": "Bezwaar",
+                    "identifier": "bezwaar",
+                    "version": 2,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-c",
+                    "title": "Melding v2",
+                    "identifier": "melding",
+                    "version": 3,
+                    "sameChain": false
+                },
+                {
+                    "id": "ct-a",
+                    "title": "tr:{\"nl\":\"Melding\"}",
+                    "identifier": "melding",
+                    "version": null,
+                    "sameChain": false
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "caseType": "",
+                        "id": "case-1",
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": ""
+                }
+            },
+            {
+                "caseTypeStore.everyCaseType": []
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-a",
+                        "title": {
+                            "nl": "Melding"
+                        },
+                        "identifier": "melding"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": ""
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-b",
+                        "title": "Bezwaar",
+                        "identifier": "bezwaar",
+                        "version": 2
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": ""
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-c",
+                        "title": "Melding v2",
+                        "identifier": "melding",
+                        "version": 3
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Melding v2"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": ""
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "ct-d",
+                        "title": "Concept",
+                        "identifier": "concept",
+                        "isDraft": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "title": "No id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": ""
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "No id"
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            }
+        ]
+    },
+    "options / case missing": {
+        "answer": {
+            "refused": "case-not-found",
+            "sentence": "This case could not be found.",
+            "status": 422
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-9",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": null
+                }
+            }
+        ]
+    },
+    "options / find throws": {
+        "answer": {
+            "refused": "case-unreadable",
+            "sentence": "This case could not be read, so it was not rebound.",
+            "status": 503
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            }
+        ]
+    },
+    "options / no object service": {
+        "answer": {
+            "refused": "case-store-unavailable",
+            "sentence": "The case register could not be reached, so nothing was rebound.",
+            "status": 503
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema"
+        ]
+    },
+    "options / no register": {
+        "answer": {
+            "refused": "case-store-unavailable",
+            "sentence": "The case register could not be reached, so nothing was rebound.",
+            "status": 503
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema"
+        ]
+    },
+    "options / no case schema": {
+        "answer": {
+            "refused": "case-store-unavailable",
+            "sentence": "The case register could not be reached, so nothing was rebound.",
+            "status": 503
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema"
+        ]
+    },
+    "preview / complete": {
+        "answer": {
+            "from": {
+                "caseType": "ct-a",
+                "status": "Nieuw"
+            },
+            "to": {
+                "caseType": "ct-b",
+                "title": "Bezwaar"
+            },
+            "statuses": [
+                {
+                    "id": "st-b1",
+                    "name": "Ontvangen"
+                },
+                {
+                    "id": "st-b2",
+                    "name": ""
+                }
+            ],
+            "missingProperties": [],
+            "impact": {
+                "complete": true,
+                "dropped": [
+                    {
+                        "name": "old",
+                        "value": "x"
+                    }
+                ],
+                "ported": [
+                    {
+                        "source": "kept",
+                        "target": "moved",
+                        "value": 1,
+                        "newValue": "1"
+                    }
+                ],
+                "required": [
+                    {
+                        "name": "zeta",
+                        "valid": true
+                    },
+                    {
+                        "name": "alpha",
+                        "valid": true
+                    }
+                ]
+            },
+            "results": {
+                "compatible": "ct-b"
+            },
+            "run": {
+                "moved": false,
+                "reason": "The case moves to the new case type. A flow run already in progress stays on the definition version it started under, until openregister ships migrate-run-between-versions."
+            },
+            "canRebind": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b1",
+                        "name": "Ontvangen"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Ontvangen"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "name": "no id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b2"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": null
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new"
+                    },
+                    "answers": {
+                        "zeta": "z"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseRebindGate.resultCompatibility": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "preview / no status chosen": {
+        "answer": {
+            "from": {
+                "caseType": "ct-a",
+                "status": "Nieuw"
+            },
+            "to": {
+                "caseType": "ct-b",
+                "title": "Bezwaar"
+            },
+            "statuses": [
+                {
+                    "id": "st-b1",
+                    "name": "Ontvangen"
+                },
+                {
+                    "id": "st-b2",
+                    "name": ""
+                }
+            ],
+            "missingProperties": [],
+            "impact": {
+                "complete": true,
+                "dropped": [
+                    {
+                        "name": "old",
+                        "value": "x"
+                    }
+                ],
+                "ported": [
+                    {
+                        "source": "kept",
+                        "target": "moved",
+                        "value": 1,
+                        "newValue": "1"
+                    }
+                ],
+                "required": [
+                    {
+                        "name": "zeta",
+                        "valid": true
+                    },
+                    {
+                        "name": "alpha",
+                        "valid": true
+                    }
+                ]
+            },
+            "results": {
+                "compatible": "ct-b"
+            },
+            "run": {
+                "moved": false,
+                "reason": "The case moves to the new case type. A flow run already in progress stays on the definition version it started under, until openregister ships migrate-run-between-versions."
+            },
+            "canRebind": false
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b1",
+                        "name": "Ontvangen"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Ontvangen"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "name": "no id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b2"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": null
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "",
+                    "remap": {
+                        "old": "new"
+                    },
+                    "answers": {
+                        "zeta": "z"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseRebindGate.resultCompatibility": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "preview / incomplete": {
+        "answer": {
+            "from": {
+                "caseType": "ct-a",
+                "status": "Nieuw"
+            },
+            "to": {
+                "caseType": "ct-b",
+                "title": "Bezwaar"
+            },
+            "statuses": [
+                {
+                    "id": "st-b1",
+                    "name": "Ontvangen"
+                },
+                {
+                    "id": "st-b2",
+                    "name": ""
+                }
+            ],
+            "missingProperties": [
+                "alpha",
+                "zeta"
+            ],
+            "impact": {
+                "complete": false,
+                "required": [
+                    {
+                        "name": "zeta",
+                        "valid": false
+                    },
+                    {
+                        "name": "beta",
+                        "valid": true
+                    },
+                    {
+                        "name": "alpha",
+                        "valid": false
+                    }
+                ],
+                "dropped": [
+                    {
+                        "name": "old",
+                        "value": "x"
+                    }
+                ],
+                "ported": [
+                    {
+                        "source": "kept",
+                        "target": "moved",
+                        "value": 1,
+                        "newValue": "1"
+                    }
+                ]
+            },
+            "results": {
+                "compatible": "ct-b"
+            },
+            "run": {
+                "moved": false,
+                "reason": "The case moves to the new case type. A flow run already in progress stays on the definition version it started under, until openregister ships migrate-run-between-versions."
+            },
+            "canRebind": false
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b1",
+                        "name": "Ontvangen"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Ontvangen"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "name": "no id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b2"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": null
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new"
+                    },
+                    "answers": {
+                        "zeta": "z"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseRebindGate.resultCompatibility": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "preview / defaults": {
+        "answer": {
+            "from": {
+                "caseType": "ct-a",
+                "status": "Nieuw"
+            },
+            "to": {
+                "caseType": "ct-b",
+                "title": "Bezwaar"
+            },
+            "statuses": [
+                {
+                    "id": "st-b1",
+                    "name": "Ontvangen"
+                },
+                {
+                    "id": "st-b2",
+                    "name": ""
+                }
+            ],
+            "missingProperties": [],
+            "impact": {
+                "complete": true,
+                "dropped": [
+                    {
+                        "name": "old",
+                        "value": "x"
+                    }
+                ],
+                "ported": [
+                    {
+                        "source": "kept",
+                        "target": "moved",
+                        "value": 1,
+                        "newValue": "1"
+                    }
+                ],
+                "required": [
+                    {
+                        "name": "zeta",
+                        "valid": true
+                    },
+                    {
+                        "name": "alpha",
+                        "valid": true
+                    }
+                ]
+            },
+            "results": {
+                "compatible": "ct-b"
+            },
+            "run": {
+                "moved": false,
+                "reason": "The case moves to the new case type. A flow run already in progress stays on the definition version it started under, until openregister ships migrate-run-between-versions."
+            },
+            "canRebind": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b1",
+                        "name": "Ontvangen"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Ontvangen"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "name": "no id"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-b2"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": null
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": "st-a1"
+                }
+            },
+            {
+                "caseTypeResolver.statusTypesFor": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "st-a1",
+                        "name": "Nieuw"
+                    }
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Nieuw"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            {
+                "caseRebindGate.resultCompatibility": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "preview / target refused": {
+        "answer": {
+            "refused": "refused-assertTarget",
+            "sentence": "assertTarget refused",
+            "status": 409
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "preview / case missing": {
+        "answer": {
+            "refused": "case-not-found",
+            "sentence": "This case could not be found.",
+            "status": 422
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-9",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": null
+                }
+            }
+        ]
+    },
+    "rebind / happy path": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / array activity": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "activity": [
+                            {
+                                "type": "created"
+                            }
+                        ],
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "activity": [
+                            {
+                                "type": "created"
+                            }
+                        ],
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "activity": [
+                            {
+                                "type": "created"
+                            }
+                        ],
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "activity": [
+                            {
+                                "type": "created"
+                            }
+                        ],
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / no activity": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "activity": null,
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "activity": null,
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "activity": null,
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "activity": null,
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "activity": "[{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / blank activity": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "activity": "  ",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "activity": "  ",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "activity": "  ",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "activity": "  ",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "activity": "[{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / broken activity": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "activity": "{oops",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "activity": "{oops",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "activity": "{oops",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "activity": "{oops",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "activity": "[{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / scalar activity": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "activity": "\"text\"",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "activity": "\"text\"",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "activity": "\"text\"",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "activity": "\"text\"",
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        }
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "activity": "[{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / two active templates": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-5",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-5",
+                        "workflowVersion": 1
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / no template": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": null,
+                        "workflowVersion": null
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / no active template": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-1"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-1",
+                        "workflowVersion": 1
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / defaults": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "r",
+            "run": {
+                "moved": true,
+                "reason": "moved"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "r"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": []
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"r\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "r"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": true
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / another actor": {
+        "answer": {
+            "refused": "not-a-coordinator",
+            "sentence": "Only a coordinator may rebind.",
+            "status": 403
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "mallory",
+                    "reason": "  Wrong type  "
+                }
+            }
+        ]
+    },
+    "rebind / empty actor": {
+        "answer": {
+            "refused": "not-a-coordinator",
+            "sentence": "Only a coordinator may rebind.",
+            "status": 403
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "",
+                    "reason": "  Wrong type  "
+                }
+            }
+        ]
+    },
+    "rebind / no reason": {
+        "answer": {
+            "refused": "reason-required",
+            "sentence": "A reason is required.",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": " "
+                }
+            }
+        ]
+    },
+    "rebind / case missing": {
+        "answer": {
+            "refused": "case-not-found",
+            "sentence": "This case could not be found.",
+            "status": 422
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-9",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": null
+                }
+            }
+        ]
+    },
+    "rebind / target refused": {
+        "answer": {
+            "refused": "refused-assertTarget",
+            "sentence": "assertTarget refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            }
+        ]
+    },
+    "rebind / status refused": {
+        "answer": {
+            "refused": "refused-assertStatus",
+            "sentence": "assertStatus refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            }
+        ]
+    },
+    "rebind / drop unconfirmed": {
+        "answer": {
+            "refused": "refused-assertDropConfirmed",
+            "sentence": "assertDropConfirmed refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            }
+        ]
+    },
+    "rebind / something missing": {
+        "answer": {
+            "refused": "refused-assertNothingMissing",
+            "sentence": "assertNothingMissing refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": [
+                        "alpha",
+                        "zeta"
+                    ]
+                }
+            }
+        ]
+    },
+    "rebind / engine refuses": {
+        "answer": {
+            "refused": "refused-migrate",
+            "sentence": "migrate refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            }
+        ]
+    },
+    "rebind / run not moved": {
+        "answer": {
+            "rebound": true,
+            "from": "ct-a",
+            "to": "ct-b",
+            "status": "st-b1",
+            "reason": "Wrong type",
+            "run": {
+                "moved": false,
+                "reason": "no-run"
+            },
+            "terms": {
+                "rearmed": 1
+            },
+            "properties": {
+                "dropped": [
+                    "old"
+                ],
+                "ported": [
+                    {
+                        "from": "kept",
+                        "to": "moved"
+                    }
+                ],
+                "answered": [
+                    "zeta",
+                    "alpha"
+                ]
+            }
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "CaseRebindService: a running case was rebound to another case type",
+                    "context": {
+                        "case": "case-1",
+                        "from": "ct-a",
+                        "to": "ct-b",
+                        "actor": "coord",
+                        "runMigrated": false
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / update throws": {
+        "answer": {
+            "refused": "rebind-not-written",
+            "sentence": "The case was not rebound, because the change could not be saved.",
+            "status": 503
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            }
+        ]
+    },
+    "rebind / terms throw": {
+        "answer": {
+            "refused": "refused-rearm",
+            "sentence": "rearm refused",
+            "status": 409
+        },
+        "calls": [
+            {
+                "caseRebindGate.assertMayRebind": {
+                    "actorUid": "coord",
+                    "reason": "  Wrong type  "
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.find": {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            },
+            {
+                "caseTypeStore.asRow": {
+                    "value": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.referenceId": {
+                    "value": {
+                        "id": "ct-a"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertTarget": {
+                    "caseId": "case-1",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseRebindGate.assertStatus": {
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1"
+                }
+            },
+            {
+                "caseRebindImpact.compute": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "targetCaseTypeId": "ct-b",
+                    "targetStatusId": "st-b1",
+                    "remap": {
+                        "old": "new",
+                        "actor": "mallory"
+                    },
+                    "answers": {
+                        "zeta": "z",
+                        "actor": "mallory",
+                        "actorUid": "mallory",
+                        "userId": "mallory",
+                        "requestedBy": "mallory",
+                        "owner": "mallory"
+                    }
+                }
+            },
+            {
+                "caseRebindGate.assertDropConfirmed": {
+                    "dropped": [
+                        "old"
+                    ],
+                    "confirmed": [
+                        "old"
+                    ]
+                }
+            },
+            {
+                "caseRebindGate.assertNothingMissing": {
+                    "missing": []
+                }
+            },
+            {
+                "engineRunMigration.migrate": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "actorUid": "coord"
+                }
+            },
+            {
+                "caseRebindImpact.apply": {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": {
+                            "id": "ct-a"
+                        },
+                        "status": "st-a1",
+                        "properties": {
+                            "old": "x"
+                        },
+                        "activity": "[{\"type\":\"created\"}]"
+                    },
+                    "impact": {
+                        "complete": true,
+                        "dropped": [
+                            {
+                                "name": "old",
+                                "value": "x"
+                            }
+                        ],
+                        "ported": [
+                            {
+                                "source": "kept",
+                                "target": "moved",
+                                "value": 1,
+                                "newValue": "1"
+                            }
+                        ],
+                        "required": [
+                            {
+                                "name": "zeta",
+                                "valid": true
+                            },
+                            {
+                                "name": "alpha",
+                                "valid": true
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "caseTypeStore.rowsOfType": {
+                    "schemaKey": "workflow_template_schema",
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "caseTypeStore.rowId": {
+                    "row": {
+                        "id": "wf-2",
+                        "version": "7",
+                        "isActive": true
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-a"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": {
+                        "nl": "Melding"
+                    }
+                }
+            },
+            {
+                "caseTypeStore.readCaseType": {
+                    "caseTypeId": "ct-b"
+                }
+            },
+            {
+                "translatedText.forReader": {
+                    "value": "Bezwaar"
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_schema",
+            {
+                "objects.updateObject": {
+                    "id": "case-1",
+                    "object": {
+                        "properties": {
+                            "applied": true
+                        },
+                        "id": "case-1",
+                        "caseType": "ct-b",
+                        "status": "st-b1",
+                        "activity": "[{\"type\":\"created\"},{\"type\":\"case-type-rebind\",\"fromCaseType\":\"ct-a\",\"fromCaseTypeTitle\":\"tr:{\\\"nl\\\":\\\"Melding\\\"}\",\"toCaseType\":\"ct-b\",\"toCaseTypeTitle\":\"Bezwaar\",\"status\":\"st-b1\",\"reason\":\"Wrong type\",\"actor\":\"coord\",\"droppedProperties\":[{\"name\":\"old\",\"value\":\"x\"}],\"portedProperties\":[{\"from\":\"kept\",\"to\":\"moved\",\"value\":1,\"newValue\":\"1\"}],\"answeredProperties\":[\"zeta\",\"alpha\"],\"timestamp\":\"<now>\"}]",
+                        "workflowTemplate": "wf-2",
+                        "workflowVersion": 7
+                    }
+                }
+            },
+            {
+                "caseRebindTerms.rearm": {
+                    "caseId": "case-1",
+                    "targetCaseTypeId": "ct-b",
+                    "reason": "Wrong type"
+                }
+            }
+        ]
+    },
+    "may / coordinator": {
+        "answer": true,
+        "calls": [
+            {
+                "caseRebindGate.mayRebind": {
+                    "uid": "coord"
+                }
+            }
+        ]
+    },
+    "may / other": {
+        "answer": false,
+        "calls": [
+            {
+                "caseRebindGate.mayRebind": {
+                    "uid": "mallory"
+                }
+            }
+        ]
+    }
+}

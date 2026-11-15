@@ -38,6 +38,8 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -52,10 +54,12 @@ class StatusTypeLookup {
 	 * @param SettingsService  $settingsService   Resolves the object service and configured schemas.
 	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
 	 *                                            inherited statuses are found too.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -71,8 +75,31 @@ class StatusTypeLookup {
 	public function nameFor(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
-		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
+		return $this->text->textOf(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
 	}//end nameFor()
+
+	/**
+	 * The words a status is announced in, or '' when it is not announced.
+	 *
+	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and
+	 * the difference is the whole point. That one answers "what does the
+	 * applicant read for this status" and falls back to the administered name,
+	 * which is right for a page that has already decided to show the status.
+	 * This one answers "is this status announced at all", and a fallback would
+	 * make every status announced the moment a case type forgot to fill a
+	 * public label in. The empty string here is a decision, not a gap.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The public label, or '' when the status is not announced.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function announcedLabelOf(string $statusTypeId): string {
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+
+		return $this->text->textOf(value: ($statusType['publicLabel'] ?? ''));
+	}//end announcedLabelOf()
 
 	/**
 	 * The whole statusType row, for the callers that need more than its name.
@@ -135,7 +162,7 @@ class StatusTypeLookup {
 	 * WHY A ROLE AND NOT A NAME. A shipped flow cannot carry a statusType uuid,
 	 * so it named the status instead — and a name is not an identifier either:
 	 *
-	 * - `statusType.name` is declared `x-translatable`, so the same status is
+	 * - `statusType.name` is declared `translatable`, so the same status is
 	 *   "In behandeling" on one instance and "In progress" on another. A flow
 	 *   matching a literal is broken by translation alone.
 	 * - Every case type spells its working phase differently and all of them are
@@ -153,7 +180,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when this case type models no such role.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForRole(string $caseTypeId, string $role): string {
 		$wanted = strtolower(trim($role));
@@ -211,7 +238,7 @@ class StatusTypeLookup {
 		$resolved = [];
 		foreach ($this->statusRowsFor(caseTypeId: $caseTypeId) as $row) {
 			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			$name = (string)($row['name'] ?? ($row['title'] ?? ''));
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 
 			if ($id === '' || $name === '') {
 				continue;
@@ -262,7 +289,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function rowsOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -296,7 +323,7 @@ class StatusTypeLookup {
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}

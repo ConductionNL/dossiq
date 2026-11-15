@@ -43,6 +43,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService.
@@ -68,7 +70,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -80,7 +82,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -331,7 +333,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 	/**
 	 * Guard regression: the deadline cron runs with NO user session and must
 	 * still be able to expire advice. A guard that required a session here
-	 * would silently break AdviceDeadlineJob.
+	 * would silently break the advice expiry on its engine timer.
 	 *
 	 * @return void
 	 */

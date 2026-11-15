@@ -29,7 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -38,8 +40,6 @@ use RuntimeException;
 
 /**
  * OpenRegister access for the demo caseload.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
  *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
@@ -158,9 +158,8 @@ class DemoCaseloadGateway {
 	): string {
 		try {
 			$created = $objectService->saveObject(
-				register: $registerId,
-				schema: $schemaId,
 				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $registerId, schema: $schemaId))
 			);
 		} catch (\Exception $e) {
 			$this->logger->error(
@@ -172,6 +171,29 @@ class DemoCaseloadGateway {
 
 		return $this->idOf(object: $created);
 	}//end create()
+
+	/**
+	 * Run an operation inside OpenRegister's system-operation scope.
+	 *
+	 * Refuses rather than running the operation as the signed-in user, so a
+	 * seed never reports success for writes that were not the system's.
+	 *
+	 * @param object   $objectService The OpenRegister ObjectService.
+	 * @param callable $operation     The operation.
+	 *
+	 * @return mixed Whatever the operation returns.
+	 *
+	 * @throws RuntimeException When this OpenRegister cannot run an operation as the system.
+	 *
+	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
+	 */
+	public function asSystem(object $objectService, callable $operation): mixed {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			throw new RuntimeException('The demo caseload needs an OpenRegister that can write as the system, and this one cannot.');
+		}
+
+		return $objectService->runAsSystem(operation: $operation);
+	}//end asSystem()
 
 	/**
 	 * Whether an object matching the filters already exists.
@@ -237,6 +259,17 @@ class DemoCaseloadGateway {
 			return [];
 		}
 
+		return self::rowsOf(results: $results);
+	}//end findMany()
+
+	/**
+	 * The rows of a findAll answer, whether it came as a list or wrapped in `results`.
+	 *
+	 * @param mixed $results The findAll answer.
+	 *
+	 * @return array<int, mixed> The rows, or none when the answer is not an array.
+	 */
+	private static function rowsOf(mixed $results): array {
 		if (is_array($results) === false) {
 			return [];
 		}
@@ -246,7 +279,7 @@ class DemoCaseloadGateway {
 		}
 
 		return array_values($results);
-	}//end findMany()
+	}//end rowsOf()
 
 	/**
 	 * Normalise an OpenRegister object to a plain array.
@@ -313,6 +346,6 @@ class DemoCaseloadGateway {
 	 * @return string The value, or '' when unset.
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end config()
 }//end class

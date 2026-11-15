@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -147,7 +147,7 @@ export async function createSubCase({ parentCaseUuid, childCaseTypeId, object })
  *
  * @param {string} parentCaseUuid Parent UUID.
  * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
- * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
+ * @spec openspec/specs/case-management/spec.md#requirement-a-held-case-cannot-be-deleted-and-you-are-told-why-req-cm-35
  */
 export async function unlinkSubCases(parentCaseUuid) {
 	const { data } = await axios.post(

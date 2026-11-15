@@ -22,19 +22,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
-use OCA\Dossiq\Service\Email\SenderBlocklist;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,7 +48,7 @@ use OCP\IUserSession;
 /**
  * REST controller for email-template templating + IMAP settings.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — this surface is the settings form
  *  for mail, so it names the mail gateway and the sender block list beside the
@@ -89,27 +89,27 @@ class EmailTemplateController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param EmailTemplateService $templateService Backend templating service.
-	 * @param SettingsService $settingsService Settings resolver (registers).
+	 * @param EmailTemplateServiceInterface $templateService Backend templating service.
+	 * @param SettingsServiceInterface $settingsService Settings resolver (registers).
 	 * @param IAppConfig $appConfig App config (IMAP settings).
 	 * @param IUserSession $userSession Current user session.
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
-	 * @param SenderBlocklist $blocklist Who may not open a case by mail, normalised as it is stored.
+	 * @param SenderBlocklistInterface $blocklist Who may not open a case by mail, normalised as it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly EmailTemplateService $templateService,
-		private readonly SettingsService $settingsService,
+		private readonly EmailTemplateServiceInterface $templateService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly MailGatewayInterface $mailGateway,
-		private readonly SenderBlocklist $blocklist,
+		private readonly SenderBlocklistInterface $blocklist,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -121,7 +121,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function listTemplates(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -171,6 +171,8 @@ class EmailTemplateController extends Controller {
 			'name' => (string)$this->request->getParam('name', ''),
 			'subject' => (string)$this->request->getParam('subject', ''),
 			'body' => (string)$this->request->getParam('body', ''),
+			'moment' => $this->request->getParam('moment'),
+			'channel' => $this->request->getParam('channel'),
 		];
 
 		try {
@@ -204,11 +206,7 @@ class EmailTemplateController extends Controller {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = [
-			'name' => $this->request->getParam('name'),
-			'subject' => $this->request->getParam('subject'),
-			'body' => $this->request->getParam('body'),
-		];
+		$data = $this->updateData();
 
 		try {
 			return new JSONResponse($this->templateService->updateTemplate(templateId: $templateId, data: $data));
@@ -216,6 +214,30 @@ class EmailTemplateController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
 		}
 	}//end updateTemplate()
+
+	/**
+	 * The template fields an update request carries.
+	 *
+	 * @return array<string, mixed> The name, subject and body, with the moment and channel the request names.
+	 */
+	private function updateData(): array {
+		$data = [
+			'name' => $this->request->getParam('name'),
+			'subject' => $this->request->getParam('subject'),
+			'body' => $this->request->getParam('body'),
+		];
+
+		// Only a moment or channel the request names reaches the update: an
+		// explicit null clears it, an absent one keeps the current version's.
+		$params = $this->request->getParams();
+		foreach (['moment', 'channel'] as $field) {
+			if (array_key_exists($field, $params) === true) {
+				$data[$field] = $params[$field];
+			}
+		}
+
+		return $data;
+	}//end updateData()
 
 	/**
 	 * Render a draft from a template against a case.
@@ -227,7 +249,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function prefillDraft(string $caseId, string $templateId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -261,7 +283,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function getSettings(): JSONResponse {
@@ -271,7 +293,7 @@ class EmailTemplateController extends Controller {
 
 		$values = [];
 		foreach (self::IMAP_KEYS as $key) {
-			$values[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$values[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return new JSONResponse($values);
@@ -292,11 +314,11 @@ class EmailTemplateController extends Controller {
 	 * stored and reports reachability, into an internal port prober. There is
 	 * no per-object guard to add here: the object IS the instance settings, so
 	 * the correct posture is the admin attribute this controller already uses
-	 * for `createTemplate()` / `updateTemplate()` / `seedDefaults()`.
+	 * for `createTemplate()` / `updateTemplate()`.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function saveSettings(): JSONResponse {
@@ -316,7 +338,7 @@ class EmailTemplateController extends Controller {
 			// capitals and the trailing space — matches nothing and the surface
 			// still shows the address as blocked. Normalising on the way in is
 			// the only place that can be true for every reader.
-			if ($key === SenderBlocklist::BLOCKLIST_KEY) {
+			if ($key === SenderBlocklistInterface::BLOCKLIST_KEY) {
 				$this->blocklist->replace(entries: explode(',', (string)$value));
 				continue;
 			}
@@ -327,7 +349,7 @@ class EmailTemplateController extends Controller {
 			// placeholder that meant "unchanged" went with it: a form that still
 			// understood it would accept three asterisks as a value for a key
 			// that is no longer a credential.
-			$this->appConfig->setValueString(Application::APP_ID, $key, (string)$value);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$value);
 		}//end foreach
 
 		return new JSONResponse(['saved' => true]);
@@ -396,7 +418,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function variables(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -410,47 +432,4 @@ class EmailTemplateController extends Controller {
 		return new JSONResponse($this->templateService->getAvailableVariables(caseTypeId: $caseTypeId));
 	}//end variables()
 
-	/**
-	 * Seed the three Dutch default templates for a caseType.
-	 *
-	 * Idempotent: the service skips any default whose name already exists, so
-	 * calling this twice creates nothing the second time and returns 0.
-	 *
-	 * The auth posture mirrors createTemplate() deliberately — this endpoint
-	 * is a loop over exactly that call and creates nothing a caller could not
-	 * create one at a time, so a stricter guard here would be inconsistent
-	 * rather than safer.
-	 *
-	 * ⚠️ That argument was sound and the posture it mirrored was not:
-	 * `createTemplate()` was reachable by every authenticated user, so this
-	 * endpoint was too. The reasoning is kept because it is still correct —
-	 * what changed is the posture on the other end. Both are now admin-only.
-	 *
-	 * @param string $caseTypeId Owning caseType id.
-	 *
-	 * @return JSONResponse carrying created, the number created on this run.
-	 *
-	 * @spec openspec/specs/authz-bypass-fixes/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function seedDefaults(string $caseTypeId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		try {
-			return new JSONResponse(
-				[
-					'created' => $this->templateService->seedDefaultTemplates(caseTypeId: $caseTypeId),
-				]
-			);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end seedDefaults()
 }//end class

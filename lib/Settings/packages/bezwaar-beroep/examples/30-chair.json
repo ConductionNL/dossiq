@@ -1,0 +1,13 @@
+{
+  "schema": "role_schema",
+  "rows": [
+    {
+      "id": "cc42d564-b499-5628-a65c-a42104ab7239",
+      "name": "Voorzitter bezwaaradviescommissie",
+      "roleType": "fe7d2472-8239-5d0c-b8a8-5a9e26780962",
+      "case": "b081ad8b-807e-5d5c-afcd-7fa5884428df",
+      "participant": "bezwaaradviescommissie",
+      "description": "Voorzitter van de bezwaaradviescommissie, kamer Fysiek."
+    }
+  ]
+}

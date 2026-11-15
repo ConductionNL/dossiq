@@ -13,10 +13,10 @@
  * That is invisible until something renders the row by name, and a `$ref` on
  * `case` is exactly that: the value becomes a picker option, a facet bucket
  * label and a column, all keyed by identifier and labelled by name. `case`'s
- * `assignedGroup` points at `organisatieRol`, which declared no name field, so
+ * `assignedGroup` pointed at `organisatieRol`, which declared no name field, so
  * the Team picker listed uuids and the Team facet bucket read `3c26f5c4…`
- * rather than `Team Permits`. Only the Team COLUMN was right, because it
- * extends the reference and reads `roleName` itself.
+ * rather than `Team Permits`. (Since one-team-model `assignedGroup` is a
+ * Nextcloud group id and no longer a `$ref`, so it is not swept here.)
  *
  * The rule is asserted over every `$ref` target on `case` rather than over
  * that one schema, because a schema with no name field is the kind of thing
@@ -155,7 +155,9 @@ describe('a schema a case points at can name its own rows', () => {
 
 	it('finds the relation targets to check', () => {
 		expect(targets.length).toBeGreaterThan(0)
-		expect(targets).toContain('organisatieRol')
+		expect(targets).toContain('caseType')
+		// one-team-model: the team is a Nextcloud group id, not a $ref.
+		expect(targets).not.toContain('organisatieRol')
 	})
 
 	it.each(targets)('%s resolves a display name', (slug) => {

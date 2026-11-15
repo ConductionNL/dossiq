@@ -1,0 +1,241 @@
+<?php
+
+/**
+ * Reviewing a gezinsplan, and saying when one has gone stale.
+ *
+ * 🔴 THE PLAN THAT IS NEVER REVIEWED IS THE PLAN THAT HARMS (D-5). A household
+ * whose situation moved on six months ago is still being worked to a plan that
+ * describes the household of last winter, and nothing on the page says so
+ * because there is nothing to say it with. A review date and a record of what
+ * changed at each review cost one field each and make staleness visible.
+ *
+ * 🔑 THE REVIEW RECORDS WHAT CHANGED, NOT THAT IT HAPPENED. "Reviewed on 3
+ * March by A. Jansen" is a tick. The changes are what a later reader, or the
+ * household, can actually check the plan against, and they are what makes a
+ * review that changed nothing visible AS a review that changed nothing.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\SociaalDomein
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\SociaalDomein;
+
+use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CasePlanReviewInterface;
+use OCA\Dossiq\Service\Support\StoredArray;
+
+/**
+ * Record a plan review, and answer whether a plan is due for one.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ */
+class CasePlanReview implements CasePlanReviewInterface {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SociaalDomeinStore $store The one reader and writer of these schemas.
+	 */
+	public function __construct(
+		private readonly SociaalDomeinStore $store,
+	) {
+	}//end __construct()
+
+	/**
+	 * Whether this plan's review date has passed.
+	 *
+	 * A plan with NO review date is not due: it has never been given one, which
+	 * is a different problem from a plan that is late, and reporting the two as
+	 * one would put every plan written before this change into the overdue
+	 * list on the day it ships.
+	 *
+	 * @param array<string, mixed> $plan  The plan.
+	 * @param string               $today The day, `Y-m-d`, or '' for today.
+	 *
+	 * @return boolean True when it is due for review.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 */
+	public function isDue(array $plan, string $today = ''): bool {
+		$due = trim((string)($plan['reviewDate'] ?? ''));
+		if ($due === '') {
+			return false;
+		}
+
+		if ($today === '') {
+			$today = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
+		return ($due < $today);
+	}//end isDue()
+
+	/**
+	 * Record a review of one plan.
+	 *
+	 * @param string             $planId         The plan uuid.
+	 * @param string             $reviewedBy     Who reviewed it.
+	 * @param array<int, string> $changes        What changed, in sentences.
+	 * @param string             $nextReviewDate The new review date, or '' to leave it.
+	 * @param string             $onDate         The day of the review, or '' for today.
+	 *
+	 * @return array<string, mixed> The plan, with the review on it.
+	 *
+	 * @throws RefusedException When the plan cannot be read or nothing was recorded.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 */
+	public function record(
+		string $planId,
+		string $reviewedBy,
+		array $changes,
+		string $nextReviewDate = '',
+		string $onDate = '',
+	): array {
+		if ($onDate === '') {
+			$onDate = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
+		$plan = $this->planToReview(planId: $planId);
+		$this->refuseWithoutReviewer(reviewedBy: $reviewedBy);
+		$written = $this->writtenChanges(changes: $changes);
+
+		return $this->writeReview(
+			plan: $plan,
+			review: ['reviewedBy' => trim($reviewedBy), 'reviewDate' => $onDate, 'changes' => $written, 'nextReviewDate' => $nextReviewDate]
+		);
+	}//end record()
+
+	/**
+	 * Write the plan with the review on it.
+	 *
+	 * @param array<string, mixed> $plan   The plan under review.
+	 * @param array<string, mixed> $review Who reviewed it, the day, what changed and the next review date.
+	 *
+	 * @return array<string, mixed> The stored plan.
+	 */
+	private function writeReview(array $plan, array $review): array {
+		return $this->store->write(schema: self::SCHEMA, object: $this->withReview(plan: $plan, review: $review));
+	}//end writeReview()
+
+	/**
+	 * The family plan under review, or a refusal when it is not there.
+	 *
+	 * @param string $planId The plan id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When the plan cannot be found.
+	 */
+	private function planToReview(string $planId): array {
+		$plan = $this->store->read(schema: self::SCHEMA, id: $planId);
+		if ($plan === null) {
+			throw new RefusedException(
+				rule: 'plan-not-found',
+				sentence: 'That family plan could not be found.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $plan;
+	}//end planToReview()
+
+	/**
+	 * Refuse a review that does not say who did it.
+	 *
+	 * @param string $reviewedBy Who reviewed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When nobody is named.
+	 */
+	private function refuseWithoutReviewer(string $reviewedBy): void {
+		if (trim($reviewedBy) === '') {
+			throw new RefusedException(
+				rule: 'review-needs-a-reviewer',
+				sentence: 'A review records who did it.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end refuseWithoutReviewer()
+
+	/**
+	 * The changes written down, trimmed; a review that names none is refused.
+	 *
+	 * @param array<int, mixed> $changes The changes as given.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @throws RefusedException When no change is written down.
+	 */
+	private function writtenChanges(array $changes): array {
+		$written = [];
+		foreach ($changes as $change) {
+			$change = trim((string)$change);
+			if ($change !== '') {
+				$written[] = $change;
+			}
+		}
+
+		if ($written === []) {
+			throw new RefusedException(
+				rule: 'review-needs-what-changed',
+				sentence: 'Write down what this review changed. A review that says only that it happened '
+					. 'tells the next reader nothing they can check.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $written;
+	}//end writtenChanges()
+
+	/**
+	 * The plan with the review appended, and its next review date when one is set.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param array<string, mixed> $review The review.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withReview(array $plan, array $review): array {
+		$reviews = $this->reviewsOf(plan: $plan);
+		$reviews[] = $review;
+
+		$plan['reviews'] = $reviews;
+		if (trim($review['nextReviewDate']) !== '') {
+			$plan['reviewDate'] = $review['nextReviewDate'];
+		}
+
+		return $plan;
+	}//end withReview()
+
+	/**
+	 * The reviews a plan already carries.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 *
+	 * @return array<int, array<string, mixed>> The reviews.
+	 */
+	private function reviewsOf(array $plan): array {
+		$raw = StoredArray::from(value: ($plan['reviews'] ?? []));
+
+		return array_values(array_filter($raw, static fn ($row): bool => is_array($row) === true));
+	}//end reviewsOf()
+}//end class

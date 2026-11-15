@@ -14,6 +14,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notification;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\NotificationPreferencesInterface;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceAddress;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceWrite;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,7 +51,7 @@ class NotificationRouting {
 	 *
 	 * @var string
 	 */
-	public const PREFERENCE_SERVICE = 'OCA\\OpenRegister\\Service\\Notification\\NotificationPreferenceService';
+	public const PREFERENCE_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Notification\\NotificationPreferenceService';
 
 	/**
 	 * The notification domains dossiq's shipped rules declare.
@@ -234,23 +237,21 @@ class NotificationRouting {
 	 *
 	 * @return bool TRUE when the platform stored it, FALSE when nothing routes.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The stored preference is itself an on/off switch.
-	 *
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function setDigestEnabled(string $userId, bool $enabled): bool {
 		$service = $this->service();
-		if ($service === null || $userId === '' || method_exists($service, 'setOverride') === false) {
+		if ($service instanceof NotificationPreferencesInterface === false || $userId === '') {
 			return false;
 		}
 
 		try {
-			$service->setOverride(
-				userId: $userId,
-				schemaSlug: self::DIGEST_SCHEMA,
-				notificationKey: self::DIGEST_NOTIFICATION,
-				override: ['enabled' => $enabled],
-				scope: null
+			$service->storeOverride(
+				write: new PreferenceWrite(
+					party: $userId,
+					address: new PreferenceAddress(schemaSlug: self::DIGEST_SCHEMA, notificationKey: self::DIGEST_NOTIFICATION),
+					value: ['enabled' => $enabled]
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq notifications: the digest switch was not routed: ' . $e->getMessage());

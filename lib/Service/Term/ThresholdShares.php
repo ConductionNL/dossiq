@@ -1,0 +1,297 @@
+<?php
+
+/**
+ * A threshold declared as a share of the term, turned into engine rungs.
+ *
+ * The escalation thresholds were fourteen, seven, two and nought days. On a
+ * six-week term fourteen days is a third of it; on a twenty-six-week term it
+ * is a formality. A threshold at 25 per cent means the same thing to a handler
+ * on both terms and a different date on each, which is the point.
+ *
+ * 🔴 A SHARE IS RESOLVED WHEN THE TIMER IS ARMED, AND NOWHERE ELSE. The engine
+ * ladder takes dates, so a share becomes a number of days at the one moment
+ * the length of the term is known. That is why a percentage adds no second
+ * escalation mechanism: the rungs handed to the engine are the same rungs, and
+ * an extension re-arms the timer, which resolves the shares again.
+ *
+ * Days and shares coexist on one ladder. Some thresholds are genuinely
+ * absolute: a statutory notice two days before the end is two days before on
+ * every term, however long it is.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Term
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Term;
+
+use DateTimeImmutable;
+
+/**
+ * Turns a declared ladder into the engine's own escalation rules.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+ */
+class ThresholdShares {
+	/**
+	 * The engine trigger every rung of a due-date ladder uses.
+	 */
+	private const TRIGGER = 'preBreach';
+
+	/**
+	 * The unit the engine counts a rung's offset in.
+	 */
+	private const UNIT = 'calendarDays';
+
+	/**
+	 * The rungs of OpenRegister's seeded `nl-termijn-default` ladder (14/7/2/0).
+	 *
+	 * A term shorter than the longest rung gets the rungs that fit it as
+	 * explicit rules: a rung before the anchor makes the engine refuse the
+	 * whole timer.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DEFAULT_RUNGS = [
+		[
+			'trigger' => 'preBreach',
+			'offset' => 14,
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => 'low',
+			'message' => 'termijn-14d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 7,
+			'notifyRole' => ['handler', 'teamleader'],
+			'escalateToRole' => ['teamleader'],
+			'priority' => 'medium',
+			'message' => 'termijn-7d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 2,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'high',
+			'message' => 'termijn-2d',
+		],
+		[
+			'trigger' => 'slaBreached',
+			'offset' => 0,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'critical',
+			'message' => 'termijn-overschreden',
+		],
+	];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param DayCount $days The calendar day count between two dates.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly DayCount $days = new DayCount(),
+	) {
+	}//end __construct()
+
+	/**
+	 * The engine rules a declared ladder becomes, for a term of this length.
+	 *
+	 * A rung is either `days` (that many days before the end) or `share` (that
+	 * share of the term elapsed, so the rung sits at `term - share * term`
+	 * before the end). A rung that declares neither, or a share that lands
+	 * outside the term, is dropped: a rung nobody can place is not a rung.
+	 *
+	 * @param array<int, mixed> $ladder  The declared rungs.
+	 * @param int               $slaDays The whole term, in days.
+	 *
+	 * @return array<int, array<string, mixed>> The engine rules, longest offset first.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+	 */
+	public function rulesFor(array $ladder, int $slaDays): array {
+		if ($slaDays <= 0) {
+			return [];
+		}
+
+		$rules = [];
+		foreach ($ladder as $rung) {
+			$rule = $this->ruleOf(rung: $rung, slaDays: $slaDays);
+			if ($rule !== null) {
+				$rules[] = $rule;
+			}
+		}
+
+		// Longest offset first, so a reader of the engine's own rule list sees
+		// the ladder in the order it fires.
+		usort($rules, static fn (array $a, array $b): int => ($b['offset'] <=> $a['offset']));
+
+		return $rules;
+	}//end rulesFor()
+
+	/**
+	 * The engine rule one declared rung becomes, or null when it cannot be placed.
+	 *
+	 * @param mixed $rung    The declared rung.
+	 * @param int   $slaDays The whole term, in days.
+	 *
+	 * @return array<string, mixed>|null The rule.
+	 */
+	private function ruleOf(mixed $rung, int $slaDays): ?array {
+		if (is_array($rung) === false) {
+			return null;
+		}
+
+		$offset = $this->offsetOf(rung: $rung, slaDays: $slaDays);
+		if ($offset === null) {
+			return null;
+		}
+
+		return self::engineRule(rung: $rung, offset: $offset);
+	}//end ruleOf()
+
+	/**
+	 * The engine rule for a placed rung, with the priority and message it declares or the defaults.
+	 *
+	 * @param array<string, mixed> $rung   The declared rung.
+	 * @param int                  $offset Its offset before the end.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private static function engineRule(array $rung, int $offset): array {
+		return [
+			'trigger' => self::TRIGGER,
+			'offset' => $offset,
+			'offsetUnit' => self::UNIT,
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => self::orDefault(value: (string)($rung['priority'] ?? ''), fallback: 'medium'),
+			'message' => self::orDefault(value: (string)($rung['message'] ?? ''), fallback: 'termijn-drempel'),
+			'openIncident' => false,
+		];
+	}//end engineRule()
+
+	/**
+	 * A declared value, or the fallback when it is empty.
+	 *
+	 * @param string $value    The declared value.
+	 * @param string $fallback The default.
+	 *
+	 * @return string The value to use.
+	 */
+	private static function orDefault(string $value, string $fallback): string {
+		if ($value === '') {
+			return $fallback;
+		}
+
+		return $value;
+	}//end orDefault()
+
+	/**
+	 * The default ladder's rungs that fit a term shorter than its longest rung,
+	 * or [] when the whole named ladder fits and the engine can keep it.
+	 *
+	 * Counted in calendar days, the unit the rungs are in, whatever the term
+	 * counts in: a rung lands before the anchor when its offset exceeds the
+	 * calendar days between the start and the end.
+	 *
+	 * @param DateTimeImmutable      $startDay The term's start day.
+	 * @param DateTimeImmutable|null $end      The term's current end, null when unknown.
+	 *
+	 * @return array<int, array<string, mixed>> The explicit rules, longest offset first.
+	 */
+	public function defaultRulesFor(DateTimeImmutable $startDay, ?DateTimeImmutable $end): array {
+		if ($end === null || $end < $startDay) {
+			return [];
+		}
+
+		$span = $this->days->between(from: $startDay, to: $end);
+		if ($span >= self::DEFAULT_RUNGS[0]['offset']) {
+			return [];
+		}
+
+		$rules = [];
+		foreach (self::DEFAULT_RUNGS as $rung) {
+			if ($rung['offset'] <= $span) {
+				$rules[] = array_merge($rung, ['offsetUnit' => self::UNIT, 'openIncident' => false]);
+			}
+		}
+
+		return $rules;
+	}//end defaultRulesFor()
+
+	/**
+	 * How many days before the end one rung sits.
+	 *
+	 * @param array<string, mixed> $rung    The declared rung.
+	 * @param int                  $slaDays The whole term, in days.
+	 *
+	 * @return int|null The offset, or null when the rung cannot be placed.
+	 */
+	private function offsetOf(array $rung, int $slaDays): ?int {
+		if (is_numeric($rung['days'] ?? null) === true) {
+			return self::daysOffset(days: (int)$rung['days'], slaDays: $slaDays);
+		}
+
+		if (is_numeric($rung['share'] ?? null) === false) {
+			return null;
+		}
+
+		return self::shareOffset(share: (float)$rung['share'], slaDays: $slaDays);
+	}//end offsetOf()
+
+	/**
+	 * A days rung's offset, null when it lies outside the term.
+	 *
+	 * @param int $days    The declared days before the end.
+	 * @param int $slaDays The whole term, in days.
+	 *
+	 * @return int|null The offset.
+	 */
+	private static function daysOffset(int $days, int $slaDays): ?int {
+		if ($days < 0 || $days > $slaDays) {
+			return null;
+		}
+
+		return $days;
+	}//end daysOffset()
+
+	/**
+	 * A share rung's offset, null when the share lies outside the term.
+	 *
+	 * @param float $share   The declared share of the term elapsed.
+	 * @param int   $slaDays The whole term, in days.
+	 *
+	 * @return int|null The offset.
+	 */
+	private static function shareOffset(float $share, int $slaDays): ?int {
+		if ($share < 0.0 || $share > 1.0) {
+			return null;
+		}
+
+		// The rung sits where that share of the term has elapsed, so the
+		// engine's offset, which counts BACK from the end, is the rest of it.
+		$elapsed = (int)round($share * $slaDays);
+
+		return max(0, ($slaDays - $elapsed));
+	}//end shareOffset()
+}//end class

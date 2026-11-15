@@ -81,8 +81,8 @@ test.describe('Store surface', () => {
 		await expect(nav).toBeVisible({ timeout: 60_000 })
 
 		await expect(
-			nav.getByText(/^\s*Store\s*$/i),
-			'the navigation must offer a Store entry',
+			nav.getByText(/^\s*(Marketplace|Marktplaats)\s*$/i),
+			'the navigation must offer a Marketplace entry',
 		).toHaveCount(1, { timeout: 30_000 })
 
 		// CLAUSE 1: the glyph the manifest declares, read off the entry itself.

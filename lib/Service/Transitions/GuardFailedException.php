@@ -31,7 +31,7 @@ use RuntimeException;
 /**
  * Exception thrown when one or more guards reject a transition.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T10
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T10
  */
 class GuardFailedException extends RuntimeException {
 
@@ -58,7 +58,7 @@ class GuardFailedException extends RuntimeException {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/status-transition-engine/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T10
 	 */
 	public function getFailedGuards(): array {
 		return $this->failedGuards;

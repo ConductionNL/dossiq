@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusDwellBreachTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -73,7 +73,7 @@ class StatusDwellBreachTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheDwellBreachesWhileTheTermIsHealthy(): void {
 		$case = [
@@ -100,7 +100,7 @@ class StatusDwellBreachTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAStatusWithNoMaximumNeverBreaches(): void {
 		$case = ['status' => 'review', 'currentStatusEnteredAt' => '2020-01-01T09:00:00+01:00'];
@@ -123,7 +123,7 @@ class StatusDwellBreachTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testReachingTheMaximumIsNotYetABreach(): void {
 		$case = ['status' => 'review', 'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00'];
@@ -157,7 +157,7 @@ class StatusDwellBreachTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAMoveClearsTheBreachFlag(): void {
 		$case = [

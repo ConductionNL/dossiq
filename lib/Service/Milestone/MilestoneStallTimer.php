@@ -1,0 +1,220 @@
+<?php
+
+/**
+ * Dossiq milestone stall on an armed engine timer.
+ *
+ * A case waiting on a milestone gets one OpenRegister FlowTimer that
+ * breaches at the start of the day after the milestone's scheduled deadline,
+ * the first day StalledCaseDetector calls the case stalled (`daysOverdue > 0`).
+ * {@see \OCA\Dossiq\Listener\MilestoneStallTimerFiredListener} then tells the
+ * assignee, once. This replaces BottleneckDetectionJob, which scanned every
+ * case daily and told the assignee again every day the case stayed stalled.
+ *
+ * The deadline comes from {@see StalledCaseDetector::waitingOn()}, the same
+ * schedule the stalled list reads, so the timer and the list agree on which
+ * milestone a case waits on. The subject is `<case id>:milestone`, apart from
+ * the status dwell timers armed on the case id.
+ *
+ * Working days stay dossiq's own calculation here; moving them onto the
+ * engine's calendar is task 3.2.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Milestone
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Milestone;
+
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
+use OCA\Dossiq\Service\Term\DayCount;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Keeps one engine timer per case on the milestone it waits on.
+ *
+ * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ */
+class MilestoneStallTimer implements MilestoneStallTimerInterface {
+
+	/**
+	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
+	 *
+	 * @var string
+	 */
+	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
+
+	/**
+	 * The suffix that keeps the timer's subject apart from the case's own timers.
+	 *
+	 * @var string
+	 */
+	public const SUBJECT_SUFFIX = ':milestone';
+
+	/**
+	 * Outcome: the case waits on no milestone and its timer is cancelled.
+	 *
+	 * @var string
+	 */
+	public const CANCELLED = 'cancelled';
+
+	/**
+	 * Outcome: nothing to time.
+	 *
+	 * @var string
+	 */
+	public const SKIPPED = 'skipped';
+
+	/**
+	 * Build the service.
+	 *
+	 * @param SettingsService     $settingsService Resolves the engine.
+	 * @param StalledCaseDetector $detector        Names the milestone a case waits on and its deadline.
+	 * @param CaseDateNormaliser  $dates           Today, in the administered zone.
+	 * @param LoggerInterface     $logger          Logs engine refusals.
+	 * @param DayCount            $days            Counts the days between two moments.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly StalledCaseDetector $detector,
+		private readonly CaseDateNormaliser $dates,
+		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
+	) {
+	}//end __construct()
+
+	/**
+	 * Bring the case's milestone timer in step with the case.
+	 *
+	 * @param array<string, mixed> $case The case object.
+	 *
+	 * @return string One of the outcome constants.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	public function sync(array $case): string {
+		$caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+		if ($caseId === '') {
+			return self::SKIPPED;
+		}
+
+		$waiting  = $this->detector->waitingOn(case: $case);
+		$deadline = $this->dates->tryParse($waiting['deadline'] ?? null);
+		if ($waiting === null || $deadline === null) {
+			return $this->cancel(caseId: $caseId, reason: 'The case waits on no milestone') ?? self::CANCELLED;
+		}
+
+		$cancelled = $this->cancel(caseId: $caseId, reason: 'Superseded by the milestone the case waits on now');
+		if ($cancelled !== null) {
+			return $cancelled;
+		}
+
+		$today = $this->dates->today();
+		$stall = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0)->modify('+1 day');
+		if ($stall <= $today) {
+			return self::DUE;
+		}
+
+		return $this->arm(
+			span: new MilestoneStallSpan(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall))
+		);
+	}//end sync()
+
+	/**
+	 * Arm the timer.
+	 *
+	 * @param MilestoneStallSpan $span The case id, the milestone row, midnight today and the days to the stall day.
+	 *
+	 * @return string ARMED, or UNAVAILABLE.
+	 */
+	private function arm(MilestoneStallSpan $span): string {
+		return $this->timers()->arm(config: fn (): array => $this->timerConfig(span: $span), logContext: ['case' => $span->caseId]);
+	}//end arm()
+
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param MilestoneStallSpan $span The case id, the milestone row, midnight today and the days to the stall day.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(MilestoneStallSpan $span): array {
+		$caseId = $span->caseId;
+		$waiting = $span->waiting;
+		return [
+			'subjectType'     => 'object',
+			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
+			'appId'           => 'dossiq',
+			'title'           => 'Mijlpaal '.(string) ($waiting['milestoneLabel'] ?? ''),
+			'purpose'         => 'due',
+			'legalEffect'     => 'none',
+			'sla'             => ['value' => $span->slaDays, 'unit' => 'calendarDays'],
+			'escalationRules' => $this->escalationRules(),
+			'anchorEvent'     => 'milestone_waiting',
+			'anchorEventAt'   => $span->anchor,
+			'metadata'        => $this->timerMetadata(caseId: $caseId, waiting: $waiting),
+		];
+	}//end timerConfig()
+
+	/**
+	 * The escalation rules of the timer: a breach the day after the deadline.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')];
+	}//end escalationRules()
+
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $waiting The milestone row.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(string $caseId, array $waiting): array {
+		return [
+			'source'              => self::METADATA_SOURCE,
+			'caseId'              => $caseId,
+			'milestoneIdentifier' => (string) ($waiting['milestoneIdentifier'] ?? ''),
+		];
+	}//end timerMetadata()
+
+	/**
+	 * Cancel the case's milestone timers (and only those).
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $reason Why.
+	 *
+	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
+	 */
+	private function cancel(string $caseId, string $reason): ?string {
+		return $this->timers()->cancel(subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, logContext: ['case' => $caseId]);
+	}//end cancel()
+
+	/**
+	 * OpenRegister's flow timer engine for this timer.
+	 *
+	 * @return FlowTimerEngine
+	 */
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq milestone', timer: 'stall timer');
+	}//end timers()
+}//end class

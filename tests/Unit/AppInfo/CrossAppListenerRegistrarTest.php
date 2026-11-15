@@ -27,13 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar
  */
 class CrossAppListenerRegistrarTest extends TestCase {
 
@@ -92,6 +94,246 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end testTheDeliverySeamIsRegisteredWhereIntegriqIsPresent()
 
 	/**
+	 * The digital post status listener is registered even when integriq's classes are not loaded yet.
+	 *
+	 * Nextcloud runs dossiq's register() before integriq's autoloader exists
+	 * (apps register in order), so a class_exists() guard on integriq's event
+	 * read false on every live instance and dossiq never heard that a letter
+	 * was delivered, read or failed (measured on idp-live, 2026-10-07).
+	 * Registering by name autoloads nothing and costs nothing without integriq.
+	 *
+	 * @return void
+	 */
+	public function testTheDigitalPostStatusListenerIsRegisteredByName(): void {
+		// Source-read for the guard, because the stub makes the class loadable
+		// here and a run cannot take the false branch a live instance takes.
+		$this->assertStringNotContainsString(
+			needle: 'class_exists(\\OCA\\Dossiq\\Listener\\DigitalPostDeliveredListener::EVENT)',
+			haystack: $this->source(class: CrossAppListenerRegistrar::class),
+			message: 'a class_exists() guard on an integriq event is false when dossiq registers',
+		);
+
+		$event = \OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT;
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertContains(
+			needle: \OCA\Dossiq\Listener\DigitalPostDeliveredListener::class,
+			haystack: ($registered[$event] ?? []),
+			message: 'without this a case keeps showing "sent" for a letter that was delivered, read or failed',
+		);
+	}//end testTheDigitalPostStatusListenerIsRegisteredByName()
+
+	/**
+	 * Integriq's two StUF write events reach the write listener, and its two questions the query listener.
+	 *
+	 * Decision 206: a write over StUF is carried out only through integriq's
+	 * events. A write event bound to no listener would be answered by integriq
+	 * as "nobody answered" on every instance, with every unit test green.
+	 *
+	 * @return void
+	 */
+	public function testTheStufWriteEventsReachTheWriteListener(): void {
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		foreach (['StufCaseMutationEvent', 'StufDocumentMutationEvent'] as $event) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Listener\StufProviderWriteListener::class],
+				actual: ($registered['OCA\\Integriq\\Event\\' . $event] ?? []),
+				message: $event . ' is carried out by the write listener and by nothing else',
+			);
+		}
+
+		foreach (['StufCaseQueryEvent', 'StufPersonQueryEvent'] as $event) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Listener\StufProviderQueryListener::class],
+				actual: ($registered['OCA\\Integriq\\Event\\' . $event] ?? []),
+			);
+		}
+	}//end testTheStufWriteEventsReachTheWriteListener()
+
+	/**
+	 * The integriq channel intake is answered when integriq is installed.
+	 *
+	 * integriq dispatches this and reads the result slot back. Registered by
+	 * nobody, every channel message it routes is held with "No app opened a
+	 * case for this message", which is what this seam ends.
+	 *
+	 * @return void
+	 */
+	public function testTheChannelIntakeSeamIsRegisteredWhereIntegriqIsPresent(): void {
+		$event = \OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT;
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		if (class_exists($event) === false) {
+			$this->assertArrayNotHasKey(
+				key: $event,
+				array: $registered,
+				message: 'without integriq the registrar must register nothing, not fail',
+			);
+			return;
+		}
+
+		$this->assertContains(
+			needle: \OCA\Dossiq\Listener\IntakeMessageRoutedListener::class,
+			haystack: ($registered[$event] ?? []),
+			message: 'without this every channel message integriq routes at a case is held unanswered',
+		);
+	}//end testTheChannelIntakeSeamIsRegisteredWhereIntegriqIsPresent()
+
+	/**
+	 * Both portaliq citizen facts are bound when portaliq is installed.
+	 *
+	 * The stubs in tests/bootstrap.php make both classes loadable here, so the
+	 * guard takes its true branch and the binding itself is asserted, not only
+	 * its absence. Without these two a resident's write or withdrawal lands on
+	 * the case and the handler is told nothing (dossiq#3142).
+	 *
+	 * @param string $event    The portaliq event class.
+	 * @param string $listener The dossiq listener class.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider portalFacts
+	 */
+	public function testBothPortalFactsAreBoundWherePortaliqIsPresent(string $event, string $listener): void {
+		$this->assertTrue(class_exists($event), $event . ' must be loadable in the test env for this to prove anything');
+
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertSame(
+			expected: [$listener],
+			actual: ($registered[$event] ?? []),
+			message: 'without this binding the handler is never told what the resident did in the portal',
+		);
+	}//end testBothPortalFactsAreBoundWherePortaliqIsPresent()
+
+	/**
+	 * The two portaliq facts and the listener each one is bound to.
+	 *
+	 * @return array<string, array<int, string>> The cases.
+	 */
+	public static function portalFacts(): array {
+		return [
+			'write' => ['OCA\Portaliq\Event\PortalClientWriteEvent', 'OCA\Dossiq\Listener\PortalClientWriteListener'],
+			'withdrawal' => ['OCA\Portaliq\Event\PortalClientWithdrawalEvent', 'OCA\Dossiq\Listener\PortalClientWithdrawalListener'],
+		];
+	}//end portalFacts()
+
+	/**
+	 * The contact channel a resident picks in the portal is heard
+	 * (portal-contact-channel-follows-the-resident), under the listener's own
+	 * EVENT name, which the registrar spells as a string.
+	 *
+	 * @return void
+	 */
+	public function testTheContactChannelFactIsBound(): void {
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertSame(
+			expected: [\OCA\Dossiq\Listener\PortalContactDetailsChangedListener::class],
+			actual: ($registered[\OCA\Dossiq\Listener\PortalContactDetailsChangedListener::EVENT] ?? []),
+		);
+	}//end testTheContactChannelFactIsBound()
+
+	/**
+	 * The listeners on another app's event are registered by name, unguarded.
+	 *
+	 * Source-read, because the stub makes the class loadable here and a run
+	 * cannot take the false branch a live instance takes. Nextcloud runs
+	 * dossiq's register() before the autoloader of an app that registers
+	 * after it exists, so a `class_exists` guard read false and the listener
+	 * never registered (measured on djb-live, 2026-10-07: integriq installed,
+	 * no dossiq listener on DeliveryConcludedEvent, IntakeMessageRoutedEvent
+	 * or MessageReceivedEvent).
+	 *
+	 * @param string $listener The dossiq listener.
+	 * @param string $event    The other app's event class.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider crossAppEvents
+	 */
+	public function testTheListenerIsRegisteredByNameWithoutAGuard(string $listener, string $event): void {
+		$source = $this->source(class: CrossAppListenerRegistrar::class);
+		$short = substr($listener, (strrpos($listener, '\\') + 1));
+
+		$this->assertStringNotContainsString(
+			needle: 'class_exists(\\OCA\\Dossiq\\Listener\\' . $short . '::EVENT)',
+			haystack: $source,
+			message: $short . ' is guarded on a class that does not exist yet when dossiq registers',
+		);
+		$this->assertStringNotContainsString(
+			needle: 'class_exists(\'\\\\' . str_replace('\\', '\\\\', $event) . '\')',
+			haystack: $source,
+			message: $short . ' is guarded on a class that does not exist yet when dossiq registers',
+		);
+		$this->assertStringNotContainsString(
+			needle: $event . '::class',
+			haystack: $source,
+			message: 'the other app\'s event class must be named by string, never by ::class',
+		);
+	}//end testTheListenerIsRegisteredByNameWithoutAGuard()
+
+	/**
+	 * The real event class reaches its listener through the dispatcher.
+	 *
+	 * `dispatchTyped()` dispatches on the event's own class name, so the name
+	 * the registrar registers has to be exactly that class, spelled the way
+	 * PHP reports it. The event is the stub of the other app's class, which
+	 * tests/Support/StubDrift holds to the real one.
+	 *
+	 * @param string $listener The dossiq listener.
+	 * @param string $event    The other app's event class.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider crossAppEvents
+	 */
+	public function testTheRealEventReachesItsListener(string $listener, string $event): void {
+		if (class_exists($event) === false) {
+			$this->markTestSkipped($event . ' has no stub here; its registration is covered by name above.');
+		}
+
+		$dispatcher = new InMemoryEventDispatcher();
+		$received = [];
+		foreach ($this->registrations(registrar: new CrossAppListenerRegistrar()) as $name => $listeners) {
+			foreach ($listeners as $registered) {
+				$dispatcher->addListener(
+					$name,
+					static function (Event $fired) use (&$received, $registered): void {
+						$received[] = [$registered, get_class($fired)];
+					}
+				);
+			}
+		}
+
+		/** @var Event $instance */
+		$instance = (new \ReflectionClass($event))->newInstanceWithoutConstructor();
+		$dispatcher->dispatchTyped($instance);
+
+		$this->assertContains([$listener, $event], $received, $listener . ' never heard ' . $event);
+	}//end testTheRealEventReachesItsListener()
+
+	/**
+	 * Every listener on an app that registers after dossiq, with its event.
+	 *
+	 * @return array<string, array{0: string, 1: string}> The pairs.
+	 */
+	public static function crossAppEvents(): array {
+		return [
+			'delivery concluded' => ['OCA\Dossiq\Listener\DeliveryConcludedListener', 'OCA\Integriq\Event\DeliveryConcludedEvent'],
+			'digital post status' => ['OCA\Dossiq\Listener\DigitalPostDeliveredListener', 'OCA\Integriq\Event\DigitalPostDeliveredEvent'],
+			'intake routed' => ['OCA\Dossiq\Listener\IntakeMessageRoutedListener', 'OCA\Integriq\Event\IntakeMessageRoutedEvent'],
+			'message received' => ['OCA\Dossiq\Listener\MessageReceivedListener', 'OCA\Integriq\Event\MessageReceivedEvent'],
+			'portal write' => ['OCA\Dossiq\Listener\PortalClientWriteListener', 'OCA\Portaliq\Event\PortalClientWriteEvent'],
+			'portal withdrawal' => ['OCA\Dossiq\Listener\PortalClientWithdrawalListener', 'OCA\Portaliq\Event\PortalClientWithdrawalEvent'],
+			'portal contact channel' => ['OCA\Dossiq\Listener\PortalContactDetailsChangedListener', 'OCA\Portaliq\Event\PortalContactDetailsChangedEvent'],
+			'document generated' => ['OCA\Dossiq\Listener\DocumentGeneratedListener', 'OCA\Filinq\Event\DocumentGeneratedEvent'],
+			'form submitted' => ['OCA\Dossiq\Listener\FormSubmittedListener', 'OCA\Forms\Events\FormSubmittedEvent'],
+		];
+	}//end crossAppEvents()
+
+	/**
 	 * The composite still delegates to the cross-app registrar.
 	 *
 	 * This is the assertion that catches the move itself, and it reads the
@@ -145,8 +387,10 @@ class CrossAppListenerRegistrarTest extends TestCase {
 		return [
 			['OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent'],
 			['OCA\Dossiq\Flow\DossiqFlowNodeListener'],
-			['OCA\\\\Integriq\\\\Event\\\\DeliveryConcludedEvent'],
+			['OCA\Integriq\Event\DeliveryConcludedEvent'],
 			['OCA\Dossiq\Listener\DeliveryConcludedListener'],
+			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT'],
+			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::class'],
 		];
 	}//end crossAppSpellings()
 

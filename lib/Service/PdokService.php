@@ -45,7 +45,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/gis-integration/spec.md
- * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
  */
 
 declare(strict_types=1);
@@ -120,7 +120,7 @@ class PdokService {
 	 *
 	 * @return array<int, array<string,mixed>> Normalised suggestion list.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function searchAddress(string $query, array $filters = [], int $rows = 10): array {
 		$this->lastWarning = null;
@@ -151,7 +151,7 @@ class PdokService {
 	 * @return array<string,mixed>|null The normalised address envelope,
 	 *                                  or null when not found / degraded.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function lookupAddress(string $id): ?array {
 		$this->lastWarning = null;
@@ -223,10 +223,6 @@ class PdokService {
 	 *     lastWarning: array{messageKey:string,status:int}|null,
 	 * }
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 *      over the app-id rename map, and the answer it gives depends on the
-	 *      instance rather than on any state this service holds.
-	 *
 	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
 	 */
 	public function getServiceStatus(): array {
@@ -260,10 +256,6 @@ class PdokService {
 	 * reports permanently dormant.
 	 *
 	 * @return bool
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 *      over the app-id rename map; injecting it would add a dependency to
-	 *      say the same thing.
 	 */
 	private function isFlagActive(): bool {
 		$appId = FleetAppId::resolve($this->appManager, self::INTEGRIQ_APP);

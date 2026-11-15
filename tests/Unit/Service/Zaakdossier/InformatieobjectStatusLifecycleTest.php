@@ -38,6 +38,9 @@ use Psr\Log\LoggerInterface;
  * Status transitions keep the document whole.
  *
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
+ * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class InformatieobjectStatusLifecycleTest extends TestCase {
 

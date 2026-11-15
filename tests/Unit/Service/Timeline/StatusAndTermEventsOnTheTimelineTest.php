@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -51,6 +51,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService as CaseStatusStore calls it.
@@ -68,7 +70,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Read one object.
@@ -79,7 +81,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -95,6 +97,12 @@ interface StatusStoreObjectServiceStub {
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  */
 class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 
@@ -162,7 +170,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAStatusMoveReachesTheTimeline(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -190,6 +198,64 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	}//end testAStatusMoveReachesTheTimeline()
 
 	/**
+	 * A status the organisation gave public words to is announced, in those words.
+	 *
+	 * BOTH HALVES ARE ASSERTED, AND THEY ARE ONE DECISION. Turning the flag
+	 * public without changing the sentence would hand the applicant the
+	 * administered from-and-to names of a workflow they are not part of, which
+	 * is a leak that reads exactly like a feature.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAStatusWithPublicWordsIsAnnouncedInThem(): void {
+		$store = $this->statusStore(actor: 'handler', publicLabel: 'In behandeling');
+
+		$store->writeStatusRecord(
+			caseId: 'case-1',
+			toStatus: 'st-behandeling',
+			fromStatus: 'st-intake',
+			label: 'Start behandeling',
+			comment: 'Stukken compleet',
+			evaluatedGuards: [],
+			noWorkflowTemplate: false,
+		);
+
+		self::assertSame('public', $this->seen['visibility']);
+		self::assertSame('Status: In behandeling', $this->seen['message']);
+		self::assertStringNotContainsString('Intake', $this->seen['message']);
+	}//end testAStatusWithPublicWordsIsAnnouncedInThem()
+
+	/**
+	 * A status with no public words stays inside, and `name` is not a fallback.
+	 *
+	 * Falling back to the administered name would announce every status the
+	 * moment a case type forgot to fill a public label in, so the absence is
+	 * asserted rather than assumed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAStatusWithoutPublicWordsStaysInside(): void {
+		$store = $this->statusStore(actor: 'handler');
+
+		$store->writeStatusRecord(
+			caseId: 'case-1',
+			toStatus: 'st-behandeling',
+			fromStatus: 'st-intake',
+			label: 'Start behandeling',
+			comment: '',
+			evaluatedGuards: [],
+			noWorkflowTemplate: false,
+		);
+
+		self::assertSame('internal', $this->seen['visibility']);
+		self::assertSame('Status gewijzigd van Intake naar Behandeling', $this->seen['message']);
+	}//end testAStatusWithoutPublicWordsStaysInside()
+
+	/**
 	 * The actor the caller names wins over the signed-in session.
 	 *
 	 * `writeStatusRecord()` takes an actor because the four-eyes rule needs to
@@ -199,7 +265,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheActorTheCallerNamesWinsOverTheSession(): void {
 		$store = $this->statusStore(actor: 'session-user');
@@ -227,7 +293,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheStatusSentenceCarriesNamesRatherThanIds(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -255,7 +321,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheStatusRecord(): void {
 		$this->armTimeline(answer: '');
@@ -282,7 +348,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -316,7 +382,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheTermEvent(): void {
 		$this->armTimeline(answer: '');
@@ -346,7 +412,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAPhaseTermStartReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -380,7 +446,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRewritingAnExistingTermAnnouncesNoStart(): void {
 		$service = $this->termService();
@@ -403,7 +469,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventWithoutAReadableCaseWritesNoEntry(): void {
 		$service = $this->termService();
@@ -422,22 +488,32 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	/**
 	 * A CaseStatusStore over two named statuses and a capturing writer.
 	 *
-	 * @param string $actor The signed-in user id, '' for nobody.
+	 * @param string $actor       The signed-in user id, '' for nobody.
+	 * @param string $publicLabel The words `st-behandeling` is announced in, '' when it is not announced.
 	 *
 	 * @return CaseStatusStore The store under test.
 	 */
-	private function statusStore(string $actor): CaseStatusStore {
+	private function statusStore(string $actor, string $publicLabel = ''): CaseStatusStore {
 		$objectService = $this->createMock(StatusStoreObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (array $object, string $register, string $schema): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return array_merge($object, ['id' => 'record-1']);
 			}
 		);
 		$objectService->method('find')->willReturnCallback(
-			static function (string $id, mixed $register = null, mixed $schema = null): array {
+			static function (string $id, ?ObjectFindOptions $options = null) use ($publicLabel): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				$behandeling = ['id' => 'st-behandeling', 'name' => 'Behandeling'];
+				if ($publicLabel !== '') {
+					$behandeling['publicLabel'] = $publicLabel;
+				}
+
 				return ([
 					'st-intake' => ['id' => 'st-intake', 'name' => 'Intake'],
-					'st-behandeling' => ['id' => 'st-behandeling', 'name' => 'Behandeling'],
+					'st-behandeling' => $behandeling,
 				][$id] ?? []);
 			}
 		);

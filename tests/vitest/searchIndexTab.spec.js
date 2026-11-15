@@ -99,9 +99,11 @@ describe('SearchIndexTab', () => {
 
 		expect(wrapper.find('[data-testid="search-index-tables"]').text()).toBe('2')
 		expect(wrapper.find('[data-testid="search-index-indexes"]').text()).toBe('2')
-		expect(wrapper.find('[data-testid="search-index-last-run"]').text()).toBe(
-			'2026-09-15T22:00:00+00:00',
-		)
+		// A date a person reads, not the ISO string the API carries.
+		const lastRun = wrapper.find('[data-testid="search-index-last-run"]').text()
+		expect(lastRun).toContain('2026')
+		expect(lastRun).not.toBe('2026-09-15T22:00:00+00:00')
+		expect(lastRun).not.toBe('')
 	})
 
 	it('says a rebuild is safe when the platform can do it concurrently', async () => {
@@ -148,5 +150,18 @@ describe('SearchIndexTab', () => {
 		expect(wrapper.find('[data-testid="search-index-tables"]').exists()).toBe(
 			false,
 		)
+	})
+})
+
+describe('the search index figures, as the board draws them', () => {
+	it('sets label over value at the font leading, a 14px label and a 15px value', async () => {
+		const { readFileSync } = await import('node:fs')
+		const { resolve } = await import('node:path')
+		const tab = readFileSync(resolve(__dirname, '../../src/views/settings/tabs/SearchIndexTab.vue'), 'utf8')
+		const rule = (sel) => tab.slice(tab.indexOf(`${sel} {`), tab.indexOf('}', tab.indexOf(`${sel} {`)))
+		expect(rule('.search-index__figures')).toContain('line-height: normal;')
+		expect(rule('.search-index__figures')).toContain('padding: 0;')
+		expect(rule('.search-index__figures dt')).toContain('font-size: 14px;')
+		expect(rule('.search-index__figures dd')).toContain('font-size: 15px;')
 	})
 })

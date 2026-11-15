@@ -45,6 +45,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class BezwaarTermijnSchedulerTest extends TestCase {
 	use MakesCaseDateNormaliser;

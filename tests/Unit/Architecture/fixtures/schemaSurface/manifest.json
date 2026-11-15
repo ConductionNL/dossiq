@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "CaseDetail",
+      "route": "/cases/:id",
+      "type": "detail",
+      "config": { "register": "fixture", "schema": "shownCase" }
+    }
+  ]
+}

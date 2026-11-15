@@ -21,10 +21,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import {
-	fieldRoleRows,
-	roleRuleSentence,
-} from '../../src/utils/fieldRoleRules.js'
+import { fieldRoleRows, roleRuleSentence } from '../../src/utils/fieldRoleRules.js'
 
 /** The five fields the change's worked example is about. */
 const WORKED_EXAMPLE = [
@@ -136,7 +133,9 @@ describe('no dossiq code decides any of it', () => {
 					`${field}[^\\n]*(isInGroup|inGroup|hasGroup|groups\\.includes|OC\\.getCurrentUser)`,
 				)
 				if (pattern.test(body)) {
-					findings.push(`${path.relative(src, file)} branches on a role for ${field}`)
+					findings.push(
+						`${path.relative(src, file)} branches on a role for ${field}`,
+					)
 				}
 			})
 		})

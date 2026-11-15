@@ -1,0 +1,398 @@
+{
+    "full committee, created": {
+        "answer": {
+            "id": "gb-1"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-1",
+                "name": "Commissie sociaal domein",
+                "bodyType": "advisory-body",
+                "domain": "social_domain",
+                "active": true,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13",
+                    "quorum": 3,
+                    "termStart": "2026-01-01"
+                },
+                "members": [
+                    {
+                        "uid": "alice",
+                        "role": "chair"
+                    },
+                    {
+                        "uid": "carol",
+                        "role": "secretary",
+                        "external": true
+                    },
+                    {
+                        "uid": "dave",
+                        "role": "member",
+                        "external": false
+                    },
+                    {
+                        "uid": "bob",
+                        "role": "member"
+                    }
+                ],
+                "actorId": "eve",
+                "correlationId": "cmte-1"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq committees: governance body resolved",
+                {
+                    "externalReference": "cmte-1",
+                    "governanceBodyId": "gb-1",
+                    "created": true
+                }
+            ]
+        ]
+    },
+    "minimal committee, updated": {
+        "answer": {
+            "id": "gb-2"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq committees: governance body resolved",
+                {
+                    "externalReference": "cmte-2",
+                    "governanceBodyId": "gb-2",
+                    "created": false
+                }
+            ]
+        ]
+    },
+    "id under @self": {
+        "answer": {
+            "id": "gb-1"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "self-1",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "",
+                "correlationId": "self-1"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq committees: governance body resolved",
+                {
+                    "externalReference": "self-1",
+                    "governanceBodyId": "gb-1",
+                    "created": true
+                }
+            ]
+        ]
+    },
+    "top-level id wins over @self": {
+        "answer": {
+            "id": "gb-1"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq committees: governance body resolved",
+                {
+                    "externalReference": "cmte-2",
+                    "governanceBodyId": "gb-1",
+                    "created": true
+                }
+            ]
+        ]
+    },
+    "no id": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs an id before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "empty id": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs an id before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "no name": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs a name before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "blank name": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs a name before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "id checked before name": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs an id before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "name checked before active": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee needs a name before it can be raised as a governance body",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "no active": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee must state `active` as a boolean before it can be raised",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "active as a string": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "A committee must state `active` as a boolean before it can be raised",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [],
+        "logs": []
+    },
+    "not handled": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "Committee service unavailable: the decision app did not handle the governance-body command.",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq committees: the decision app did not handle the command; failing closed",
+                {
+                    "externalReference": "cmte-2",
+                    "handled": false
+                }
+            ]
+        ]
+    },
+    "handled without an id": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "Committee service unavailable: the decision app did not handle the governance-body command.",
+            "code": 0,
+            "previous": null
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq committees: the decision app did not handle the command; failing closed",
+                {
+                    "externalReference": "cmte-2",
+                    "handled": true
+                }
+            ]
+        ]
+    },
+    "dispatch throws": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "Committee service error: bus down",
+            "code": 0,
+            "previous": "bus down"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [],
+                "actorId": "eve",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq committees: GovernanceBodyRequestedEvent dispatch failed",
+                {
+                    "externalReference": "cmte-2",
+                    "error": "bus down"
+                }
+            ]
+        ]
+    },
+    "domain unreadable": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "Committee service error: Object of class stdClass could not be converted to string",
+            "code": 0,
+            "previous": "Object of class stdClass could not be converted to string"
+        },
+        "commands": [],
+        "logs": [
+            [
+                "error",
+                "Dossiq committees: GovernanceBodyRequestedEvent dispatch failed",
+                {
+                    "externalReference": "cmte-2",
+                    "error": "Object of class stdClass could not be converted to string"
+                }
+            ]
+        ]
+    },
+    "members not a list": {
+        "answer": {
+            "id": "gb-1"
+        },
+        "commands": [
+            {
+                "class": "OCA\\Decidiq\\Event\\GovernanceBodyRequestedEvent",
+                "sourceApp": "dossiq",
+                "externalReference": "cmte-2",
+                "name": "Kamer 2",
+                "bodyType": "advisory-body",
+                "domain": "general",
+                "active": false,
+                "attributes": {
+                    "statutoryBasis": "Awb 7:13"
+                },
+                "members": [
+                    {
+                        "uid": "alice",
+                        "role": "secretary",
+                        "external": true
+                    }
+                ],
+                "actorId": "",
+                "correlationId": "cmte-2"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq committees: governance body resolved",
+                {
+                    "externalReference": "cmte-2",
+                    "governanceBodyId": "gb-1",
+                    "created": true
+                }
+            ]
+        ]
+    }
+}

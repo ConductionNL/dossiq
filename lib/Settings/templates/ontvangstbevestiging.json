@@ -1,7 +1,7 @@
 {
   "id": "ontvangstbevestiging",
   "title": "Ontvangstbevestiging",
-  "description": "Acknowledgement of receipt (Awb 4:3a): confirms an application has arrived, names what was received, its reference and the decision deadline, how to follow the case and who to contact.",
+  "description": "Bevestigt dat een aanvraag binnen is, met het kenmerk en de beslistermijn.",
   "category": "document",
   "version": "2.0.0",
   "documentType": "Ontvangstbevestiging",

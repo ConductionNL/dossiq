@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -42,6 +42,7 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for the post-persist derived-status timeline writer.
@@ -53,6 +54,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  */
 class DerivedStatusTimelineListenerTest extends TestCase {
 
@@ -128,10 +131,17 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ([
 					'st-open' => ['id' => 'st-open', 'name' => 'In behandeling'],
 					'st-compleet' => ['id' => 'st-compleet', 'name' => 'Compleet'],
+					'st-besloten' => [
+						'id' => 'st-besloten',
+						'name' => 'Besloten',
+						'publicLabel' => 'Besluit genomen',
+					],
 				][$id] ?? []);
 			}
 		};
@@ -159,7 +169,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testALandedDerivationReachesTheTimeline(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -182,7 +192,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivedMoveNamesNoActorAndInventsNoReason(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -195,6 +205,27 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	}//end testADerivedMoveNamesNoActorAndInventsNoReason()
 
 	/**
+	 * A derived move into an announced status is announced, in its public words.
+	 *
+	 * The reason it was derived does not travel with it: "omdat de zaak
+	 * daaraan voldoet" is the workflow explaining itself to a handler, and the
+	 * applicant is not the audience for that sentence.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testADerivedMoveIntoAnAnnouncedStatusIsPublic(): void {
+		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-besloten');
+
+		$this->listener->handle($this->saved(caseId: 'case-1', status: 'st-besloten'));
+
+		self::assertSame(1, $this->writes);
+		self::assertSame('public', $this->seen['visibility']);
+		self::assertSame('Status: Besluit genomen', $this->seen['message']);
+	}//end testADerivedMoveIntoAnAnnouncedStatusIsPublic()
+
+	/**
 	 * A move nobody staged writes nothing.
 	 *
 	 * This is what stops the timeline saying twice what happened once: the
@@ -204,7 +235,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAMoveNobodyDerivedIsNotRecordedTwice(): void {
 		$this->listener->handle($this->saved(caseId: 'case-1', status: 'st-compleet'));
@@ -217,7 +248,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivationThatDidNotLandIsNotRecorded(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -232,7 +263,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAStagedMoveIsRecordedOnlyOnce(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -248,7 +279,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivationThatChangesNothingStagesNothing(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-compleet', toStatus: 'st-compleet');

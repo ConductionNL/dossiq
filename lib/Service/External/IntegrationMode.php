@@ -13,7 +13,7 @@
  *   - `log`       dormant Log adapter (default) — no external call
  *   - `mock`      offline mock (e.g. ghcr.io/brp-api/personen-mock)
  *   - `test`      hosted test environment (BRP proefomgeving, api.kvk.nl/test)
- *   - `simulator` local auth simulator (DigiD/eHerkenning, capped at beta)
+ *   - `simulator` local simulator tier (no external call, capped at beta)
  *   - `preprod`   official preproductie (certificate-bound, manual/gated)
  *   - `live`      production (customer-side aansluiting — out of scope here)
  *
@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\External;
 
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCP\IAppConfig;
 
 /**
@@ -47,16 +48,11 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
  */
-final class IntegrationMode {
+final class IntegrationMode implements IntegrationModeInterface {
 	/**
 	 * Dossiq app id.
 	 */
 	public const APP_ID = 'dossiq';
-
-	/**
-	 * Dormant tier — no external call. Default for every seam.
-	 */
-	public const LOG = 'log';
 
 	/**
 	 * Offline mock tier (docker mock).
@@ -64,12 +60,7 @@ final class IntegrationMode {
 	public const MOCK = 'mock';
 
 	/**
-	 * Hosted test-environment tier.
-	 */
-	public const TEST = 'test';
-
-	/**
-	 * Local auth-simulator tier (DigiD/eHerkenning; capped at beta).
+	 * Local simulator tier (capped at beta).
 	 */
 	public const SIMULATOR = 'simulator';
 
@@ -77,11 +68,6 @@ final class IntegrationMode {
 	 * Official preproductie tier (certificate-bound, manual/gated).
 	 */
 	public const PREPROD = 'preprod';
-
-	/**
-	 * Production tier (customer-side aansluiting).
-	 */
-	public const LIVE = 'live';
 
 	/**
 	 * Constructor.

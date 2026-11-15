@@ -32,13 +32,18 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\Transfer\FederatedIdempotency;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
+use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Fake "saved object" — implements the jsonSerialize()/getUuid() shape the
@@ -81,6 +86,7 @@ final class CtfFakeObjectService {
 	 * @return array<string, mixed>|null
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		return $this->store[(string)$id] ?? null;
 	}//end find()
 
@@ -89,7 +95,10 @@ final class CtfFakeObjectService {
 	 *
 	 * @return CtfFakeTransferObject
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('transfer-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->store[(string)$id] = $object;
@@ -221,6 +230,8 @@ final class CtfFakeFederatedShareMapper {
  *
  * @uses \OCA\Dossiq\Service\Transfer\TransferRegisterGateway
  * @uses \OCA\Dossiq\Service\Transfer\TransferShareBroker
+ * @uses \OCA\Dossiq\Service\Transfer\FederatedIdempotency
+ * @uses \OCA\Dossiq\Service\CaseTransfer\TransferStore
  */
 class CaseTransferServiceFederationTest extends TestCase {
 	private CtfFakeObjectService $objects;
@@ -254,10 +265,9 @@ class CaseTransferServiceFederationTest extends TestCase {
 		LoggerInterface $logger,
 		TenantAuditTrailService $auditTrail,
 	): CaseTransferService {
-		$gateway = new TransferRegisterGateway($appManager, $container, $logger);
+		$gateway = new TransferRegisterGateway($appManager, $container, $logger, $settings);
 
 		return new CaseTransferService(
-			settingsService: $settings,
 			gateway: $gateway,
 			shareBroker: new TransferShareBroker($gateway, $logger),
 			logger: $logger,
@@ -267,8 +277,43 @@ class CaseTransferServiceFederationTest extends TestCase {
 			// handover, so a stub that answers nothing is the whole
 			// requirement here.
 			internal: self::createStub(InternalHandover::class),
+			// The chain and the gate are stubbed here BECAUSE THIS TEST IS
+			// ABOUT NEITHER. Its subject is the federated idempotency and the
+			// token; the holding it writes and the consent it needs are
+			// watched by CaseCustodyChainTest and CaseTransferConsentGateTest
+			// against a real in-memory register. A gate that answered nothing
+			// would refuse every federated transfer here and redden the wrong
+			// assertion, so it answers the allowing verdict explicitly.
+			custody: self::createStub(CaseCustodyChain::class),
+			consent: self::allowingConsentGate(),
+			// A REAL idempotency over the SAME gateway. This test's subject is
+			// the federated key and the token, and both are still watched
+			// through the same register double: only the wiring line moved.
+			idempotency: new FederatedIdempotency($gateway),
 		);
 	}//end makeTransferService()
+
+	/**
+	 * A consent gate that lets every hand-off through.
+	 *
+	 * @return CaseTransferConsentGate&\PHPUnit\Framework\MockObject\Stub The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn(
+			[
+				'allowed' => true,
+				'rule' => '',
+				'sentence' => '',
+				'consent' => null,
+				'scope' => [],
+				'until' => '',
+				'crossesOrganisation' => true,
+			]
+		);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void

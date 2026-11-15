@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -40,14 +40,20 @@ namespace OCA\Dossiq\Service\Timeline;
 
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCP\IUserSession;
-use Throwable;
 
 /**
  * Writes one `statuswijziging` entry per recorded status move.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class StatusMoveEntry {
+
+	/**
+	 * The name a status is shown under.
+	 *
+	 * @var StatusDisplayName
+	 */
+	private readonly StatusDisplayName $statusNames;
 
 	/**
 	 * Constructor.
@@ -61,6 +67,7 @@ class StatusMoveEntry {
 		private readonly StatusTypeLookup $statuses,
 		private readonly IUserSession $userSession,
 	) {
+		$this->statusNames = new StatusDisplayName(statuses: $statuses);
 	}//end __construct()
 
 	/**
@@ -82,7 +89,7 @@ class StatusMoveEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function record(
 		string $caseId,
@@ -97,10 +104,12 @@ class StatusMoveEntry {
 			return;
 		}
 
+		$publicLabel = $this->statuses->announcedLabelOf(statusTypeId: $toStatus);
+
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::STATUS_CHANGE,
-			message: $this->sentence(toStatus: $toStatus, fromStatus: $fromStatus),
+			message: $this->sentence(toStatus: $toStatus, fromStatus: $fromStatus, publicLabel: $publicLabel),
 			fields: [
 				'from' => $fromStatus,
 				'to' => $toStatus,
@@ -109,19 +118,52 @@ class StatusMoveEntry {
 				'label' => $label,
 				'statusRecordId' => (string)($record['id'] ?? ($record['@self']['id'] ?? '')),
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: $this->visibility(publicLabel: $publicLabel),
 		);
 	}//end record()
 
 	/**
-	 * What a handler reads on the line.
+	 * Which side of the counter a status move belongs on.
 	 *
-	 * @param string $toStatus   The statusType entered.
-	 * @param string $fromStatus The statusType left, '' on a first status.
+	 * A status the organisation gave public words to is a status the applicant
+	 * is meant to hear about. Every other move stays inside, which is the
+	 * default the whole feed runs on.
+	 *
+	 * @param string $publicLabel The status's public label, '' when it has none.
+	 *
+	 * @return string `internal` or `public`.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function visibility(string $publicLabel): string {
+		if ($publicLabel === '') {
+			return CaseTimeline::INTERNAL;
+		}
+
+		return CaseTimeline::PUBLIC_ENTRY;
+	}//end visibility()
+
+	/**
+	 * What a reader sees on the line.
+	 *
+	 * A PUBLIC ENTRY READS THE PUBLIC WORDS, AND ONLY THOSE. One entry is read
+	 * by the handler and by the applicant, so a public move that spelled out
+	 * the administered from-and-to names would hand the applicant the internal
+	 * vocabulary of a workflow they are not part of. A status that was given
+	 * public words is announced in them: "Status: In behandeling". Every other
+	 * move keeps the handler's sentence, because nobody outside reads it.
+	 *
+	 * @param string $toStatus    The statusType entered.
+	 * @param string $fromStatus  The statusType left, '' on a first status.
+	 * @param string $publicLabel The status's public label, '' when it has none.
 	 *
 	 * @return string The sentence.
 	 */
-	private function sentence(string $toStatus, string $fromStatus): string {
+	private function sentence(string $toStatus, string $fromStatus, string $publicLabel = ''): string {
+		if ($publicLabel !== '') {
+			return 'Status: ' . $publicLabel;
+		}
+
 		$to = $this->statusName(statusTypeId: $toStatus);
 		$from = $this->statusName(statusTypeId: $fromStatus);
 
@@ -144,21 +186,7 @@ class StatusMoveEntry {
 	 * @return string The name, the id, or '' when nothing was asked for.
 	 */
 	private function statusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		try {
-			$name = trim($this->statuses->nameFor(statusTypeId: $statusTypeId));
-		} catch (Throwable $e) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return $statusTypeId;
-		}
-
-		return $name;
+		return $this->statusNames->of(statusTypeId: $statusTypeId);
 	}//end statusName()
 
 	/**

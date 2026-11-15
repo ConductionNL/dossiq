@@ -2,20 +2,21 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Taking a case from a list row, kept out of `customComponents.js` so it can
- * be tested without mounting the app: that file imports every surviving custom
- * page and tab, so importing it in a unit test pulls the whole component tree
- * (and every `@nextcloud/vue` module-eval side effect) in behind one function.
- * The registry entry is still declared there, which is what the manifest
+ * Taking a case from a list row, kept out of `registry.js` so it can be tested
+ * without mounting the app: that file imports every surviving custom page and
+ * tab, so importing it in a unit test pulls the whole component tree (and every
+ * `@nextcloud/vue` module-eval side effect) in behind one function. The
+ * `kind: 'handler'` entry is still declared there, which is what the manifest
  * resolves against.
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { announceCasesChanged } from './casesChanged.js'
 
 /**
  * Row-action handler for the Queue and Cases indexes: take this case.
@@ -40,7 +41,7 @@ import { generateUrl } from '@nextcloud/router'
  * @param {{actionId: string, item: object}} scope The row the action was used on.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function claimCase({ item }) {
 	const caseId = String(item?.id ?? item?.['@self']?.id ?? '')
@@ -55,10 +56,8 @@ export async function claimCase({ item }) {
 		showSuccess(t('dossiq', 'You are now handling this case.'))
 		// The same signal the reassign and bulk-transition handlers send: the
 		// row the user just claimed no longer belongs on the queue, and leaving
-		// it on screen invites a second claim on a case that already moved. The
-		// list's own refresh comes from its live-collection subscription; this
-		// event is the app-level notice beside it.
-		window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+		// it on screen invites a second claim on a case that already moved.
+		announceCasesChanged(caseId)
 	} catch (err) {
 		const refusal = String(err?.response?.data?.error ?? '')
 		showError(

@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
  * @uses \OCA\Dossiq\Service\AiService
+ * @uses   \OCA\Dossiq\Service\Ai\AiPromptFactory
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  */
 class AiServicePiiDetectionTest extends TestCase {
 	/**

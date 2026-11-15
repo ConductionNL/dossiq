@@ -49,7 +49,7 @@ English.
 - **AND** it SHALL carry the sentence about the first working day
 
 #### Scenario: the mail says the same thing
-@e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
+@e2e exclude no HTTP trigger; the ontvangstbevestiging is sent by AcknowledgementDispatchJob, a background job, so there is nothing for a browser to press. Asserted in tests/Unit/Service/IntakeConfirmationTextTest.php, in both languages
 
 - **GIVEN** the same request
 - **WHEN** the ontvangstbevestiging is sent
@@ -57,7 +57,7 @@ English.
 - **AND** the start it names SHALL be the one stored on the case
 
 #### Scenario: no explanation when none is needed
-@e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
+@e2e exclude the same background job; asserted in tests/Unit/Service/IntakeConfirmationTextTest.php::testNoExplanationWhenNoneIsNeeded
 
 - **GIVEN** a request filed on Tuesday at ten
 - **WHEN** the confirmation appears

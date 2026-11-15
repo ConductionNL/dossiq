@@ -13,7 +13,7 @@
 -->
 <template>
 	<div class="stuf-endpoints">
-		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
+		<table v-if="endpoints.length" class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Name') }}</th>
@@ -72,13 +72,17 @@
 						</span>
 					</td>
 				</tr>
-				<tr v-if="!endpoints.length">
-					<td colspan="8" class="stuf-endpoints__empty">
-						{{ t('dossiq', 'No StUF endpoints configured yet.') }}
-					</td>
-				</tr>
 			</tbody>
 		</table>
+		<!-- Nothing configured: the board's empty state, not an empty table. -->
+		<NcEmptyContent
+			v-else
+			:name="t('dossiq', 'No StUF endpoints configured yet.')"
+			data-testid="stuf-endpoints-empty">
+			<template #icon>
+				<ServerNetworkOutline :size="48" />
+			</template>
+		</NcEmptyContent>
 		<p class="stuf-endpoints__note">
 			{{
 				t(
@@ -95,14 +99,15 @@
 
 <script>
 import { showError } from '@nextcloud/dialogs'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent } from '@nextcloud/vue'
+import ServerNetworkOutline from 'vue-material-design-icons/ServerNetworkOutline.vue'
 import { testStufEndpoint } from '../../services/connectionTestApi.js'
 import { listEndpoints } from '../../services/stufApi.js'
 import { connectionLabel } from '../../utils/starterStates.js'
 
 export default {
 	name: 'StufEndpoints',
-	components: { NcButton },
+	components: { NcButton, NcEmptyContent, ServerNetworkOutline },
 	data() {
 		return {
 			endpoints: [],
@@ -188,6 +193,12 @@ export default {
 		healthClass(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return 'stuf-endpoints__health--degraded'
+			}
+			if (state === 'integriq') {
+				return 'stuf-endpoints__health--ok'
+			}
 			return 'stuf-endpoints__health--' + state
 		},
 
@@ -200,6 +211,12 @@ export default {
 		healthLabel(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return t('dossiq', 'No integriq source')
+			}
+			if (state === 'integriq') {
+				return t('dossiq', 'Sent through integriq')
+			}
 			if (state === 'circuit_open') {
 				return t('dossiq', 'Circuit open')
 			}
@@ -225,11 +242,6 @@ export default {
 	text-align: left;
 }
 
-.stuf-endpoints__empty {
-	color: var(--color-text-maxcontrast);
-	font-style: italic;
-}
-
 .stuf-endpoints__health {
 	display: inline-block;
 	padding: 2px 8px;
@@ -240,27 +252,28 @@ export default {
 
 .stuf-endpoints__health--ok {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .stuf-endpoints__health--degraded {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .stuf-endpoints__health--circuit_open {
 	background: var(--color-error);
-	color: white;
+	color: var(--color-error-text);
 }
 
 .stuf-endpoints__note {
 	color: var(--color-text-maxcontrast);
-	margin-top: 12px;
-	font-size: 13px;
+	margin-top: 16px;
+	font-size: 14px;
+	line-height: 1.5;
 }
 
 .stuf-endpoints__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 

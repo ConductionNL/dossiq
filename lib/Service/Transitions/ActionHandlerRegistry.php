@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Registry of action handlers keyed by action type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T09
  */
 class ActionHandlerRegistry {
 
@@ -45,40 +45,35 @@ class ActionHandlerRegistry {
 	/**
 	 * Constructor — wires the built-in handlers.
 	 *
-	 * @param SendEmailHandler $sendEmail Built-in email handler
+	 * Only what a dossiq case can do and no other app owns. The mail,
+	 * notification, field, decision and webhook handlers left with change
+	 * flow-nodes-to-their-owners: their types now run as their owners' nodes
+	 * through {@see \OCA\Dossiq\Service\Flow\RetiredActionRunner}.
+	 *
 	 * @param CreateTaskHandler $createTask Built-in task handler
 	 * @param CreateSubCaseHandler $createSubCase Built-in sub-case handler
-	 * @param WebhookHandler $webhook Built-in webhook handler
-	 * @param SetFieldHandler $setField Built-in field-set handler
-	 * @param NotifyHandler $notify Built-in notification handler
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
-	 * @param EvaluateDecisionHandler $evaluateDecision DMN decision-evaluation handler
 	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
+	 * @param RaiseDecisionHandler $raiseDecision Hands the case to the decision app as a decision of a configured type
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function __construct(
-		SendEmailHandler $sendEmail,
 		CreateTaskHandler $createTask,
 		CreateSubCaseHandler $createSubCase,
-		WebhookHandler $webhook,
-		SetFieldHandler $setField,
-		NotifyHandler $notify,
 		BesluitvormingPublishHandler $decisionPublish,
-		EvaluateDecisionHandler $evaluateDecision,
 		ResumeTermHandler $resumeTerm,
+		RaiseDecisionHandler $raiseDecision,
 	) {
 		$this->handlers = [
-			'sendEmail' => $sendEmail,
 			'createTask' => $createTask,
 			'createSubCase' => $createSubCase,
-			'webhook' => $webhook,
-			'setField' => $setField,
-			'notify' => $notify,
 			'besluitvormingPublish' => $decisionPublish,
-			'evaluateDecision' => $evaluateDecision,
 			// Declared by a TASK rather than by a transition: finishing the
 			// task that processed the aanvulling is what lifts the pause the
 			// aanvulling request put on the term.
 			'resumeTerm' => $resumeTerm,
+			'raiseDecision' => $raiseDecision,
 		];
 	}//end __construct()
 

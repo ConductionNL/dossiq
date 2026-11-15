@@ -22,19 +22,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\SentimentServiceInterface;
+
 /**
  * Trigger-word detection and sentiment scoring for KCC contactmomenten.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
-class SentimentService {
+class SentimentService implements SentimentServiceInterface {
 	/**
 	 * Trigger words that always warrant escalation when present.
 	 */
@@ -73,38 +75,12 @@ class SentimentService {
 	 *
 	 * @return array{score: float, label: string, triggers: array<int, string>, escalationRecommended: bool, escalationLevel: string, snippet: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function analyzeSentiment(string $text, array $triggerWords): array {
 		$haystack = ' ' . mb_strtolower(trim($text)) . ' ';
-
-		$foundTriggers = [];
-		foreach ($triggerWords as $word) {
-			$needle = mb_strtolower(trim((string)$word));
-			if ($needle === '') {
-				continue;
-			}
-
-			if ($this->containsWord(paddedHaystack: $haystack, needle: $needle) === true) {
-				$foundTriggers[] = $needle;
-			}
-		}
-
-		$foundTriggers = array_values(array_unique($foundTriggers));
-
-		$score = 0.0;
-		$matches = 0;
-		foreach (self::WORD_WEIGHTS as $word => $weight) {
-			if ($this->containsWord(paddedHaystack: $haystack, needle: $word) === true) {
-				$score += $weight;
-				$matches++;
-			}
-		}
-
-		if ($matches > 0) {
-			// Average and clamp to [-1, 1].
-			$score = max(-1.0, min(1.0, ($score / max(1, (int)ceil($matches / 2)))));
-		}
+		$foundTriggers = $this->triggersIn(haystack: $haystack, triggerWords: $triggerWords);
+		$score = $this->polarityOf(haystack: $haystack);
 
 		$escalate = $this->shouldEscalate(score: $score, triggers: $foundTriggers);
 
@@ -119,6 +95,55 @@ class SentimentService {
 	}//end analyzeSentiment()
 
 	/**
+	 * The configured trigger words the text contains, lower-cased, each once.
+	 *
+	 * @param string            $haystack     The lower-cased text, padded with spaces.
+	 * @param array<int, mixed> $triggerWords The configured trigger words.
+	 *
+	 * @return array<int, string> The triggers found.
+	 */
+	private function triggersIn(string $haystack, array $triggerWords): array {
+		$foundTriggers = [];
+		foreach ($triggerWords as $word) {
+			$needle = mb_strtolower(trim((string)$word));
+			if ($needle === '') {
+				continue;
+			}
+
+			if ($this->containsWord(paddedHaystack: $haystack, needle: $needle) === true) {
+				$foundTriggers[] = $needle;
+			}
+		}
+
+		return array_values(array_unique($foundTriggers));
+	}//end triggersIn()
+
+	/**
+	 * The text's polarity from the weighted words it contains, in [-1, 1].
+	 *
+	 * @param string $haystack The lower-cased text, padded with spaces.
+	 *
+	 * @return float The score.
+	 */
+	private function polarityOf(string $haystack): float {
+		$score = 0.0;
+		$matches = 0;
+		foreach (self::WORD_WEIGHTS as $word => $weight) {
+			if ($this->containsWord(paddedHaystack: $haystack, needle: $word) === true) {
+				$score += $weight;
+				$matches++;
+			}
+		}
+
+		if ($matches > 0) {
+			// Average and clamp to [-1, 1].
+			$score = max(-1.0, min(1.0, ($score / max(1, (int)ceil($matches / 2)))));
+		}
+
+		return $score;
+	}//end polarityOf()
+
+	/**
 	 * Decide whether a contact should be escalated.
 	 *
 	 * @param float $score The sentiment score.
@@ -126,13 +151,24 @@ class SentimentService {
 	 *
 	 * @return bool True when escalation is recommended.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function shouldEscalate(float $score, array $triggers): bool {
 		if ($score <= -0.5) {
 			return true;
 		}
 
+		return self::hasSeriousTrigger(triggers: $triggers);
+	}//end shouldEscalate()
+
+	/**
+	 * Whether any trigger found is one of the serious ones.
+	 *
+	 * @param array<int, string> $triggers The triggers found.
+	 *
+	 * @return bool True when a serious trigger is among them.
+	 */
+	private static function hasSeriousTrigger(array $triggers): bool {
 		foreach ($triggers as $trigger) {
 			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
 				return true;
@@ -140,7 +176,7 @@ class SentimentService {
 		}
 
 		return false;
-	}//end shouldEscalate()
+	}//end hasSeriousTrigger()
 
 	/**
 	 * Derive the recommended escalation level.
@@ -150,13 +186,11 @@ class SentimentService {
 	 *
 	 * @return string One of geen|geel|oranje|rood.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function getEscalationLevel(float $score, array $triggers): string {
-		foreach ($triggers as $trigger) {
-			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
-				return 'rood';
-			}
+		if (self::hasSeriousTrigger(triggers: $triggers) === true) {
+			return 'rood';
 		}
 
 		if ($score < -0.6) {
@@ -183,10 +217,8 @@ class SentimentService {
 	 * @return string One of positief|neutraal|negatief|boos.
 	 */
 	private function labelFor(float $score, array $triggers): string {
-		foreach ($triggers as $trigger) {
-			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
-				return 'boos';
-			}
+		if (self::hasSeriousTrigger(triggers: $triggers) === true) {
+			return 'boos';
 		}
 
 		if ($score <= -0.6) {

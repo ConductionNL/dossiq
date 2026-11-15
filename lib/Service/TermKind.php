@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service;
 /**
  * The kind a term instance carries (REQ-TERM-060).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 final class TermKind {
 	/**
@@ -73,6 +73,33 @@ final class TermKind {
 	public const PHASE = 'phase';
 
 	/**
+	 * The promise that you hear from us within so many days.
+	 *
+	 * A first response is a term like any other, which is exactly why it is a
+	 * kind here rather than a second mechanism beside the four. It used to
+	 * exist for complaints alone, computed from a private constant in
+	 * `ComplaintService`, so the promise every service desk makes was kept for
+	 * one case type and measured for none.
+	 *
+	 * @var string
+	 */
+	public const FIRST_RESPONSE = 'firstResponse';
+
+	/**
+	 * The clock a decision's remedy runs on, started when the decision is sent.
+	 *
+	 * Its own kind and not a phase term, because it is not a phase: it starts
+	 * when the besluit goes out and it runs against the DECISION, not against
+	 * the work. Modelled as a phase it would enter the phase strip and the
+	 * progress figure, and a closed case would read as unfinished for six
+	 * weeks. It is what makes "is this decision still open to bezwaar"
+	 * answerable from the case without arithmetic.
+	 *
+	 * @var string
+	 */
+	public const REMEDY = 'remedy';
+
+	/**
 	 * Every kind, in the order a case page reads them.
 	 *
 	 * @var array<int, string>
@@ -82,6 +109,8 @@ final class TermKind {
 		self::PLANNED,
 		self::INTERNAL,
 		self::PHASE,
+		self::FIRST_RESPONSE,
+		self::REMEDY,
 	];
 
 	/**
@@ -97,7 +126,7 @@ final class TermKind {
 	 *
 	 * @return bool True when the vocabulary knows it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isKnown(string $kind): bool {
 		return in_array($kind, self::ALL, true);
@@ -115,7 +144,7 @@ final class TermKind {
 	 *
 	 * @return string One of the four kinds.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function ofInstance(array $instance): string {
 		$kind = (string)($instance['kind'] ?? '');
@@ -140,7 +169,7 @@ final class TermKind {
 	 *
 	 * @return bool True only for the statutory term.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isCitizenVisible(string $kind): bool {
 		return $kind === self::STATUTORY;
@@ -153,7 +182,7 @@ final class TermKind {
 	 *
 	 * @return array<int, array<string, mixed>> The statutory ones, reindexed.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function citizenVisible(array $terms): array {
 		$visible = [];

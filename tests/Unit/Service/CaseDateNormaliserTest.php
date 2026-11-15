@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -38,15 +39,20 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class CaseDateNormaliserTest extends TestCase {
+	// The clock is a seam, so the zone assertions below do not change
+	// meaning with the hour they run at.
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * Build a normaliser whose tenant answers the given zone.
 	 *
 	 * @param string|null $tenantZone The administered zone, or null for none.
 	 * @param LoggerInterface|null $logger An optional logger to assert on.
+	 * @param string $appZone The app's own `timezone` setting.
 	 *
 	 * @return CaseDateNormaliser
 	 */
-	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null): CaseDateNormaliser {
+	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null, string $appZone = ''): CaseDateNormaliser {
 		$context = $this->createMock(originalClassName: TenantContext::class);
 		$context->method('isBound')->willReturn($tenantZone !== null);
 		$context->method('getTenantId')->willReturn('tenant-1');
@@ -61,12 +67,14 @@ class CaseDateNormaliserTest extends TestCase {
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnMap([['timezone', '', $appZone]]);
 
 		return new CaseDateNormaliser(
 			tenantContext: $context,
 			tenantConfiguration: $config,
 			settingsService: $settings,
 			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
+			time: $this->clockFixedAt(instant: self::CLOCK_AT_THE_DAY_BOUNDARY),
 		);
 	}
 
@@ -81,6 +89,20 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(
 			expected: 'Europe/Amsterdam',
 			actual: $this->normaliser(tenantZone: null)->timeZone()->getName()
+		);
+	}
+
+	/**
+	 * With no tenant bound, the app's own time zone setting is the zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function testNoTenantReadsTheAppTimeZone(): void {
+		self::assertSame(
+			expected: 'Europe/Brussels',
+			actual: $this->normaliser(tenantZone: null, appZone: 'Europe/Brussels')->timeZone()->getName()
 		);
 	}
 

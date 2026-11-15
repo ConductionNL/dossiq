@@ -43,6 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\BeschikkingImmutabilityListener
  *
  * @uses \OCA\Dossiq\Service\StateMachineService
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class BeschikkingImmutabilityListenerTest extends TestCase {
 	/**
@@ -237,6 +238,61 @@ class BeschikkingImmutabilityListenerTest extends TestCase {
 			'Recording a dispatch on a sent beschikking must be allowed'
 		);
 	}//end testProcessEventsStayAllowedAfterSigning()
+
+	/**
+	 * A correction writes its forward pointer on the signed beschikking it
+	 * replaces: the one field the freeze lets a successor write (REQ-BES-012).
+	 *
+	 * @return void
+	 */
+	public function testTheSuccessorPointerMayBeWrittenOnceAfterSigning(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'rationale' => 'origineel', 'supersededBy' => 'besch-2']),
+			$this->entity(['currentStatus' => 'sent', 'rationale' => 'origineel'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped(), 'Naming the successor must be allowed on a sent beschikking');
+	}//end testTheSuccessorPointerMayBeWrittenOnceAfterSigning()
+
+	/**
+	 * A replaced beschikking cannot be re-pointed or cleared: the chain is linear.
+	 *
+	 * @return void
+	 */
+	public function testTheSuccessorPointerCannotBeRewritten(): void {
+		$repoint = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-3']),
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-2'])
+		);
+		$clear = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => null]),
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-2'])
+		);
+
+		$this->listener->handle($repoint);
+		$this->listener->handle($clear);
+
+		$this->assertTrue($repoint->isPropagationStopped(), 'A second successor must be refused');
+		$this->assertTrue($clear->isPropagationStopped(), 'Clearing the successor must be refused');
+	}//end testTheSuccessorPointerCannotBeRewritten()
+
+	/**
+	 * The number a bezwaar cites cannot change after signing.
+	 *
+	 * @return void
+	 */
+	public function testTheNumberIsFrozenAfterSigning(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'signed', 'reference' => 'B-2026-000999']),
+			$this->entity(['currentStatus' => 'signed', 'reference' => 'B-2026-000123'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped(), 'A signed beschikking keeps its number');
+	}//end testTheNumberIsFrozenAfterSigning()
 
 	/**
 	 * Repeating a stored value changes nothing. The generic object API sends

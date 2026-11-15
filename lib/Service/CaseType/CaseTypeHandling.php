@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeHandlingInterface;
+
 /**
  * What happens to a case of this type: the group, the handler, the messages
  * and the intake screen.
@@ -50,7 +52,7 @@ namespace OCA\Dossiq\Service\CaseType;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-final class CaseTypeHandling {
+final class CaseTypeHandling implements CaseTypeHandlingInterface {
 
 	/**
 	 * The property holding the declared block.
@@ -69,6 +71,7 @@ final class CaseTypeHandling {
 	 */
 	public const READ_SWITCHES = [
 		'defaultGroup',
+		'teams',
 		'defaultHandler',
 		'automaticMessages',
 		'intakeScreen',
@@ -92,6 +95,7 @@ final class CaseTypeHandling {
 		'hersteltermijn-request',
 		'hersteltermijn-reminder',
 		'doorzending',
+		'niet-ontvankelijk',
 	];
 
 	/**
@@ -99,13 +103,21 @@ final class CaseTypeHandling {
 	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
-	 * @return array{defaultGroup: string, defaultHandler: string, automaticMessages: array<int, string>, intakeScreen: string}
+	 * @return array{
+	 *     defaultGroup: string,
+	 *     teams: array<int, string>,
+	 *     defaultHandler: string,
+	 *     automaticMessages: array<int, string>,
+	 *     intakeScreen: string
+	 * }
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function block(array $caseType): array {
 		return [
 			'defaultGroup' => $this->defaultGroup(caseType: $caseType),
+			'teams' => $this->teams(caseType: $caseType),
 			'defaultHandler' => $this->defaultHandler(caseType: $caseType),
 			'automaticMessages' => $this->automaticMessages(caseType: $caseType),
 			'intakeScreen' => $this->intakeScreen(caseType: $caseType),
@@ -148,7 +160,45 @@ final class CaseTypeHandling {
 	}//end defaultGroup()
 
 	/**
+	 * The Nextcloud groups that handle cases of this type.
+	 *
+	 * The default group first, because it is a handling team by definition
+	 * and every case type that names one is linked without a migration; then
+	 * the declared `teams` in order. Duplicates and empty ids are dropped.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return array<int, string> The group ids, possibly empty.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 */
+	public function teams(array $caseType): array {
+		$teams = [];
+
+		$default = $this->defaultGroup(caseType: $caseType);
+		if ($default !== '') {
+			$teams[$default] = true;
+		}
+
+		$declared = $this->switchValue(caseType: $caseType, name: 'teams');
+		if (is_array($declared) === true) {
+			foreach ($declared as $team) {
+				if (is_string($team) === false || trim($team) === '') {
+					continue;
+				}
+
+				$teams[trim($team)] = true;
+			}
+		}
+
+		return array_map(static fn (int|string $team): string => (string)$team, array_keys($teams));
+	}//end teams()
+
+	/**
 	 * The user a new case of this type falls to.
+	 *
+	 * The legacy `defaultAssignee` is a user or group id string; a value of
+	 * any other shape names nobody.
 	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
@@ -162,7 +212,12 @@ final class CaseTypeHandling {
 			return $declared;
 		}
 
-		return (string)($caseType['defaultAssignee'] ?? '');
+		$legacy = ($caseType['defaultAssignee'] ?? '');
+		if (is_string($legacy) === false && is_int($legacy) === false) {
+			return '';
+		}
+
+		return (string)$legacy;
 	}//end defaultHandler()
 
 	/**

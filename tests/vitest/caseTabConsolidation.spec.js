@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds ELEVEN tabs, and keeps holding eleven.
+ * The case page holds FIFTEEN tabs, and keeps holding fifteen.
  *
- * The strip grew from ten tabs to fourteen over one programme while the app
+ * The strip grew from ten tabs to fifteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
  * nothing counting it. This file is the thing that counts it. Every assertion
  * here is about config, and config fails quietly: a tab added to the strip
@@ -25,16 +25,13 @@
  * @spec openspec/changes/the-case-page-finished/specs/case-dashboard-view/spec.md
  */
 
+import { LIBRARY_WIDGET_KEYS } from '@conduction/nextcloud-vue/src/utils/libraryWidgetKeys.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src/manifest.json')
-const REGISTER_MODULE = path.join(
-	ROOT,
-	'src/components/case/registerCaseSections.js',
-)
 const LIB = path.join(ROOT, 'node_modules/@conduction/nextcloud-vue/src')
 
 const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
@@ -74,6 +71,7 @@ const tabs = () => widget('case-panels').content.tabs
  *                       left the SIDEBAR
  *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
  *   10 -> 11 2026-09-16 the Timeline tab arrived with #2846
+ *   11 -> 13 2026-09-19 Custody arrived with #2940 and Knowledge with #2995
  *
  * The second move is not the growth this ceiling guards against. Nothing was
  * added to the page: the sidebar lost exactly the three tabs the strip gained
@@ -89,22 +87,55 @@ const tabs = () => widget('case-panels').content.tabs
  * came in with this file left at nine, so the strip and the ceiling disagreed
  * and the suite was red on development until these lines were edited. That is
  * the mechanism working, two PRs late.
+ *
+ * The fifth move is growth too, and Ruben took it on 2026-09-19 with both
+ * tabs already on the strip and this file still red at eleven. Custody is who
+ * has held the case and who is asking for it, which no other tab answers: the
+ * timeline says what changed, not who was accountable while it changed.
+ * Knowledge is the work instruction for this kind of case, drawn from the
+ * collectives leaf, and it belongs beside the case rather than in a second
+ * app a handler has to go and find. Neither folds into an existing tab
+ * without burying it, so the ceiling moves to thirteen instead.
+ *
+ * Thirteen is a decision, not a surrender. A fourteenth tab still reddens
+ * this line, and whoever wants it writes down here what it answers that the
+ * thirteen do not. That is the whole job of the number.
+ *
+ * Proposals is the fourteenth (portal-change-proposals-on-the-case). It
+ * answers what a resident asked to change through the portal and what became
+ * of the request, which Communication cannot say (it holds messages, not
+ * requests that wait for a handler's yes or no) and Work does not hold (those
+ * are tasks the handler made, not changes the resident asked for). It sits
+ * after Work because deciding on a proposal is work. The ceiling is fourteen.
+ *
+ * Review is the fifteenth (woo-review-triage, woo-review-recall-and-stopping).
+ * It answers where a document review stands: which documents are in or out
+ * of scope, the stopping rule and its samples, the batches and what is still
+ * open. Files holds the documents themselves and Work holds the tasks a
+ * handler made; neither says how far through a large collection a review has
+ * got, or whether it may stop. It sits after Files because the documents are
+ * what it reviews, and it shows only on a case type that enables review.
+ * The ceiling is fifteen on that reason, and the next tab writes its own.
  */
-const TAB_CEILING = 11
+const TAB_CEILING = 15
 
-/** The eleven labels, in the order a handler reads them. */
+/** The fifteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
-	['case-data-panel', 'Data'],
+	['case-data-panel', 'Overview'],
 	['case-files', 'Files'],
+	['case-communication-panel', 'Contact'],
+	['case-work-panel', 'Tasks'],
+	['case-timeline-panel', 'Case history'],
 	['case-notes-panel', 'Notes'],
-	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
-	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
-	['case-work-panel', 'Work'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
+	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
+	['case-knowledge-panel', 'Knowledge'],
+	['case-document-review', 'Review'],
+	['case-change-proposals', 'Proposals'],
 ]
 
 /**
@@ -162,8 +193,14 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the eleven tabs, in order', () => {
+	it('names the fifteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
+	})
+
+	it('shows five tabs and puts the rest under More (REQ-CDV-16)', () => {
+		const content = widget('case-panels').content
+		expect(content.maxVisibleTabs).toBe(5)
+		expect(content.moreLabel).toBe('More')
 	})
 
 	it('labels every tab in sentence case, with no em-dash', () => {
@@ -257,23 +294,44 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// end, the internal target and the phase term. It has no strip
 		// counterpart either. The strip says what happened; this says what is
 		// still owed and by when.
+		//
+		// `avg` arrived with data-subject-requests-drive-the-platform: what
+		// the platform reported about this case's data subject, and the acts
+		// dossiq drives on it. It is declared on every case and reads its own
+		// empty state when the case is not a data subject request, so it has
+		// no strip counterpart and duplicates nothing. Saying so here is the
+		// price of the tab, and it is the price on purpose.
+		//
+		// `assistant` arrived with ai-features-on-the-case-consume-hermiq
+		// (board DqZaakAssistent): the AI features the case type switched on,
+		// a run on a case document with a refusal in words, and the report
+		// group. No strip widget reads any of that, so it duplicates nothing.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
 			'terms',
+			'assistant',
 			'access',
 			'sharing',
+			'avg',
 			'tags',
 		])
 	})
 })
 
 describe('the container type this change depends on', () => {
-	it('is registered in the SHARED catalog, with container: true', () => {
-		const source = read(REGISTER_MODULE)
-		expect(source).toContain("registerDashboardWidget('case-sections'")
+	it("is the library's `sections` container, registered in the SHARED catalog", () => {
+		// nextcloud-vue registers `sections` itself (CnSectionsWidget) with
+		// container: true, the flag CnDetailWidgetHost reads to hand a widget
+		// the schema, integration context and registry its children need.
+		const source = read(path.join(LIB, 'components/CnSectionsWidget/index.js'))
+		expect(source).toContain("registerDashboardWidget('sections'")
 		expect(source).toContain('container: true')
-		// `registry.js` is the wrong map: a renderer resolves from it, but
-		// `isContainer` does not read it, so the sections would render blank.
+		// The app no longer carries its own copy of the container.
+		expect(
+			fs.existsSync(
+				path.join(ROOT, 'src/components/case/CaseSectionsWidget.vue'),
+			),
+		).toBe(false)
 		expect(read(path.join(ROOT, 'src/registry.js'))).not.toContain(
 			'case-sections',
 		)
@@ -283,7 +341,7 @@ describe('the container type this change depends on', () => {
 		// Six tabs are a single surface rather than a group of sections: Files
 		// (the case folder through the `files` leaf), the three panes that came
 		// out of the sidebar, Timeline, and Archiving. Every other tab is a
-		// group and declares `case-sections`.
+		// group and declares `sections`.
 		//
 		// Archiving is `custom` on purpose and the manifest says why: every
 		// value on it is read off `@self._retention`, which openregister wrote
@@ -296,42 +354,103 @@ describe('the container type this change depends on', () => {
 		// and renders nothing, silently, when the key is missing, and these
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
-			'case-notes-panel': 'case-notes-pane',
-			'case-email-panel': 'case-email-pane',
-			'case-decisions-panel': 'case-decisions-pane',
-			// Timeline arrived with #2846: every note, call and message on the
-			// case in one order. A single surface, keyed by TYPE like the three
-			// above it.
-			'case-timeline-panel': 'case-timeline-pane',
 			// Archiving arrived with #2850 as `type: "custom"` plus a
 			// `widget-case-archival` slot on the page, and this file carried a
 			// branch that asserted exactly that. The slot name did not match
 			// the widget id,
 			// and a page slot is read by the widget GRID and never reaches a
 			// widget inside a tab panel, so the tab drew nothing while this
-			// test stayed green. It is keyed by TYPE now, like the five above.
-			'case-archival-panel': 'case-archival-pane',
+			// test stayed green. It is the library's retention widget now.
+			'case-archival-panel': 'retention',
+			// Custody arrived with #2940: who has held this case, and who is
+			// asking for it. Keyed by TYPE for the same reason as the six
+			// above, and a custom pane rather than a data widget because a
+			// holding is only meaningful as a JOIN between the moment one
+			// ended and the moment the next began; a row of values per
+			// holding would look complete on a chain with a gap in it.
+			'case-custody-panel': 'case-custody-pane',
+			// Review arrived with woo-review-triage: where a document review
+			// stands. A single surface keyed by TYPE (registry.js), like the rest.
+			'case-document-review': 'document-relevance-review',
+		}
+
+		// The tabs the LIBRARY draws from another app's leaf. Files is the
+		// only one left: Knowledge was here too until the case type's work
+		// instruction joined the collectives leaf under it, which made it a
+		// GROUP and so a `sections` like every other group. Its leaf did
+		// not go anywhere, it just moved one level down, and the assertion
+		// below follows it there rather than being deleted.
+		//
+		// A map rather than one id, because each entry has to name the leaf it
+		// draws: an `integration` widget with no `integrationId` renders an
+		// empty tab and logs nothing.
+		const LEAVES = {
+			'case-files': 'files',
+			// Notes is the library notes leaf, wired by the manifest with the
+			// mention endpoint and the one note action dossiq adds.
+			'case-notes-panel': 'notes',
+			'case-change-proposals': 'portaliq-change-proposal-queue',
+		}
+
+		// The tabs a library widget type draws from the manifest alone.
+		const LIBRARY_TYPES = {
+			'case-email-panel': 'mail',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order, now the library timeline in manage mode.
+			'case-timeline-panel': 'timeline',
+		}
+
+		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,
+		// integrationId] }`. Same failure it guards against, one level down.
+		const NESTED_LEAVES = {
+			'case-knowledge-panel': ['case-knowledge-pages', 'collectives'],
+			// decidiq's decisions, through the library integration widget,
+			// which says "Decidiq not available" when the leaf is absent. A
+			// group since the advice a decision table gave joined it
+			// (enforcement-intervention-from-the-case 3.3); the leaf moved one
+			// level down and the assertion follows it.
+			'case-decisions-panel': ['case-decidiq-decisions', 'decidesk-decisions'],
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
 		for (const { widgetId } of tabs()) {
-			if (widgetId === 'case-files') {
+			if (LEAVES[widgetId]) {
 				expect(widget(widgetId).type).toBe('integration')
-				expect(widget(widgetId).integrationId).toBe('files')
+				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])
+				continue
+			}
+			if (LIBRARY_TYPES[widgetId]) {
+				expect(widget(widgetId).type).toBe(LIBRARY_TYPES[widgetId])
 				continue
 			}
 			if (PANES[widgetId]) {
 				const type = PANES[widgetId]
 				expect(widget(widgetId).type).toBe(type)
-				// And the type actually resolves. Without this the assertion
-				// above passes on a manifest naming a renderer nobody wrote.
-				expect(
-					registry,
-					`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
-				).toContain(`'${type}': {`)
+				// And the type actually resolves, in this registry or as a
+				// library widget. Without this the assertion above passes on a
+				// manifest naming a renderer nobody wrote.
+				if (!LIBRARY_WIDGET_KEYS.includes(type)) {
+					expect(
+						registry,
+						`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
+					).toContain(`'${type}': {`)
+				}
 				continue
 			}
-			expect(widget(widgetId).type).toBe('case-sections')
+			expect(widget(widgetId).type).toBe('sections')
+
+			if (NESTED_LEAVES[widgetId]) {
+				const [sectionId, integrationId] = NESTED_LEAVES[widgetId]
+				const section = (widget(widgetId).content.sections || [])
+					.map((entry) => entry.widget)
+					.find((child) => child && child.id === sectionId)
+				expect(
+					section,
+					`${widgetId} no longer holds the ${integrationId} leaf, so the tab draws no pages at all`,
+				).toBeTruthy()
+				expect(section.type).toBe('integration')
+				expect(section.integrationId).toBe(integrationId)
+			}
 		}
 	})
 
@@ -345,16 +464,17 @@ describe('the container type this change depends on', () => {
 		expect(host).toMatch(/if \(this\.isContainer\) \{[\s\S]*cnRegistry,/)
 	})
 
-	it('cannot name its sections by id, because the tabs widget forwards no sibling list', () => {
-		// The day this fails, `content.sections[].widget` can become
-		// `content.sections[].widgetId` and the inline definitions go back to
-		// the page's `widgets[]`. That is a simplification waiting on the
-		// library, and this is the alarm for it.
+	it('can now name its sections by id, because the tabs widget forwards the sibling list', () => {
+		// This was the alarm for a library change: since nextcloud-vue 2.80.0
+		// CnTabsWidget forwards `availableWidgets` to its CnDetailWidgetHost, so
+		// `content.sections[].widget` could become `content.sections[].widgetId`
+		// with the inline definitions back in the page's `widgets[]`. That
+		// simplification is a separate change; this pins that the library
+		// supports it.
 		const strip = read(
 			path.join(LIB, 'components/CnTabsWidget/CnTabsWidget.vue'),
 		)
 		expect(strip).toContain('<CnDetailWidgetHost')
-		expect(strip).not.toContain(':available-widgets')
-		expect(strip).not.toContain(':availableWidgets')
+		expect(strip).toMatch(/:available-widgets|:availableWidgets/)
 	})
 })

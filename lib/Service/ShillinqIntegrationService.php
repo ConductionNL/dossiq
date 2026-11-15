@@ -3,7 +3,16 @@
 /**
  * Dossiq Shillinq Integration Service
  *
- * Exports tenant billing events into Shillinq invoices.
+ * Hands a tenant's invoiced month to shillinq. Shillinq defines the command
+ * (`OCA\Shillinq\Event\BillablePeriodClosedEvent`, ADR-041) and its
+ * listener drafts a BillableInvoice for the one CustomerMaster that carries
+ * the dossiq tenant id as its external reference (decision 174). The answer
+ * comes back on the same event object: the drafted invoice, or a refusal that
+ * this service records on the tenant's audit trail.
+ *
+ * This replaces a bearer-token POST to a `/invoices` URL that shillinq never
+ * had, with a blocking sleep() retry loop around it
+ * (dossiq-delivers-nothing phase 5).
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -17,46 +26,41 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+ * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCP\Http\Client\IClientService;
+use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Shillinq HTTP integration with retry + backoff.
+ * Raises shillinq's invoice command for a tenant month and reads its answer.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+ * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
  */
 class ShillinqIntegrationService {
 	/**
-	 * Maximum retry attempts.
+	 * Shillinq's command, resolved by name so dossiq installs without shillinq.
 	 */
-	public const MAX_RETRIES = 3;
-
-	/**
-	 * Backoff sleep base in seconds.
-	 */
-	public const BACKOFF_BASE_SECONDS = 2;
+	public const INGEST_EVENT = 'OCA\\Shillinq\\Event\\BillablePeriodClosedEvent';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IClientService $httpClientService The HTTP client service.
+	 * @param IEventDispatcher $eventDispatcher Dispatches shillinq's command in-process.
+	 * @param TenantAuditTrailService $auditTrail Records a refusal on the tenant's trail.
 	 * @param LoggerInterface $logger The logger.
-	 * @param string $shillinqBaseUrl The Shillinq base URL.
-	 * @param string $shillinqApiKey The Shillinq API key.
 	 */
 	public function __construct(
-		private readonly IClientService $httpClientService,
+		private readonly IEventDispatcher $eventDispatcher,
+		private readonly TenantAuditTrailService $auditTrail,
 		private readonly LoggerInterface $logger,
-		private readonly string $shillinqBaseUrl = '',
-		private readonly string $shillinqApiKey = '',
 	) {
 	}//end __construct()
 
@@ -67,7 +71,7 @@ class ShillinqIntegrationService {
 	 *
 	 * @return array<string, array<int, array<string,mixed>>> Keyed by `<tenantId>:<month>`.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function groupForInvoicing(array $events): array {
 		$grouped = [];
@@ -90,82 +94,181 @@ class ShillinqIntegrationService {
 	}//end groupForInvoicing()
 
 	/**
-	 * Build the Shillinq invoice payload from a group of events.
+	 * Build the command's content from a tenant's month of events.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $month YYYY-MM.
 	 * @param array<int, array<string,mixed>> $events Events.
 	 *
-	 * @return array<string,mixed>
+	 * @return array{tenantId:string, period:string, lines:array<int, array<string,mixed>>}
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+	 * @throws InvalidArgumentException When an event carries no readable quantity or unit price.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
 	 */
 	public function buildInvoicePayload(string $tenantId, string $month, array $events): array {
-		$lineItems = [];
+		$lines = [];
 		foreach ($events as $event) {
-			$lineItems[] = [
-				'description' => (string)($event['eventType'] ?? 'usage'),
-				'quantity' => (float)($event['quantity'] ?? 1),
-				'unit_price' => (float)($event['unitPrice'] ?? 0),
-				'currency' => (string)($event['currency'] ?? 'EUR'),
-				'occurred_at' => (string)($event['occurredAt'] ?? ''),
-			];
+			$lines[] = self::invoiceLine(event: $event);
 		}
 
-		return [
-			'tenant_id' => $tenantId,
-			'period' => $month,
-			'currency' => $lineItems[0]['currency'] ?? 'EUR',
-			'line_items' => $lineItems,
-		];
+		return ['tenantId' => $tenantId, 'period' => $month, 'lines' => $lines];
 	}//end buildInvoicePayload()
 
 	/**
-	 * POST a built invoice payload to Shillinq with retry + backoff.
+	 * The invoice line of one usage event.
 	 *
-	 * @param array<string,mixed> $payload Payload.
+	 * @param mixed $event The usage event, as the caller passed it.
 	 *
-	 * @return array{success:bool, invoiceRef?:string, attempts:int, lastError?:string}
+	 * @return array<string, mixed> The line.
 	 *
-	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
+	 * @throws InvalidArgumentException When the event carries no readable quantity or unit price.
 	 */
-	public function exportInvoice(array $payload): array {
-		if ($this->shillinqBaseUrl === '' || $this->shillinqApiKey === '') {
-			return ['success' => false, 'attempts' => 0, 'lastError' => 'Shillinq not configured'];
+	private static function invoiceLine(mixed $event): array {
+		// 🔴 NO LINE IS PRICED BY DEFAULT. `quantity ?? 1` and
+		// `unitPrice ?? 0` were two different guesses about the same event,
+		// so the payload and TenantBillingService::aggregate() answered
+		// different amounts for one month. An event that cannot be priced
+		// throws here, and runInvoicing() already refuses before this.
+		$quantity = ($event['quantity'] ?? null);
+		$unitPrice = ($event['unitPrice'] ?? null);
+		if (is_numeric($quantity) === false || is_numeric($unitPrice) === false) {
+			throw new InvalidArgumentException(
+				'A usage event carries no readable quantity or unit price, so no invoice line was built for it.'
+			);
 		}
 
-		$client = $this->httpClientService->newClient();
-		$attempt = 0;
-		$lastErr = '';
-		while ($attempt < self::MAX_RETRIES) {
-			$attempt++;
-			try {
-				$resp = $client->post(
-					$this->shillinqBaseUrl . '/invoices',
-					[
-						'headers' => [
-							'Authorization' => 'Bearer ' . $this->shillinqApiKey,
-							'Content-Type' => 'application/json',
-						],
-						'body' => json_encode($payload),
-						'timeout' => 30,
-					]
-				);
-				$body = (string)$resp->getBody();
-				$json = json_decode($body, true);
-				$ref = (string)($json['invoiceRef'] ?? $json['id'] ?? '');
-				if ($ref !== '') {
-					return ['success' => true, 'invoiceRef' => $ref, 'attempts' => $attempt];
-				}
-			} catch (Throwable $e) {
-				$lastErr = $e->getMessage();
-				if ($attempt < self::MAX_RETRIES) {
-					sleep(self::BACKOFF_BASE_SECONDS ** $attempt);
-				}
-			}//end try
-		}//end while
+		return [
+			'description' => (string)($event['eventType'] ?? 'usage'),
+			'quantity' => (float)$quantity,
+			'unitPrice' => (float)$unitPrice,
+			'currency' => (string)($event['currency'] ?? 'EUR'),
+			'occurredAt' => (string)($event['occurredAt'] ?? ''),
+			'sourceId' => (string)($event['id'] ?? ($event['uuid'] ?? '')),
+		];
+	}//end invoiceLine()
 
-		$this->logger->error('Dossiq: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
-		return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
+	/**
+	 * Ask shillinq to draft the month's invoice.
+	 *
+	 * A refusal (no customer carries the tenant, the month was drafted with
+	 * other lines, a line shillinq cannot price) is recorded on the tenant's
+	 * audit trail and returned as `lastError`, so the events stay unbilled and
+	 * the month invoices once the cause is fixed.
+	 *
+	 * @param array<string,mixed> $payload The built payload (tenantId, period, lines).
+	 *
+	 * @return array{success:bool, invoiceRef?:string, invoiceNumber?:string, duplicated?:bool, attempts:int, lastError?:string}
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	public function exportInvoice(array $payload): array {
+		$month = new InvoiceMonth(tenantId: (string)($payload['tenantId'] ?? ''), period: (string)($payload['period'] ?? ''));
+		$eventClass = self::INGEST_EVENT;
+		if (class_exists($eventClass) === false) {
+			return $this->refused(month: $month, attempts: 0, reason: 'Shillinq is not installed, so no invoice was drafted.');
+		}
+
+		$event = $this->dispatchInvoice(eventClass: $eventClass, payload: $payload, month: $month);
+		if (is_array($event) === true) {
+			return $event;
+		}
+
+		return $this->answerOf(event: $event, month: $month);
 	}//end exportInvoice()
+
+	/**
+	 * Dispatch the invoice request, or the refusal when it cannot be asked.
+	 *
+	 * @param string              $eventClass The shillinq ingest event class.
+	 * @param array<string,mixed> $payload    The built payload (tenantId, period, lines).
+	 * @param InvoiceMonth        $month      The tenant and the month.
+	 *
+	 * @return object|array<string, mixed> The dispatched event, or the refusal.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function dispatchInvoice(string $eventClass, array $payload, InvoiceMonth $month): object|array {
+		$tenantId = $month->tenantId;
+		$period = $month->period;
+		try {
+			// Shillinq's contract: sourceApp, externalReference, period, lines, correlationId.
+			$event = new $eventClass(AppIdentity::APP_ID, $tenantId, $period, (array)($payload['lines'] ?? []), $tenantId . ':' . $period);
+			$this->eventDispatcher->dispatchTyped($event);
+		} catch (Throwable $e) {
+			return $this->refused(month: $month, attempts: 1, reason: 'Shillinq could not be asked: ' . $e->getMessage());
+		}
+
+		return $event;
+	}//end dispatchInvoice()
+
+	/**
+	 * What shillinq answered on a dispatched invoice request.
+	 *
+	 * @param object       $event The dispatched event.
+	 * @param InvoiceMonth $month The tenant and the month.
+	 *
+	 * @return array{success:bool, invoiceRef?:string, invoiceNumber?:string, duplicated?:bool, attempts:int, lastError?:string}
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function answerOf(object $event, InvoiceMonth $month): array {
+		if ((bool)$event->isHandled() === false) {
+			return $this->refused(month: $month, attempts: 1, reason: $this->unhandledReason(event: $event));
+		}
+
+		$result = (array)$event->getResult();
+		return [
+			'success' => true,
+			'invoiceRef' => (string)($result['invoiceId'] ?? ''),
+			'invoiceNumber' => (string)($result['invoiceNumber'] ?? ''),
+			'duplicated' => (bool)($result['duplicated'] ?? false),
+			'attempts' => 1,
+		];
+	}//end answerOf()
+
+	/**
+	 * Why an unhandled invoice request drafted nothing.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return string The listener's error, or that no listener answered.
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/tasks.md
+	 */
+	private function unhandledReason(object $event): string {
+		$reason = (string)($event->getError() ?? '');
+		if ($reason === '') {
+			$reason = 'No shillinq listener answered the invoice request.';
+		}
+
+		return $reason;
+	}//end unhandledReason()
+
+	/**
+	 * Record why no invoice exists for the month, and answer with it.
+	 *
+	 * @param InvoiceMonth $month The tenant UUID and the month (YYYY-MM).
+	 * @param int $attempts 0 when shillinq was never asked, 1 when it was.
+	 * @param string $reason Why.
+	 *
+	 * @return array{success:bool, attempts:int, lastError:string}
+	 */
+	private function refused(InvoiceMonth $month, int $attempts, string $reason): array {
+		$tenantId = $month->tenantId;
+		$period = $month->period;
+		$this->logger->warning('Dossiq: shillinq drafted no invoice', ['tenantId' => $tenantId, 'period' => $period, 'reason' => $reason]);
+		$this->auditTrail->emit(
+			payload: [
+				// The trail prefixes `procest.tenant.` and keeps only a few bio
+				// keys, so the reason travels in `resource`, where it is read.
+				'action' => 'invoice.refused',
+				'actor' => 'system',
+				'resource' => 'tenantBilling/' . $period . ': ' . $reason,
+				'tenantId' => $tenantId,
+			]
+		);
+
+		return ['success' => false, 'attempts' => $attempts, 'lastError' => $reason];
+	}//end refused()
 }//end class

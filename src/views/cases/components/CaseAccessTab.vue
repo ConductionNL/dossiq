@@ -38,7 +38,7 @@
   Registered in src/registry.js as `CaseAccessTab` and wired as a `component:`
   sidebar tab on CaseDetail in src/manifest.json.
 
-  @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-access-tab">
@@ -119,6 +119,11 @@
 								v-if="roleHint(row)"
 								class="case-access-tab__hint"
 								>{{ roleHint(row) }}</span
+							>
+							<span
+								v-if="inheritedHint(row)"
+								class="case-access-tab__hint case-access-tab__inherited"
+								>{{ inheritedHint(row) }}</span
 							>
 							<span v-if="row.until" class="case-access-tab__hint">{{
 								endsHint(row)
@@ -207,9 +212,7 @@
 				</template>
 			</section>
 
-			<section
-				v-if="fieldRows.length"
-				class="case-access-tab__fields">
+			<section v-if="fieldRows.length" class="case-access-tab__fields">
 				<h4>{{ t('dossiq', 'Which fields each role reads') }}</h4>
 				<p class="case-access-tab__hint">
 					{{
@@ -243,9 +246,11 @@
 							</td>
 							<td>
 								{{ sentenceFor(row) }}
-								<span v-if="row.reason" class="case-access-tab__hint">{{
-									row.reason
-								}}</span>
+								<span
+									v-if="row.reason"
+									class="case-access-tab__hint"
+									>{{ row.reason }}</span
+								>
 							</td>
 						</tr>
 					</tbody>
@@ -277,6 +282,55 @@ import {
 
 /** OpenRegister's answer to a reader who may open the case and not review it. */
 const REVIEW_REFUSED = 403
+
+/**
+ * The sources that could not be read, each NAMED: an auditor reading a short
+ * list has to know which source is missing from it.
+ *
+ * @param {{set: object|null}} permissions The access set answer.
+ * @param {object} reads Each other source's answer.
+ * @return {Array<string>} The names, in reading order.
+ */
+function unreadableSources(permissions, reads) {
+	const missing = []
+	if (reads.catalogue === null)
+		missing.push(t('dossiq', 'the rights it publishes'))
+	if (permissions.set === null) {
+		missing.push(...unreadableFallbacks(reads))
+	}
+	if (reads.callerScope === null) missing.push(t('dossiq', 'your own rights'))
+	return missing
+}
+
+/**
+ * The fallback sources, read when the access set is not, that failed.
+ *
+ * @param {object} reads Each source's answer.
+ * @return {Array<string>} The names, in reading order.
+ */
+function unreadableFallbacks(reads) {
+	const missing = []
+	if (reads.objectGrants === null)
+		missing.push(t('dossiq', 'the shares on this case'))
+	if (reads.roleGrants === null) missing.push(t('dossiq', 'the roles'))
+	if (reads.denyRules === null) missing.push(t('dossiq', 'the refusals'))
+	return missing
+}
+
+/**
+ * The refusal enforcement: the access set's, else the catalogue's, else the
+ * refusals'.
+ *
+ * @param {{set: object|null}} permissions The access set answer.
+ * @param {object} reads Each other source's answer.
+ * @return {string} The enforcement, or ''.
+ */
+function accessEnforcement(permissions, reads) {
+	return permissions.set?.denyEnforcement
+		|| reads.catalogue?.denyEnforcement
+		|| reads.denyRules?.denyEnforcement
+		|| ''
+}
 
 export default {
 	name: 'CaseAccessTab',
@@ -313,7 +367,7 @@ export default {
 		 * The reader's word for each field rule.
 		 *
 		 * @return {object} The labels, by rule id.
-		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 * @spec openspec/specs/security-hardening/spec.md
 		 */
 		ruleLabels() {
 			return roleRuleLabels()
@@ -323,7 +377,7 @@ export default {
 		 * Today, so nobody asks the trail about a date that has not happened.
 		 *
 		 * @return {string} Today as `YYYY-MM-DD`.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
@@ -333,7 +387,7 @@ export default {
 		 * Who wrote the rules that stood at the moment asked about.
 		 *
 		 * @return {string} One sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		setBySentence() {
 			if (!this.asOf?.setBy) {
@@ -349,7 +403,7 @@ export default {
 		 * What changed the rights after the moment asked about.
 		 *
 		 * @return {string} One sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		changedAfterwardsSentence() {
 			const change = this.asOf?.changedAfterwardsBy
@@ -366,7 +420,7 @@ export default {
 		 * What the deny switch means for the rows below.
 		 *
 		 * @return {string} One sentence, empty when the mode is unknown.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		enforcementSentence() {
 			if (this.enforcement === 'enforcing') {
@@ -396,7 +450,7 @@ export default {
 		 * @param {object} row One row from `fieldRoleRows`.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 * @spec openspec/specs/security-hardening/spec.md
 		 */
 		sentenceFor(row) {
 			return roleRuleSentence(row)
@@ -406,13 +460,11 @@ export default {
 		 * Ask OpenRegister, once, and render what came back.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			this.loading = true
-			const permissions = this.objectId
-				? await fetchObjectPermissions(this.objectId)
-				: { status: 0, set: null }
+			const permissions = await this.readPermissions()
 
 			// A 403 is OpenRegister answering, and the answer is "not you". The
 			// fallback reads are skipped: they would assemble a partial list
@@ -420,6 +472,39 @@ export default {
 			this.reviewRefused = permissions.status === REVIEW_REFUSED
 			this.historyReadable = permissions.set !== null
 
+			const reads = await this.readAccessSources(permissions)
+
+			// The field rules ride along rather than gating anything. A reader
+			// who may not review the access set may still be looking at a gap
+			// where a field should be, and the rule behind that gap is the one
+			// thing this panel can tell them.
+			this.fieldRows = fieldRoleRows(reads.fieldRules.declared, reads.fieldRules.decided)
+			this.showAccessSources(permissions, reads)
+			this.loading = false
+		},
+
+		/**
+		 * The case's access set as OpenRegister answers it, or no set for a
+		 * panel without a case.
+		 *
+		 * @return {Promise<{status: number, set: object|null}>} The answer.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		async readPermissions() {
+			return this.objectId
+				? await fetchObjectPermissions(this.objectId)
+				: { status: 0, set: null }
+		},
+
+		/**
+		 * Read every other source at once; the role grants and refusals only
+		 * when the access set itself is not readable.
+		 *
+		 * @param {{set: object|null}} permissions The access set answer.
+		 * @return {Promise<object>} Each source's answer, null where it failed.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		async readAccessSources(permissions) {
 			const [
 				catalogue,
 				objectGrants,
@@ -435,41 +520,30 @@ export default {
 				permissions.set === null ? fetchDenyRules() : null,
 				fetchFieldRoleRules(this.objectId),
 			])
+			return { catalogue, objectGrants, roleGrants, callerScope, denyRules, fieldRules }
+		},
 
-			// The field rules ride along rather than gating anything. A reader
-			// who may not review the access set may still be looking at a gap
-			// where a field should be, and the rule behind that gap is the one
-			// thing this panel can tell them.
-			this.fieldRows = fieldRoleRows(fieldRules.declared, fieldRules.decided)
-
-			// Each failed read is NAMED. An auditor reading a short list has to
-			// know which source is missing from it.
-			const missing = []
-			if (catalogue === null)
-				missing.push(t('dossiq', 'the rights it publishes'))
-			if (permissions.set === null) {
-				if (objectGrants === null)
-					missing.push(t('dossiq', 'the shares on this case'))
-				if (roleGrants === null) missing.push(t('dossiq', 'the roles'))
-				if (denyRules === null) missing.push(t('dossiq', 'the refusals'))
-			}
-			if (callerScope === null) missing.push(t('dossiq', 'your own rights'))
-
-			this.catalogue = catalogue?.permissions || []
-			this.enforcement =
-				permissions.set?.denyEnforcement
-				|| catalogue?.denyEnforcement
-				|| denyRules?.denyEnforcement
-				|| ''
+		/**
+		 * Show the rights, the enforcement, the sources that could not be read
+		 * and the grant rows.
+		 *
+		 * @param {{set: object|null}} permissions The access set answer.
+		 * @param {object} reads Each other source's answer.
+		 * @return {void}
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		showAccessSources(permissions, reads) {
+			const missing = unreadableSources(permissions, reads)
+			this.catalogue = reads.catalogue?.permissions || []
+			this.enforcement = accessEnforcement(permissions, reads)
 			this.unreadable = this.reviewRefused ? [] : missing
 			this.rows = grantRows({
 				objectPermissions: permissions.set,
-				objectGrants,
-				roleGrants,
-				callerScope,
-				denyRules,
+				objectGrants: reads.objectGrants,
+				roleGrants: reads.roleGrants,
+				callerScope: reads.callerScope,
+				denyRules: reads.denyRules,
 			})
-			this.loading = false
 		},
 
 		/**
@@ -478,7 +552,7 @@ export default {
 		 * @param {{status: number, set: object|null}} permissions What the object answered.
 		 *
 		 * @return {Promise<Array|null>} The grants, or null.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		fallbackGrants(permissions) {
 			if (permissions.set !== null || this.objectId === '') {
@@ -491,7 +565,7 @@ export default {
 		 * Ask the trail who held a right on the date the reader picked.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async loadMoment() {
 			if (this.moment === '' || this.objectId === '') {
@@ -517,13 +591,40 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence, empty when no role is named.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		roleHint(row) {
 			if (!row?.role) {
 				return row?.detail || ''
 			}
 			return t('dossiq', 'Through the role {role}', { role: row.role })
+		},
+
+		/**
+		 * Which case handed this rule down (row Q13.23, D-4).
+		 *
+		 * The grant is not on the case in front of the reader, so a handler
+		 * who wants it gone has to be told where to go. The id is rendered
+		 * inside a sentence that says what it is, never bare: a uuid standing
+		 * on its own in a column headed Where it comes from reads as a broken
+		 * label rather than as an answer.
+		 *
+		 * @param {object} row One row.
+		 *
+		 * @return {string} The sentence, or an empty string when nothing was inherited.
+		 * @spec openspec/specs/deelzaak-support/spec.md
+		 */
+		inheritedHint(row) {
+			if (!row?.inheritedFrom) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'Granted on case {case}, which this one hangs under',
+				{
+					case: row.inheritedFrom,
+				},
+			)
 		},
 
 		/**
@@ -535,7 +636,7 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		endsHint(row) {
 			return t('dossiq', 'Written to end on {date}', { date: row.until })
@@ -547,7 +648,7 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence, empty when the grant names no area.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		areaHint(row) {
 			const named = [
@@ -568,7 +669,7 @@ export default {
 		 * @param {string} right The verb.
 		 *
 		 * @return {string} The description, empty when the catalogue has none.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		describe(right) {
 			const entry = this.catalogue.find(
@@ -583,7 +684,7 @@ export default {
 		 * @param {string} source The source key.
 		 *
 		 * @return {string} The label, the raw key when it is one we do not know.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		sourceLabel(source) {
 			const labels = {
@@ -597,6 +698,7 @@ export default {
 				'staged-deny': t('dossiq', 'A rule that will refuse'),
 				'default-open': t('dossiq', 'No rule, so it is open'),
 				none: t('dossiq', 'No rule grants it'),
+				inherited: t('dossiq', 'A grant on a case this one hangs under'),
 			}
 			return labels[source] || source
 		},

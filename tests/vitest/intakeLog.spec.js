@@ -60,6 +60,11 @@ function boxStub(name, tag = 'div') {
 vi.mock('@nextcloud/vue', () => ({
 	NcAppContent: boxStub('NcAppContent'),
 	NcButton: boxStub('NcButton', 'button'),
+	// The file-on-a-case form arrived in a dialog. A component the view
+	// imports and this mock does not declare takes the WHOLE file down at
+	// collection time, which reads as a spec nobody wrote rather than as one
+	// component short.
+	NcDialog: boxStub('NcDialog'),
 	NcEmptyContent: boxStub('NcEmptyContent'),
 	NcLoadingIcon: boxStub('NcLoadingIcon', 'span'),
 	NcNoteCard: boxStub('NcNoteCard'),
@@ -91,6 +96,10 @@ vi.mock('@nextcloud/vue', () => ({
 
 const MailIntakeLogView = (
 	await import('../../src/views/intake/MailIntakeLogView.vue')
+).default
+
+const MailIntakeFileOnCaseDialog = (
+	await import('../../src/dialogs/MailIntakeFileOnCaseDialog.vue')
 ).default
 
 /**
@@ -158,6 +167,43 @@ describe('the intake log', () => {
 	beforeEach(() => {
 		globalThis.OC = { requestToken: 'token' }
 		calls = []
+	})
+
+	it('reads the log with its filters and keeps what it answers, as before', async () => {
+		serve({ results: [entry()], filterOrder: ['bounce-notification'], junkRules: [{ id: 'r1' }] })
+		const wrapper = await mountLog()
+		const view = wrapper.vm
+		const stateOf = () => ({ loading: view.loading, forbidden: view.forbidden, entries: view.entries.length, filterOrder: view.filterOrder, junkRules: view.junkRules })
+		const states = [stateOf()]
+
+		view.sender = 'a@b.nl'
+		view.outcome = 'junk'
+		serve({})
+		await view.reload()
+		states.push(stateOf())
+		const asked = calls.map((call) => [call.url, call.options])
+
+		serve({}, 403)
+		await view.reload()
+		states.push(stateOf())
+
+		serve({ results: [entry()] })
+		await view.reload()
+		globalThis.fetch = vi.fn(async () => {
+			throw new Error('offline')
+		})
+		await view.reload()
+		states.push(stateOf())
+
+		expect({ states, asked }).toEqual({
+			states: [
+				{ loading: false, forbidden: false, entries: 1, filterOrder: ['bounce-notification'], junkRules: [{ id: 'r1' }] },
+				{ loading: false, forbidden: false, entries: 0, filterOrder: [], junkRules: [] },
+				{ loading: false, forbidden: true, entries: 0, filterOrder: [], junkRules: [] },
+				{ loading: false, forbidden: false, entries: 0, filterOrder: [], junkRules: [] },
+			],
+			asked: [['/index.php/apps/dossiq/api/mail-intake/log?sender=a%40b.nl&outcome=junk', { headers: { 'OCS-APIRequest': 'true' } }]],
+		})
 	})
 
 	it('names a check nobody made rather than leaving it blank', async () => {
@@ -269,6 +315,54 @@ describe('the intake log', () => {
 		await flushPromises()
 
 		expect(calls.some((call) => call.url.endsWith('/held/release'))).toBe(true)
+	})
+
+	// 🔴 UNLIKE RELEASE, THIS ONE IS ON EVERY ROW, and that is the point of it.
+	// Release files a message on the case the matcher already chose, so a
+	// handler who knew it belonged on 2026-114 could do nothing with that
+	// knowledge. A wrong match is the common reason somebody reaches for this,
+	// and an entry that became 2026-090 when it belonged on 2026-114 looks
+	// exactly like a successful match until a person reads it.
+	// @spec openspec/specs/case-email-integration/spec.md
+	it('offers File on a case on every entry, matched or not', async () => {
+		serve({
+			results: [
+				entry({
+					'@self': { id: 'wrong' },
+					outcome: 'case',
+					case: '2026-090',
+				}),
+				entry({ '@self': { id: 'nowhere' }, outcome: 'inbox', case: '' }),
+			],
+		})
+
+		const wrapper = await mountLog()
+
+		expect(
+			wrapper.find('[data-testid="intake-log-file-on-case-wrong"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="intake-log-file-on-case-nowhere"]').exists(),
+		).toBe(true)
+		// Found by COMPONENT, not by its `data-testid`: the dialog's own
+		// NcDialog teleports its markup to the body, so a DOM query on this
+		// wrapper answers false whether the dialog opened or not.
+		expect(wrapper.findComponent(MailIntakeFileOnCaseDialog).exists()).toBe(
+			false,
+		)
+
+		await wrapper
+			.find('[data-testid="intake-log-file-on-case-wrong"]')
+			.trigger('click')
+		await flushPromises()
+
+		// The dialog opens on the entry that was clicked, carrying where the
+		// matcher put it. Nothing is posted until the handler confirms.
+		const dialog = wrapper.findComponent(MailIntakeFileOnCaseDialog)
+		expect(dialog.exists()).toBe(true)
+		expect(dialog.props('entryId')).toBe('wrong')
+		expect(dialog.props('entry').case).toBe('2026-090')
+		expect(calls.some((call) => call.url.includes('/file-on-case'))).toBe(false)
 	})
 
 	it('says the order the filters ran in', async () => {

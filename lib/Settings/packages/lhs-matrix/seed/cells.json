@@ -1,0 +1,128 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": [
+      "dossiq",
+      "procest"
+    ],
+    "slug": "lhsMatrixCell"
+  },
+  "match": [
+    "behaviourRow",
+    "consequenceColumn"
+  ],
+  "rows": [
+    {
+      "id": "99c4c9d3-5f1f-52a3-bc27-63bc4f19f19b",
+      "behaviourRow": "A",
+      "consequenceColumn": "1",
+      "interventionStep": "Aanspreken / informeren",
+      "description": "Informeer de overtreder over de regels en geef gelegenheid tot herstel."
+    },
+    {
+      "id": "3280e39b-e329-5d3b-97f2-8b9373aaf45f",
+      "behaviourRow": "A",
+      "consequenceColumn": "2",
+      "interventionStep": "Waarschuwen",
+      "description": "Stuur een schriftelijke waarschuwing met hersteltermijn."
+    },
+    {
+      "id": "99bd9b41-663d-523d-a1ba-7045fff2e0bc",
+      "behaviourRow": "A",
+      "consequenceColumn": "3",
+      "interventionStep": "Bestuurlijke waarschuwing",
+      "description": "Formele bestuurlijke waarschuwing; overtreder krijgt hersteltermijn."
+    },
+    {
+      "id": "cda6fd52-2bfe-5ddd-a45d-65d299b26ac5",
+      "behaviourRow": "A",
+      "consequenceColumn": "4",
+      "interventionStep": "Last onder dwangsom",
+      "description": "Opleggen last onder dwangsom."
+    },
+    {
+      "id": "91466d87-e860-5bae-bf5d-481285ef0519",
+      "behaviourRow": "B",
+      "consequenceColumn": "1",
+      "interventionStep": "Waarschuwen",
+      "description": "Schriftelijke waarschuwing met korte hersteltermijn."
+    },
+    {
+      "id": "ae4a13cc-e2e9-547e-b648-601ed5255766",
+      "behaviourRow": "B",
+      "consequenceColumn": "2",
+      "interventionStep": "Bestuurlijke waarschuwing",
+      "description": "Bestuurlijke waarschuwing met hersteltermijn."
+    },
+    {
+      "id": "78b1c5d7-2306-504a-b40a-a62660e78323",
+      "behaviourRow": "B",
+      "consequenceColumn": "3",
+      "interventionStep": "Last onder dwangsom",
+      "description": "Last onder dwangsom opleggen."
+    },
+    {
+      "id": "4af9a5be-e002-577e-87f4-84d83d1c8ed1",
+      "behaviourRow": "B",
+      "consequenceColumn": "4",
+      "interventionStep": "Last onder dwangsom + Proces-verbaal",
+      "description": "Bestuurlijk én strafrechtelijk optreden."
+    },
+    {
+      "id": "bfcd9039-763a-52a9-91c3-f43c670ffb12",
+      "behaviourRow": "C",
+      "consequenceColumn": "1",
+      "interventionStep": "Bestuurlijke waarschuwing",
+      "description": "Bestuurlijke waarschuwing."
+    },
+    {
+      "id": "10b0b653-989d-58ff-aea1-62fac51e5fe5",
+      "behaviourRow": "C",
+      "consequenceColumn": "2",
+      "interventionStep": "Last onder dwangsom",
+      "description": "Last onder dwangsom."
+    },
+    {
+      "id": "2d300fe9-c585-5afc-8dcd-8dc0faeda834",
+      "behaviourRow": "C",
+      "consequenceColumn": "3",
+      "interventionStep": "Bestuursdwang + Proces-verbaal",
+      "description": "Bestuursdwang toepassen en aangifte doen bij OM."
+    },
+    {
+      "id": "c846f56c-1938-5561-90b5-a4823f77894d",
+      "behaviourRow": "C",
+      "consequenceColumn": "4",
+      "interventionStep": "Bestuursdwang + Proces-verbaal",
+      "description": "Zwaarste bestuurlijke inzet gecombineerd met strafrechtelijk optreden."
+    },
+    {
+      "id": "8648a234-db75-5b70-8190-9eee6d6362b6",
+      "behaviourRow": "D",
+      "consequenceColumn": "1",
+      "interventionStep": "Last onder dwangsom",
+      "description": "Last onder dwangsom."
+    },
+    {
+      "id": "5990714d-f8a4-5b02-a130-34c3b5d46141",
+      "behaviourRow": "D",
+      "consequenceColumn": "2",
+      "interventionStep": "Bestuursdwang + Proces-verbaal",
+      "description": "Bestuursdwang en strafrechtelijk optreden."
+    },
+    {
+      "id": "b5171efa-c027-5517-9fff-4cef6820b94b",
+      "behaviourRow": "D",
+      "consequenceColumn": "3",
+      "interventionStep": "Bestuursdwang + Proces-verbaal",
+      "description": "Maximale bestuurlijke en strafrechtelijke inzet."
+    },
+    {
+      "id": "ceddcbf2-6986-58aa-9c5d-52a87b3d7057",
+      "behaviourRow": "D",
+      "consequenceColumn": "4",
+      "interventionStep": "Bestuursdwang + Proces-verbaal",
+      "description": "Maximale inzet bestuur en OM voor crimineel gedrag met onomkeerbare gevolgen."
+    }
+  ]
+}

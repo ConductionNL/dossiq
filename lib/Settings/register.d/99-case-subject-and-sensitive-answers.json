@@ -1,0 +1,97 @@
+{
+  "_note": "social-domain-procedures-are-case-types (coordinator 23 Oct): a procedure that held a BSN or a sensitive test on its own record, readable only by dossiq-sensitive, keeps exactly that access as a case. `subjectBsn` is the BSN of the person the case is about; `sensitiveProperties` holds the answers to the case type's fields flagged `sensitive`, in the same shape as `properties`. Both carry the property authorization OpenRegister enforces (`authorization`, not `x-openregister-authorization`, which Schema::propertyCarriesAuthorization does not read). propertyDefinition gains `sensitive`. case 1.49.0, propertyDefinition 1.7.0. The case form routes a sensitive definition's answer to sensitiveProperties through `values.arrayKeyBy` (nextcloud-vue).",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.49.0",
+        "properties": {
+          "caseType": {
+            "x-openregister-extends-form": {
+              "values": {
+                "arrayKeyBy": {
+                  "field": "sensitive",
+                  "keys": {
+                    "true": "sensitiveProperties"
+                  }
+                }
+              }
+            }
+          },
+          "subjectBsn": {
+            "type": "string",
+            "title": "Subject BSN",
+            "description": "The citizen service number of the person this case is about. Readable and writable only by the group dossiq-sensitive; the cross-domain lookup asks for it as the system and answers only whether an open case exists, in which domain and whom to call.",
+            "visible": false,
+            "facetable": false,
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ],
+              "update": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            }
+          },
+          "sensitiveProperties": {
+            "type": "array",
+            "title": "Sensitive properties",
+            "description": "The answers to the case type's fields flagged sensitive, in the shape of `properties`. Readable and writable only by the group dossiq-sensitive.",
+            "visible": false,
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ],
+              "update": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
+            "items": {
+              "type": "object",
+              "properties": {
+                "propertyDefinition": {
+                  "type": "string",
+                  "format": "uuid",
+                  "title": "Property definition",
+                  "description": "The propertyDefinition this entry answers"
+                },
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "The definition's name, stored beside the value"
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value",
+                  "description": "The answer, as text. A non-scalar answer is stored JSON-encoded"
+                }
+              }
+            }
+          }
+        }
+      },
+      "propertyDefinition": {
+        "version": "1.7.0",
+        "properties": {
+          "sensitive": {
+            "type": "boolean",
+            "default": false,
+            "title": "Sensitive",
+            "description": "Whether an answer to this field is sensitive personal data, such as an income or asset test. A sensitive answer is kept in the case's sensitiveProperties, which only the group dossiq-sensitive reads."
+          }
+        }
+      }
+    }
+  }
+}

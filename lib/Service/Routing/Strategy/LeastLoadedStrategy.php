@@ -27,14 +27,25 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
+use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 
 /**
  * Least-loaded strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class LeastLoadedStrategy implements RoutingStrategyInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param PoolMembership $pool Reads the pool, its weights and its teams
+	 */
+	public function __construct(
+		private readonly PoolMembership $pool,
+	) {
+	}//end __construct()
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -71,31 +82,62 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 			raw: ($case['openTaskCountsByParticipant'] ?? [])
 		);
 
-		$bestParticipant = null;
-		$bestCount = null;
-		foreach ($roles as $role) {
-			if ((string)($role['roleType'] ?? '') !== $target) {
-				continue;
-			}
+		$team = trim((string)($rule['team'] ?? ''));
+		$members = $this->pool->membersOf(roles: $roles, roleType: $target, team: $team);
 
-			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '') {
-				continue;
-			}
-
-			$count = $counts[$participant] ?? 0;
-			if ($bestCount === null || $count < $bestCount) {
-				$bestParticipant = $participant;
-				$bestCount = $count;
-			}
-		}
-
+		$bestParticipant = $this->leastLoaded(members: $members, counts: $counts);
 		if ($bestParticipant === null) {
 			return [];
 		}
 
 		return [$bestParticipant];
 	}//end resolve()
+
+	/**
+	 * The member with the lowest load per unit of weight, or null when nobody may take a case.
+	 *
+	 * @param array<int, array{participant: string, weight: mixed}> $members The pool.
+	 * @param array<string, int|float>                             $counts  Open tasks per participant.
+	 *
+	 * @return string|null The participant.
+	 */
+	private function leastLoaded(array $members, array $counts): ?string {
+		$bestParticipant = null;
+		$bestLoad = null;
+		foreach ($members as $member) {
+			$participant = $member['participant'];
+			// LOAD PER UNIT OF WEIGHT, not the raw count. A member at weight 2
+			// holding six is less loaded than one at weight 1 holding four,
+			// and comparing counts gets exactly that case backwards. An
+			// unweighted pool divides every count by one, which is the same
+			// comparison this strategy has always made (REQ-RTP-01).
+			$load = $this->pool->relativeLoad(
+				count: (float)($counts[$participant] ?? 0),
+				weight: $member['weight'],
+			);
+
+			// Weight zero (INF): in the pool, holding their cases, not offered
+			// the next one.
+			if (self::isLighter(load: $load, bestLoad: $bestLoad) === true) {
+				$bestParticipant = $participant;
+				$bestLoad = $load;
+			}
+		}
+
+		return $bestParticipant;
+	}//end leastLoaded()
+
+	/**
+	 * Whether a load may take the case and is lower than the best so far.
+	 *
+	 * @param float      $load     The member's load per unit of weight; INF at weight zero.
+	 * @param float|null $bestLoad The lowest load so far, or null before one.
+	 *
+	 * @return bool True when this member is the new best.
+	 */
+	private static function isLighter(float $load, ?float $bestLoad): bool {
+		return ($load !== INF && ($bestLoad === null || $load < $bestLoad));
+	}//end isLighter()
 
 	/**
 	 * Normalise the raw open-task tally to a participant => count map.

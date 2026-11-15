@@ -26,9 +26,16 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use Exception;
 use OCA\Dossiq\Controller\AssistantController;
+use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
 use OCA\Dossiq\Service\Assistant\CaseAssistantService;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
+use OCP\App\IAppManager;
+use OCP\AppFramework\Http;
+use OCP\Http\Client\IClientService;
+use OCP\IAppConfig;
+use OCP\IURLGenerator;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
@@ -41,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\AssistantController
  *
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient
+ * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
  */
 class AssistantControllerTest extends TestCase {
 	/**
@@ -93,7 +102,10 @@ class AssistantControllerTest extends TestCase {
 	 *
 	 * @return AssistantController
 	 */
-	private function controller(): AssistantController {
+	private function controller(
+		?CaseTypeAiFeatures $aiFeatures = null,
+		?HermiqAiFeatureClient $aiFeatureClient = null,
+	): AssistantController {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
@@ -104,7 +116,9 @@ class AssistantControllerTest extends TestCase {
 			$this->hermiqClient,
 			$this->userSession,
 			$l10n,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$aiFeatures,
+			$aiFeatureClient
 		);
 	}//end controller()
 
@@ -220,6 +234,25 @@ class AssistantControllerTest extends TestCase {
 	}//end testCaseNotFoundReturns404()
 
 	/**
+	 * A failure whose code is no HTTP error status is a 500.
+	 *
+	 * @return void
+	 */
+	public function testAFailureWithoutAnErrorStatusIsA500(): void {
+		$this->stubParams(['caseId' => 'case-1', 'message' => 'hello']);
+
+		foreach ([0, 302, 600] as $code) {
+			$service = $this->createMock(CaseAssistantService::class);
+			$service->method('converse')->willThrowException(new Exception('broken', $code));
+			$this->caseAssistantService = $service;
+
+			$response = $this->controller()->converse();
+
+			$this->assertSame(500, $response->getStatus(), 'code ' . $code);
+		}
+	}//end testAFailureWithoutAnErrorStatusIsA500()
+
+	/**
 	 * A HermiqAssistantException's status AND errorCode are both relayed.
 	 *
 	 * @return void
@@ -253,4 +286,161 @@ class AssistantControllerTest extends TestCase {
 
 		$this->assertSame(503, $response->getStatus());
 	}//end testHermiqUnavailableMapsTo503()
+	/**
+	 * An undeclared case type makes no call to hermiq at all.
+	 *
+	 * Contract coverage for `assistant#aiFeatures` (gate-25), and the privacy
+	 * rule underneath it (REQ-AIC-01). "No features declared" must be answered
+	 * LOCALLY. A call that goes out to find that out has already sent the case
+	 * type somewhere, and the empty answer that comes back looks identical.
+	 *
+	 * @return void
+	 */
+	public function testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing(): void {
+		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
+
+		$declared = $this->createMock(CaseTypeAiFeatures::class);
+		$declared->method('onSurface')->willReturn([]);
+
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->expects(self::never())->method('featureResidency');
+
+		$response = $this->controller(aiFeatures: $declared, aiFeatureClient: $client)->aiFeatures();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame([], $response->getData()['features']);
+	}//end testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing()
+
+	/**
+	 * A feature hermiq does not answer for is unavailable, never local.
+	 *
+	 * An unknown residency rendered as "here" is the one wrong answer this
+	 * endpoint could give, so it is asserted rather than assumed (REQ-AIC-02).
+	 *
+	 * @return void
+	 */
+	public function testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal(): void {
+		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
+
+		$declared = $this->createMock(CaseTypeAiFeatures::class);
+		$declared->method('onSurface')->willReturn(['summarise', 'classify']);
+
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->method('featureResidency')->willReturn(
+			['summarise' => ['provider' => 'azure-eu', 'residency' => 'eu-west']]
+		);
+
+		$data = $this->controller(aiFeatures: $declared, aiFeatureClient: $client)
+			->aiFeatures()
+			->getData();
+
+		$bySlug = array_column($data['features'], null, 'slug');
+
+		self::assertTrue($bySlug['summarise']['available']);
+		self::assertSame('azure-eu', $bySlug['summarise']['provider']);
+		self::assertSame('eu-west', $bySlug['summarise']['residency']);
+
+		self::assertFalse($bySlug['classify']['available']);
+		self::assertNull($bySlug['classify']['provider']);
+		self::assertNull($bySlug['classify']['residency'], 'an unknown residency must never render as local');
+	}//end testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal()
+
+	/**
+	 * With the AI collaborators absent the endpoint answers an empty list.
+	 *
+	 * Both are nullable on the constructor, so an instance without them must
+	 * answer a well-formed empty envelope rather than a 500.
+	 *
+	 * @return void
+	 */
+	public function testAiFeaturesAnswersAnEmptyEnvelopeWhenTheCollaboratorsAreAbsent(): void {
+		$this->stubParams([]);
+
+		$response = $this->controller()->aiFeatures();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame([], $response->getData()['features']);
+	}//end testAiFeaturesAnswersAnEmptyEnvelopeWhenTheCollaboratorsAreAbsent()
+
+	/**
+	 * An absent hermiq reports every declared feature as unavailable, never as
+	 * local, and makes no request (ai-features 2.2).
+	 *
+	 * Built over the real client, so the absent path is the production one and
+	 * not a double that already answers an empty map.
+	 *
+	 * @return void
+	 */
+	public function testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable(): void {
+		$this->stubParams(['caseType' => ['aiFeatures' => ['record-summary' => 'case', 'report-similarity' => 'case']], 'surface' => 'case']);
+
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isEnabledForUser')->willReturn(false);
+		$http = $this->createMock(IClientService::class);
+		$http->expects(self::never())->method('newClient');
+
+		$client = new HermiqAiFeatureClient(
+			clientService: $http,
+			urlGenerator: $this->createMock(IURLGenerator::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			appManager: $appManager,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$features = $this->controller(aiFeatures: new CaseTypeAiFeatures(), aiFeatureClient: $client)
+			->aiFeatures()
+			->getData()['features'];
+
+		self::assertCount(2, $features);
+		foreach ($features as $feature) {
+			self::assertFalse($feature['available']);
+			self::assertNull($feature['provider']);
+			self::assertNull($feature['residency'], 'an absent hermiq must never read as local');
+		}
+	}//end testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable()
+
+	/**
+	 * The prompts offered on a case are hermiq's, read under dossiq's case scope,
+	 * in hermiq's order; a row without text is not offered (REQ-AIC-06).
+	 *
+	 * @return void
+	 */
+	public function testThePromptsOfferedOnACaseComeFromHermiq(): void {
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->expects(self::once())
+			->method('prompts')
+			->with(AssistantController::CASE_PROMPT_SCOPE)
+			->willReturn(
+				[
+					['id' => 'p-2', 'label' => 'Open documents', 'prompt' => 'Which documents still need review?'],
+					['id' => 'p-3', 'label' => 'Empty', 'prompt' => '  '],
+					['id' => 'p-1', 'label' => 'Summary', 'prompt' => 'Summarise the mails.'],
+				]
+			);
+
+		$response = $this->controller(aiFeatureClient: $client)->prompts();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(
+			[
+				['id' => 'p-2', 'label' => 'Open documents', 'prompt' => 'Which documents still need review?'],
+				['id' => 'p-1', 'label' => 'Summary', 'prompt' => 'Summarise the mails.'],
+			],
+			$response->getData()['prompts']
+		);
+	}//end testThePromptsOfferedOnACaseComeFromHermiq()
+
+	/**
+	 * Without the client, or without a session, no prompt is offered.
+	 *
+	 * @return void
+	 */
+	public function testPromptsAreRefusedWithoutASessionAndEmptyWithoutHermiq(): void {
+		self::assertSame([], $this->controller()->prompts()->getData()['prompts']);
+
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn(null);
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->prompts()->getStatus());
+	}//end testPromptsAreRefusedWithoutASessionAndEmptyWithoutHermiq()
+
 }//end class

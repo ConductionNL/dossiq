@@ -13,10 +13,13 @@
  *  - dispatch automatic actions sequentially (via SideEffectDispatcher)
  *  - replay transition history from the `statusRecord` chain
  *
- * Three collaborators carry the concerns that are not transition decisions:
- * {@see Transitions\CaseStatusStore} owns every OpenRegister read/write,
- * {@see Transitions\TransitionAuthorizer} owns the OR-RBAC group gate, and
- * {@see Transitions\TransitionSpecReader} owns the template dialects a
+ * The engine keeps the decision: which transition, in which order the checks
+ * run, what is refused and what the caller is told. It asks two collaborators
+ * for everything else. {@see Transitions\CaseDeclarations} reads what a case
+ * declares about its status and its moves. {@see Transitions\CaseMoveLedger}
+ * holds every read and write of the store, the closing result and the side
+ * effects. {@see Transitions\TransitionAuthorizer} owns the OR-RBAC group gate
+ * and {@see Transitions\TransitionSpecReader} the template dialects a
  * transition's guards and actions may be spelled in.
  *
  * Identity is ALWAYS derived from IUserSession when the caller does not pass
@@ -42,19 +45,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
-use OCA\Dossiq\Service\Status\StatusDeclarations;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
-use OCA\Dossiq\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
-use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
-use OCA\Dossiq\Service\Transitions\StatusChecklist;
+use OCA\Dossiq\Service\Transitions\TransitionAsk;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
-use OCA\Dossiq\Service\Transitions\OfferedTransitions;
-use OCA\Dossiq\Service\Transitions\TransitionDeclarations;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
+use OCA\Dossiq\Service\Transitions\TransitionStep;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -62,17 +61,9 @@ use RuntimeException;
 /**
  * The status-transition engine.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the collaborators ARE the
- *      decomposition: persistence, the group gate, the template dialects, the
- *      closing result and the status checklist each live in their own class,
- *      and folding any of them back in to satisfy the count would put the
- *      concern back where it was split from.
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) — same reason, counted at the
- *      constructor: every parameter is one of those collaborators, injected.
- *
- * @spec openspec/changes/status-transition-engine/tasks.md#T10
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T10
  */
-class StatusTransitionService {
+class StatusTransitionService implements StatusTransitionServiceInterface {
 
 	/**
 	 * Group ID used to gate admin-only free-form transitions. Matches the
@@ -85,38 +76,44 @@ class StatusTransitionService {
 	public const ADMIN_GROUP_ID = TransitionAuthorizer::ADMIN_GROUP_ID;
 
 	/**
+	 * The move a free-form transition records, in this key order; the
+	 * from-status, target, comment and actor are filled in per move.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const FREE_FORM_MOVE = [
+		'fromStatus' => '',
+		'toStatus' => '',
+		'label' => 'Free-form transition',
+		'comment' => null,
+		'actor' => '',
+		'evaluatedGuards' => [],
+		'noWorkflowTemplate' => true,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WorkflowTemplateLoader $templateLoader Active workflowTemplate loader
 	 * @param GuardRegistry $guardRegistry Guard registry
-	 * @param SideEffectDispatcher $sideEffectDispatcher Side-effect dispatcher
-	 * @param CaseStatusStore $store OpenRegister persistence for the engine
 	 * @param TransitionAuthorizer $authorizer OR-RBAC group gate
 	 * @param TransitionSpecReader $specReader Guard/action shape reader
 	 * @param IUserSession $userSession Current session
 	 * @param LoggerInterface $logger Logger
-	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
-	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
-	 * @param StatusDeclarations $declarations What a status declares about itself
-	 * @param TransitionDeclarations $declaredMoves What a transition declares about itself
-	 * @param OfferedTransitions $offered Which moves this case offers and which it withholds
 	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
+	 * @param CaseDeclarations $declarations What the case declares about its status and its moves
+	 * @param CaseMoveLedger $ledger What a move writes, and what earlier moves wrote
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
 		private readonly GuardRegistry $guardRegistry,
-		private readonly SideEffectDispatcher $sideEffectDispatcher,
-		private readonly CaseStatusStore $store,
 		private readonly TransitionAuthorizer $authorizer,
 		private readonly TransitionSpecReader $specReader,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseResultWriter $resultWriter,
-		private readonly StatusChecklist $statusChecklist,
-		private readonly StatusDeclarations $declarations,
-		private readonly TransitionDeclarations $declaredMoves,
-		private readonly OfferedTransitions $offered,
 		private readonly ProcessOwnedStatusRule $processOwnedStatus,
+		private readonly CaseDeclarations $declarations,
+		private readonly CaseMoveLedger $ledger,
 	) {
 	}//end __construct()
 
@@ -132,51 +129,15 @@ class StatusTransitionService {
 	 */
 	public function getAvailableTransitions(string $caseId, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);
-		$case = $this->store->loadCase(caseId: $caseId);
+		$case = $this->ledger->load(caseId: $caseId);
 		if ($case === null) {
 			return ['transitions' => [], 'current' => []];
 		}
 
 		$currentId = (string)($case['status'] ?? '');
-
-		// 🔑 THE CASE, NOT ITS CASE TYPE. A case type may carry several routes,
-		// and a case pinned to one of them must be offered that route's
-		// transitions. Asking by case type alone returned whichever active
-		// definition the store listed first.
-		$template = $this->templateLoader->getTemplateForCase(case: $case);
-
-		// What the status the case is in DECLARES, beside the moves out of it.
-		// The handler asks both questions in the same breath — what can I do
-		// here, and why is the thing I expected not on offer — so they are
-		// answered in one round trip rather than two.
-		$declared = $this->declarations->panelFor(case: $case);
-
-		$result = [
-			'transitions' => [],
-			// Always present, even when nothing is withheld: a caller that had
-			// to test for the key would read an absent list as "nothing is in
-			// the way", which is the one wrong answer that looks right.
-			'withheld' => [],
-			'current' => [
-				'statusId' => $currentId,
-				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
-				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
-				// What this status MEANS, written by an administrator and
-				// rendered on the case. Published beside the name because both
-				// come off the same row.
-				'statusDescription' => $this->store->lookupStatusDescription(statusTypeId: $currentId),
-				'waitingOn' => $declared['waitingOn'],
-				'dwell' => $declared['dwell'],
-			],
-			'derivation' => $declared['derivation'],
-		];
-
-		if ($template === null) {
-			return $result;
-		}
-
-		$transitions = $template['transitions'] ?? [];
-		if (is_array($transitions) === false) {
+		$transitions = $this->transitionsFor(case: $case);
+		$result = $this->panelFor(case: $case, currentId: $currentId);
+		if ($transitions === null) {
 			return $result;
 		}
 
@@ -184,7 +145,7 @@ class StatusTransitionService {
 		// decision about one transition asked five ways, and it lives in its
 		// own class. This engine's job is what happens when a handler TAKES
 		// one.
-		$sorted = $this->offered->from(
+		$sorted = $this->declarations->offered(
 			transitions: $transitions,
 			case: $case,
 			currentId: $currentId,
@@ -196,6 +157,64 @@ class StatusTransitionService {
 
 		return $result;
 	}//end getAvailableTransitions()
+
+	/**
+	 * The transitions of the workflow a case runs on, or null when it runs on none.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<int|string, mixed>|null The transitions, or null without a template or a transition list.
+	 */
+	private function transitionsFor(array $case): ?array {
+		// 🔑 THE CASE, NOT ITS CASE TYPE. A case type may carry several routes,
+		// and a case pinned to one of them must be offered that route's
+		// transitions. Asking by case type alone returned whichever active
+		// definition the store listed first.
+		$template = $this->templateLoader->getTemplateForCase(case: $case);
+		if ($template === null) {
+			return null;
+		}
+
+		$transitions = $template['transitions'] ?? [];
+		if (is_array($transitions) === false) {
+			return null;
+		}
+
+		return $transitions;
+	}//end transitionsFor()
+
+	/**
+	 * The status panel of a case, with no transitions offered or withheld yet.
+	 *
+	 * @param array<string, mixed> $case      The case.
+	 * @param string               $currentId The status the case is in.
+	 *
+	 * @return array<string, mixed> The panel.
+	 */
+	private function panelFor(array $case, string $currentId): array {
+		// What the status the case is in DECLARES, beside the moves out of it.
+		// The handler asks both questions in the same breath — what can I do
+		// here, and why is the thing I expected not on offer — so they are
+		// answered in one round trip rather than two.
+		$declared = $this->declarations->panel(case: $case);
+
+		return [
+			'transitions' => [],
+			// Always present, even when nothing is withheld: a caller that had
+			// to test for the key would read an absent list as "nothing is in
+			// the way", which is the one wrong answer that looks right.
+			'withheld' => [],
+			// The name, the colour and what this status MEANS, written by an
+			// administrator and rendered on the case: all three come off the
+			// same row.
+			'current' => array_merge(
+				['statusId' => $currentId],
+				$this->declarations->statusFacts(statusTypeId: $currentId),
+				['waitingOn' => $declared['waitingOn'], 'dwell' => $declared['dwell']],
+			),
+			'derivation' => $declared['derivation'],
+		];
+	}//end panelFor()
 
 	/**
 	 * Execute a guarded transition.
@@ -216,12 +235,13 @@ class StatusTransitionService {
 	 *         `status` is `ok`, or `partial` when the case moved and an action it
 	 *         should have brought did not run. See `actionOutcome()`.
 	 *
-	 * @throws GuardFailedException When server-side re-evaluation fails any guard
-	 * @throws RuntimeException When case/transition/template are not found, or a
-	 *                          closing transition arrives without a result type
+	 * @throws RuntimeException A GuardFailedException when server-side re-evaluation fails
+	 *                          any guard; a RefusedException when the from-status or group
+	 *                          gate rejects; otherwise when case/transition/template are not
+	 *                          found, or a closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function execute(
 		string $caseId,
@@ -230,32 +250,35 @@ class StatusTransitionService {
 		?string $userId = null,
 		?string $resultTypeId = null,
 	): array {
-		$userId = $this->resolveUserId(explicit: $userId);
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RuntimeException('case_not_found');
-		}
+		$actor = $this->resolveUserId(explicit: $userId);
+		$step = $this->stepFor(ask: new TransitionAsk(caseId: $caseId, transitionId: $transitionId, userId: $actor, resultTypeId: $resultTypeId));
+		$eval = $this->assertTransitionAllowed(step: $step);
 
-		// H2: Capture the @self.version at read time for the optimistic lock check below.
-		$readVersion = (int)(($case['@self']['version'] ?? ($case['version'] ?? 0)));
+		return $this->carryOut(step: $step, move: ['evaluatedGuards' => $eval, 'comment' => $comment]);
+	}//end execute()
 
-		$transition = $this->templateLoader->getTransitionForCase(case: $case, transitionId: $transitionId);
-		if ($transition === null) {
-			throw new RuntimeException('transition_not_found');
-		}
-
-		$currentId = (string)($case['status'] ?? '');
-
-		$eval = $this->assertTransitionAllowed(
-			case: $case,
-			transition: $transition,
-			caseId: $caseId,
-			transitionId: $transitionId,
-			currentId: $currentId,
-			userId: $userId,
-		);
-
-		$toStatus = (string)($transition['toStatus'] ?? '');
+	/**
+	 * Write an allowed move, retime the status clocks, record it and dispatch its actions.
+	 *
+	 * @param TransitionStep $step The allowed move on the loaded case, asked for its case UUID
+	 * @param array{evaluatedGuards: array<int, array<string, mixed>>, comment: string|null} $move The guard evaluation
+	 *        results, and the optional comment
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 *     version: int,
+	 * }
+	 *
+	 * @throws RuntimeException When the transition names no target status, or the case changed since it was read
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function carryOut(TransitionStep $step, array $move): array {
+		$caseId = $step->ask->caseId;
+		$toStatus = $step->toStatus();
 		if ($toStatus === '') {
 			throw new RuntimeException('transition_missing_to_status');
 		}
@@ -263,19 +286,9 @@ class StatusTransitionService {
 		// H2: Optimistic concurrency guard — re-load the case immediately before writing
 		// and abort if its status changed since we read it (concurrent transition executed
 		// between our guard evaluation and our save).
-		$caseAtSave = $this->assertNoConcurrentChange(
-			caseId: $caseId,
-			readVersion: $readVersion,
-			currentId: $currentId,
-		);
+		$caseAtSave = $this->ledger->reloadUnchanged(caseId: $caseId, readVersion: $step->readVersion(), currentId: $step->currentId());
 
-		[$case, $savedVersion] = $this->writeMove(
-			caseAtSave: $caseAtSave,
-			caseId: $caseId,
-			toStatus: $toStatus,
-			resultTypeId: $resultTypeId,
-			readVersion: $readVersion,
-		);
+		[$saved, $savedVersion] = $this->writeMove(step: $step, caseAtSave: $caseAtSave);
 
 		// Stop the clock on the status the case left, start one on the status
 		// it entered when that status declares a maximum. After the save, and
@@ -283,26 +296,36 @@ class StatusTransitionService {
 		// would breach about a status the case is not in.
 		$this->declarations->retime(caseId: $caseId, toStatus: $toStatus);
 
-		[$record, $dispatched] = $this->recordAndDispatch(
-			case: $case,
-			transition: $transition,
-			caseId: $caseId,
-			currentId: $currentId,
-			comment: $comment,
-			userId: $userId,
-			evaluatedGuards: $eval,
+		$recorded = $this->recordAndDispatch(
+			step: $step->withCaseData(caseData: $saved),
+			move: $step->move(comment: $move['comment'], evaluatedGuards: $move['evaluatedGuards'])
 		);
 
-		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
+		return ($this->moveResult(caseId: $caseId, recorded: $recorded) + ['version' => $savedVersion]);
+	}//end carryOut()
 
-		return [
-			'status' => $outcome['status'],
-			'statusRecord' => $record,
-			'dispatchedActions' => $dispatched,
-			'failedActions' => $outcome['failedActions'],
-			'version' => $savedVersion,
-		];
-	}//end execute()
+	/**
+	 * Load the case and the transition a move asks for.
+	 *
+	 * @param TransitionAsk $ask The move as asked.
+	 *
+	 * @return TransitionStep The move on the loaded case.
+	 *
+	 * @throws RuntimeException When the case or the transition does not exist.
+	 */
+	private function stepFor(TransitionAsk $ask): TransitionStep {
+		$loaded = $this->ledger->load(caseId: $ask->caseId);
+		if ($loaded === null) {
+			throw new RuntimeException('case_not_found');
+		}
+
+		$transition = $this->templateLoader->getTransitionForCase(case: $loaded, transitionId: $ask->transitionId);
+		if ($transition === null) {
+			throw new RuntimeException('transition_not_found');
+		}
+
+		return new TransitionStep(ask: $ask, caseData: $loaded, transition: $transition);
+	}//end stepFor()
 
 	/**
 	 * What to tell the caller happened, and which actions did not.
@@ -333,7 +356,7 @@ class StatusTransitionService {
 	 * @return array{status: string, failedActions: array<int, array{type: string, error: string}>}
 	 *         `ok` with no failures, or `partial` with the failures in dispatch order.
 	 *
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function actionOutcome(array $dispatched, string $caseId): array {
 		$outcome = ['status' => 'ok', 'failedActions' => []];
@@ -385,51 +408,28 @@ class StatusTransitionService {
 	 * so the store still refuses a write that another transition got in front
 	 * of.
 	 *
-	 * @param array<string, mixed> $caseAtSave   The case as re-read immediately before writing.
-	 * @param string               $caseId       Case UUID.
-	 * @param string               $toStatus     The status being entered.
-	 * @param string|null          $resultTypeId The result a closing transition carries.
-	 * @param int                  $readVersion  The version captured at read time.
+	 * @param TransitionStep       $step       The move on the case as first read.
+	 * @param array<string, mixed> $caseAtSave The case as re-read immediately before writing.
 	 *
 	 * @return array{0: array<string, mixed>, 1: int} The saved case and its new version.
 	 *
 	 * @throws RuntimeException When a closing transition carries no result type.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function writeMove(
-		array $caseAtSave,
-		string $caseId,
-		string $toStatus,
-		?string $resultTypeId,
-		int $readVersion,
-	): array {
-		$caseAtSave = $this->applyClosingResult(
+	private function writeMove(TransitionStep $step, array $caseAtSave): array {
+		$toStatus = $step->toStatus();
+		$caseAtSave = $this->ledger->close(
 			case: $caseAtSave,
-			caseId: $caseId,
+			caseId: $step->ask->caseId,
 			toStatus: $toStatus,
-			resultTypeId: $resultTypeId,
+			resultTypeId: $step->ask->resultTypeId,
 		);
 
-		$caseAtSave = $this->declarations->applyStatusChange(case: $caseAtSave, toStatus: $toStatus);
+		$caseAtSave = $this->declarations->stamp(case: $caseAtSave, toStatus: $toStatus);
 
-		$caseAtSave['status'] = $toStatus;
-
-		// One branch, not two. `isset() === false || is_array() === false` is
-		// two decision points for one question, and this class sits on PHPMD's
-		// complexity ceiling: the compound spelling is what pushed it over.
-		// A missing key reads as null here, and null is not an array.
-		$self = ($caseAtSave['@self'] ?? null);
-		if (is_array($self) === false) {
-			$self = [];
-		}
-
-		$self['version'] = $readVersion;
-		$caseAtSave['@self'] = $self;
-		$savedCase = $this->store->saveCase(case: $caseAtSave);
-
-		return [$savedCase, (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)))];
+		return $this->ledger->save(case: $caseAtSave, toStatus: $toStatus, readVersion: $step->readVersion());
 	}//end writeMove()
 
 	/**
@@ -439,311 +439,71 @@ class StatusTransitionService {
 	 * dispatched actions are written back onto: splitting them would mean
 	 * passing that id back and forth for no gain.
 	 *
-	 * @param array<string, mixed> $case The SAVED case (side effects read the new status)
-	 * @param array<string, mixed> $transition The transition definition
-	 * @param string $caseId Case UUID
-	 * @param string $currentId The status the case moved out of
-	 * @param string|null $comment Free-form comment
-	 * @param string $userId The acting user UID
-	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots
+	 * @param TransitionStep       $step The move on the SAVED case (side effects read the new status)
+	 * @param array<string, mixed> $move What the status record says (TransitionStep::move())
 	 *
 	 * @return array{0: array<string, mixed>, 1: array<int, array<string, mixed>>}
 	 *         The statusRecord and the dispatched-action results
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function recordAndDispatch(
-		array $case,
-		array $transition,
-		string $caseId,
-		string $currentId,
-		?string $comment,
-		string $userId,
-		array $evaluatedGuards,
-	): array {
-		$label = (string)($transition['label'] ?? '');
-		$toStatus = (string)($transition['toStatus'] ?? '');
-		$record = $this->store->writeStatusRecord(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $currentId,
-			label: $label,
-			comment: $comment,
-			evaluatedGuards: $evaluatedGuards,
-			noWorkflowTemplate: false,
-			actor: $userId,
-		);
-
-		$statusRecordId = (string)($record['id'] ?? '');
-		$context = [
-			'fromStatus' => $currentId,
-			'toStatus' => $toStatus,
-			'transitionLabel' => $label,
-			'userId' => $userId,
-			'statusRecordUuid' => $statusRecordId,
-		];
+	private function recordAndDispatch(TransitionStep $step, array $move): array {
+		$record = $this->ledger->record(caseId: $step->ask->caseId, move: $move);
 
 		// The status the case just entered brings its own work. The checklist
 		// actions go FIRST, so the tasks a phase asks for exist before whatever
-		// the transition itself does with them — a notification that lists the
+		// the transition itself does with them: a notification that lists the
 		// case's open tasks is otherwise sent one dispatch too early.
 		$actions = array_merge(
-			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case, actor: $userId),
-			$this->specReader->extractActions(transition: $transition),
+			$this->declarations->checklistActions(statusTypeId: $step->toStatus(), case: $step->caseData, actor: $step->ask->userId),
+			$this->specReader->extractActions(transition: $step->transition),
 		);
-		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
+		$dispatched = $this->ledger->dispatch(actions: $actions, case: $step->caseData, move: $move, record: $record);
 
 		// Update the statusRecord with the actual dispatched-action results.
-		$record = $this->persistDispatchedActions(
-			record: $record,
-			dispatched: $dispatched,
-			statusRecordId: $statusRecordId,
-		);
-
-		return [$record, $dispatched];
+		return [$this->ledger->writeBack(record: $record, dispatched: $dispatched), $dispatched];
 	}//end recordAndDispatch()
-
-	/**
-	 * Write the result a closing transition records, onto the case payload.
-	 *
-	 * Returns the case unchanged when the target status is not final. When it
-	 * is, a result type is REQUIRED: a case that closes with no result answers
-	 * none of the questions an archivist, a citizen or a WOO request will ask
-	 * of it later.
-	 *
-	 * A closing transition also settles the case's END DATE and its ARCHIVAL
-	 * FUTURE, both in this same save. Neither used to happen here. `endDate`
-	 * was written only by the ZGW path (zrc-007a), so a case closed at the desk
-	 * read as still open to every consumer that asks the zaak whether it has an
-	 * einddatum; and the zrc-021 nomination was derived only over the API, so
-	 * the same case closed two ways ended in two different archival states.
-	 * Doing both here, rather than in a job afterwards, is what keeps them
-	 * true of every closed case rather than of most of them.
-	 *
-	 * @param array<string, mixed> $case The case payload about to be saved
-	 * @param string $caseId Case UUID
-	 * @param string $toStatus The target statusType UUID
-	 * @param string|null $resultTypeId The chosen resultType UUID, or null
-	 *
-	 * @return array<string, mixed> The case payload, with `result`, `endDate` and
-	 *                              the archival fields set when closing
-	 *
-	 * @throws RuntimeException When a closing transition carries no result type
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function applyClosingResult(
-		array $case,
-		string $caseId,
-		string $toStatus,
-		?string $resultTypeId,
-	): array {
-		if ($this->resultWriter->isFinalStatus(statusTypeId: $toStatus) === false) {
-			return $case;
-		}
-
-		// An end date the case already carries is left alone: a handler who
-		// backdated the close meant it, and zrc-021 derives from that date.
-		$endDate = substr((string)($case['endDate'] ?? ''), 0, 10);
-		if ($endDate === '') {
-			$endDate = date('Y-m-d');
-		}
-
-		$case['endDate'] = $endDate;
-
-		$resultId = $this->resultWriter->resolveClosingResult(
-			caseId: $caseId,
-			caseTypeId: (string)($case['caseType'] ?? ''),
-			resultTypeId: $resultTypeId,
-		);
-		if ($resultId === null) {
-			return $case;
-		}
-
-		$case['result'] = $resultId;
-
-		return array_merge(
-			$case,
-			$this->resultWriter->archivalFuture(
-				case: $case,
-				resultTypeId: (string)$resultTypeId,
-				endDate: $endDate,
-			)
-		);
-	}//end applyClosingResult()
 
 	/**
 	 * Re-evaluate every server-side precondition for a transition.
 	 *
-	 * @param array<string, mixed> $case The loaded case
-	 * @param array<string, mixed> $transition The transition definition
-	 * @param string $caseId Case UUID (for logging)
-	 * @param string $transitionId Transition id (for logging)
-	 * @param string $currentId The case's current statusType UUID
-	 * @param string $userId The acting user UID
+	 * @param TransitionStep $step The move on the loaded case, with the acting user
 	 *
 	 * @return array<int, array<string, mixed>> The guard evaluation results
 	 *
-	 * @throws GuardFailedException When server-side re-evaluation fails any guard
-	 * @throws RuntimeException When the from-status or group authorization gate rejects
+	 * @throws RuntimeException A RefusedException when the from-status or group authorization
+	 *                          gate rejects, a GuardFailedException when any guard fails
 	 */
-	private function assertTransitionAllowed(
-		array $case,
-		array $transition,
-		string $caseId,
-		string $transitionId,
-		string $currentId,
-		string $userId,
-	): array {
-		$fromStatus = (string)($transition['fromStatus'] ?? '');
-		if ($fromStatus !== '' && $fromStatus !== $currentId) {
-			throw new RefusedException(
-				rule: 'transition-from-status-mismatch',
-				sentence: 'This move does not start from the status the case is in.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
+	private function assertTransitionAllowed(TransitionStep $step): array {
+		$step->assertStartsFromCurrent();
+		$ask = $step->ask;
 
 		// The dependency is re-asked on the server, for the reason the guards
 		// are: the list a browser holds was true when it was fetched, and the
 		// advice request can have arrived since. Withholding is the courtesy;
 		// this is the rule.
-		$withheld = $this->declaredMoves->withheldReasons(transition: $transition, case: $case);
-		if ($withheld !== []) {
-			throw new RefusedException(
-				rule: 'transition-dependency-open',
-				sentence: 'This move is waiting on ' . $withheld[0] . '.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
+		$this->declarations->assertOpen(transition: $step->transition, case: $step->caseData, caseId: $ask->caseId, userId: $ask->userId);
 
-		// 🔑 FOUR EYES IS A NEGATIVE RULE ABOUT AN ACT, NOT A ROLE. The same
-		// person legitimately approves other cases they did not prepare, so
-		// there is no role to withhold this from: the engine reads who
-		// performed the named earlier act ON THIS CASE and refuses them.
-		// It refuses rather than withholds, deliberately. A colleague opening
-		// the same case must see the move, and a list that hid it per reader
-		// would make two handlers disagree about what the case offers.
-		$refusal = $this->declaredMoves->fourEyesRefusal(
-			transition: $transition,
-			caseId: $caseId,
-			userId: $userId,
+		$step->assertGroupAuthorized(
+			authorized: $this->authorizer->isTransitionGroupAuthorized(transition: $step->transition, userId: $ask->userId)
 		);
-		if ($refusal !== null) {
-			throw new RefusedException(
-				rule: 'transition-four-eyes',
-				sentence: $this->declaredMoves->refusalSentence(refusal: $refusal),
-				status: RefusedException::STATUS_FORBIDDEN,
-			);
-		}
-
-		// OR-RBAC role-routing gate (ADR-022). At publish time
-		// WorkflowDefinitionService resolves each transition's assignee role
-		// to its `roleType.ncGroupId` and freezes the literal group id(s) on
-		// the transition `authorization` list — the same OR PR #153 gate
-		// format OR enforces declaratively on schemas that carry an
-		// x-openregister-lifecycle. `case.status` is a per-caseType dynamic
-		// state machine with no static lifecycle table, so OR cannot enforce
-		// it on saveObject; this engine therefore enforces the SAME group
-		// model here using OR's single trusted membership check (IGroupManager),
-		// not a bespoke role-resolution scheme. An empty/absent list = open.
-		if ($this->authorizer->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
-			throw new RefusedException(
-				rule: 'transition-unauthorized',
-				sentence: 'You are not in a group this move is open to.',
-				status: RefusedException::STATUS_FORBIDDEN,
-			);
-		}
 
 		// Defence in depth — re-evaluate guards on the server side.
 		$eval = $this->guardRegistry->evaluateAll(
-			guards: $this->evaluateGuards(transition: $transition),
-			case: $case,
-			userId: $userId,
+			guards: $this->evaluateGuards(transition: $step->transition),
+			case: $step->caseData,
+			userId: $ask->userId,
 		);
 		$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
 		// @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
 		if (count($failed) > 0) {
-			$this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
-			throw new GuardFailedException(failedGuards: $failed);
+			$this->logger->info('StatusTransitionService: guards failed', ['caseId' => $ask->caseId, 'transitionId' => $ask->transitionId]);
 		}
+
+		$step->assertGuardsPassed(failed: $failed);
 
 		return $eval;
 	}//end assertTransitionAllowed()
-
-	/**
-	 * Re-load the case immediately before writing and abort when another
-	 * transition landed in the meantime (H2 optimistic concurrency guard).
-	 *
-	 * @param string $caseId Case UUID
-	 * @param int $readVersion The @self.version captured at read time
-	 * @param string $currentId The statusType UUID observed at read time
-	 *
-	 * @return array<string, mixed> The freshly loaded case
-	 *
-	 * @throws RuntimeException When the case vanished or was concurrently changed
-	 */
-	private function assertNoConcurrentChange(
-		string $caseId,
-		int $readVersion,
-		string $currentId,
-	): array {
-		$caseAtSave = $this->store->loadCase(caseId: $caseId);
-		if ($caseAtSave === null) {
-			throw new RuntimeException('case_not_found');
-		}
-
-		$versionAtSave = (int)(($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
-		if ($versionAtSave !== $readVersion) {
-			throw new RefusedException(
-				rule: 'transition-conflict',
-				sentence: 'Another change reached this case first. Reload it and try again.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$statusAtSave = (string)($caseAtSave['status'] ?? '');
-		if ($statusAtSave !== $currentId) {
-			throw new RefusedException(
-				rule: 'transition-conflict',
-				sentence: 'Another change reached this case first. Reload it and try again.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		return $caseAtSave;
-	}//end assertNoConcurrentChange()
-
-	/**
-	 * Persist the dispatched-action results onto the statusRecord.
-	 *
-	 * @param array<string, mixed> $record The statusRecord
-	 * @param array<int, array<string, mixed>> $dispatched Dispatch results
-	 * @param string $statusRecordId The statusRecord UUID
-	 *
-	 * @return array<string, mixed> The (possibly updated) statusRecord
-	 */
-	private function persistDispatchedActions(
-		array $record,
-		array $dispatched,
-		string $statusRecordId,
-	): array {
-		if ($statusRecordId === '') {
-			return $record;
-		}
-
-		$record['dispatchedActions'] = $dispatched;
-		try {
-			return $this->store->updateStatusRecord(record: $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StatusTransitionService: dispatchedActions persist failed',
-				['exception' => $e->getMessage(), 'statusRecord' => $statusRecordId],
-			);
-		}
-
-		return $record;
-	}//end persistDispatchedActions()
 
 	/**
 	 * Execute an admin-only free-form transition for caseTypes without an active workflow template.
@@ -763,19 +523,133 @@ class StatusTransitionService {
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);
+		$case = $this->caseForAdmin(caseId: $caseId, userId: $userId);
+		$this->assertHandSettable(case: $case, toStatusId: $toStatusId);
+
+		$move = array_replace(
+			self::FREE_FORM_MOVE,
+			['fromStatus' => (string)($case['status'] ?? ''), 'toStatus' => $toStatusId, 'comment' => $comment, 'actor' => $userId],
+		);
+		$case = $this->saveFreeFormMove(moving: ['caseId' => $caseId, 'case' => $case], toStatusId: $toStatusId);
+
+		return $this->recordAndDispatchFreeForm(moved: ['caseId' => $caseId, 'case' => $case], move: $move);
+	}//end executeFreeForm()
+
+	/**
+	 * Save the case in its new status and retime its terms.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>} $moving     Case UUID, and the case.
+	 * @param string                                            $toStatusId Target statusType UUID
+	 *
+	 * @return array<string, mixed> The saved case.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function saveFreeFormMove(array $moving, string $toStatusId): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moving;
+		[$case] = $this->ledger->save(
+			case: $this->declarations->stamp(case: $caseData, toStatus: $toStatusId),
+			toStatus: $toStatusId,
+		);
+		$this->declarations->retime(caseId: $caseId, toStatus: $toStatusId);
+
+		return $case;
+	}//end saveFreeFormMove()
+
+	/**
+	 * Record the move and dispatch the target status's checklist actions.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>} $moved Case UUID, and the saved case.
+	 * @param array<string, mixed>                              $move  The move (`toStatus`, `fromStatus`, `comment`, `actor`, ...);
+	 *                                                                 `actor` is the acting user UID.
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 * }
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordAndDispatchFreeForm(array $moved, array $move): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moved;
+		$record = $this->ledger->record(caseId: $caseId, move: $move);
+		$dispatched = $this->ledger->dispatch(
+			actions: $this->declarations->checklistActions(statusTypeId: $move['toStatus'], case: $caseData, actor: $move['actor']),
+			case: $caseData,
+			move: $move,
+			record: $record,
+		);
+
+		return $this->moveResult(caseId: $caseId, recorded: [$record, $dispatched]);
+	}//end recordAndDispatchFreeForm()
+
+	/**
+	 * The answer of a carried-out move; a guarded transition adds its `version`.
+	 *
+	 * @param string                                                         $caseId   Case UUID
+	 * @param array{0: array<string, mixed>, 1: array<int, array<string, mixed>>} $recorded The status record and the dispatched actions.
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 * }
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function moveResult(string $caseId, array $recorded): array {
+		[$record, $dispatched] = $recorded;
+		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
+
+		return [
+			'status' => $outcome['status'],
+			'statusRecord' => $record,
+			'dispatchedActions' => $dispatched,
+			'failedActions' => $outcome['failedActions'],
+		];
+	}//end moveResult()
+
+	/**
+	 * The case a free-form transition writes, for an administrator only.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $userId The acting user UID
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RuntimeException When the caller is not in the admin group or the case is not found
+	 */
+	private function caseForAdmin(string $caseId, string $userId): array {
 		if ($this->authorizer->isAdmin(userId: $userId) === false) {
 			throw new RuntimeException('forbidden_admin_only');
 		}
 
-		$case = $this->store->loadCase(caseId: $caseId);
+		$case = $this->ledger->load(caseId: $caseId);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
 
+		return $case;
+	}//end caseForAdmin()
+
+	/**
+	 * Refuse a free-form target the case type does not allow to be set by hand.
+	 *
+	 * @param array<string, mixed> $case       The case.
+	 * @param string               $toStatusId Target statusType UUID
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case type owns its status or the target is not one of its statuses
+	 */
+	private function assertHandSettable(array $case, string $toStatusId): void {
 		$caseTypeId = (string)($case['caseType'] ?? '');
 
 		// REQ-LIFE-03. A free-form transition is a status written because an
@@ -790,55 +664,8 @@ class StatusTransitionService {
 		// would read complete and not be.
 		$this->processOwnedStatus->requireHandSetAllowed(caseTypeId: $caseTypeId);
 
-		$this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
-
-		$currentId = (string)($case['status'] ?? '');
-		// The dwell bookkeeping belongs to the MOVE, not to the road into it.
-		// An admin free-form move is still a move, and a case whose dwell reset
-		// only on the guarded path would report months in a status it entered
-		// this morning.
-		$case = $this->declarations->applyStatusChange(case: $case, toStatus: $toStatusId);
-		$case['status'] = $toStatusId;
-		$case = $this->store->saveCase(case: $case);
-		$this->declarations->retime(caseId: $caseId, toStatus: $toStatusId);
-
-		$record = $this->store->writeStatusRecord(
-			caseId: $caseId,
-			toStatus: $toStatusId,
-			fromStatus: $currentId,
-			label: 'Free-form transition',
-			comment: $comment,
-			evaluatedGuards: [],
-			noWorkflowTemplate: true,
-			actor: $userId,
-		);
-
-		// A status brings its checklist however the case arrived. This path
-		// dispatched nothing at all before, because it has no transition to
-		// read actions off — but the work belongs to the phase, not to the road
-		// into it, so an admin's move brings the tasks too. Only the checklist
-		// actions run here: there is no transition whose actions could.
-		$dispatched = $this->sideEffectDispatcher->dispatch(
-			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case, actor: $userId),
-			case: $case,
-			transitionContext: [
-				'fromStatus' => $currentId,
-				'toStatus' => $toStatusId,
-				'transitionLabel' => 'Free-form transition',
-				'userId' => $userId,
-				'statusRecordUuid' => (string)($record['id'] ?? ''),
-			],
-		);
-
-		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
-
-		return [
-			'status' => $outcome['status'],
-			'statusRecord' => $record,
-			'dispatchedActions' => $dispatched,
-			'failedActions' => $outcome['failedActions'],
-		];
-	}//end executeFreeForm()
+		$this->ledger->assertStatusOfCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
+	}//end assertHandSettable()
 
 	/**
 	 * Return the chronological history of transitions for a case.
@@ -850,7 +677,7 @@ class StatusTransitionService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function replay(string $caseId): array {
-		$list = $this->store->findStatusRecords(caseId: $caseId);
+		$list = $this->ledger->history(caseId: $caseId);
 		if ($list === null) {
 			return ['history' => [], 'replayable' => false];
 		}
@@ -885,7 +712,7 @@ class StatusTransitionService {
 	// ------------------------------------------------------------------
 
 	/**
-	 * The guards a transition is subject to: its own, plus the implicit one.
+	 * The guards a transition is subject to: its own, plus the implicit ones.
 	 *
 	 * The status checklist is appended to EVERY transition rather than left to
 	 * the template, because the list it enforces is authored on the status. A
@@ -903,10 +730,14 @@ class StatusTransitionService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function evaluateGuards(array $transition): array {
-		$guards = $this->specReader->extractGuards(transition: $transition);
-		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
-
-		return $guards;
+		// The implicit guards (the status checklist, the status capacity and
+		// the walked approval) come from the one list the offer and the move
+		// both read.
+		return $this->specReader->guardsWithImplicit(
+			transition: $transition,
+			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: $this->guardRegistry->knows(type: GuardRegistry::STATUS_ENTRY_REQUIREMENTS),
+		);
 	}//end evaluateGuards()
 
 	/**

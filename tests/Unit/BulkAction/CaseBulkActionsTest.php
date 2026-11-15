@@ -18,14 +18,17 @@ namespace OCA\Dossiq\Tests\Unit\BulkAction;
 
 use InvalidArgumentException;
 use OCA\Dossiq\BulkAction\LifecycleCasesAction;
+use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
 use OCA\Dossiq\Service\CaseLifecycleService;
+use OCA\Dossiq\Service\CaseType\CaseVersionMove;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCA\OpenRegister\Db\BulkJobMember;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IL10N;
@@ -92,9 +95,12 @@ class CaseBulkActionsTest extends TestCase {
 		$engine->expects($this->never())->method('execute');
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -121,9 +127,12 @@ class CaseBulkActionsTest extends TestCase {
 		]);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
@@ -146,9 +155,12 @@ class CaseBulkActionsTest extends TestCase {
 			->willReturn(['statusRecord' => ['id' => 'sr-1']]);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided', 'comment' => 'Handled in bulk'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided', 'comment' => 'Handled in bulk'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -169,9 +181,12 @@ class CaseBulkActionsTest extends TestCase {
 		);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
@@ -208,14 +223,45 @@ class CaseBulkActionsTest extends TestCase {
 		$lifecycle->expects($this->never())->method('suspend');
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
 		$this->assertSame(expected: 'suspension_not_allowed', actual: $result->getReason());
 	}//end testALifecycleGestureTheCaseTypeForbidsIsSkipped()
+
+	/**
+	 * A case that used every extension its case type allows is skipped with
+	 * its own code, not with "this case type allows none".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testAnExtensionPastTheLimitIsSkippedWithItsOwnCode(): void {
+		$lifecycle = $this->createMock(originalClassName: CaseLifecycleService::class);
+		$lifecycle->method('state')->willReturn(
+			['canExtend' => false, 'suspended' => false, 'isFinalStatus' => false, 'extensionCount' => 1, 'maxExtensions' => 1]
+		);
+		$lifecycle->expects($this->never())->method('extend');
+
+		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'extend', 'reason' => 'Zienswijzen van derden'],
+				commit: true,
+				actor: null
+			)
+		);
+
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'extension_limit_reached', actual: $result->getReason());
+	}//end testAnExtensionPastTheLimitIsSkippedWithItsOwnCode()
 
 	/**
 	 * A permitted gesture writes, carrying the reason onto the case.
@@ -233,9 +279,12 @@ class CaseBulkActionsTest extends TestCase {
 			->willReturn([]);
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -255,9 +304,12 @@ class CaseBulkActionsTest extends TestCase {
 		$lifecycle->expects($this->never())->method('suspend');
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -319,9 +371,12 @@ class CaseBulkActionsTest extends TestCase {
 		$writer->expects($this->never())->method('reassignOne');
 
 		$result = (new ReassignCasesAction(writer: $writer, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-2']),
-			parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-2']),
+				parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -342,9 +397,12 @@ class CaseBulkActionsTest extends TestCase {
 		$writer->method('reassignOne')->willReturn(false);
 
 		$result = (new ReassignCasesAction(writer: $writer, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-1']),
-			parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-1']),
+				parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
@@ -411,9 +469,12 @@ class CaseBulkActionsTest extends TestCase {
 		$settings->expects($this->never())->method('getObjectService');
 
 		$result = (new SetCaseAttributeAction(settingsService: $settings, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'openbaar']),
-			parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'openbaar']),
+				parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -434,9 +495,12 @@ class CaseBulkActionsTest extends TestCase {
 		$settings->method('getConfigValue')->willReturn('3');
 
 		$result = (new SetCaseAttributeAction(settingsService: $settings, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'vertrouwelijk']),
-			parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'vertrouwelijk']),
+				parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
@@ -454,17 +518,149 @@ class CaseBulkActionsTest extends TestCase {
 	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
-	public function testTheFourActionsCarryFourDistinctDossiqIds(): void {
+	public function testTheFiveActionsCarryFiveDistinctDossiqIds(): void {
 		$ids = [
 			TransitionCasesAction::ID,
 			LifecycleCasesAction::ID,
 			ReassignCasesAction::ID,
 			SetCaseAttributeAction::ID,
+			MoveCaseTypeVersionAction::ID,
 		];
 
 		$this->assertSame(expected: $ids, actual: array_values(array_unique($ids)));
 		foreach ($ids as $id) {
 			$this->assertStringStartsWith(prefix: 'dossiq:', string: $id);
 		}
-	}//end testTheFourActionsCarryFourDistinctDossiqIds()
+	}//end testTheFiveActionsCarryFiveDistinctDossiqIds()
+
+	/**
+	 * 🔴 The version move REHEARSES through the same service the dialog asks.
+	 *
+	 * A bulk gesture that computed its own status mapping would be a second
+	 * answer to the question the per-case dialog already asks, and the two would
+	 * drift the first time either side changed: the dialog would refuse a case
+	 * the job had already moved, and nothing on either side would say which one
+	 * was right.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	public function testARehearsedVersionMoveAsksThePreviewAndWritesNothing(): void {
+		$move = $this->createMock(originalClassName: CaseVersionMove::class);
+		$move->expects($this->once())
+			->method('preview')
+			->with(caseId: 'case-1', targetCaseTypeId: 'ct-2')
+			->willReturn(['canMove' => true, 'refusals' => []]);
+		$move->expects($this->never())->method('move');
+
+		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: false,
+				actor: null
+			)
+		);
+
+		$this->assertSame(expected: 'applied', actual: $result->getOutcome());
+	}//end testARehearsedVersionMoveAsksThePreviewAndWritesNothing()
+
+	/**
+	 * 🔴 A case the target version cannot hold is REFUSED with the sentence.
+	 *
+	 * Not failed, and not skipped. The sentence names the status that does not
+	 * exist in the target version, and the name is the only thing an operator
+	 * looking at a hundred-row report can act on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	public function testACaseWithNowhereToLandIsRefusedWithTheReason(): void {
+		$move = $this->createMock(originalClassName: CaseVersionMove::class);
+		$move->method('preview')->willReturn(
+			[
+				'canMove' => false,
+				'refusals' => ['The other version has no status called "Ingetrokken", so this case has nowhere to land.'],
+			]
+		);
+
+		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: false,
+				actor: null
+			)
+		);
+
+		$this->assertSame(expected: 'refused', actual: $result->getOutcome());
+		$this->assertStringContainsString(needle: 'Ingetrokken', haystack: (string)$result->getReason());
+	}//end testACaseWithNowhereToLandIsRefusedWithTheReason()
+
+	/**
+	 * A committed move goes through the service, with the reason and the actor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	public function testACommittedVersionMoveGoesThroughTheService(): void {
+		$move = $this->createMock(originalClassName: CaseVersionMove::class);
+		$move->expects($this->once())
+			->method('move')
+			->with(
+				caseId: 'case-1',
+				targetCaseTypeId: 'ct-2',
+				reason: 'Nieuwe regels',
+				actorUid: '',
+			)
+			->willReturn(['moved' => true]);
+
+		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: true,
+				actor: null
+			)
+		);
+
+		$this->assertSame(expected: 'applied', actual: $result->getOutcome());
+	}//end testACommittedVersionMoveGoesThroughTheService()
+
+	/**
+	 * The move refuses a selection that names no target and no reason.
+	 *
+	 * The reason is a PARAMETER and not only the job's justification, so an act
+	 * handed over by a caller that is not dossiq's own endpoint is refused just
+	 * the same.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	public function testTheVersionMoveRequiresATargetAndAReason(): void {
+		$action = new MoveCaseTypeVersionAction(
+			move: $this->createMock(originalClassName: CaseVersionMove::class),
+			l10n: $this->l10n(),
+		);
+
+		$this->assertTrue($action->requiresJustification());
+
+		try {
+			$action->validateParameters(['reason' => 'Nieuwe regels']);
+			$this->fail('a move with no target was accepted');
+		} catch (InvalidArgumentException $e) {
+			$this->assertStringContainsString(needle: 'target', haystack: $e->getMessage());
+		}
+
+		try {
+			$action->validateParameters(['target' => 'ct-2']);
+			$this->fail('a move with no reason was accepted');
+		} catch (InvalidArgumentException $e) {
+			$this->assertStringContainsString(needle: 'reason', haystack: $e->getMessage());
+		}
+	}//end testTheVersionMoveRequiresATargetAndAReason()
 }//end class

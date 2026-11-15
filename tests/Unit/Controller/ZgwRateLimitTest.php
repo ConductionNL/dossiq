@@ -48,13 +48,14 @@ use ReflectionMethod;
 class ZgwRateLimitTest extends TestCase {
 
 	/**
-	 * The six ZGW component controllers.
+	 * The ZGW component controllers (ZTC publish has its own since slice 8i).
 	 *
 	 * @var string[]
 	 */
 	private const CONTROLLERS = [
 		\OCA\Dossiq\Controller\ZrcController::class,
 		\OCA\Dossiq\Controller\ZtcController::class,
+		\OCA\Dossiq\Controller\ZtcPublishController::class,
 		\OCA\Dossiq\Controller\BrcController::class,
 		\OCA\Dossiq\Controller\DrcController::class,
 		\OCA\Dossiq\Controller\NrcController::class,

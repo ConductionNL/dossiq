@@ -1,0 +1,439 @@
+<?php
+
+/**
+ * The one reader and writer of the sociaal domein schemas.
+ *
+ * 🔴 NOTHING IN lib/ READ THESE SCHEMAS AT ALL BEFORE THIS FILE. `gezinsplan`,
+ * `sociaalDomeinAuditLog` and the three domain case schemas have been declared
+ * in `register.d/50-sociaal-domein.json` since the register was written, and a
+ * grep of `lib/` for either slug returned nothing on 2026-09-18. That is the
+ * shape of the two rows this change closes: the register is ambitious and the
+ * code behind it is not there, so a plan is a list of strings nobody reads and
+ * an authorisation ground is a declared field nobody writes.
+ *
+ * 🔑 THE SLUGS ARE NOT IN `SchemaSlugMap`, AND THAT IS ON PURPOSE. That map
+ * exists for the schemas whose uuid is stored in appconfig by the importer, and
+ * the sociaal domein schemas have never been. They are addressed by SLUG here,
+ * which `SearchesObjects` supports through OpenRegister's slug-aware bridge, so
+ * this change needs no new appconfig key and no import step to run. A reader
+ * looking for a `sociaal_domein_*_schema` key will not find one, and should not
+ * add it: a second way of naming one schema is how two callers end up reading
+ * two different objects.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\SociaalDomein
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\SociaalDomein;
+
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Read and write the sociaal domein objects, by slug.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ */
+class SociaalDomeinStore implements SociaalDomeinStoreInterface {
+
+	use RefusesWhenIndeterminate;
+	use SearchesObjects;
+
+	/**
+	 * The register these schemas live in.
+	 *
+	 * @var string
+	 */
+	public const REGISTER = 'dossiq';
+
+	/**
+	 * The three domains a person can have a case in, and how each names them.
+	 *
+	 * 🔴 THE BSN KEY IS NOT THE SAME WORD IN ALL THREE. `wmoZaak` and
+	 * `participatiewetZaak` carry `bsn`; `jeugdwetZaak` carries `jeugdigeBsn`,
+	 * because the person a Jeugdwet case is about is the juvenile and the
+	 * schema says so. Filtering all three on `bsn` reads as a clean "no case
+	 * exists in Jeugdwet" rather than as an error, which is the single worst
+	 * answer this lookup can give: it tells a consulent nobody else is working
+	 * with a household that somebody is. The key is therefore declared per
+	 * domain here, beside the schema, so the two can never drift apart.
+	 *
+	 * Ordered, and the order is the answer's order, so two lookups of one
+	 * person never read as two different answers because a store happened to
+	 * return its rows the other way round.
+	 *
+	 * @var array<string, array{schema: string, bsnKey: string}>
+	 */
+	public const DOMAINS = [
+		'Wmo' => ['schema' => 'wmoZaak', 'bsnKey' => 'bsn'],
+		'Jeugdwet' => ['schema' => 'jeugdwetZaak', 'bsnKey' => 'jeugdigeBsn'],
+		'Participatiewet' => ['schema' => 'participatiewetZaak', 'bsnKey' => 'bsn'],
+	];
+
+	/**
+	 * The case type categories of each domain, as the case types spell them.
+	 *
+	 * A procedure that moved onto a case type is a case of a case type in one
+	 * of these categories, so this is how a case says which domain it is in.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	public const DOMAIN_CATEGORIES = [
+		'Jeugdwet' => ['Jeugd', 'Jeugdhulp'],
+		'Wmo' => ['Wmo'],
+		'Participatiewet' => ['Participatiewet', 'Werk en inkomen'],
+	];
+
+	/**
+	 * The status every one of the three schemas spells its closed state with.
+	 *
+	 * All three enums end in the same literal, checked 2026-09-18. A domain
+	 * that grows a second terminal status has to be added here, and the test
+	 * that enumerates the enums is what will say so.
+	 *
+	 * @var string
+	 */
+	public const CLOSED_STATUS = 'closed';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Register/schema configuration and the object service.
+	 * @param LoggerInterface $logger          The logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Per domain, whom to call about an open case of that domain about this
+	 * person: the case's assignee, else its team, else the domain.
+	 *
+	 * Read AS THE SYSTEM, deliberately. A consulent asking whether another
+	 * domain knows this household usually cannot open that domain's
+	 * confidential case, and a read under their own access would answer
+	 * "nothing exists", which is the worst answer this lookup can give. Only
+	 * the domain and the contact leave this method; the caller logs the act.
+	 *
+	 * @param string $bsn The person's citizen service number.
+	 *
+	 * @return array<string, string> Domain => contact, the first open case per domain.
+	 *
+	 * @throws RefusedException When the cases or their case types cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function openCaseContactsAbout(string $bsn): array {
+		$objectService = $this->objectService();
+		try {
+			$cases = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: 'case',
+				filters: ['subjectBsn' => $bsn]
+			);
+			$contacts = $this->openContactsOf(objectService: $objectService, cases: $cases);
+		} catch (Throwable $e) {
+			$this->refuseIndeterminate(
+				rule: 'sociaal-domein-unreadable',
+				sentence: 'The cases of the social domain could not be read, so no answer is given rather than "nothing exists".',
+				previous: $e,
+			);
+		}
+
+		return $contacts;
+	}//end openCaseContactsAbout()
+
+	/**
+	 * Domain => contact for the first open case per domain.
+	 *
+	 * @param object                           $objectService The OpenRegister object service.
+	 * @param array<int, array<string, mixed>> $cases         The person's cases.
+	 *
+	 * @return array<string, string> Domain => contact.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function openContactsOf(object $objectService, array $cases): array {
+		$contacts = [];
+		foreach ($cases as $case) {
+			if ($this->isFinal(caseData: $case) === true) {
+				continue;
+			}
+
+			$domain = $this->domainOfCase(objectService: $objectService, caseData: $case);
+			if ($domain === '' || isset($contacts[$domain]) === true) {
+				continue;
+			}
+
+			$contacts[$domain] = $this->contactOf(case: $case, domain: $domain);
+		}
+
+		return $contacts;
+	}//end openContactsOf()
+
+	/**
+	 * Whether a case sits in a final status.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return bool True when the case is closed.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function isFinal(array $caseData): bool {
+		return ($caseData['isFinalStatus'] ?? false) === true;
+	}//end isFinal()
+
+	/**
+	 * The domain of a case's case type, or '' when it is none of the three.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $caseData      The case.
+	 *
+	 * @return string The domain.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function domainOfCase(object $objectService, array $caseData): string {
+		$type = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: self::REGISTER,
+			schema: 'caseType',
+			id: (string)($caseData['caseType'] ?? '')
+		);
+		return $this->domainOfCategory(category: trim((string)($type['category'] ?? '')));
+	}//end domainOfCase()
+
+	/**
+	 * The domain a case type category belongs to, or '' when it is none of the three.
+	 *
+	 * @param string $category The case type category.
+	 *
+	 * @return string The domain.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function domainOfCategory(string $category): string {
+		foreach (self::DOMAIN_CATEGORIES as $domain => $categories) {
+			if (in_array($category, $categories, true) === true) {
+				return $domain;
+			}
+		}
+
+		return '';
+	}//end domainOfCategory()
+
+	/**
+	 * Whom to call about a case: its assignee, else its team, else the domain.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $domain Its domain.
+	 *
+	 * @return string The contact.
+	 */
+	private function contactOf(array $case, string $domain): string {
+		foreach (['assignee', 'assignedGroup'] as $key) {
+			$value = trim((string)($case[$key] ?? ''));
+			if ($value !== '') {
+				return $value;
+			}
+		}
+
+		return $domain;
+	}//end contactOf()
+
+	/**
+	 * Rows of one schema matching these filters.
+	 *
+	 * 🔴 AN UNREADABLE STORE IS NOT AN EMPTY LIST, AND HERE IT REFUSES. A plan
+	 * that could not be read and a household with no plan look identical as an
+	 * empty array, and only one of them is safe to act on: a consulent shown an
+	 * empty plan writes a new one over the plan that is already there.
+	 *
+	 * @param string               $schema  The schema slug.
+	 * @param array<string, mixed> $filters The bare filter keys.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws RefusedException When the store cannot be asked.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	public function rows(string $schema, array $filters = []): array {
+		$objectService = $this->objectService();
+
+		try {
+			return $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: $schema,
+				filters: $filters
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'SociaalDomeinStore: ' . $schema . ' could not be read, so the read is refused rather than answered empty',
+				['error' => $e->getMessage()]
+			);
+
+			$this->refuseIndeterminate(
+				rule: 'sociaal-domein-unreadable',
+				sentence: 'The social domain register could not be read, so nothing is being shown rather than an empty plan.',
+				previous: $e,
+			);
+		}
+	}//end rows()
+
+	/**
+	 * One row by its uuid, or null.
+	 *
+	 * @param string $schema The schema slug.
+	 * @param string $id     The object uuid.
+	 *
+	 * @return array<string, mixed>|null The row.
+	 *
+	 * @throws RefusedException When the store cannot be asked.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	public function read(string $schema, string $id): ?array {
+		if (trim($id) === '') {
+			return null;
+		}
+
+		$objectService = $this->objectService();
+
+		try {
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: $schema,
+				id: $id
+			);
+		} catch (Throwable $e) {
+			$this->refuseIndeterminate(
+				rule: 'sociaal-domein-unreadable',
+				sentence: 'That record of the social domain register could not be read.',
+				previous: $e,
+			);
+		}
+	}//end read()
+
+	/**
+	 * Write one row, and refuse rather than answer null when it fails.
+	 *
+	 * @param string               $schema The schema slug.
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return array<string, mixed> The stored object.
+	 *
+	 * @throws RefusedException When the write fails.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	public function write(string $schema, array $object): array {
+		$objectService = $this->objectService();
+		$uuid = $this->declaredUuid(object: $object);
+
+		try {
+			$saved = $this->saveObjectAsArray(objectService: $objectService, register: self::REGISTER, schema: $schema, object: $object, uuid: $uuid);
+		} catch (Throwable $e) {
+			$this->refuseIndeterminate(
+				rule: 'sociaal-domein-not-written',
+				sentence: 'That change to the social domain register could not be saved.',
+				previous: $e,
+			);
+		}
+
+		return $this->savedOrRefused(saved: $saved);
+	}//end write()
+
+	/**
+	 * The id the object declares, or null for a new one.
+	 *
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return string|null The uuid.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function declaredUuid(array $object): ?string {
+		$declaredId = trim((string)($object['id'] ?? ''));
+		$uuid = null;
+		if ($declaredId !== '') {
+			$uuid = $declaredId;
+		}
+
+		return $uuid;
+	}//end declaredUuid()
+
+	/**
+	 * The stored object, refusing when the store handed back nothing readable.
+	 *
+	 * @param array<string, mixed>|null $saved The stored object, or null.
+	 *
+	 * @return array<string, mixed> The stored object.
+	 *
+	 * @throws RefusedException When nothing readable was stored.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function savedOrRefused(?array $saved): array {
+		if ($saved === null) {
+			// 🔴 NOT A SILENT NULL. `saveObjectAsArray` answers null when the
+			// store hands back a shape it cannot read, and a caller that took
+			// that as "nothing to do" would report a goal it never wrote.
+			throw new RefusedException(
+				rule: 'sociaal-domein-not-written',
+				sentence: 'That change to the social domain register could not be saved.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
+
+		return $saved;
+	}//end savedOrRefused()
+
+	/**
+	 * The object service, or a refusal naming what is missing.
+	 *
+	 * @return object The service.
+	 *
+	 * @throws RefusedException When OpenRegister is absent.
+	 */
+	private function objectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RefusedException(
+				rule: 'sociaal-domein-store-unavailable',
+				sentence: 'The social domain register could not be reached.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
+
+		return $objectService;
+	}//end objectService()
+}//end class

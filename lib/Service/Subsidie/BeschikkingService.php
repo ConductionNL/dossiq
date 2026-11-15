@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class BeschikkingService {
 
@@ -63,6 +64,9 @@ class BeschikkingService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param StaatssteunClassifier $stateAid Which state-aid ground a grant sits
+	 *        on (REQ-SUB-008). Defaulted for the same reason the validator beside
+	 *        it is: this service is constructed directly in several suites.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -70,6 +74,7 @@ class BeschikkingService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly StaatssteunClassifier $stateAid = new StaatssteunClassifier(),
 	) {
 	}//end __construct()
 
@@ -80,7 +85,7 @@ class BeschikkingService {
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -97,7 +102,7 @@ class BeschikkingService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function assertDraftValid(array $payload): void {
 		$granted = (float)($payload['grantedAmount'] ?? 0);
@@ -133,6 +138,7 @@ class BeschikkingService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-001-multi-year-beschikking-with-voorschot-schema
 	 */
 	public function createDraft(string $requestId, array $payload, int $sequence): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$this->assertDraftValid(payload: $payload);
 		[$objectService, $register, $schema] = $this->resolve();
 
@@ -143,6 +149,7 @@ class BeschikkingService {
 				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $sequence),
 				'beschikkingtype' => (string)($payload['beschikkingtype'] ?? 'verleningsbeschikking'),
 				'status' => 'draft',
+				'stateAidCategory' => $this->stateAidCategoryFor(payload: $payload),
 			]
 		);
 		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
@@ -154,6 +161,45 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Kon beschikking niet aanmaken');
 		}
 	}//end createDraft()
+
+	/**
+	 * Which state-aid ground this grant sits on.
+	 *
+	 * `StaatssteunClassifier` has answered this since the subsidy chain shipped
+	 * and nothing asked it, so `subsidieBeschikking.stateAidCategory` was a
+	 * declared field that no code ever wrote: a grant above the de-minimis
+	 * ceiling looked exactly like one below it.
+	 *
+	 * 🔴 A CATEGORY THE HANDLER TYPED WINS. The classifier answers from the
+	 * amounts, and a handler who has asserted an AGVV article or a DAEB has
+	 * looked at something the amounts do not contain. Overwriting their answer
+	 * would make the field unusable the moment anybody used it.
+	 *
+	 * @param array<string, mixed> $payload The beschikking as drafted.
+	 *
+	 * @return string The category.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function stateAidCategoryFor(array $payload): string {
+		$declared = trim((string)($payload['stateAidCategory'] ?? ''));
+		if ($declared !== '') {
+			return $declared;
+		}
+
+		$article = trim((string)($payload['agvvArtikel'] ?? ''));
+		$agvvArtikel = null;
+		if ($article !== '') {
+			$agvvArtikel = $article;
+		}
+
+		return $this->stateAid->classify(
+			amount: (float)($payload['grantedAmount'] ?? 0),
+			eerdereDeMinimis: (float)($payload['eerdereDeMinimis'] ?? 0),
+			agvvArtikel: $agvvArtikel,
+			isDaeb: (($payload['isDaeb'] ?? false) === true),
+		);
+	}//end stateAidCategoryFor()
 
 	/**
 	 * Record a digital signature on a beschikking (REQ — security policy).
@@ -222,20 +268,8 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if ($current === null) {
-			throw new OCSBadRequestException('Beschikking niet gevonden');
-		}
-
-		if (((string)($current['signedBy'] ?? '')) === '') {
-			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
-		}
-
-		$now = new DateTimeImmutable();
-		$patch = [
-			'status' => 'granted',
-			'publicationDate' => $now->format('Y-m-d'),
-			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
-		];
+		self::assertSigned(current: $current);
+		$patch = $this->publicationPatch(now: new DateTimeImmutable());
 
 		try {
 			return ($this->patchObjectAsArray(
@@ -252,6 +286,40 @@ class BeschikkingService {
 	}//end publish()
 
 	/**
+	 * Refuse a beschikking that is not found or not yet signed.
+	 *
+	 * @param array<string, mixed>|null $current The stored beschikking, or null.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When it is not found or not signed.
+	 */
+	private static function assertSigned(?array $current): void {
+		if ($current === null) {
+			throw new OCSBadRequestException('Beschikking niet gevonden');
+		}
+
+		if (((string)($current['signedBy'] ?? '')) === '') {
+			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
+		}
+	}//end assertSigned()
+
+	/**
+	 * The patch that grants a beschikking: today as its publication day and its bezwaartermijn.
+	 *
+	 * @param DateTimeImmutable $now The moment of publication.
+	 *
+	 * @return array{status: string, publicationDate: string, objectionPeriodEnd: string} The patch.
+	 */
+	private function publicationPatch(DateTimeImmutable $now): array {
+		return [
+			'status' => 'granted',
+			'publicationDate' => $now->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
+		];
+	}//end publicationPatch()
+
+	/**
 	 * Resolve the ObjectService and register/schema ids.
 	 *
 	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
@@ -259,17 +327,7 @@ class BeschikkingService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Beschikking-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: 'subsidie_beschikking_schema', unconfiguredMessage: 'Beschikking-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

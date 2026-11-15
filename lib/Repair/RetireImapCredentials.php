@@ -20,6 +20,13 @@
  * `email_imap_folder` STAYS, because which folder intake reads is still dossiq's
  * question and an instance that named one keeps reading the same one.
  *
+ * THE OUTBOUND SMTP CREDENTIAL GOES TOO (inbound-mail-filters 8.1, REQ-IMF-11).
+ * Case mail now leaves through the Nextcloud Mail account on that account's own
+ * authentication, and term notices through Nextcloud's own mailer, so nothing
+ * in dossiq reads an SMTP host or password. The first release of the mail
+ * settings stored `email_smtp_host` and `email_smtp_password`; the username,
+ * port and encryption keys go with them for the same reason as the IMAP ones.
+ *
  * IT IS IDEMPOTENT AND IT NEVER THROWS. Repair steps run on every upgrade, and
  * a step registered under `<install>` that throws aborts the install and takes
  * every route in the app with it. One unreadable config value is not worth that.
@@ -45,7 +52,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -72,6 +79,11 @@ class RetireImapCredentials implements IRepairStep {
 		'email_imap_host',
 		'email_imap_port',
 		'email_imap_encryption',
+		'email_smtp_password',
+		'email_smtp_username',
+		'email_smtp_host',
+		'email_smtp_port',
+		'email_smtp_encryption',
 	];
 
 	/**
@@ -107,7 +119,7 @@ class RetireImapCredentials implements IRepairStep {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function getName(): string {
-		return 'Remove the stored mailbox password now that Nextcloud Mail holds the account';
+		return 'Remove the stored mailbox and SMTP passwords now that Nextcloud Mail holds the account';
 	}//end getName()
 
 	/**
@@ -121,7 +133,7 @@ class RetireImapCredentials implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$removed = 0;
-		foreach ([Application::APP_ID, self::OLD_APP_ID] as $appId) {
+		foreach ([AppIdentity::APP_ID, self::OLD_APP_ID] as $appId) {
 			$removed += $this->removeFrom(appId: $appId);
 		}
 
@@ -132,7 +144,7 @@ class RetireImapCredentials implements IRepairStep {
 		$output->info('Removed ' . $removed . ' stored mailbox connection values.');
 		$this->logger->info(
 			'Dossiq: removed {count} stored mailbox connection values; Nextcloud Mail holds the account now',
-			['count' => $removed, 'app' => Application::APP_ID]
+			['count' => $removed, 'app' => AppIdentity::APP_ID]
 		);
 	}//end run()
 

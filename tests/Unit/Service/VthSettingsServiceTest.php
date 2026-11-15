@@ -35,9 +35,13 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\SettingsService
  *
+ * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
+ * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * @uses \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  */
 class VthSettingsServiceTest extends TestCase {
 

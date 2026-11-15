@@ -167,7 +167,7 @@ test.describe('A case records what it asked the applicant for', () => {
 			)
 		).json()
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#asking-writes-the-request-and-suspends-the-term
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#asking-writes-the-request-and-suspends-the-term
 	test('asking writes the request naming both items, and suspends the term', async ({
 		playwright,
 		baseURL,
@@ -211,7 +211,7 @@ test.describe('A case records what it asked the applicant for', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#a-partial-answer-leaves-the-request-open
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#a-partial-answer-leaves-the-request-open
 	test('one of two arrives: the request stays open naming the other', async ({
 		playwright,
 		baseURL,
@@ -250,7 +250,7 @@ test.describe('A case records what it asked the applicant for', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#a-full-answer-closes-the-request-and-resumes-the-clock
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#a-full-answer-closes-the-request-and-resumes-the-clock
 	test('both arrive and the handler says so: the request reads answered', async ({
 		playwright,
 		baseURL,
@@ -286,7 +286,7 @@ test.describe('A case records what it asked the applicant for', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#the-work-list-answers-what-we-are-waiting-on
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#the-work-list-answers-what-we-are-waiting-on
 	test('the work list lists exactly the cases waiting on an applicant', async ({
 		playwright,
 		baseURL,
@@ -323,7 +323,7 @@ test.describe('A case records what it asked the applicant for', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#answering-removes-the-case-from-the-filter
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#answering-removes-the-case-from-the-filter
 	test('answering in full takes the case out of the filter', async ({
 		playwright,
 		baseURL,
@@ -352,7 +352,7 @@ test.describe('A case records what it asked the applicant for', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#the-request-names-who-asked
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#the-request-names-who-asked
 	test('a case page opens with the request on it', async ({ page }) => {
 		await page.goto(`/apps/${REGISTER}/cases/${cases.ask}`, PAGE_LOAD)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({

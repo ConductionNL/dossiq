@@ -185,28 +185,36 @@ class WalkthroughCompletionTest extends TestCase {
 	}//end testAStepThatLostItsSurfaceIsCaughtAndNamed()
 
 	/**
-	 * An element target is reported as unverifiable, not as broken.
+	 * A DOM target is reported as unverifiable, not as broken.
 	 *
-	 * `element` names a DOM test id, which no manifest resolves. Counting one
-	 * as broken would put a permanent false finding in front of an
-	 * administrator, and counting it as fine would claim a check that did not
-	 * happen. It says which it is instead.
+	 * `element` names a test id and `selector` a raw CSS selector; no manifest
+	 * resolves either. Counting one as broken would put a permanent false
+	 * finding in front of an administrator, and counting it as fine would
+	 * claim a check that did not happen. It says which it is instead.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
-	public function testAnElementTargetIsUnverifiableRatherThanBroken(): void {
+	public function testADomTargetIsUnverifiableRatherThanBroken(): void {
+		// The shipped tour names only pages and menu entries, so one step gets
+		// a test id target here.
+		$manifest = $this->manifest();
+		$manifest['walkthrough']['tours'][0]['steps'][1]['target'] = [
+			'kind' => 'element',
+			'ref' => 'index-add',
+		];
+
 		$unverifiable = array_values(array_filter(
-			$this->readiness()->brokenTourSteps(),
+			$this->readiness()->brokenTourSteps(manifest: $manifest),
 			static fn (array $step): bool => $step['state'] === 'unverifiable'
 		));
 
-		$this->assertNotEmpty($unverifiable, 'no element target was classified, so the scan did not run');
+		$this->assertNotEmpty($unverifiable, 'no DOM target was classified, so the scan did not run');
 		foreach ($unverifiable as $step) {
-			$this->assertSame('element', $step['kind']);
+			$this->assertNotContains($step['kind'], ['page', 'nav-item']);
 			$this->assertNotSame('', $step['surface']);
 		}
-	}//end testAnElementTargetIsUnverifiableRatherThanBroken()
+	}//end testADomTargetIsUnverifiableRatherThanBroken()
 
 }//end class

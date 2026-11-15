@@ -41,12 +41,14 @@ use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskDeclaration
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationValidator
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationReader
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
+ * @uses \OCA\Dossiq\Service\Task\TaskFormAt
  */
 class PerTaskConfigurationTest extends TestCase {
 
@@ -273,15 +275,21 @@ class PerTaskConfigurationTest extends TestCase {
 	/**
 	 * A reader over a definition service that answers nothing.
 	 *
-	 * The validator only ever asks it to DECODE a definition it was handed,
-	 * never to look one up, so the lookup half is deliberately a double that
-	 * would fail loudly if anything started using it.
+	 * The lookup half is deliberately a double that would fail loudly if
+	 * anything started using it: only `stepsForCase` resolves a definition,
+	 * and nothing here calls it. The reader resolves that half through the
+	 * container, so the double is handed over the same way.
 	 *
 	 * @return TaskDeclarationReader The reader.
 	 */
 	private function reader(): TaskDeclarationReader {
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturn(
+			$this->createMock(originalClassName: WorkflowDefinitionService::class)
+		);
+
 		return new TaskDeclarationReader(
-			definitions: $this->createMock(originalClassName: WorkflowDefinitionService::class),
+			container: $container,
 			json: new WorkflowJsonProperty(),
 			declaration: new TaskDeclaration()
 		);
@@ -307,7 +315,7 @@ class PerTaskConfigurationTest extends TestCase {
 			handlers: $registry,
 			groups: $groupManager,
 			declaration: new TaskDeclaration(),
-			steps: $this->reader()
+			steps: new WorkflowJsonProperty()
 		);
 	}
 }//end class

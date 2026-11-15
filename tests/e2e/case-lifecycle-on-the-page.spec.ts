@@ -296,11 +296,11 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 			timeout: 30_000,
 		})
-		// The status pill in the identity row. It is the library's own badge
-		// inside a configured `stat` tile, so it carries the library testid.
-		await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
-			timeout: 30_000,
-		})
+		// NO STATUS PILL TO WAIT FOR. The identity row's Status tile (the
+		// library `stat` tile in badge mode) was removed in 353a31777, which
+		// left the case number, the case type and the deadline in the KPI row
+		// and moved the status onto the stages widget awaited above. Waiting
+		// for `cn-stat-widget-badge` timed out on every case this file opens.
 	}
 
 	/**
@@ -572,9 +572,13 @@ test.describe('Case lifecycle on the case page', () => {
 		// GET /api/case/{id}/lifecycle, so no property of the case says it.
 		//
 		// The GESTURE still has a home, which is what this scenario is about:
-		// `case-resume` is a header action, and CaseLifecycleActionDialog reads
-		// /lifecycle before it posts, so Resume on a case that is not suspended
-		// is refused with a sentence. What is lost is the marker and the second
+		// `case-lifecycle-menu` is the header action, and
+		// CaseLifecycleMenuDialog reads /available-transitions, /lifecycle and
+		// /acts before it offers anything, so Resume on a case that is not
+		// suspended is shown disabled with the server's own sentence. This
+		// comment used to name `case-resume` and CaseLifecycleActionDialog,
+		// and neither existed: the action had never been declared and the
+		// dialog was opened by nobody. It is retired. What is lost is the marker and the second
 		// Resume button that sat in front of the handler; the state is asserted
 		// against the endpoint here, because that is now the only place it is
 		// visible at all.

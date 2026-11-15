@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Reads who performed a named earlier act, and refuses them the transition.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class FourEyesRule {
 
@@ -56,7 +56,7 @@ class FourEyesRule {
 	 * @return array{act: string, askInstead: string}|null The rule, or null when
 	 *         the transition declares none.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function declaredFor(array $transition): ?array {
 		$declared = ($transition['notPerformedBy'] ?? null);
@@ -92,7 +92,7 @@ class FourEyesRule {
 	 * @return array{actor: string, at: string}|null The performer, or null when
 	 *         the act has not been performed on this case.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function performerOf(array $records, string $act): ?array {
 		$wanted = strtolower(trim($act));
@@ -134,7 +134,7 @@ class FourEyesRule {
 	 * @return array{act: string, actor: string, at: string, askInstead: string}|null
 	 *         The refusal, or null when the transition is open to this person.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function refusalFor(array $transition, array $records, string $userId): ?array {
 		$rule = $this->declaredFor(transition: $transition);
@@ -169,7 +169,7 @@ class FourEyesRule {
 	 *
 	 * @return string The uid, or the empty string when the record names nobody.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function actorOf(array $record): string {
 		$actor = trim((string)($record['actor'] ?? ''));

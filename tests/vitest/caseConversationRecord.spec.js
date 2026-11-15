@@ -27,7 +27,6 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const registrySource = read('src', 'registry.js')
-const iconsSource = read('src', 'icons.js')
 const panelSource = read(
 	'src',
 	'views',
@@ -58,9 +57,8 @@ describe('the live conversation section on the case', () => {
 		expect(registrySource).toContain('component: CaseConversationsPanel')
 	})
 
-	it('names an icon the icon registry carries', () => {
-		expect(section.widget.icon).toBe('PhoneInTalk')
-		expect(iconsSource).toContain('PhoneInTalk')
+	it('draws no title icon, as the boards draw none on card titles', () => {
+		expect(section.widget.icon).toBeUndefined()
 	})
 })
 
@@ -96,8 +94,16 @@ describe('the record the case keeps of a conversation', () => {
 	it('notifies the responders declaratively rather than dispatching, per ADR-031', () => {
 		const rule = caseSchema['x-openregister-notifications'].caseDeclaredMajor
 		expect(rule).toBeDefined()
+		// The responders are still declared, and still FIRST. `case-followers`
+		// (row 13.18) added the case's watchers beside them, which is what
+		// somebody following a sensitive case is following it for. What this
+		// assertion has always been guarding is that dossiq names the
+		// recipients on the schema rather than dispatching to them in code, so
+		// it names the whole list rather than only the block it cares about: a
+		// `some()` here would let the responders be dropped in silence.
 		expect(rule.recipients).toEqual([
 			{ kind: 'field', field: 'majorResponders' },
+			{ watchers: true },
 		])
 		expect(rule.subject.nl).toBeTruthy()
 		expect(rule.subject.en).toBeTruthy()
@@ -128,10 +134,11 @@ describe('the record the case keeps of a conversation', () => {
 
 describe('the panel that shows it', () => {
 	it('shows the moment, who joined and how long, not just the moment', () => {
-		expect(panelSource).toContain('recordSummary')
-		expect(panelSource).toContain('record.startedAt')
-		expect(panelSource).toContain('record?.participants')
-		expect(panelSource).toContain('record?.durationSeconds')
+		const lineSource = read('src', 'utils', 'conversationRecordLine.js')
+		expect(panelSource).toContain('conversationSummary(record)')
+		expect(lineSource).toContain('record?.startedAt')
+		expect(lineSource).toContain('record?.participants')
+		expect(lineSource).toContain('record?.durationSeconds')
 	})
 
 	it('says why rather than offering a conversation the instance cannot hold', () => {
