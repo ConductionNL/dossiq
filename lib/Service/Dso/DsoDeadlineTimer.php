@@ -49,11 +49,9 @@ namespace OCA\Dossiq\Service\Dso;
 use OCA\Dossiq\Kernel\Contracts\DsoDeadlineTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per open DSO case in step with the case.
@@ -151,14 +149,7 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
 	private function arm(DsoTermSpan $span): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$config = $this->timerConfig(span: $span);
-
-		return $this->armOn(engine: $engine, config: $config, caseId: $span->caseId);
+		return $this->timers()->arm(config: fn (): array => $this->timerConfig(span: $span), logContext: ['case' => $span->caseId]);
 	}//end arm()
 
 	/**
@@ -195,54 +186,11 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
 
 		return [
-			$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-			$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
-			$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+			$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
+			$this->timers()->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+			$this->timers()->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
 		];
 	}//end escalationRules()
-
-	/**
-	 * Hand the configuration to the engine.
-	 *
-	 * @param object               $engine The timer engine.
-	 * @param array<string, mixed> $config The timer configuration.
-	 * @param string               $caseId The case id, for the log.
-	 *
-	 * @return string ARMED, or UNAVAILABLE.
-	 */
-	private function armOn(object $engine, array $config, string $caseId): string {
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq DSO: the engine refused the DSO term timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
-	}//end armOn()
-
-	/**
-	 * One escalation rule.
-	 *
-	 * @param string $trigger slaBreached or preBreach.
-	 * @param int    $offset  The offset.
-	 * @param string $unit    The offset unit.
-	 * @param string $message The message identity.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function rule(string $trigger, int $offset, string $unit, string $message): array {
-		return [
-			'trigger'        => $trigger,
-			'offset'         => $offset,
-			'offsetUnit'     => $unit,
-			'notifyRole'     => [],
-			'escalateToRole' => [],
-			'priority'       => 'normal',
-			'message'        => $message,
-			'openIncident'   => false,
-		];
-	}//end rule()
 
 	/**
 	 * A lead setting, read as the job read it.
@@ -270,30 +218,15 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $caseId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq DSO: the engine refused to cancel the DSO term timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, logContext: ['case' => $caseId]);
 	}//end cancel()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq DSO', timer: 'DSO term timer');
+	}//end timers()
 }//end class

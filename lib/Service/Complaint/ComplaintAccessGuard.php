@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Complaint;
 
 use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -73,12 +74,7 @@ class ComplaintAccessGuard implements ComplaintAccessGuardInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function currentUid(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end currentUid()
 
 	/**

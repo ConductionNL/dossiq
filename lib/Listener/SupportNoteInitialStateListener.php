@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Listener\Support\OwnPageRender;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -81,10 +81,7 @@ class SupportNoteInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/the-support-note-can-be-switched-off/specs/first-load-onboarding/spec.md#requirement-an-administrator-can-switch-the-support-note-off-req-flo-002
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
-		) {
+		if ((new OwnPageRender())->matches(event: $event) === false) {
 			return;
 		}
 

@@ -182,24 +182,7 @@ class HearingService {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearing(string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('hearing_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'hearing_schema', id: $id);
 	}//end getHearing()
 
 	/**

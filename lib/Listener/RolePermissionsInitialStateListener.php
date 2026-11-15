@@ -22,9 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\RolePermissionsInterface;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Listener\Support\OwnPageRender;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -71,10 +70,7 @@ class RolePermissionsInitialStateListener implements IEventListener {
 	 * @spec openspec/specs/admin-data-access/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
-		) {
+		if ((new OwnPageRender())->matches(event: $event) === false) {
 			return;
 		}
 

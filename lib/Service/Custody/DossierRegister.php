@@ -28,8 +28,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Custody;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
+use Throwable;
 
 /**
  * The object service, the register and a configured schema, or the exception naming what is missing.
@@ -37,6 +40,8 @@ use RuntimeException;
  * @spec openspec/specs/case-management/spec.md
  */
 final class DossierRegister {
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -89,4 +94,70 @@ final class DossierRegister {
 
 		return $schema;
 	}//end schema()
+
+	/**
+	 * The stored case, or a refusal saying what was not done.
+	 *
+	 * A read that fails is indeterminate; a case that is not there is unprocessable.
+	 *
+	 * @param string $caseId   The case uuid.
+	 * @param string $rule     The rule both refusals carry.
+	 * @param string $sentence The sentence both refusals carry.
+	 *
+	 * @return array<string, mixed> The stored case.
+	 *
+	 * @throws RefusedException When it cannot be read.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function requireCase(string $caseId, string $rule, string $sentence): array {
+		try {
+			[$objectService, $register] = $this->context();
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->schema(key: 'case_schema'),
+				id: $caseId,
+			);
+		} catch (Throwable $e) {
+			throw new RefusedException(
+				rule: $rule,
+				sentence: $sentence,
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
+
+		if ($case === null) {
+			throw new RefusedException(
+				rule: $rule,
+				sentence: $sentence,
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $case;
+	}//end requireCase()
+
+	/**
+	 * Save a case's payload over the stored case.
+	 *
+	 * @param string               $caseId  The case uuid.
+	 * @param array<string, mixed> $payload The case without its identity fields.
+	 *
+	 * @return void
+	 *
+	 * @throws Throwable When the register is not configured or the save fails.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function saveCase(string $caseId, array $payload): void {
+		[$objectService, $register] = $this->context();
+		$objectService->saveObject(
+			object: $payload,
+			register: $register,
+			schema: $this->schema(key: 'case_schema'),
+			uuid: $caseId,
+		);
+	}//end saveCase()
 }//end class
