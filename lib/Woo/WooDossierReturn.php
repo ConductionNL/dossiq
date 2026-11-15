@@ -133,15 +133,30 @@ class WooDossierReturn {
 			return false;
 		}
 
-		$target = $this->appendTarget(objectService: $objectService, collectionId: $collectionId);
+		return $this->appendOrWarn(
+			target: $this->appendTarget(objectService: $objectService, collectionId: $collectionId),
+			addition: ['case' => $case, 'publicationId' => $publicationId, 'title' => $title]
+		);
+	}//end append()
 
+	/**
+	 * Add the publication to the source dossier; a failure is logged and answers false.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string} $target   The object service, register,
+	 *                                                                                         schema and collection id.
+	 * @param array{case: array<string, mixed>, publicationId: string, title: string}     $addition The case, the publication uuid
+	 *                                                                                         and what the item's note says.
+	 *
+	 * @return bool True when the dossier holds the publication afterwards.
+	 */
+	private function appendOrWarn(array $target, array $addition): bool {
 		try {
-			return $this->appendToCollection(target: $target, case: $case, publicationId: $publicationId, title: $title);
+			return $this->appendToCollection(target: $target, addition: $addition);
 		} catch (Throwable $e) {
-			$this->warnNotAppended(collectionId: $collectionId, publicationId: $publicationId, error: $e);
+			$this->warnNotAppended(collectionId: $target['id'], publicationId: $addition['publicationId'], error: $e);
 			return false;
 		}
-	}//end append()
+	}//end appendOrWarn()
 
 	/**
 	 * Log that the decision could not be added to its source dossier.
@@ -176,11 +191,10 @@ class WooDossierReturn {
 	/**
 	 * Add the publication to the source dossier when it is still the requester's.
 	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string} $target        The object service, register,
-	 *                                                                                              schema and collection id.
-	 * @param array<string, mixed>                                                       $case          The case, with `portalSubject`.
-	 * @param string                                                                     $publicationId The publication uuid.
-	 * @param string                                                                     $title         What the item's note says.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $target   The object service, register,
+	 *                                                                                         schema and collection id.
+	 * @param array{case: array<string, mixed>, publicationId: string, title: string}     $addition The case with `portalSubject`,
+	 *                                                                                         the publication uuid and the note.
 	 *
 	 * @return bool True when the dossier holds the publication afterwards.
 	 *
@@ -188,13 +202,13 @@ class WooDossierReturn {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 */
-	private function appendToCollection(array $target, array $case, string $publicationId, string $title): bool {
-		$collection = $this->ownedCollection(target: $target, case: $case);
+	private function appendToCollection(array $target, array $addition): bool {
+		$collection = $this->ownedCollection(target: $target, case: $addition['case']);
 		if ($collection === null) {
 			return false;
 		}
 
-		$items = $this->itemsWith(collection: $collection, entry: ['publication' => $publicationId, 'note' => $title]);
+		$items = $this->itemsWith(collection: $collection, entry: ['publication' => $addition['publicationId'], 'note' => $addition['title']]);
 		if ($items === null) {
 			return true;
 		}
