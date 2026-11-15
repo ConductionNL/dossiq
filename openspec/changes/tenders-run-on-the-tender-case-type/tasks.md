@@ -17,7 +17,7 @@
 
 - [ ] 3.1 Wait for board DqAanbesteding, then place on CaseDetail (`src/manifest.json`) the widgets it draws (lots as sub-cases, questions and answers, bids, evaluation, award), `visibleWhen: "@context.caseType.tenderChain"`; the package sets `tenderChain: true`.
 - [ ] 3.2 Header actions `tender-answer-publish`, `bid-register`, `bid-score`, `award-propose`, dialogs under `src/dialogs/` named by what they do.
-- [ ] 3.3 The award hands off to shillinq and decidiq through `lib/Service/ContractDecisionDelegationService.php` (no new contract code).
+- [x] 3.3 The award hands off to shillinq and decidiq through `lib/Service/ContractDecisionDelegationService.php` (no new contract code). Built: a generic transition action `raiseDecision` (`lib/Service/Transitions/RaiseDecisionHandler.php`, flow node `dossiq.raiseDecision`, and the registry fallback) raises a delegated decision of the configured type for the case; the aanbesteding flow's `Definitief gunnen` raises `tender-award`, so the award is handed on only once the standstill has ended. `tests/Unit/Service/Transitions/RaiseDecisionHandlerTest.php`.
 
 ## 4. Checks
 

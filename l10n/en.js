@@ -12657,7 +12657,9 @@ OC.L10N.register(
         "{years} years": "{years} years",
         "It is not known who asks for the redacted copy. Sign in and try again.": "It is not known who asks for the redacted copy. Sign in and try again.",
         "You checked these passages yourself. A colleague must make the redacted copy.": "You checked these passages yourself. A colleague must make the redacted copy.",
-        "{subject}": "{subject}"
+        "{subject}": "{subject}",
+        "Raise a decision": "Raise a decision",
+        "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.": "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award."
     },
     "nplurals=2; plural=(n != 1);"
 )

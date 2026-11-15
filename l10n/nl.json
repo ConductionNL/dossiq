@@ -12776,6 +12776,8 @@
         "{years} years": "{years} jaar",
         "It is not known who asks for the redacted copy. Sign in and try again.": "Het is niet bekend wie om de gelakte kopie vraagt. Log in en probeer het opnieuw.",
         "You checked these passages yourself. A colleague must make the redacted copy.": "Je hebt deze passages zelf gecontroleerd. Een collega moet de gelakte kopie maken.",
-        "{subject}": "{subject}"
+        "{subject}": "{subject}",
+        "Raise a decision": "Besluit aanvragen",
+        "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.": "Draag de zaak over aan de besluitapp als besluit van het ingestelde type, zoals het contract dat op een gunning volgt."
     }
 }
