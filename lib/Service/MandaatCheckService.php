@@ -317,7 +317,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 
 		$dateStr = $date->format('Y-m-d');
 
-		return $this->anyActiveFor(rows: $rows, organisation: $organisation, dateStr: $dateStr);
+		return $this->anyActiveFor(rows: $rows, scope: ['organisation' => $organisation, 'dateStr' => $dateStr]);
 	}//end hasActiveMandateFor()
 
 	/**
@@ -353,15 +353,15 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	/**
 	 * Whether any row is an active mandate of the organisation, valid on the date.
 	 *
-	 * @param array<int, array<string, mixed>> $rows         The mandate rows.
-	 * @param string                           $organisation The organisation UUID.
-	 * @param string                           $dateStr      The date, `Y-m-d`.
+	 * @param array<int, array<string, mixed>>             $rows  The mandate rows.
+	 * @param array{organisation: string, dateStr: string} $scope `organisation` the organisation UUID; `dateStr` the date, `Y-m-d`.
 	 *
 	 * @return bool True when one is.
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
 	 */
-	private function anyActiveFor(array $rows, string $organisation, string $dateStr): bool {
+	private function anyActiveFor(array $rows, array $scope): bool {
+		[$organisation, $dateStr] = [$scope['organisation'], $scope['dateStr']];
 		foreach ($rows as $row) {
 			if ((string)($row['status'] ?? '') === 'active'
 				&& self::organisationOf(row: $row) === $organisation

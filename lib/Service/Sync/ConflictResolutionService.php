@@ -341,7 +341,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 				$officeMoved = true;
 			}
 
-			$refreshed = $this->withValueAt(data: $refreshed, path: $path, value: $now);
+			$refreshed = $this->withValueAt(data: $refreshed, placed: ['path' => $path, 'value' => $now]);
 		}
 
 		if ($officeMoved === false) {
@@ -393,8 +393,10 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			$base = ($changes[$top] ?? ($current[$top] ?? null));
 			$changes[$top] = $this->withValueAt(
 				data: [$top => $base],
-				path: $path,
-				value: $this->valueAt(data: $clientVersion, path: $path)
+				placed: [
+					'path' => $path,
+					'value' => $this->valueAt(data: $clientVersion, path: $path),
+				]
 			)[$top];
 		}
 
@@ -553,13 +555,13 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * The data with the value set at a dot path.
 	 *
-	 * @param array<string, mixed> $data  The data.
-	 * @param string               $path  The dot path.
-	 * @param mixed                $value The value.
+	 * @param array<string, mixed>              $data   The data.
+	 * @param array{path: string, value: mixed} $placed `path` the dot path; `value` the value.
 	 *
 	 * @return array<string, mixed> The data with the value in place.
 	 */
-	private function withValueAt(array $data, string $path, mixed $value): array {
+	private function withValueAt(array $data, array $placed): array {
+		[$path, $value] = [$placed['path'], $placed['value']];
 		$segments = explode('.', $path);
 		$key = $this->keyOf(segment: array_shift($segments));
 		if ($segments === []) {
@@ -568,7 +570,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		}
 
 		$child = $this->arrayOf(value: ($data[$key] ?? null));
-		$data[$key] = $this->withValueAt(data: $child, path: implode('.', $segments), value: $value);
+		$data[$key] = $this->withValueAt(data: $child, placed: ['path' => implode('.', $segments), 'value' => $value]);
 
 		return $data;
 	}//end withValueAt()

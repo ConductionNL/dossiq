@@ -143,17 +143,32 @@ class StateMachineService implements StateMachineServiceInterface {
 			return [];
 		}
 
-		[$objectService, $register, $logSchema] = $target;
 		$record = $this->transitionRecord(transition: ['decisionId' => $decisionId, 'from' => $from, 'to' => $to], metadata: $metadata);
 
+		return $this->savedLog(target: $target, record: $record);
+	}//end logTransition()
+
+	/**
+	 * Save the transition log record; a refused save is logged and answers [].
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target The object service, the register and the log schema.
+	 * @param array<string, mixed>                   $record The transition log record, with its `decisionId`.
+	 *
+	 * @return array<string, mixed> The saved record, or [].
+	 */
+	private function savedLog(array $target, array $record): array {
+		[$objectService, $register, $logSchema] = $target;
 		try {
 			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
 			return $this->toArray(value: $saved);
 		} catch (\Throwable $e) {
-			$this->logger->error('StateMachineService: failed to persist transition log', ['exception' => $e->getMessage(), 'decisionId' => $decisionId]);
+			$this->logger->error(
+				'StateMachineService: failed to persist transition log',
+				['exception' => $e->getMessage(), 'decisionId' => $record['decisionId']]
+			);
 			return [];
 		}
-	}//end logTransition()
+	}//end savedLog()
 
 	/**
 	 * Where the transition log is stored, or null (with a warning) when it cannot be.

@@ -191,12 +191,24 @@ class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 			return null;
 		}
 
-		$event = new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		return $this->providerAnswer(
+			event: new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service)
+		);
+	}//end forwardProviderRequest()
+
+	/**
+	 * Dispatch the provider request event, and read what integriq answered.
+	 *
+	 * @param object $event The provider request event.
+	 *
+	 * @return array{statusCode: int, body: string}|null The answer, or null when nothing handled it.
+	 */
+	private function providerAnswer(object $event): ?array {
 		$this->dispatcher->dispatchTyped($event);
 		if ($event->isHandled() === false) {
 			return null;
 		}
 
 		return ['statusCode' => (int)$event->getStatusCode(), 'body' => (string)$event->getBody()];
-	}//end forwardProviderRequest()
+	}//end providerAnswer()
 }//end class

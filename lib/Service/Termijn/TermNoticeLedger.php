@@ -85,18 +85,29 @@ class TermNoticeLedger {
 	public function claim(string $key, string $template, string $instance, int $now): bool {
 		$query = $this->db->getQueryBuilder();
 		$query->insert(self::TABLE)
-			->values(
-				[
-					'notice_key' => $query->createNamedParameter($key),
-					'template' => $query->createNamedParameter(substr($template, 0, 64)),
-					'instance_ref' => $query->createNamedParameter(substr($instance, 0, 64)),
-					'outcome' => $query->createNamedParameter(self::PENDING),
-					'updated_at' => $query->createNamedParameter($now, IQueryBuilder::PARAM_INT),
-				]
-			);
+			->values(self::pendingRow(query: $query, notice: ['key' => $key, 'template' => $template, 'instance' => $instance, 'now' => $now]));
 
 		return self::inserted(query: $query);
 	}//end claim()
+
+	/**
+	 * The insert values of a pending notice.
+	 *
+	 * @param IQueryBuilder                                                   $query  The insert being built.
+	 * @param array{key: string, template: string, instance: string, now: int} $notice The notice key, its template, the term
+	 *                                                                                instance and the moment of the claim.
+	 *
+	 * @return array<string, mixed> The named parameters by column.
+	 */
+	private static function pendingRow(IQueryBuilder $query, array $notice): array {
+		return [
+			'notice_key' => $query->createNamedParameter($notice['key']),
+			'template' => $query->createNamedParameter(substr($notice['template'], 0, 64)),
+			'instance_ref' => $query->createNamedParameter(substr($notice['instance'], 0, 64)),
+			'outcome' => $query->createNamedParameter(self::PENDING),
+			'updated_at' => $query->createNamedParameter($notice['now'], IQueryBuilder::PARAM_INT),
+		];
+	}//end pendingRow()
 
 	/**
 	 * Run an insert, answering false when the row already exists.

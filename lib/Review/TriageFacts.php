@@ -98,7 +98,7 @@ class TriageFacts {
 			$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentId, record: $record);
 			$mail = $this->provenance->mailOf(caseId: $caseId, documentId: $documentId, record: $record);
 		} catch (Throwable $e) {
-			throw $this->unavailable(error: $e, caseId: $caseId, documentId: $documentId);
+			throw $this->unavailable(error: $e, document: ['caseId' => $caseId, 'documentId' => $documentId]);
 		}
 
 		return $this->factRow(record: $record, facts: $provenance + $mail);
@@ -107,15 +107,15 @@ class TriageFacts {
 	/**
 	 * Log an unreadable provenance and answer the refusal to throw.
 	 *
-	 * @param Throwable $error      Why the provenance could not be read.
-	 * @param string    $caseId     The case UUID.
-	 * @param string    $documentId The document.
+	 * @param Throwable                                 $error    Why the provenance could not be read.
+	 * @param array{caseId: string, documentId: string} $document `caseId` the case UUID; `documentId` the document.
 	 *
 	 * @return RefusedException The refusal.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
 	 */
-	private function unavailable(Throwable $error, string $caseId, string $documentId): RefusedException {
+	private function unavailable(Throwable $error, array $document): RefusedException {
+		[$caseId, $documentId] = [$document['caseId'], $document['documentId']];
 		$this->logger->error(
 			'Dossiq: the provenance of a document could not be read, so the triage rules were not applied',
 			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $error->getMessage()]

@@ -187,7 +187,7 @@ class ConcludedDecisionRecord {
 			$reference = (string)($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
 		}
 
-		$this->writeDeviation(requestId: $requestId, reference: $reference, rationale: $rationale);
+		$this->writeDeviation(requestId: $requestId, deviation: ['reference' => $reference, 'rationale' => $rationale]);
 	}//end recordCouncilDeviation()
 
 	/**
@@ -220,20 +220,19 @@ class ConcludedDecisionRecord {
 	/**
 	 * Write the deviation on the advice request's audit trail, logging a failed entry.
 	 *
-	 * @param string $requestId The advice request id.
-	 * @param string $reference The besluit reference.
-	 * @param string $rationale The deviation rationale.
+	 * @param string                                      $requestId The advice request id.
+	 * @param array{reference: string, rationale: string} $deviation The besluit reference and the deviation rationale.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function writeDeviation(string $requestId, string $reference, string $rationale): void {
+	private function writeDeviation(string $requestId, array $deviation): void {
 		try {
 			$this->bacService->recordCouncilDeviation(
 				requestId: $requestId,
-				decisionId: $reference,
-				rationaleRef: $rationale
+				decisionId: $deviation['reference'],
+				rationaleRef: $deviation['rationale']
 			);
 		} catch (BezwaarEntryNotWrittenException $notWritten) {
 			// The besluit stands; the Awb art. 7:13 record of the deviation did

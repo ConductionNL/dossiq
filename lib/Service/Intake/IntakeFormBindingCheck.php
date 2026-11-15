@@ -195,6 +195,20 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 		$mapping = $this->normalisedMapping(mapping: $mapping);
 
 		$requirements = $this->unmetRequirements(caseType: $caseType, mapping: $mapping);
+
+		return $this->withValidatorFindings(requirements: $requirements, check: ['mapping' => $mapping, 'audience' => $audience]);
+	}//end findingsOfMapping()
+
+	/**
+	 * The validator's findings before the intake requirements, or the requirements alone (logged) without a validator.
+	 *
+	 * @param array<int, array<string, mixed>>                        $requirements The unmet intake requirements.
+	 * @param array{mapping: array<string, mixed>, audience: ?string} $check        The normalised mapping, and the form's audience.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 */
+	private function withValidatorFindings(array $requirements, array $check): array {
+		[$mapping, $audience] = [$check['mapping'], $check['audience']];
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
 		$schema = $this->caseSchema();
 		if ($validator === null || $schema === null || method_exists($validator, 'validate') === false) {
@@ -206,8 +220,11 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			return $requirements;
 		}
 
-		return array_merge($this->validatorFindings(validator: $validator, schema: $schema, mapping: $mapping, audience: $audience), $requirements);
-	}//end findingsOfMapping()
+		return array_merge(
+			$this->validatorFindings(validator: $validator, check: ['schema' => $schema, 'mapping' => $mapping, 'audience' => $audience]),
+			$requirements
+		);
+	}//end withValidatorFindings()
 
 	/**
 	 * A mapping reduced to its `fields` (each an array) and `fixed` values.
@@ -227,13 +244,13 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	 * What OpenRegister's validator finds wrong with a mapping against the case schema.
 	 *
 	 * @param object               $validator OpenRegister's form destination validator.
-	 * @param object               $schema    The case schema.
-	 * @param array<string, mixed> $mapping   The normalised mapping.
-	 * @param string|null          $audience  `public` or `authenticated` for a form that is not internal.
+	 * @param array<string, mixed> $check     The case schema (`schema`), the normalised mapping (`mapping`) and the
+	 *                                        `audience`: `public` or `authenticated` for a form that is not internal, else null.
 	 *
 	 * @return array<int, array<string, mixed>> The findings.
 	 */
-	private function validatorFindings(object $validator, object $schema, array $mapping, string|null $audience): array {
+	private function validatorFindings(object $validator, array $check): array {
+		[$schema, $mapping, $audience] = [$check['schema'], $check['mapping'], $check['audience']];
 		$options = [];
 		if ($audience !== null) {
 			$options['audience'] = $audience;

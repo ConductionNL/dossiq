@@ -237,7 +237,13 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		}
 
 		$origin = (new RowOrigins())->originFor(isOwn: true);
-		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(row: $row, origin: $origin, ancestor: $own), array_values($rows)));
+		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(
+			row: $row,
+			tagging: [
+				'origin' => $origin,
+				'ancestor' => $own,
+			]
+		), array_values($rows)));
 	}//end ownLifecycle()
 
 	/**
@@ -449,8 +455,10 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 				$key    = $this->mergeKey(row: $row);
 				$tagged = $this->tag(
 					row: $row,
-					origin: $origin,
-					ancestor: $ancestor
+					tagging: [
+						'origin' => $origin,
+						'ancestor' => $ancestor,
+					]
 				);
 				$merged[$key] = $origins->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
@@ -475,7 +483,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		foreach ($this->store->sharedRows(schemaKey: $schemaKey) as $row) {
 			$key = $this->mergeKey(row: $row);
 			if (isset($merged[$key]) === false) {
-				$merged[$key] = $this->tag(row: $row, origin: self::ORIGIN_SHARED, ancestor: []);
+				$merged[$key] = $this->tag(row: $row, tagging: ['origin' => self::ORIGIN_SHARED, 'ancestor' => []]);
 			}
 		}
 
@@ -485,15 +493,16 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	/**
 	 * Stamp a row with where it came from.
 	 *
-	 * @param array<string, mixed> $row      The row.
-	 * @param string               $origin   own, inherited or shared.
-	 * @param array<string, mixed> $ancestor The case type it was declared on.
+	 * @param array<string, mixed>                                  $row     The row.
+	 * @param array{origin: string, ancestor: array<string, mixed>} $tagging `origin` own, inherited or shared; `ancestor` the case type it was
+	 *                                                                       declared on.
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function tag(array $row, string $origin, array $ancestor): array {
+	private function tag(array $row, array $tagging): array {
+		[$origin, $ancestor] = [$tagging['origin'], $tagging['ancestor']];
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
 		$row['originCaseTypeTitle'] = $this->text->textOf(value: ($ancestor['title'] ?? null));

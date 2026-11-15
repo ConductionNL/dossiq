@@ -169,7 +169,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		$infoId = $this->storeUploadedRecord(store: $store, upload: $upload, informatieobject: $informatieobject);
 
-		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $profile->correspondents);
+		$this->linkAndRecordDispatches(caseId: $caseId, linking: ['infoId' => $infoId, 'correspondents' => $profile->correspondents]);
 
 		return $this->uploadSummary(infoId: $infoId, informatieobject: $informatieobject);
 	}//end uploadDocument()
@@ -219,15 +219,16 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	/**
 	 * Join the uploaded document to its case and record one dispatch per correspondent.
 	 *
-	 * @param string               $caseId         The case (zaak) UUID.
-	 * @param string               $infoId         The stored informatieobject id.
-	 * @param array<string, mixed> $correspondents The resolved sender and recipients.
+	 * @param string                                                      $caseId  The case (zaak) UUID.
+	 * @param array{infoId: string, correspondents: array<string, mixed>} $linking `infoId` the stored informatieobject id; `correspondents` the
+	 *                                                                             resolved sender and recipients.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function linkAndRecordDispatches(string $caseId, string $infoId, array $correspondents): void {
+	private function linkAndRecordDispatches(string $caseId, array $linking): void {
+		[$infoId, $correspondents] = [$linking['infoId'], $linking['correspondents']];
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
@@ -690,7 +691,14 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		$current = $this->requireEditableDocument(current: $current, infoObjectId: $infoObjectId);
 
 		$updateData = $this->editableFields(metadata: $metadata);
-		$updateData = $this->withCorrespondentEdit(infoObjectId: $infoObjectId, current: $current, metadata: $metadata, updateData: $updateData);
+		$updateData = $this->withCorrespondentEdit(
+			infoObjectId: $infoObjectId,
+			edit: [
+				'current' => $current,
+				'metadata' => $metadata,
+				'updateData' => $updateData,
+			]
+		);
 
 		if (empty($updateData) === true) {
 			return ['id' => $infoObjectId, 'updated' => false];
@@ -707,16 +715,24 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	/**
 	 * The update data with the correspondent edit merged in.
 	 *
-	 * @param string $infoObjectId The informatieobject UUID.
-	 * @param array<string, mixed> $current The stored document.
-	 * @param array<string, mixed> $metadata Editable fields as submitted.
-	 * @param array<string, mixed> $updateData The editable fields picked so far.
+	 * @param string                                                                                                 $infoObjectId The
+	 *                                                                                                                             informatieobject
+	 *                                                                                                                             UUID.
+	 * @param array{current: array<string, mixed>, metadata: array<string, mixed>, updateData: array<string, mixed>} $edit         `current` the
+	 *                                                                                                                             stored document;
+	 *                                                                                                                             `metadata`
+	 *                                                                                                                             editable fields
+	 *                                                                                                                             as submitted;
+	 *                                                                                                                             `updateData` the
+	 *                                                                                                                             editable fields
+	 *                                                                                                                             picked so far.
 	 *
 	 * @return array<string, mixed> The update data.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function withCorrespondentEdit(string $infoObjectId, array $current, array $metadata, array $updateData): array {
+	private function withCorrespondentEdit(string $infoObjectId, array $edit): array {
+		[$current, $metadata, $updateData] = [$edit['current'], $edit['metadata'], $edit['updateData']];
 		return array_merge(
 			$updateData,
 			$this->correspondents->applyEdit(

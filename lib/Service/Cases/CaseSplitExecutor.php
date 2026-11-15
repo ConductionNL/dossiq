@@ -162,14 +162,20 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 		$case = $this->store->requireCase(caseId: $caseId);
 		$selection = $this->allowedSelection(caseId: $caseId, caseData: $case, chosen: $chosen);
 
-		$newCase = $this->openSecondCase(source: $case, title: $title, actor: $actor);
+		$newCase = $this->openSecondCase(source: $case, opening: ['title' => $title, 'actor' => $actor]);
 		$newId = $this->store->uuidOf(row: $newCase);
 		$planned = $this->plan->forSelection(sourceId: $caseId, newId: $newId, chosen: $selection['rows']);
-		$moved = $this->carryOut(planned: $planned, selection: $selection, newId: $newId);
+		$moved = $this->carryOut(planned: $planned, carried: ['selection' => $selection, 'newId' => $newId]);
 
-		$split = $this->splitOf(caseId: $caseId, newCase: $newCase, newId: $newId, references: $planned['references']);
+		$split = $this->splitOf(caseId: $caseId, second: ['newCase' => $newCase, 'newId' => $newId, 'references' => $planned['references']]);
 		$note = $this->recordOnOriginal(case: $case, split: $split);
-		$this->logSplit(caseId: $caseId, newId: $newId, counts: [count($moved), count($planned['refused']), count($selection['onBoth'])]);
+		$this->logSplit(
+			caseId: $caseId,
+			outcome: [
+				'newId' => $newId,
+				'counts' => [count($moved), count($planned['refused']), count($selection['onBoth'])],
+			]
+		);
 
 		return ['case' => $newCase, 'moved' => $moved, 'refused' => $planned['refused'], 'note' => $note];
 	}//end split()
@@ -177,15 +183,16 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	/**
 	 * Log a split with how much moved, was refused and stayed on both.
 	 *
-	 * @param string                        $caseId The case that was split.
-	 * @param string                        $newId  The new case.
-	 * @param array{0: int, 1: int, 2: int} $counts The moved, refused and on-both counts.
+	 * @param string                                                      $caseId  The case that was split.
+	 * @param array{newId: string, counts: array{0: int, 1: int, 2: int}} $outcome `newId` the new case; `counts` the moved, refused and on-both
+	 *                                                                             counts.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function logSplit(string $caseId, string $newId, array $counts): void {
+	private function logSplit(string $caseId, array $outcome): void {
+		[$newId, $counts] = [$outcome['newId'], $outcome['counts']];
 		$this->logger->info(
 			'Dossiq split: a case was divided',
 			['case' => $caseId, 'into' => $newId, 'moved' => $counts[0], 'refused' => $counts[1], 'onBoth' => $counts[2]],
@@ -214,15 +221,15 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	/**
 	 * Apply the planned moves and duplicate what stays on both cases.
 	 *
-	 * @param array<string, mixed> $planned   The plan (`moves`).
-	 * @param array<string, mixed> $selection The selection (`rows`, `onBoth`).
-	 * @param string               $newId     The new case.
+	 * @param array<string, mixed>                                  $planned The plan (`moves`).
+	 * @param array{selection: array<string, mixed>, newId: string} $carried `selection` the selection (`rows`, `onBoth`); `newId` the new case.
 	 *
 	 * @return array<int, array<string, mixed>> The moves that were carried out.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function carryOut(array $planned, array $selection, string $newId): array {
+	private function carryOut(array $planned, array $carried): array {
+		[$selection, $newId] = [$carried['selection'], $carried['newId']];
 		$moved = array_values(
 			array_filter($planned['moves'], fn (array $move): bool => $this->apply(move: $move, rows: $selection['rows']))
 		);
@@ -236,16 +243,18 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	/**
 	 * The split as the original records it.
 	 *
-	 * @param string                           $caseId     The case that was split.
-	 * @param array<string, mixed>             $newCase    The new case.
-	 * @param string                           $newId      The new case's uuid.
-	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
+	 * @param string                                                                                            $caseId The case that was split.
+	 * @param array{newCase: array<string, mixed>, newId: string, references: array<int, array<string, mixed>>} $second `newCase` the new case;
+	 *                                                                                                                  `newId` the new case's uuid;
+	 *                                                                                                                  `references` the plan's
+	 *                                                                                                                  reference entries.
 	 *
 	 * @return array<string, string|array<mixed>> caseId, newId, newNumber and references.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function splitOf(string $caseId, array $newCase, string $newId, array $references): array {
+	private function splitOf(string $caseId, array $second): array {
+		[$newCase, $newId, $references] = [$second['newCase'], $second['newId'], $second['references']];
 		return [
 			'caseId' => $caseId,
 			'newId' => $newId,
@@ -484,9 +493,8 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	/**
 	 * Open the second case, naming the first.
 	 *
-	 * @param array<string, mixed> $source The case being split.
-	 * @param string               $title  The new case's title.
-	 * @param string               $actor  Who split it.
+	 * @param array<string, mixed>                $source  The case being split.
+	 * @param array{title: string, actor: string} $opening `title` the new case's title; `actor` who split it.
 	 *
 	 * @return array<string, mixed> The new case.
 	 *
@@ -494,7 +502,8 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function openSecondCase(array $source, string $title, string $actor): array {
+	private function openSecondCase(array $source, array $opening): array {
+		[$title, $actor] = [$opening['title'], $opening['actor']];
 		$this->store->refuseUnreachableStatus(source: $source);
 		$payload = $this->secondCaseOf(source: $source, title: $title);
 		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);

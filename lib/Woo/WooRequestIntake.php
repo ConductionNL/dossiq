@@ -164,7 +164,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		$subjectRef = trim((string)$request['subjectRef']);
 
 		[$objectService, $register] = $this->availableRegister();
-		$collection = $this->ownedCollection(objectService: $objectService, wooRequest: $wooRequest, subjectRef: $subjectRef);
+		$collection = $this->ownedCollection(objectService: $objectService, owner: ['wooRequest' => $wooRequest, 'subjectRef' => $subjectRef]);
 
 		$target = new IntakeRegister(objectService: $objectService, register: $register);
 		$caseType = $this->caseType(target: $target);
@@ -173,7 +173,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
-			$this->linkLater(target: $target, caseId: $caseId, collection: $collection, subjectRef: $subjectRef);
+			$this->linkLater(target: $target, pending: ['caseId' => $caseId, 'collection' => $collection, 'subjectRef' => $subjectRef]);
 		}
 
 		// THE CASE NUMBER AND THE DATE, READ BACK FROM WHAT WAS WRITTEN, so
@@ -208,9 +208,9 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	/**
 	 * The requester's own dossier the request starts from, or null when it names none.
 	 *
-	 * @param object                $objectService OpenRegister's object service.
-	 * @param array<string, string> $wooRequest    The request as the case keeps it.
-	 * @param string                $subjectRef    The requester.
+	 * @param object                                                       $objectService OpenRegister's object service.
+	 * @param array{wooRequest: array<string, string>, subjectRef: string} $owner         `wooRequest` the request as the case keeps it;
+	 *                                                                                    `subjectRef` the requester.
 	 *
 	 * @return array<string, mixed>|null The dossier.
 	 *
@@ -218,7 +218,8 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
-	private function ownedCollection(object $objectService, array $wooRequest, string $subjectRef): ?array {
+	private function ownedCollection(object $objectService, array $owner): ?array {
+		[$wooRequest, $subjectRef] = [$owner['wooRequest'], $owner['subjectRef']];
 		$collection = null;
 		if ($wooRequest['collectionId'] !== '') {
 			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
@@ -300,16 +301,18 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 * past its timeout while the case already existed. A background job does
 	 * it right after; without a job list it is done here, as before.
 	 *
-	 * @param IntakeRegister       $target     The OpenRegister ObjectService and the dossiq register.
-	 * @param string               $caseId     The case.
-	 * @param array<string, mixed> $collection The dossier, already proven the resident's.
-	 * @param string               $subjectRef The resident.
+	 * @param IntakeRegister                                                              $target  The OpenRegister ObjectService and the dossiq
+	 *                                                                                             register.
+	 * @param array{caseId: string, collection: array<string, mixed>, subjectRef: string} $pending `caseId` the case; `collection` the dossier,
+	 *                                                                                             already proven the resident's; `subjectRef` the
+	 *                                                                                             resident.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
 	 */
-	private function linkLater(IntakeRegister $target, string $caseId, array $collection, string $subjectRef): void {
+	private function linkLater(IntakeRegister $target, array $pending): void {
+		[$caseId, $collection, $subjectRef] = [$pending['caseId'], $pending['collection'], $pending['subjectRef']];
 		$register = $target->register;
 		if ($this->linkQueue === null) {
 			$this->collections->link(objectService: $target->objectService, register: $register, caseId: $caseId, collection: $collection);
@@ -339,7 +342,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 */
 	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
 		try {
-			$request = $this->requestAndIntake(answers: $answers, receivedAt: $receivedAt, origin: $origin);
+			$request = $this->requestAndIntake(answers: $answers, arrival: ['receivedAt' => $receivedAt, 'origin' => $origin]);
 			[$objectService, $register, $receivedTerm] = $this->writeTarget();
 
 			$target = new IntakeRegister(objectService: $objectService, register: $register);
@@ -352,15 +355,15 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 			return array_merge(WooReceivedAnswers::EMPTY_ANSWER, ['outcome' => $outcome, 'message' => $e->getDetail()]);
 		}//end try
 
-		return $this->termAnswer(receivedTerm: $receivedTerm, target: $target, caseId: $saved['id']);
+		return $this->termAnswer(receivedTerm: $receivedTerm, filed: ['target' => $target, 'caseId' => $saved['id']]);
 	}//end receive()
 
 	/**
 	 * The normalised Woo request and its intake, read from the answers.
 	 *
-	 * @param array<string, mixed> $answers    The answers in opencatalogi's shape.
-	 * @param string               $receivedAt When the requester sent it (ISO 8601).
-	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 * @param array<string, mixed>                      $answers The answers in opencatalogi's shape.
+	 * @param array{receivedAt: string, origin: string} $arrival `receivedAt` when the requester sent it (ISO 8601); `origin` `portal-form` or
+	 *                                                           `opencatalogi`.
 	 *
 	 * @return array{wooRequest: array<string, mixed>, intake: array<string, mixed>} The request to write.
 	 *
@@ -368,7 +371,8 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
 	 */
-	private function requestAndIntake(array $answers, string $receivedAt, string $origin): array {
+	private function requestAndIntake(array $answers, array $arrival): array {
+		[$receivedAt, $origin] = [$arrival['receivedAt'], $arrival['origin']];
 		$answersMap = $this->receivedAnswers;
 		if ($answersMap === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
@@ -415,15 +419,16 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 * instance's rolled `endDateCurrent`. Anything less answers `not-armed`
 	 * and leaves an internal timeline entry on the case saying why.
 	 *
-	 * @param WooReceivedTerm $receivedTerm Reads the term back.
-	 * @param IntakeRegister  $target       The OpenRegister ObjectService and the dossiq register.
-	 * @param string          $caseId       The written case.
+	 * @param WooReceivedTerm                               $receivedTerm Reads the term back.
+	 * @param array{target: IntakeRegister, caseId: string} $filed        `target` the OpenRegister ObjectService and the dossiq register; `caseId`
+	 *                                                                    the written case.
 	 *
 	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
-	private function termAnswer(WooReceivedTerm $receivedTerm, IntakeRegister $target, string $caseId): array {
+	private function termAnswer(WooReceivedTerm $receivedTerm, array $filed): array {
+		[$target, $caseId] = [$filed['target'], $filed['caseId']];
 		return $receivedTerm->answer(
 			caseId: $caseId,
 			case: $this->cases->readCase(objectService: $target->objectService, register: $target->register, caseId: $caseId),

@@ -187,7 +187,28 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md
 	 */
 	public function open(string $caseId, string $decisionId, array $delivered): array {
-		[$objectService, $register, $schema] = $this->store();
+		return $this->storedSet(store: $this->store(), delivery: ['caseId' => $caseId, 'decisionId' => $decisionId, 'delivered' => $delivered]);
+	}//end open()
+
+	/**
+	 * Store the pending set of a delivery, keep its bytes, and reconcile the case's reviewer access.
+	 *
+	 * @param array{0: object, 1: string, 2: string}                                         $store    The object service,
+	 *                                                                                              the register and the
+	 *                                                                                              schema.
+	 * @param array{caseId: string, decisionId: string, delivered: array<int, array<string, mixed>>} $delivery The Woo case,
+	 *                                                                                              the decision and what
+	 *                                                                                              is delivered.
+	 *
+	 * @return array<string, mixed> The stored set, with its `id`.
+	 *
+	 * @throws RuntimeException When the set cannot be stored.
+	 */
+	private function storedSet(array $store, array $delivery): array {
+		[$objectService, $register, $schema] = $store;
+		$caseId = $delivery['caseId'];
+		$delivered = $delivery['delivered'];
+		$decisionId = $delivery['decisionId'];
 
 		$items = self::itemsOf(delivered: $delivered);
 		$set = $this->pendingSet(subject: ['case' => $caseId, 'decision' => $decisionId], items: $items);
@@ -206,7 +227,7 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 		$this->access?->reconcileAfterCreate(caseId: $caseId, created: 1);
 
 		return $stored;
-	}//end open()
+	}//end storedSet()
 
 	/**
 	 * The manifest items of a delivery, one per delivered document.

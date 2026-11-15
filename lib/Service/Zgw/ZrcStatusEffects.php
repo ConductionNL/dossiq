@@ -188,23 +188,26 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 
 		$this->moveCase(
 			final: $final,
-			loaded: $loaded,
-			submitted: ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
+			moving: [
+				'loaded' => $loaded,
+				'submitted' => ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
+			]
 		);
 	}//end applyFinalState()
 
 	/**
 	 * Close the zaak on a final status, reopen it on a status type that says false.
 	 *
-	 * @param bool|string|null                  $final     What the status type says about being final.
-	 * @param array{0: string, 1: array, 2: array} $loaded    The zaak uuid, its mapping and its data.
-	 * @param mixed                             $submitted The submitted status date, if any.
+	 * @param bool|string|null                                                      $final  What the status type says about being final.
+	 * @param array{loaded: array{0: string, 1: array, 2: array}, submitted: mixed} $moving `loaded` the zaak uuid, its mapping and its data;
+	 *                                                                                      `submitted` the submitted status date, if any.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function moveCase(bool|string|null $final, array $loaded, mixed $submitted): void {
+	private function moveCase(bool|string|null $final, array $moving): void {
+		[$loaded, $submitted] = [$moving['loaded'], $moving['submitted']];
 		if ($final === true) {
 			$this->closeCase(loaded: $loaded, submitted: $submitted);
 		}

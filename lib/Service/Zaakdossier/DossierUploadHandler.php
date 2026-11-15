@@ -104,7 +104,7 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
 		try {
-			return $this->uploadFile(caseId: $caseId, file: $file, metadata: $metadata);
+			return $this->uploadFile(caseId: $caseId, upload: ['file' => $file, 'metadata' => $metadata]);
 		} catch (\Throwable $e) {
 			return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
 		}//end try
@@ -113,9 +113,9 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	/**
 	 * Refuse an executable, then store the file's bytes as a document of the case.
 	 *
-	 * @param string               $caseId   The case (zaak) UUID.
-	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
-	 * @param array<string, mixed> $metadata The shared document metadata.
+	 * @param string                                                            $caseId The case (zaak) UUID.
+	 * @param array{file: array<string, mixed>, metadata: array<string, mixed>} $upload `file` one normalised uploaded-file entry; `metadata` the
+	 *                                                                                  shared document metadata.
 	 *
 	 * @return array<string, mixed> The per-file result entry.
 	 *
@@ -123,7 +123,8 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
-	private function uploadFile(string $caseId, array $file, array $metadata): array {
+	private function uploadFile(string $caseId, array $upload): array {
+		[$file, $metadata] = [$upload['file'], $upload['metadata']];
 		$name = (string)($file['name'] ?? '');
 		$tmpName = (string)($file['tmp_name'] ?? '');
 		if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {

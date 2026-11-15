@@ -223,7 +223,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	private function rebindCaseType(FlowRebindRun $run, array $binding): int {
 		$moved = 0;
 		foreach ($this->casesOf(run: $run, binding: $binding) as $case) {
-			if ($this->basisFlowOf(run: $run, case: $case, binding: $binding) === null) {
+			if ($this->basisFlowOf(run: $run, candidate: ['case' => $case, 'binding' => $binding]) === null) {
 				continue;
 			}
 
@@ -282,14 +282,14 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	 * Null for a case without an id or a binding, one already on the target,
 	 * a closed one, or one bound to any flow that is not this case type's basis.
 	 *
-	 * @param FlowRebindRun                                              $run     The run.
-	 * @param array<string, mixed>                                       $case    The case.
-	 * @param array{caseTypeId: string, target: array<string, mixed>} $binding The case type and the flow it names.
+	 * @param FlowRebindRun        $run       The run.
+	 * @param array<string, mixed> $candidate The case (`case`), and the case type with the flow it names (`binding`).
 	 *
 	 * @return array<string, mixed>|null The basis flow.
 	 */
-	private function basisFlowOf(FlowRebindRun $run, array $case, array $binding): ?array {
-		$bound = $this->movableFrom(case: $case, binding: $binding);
+	private function basisFlowOf(FlowRebindRun $run, array $candidate): ?array {
+		$binding = $candidate['binding'];
+		$bound = $this->movableFrom(case: $candidate['case'], binding: $binding);
 		if ($bound === '') {
 			return null;
 		}

@@ -343,8 +343,10 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 
 		$caseTypeId = $this->saveCaseType(
 			payload: $this->buildCaseTypePayload(scheme: $scheme, name: $name),
-			register: $register,
-			schema: $caseTypeSchema
+			target: [
+				'register' => $register,
+				'schema' => $caseTypeSchema,
+			]
 		);
 
 		if ($caseTypeId === '') {
@@ -474,13 +476,13 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * Persist the case type and return its id.
 	 *
-	 * @param array<string, mixed> $payload  The caseType payload.
-	 * @param string               $register Register id.
-	 * @param string               $schema   caseType schema id.
+	 * @param array<string, mixed>                    $payload The caseType payload.
+	 * @param array{register: string, schema: string} $target  `register` register id; `schema` caseType schema id.
 	 *
 	 * @return string The new id, or '' when it could not be read back.
 	 */
-	private function saveCaseType(array $payload, string $register, string $schema): string {
+	private function saveCaseType(array $payload, array $target): string {
+		[$register, $schema] = [$target['register'], $target['schema']];
 		$created = $this->settingsService->getObjectService()->saveObject($payload, [], $register, $schema);
 		if (is_object($created) === true && method_exists($created, 'jsonSerialize') === true) {
 			$created = $created->jsonSerialize();
@@ -546,7 +548,14 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				continue;
 			}
 
-			$definition = $this->propertyDefinition(property: $property, type: $type, caseTypeId: $caseTypeId, value: $scheme[$property]);
+			$definition = $this->propertyDefinition(
+				property: $property,
+				definition: [
+					'type' => $type,
+					'caseTypeId' => $caseTypeId,
+					'value' => $scheme[$property],
+				]
+			);
 
 			$objectService->saveObject($definition, [], $register, $propertySchema);
 		}
@@ -555,14 +564,14 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * One propertyDefinition record.
 	 *
-	 * @param string $property   The property name.
-	 * @param string $type       The property type.
-	 * @param string $caseTypeId The case type it belongs to.
-	 * @param mixed  $value      The scheme's value, the default.
+	 * @param string                                                $property   The property name.
+	 * @param array{type: string, caseTypeId: string, value: mixed} $definition `type` the property type; `caseTypeId` the case type it belongs to;
+	 *                                                                          `value` the scheme's value, the default.
 	 *
 	 * @return array<string, mixed> The record.
 	 */
-	private function propertyDefinition(string $property, string $type, string $caseTypeId, mixed $value): array {
+	private function propertyDefinition(string $property, array $definition): array {
+		[$type, $caseTypeId, $value] = [$definition['type'], $definition['caseTypeId'], $definition['value']];
 		$definition = [
 			'name' => $property,
 			'caseType' => $caseTypeId,

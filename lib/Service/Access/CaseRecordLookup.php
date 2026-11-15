@@ -88,9 +88,24 @@ class CaseRecordLookup {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
 	 */
 	public function rowsOf(string $schema, string $field, string $caseId): array {
+		return $this->everyPage(query: ['schema' => $schema, 'field' => $field, 'value' => $caseId]);
+	}//end rowsOf()
+
+	/**
+	 * Every row of a schema whose field holds the value, a page at a time.
+	 *
+	 * @param array{schema: string, field: string, value: string} $query The schema slug, the field and the value.
+	 *
+	 * @return list<array<string, mixed>> The rows.
+	 *
+	 * @throws RuntimeException When more rows name the value than this reads.
+	 */
+	private function everyPage(array $query): array {
+		$schema = $query['schema'];
+		$caseId = $query['value'];
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$read = $this->page(schema: $schema, field: $field, value: $caseId, offset: ($page * self::PAGE), limit: self::PAGE);
+			$read = $this->page(schema: $schema, field: $query['field'], value: $caseId, offset: ($page * self::PAGE), limit: self::PAGE);
 			$rows = array_merge($rows, $read['rows']);
 			if ($read['read'] < self::PAGE) {
 				return $rows;
@@ -100,7 +115,7 @@ class CaseRecordLookup {
 		throw new RuntimeException(
 			'Dossiq case record lookup: more than '.(self::MAX_PAGES * self::PAGE).' rows of '.$schema.' name '.$caseId.'; not read in part'
 		);
-	}//end rowsOf()
+	}//end everyPage()
 
 	/**
 	 * One page of the rows of a schema whose field holds the value, read regardless of the caller.

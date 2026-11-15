@@ -114,26 +114,27 @@ class SubCaseDeriver {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
-		return $this->createChild(store: $store, link: $link, childData: $childData, parentCaseUuid: $parentCaseUuid);
+		return $this->createChild(parent: ['store' => $store, 'link' => $link], childData: $childData);
 	}//end derive()
 
 	/**
 	 * Create the child under its parent, with what it inherits.
 	 *
-	 * @param SubCaseStore         $store          Where the child is saved.
-	 * @param SubCaseLink          $link           What the child is derived from.
-	 * @param array<string, mixed> $childData      The child as the form filled it in.
-	 * @param string               $parentCaseUuid The parent case.
+	 * @param array{store: SubCaseStore, link: SubCaseLink} $parent    Where the child is saved (with its parent case), and
+	 *                                                              what it is derived from.
+	 * @param array<string, mixed>                          $childData The child as the form filled it in.
 	 *
 	 * @return array{ok: bool, reason?: string, object?: array<string, mixed>, inherited?: array<string, mixed>, inheritanceApplied?: bool}
 	 *
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
-	private function createChild(SubCaseStore $store, SubCaseLink $link, array $childData, string $parentCaseUuid): array {
+	private function createChild(array $parent, array $childData): array {
+		$store = $parent['store'];
+		$link = $parent['link'];
 		$childData = array_diff_key($childData, CallerIdentity::KEYS);
 		// The child names its parent before anything is inherited: the
 		// declaration that says what to inherit hangs off this very property.
-		$childData[self::PARENT_PROPERTY] = $parentCaseUuid;
+		$childData[self::PARENT_PROPERTY] = $store->parentCaseUuid;
 
 		$applied = $this->inherit(link: $link, childData: $childData);
 		try {
