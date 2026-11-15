@@ -112,97 +112,31 @@ class RetiredDocumentSteps {
 	}//end create()
 
 	/**
-	 * The filed document step for a text and a name, under the configuration's type and output.
+	 * The filed document step for a text and a name, under the configuration's type and output:
+	 * a step that renders the text as a file and asks dossiq to file it on the case.
 	 *
-	 * @param array<string, mixed>  $config   The retired configuration.
-	 * @param array<string, string> $document The `text` and the file `name`.
+	 * @param array<string, mixed>  $config   The retired configuration: the document type the dossier
+	 *                                        files it under, and where the result goes on the item.
+	 * @param array<string, string> $document The dossiq template `text` and the document's `name`,
+	 *                                        possibly with an extension.
 	 *
 	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
 	 *
 	 * @throws UnmappableStep When the step has no text or no document type.
 	 */
 	private function filedFrom(array $config, array $document): array {
-		return $this->filed(
-			text: $document['text'],
-			name: $document['name'],
-			documentType: trim((string)($config['documentType'] ?? '')),
-			output: $this->output(config: $config)
-		);
-	}//end filedFrom()
-
-	/**
-	 * `dossiq.action.mergeTemplate`: render text into a case field, or file it in the dossier.
-	 *
-	 * @param array<string, mixed> $config The retired configuration.
-	 *
-	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
-	 *
-	 * @throws UnmappableStep When the step has no text, or files a document without a type.
-	 *
-	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
-	 */
-	public function merge(array $config): array {
-		$text = (string)($config['template'] ?? ($config['templateSlug'] ?? ''));
-		$targetField = trim((string)($config['targetField'] ?? ''));
-
-		if ($targetField === '') {
-			$name = trim((string)($config['templateName'] ?? ($config['name'] ?? '')));
-			if ($name === '') {
-				$name = 'Document';
-			}
-
-			return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
-		}
-
-		return $this->fieldWrite(config: $config, write: ['text' => $text, 'targetField' => $targetField]);
-	}//end merge()
-
-	/**
-	 * The generate-document step that writes rendered text into a case field and stores no file.
-	 *
-	 * @param array<string, mixed>  $config The retired configuration.
-	 * @param array<string, string> $write  The `text` and the `targetField`.
-	 *
-	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
-	 *
-	 * @throws UnmappableStep When the step has no text.
-	 */
-	private function fieldWrite(array $config, array $write): array {
-		return [
-			'type' => self::GENERATE_DOCUMENT,
-			'config' => [
-				'template' => $this->text(text: $write['text']),
-				'storeFile' => false,
-				'targetField' => $write['targetField'],
-				'requestingApp' => AppIdentity::APP_ID,
-				'output' => $this->output(config: $config),
-			],
-		];
-	}//end fieldWrite()
-
-	/**
-	 * A step that renders the text as a file and asks dossiq to file it on the case.
-	 *
-	 * @param string $text         The dossiq template text.
-	 * @param string $name         The document's name, possibly with an extension.
-	 * @param string $documentType The document type the dossier files it under.
-	 * @param string $output       Where the result goes on the item.
-	 *
-	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
-	 *
-	 * @throws UnmappableStep When there is no document type.
-	 */
-	private function filed(string $text, string $name, string $documentType, string $output): array {
+		$documentType = trim((string)($config['documentType'] ?? ''));
+		$output = $this->output(config: $config);
 		if ($documentType === '') {
 			throw new UnmappableStep(message: 'the step names no document type, which the case dossier needs to file the document');
 		}
 
-		$title = (string)preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $name);
+		$title = (string)preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $document['name']);
 
 		return [
 			'type' => self::GENERATE_DOCUMENT,
 			'config' => [
-				'template' => $this->text(text: $text),
+				'template' => $this->text(text: $document['text']),
 				'templateName' => $this->syntax->forDocument(template: $title, what: 'document name'),
 				'filename' => $this->syntax->forDocument(template: $title, what: 'document name'),
 				'format' => self::FILED_FORMAT,
@@ -216,7 +150,7 @@ class RetiredDocumentSteps {
 				],
 			],
 		];
-	}//end filed()
+	}//end filedFrom()
 
 	/**
 	 * The template text, rewritten and required.
