@@ -19,7 +19,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\DecisionAdvice;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\AppFramework\Http;
 use Throwable;
 
@@ -115,6 +114,14 @@ class DecisionAdviceStore {
 	 * @return array<string, mixed> The array, or [] when it is not one.
 	 */
 	private function toArray(mixed $value): array {
-		return SerialisedResult::arrayOf(value: $value);
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$value = $value->jsonSerialize();
+		}
+
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
 	}//end toArray()
 }//end class

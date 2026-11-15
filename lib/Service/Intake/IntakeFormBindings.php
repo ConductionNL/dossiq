@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingsInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -113,8 +112,11 @@ class IntakeFormBindings implements IntakeFormBindingsInterface {
 
 		$rows = [];
 		foreach ($found as $row) {
-			$row = SerialisedResult::rowOf(value: $row);
-			if ($row !== null) {
+			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+				$row = $row->jsonSerialize();
+			}
+
+			if (is_array($row) === true) {
 				$rows[] = $row;
 			}
 		}

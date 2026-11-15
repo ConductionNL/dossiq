@@ -298,8 +298,11 @@ class CaseRelationStore {
 
 		$rows = [];
 		foreach ($results as $row) {
-			$row = SerialisedResult::rowOf(value: $row);
-			if ($row !== null) {
+			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+				$row = $row->jsonSerialize();
+			}
+
+			if (is_array($row) === true) {
 				$rows[] = $row;
 			}
 		}

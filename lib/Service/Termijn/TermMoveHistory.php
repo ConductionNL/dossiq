@@ -44,7 +44,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -173,8 +172,12 @@ class TermMoveHistory {
 	 * @return array<string, mixed>|null The row.
 	 */
 	private function asRow(mixed $event): ?array {
-		$data = SerialisedResult::rowOf(value: $event);
-		if ($data === null) {
+		$data = $event;
+		if (is_object($event) === true && method_exists($event, 'jsonSerialize') === true) {
+			$data = $event->jsonSerialize();
+		}
+
+		if (is_array($data) === false) {
 			return null;
 		}
 
