@@ -120,14 +120,16 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 		$schemas = $this->resolveSchemas();
 
-		$decision = $this->findContestedDecision(objectService: $objectService, schemas: $schemas, contestedDecisionId: $link->contestedDecisionId);
+		$decision = $this->findContestedDecision(
+			objectService: $objectService,
+			decision: ['register' => $schemas['register'], 'schema' => $schemas['decision'], 'id' => $link->contestedDecisionId]
+		);
 
 		$primaryDecisionCase = $this->extractUuid(value: ($decision['case'] ?? ''));
 
 		$this->linkPrimairDecision(
 			caseStore: new BezwaarCaseStore(objectService: $objectService, register: $schemas['register'], caseSchema: $schemas['case']),
-			link: $link,
-			primaryDecisionCase: $primaryDecisionCase,
+			link: ['objection' => $link, 'related' => $primaryDecisionCase],
 		);
 
 		$objection = $this->buildObjection(link: $link, payload: $objectionPayload);
@@ -174,20 +176,20 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	/**
 	 * Load the contested decision.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array{register: string, case: string, decision: string, objection: string} $schemas Register + schema ids.
-	 * @param string $contestedDecisionId UUID of the contested decision.
+	 * @param object                                              $objectService The OpenRegister ObjectService.
+	 * @param array{register: string, schema: string, id: string} $decision      The register, the decision schema and
+	 *                                                                           the UUID of the contested decision.
 	 *
 	 * @return array<string, mixed> The contested decision.
 	 *
 	 * @throws RuntimeException When the contested decision cannot be found.
 	 */
-	private function findContestedDecision(object $objectService, array $schemas, string $contestedDecisionId): array {
+	private function findContestedDecision(object $objectService, array $decision): array {
 		$decision = $this->findObjectAsArray(
 			objectService: $objectService,
-			register: $schemas['register'],
-			schema: $schemas['decision'],
-			id: $contestedDecisionId
+			register: $decision['register'],
+			schema: $decision['schema'],
+			id: $decision['id']
 		);
 		if ($decision === null) {
 			throw new RuntimeException('Contested decision not found');
@@ -226,19 +228,20 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 	 * When the contested decision has no parent case nothing is linked;
 	 * the absence is logged for operational visibility.
 	 *
-	 * @param BezwaarCaseStore $caseStore Where the bezwaar case is read and saved.
-	 * @param ObjectionLink $link The bezwaar case to update and the contested decision (for logging).
-	 * @param string $primaryDecisionCase The primair besluit case (may be '').
+	 * @param BezwaarCaseStore                                 $caseStore Where the bezwaar case is read and saved.
+	 * @param array{objection: ObjectionLink, related: string} $link      The bezwaar case to update with the contested decision
+	 *                                                                    (for logging), and the primair besluit case (may be '').
 	 *
 	 * @return void
 	 */
-	private function linkPrimairDecision(BezwaarCaseStore $caseStore, ObjectionLink $link, string $primaryDecisionCase): void {
-		$objectionCaseId = $link->objectionCaseId;
+	private function linkPrimairDecision(BezwaarCaseStore $caseStore, array $link): void {
+		$objectionCaseId = $link['objection']->objectionCaseId;
+		$primaryDecisionCase = $link['related'];
 		if ($primaryDecisionCase === '') {
 			$this->logger->info(
 				'BezwaarCreationHook: contested decision has no parent case; '
 				. 'skipping relatedCases link',
-				['decision' => $link->contestedDecisionId]
+				['decision' => $link['objection']->contestedDecisionId]
 			);
 			return;
 		}
