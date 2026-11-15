@@ -24,9 +24,10 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,16 +39,15 @@ use Throwable;
  * so it can be declared or replaced only while every document of the case is
  * still unmarked.
  *
+ * The rule is private to its case (REQ-WRT-006): a declared rule reconciles
+ * the case's reviewer access in the same request, so the assignee the case
+ * type grants it to can read and update it.
+ *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class StoppingRules {
+class StoppingRules implements StoppingRulesInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The app config key of the stopping rule schema.
-	 */
-	public const SCHEMA_KEY = 'stopping_rule_schema';
 
 	/**
 	 * The confidences a rule may name.
@@ -55,23 +55,20 @@ class StoppingRules {
 	public const CONFIDENCES = [0.9, 0.95, 0.99];
 
 	/**
-	 * The refusal sentence once review started.
-	 */
-	public const LOCKED = 'A stopping rule is declared before review. Once a document is marked, it cannot change.';
-
-	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ReviewWrites $writes Grants the case's private records to the people on it once the rule is stored.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
+		private readonly ReviewWrites $writes,
 	) {
 	}//end __construct()
 
@@ -139,6 +136,33 @@ class StoppingRules {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
 	 */
 	public function declare(string $caseId, float $targetRecall, float $confidence, string $userId): array {
+		$this->requireInRange(targetRecall: $targetRecall, confidence: $confidence);
+
+		if ($this->reviewStarted(caseId: $caseId) === true) {
+			throw new RefusedException(rule: 'review-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
+		}
+
+		$uuid = $this->existingUuid(caseId: $caseId);
+
+		$rule = $this->ruleOf(caseId: $caseId, targetRecall: $targetRecall, confidence: $confidence, userId: $userId);
+
+		$saved = $this->save(rule: $rule, uuid: $uuid);
+		$this->reconcile(caseId: $caseId);
+
+		return $saved;
+	}//end declare()
+
+	/**
+	 * Refuse a target recall or confidence outside the allowed range.
+	 *
+	 * @param float $targetRecall The target recall.
+	 * @param float $confidence   The confidence.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When either is out of range.
+	 */
+	private function requireInRange(float $targetRecall, float $confidence): void {
 		if ($targetRecall < 0.5 || $targetRecall > 0.99 || in_array($confidence, self::CONFIDENCES, true) === false) {
 			throw new RefusedException(
 				rule: 'review-stopping-rule-out-of-range',
@@ -146,27 +170,68 @@ class StoppingRules {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end requireInRange()
 
-		if ($this->reviewStarted(caseId: $caseId) === true) {
-			throw new RefusedException(rule: 'review-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
-		}
-
+	/**
+	 * The uuid of the rule the case already declared, or null.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return string|null
+	 */
+	private function existingUuid(string $caseId): ?string {
 		$existing = $this->forCase(caseId: $caseId);
 		$uuid = null;
 		if ($existing !== null) {
 			$uuid = (string)($existing['id'] ?? ($existing['uuid'] ?? ''));
 		}
 
-		$rule = [
+		return $uuid;
+	}//end existingUuid()
+
+	/**
+	 * The stopping rule as declared now.
+	 *
+	 * @param string $caseId       The case uuid.
+	 * @param float  $targetRecall The target recall.
+	 * @param float  $confidence   The confidence.
+	 * @param string $userId       Who declares it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function ruleOf(string $caseId, float $targetRecall, float $confidence, string $userId): array {
+		return [
 			'case' => $caseId,
 			'targetRecall' => $targetRecall,
 			'confidence' => $confidence,
 			'declaredBy' => $userId,
 			'declaredAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 		];
+	}//end ruleOf()
 
-		return $this->save(rule: $rule, uuid: $uuid);
-	}//end declare()
+	/**
+	 * Reconcile the case's reviewer access after the rule was stored.
+	 *
+	 * The rule is already stored, so a reconcile that fails is logged rather
+	 * than undoing it; the administrator's reconcile route repairs the grants
+	 * (case-reviewer-access REQ-CRA-004).
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/tasks.md#1-the-stopping-rule
+	 */
+	private function reconcile(string $caseId): void {
+		try {
+			$this->writes->ruleStored(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: a stopping rule was stored but the reviewer access of its case could not be reconciled',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end reconcile()
 
 	/**
 	 * Store the rule.
@@ -193,7 +258,7 @@ class StoppingRules {
 				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]);
 			throw $this->unstored(previous: $e);
 		}
 

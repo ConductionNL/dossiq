@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Dashboard\IWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -68,7 +68,7 @@ abstract class DashboardPageWidget implements IWidget {
 	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
-		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
+		return $this->url->linkToRouteAbsolute(AppIdentity::APP_ID . '.dashboard.page');
 	}//end getUrl()
 
 	/**
@@ -83,9 +83,9 @@ abstract class DashboardPageWidget implements IWidget {
 	 */
 	public function load(): void {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-vendor');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-nc-vue');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-dashboardWidgets');
-		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
+		Util::addScript(AppIdentity::APP_ID, AppIdentity::APP_ID . '-shared-vendor');
+		Util::addScript(AppIdentity::APP_ID, AppIdentity::APP_ID . '-shared-nc-vue');
+		Util::addScript(AppIdentity::APP_ID, AppIdentity::APP_ID . '-dashboardWidgets');
+		Util::addStyle(AppIdentity::APP_ID, 'dashboardWidgets');
 	}//end load()
 }//end class

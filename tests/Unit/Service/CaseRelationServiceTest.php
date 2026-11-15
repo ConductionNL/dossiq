@@ -48,6 +48,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRelationServiceTest extends TestCase {
 

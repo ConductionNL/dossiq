@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,7 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class CaseCollaborationService {
+class CaseCollaborationService implements CaseCollaborationServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -178,7 +179,29 @@ class CaseCollaborationService {
 			return ['error' => 'Federated case collaboration is not configured'];
 		}
 
-		$shareObj = $objectService->find($federatedShareId, register: (int)$register, schema: (int)$shareSchema);
+		return $this->appendToShare(
+			store: new FederatedActivityStore(
+				objectService: $objectService,
+				register: $register,
+				shareSchema: $shareSchema,
+				activitySchema: $activitySchema,
+			),
+			federatedShareId: $federatedShareId,
+			entry: $entry,
+		);
+	}//end appendEntry()
+
+	/**
+	 * Append one entry to a share that is found and not revoked.
+	 *
+	 * @param FederatedActivityStore $store            The object service, register and schemas
+	 * @param string                 $federatedShareId The caseFederatedShare UUID
+	 * @param array<string, mixed>   $entry            The entry to append
+	 *
+	 * @return array The updated activity object data, or an error array
+	 */
+	private function appendToShare(FederatedActivityStore $store, string $federatedShareId, array $entry): array {
+		$shareObj = $store->objectService->find($federatedShareId, register: (int)$store->register, schema: (int)$store->shareSchema);
 		if ($shareObj === null) {
 			return ['error' => 'Federated share not found'];
 		}
@@ -189,6 +212,21 @@ class CaseCollaborationService {
 			return ['error' => 'This federated share has been revoked'];
 		}
 
+		$activity = $this->activityWithEntry(federatedShareId: $federatedShareId, shareData: $shareData, entry: $entry);
+
+		return $this->storeActivity(store: $store, activity: $activity, entry: $entry);
+	}//end appendToShare()
+
+	/**
+	 * The share's activity object, created when absent, with the entry appended.
+	 *
+	 * @param string               $federatedShareId The caseFederatedShare UUID
+	 * @param array<string, mixed> $shareData        The share object data
+	 * @param array<string, mixed> $entry            The entry to append
+	 *
+	 * @return array<string, mixed> The activity object, not yet saved
+	 */
+	private function activityWithEntry(string $federatedShareId, array $shareData, array $entry): array {
 		$activity = $this->findActivityObject(federatedShareId: $federatedShareId);
 		if ($activity === null) {
 			$activity = [
@@ -203,7 +241,20 @@ class CaseCollaborationService {
 		$activity['entries'] = $entries;
 		$activity['lastActivityAt'] = $entry['createdAt'];
 
-		$result = $objectService->saveObject(object: $activity, register: (int)$register, schema: (int)$activitySchema);
+		return $activity;
+	}//end activityWithEntry()
+
+	/**
+	 * Save the activity object and emit the audit trail entry for the post.
+	 *
+	 * @param FederatedActivityStore $store    The object service, register and activity schema
+	 * @param array<string, mixed>   $activity The activity object
+	 * @param array<string, mixed>   $entry    The entry appended
+	 *
+	 * @return array The updated activity object data
+	 */
+	private function storeActivity(FederatedActivityStore $store, array $activity, array $entry): array {
+		$result = $store->objectService->saveObject(object: $activity, register: (int)$store->register, schema: (int)$store->activitySchema);
 		$resultData = $this->asArray(value: $result);
 
 		$this->tenantAuditTrail->emit(
@@ -217,7 +268,7 @@ class CaseCollaborationService {
 		);
 
 		return $resultData;
-	}//end appendEntry()
+	}//end storeActivity()
 
 	/**
 	 * Normalise an OpenRegister return value to its array form — OR hands back
@@ -288,7 +339,7 @@ class CaseCollaborationService {
 	 */
 	private function resolveRemoteToken(string $shareToken, string $federatedShareId): ?array {
 		$shareMapper = $this->getFederatedShareMapper();
-		if ($shareMapper === null || $shareToken === '' || $federatedShareId === '') {
+		if ($shareMapper === null || $this->namesAShare(shareToken: $shareToken, federatedShareId: $federatedShareId) === false) {
 			return null;
 		}
 
@@ -298,6 +349,18 @@ class CaseCollaborationService {
 			return null;
 		}
 
+		return $this->sharedWithOf(share: $share, federatedShareId: $federatedShareId);
+	}//end resolveRemoteToken()
+
+	/**
+	 * Who an outgoing, live share of this federated share was made with.
+	 *
+	 * @param object $share            The federated share found by its token.
+	 * @param string $federatedShareId The federated share id the caller names.
+	 *
+	 * @return array{sharedWith: string}|null Null when the share is not outgoing, not live, or of another id.
+	 */
+	private function sharedWithOf(object $share, string $federatedShareId): ?array {
 		if ($share->getDirection() !== 'outgoing') {
 			return null;
 		}
@@ -314,7 +377,19 @@ class CaseCollaborationService {
 		}
 
 		return ['sharedWith' => (string)$share->getSharedWith()];
-	}//end resolveRemoteToken()
+	}//end sharedWithOf()
+
+	/**
+	 * Whether both the share token and the federated share id are given.
+	 *
+	 * @param string $shareToken       The share token.
+	 * @param string $federatedShareId The federated share id.
+	 *
+	 * @return bool
+	 */
+	private function namesAShare(string $shareToken, string $federatedShareId): bool {
+		return $shareToken !== '' && $federatedShareId !== '';
+	}//end namesAShare()
 
 	/**
 	 * Resolve OpenRegister's ObjectService.

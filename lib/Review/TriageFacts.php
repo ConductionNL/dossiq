@@ -23,10 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -65,16 +65,16 @@ class TriageFacts {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooCaseDocuments       $caseDocuments The document records.
-	 * @param CaseDocumentProvenance $provenance    Custodian, source system and mail headers per document.
+	 * @param WooCaseDocumentsInterface       $caseDocuments The document records.
+	 * @param CaseDocumentProvenanceInterface $provenance    Custodian, source system and mail headers per document.
 	 * @param DocumentText           $text          The extracted text per document.
 	 * @param LoggerInterface        $logger        The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseDocumentProvenance $provenance,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
+		private readonly CaseDocumentProvenanceInterface $provenance,
 		private readonly DocumentText $text,
 		private readonly LoggerInterface $logger,
 	) {
@@ -98,18 +98,48 @@ class TriageFacts {
 			$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentId, record: $record);
 			$mail = $this->provenance->mailOf(caseId: $caseId, documentId: $documentId, record: $record);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the provenance of a document could not be read, so the triage rules were not applied',
-				['app' => Application::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $e->getMessage()]
-			);
-			throw new RefusedException(
-				rule: 'triage-rule-unavailable',
-				sentence: 'The triage rules cannot be stored or applied, so nothing was marked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unavailable(error: $e, caseId: $caseId, documentId: $documentId);
 		}
 
+		return $this->factRow(record: $record, provenance: $provenance, mail: $mail);
+	}//end forDocument()
+
+	/**
+	 * Log an unreadable provenance and answer the refusal to throw.
+	 *
+	 * @param Throwable $error      Why the provenance could not be read.
+	 * @param string    $caseId     The case UUID.
+	 * @param string    $documentId The document.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	private function unavailable(Throwable $error, string $caseId, string $documentId): RefusedException {
+		$this->logger->error(
+			'Dossiq: the provenance of a document could not be read, so the triage rules were not applied',
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $error->getMessage()]
+		);
+		return new RefusedException(
+			rule: 'triage-rule-unavailable',
+			sentence: 'The triage rules cannot be stored or applied, so nothing was marked.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $error,
+		);
+	}//end unavailable()
+
+	/**
+	 * The facts of a document from its record, provenance and mail headers.
+	 *
+	 * @param array<string, mixed> $record     The document's record.
+	 * @param array<string, mixed> $provenance The document's provenance.
+	 * @param array<string, mixed> $mail       The document's mail headers.
+	 *
+	 * @return FactRow
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	private function factRow(array $record, array $provenance, array $mail): array {
 		$date = $mail['date'];
 		if ($date === '') {
 			$date = (string)($record['creatiedatum'] ?? '');
@@ -124,7 +154,7 @@ class TriageFacts {
 			'text' => null,
 			'record' => $record,
 		];
-	}//end forDocument()
+	}//end factRow()
 
 	/**
 	 * The facts with the document's extracted text read in; null when it has none.

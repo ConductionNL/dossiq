@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\Zgw\SchemaFilter
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */

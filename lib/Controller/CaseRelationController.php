@@ -34,11 +34,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseRelationService;
-use OCA\Dossiq\Service\Flow\CaseFlowActions;
-use OCA\Dossiq\Service\Relation\CaseRelationDetails;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRelationDetailsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -73,21 +73,21 @@ class CaseRelationController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param CaseRelationService $caseRelationService Backend service.
+	 * @param CaseRelationServiceInterface $caseRelationService Backend service.
 	 * @param IUserSession $userSession Current user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
-	 * @param CaseFlowActions $flowActions The case's planned follow-ups, listed with `?planned=1`.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseRelationDetailsInterface $caseRelationDetails Number, case type, status and handler per related case.
+	 * @param CaseFlowActionsInterface $flowActions The case's planned follow-ups, listed with `?planned=1`.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseRelationService $caseRelationService,
+		private readonly CaseRelationServiceInterface $caseRelationService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly CaseRelationDetails $caseRelationDetails,
-		private readonly CaseFlowActions $flowActions,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly CaseRelationDetailsInterface $caseRelationDetails,
+		private readonly CaseFlowActionsInterface $flowActions,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -179,13 +179,25 @@ class CaseRelationController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$targetId = (string)$this->request->getParam('targetId', '');
-		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
-		$notes = $this->request->getParam('notes', null);
-		if ($notes !== null) {
-			$notes = (string)$notes;
+		$refusal = $this->createRefusal(caseId: $caseId, user: $user);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
+		return $this->addRelation(caseId: $caseId);
+	}//end create()
+
+	/**
+	 * Refuse a relation without a target or nature (400), or between cases the caller cannot both read (403).
+	 *
+	 * @param string $caseId The case the relation starts from.
+	 * @param IUser  $user   The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the relation may be added.
+	 */
+	private function createRefusal(string $caseId, IUser $user): ?JSONResponse {
+		$targetId = (string)$this->request->getParam('targetId', '');
+		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
 		if ($targetId === '' || $natureRelationship === '') {
 			return new JSONResponse(
 				['ok' => false, 'reason' => 'missing_case_id', 'message' => 'targetId and aardRelatie are required'],
@@ -200,11 +212,22 @@ class CaseRelationController extends Controller {
 			);
 		}
 
+		return null;
+	}//end createRefusal()
+
+	/**
+	 * Add the relation the request names, and answer 201, or the status its refusal maps to.
+	 *
+	 * @param string $caseId The case the relation starts from.
+	 *
+	 * @return JSONResponse
+	 */
+	private function addRelation(string $caseId): JSONResponse {
 		$result = $this->caseRelationService->addRelation(
 			caseId: $caseId,
-			targetId: $targetId,
-			natureRelationship: $natureRelationship,
-			notes: $notes,
+			targetId: (string)$this->request->getParam('targetId', ''),
+			natureRelationship: (string)$this->request->getParam('aardRelatie', ''),
+			notes: $this->notesParam(),
 		);
 
 		if ($result['ok'] === false) {
@@ -213,7 +236,21 @@ class CaseRelationController extends Controller {
 		}
 
 		return new JSONResponse($result, Http::STATUS_CREATED);
-	}//end create()
+	}//end addRelation()
+
+	/**
+	 * The relation's notes as a string, or null when none were sent.
+	 *
+	 * @return string|null
+	 */
+	private function notesParam(): ?string {
+		$notes = $this->request->getParam('notes', null);
+		if ($notes === null) {
+			return null;
+		}
+
+		return (string)$notes;
+	}//end notesParam()
 
 	/**
 	 * Remove a typed peer relation between two cases (two-sided).
@@ -236,6 +273,23 @@ class CaseRelationController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->removeReadable(
+			user: $user,
+			relation: ['caseId' => $caseId, 'targetId' => $targetId, 'natureRelationship' => $natureRelationship]
+		);
+	}//end destroy()
+
+	/**
+	 * Remove the relation when the user may read both cases.
+	 *
+	 * @param IUser                                                              $user     The signed-in user.
+	 * @param array{caseId: string, targetId: string, natureRelationship: string} $relation The origin case, the target
+	 *                                                                                     case and the relation type.
+	 *
+	 * @return JSONResponse
+	 */
+	private function removeReadable(IUser $user, array $relation): JSONResponse {
+		['caseId' => $caseId, 'targetId' => $targetId] = $relation;
 		if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
 			return new JSONResponse(
 				['ok' => false, 'reason' => 'access_denied'],
@@ -246,7 +300,7 @@ class CaseRelationController extends Controller {
 		$result = $this->caseRelationService->removeRelation(
 			caseId: $caseId,
 			targetId: $targetId,
-			natureRelationship: $natureRelationship,
+			natureRelationship: $relation['natureRelationship'],
 		);
 
 		if ($result['ok'] === false) {
@@ -255,7 +309,7 @@ class CaseRelationController extends Controller {
 		}
 
 		return new JSONResponse($result);
-	}//end destroy()
+	}//end removeReadable()
 
 	/**
 	 * Whether the caller may read both ends of a relation.

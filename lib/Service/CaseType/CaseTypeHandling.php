@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeHandlingInterface;
+
 /**
  * What happens to a case of this type: the group, the handler, the messages
  * and the intake screen.
@@ -50,7 +52,7 @@ namespace OCA\Dossiq\Service\CaseType;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-final class CaseTypeHandling {
+final class CaseTypeHandling implements CaseTypeHandlingInterface {
 
 	/**
 	 * The property holding the declared block.

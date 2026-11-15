@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for create(); behaviour covered by the create() tests.
 	 */
@@ -82,7 +82,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for show(); behaviour covered by the show() tests.
 	 */
@@ -101,7 +101,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for pauze(); behaviour covered by the pauze() tests.
 	 */
@@ -120,7 +120,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for hervat(); behaviour covered by the hervat() tests.
 	 */
@@ -139,7 +139,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for verleng(); behaviour covered by the verleng() tests.
 	 */
@@ -158,7 +158,7 @@ class DeadlineInstanceLegacyPathController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for voltooi(); behaviour covered by the voltooi() tests.
 	 */

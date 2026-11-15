@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\FileDocumentLookupInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
@@ -31,7 +32,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-every-path-that-returns-the-document-or-its-file-honours-the-exception
  */
-class FileDocumentLookup {
+class FileDocumentLookup implements FileDocumentLookupInterface {
 	use SearchesObjects;
 
 	/**

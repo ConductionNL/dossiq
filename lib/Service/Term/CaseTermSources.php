@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\TermijnTimerService;
 /**
  * Where a case's terms are read from: its term instances, the case type's term declarations and the engine timers.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 final class CaseTermSources {
 	/**

@@ -220,6 +220,14 @@
         "carriesTerm": true,
         "runOnUpgrade": true
       }
+    ],
+    "requiresConsentForSharing": true,
+    "requiresSpecialCategory": true,
+    "identifyingFields": [
+      "subjectBsn",
+      "requester",
+      "initiatorDisplayName",
+      "initiatorSourceId"
     ]
   },
   "propertyDefinitions": [

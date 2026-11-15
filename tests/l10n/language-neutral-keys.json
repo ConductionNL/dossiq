@@ -127,6 +127,7 @@
         "Override",
         "{identifier}",
         "{subject.title}",
+        "{subject}",
         "initiatorDisplayName",
         "name",
         "{name}, {description}",

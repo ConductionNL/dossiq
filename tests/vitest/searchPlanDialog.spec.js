@@ -307,4 +307,81 @@ describe('SearchPlanDialog', () => {
 			),
 		)
 	})
+
+	it('fills the form from a partial plan and from none', async () => {
+		const { wrapper, axios } = await mountDialog()
+		const before = axios.get.mock.calls.length
+		wrapper.vm.fill({ custodians: [{ name: 'A' }, { function: 'F' }], systems: 'files' })
+		expect(wrapper.vm.custodians).toEqual([{ name: 'A', function: '' }, { name: '', function: 'F' }])
+		expect(wrapper.vm.systems).toEqual([])
+		expect([wrapper.vm.periodFrom, wrapper.vm.periodTo, wrapper.vm.terms]).toEqual(['', '', ''])
+		expect(axios.get.mock.calls.length, 'no history without a plan id').toBe(before)
+
+		wrapper.vm.fill({ custodians: [], systems: ['files'], periodFrom: '2025-01-01', periodTo: '2025-02-01', terms: 'x' })
+		expect(wrapper.vm.custodians).toEqual([{ name: '', function: '' }])
+		expect(wrapper.vm.systems).toEqual(['files'])
+		expect([wrapper.vm.periodFrom, wrapper.vm.periodTo, wrapper.vm.terms]).toEqual(['2025-01-01', '2025-02-01', 'x'])
+
+		wrapper.vm.fill(null)
+		expect(wrapper.vm.plan).toBeNull()
+		expect(wrapper.vm.systems, 'a cleared plan leaves the form').toEqual(['files'])
+	})
+
+	it('applies a template of names and drops the blank ones, and clears on none', async () => {
+		const { wrapper } = await mountDialog()
+		wrapper.vm.periodFrom = '2025-01-01'
+		wrapper.vm.applyTemplate({ id: 'tpl', values: { custodians: [' Wethouder ', { name: ' ' }, null, { name: 'B', function: ' F ' }], systems: [1, 'files'], terms: 7 } })
+		expect(wrapper.vm.startedFrom).toBe('tpl')
+		expect(wrapper.vm.custodians).toEqual([{ name: 'Wethouder', function: '' }, { name: 'B', function: 'F' }])
+		expect(wrapper.vm.systems).toEqual(['1', 'files'])
+		expect(wrapper.vm.terms).toBe('7')
+		expect(wrapper.vm.periodFrom).toBe('2025-01-01')
+
+		wrapper.vm.applyTemplate({ values: { custodians: 'x', systems: 'files' } })
+		expect(wrapper.vm.startedFrom).toBe('')
+		expect(wrapper.vm.custodians).toEqual([{ name: '', function: '' }])
+		expect(wrapper.vm.systems).toEqual([])
+		expect(wrapper.vm.terms).toBe('')
+
+		wrapper.vm.applyTemplate({ id: 'tpl2' })
+		expect(wrapper.vm.terms).toBe('')
+		wrapper.vm.terms = 'kept'
+		wrapper.vm.applyTemplate(null)
+		expect(wrapper.vm.startedFrom).toBe('')
+		expect(wrapper.vm.terms).toBe('kept')
+	})
+
+	it('is complete only with a custodian, a system, a valid period and terms', async () => {
+		const { wrapper } = await mountDialog()
+		const set = async (fields) => {
+			Object.assign(wrapper.vm.$data, fields)
+			await wrapper.vm.$nextTick()
+			return wrapper.vm.complete
+		}
+		const full = { custodians: [{ name: 'A', function: '' }], systems: ['files'], periodFrom: '2025-01-01', periodTo: '2025-01-01', terms: 'x' }
+		expect(await set(full)).toBe(true)
+		expect(await set({ ...full, custodians: [{ name: ' ', function: '' }] })).toBe(false)
+		expect(await set({ ...full, systems: [] })).toBe(false)
+		expect(await set({ ...full, periodFrom: '2025-1-01' })).toBe(false)
+		expect(await set({ ...full, periodTo: '' })).toBe(false)
+		expect(await set({ ...full, periodFrom: '2025-01-02' })).toBe(false)
+		expect(await set({ ...full, terms: '  ' })).toBe(false)
+	})
+
+	it('reads the history from a plain list and fills its gaps', async () => {
+		const { wrapper, axios } = await mountDialog()
+		axios.get.mockResolvedValueOnce({ data: [{ action: 'create', user: 'pj', created: '2026-10-01T10:00:00Z' }, { id: 9 }] })
+		await wrapper.vm.loadHistory('plan-1')
+		expect(wrapper.vm.history).toEqual([
+			{ id: '0', when: '2026-10-01 10:00', who: 'pj', what: 'created' },
+			{ id: '9', when: '', who: '', what: 'changed' },
+		])
+		axios.get.mockResolvedValueOnce({ data: {} })
+		await wrapper.vm.loadHistory('plan-1')
+		expect(wrapper.vm.history).toEqual([])
+		axios.get.mockRejectedValueOnce(new Error('down'))
+		wrapper.vm.history = [{ id: 'x' }]
+		await wrapper.vm.loadHistory('plan-1')
+		expect(wrapper.vm.history).toEqual([])
+	})
 })

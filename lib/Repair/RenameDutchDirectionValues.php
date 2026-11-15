@@ -175,29 +175,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 			}
 
 			$touched++;
-			$qTable = $this->quote(identifier: $table);
-			$qColumn = $this->quote(identifier: self::COLUMN);
-
-			foreach (self::VALUE_MAP as $old => $new) {
-				try {
-					$rows = $this->db->executeStatement(
-						sprintf('UPDATE %s SET %s = ? WHERE %s = ?', $qTable, $qColumn, $qColumn),
-						[$new, $old]
-					);
-				} catch (Exception $e) {
-					// One unreadable table must not abort the rest.
-					$this->logger->warning(
-						'RenameDutchDirectionValues: update failed on a shard table.',
-						['table' => $table, 'from' => $old, 'to' => $new, 'exception' => $e->getMessage()]
-					);
-					continue;
-				}
-
-				if ($rows > 0) {
-					$updated += $rows;
-					$output->info(sprintf('  %s: %s -> %s (%d row(s))', $table, $old, $new, $rows));
-				}
-			}//end foreach
+			$updated += $this->rewriteTable(table: $table, output: $output);
 		}//end foreach
 
 		// The count is reported even when it is zero. A step that prints nothing
@@ -211,6 +189,43 @@ class RenameDutchDirectionValues implements IRepairStep {
 		);
 
 	}//end run()
+
+	/**
+	 * Rewrite every Dutch direction value in one shard table.
+	 *
+	 * @param string  $table  The table name.
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return int The number of rows updated.
+	 */
+	private function rewriteTable(string $table, IOutput $output): int {
+		$updated = 0;
+		$qTable = $this->quote(identifier: $table);
+		$qColumn = $this->quote(identifier: self::COLUMN);
+
+		foreach (self::VALUE_MAP as $old => $new) {
+			try {
+				$rows = $this->db->executeStatement(
+					sprintf('UPDATE %s SET %s = ? WHERE %s = ?', $qTable, $qColumn, $qColumn),
+					[$new, $old]
+				);
+			} catch (Exception $e) {
+				// One unreadable table must not abort the rest.
+				$this->logger->warning(
+					'RenameDutchDirectionValues: update failed on a shard table.',
+					['table' => $table, 'from' => $old, 'to' => $new, 'exception' => $e->getMessage()]
+				);
+				continue;
+			}
+
+			if ($rows > 0) {
+				$updated += $rows;
+				$output->info(sprintf('  %s: %s -> %s (%d row(s))', $table, $old, $new, $rows));
+			}
+		}//end foreach
+
+		return $updated;
+	}//end rewriteTable()
 
 	/**
 	 * Whether a shard table carries a `direction` column.

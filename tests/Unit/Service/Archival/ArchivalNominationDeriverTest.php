@@ -345,4 +345,123 @@ class ArchivalNominationDeriverTest extends TestCase {
 		);
 		$this->assertNull($this->deriver->resultTypeForCase(caseId: 'case-without-a-result'));
 	}//end testResultTypeForCaseFollowsTheWrittenResult()
+
+	/**
+	 * A deriver over the shared fake store with its own logger double.
+	 *
+	 * @param LoggerInterface $logger The logger double.
+	 * @param string          $resultSchema The configured result schema ('' leaves it unconfigured).
+	 *
+	 * @return ArchivalNominationDeriver The deriver.
+	 */
+	private function deriverWith(LoggerInterface $logger, string $resultSchema = 'result'): ArchivalNominationDeriver {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'result_schema' => $resultSchema,
+				'result_type_schema' => 'resultType',
+				default => '',
+			}
+		);
+
+		return new ArchivalNominationDeriver(
+			settingsService: $settings,
+			baseDates: new ArchivalBaseDateResolver(settingsService: $settings),
+			logger: $logger,
+		);
+	}//end deriverWith()
+
+	/**
+	 * Without a result type or an end date nothing is read and nothing is derived.
+	 *
+	 * @return void
+	 */
+	public function testAMissingResultTypeOrEndDateDerivesNothing(): void {
+		$this->seedResultType(id: 'rt-1', fields: ['archivalAction' => 'vernietigen', 'archivalPeriod' => 'P5Y']);
+
+		$this->assertSame([], $this->deriver->derive(case: ['id' => 'case-1'], resultTypeId: '', endDate: '2026-09-08'));
+		$this->assertSame([], $this->deriver->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-1', endDate: ''));
+	}//end testAMissingResultTypeOrEndDateDerivesNothing()
+
+	/**
+	 * A result type without an archival period dates the action on the base date itself.
+	 *
+	 * @return void
+	 */
+	public function testNoArchivalPeriodDatesTheActionOnTheBaseDate(): void {
+		$this->seedResultType(
+			id: 'rt-4',
+			fields: ['archivalAction' => 'vernietigen', 'sourceDateArchiveProcedure' => ['derivationMethod' => 'afgehandeld']]
+		);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$derived = $this->deriverWith(logger: $logger)->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-4', endDate: '2026-09-08');
+
+		$this->assertSame(['archiveNomination' => 'vernietigen', 'archiveActionDate' => '2026-09-08'], $derived);
+	}//end testNoArchivalPeriodDatesTheActionOnTheBaseDate()
+
+	/**
+	 * An unparseable archival period falls back to the base date and warns.
+	 *
+	 * @return void
+	 */
+	public function testAnUnparseableArchivalPeriodFallsBackToTheBaseDateAndWarns(): void {
+		$this->seedResultType(
+			id: 'rt-5',
+			fields: ['archiefnominatie' => 'bewaren', 'archiefactietermijn' => 'five years', 'brondatumArchiefprocedure' => '{"afleidingswijze":"afgehandeld"}']
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'zrc-021: unparseable archivalPeriod, archiveActionDate falls back to the base date',
+			['archivalPeriod' => 'five years']
+		);
+
+		$derived = $this->deriverWith(logger: $logger)->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-5', endDate: '2026-09-08');
+
+		$this->assertSame(['archiveNomination' => 'blijvend_bewaren', 'archiveActionDate' => '2026-09-08'], $derived);
+	}//end testAnUnparseableArchivalPeriodFallsBackToTheBaseDateAndWarns()
+
+	/**
+	 * An unknown nomination value writes no nomination key.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownNominationWritesNoNomination(): void {
+		$this->seedResultType(
+			id: 'rt-6',
+			fields: ['archivalAction' => 'misschien', 'archivalPeriod' => 'P1Y', 'sourceDateArchiveProcedure' => '{"afleidingswijze":"afgehandeld"}']
+		);
+
+		$derived = $this->deriver->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-6', endDate: '2026-09-08');
+
+		$this->assertSame(['archiveActionDate' => '2027-09-08'], $derived);
+	}//end testAnUnknownNominationWritesNoNomination()
+
+	/**
+	 * An empty case id, or an unconfigured result schema, finds no result type.
+	 *
+	 * @return void
+	 */
+	public function testResultTypeForCaseNeedsACaseIdAndAConfiguredSchema(): void {
+		$this->objects->store['result']['res-1'] = [
+			'id' => 'res-1',
+			'case' => 'case-1',
+			'resultType' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+		];
+		// A result row with a blank case must not be found for a blank case id.
+		$this->objects->store['result']['res-blank'] = [
+			'id' => 'res-blank',
+			'case' => '',
+			'resultType' => 'ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee',
+		];
+
+		$this->assertNull($this->deriver->resultTypeForCase(caseId: ''));
+		$this->assertNull(
+			$this->deriverWith(logger: $this->createMock(LoggerInterface::class), resultSchema: '')->resultTypeForCase(caseId: 'case-1')
+		);
+	}//end testResultTypeForCaseNeedsACaseIdAndAConfiguredSchema()
 }//end class

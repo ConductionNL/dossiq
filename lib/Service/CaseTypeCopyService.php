@@ -22,17 +22,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
- * @spec openspec/changes/zaaktype-copy/tasks.md#T02
- * @spec openspec/changes/zaaktype-copy/tasks.md#T03
- * @spec openspec/changes/zaaktype-copy/tasks.md#T04
- * @spec openspec/changes/zaaktype-copy/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeChildCopy;
 use OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget;
 use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
@@ -45,9 +46,9 @@ use Psr\Log\LoggerInterface;
  * Service for duplicating case type definitions and guarding their
  * deletion to draft-status definitions.
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
-class CaseTypeCopyService {
+class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 
 	/**
 	 * Config keys (resolved via {@see SettingsService::getConfigValue()})
@@ -77,7 +78,7 @@ class CaseTypeCopyService {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private const WORKFLOW_TEMPLATE_CONFIG_KEY = 'workflow_template_schema';
 
@@ -126,10 +127,10 @@ class CaseTypeCopyService {
 	 *                                   resolve (or OpenRegister is
 	 *                                   unavailable / misconfigured).
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T01
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T02
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T03
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T04
 	 */
 	public function copy(string $caseTypeId): ?array {
 		return $this->derive(caseTypeId: $caseTypeId, asVersion: false);
@@ -619,6 +620,5 @@ class CaseTypeCopyService {
 		unset($data['id'], $data['@self']);
 		return $data;
 	}//end stripIdentity()
-
 
 }//end class

@@ -215,4 +215,31 @@ class WooDeliveredSetGuardTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testAPendingSetMayBeFrozenOrDiscarded()
+
+	/**
+	 * When the delivered sets cannot be read, an assessment write is refused
+	 * with the sentence that says the delivery could not be checked.
+	 *
+	 * @return void
+	 */
+	public function testAnAssessmentIsRefusedWhenTheDeliveredSetsCannotBeRead(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_delivered_set_schema' => 'wooDeliveredSet'][$key] ?? $default)
+		);
+		$sets = $this->createMock(WooDeliveredSetWriter::class);
+		$sets->method('frozenSets')->willThrowException(new \RuntimeException('register offline'));
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters));
+		$guard = new WooDeliveredSetGuard(settings: $settings, sets: $sets, l10n: $l10n, logger: new NullLogger());
+
+		$old = $this->entity(schema: 'wooDocumentAssessment', uuid: 'as-1', data: ['caseRef' => 'case-1', 'classification' => 'openbaar']);
+		$new = $this->entity(schema: 'wooDocumentAssessment', uuid: 'as-1', data: ['caseRef' => 'case-1', 'classification' => 'niet_openbaar']);
+		$event = new ObjectUpdatingEvent($new, $old);
+		$guard->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertSame('woo-delivered-set-frozen', $event->getErrors()['error']);
+		$this->assertStringContainsString('could not be checked', $event->getErrors()['message']);
+	}//end testAnAssessmentIsRefusedWhenTheDeliveredSetsCannotBeRead()
 }//end class

@@ -30,12 +30,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MentionNotificationServiceInterface;
 use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCA\Dossiq\Service\Notes\NoteMention;
+use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
-use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
-class MentionNotificationService {
+class MentionNotificationService implements MentionNotificationServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -145,7 +146,7 @@ class MentionNotificationService {
 	private function notificationFor(NoteMention $mention, string $recipient): INotification {
 		$note = $mention->note;
 		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(Application::APP_ID)
+		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($recipient)
 			->setDateTime(new DateTime())
 			->setObject($note->objectType(), $note->objectId)

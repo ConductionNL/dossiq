@@ -131,15 +131,31 @@ class DocumentSeriesNumberer {
 	public function issue(string $caseId, string $series, string $defaultPrefix, ?DateTimeImmutable $moment = null): string {
 		$year = ($moment ?? new DateTimeImmutable())->format('Y');
 		$case = ($this->cases->loadCase(caseId: $caseId) ?? []);
-		$scopeKey = $this->scopeKey(series: $series, organisation: $this->organisationOf(case: $case), year: $year);
+		$scopeKey = $this->scopeKey(scope: ['series' => $series, 'organisation' => $this->organisationOf(case: $case), 'year' => $year]);
 
+		$next = $this->reserveNumber(scopeKey: $scopeKey, asked: ['caseId' => $caseId, 'series' => $series]);
+
+		return sprintf(self::FORMAT, $this->prefixFor(case: $case, series: ['name' => $series, 'defaultPrefix' => $defaultPrefix]), $year, $next);
+	}//end issue()
+
+	/**
+	 * Reserve the next number in the scope; a reservation that fails or answers nothing is refused.
+	 *
+	 * @param string                               $scopeKey The counter's scope.
+	 * @param array{caseId: string, series: string} $asked    The case and the series, for the log.
+	 *
+	 * @return int The reserved number, 1 or more.
+	 *
+	 * @throws RefusedException When no number could be reserved.
+	 */
+	private function reserveNumber(string $scopeKey, array $asked): int {
 		try {
 			$sequences = $this->container->get(self::SEQUENCE_SERVICE);
 			$next = (int)$sequences->reserveNext(0, 0, $scopeKey);
 		} catch (Throwable $failure) {
 			$this->logger->error(
 				'Dossiq document series: no number could be reserved',
-				['exception' => $failure->getMessage(), 'caseId' => $caseId, 'series' => $series],
+				['exception' => $failure->getMessage(), 'caseId' => $asked['caseId'], 'series' => $asked['series']],
 			);
 
 			throw $this->unavailable(previous: $failure);
@@ -149,8 +165,8 @@ class DocumentSeriesNumberer {
 			throw $this->unavailable(previous: null);
 		}
 
-		return sprintf(self::FORMAT, $this->prefixFor(case: $case, series: $series, default: $defaultPrefix), $year, $next);
-	}//end issue()
+		return $next;
+	}//end reserveNumber()
 
 	/**
 	 * The prefix the case type configures for this series, or the default.
@@ -159,13 +175,13 @@ class DocumentSeriesNumberer {
 	 * refusing: the number itself is what must be unique, and the counter
 	 * already guarantees that whatever is printed in front of it.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $series  The series.
-	 * @param string               $default The caller's default.
+	 * @param array<string, mixed>                       $case   The case.
+	 * @param array{name: string, defaultPrefix: string} $series The series and the caller's default prefix.
 	 *
 	 * @return string The prefix.
 	 */
-	private function prefixFor(array $case, string $series, string $default): string {
+	private function prefixFor(array $case, array $series): string {
+		['name' => $name, 'defaultPrefix' => $default] = $series;
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseTypeId === '') {
 			return $default;
@@ -176,13 +192,13 @@ class DocumentSeriesNumberer {
 		} catch (Throwable $failure) {
 			$this->logger->warning(
 				'Dossiq document series: the case type could not be read, so the default prefix is used',
-				['exception' => $failure->getMessage(), 'series' => $series],
+				['exception' => $failure->getMessage(), 'series' => $name],
 			);
 
 			return $default;
 		}
 
-		$configured = ($caseType[self::CASE_TYPE_KEY][$series]['prefix'] ?? null);
+		$configured = ($caseType[self::CASE_TYPE_KEY][$name]['prefix'] ?? null);
 		if (is_string($configured) === false || trim($configured) === '') {
 			return $default;
 		}
@@ -229,13 +245,13 @@ class DocumentSeriesNumberer {
 	 * together rather than cut: two ids sharing a prefix would otherwise
 	 * share a counter.
 	 *
-	 * @param string $series       The series.
-	 * @param string $organisation The organisation id.
-	 * @param string $year         The four-digit year.
+	 * @param array{series: string, organisation: string, year: string} $scope The series, the organisation id and the
+	 *                                                                         four-digit year.
 	 *
 	 * @return string The scope key, at most 64 characters.
 	 */
-	private function scopeKey(string $series, string $organisation, string $year): string {
+	private function scopeKey(array $scope): string {
+		['series' => $series, 'organisation' => $organisation, 'year' => $year] = $scope;
 		$key = self::SCOPE_PREFIX.$series.'|'.$organisation.'|'.$year;
 		if (strlen($key) <= self::SCOPE_KEY_MAX) {
 			return $key;

@@ -95,6 +95,19 @@ class TermNoticeLedger {
 				]
 			);
 
+		return self::inserted(query: $query);
+	}//end claim()
+
+	/**
+	 * Run an insert, answering false when the row already exists.
+	 *
+	 * @param IQueryBuilder $query The insert.
+	 *
+	 * @return bool True when the row was inserted.
+	 *
+	 * @throws DbException When the insert fails for any other reason.
+	 */
+	private static function inserted(IQueryBuilder $query): bool {
 		try {
 			$query->executeStatement();
 		} catch (DbException $e) {
@@ -106,7 +119,7 @@ class TermNoticeLedger {
 		}
 
 		return true;
-	}//end claim()
+	}//end inserted()
 
 	/**
 	 * The outcome on a key, or null when nobody holds it.

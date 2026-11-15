@@ -98,6 +98,7 @@ trait MakesRecordedCaseShares {
 			]),
 			consent: $this->shareRecorder(class: CaseTransferConsentGate::class, answers: [
 				'assess' => ($behaviour['consent'] ?? ['allowed' => true, 'rule' => 'consent-found', 'sentence' => '', 'consent' => ['id' => ' consent-1 '], 'scope' => ['title'], 'until' => '2027-01-01']),
+				'assessSharing' => ($behaviour['sharingConsent'] ?? ['allowed' => true, 'rule' => '', 'sentence' => '', 'consent' => null, 'scope' => [], 'until' => '']),
 			]),
 			logger: $this->shareLogger(),
 		);

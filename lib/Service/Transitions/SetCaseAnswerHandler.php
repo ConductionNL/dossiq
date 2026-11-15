@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SetCaseAnswerHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -35,7 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
-class SetCaseAnswerHandler implements ActionHandlerInterface {
+class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandlerInterface {
 
 	/**
 	 * Constructor.
@@ -71,22 +72,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface {
 		}
 
 		try {
-			$stored = $objects->find($caseId);
-			if (is_object($stored) === true && method_exists($stored, 'jsonSerialize') === true) {
-				$stored = $stored->jsonSerialize();
-			}
-
-			$stored = (array)$stored;
-			$stored['properties'] = self::withAnswer(
-				answers: (array)($stored['properties'] ?? []),
-				name: $name,
-				value: ($actionConfig['value'] ?? null)
-			);
-			$objects->saveObject(
-				object: $stored,
-				register: $this->settings->getConfigValue(key: 'register'),
-				schema: $this->settings->getConfigValue(key: 'case_schema')
-			);
+			$this->writeAnswer(objects: $objects, caseId: $caseId, name: $name, actionConfig: $actionConfig);
 		} catch (Throwable $e) {
 			$this->logger->error('SetCaseAnswerHandler: the answer was not written', ['case' => $caseId, 'exception' => $e->getMessage()]);
 
@@ -95,6 +81,51 @@ class SetCaseAnswerHandler implements ActionHandlerInterface {
 
 		return new ActionResult(succeeded: true, data: ['name' => $name]);
 	}//end handle()
+
+	/**
+	 * Read the stored case, set the answer on it and save it.
+	 *
+	 * @param object $objects The OpenRegister object service.
+	 * @param string $caseId The case id.
+	 * @param string $name The property definition's name.
+	 * @param array<string, mixed> $actionConfig `{name, value}`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	private function writeAnswer(object $objects, string $caseId, string $name, array $actionConfig): void {
+		$stored = $this->storedCase(objects: $objects, caseId: $caseId);
+		$stored['properties'] = self::withAnswer(
+			answers: (array)($stored['properties'] ?? []),
+			name: $name,
+			value: ($actionConfig['value'] ?? null)
+		);
+		$objects->saveObject(
+			object: $stored,
+			register: $this->settings->getConfigValue(key: 'register'),
+			schema: $this->settings->getConfigValue(key: 'case_schema')
+		);
+	}//end writeAnswer()
+
+	/**
+	 * The stored case as an array.
+	 *
+	 * @param object $objects The OpenRegister object service.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed> The stored case.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	private function storedCase(object $objects, string $caseId): array {
+		$stored = $objects->find($caseId);
+		if (is_object($stored) === true && method_exists($stored, 'jsonSerialize') === true) {
+			$stored = $stored->jsonSerialize();
+		}
+
+		return (array)$stored;
+	}//end storedCase()
 
 	/**
 	 * The answers with one answer set: the entry of that name replaced, or one appended.

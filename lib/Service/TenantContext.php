@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\TenantContextInterface;
 use RuntimeException;
 
 /**
@@ -39,7 +40,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
-class TenantContext {
+class TenantContext implements TenantContextInterface {
 
 	/**
 	 * Whether the tenant has been read for this request.

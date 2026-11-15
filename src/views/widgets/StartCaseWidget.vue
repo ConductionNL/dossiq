@@ -215,7 +215,7 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @param {object} extraFields Additional case fields (the requester payload)
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async startWithRequirements(caseType, extraFields = {}) {
 			if (!caseType) {
@@ -237,7 +237,7 @@ export default {
 		 *
 		 * @param {object} answers The declared fields, as answered
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async onRequirementsAnswered(answers) {
 			const caseType = this.pendingRequirements
@@ -250,7 +250,7 @@ export default {
 		 * Close the requirements dialog without creating anything.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		cancelRequirements() {
 			this.pendingRequirements = null

@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Listener\OrganisationStatusChangeListener
  * @uses \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class OrganisationStatusChangeListenerTest extends TestCase {
 	use MakesTenantAnchors;

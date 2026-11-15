@@ -35,12 +35,17 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @covers \OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget
  * @covers \OCA\Dossiq\Listener\CaseTypeLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Listener\CaseTypeSchema
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
@@ -389,4 +394,28 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 		$listener->handle($create);
 		$this->assertTrue($create->isPropagationStopped());
 	}//end testOnlyCaseTypesAreInspected()
+
+	/**
+	 * A type without a portal withdrawal, or with an empty one, or a new type
+	 * without an id yet, is not judged.
+	 *
+	 * @return void
+	 */
+	public function testATypeWithoutAWithdrawalOrWithoutAnIdIsNotJudged(): void {
+		$listener = $this->listener([]);
+
+		$this->assertFalse($this->save($listener, [])->isPropagationStopped());
+
+		$none = new ObjectCreatingEvent($this->entity(['title' => 'Melding']));
+		$listener->handle($none);
+		$this->assertFalse($none->isPropagationStopped());
+
+		$notAList = new ObjectCreatingEvent($this->entity(['portalWithdrawal' => 'ingetrokken']));
+		$listener->handle($notAList);
+		$this->assertFalse($notAList->isPropagationStopped());
+
+		$new = new ObjectCreatingEvent($this->entity(['portalWithdrawal' => $this->withdrawal('anything')], 'case-type-schema-id', ''));
+		$listener->handle($new);
+		$this->assertFalse($new->isPropagationStopped());
+	}//end testATypeWithoutAWithdrawalOrWithoutAnIdIsNotJudged()
 }//end class

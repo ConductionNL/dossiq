@@ -119,7 +119,7 @@ class OutboundUrlGuard {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function publicAddress(string $url): ?string {
-		return $this->addressFor(url: $url, schemes: ['https'], insideOwnNetwork: false);
+		return $this->addressFor(url: $url, insideOwnNetwork: false);
 	}//end publicAddress()
 
 	/**
@@ -135,7 +135,7 @@ class OutboundUrlGuard {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function ownNetworkAddress(string $url): ?string {
-		return $this->addressFor(url: $url, schemes: ['http', 'https'], insideOwnNetwork: true);
+		return $this->addressFor(url: $url, insideOwnNetwork: true);
 	}//end ownNetworkAddress()
 
 	/**
@@ -179,13 +179,19 @@ class OutboundUrlGuard {
 	/**
 	 * Resolve a URL and judge every address it answers with.
 	 *
+	 * Outside the own network only https is accepted; inside it plain http too.
+	 *
 	 * @param string $url The URL.
-	 * @param string[] $schemes The schemes this question accepts.
 	 * @param bool $insideOwnNetwork True when the address must be inside the own network, false when it must be outside.
 	 *
 	 * @return string|null The first address, or null when the URL is refused.
 	 */
-	private function addressFor(string $url, array $schemes, bool $insideOwnNetwork): ?string {
+	private function addressFor(string $url, bool $insideOwnNetwork): ?string {
+		$schemes = ['https'];
+		if ($insideOwnNetwork === true) {
+			$schemes = ['http', 'https'];
+		}
+
 		$parsed = $this->parsed(url: $url);
 		$host = $parsed['host'];
 		if ($host === '' || in_array($parsed['scheme'], $schemes, true) === false) {
@@ -193,6 +199,18 @@ class OutboundUrlGuard {
 			return null;
 		}
 
+		return $this->addressOfHost(host: $host, insideOwnNetwork: $insideOwnNetwork);
+	}//end addressFor()
+
+	/**
+	 * Resolve a host and judge every address it answers with.
+	 *
+	 * @param string $host The host.
+	 * @param bool $insideOwnNetwork True when the address must be inside the own network, false when it must be outside.
+	 *
+	 * @return string|null The first address, or null when the host is refused.
+	 */
+	private function addressOfHost(string $host, bool $insideOwnNetwork): ?string {
 		$addresses = [$host];
 		if (filter_var($host, FILTER_VALIDATE_IP) === false) {
 			$addresses = $this->resolver->addressesOf(host: $host);
@@ -203,6 +221,7 @@ class OutboundUrlGuard {
 			return null;
 		}
 
+		// The first address, when every address passes.
 		foreach ($addresses as $address) {
 			if ($this->passes(address: $address, insideOwnNetwork: $insideOwnNetwork) === false) {
 				$this->refused(
@@ -214,7 +233,7 @@ class OutboundUrlGuard {
 		}
 
 		return $addresses[0];
-	}//end addressFor()
+	}//end addressOfHost()
 
 	/**
 	 * Whether one address passes.

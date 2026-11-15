@@ -27,13 +27,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\SignedIn;
 use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
 use OCA\Dossiq\Service\External\Woz\WozLookupResult;
 use OCP\AppFramework\Controller;
@@ -47,7 +48,7 @@ use Throwable;
 /**
  * Controller for WOZ value lookups.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * @psalm-suppress UnusedClass
  */
@@ -84,7 +85,7 @@ class WozController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function value(): JSONResponse {
 		$unauthorized = $this->requireUser();
@@ -182,7 +183,7 @@ class WozController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function object(string $wozobjectnummer): JSONResponse {
 		$unauthorized = $this->requireUser();
@@ -211,14 +212,7 @@ class WozController extends Controller {
 	 *                           null.
 	 */
 	private function requireUser(): ?JSONResponse {
-		if ($this->userSession->getUser() === null) {
-			return new JSONResponse(
-				['error' => 'Authentication required'],
-				Http::STATUS_UNAUTHORIZED,
-			);
-		}
-
-		return null;
+		return SignedIn::refusal(session: $this->userSession);
 	}//end requireUser()
 
 	/**

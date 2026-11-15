@@ -39,6 +39,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 

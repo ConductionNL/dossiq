@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchPreferencesInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,9 +43,9 @@ use Throwable;
 /**
  * Per-user matching preferences.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseEmailMatchPreferences {
+class CaseEmailMatchPreferences implements CaseEmailMatchPreferencesInterface {
 
 	/**
 	 * Whether this user's mail is matched.
@@ -103,10 +104,10 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return iterable<string> Their user ids.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function optedInUsers(): iterable {
-		return $this->userConfig->searchUsersByValueBool(Application::APP_ID, self::PREF_ENABLED, true);
+		return $this->userConfig->searchUsersByValueBool(AppIdentity::APP_ID, self::PREF_ENABLED, true);
 	}//end optedInUsers()
 
 	/**
@@ -119,13 +120,13 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return array{enabled: bool, account: int} The settings.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function getUserSettings(string $userId): array {
 		try {
 			return [
-				'enabled' => $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, false),
-				'account' => $this->userConfig->getValueInt($userId, Application::APP_ID, self::PREF_ACCOUNT, 0),
+				'enabled' => $this->userConfig->getValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, false),
+				'account' => $this->userConfig->getValueInt($userId, AppIdentity::APP_ID, self::PREF_ACCOUNT, 0),
 			];
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: reading email case matching settings failed: ' . $e->getMessage());
@@ -148,7 +149,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @throws InvalidArgumentException When the account is not the user's.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function saveUserSettings(string $userId, bool $enabled, int $account): array {
 		if ($account > 0 && $this->messages->ownsAccount(accountId: $account, userId: $userId) === false) {
@@ -161,8 +162,8 @@ class CaseEmailMatchPreferences {
 			&& $account > 0
 			&& ($before['enabled'] === false || $before['account'] !== $account));
 
-		$this->userConfig->setValueBool($userId, Application::APP_ID, self::PREF_ENABLED, $enabled);
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_ACCOUNT, $account);
+		$this->userConfig->setValueBool($userId, AppIdentity::APP_ID, self::PREF_ENABLED, $enabled);
+		$this->userConfig->setValueInt($userId, AppIdentity::APP_ID, self::PREF_ACCOUNT, $account);
 		if ($restart === true) {
 			$this->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $account));
 		}
@@ -177,11 +178,11 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return int The cursor.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function readCursor(string $userId): int {
 		try {
-			return $this->userConfig->getValueInt($userId, Application::APP_ID, self::PREF_CURSOR, self::CURSOR_UNSET);
+			return $this->userConfig->getValueInt($userId, AppIdentity::APP_ID, self::PREF_CURSOR, self::CURSOR_UNSET);
 		} catch (Throwable $e) {
 			return self::CURSOR_UNSET;
 		}
@@ -195,10 +196,10 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function writeCursor(string $userId, int $cursor): void {
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_CURSOR, max(0, $cursor));
+		$this->userConfig->setValueInt($userId, AppIdentity::APP_ID, self::PREF_CURSOR, max(0, $cursor));
 	}//end writeCursor()
 
 	/**
@@ -208,12 +209,12 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return array{lastRunAt: ?string, linked: int, scanned: int, error: ?string} The status.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function getStatus(string $userId): array {
 		$empty = ['lastRunAt' => null, 'linked' => 0, 'scanned' => 0, 'error' => null];
 		try {
-			$json = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STATUS, '');
+			$json = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_STATUS, '');
 		} catch (Throwable $e) {
 			return $empty;
 		}
@@ -254,7 +255,7 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function writeStatus(string $userId, int $linked, int $scanned, ?string $error): void {
 		$payload = json_encode(
@@ -267,7 +268,7 @@ class CaseEmailMatchPreferences {
 		);
 
 		try {
-			$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_STATUS, (string)$payload);
+			$this->userConfig->setValueString($userId, AppIdentity::APP_ID, self::PREF_STATUS, (string)$payload);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: recording the email case matching status failed: ' . $e->getMessage());
 		}

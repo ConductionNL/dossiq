@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
-use OCA\Dossiq\Service\Zaakdossier\FileDocumentLookup;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionRuleInterface;
+use OCA\Dossiq\Kernel\Contracts\FileDocumentLookupInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IUserManager;
@@ -49,15 +49,15 @@ class FileRestrictionAdmitListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FileDocumentLookup      $files       Which document names the file.
-	 * @param DocumentAccessExceptionRule $rule        Whether the person handles a case of the document.
+	 * @param FileDocumentLookupInterface      $files       Which document names the file.
+	 * @param DocumentAccessExceptionRuleInterface $rule        Whether the person handles a case of the document.
 	 * @param IUserManager            $userManager Resolves the person asking.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly FileDocumentLookup $files,
-		private readonly DocumentAccessExceptionRule $rule,
+		private readonly FileDocumentLookupInterface $files,
+		private readonly DocumentAccessExceptionRuleInterface $rule,
 		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()

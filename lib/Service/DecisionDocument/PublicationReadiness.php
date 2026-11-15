@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -103,7 +103,7 @@ class PublicationReadiness {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'PublicationReadiness: the case could not show that its decision is ready to publish',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end markCaseReady()

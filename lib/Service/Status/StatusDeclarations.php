@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Status;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\StatusDeclarationsInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class StatusDeclarations {
+class StatusDeclarations implements StatusDeclarationsInterface {
 
 	/**
 	 * Constructor.
@@ -119,7 +120,7 @@ class StatusDeclarations {
 	 *
 	 * @return string The name, or '' when the status cannot be read.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function nameOf(string $statusTypeId): string {
 		return $this->lookup->nameFor(statusTypeId: $statusTypeId);

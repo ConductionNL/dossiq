@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Team\PrimaryTeamService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,15 +43,15 @@ class MyTeamController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest           $request     The request.
-	 * @param PrimaryTeamService $teams       Reads the team from the organisation roles.
+	 * @param PrimaryTeamServiceInterface $teams       Reads the team from the organisation roles.
 	 * @param IUserSession       $userSession The user session.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PrimaryTeamService $teams,
+		private readonly PrimaryTeamServiceInterface $teams,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

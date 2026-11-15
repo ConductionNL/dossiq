@@ -19,7 +19,7 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
 
 ## 1. Relevance apart from the verdict
 
-- [ ] 1.1 Add schema `documentReview` in `lib/Settings/register.d/87-document-review.json` with the
+- [x] 1.1 Add schema `documentReview` in `lib/Settings/register.d/87-document-review.json` with the
   REQ-WRT-001 properties; create one per document at the gather add and for documents already on a
   Woo case through a repair step (idempotent). Bump the register version (REQ-WRT-001).
   - unit `tests/Unit/Repair/CreateDocumentReviewsTest.php` `testEveryDocumentGetsOneReview`,
@@ -32,6 +32,14 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
     Open: "create one per document at the gather add" belongs in the add that lane L9 builds
     (`woo-requests-gather-documents-from-sources`). Until then a document without a review reads as unmarked,
     which is the same state the add would write.
+  - Built (pass 3): the gather add (`WooGatherAdd::addPicks()`, landed with
+    `woo-requests-gather-documents-from-sources`) opens one unmarked review per added document through
+    `ReviewWrites::openReviews()`, only on a case type with `documentReview.enabled`, keeping a review a document
+    already has, and reconciles the case once in the same request (6.2). A review that cannot be written leaves the
+    document added and is logged. Tests: `WooGatherAddTest::testEveryAddedDocumentGetsAnUnmarkedReview`,
+    `testACaseTypeWithoutDocumentReviewGetsNoReview`, `testAReviewThatCannotBeWrittenLeavesTheDocumentAdded`
+    (red with the call removed), `ReviewWritesTest::testAddedDocumentsEachGetOneUnmarkedReview`,
+    `testOnlyACaseTypeWithDocumentReviewOpensReviews`.
 - [x] 1.2 POST `/api/cases/{id}/review/documents/{documentRef}/relevance` with `{relevance}`, case
   mutation guard. `getOutstanding()` skips out-of-scope documents. The case summary reports the
   three counts (REQ-WRT-001).
@@ -179,7 +187,11 @@ record. OpenRegister refuses a parent that references another schema
     stay public until their writers (`DocumentRelevance::mark`, triage apply, `WooCollection::record`,
     `WooSearchPlans::record`, `WooCollectionQueries` save) call `CaseReviewerAccess::reconcile()`: RBAC-scoped reads
     would otherwise hide a record from everyone but its author (a plan recorded by a coordinator would read as no
-    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10). Named tests, generic (decision
+    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10).
+    Built (pass 2): the four above are private on `development` now, their writers reconciling; `wooDeliveredSet` (lane L10
+    landed) carries the private block too (1.1.1, register 0.20.96) and the `woo-verzoek` case type (both versions) lists
+    it under `reviewerAccess.records` with `readers: assignee` and no `assigneeMay`, so the assignee reads and never
+    updates it. The generic `CaseTypePrivateRecordsTest` now covers it. Open: the Newman folder (needs an instance). Named tests, generic (decision
     182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
     and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
     the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
@@ -194,6 +206,11 @@ record. OpenRegister refuses a parent that references another schema
     `testTheDeliveredSetIsNeverGrantedUpdate`, `testNoGrantReachesAnotherCase`,
     `testAGrantTheCallerMayNotSetIsCountedAndNotRetried` (the sharing double throws
     `NotAuthorizedException`, built with `environmentAwareDouble()` from the real signature).
+  - Built (pass 2): `WooDeliveredSetWriter::open()` reconciles the case after the set is stored, so publishing grants the
+    assignee read in the same request (`tests/Unit/Woo/WooDeliveredSetAccessTest.php`). Open: the gather add creates no
+    `documentReview` yet (1.1), so it has nothing of the seven to reconcile.
+  - Built (pass 3): the gather add now creates the `documentReview` of each added document and reconciles the case
+    after it (`ReviewWrites::openReviews()`, see 1.1). Still open: the Newman folder `scoped` (needs an instance).
   - Through the caller: `DocumentReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
     `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
     `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;
@@ -298,8 +315,22 @@ record. OpenRegister refuses a parent that references another schema
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
-- [ ] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
+- [x] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
   - unit: one test per controller, `testAUserWithoutAGrantOnTheCaseIsRefused`.
+  - Built across the earlier rounds; checked in the second pass. Every controller that serves a Woo record of a
+    case guards it through `CaseAccessGuard` and has a refusal test:
+    `DocumentReviewControllerTest::testAUserWithoutAGrantOnTheCaseIsRefused`,
+    `TriageRuleControllerTest::testAUserWithoutAGrantOnTheCaseIsRefused`,
+    `WOOAssessmentControllerAuthorizationTest::testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint`
+    (every mutation endpoint) and `testANonHandlerIsRefusedPublicationWithA403` (publish, withdraw),
+    `WooCollectionControllerTest::testTheReportRefusesAUserWithoutCaseAccess`,
+    `WooDeliveredSetControllerTest::testVerifyRefusesAUserWithoutCaseAccess` and
+    `testTheCompareReadsRefuseAUserWithoutCaseAccess`,
+    `WooSourcesControllerTest::testTheSourcesRefuseACallerWhoCannotReadTheCase`,
+    `testTheSearchRefusesACallerWithoutCaseAccess` and `testTheAddRefusesNoPicksAndACallerWithoutCaseAccess`.
+    Not per case, so not this guard: `CaseReviewerAccessController` (administrators only),
+    `WooReportController` (a cross-case report behind its group check), and the portal controllers (the
+    requester's own request).
 - [ ] 6.4 Live check after merge on the dev instance, with two Woo cases and a reviewer in a batch
   of one: list `wooDocumentReview` through the OpenRegister API and through dossiq's routes, and
   record both answers in the PR. Both must hold only that batch's reviews. Then create a batch as a

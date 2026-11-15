@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
@@ -34,20 +34,20 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseRequesterListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\DocumentListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\PersonListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\WooListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\OnboardingListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseRequesterListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ForfeitInvoiceListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 

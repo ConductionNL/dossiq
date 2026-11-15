@@ -46,23 +46,43 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Task\\TaskForm', false) === fals
 
 
         /**
+         * The subject schema reference.
+         *
+         * @var string
+         */
+        public readonly string $schema;
+
+        /**
+         * The lifecycle action, if any.
+         *
+         * @var string|null
+         */
+        public readonly ?string $action;
+
+        /**
+         * The declared fields.
+         *
+         * @var array<int, array{field: string, required: bool}>
+         */
+        public readonly array $fields;
+
+        /**
          * Constructor.
          *
-         * @param string|null                                    $kind             The kind, or null for no form.
-         * @param string                                         $schema           The subject schema reference.
-         * @param string|null                                    $action           The lifecycle action, if any.
-         * @param array<int, array{field: string, required: bool}> $fields          The declared fields.
-         * @param int|null                                       $formId           The bound external form.
-         * @param boolean                                        $requireChecklist Whether a checklist is required.
+         * @param string|null    $kind             The kind, or null for no form.
+         * @param TaskFormFields $native           The schema, action and fields of a native form.
+         * @param int|null       $formId           The bound external form.
+         * @param boolean        $requireChecklist Whether a checklist is required.
          */
         public function __construct(
             public readonly ?string $kind,
-            public readonly string $schema = '',
-            public readonly ?string $action = null,
-            public readonly array $fields = [],
+            TaskFormFields $native = new TaskFormFields(),
             public readonly ?int $formId = null,
             public readonly bool $requireChecklist = false,
         ) {
+            $this->schema = $native->schema;
+            $this->action = $native->action;
+            $this->fields = $native->fields;
         }//end __construct()
 
 

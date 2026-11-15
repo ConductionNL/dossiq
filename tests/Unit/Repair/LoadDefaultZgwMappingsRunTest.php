@@ -162,6 +162,38 @@ class LoadDefaultZgwMappingsRunTest extends TestCase {
 	}//end testAnOlderInstanceIsHealedAndPatched()
 
 	/**
+	 * Everything an older instance's run says, in order.
+	 *
+	 * @return void
+	 */
+	public function testTheRunSaysEverythingInOrder(): void {
+		$this->mappings = [
+			'catalogus' => ['sourceSchema' => ''],
+			'zaak' => ['sourceSchema' => 'chosen-on-purpose'],
+			'enkelvoudiginformatieobject' => ['sourceSchema' => 'x', 'propertyMapping' => ['indicatieGebruiksrecht' => '{{ usageRightsIndication }}']],
+			'kanaal' => ['sourceRegister' => 'reg-1', 'sourceSchema' => 'channel-s'],
+		];
+		$this->server(objects: $this->objects(existing: [], refused: ['catalogi']));
+
+		$this->repair(register: 'reg-1')->run(output: $this->recordingOutput());
+
+		$this->assertSame(
+			expected: [
+				'info: Loading default ZGW API mappings...',
+				'info: Loaded 22 default ZGW mapping configurations.',
+				'info: Filled in the empty sourceSchema on the catalogus ZGW mapping.',
+				'log-info: Dossiq: filled in empty ZGW mapping schemas',
+				'info: Patched enkelvoudiginformatieobject mapping: indicatieGebruiksrecht template.',
+				'info: Created 2, updated 0 default test applicaties.',
+				'log-error: Dossiq: default notification channel refused',
+				'warning: Created 4 default notification channels; 1 REFUSED (catalogi). ZGW notifications on those channels cannot be delivered.',
+				'log-info: Dossiq: Default ZGW mappings loaded',
+			],
+			actual: $this->said
+		);
+	}//end testTheRunSaysEverythingInOrder()
+
+	/**
 	 * Without OpenRegister's services, or with a channel mapping that is not configured, the seeds are skipped.
 	 *
 	 * @return void

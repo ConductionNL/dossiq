@@ -262,4 +262,81 @@ class NoticeOfDefaultRowsTest extends TestCase {
 
 		return $settings;
 	}
+
+	/**
+	 * A whole row, keys in order, for a fixed penalty and for a notice whose term cannot be read.
+	 *
+	 * @return void
+	 */
+	public function testAWholeRowIsAsPinned(): void {
+		$this->objects->seed(
+			schema: 'noticeOfDefault',
+			object: ['id' => 'nod-lost', 'deadlineInstance' => 'ti-missing', 'receiptDate' => '2026-01-01']
+		);
+
+		$byId = array_column(array: $this->rows->list()['notices'], column_key: null, index_key: 'id');
+
+		self::assertSame(
+			expected: [
+				'id'               => 'nod-4863',
+				'caseId'           => 'case-4863',
+				'caseIdentifier'   => '2026-4863',
+				'caseTitle'        => 'Kapvergunning Parkstraat',
+				'caseLabel'        => '2026-4863 Kapvergunning Parkstraat',
+				'receiptDate'      => '2026-08-07',
+				'validityStatus'   => 'valid',
+				'penaltyState'     => 'definitive',
+				'penaltyEuros'     => 1442.0,
+				'penaltySince'     => '2026-08-21',
+				'financeState'     => 'payout-due',
+				'accruingAmountId' => 'calc-4863',
+			],
+			actual: $byId['nod-4863']
+		);
+		self::assertSame(
+			expected: [
+				'id'               => 'nod-lost',
+				'caseId'           => '',
+				'caseIdentifier'   => '',
+				'caseTitle'        => '',
+				'caseLabel'        => '',
+				'receiptDate'      => '2026-01-01',
+				'validityStatus'   => 'unknown',
+				'penaltyState'     => 'none',
+				'penaltyEuros'     => 0.0,
+				'penaltySince'     => '',
+				'financeState'     => null,
+				'accruingAmountId' => '',
+			],
+			actual: $byId['nod-lost']
+		);
+	}
+
+	/**
+	 * The notices of one case are that case's rows of the report, newest first.
+	 *
+	 * @return void
+	 */
+	public function testForCaseKeepsOnlyThatCasesNotices(): void {
+		$this->objects->seed(
+			schema: 'noticeOfDefault',
+			object: ['id' => 'nod-4863-b', 'deadlineInstance' => 'ti-4863', 'receiptDate' => '2026-09-01', 'validityStatus' => 'unknown']
+		);
+
+		$notices = $this->rows->forCase(caseId: ' case-4863 ')['notices'];
+
+		$this->assertSame(['nod-4863-b', 'nod-4863'], array_column($notices, 'id'));
+		$this->assertSame(['case-4863', 'case-4863'], array_column($notices, 'caseId'));
+		$this->assertSame('definitive', $notices[1]['penaltyState']);
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: 'case-unknown'));
+	}
+
+	/**
+	 * Without a case id there is nothing to list.
+	 *
+	 * @return void
+	 */
+	public function testForCaseWithoutAnIdIsEmpty(): void {
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: '  '));
+	}
 }
