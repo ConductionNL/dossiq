@@ -79,7 +79,7 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
 	 */
 	public function forDocument(string $caseId, string $documentId, ?array $record = null): array {
-		return $this->normalise(stored: $this->stored(caseId: $caseId, documentId: $documentId, record: $record));
+		return $this->normalise(stored: $this->stored(document: [$caseId, $documentId], record: $record));
 	}//end forDocument()
 
 	/**
@@ -201,7 +201,17 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function mailOf(string $caseId, string $documentId, ?array $record = null): array {
-		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		return $this->mailFields(stored: $this->stored(document: [$caseId, $documentId], record: $record));
+	}//end mailOf()
+
+	/**
+	 * The mail header fields of a stored provenance.
+	 *
+	 * @param array<string, mixed> $stored The provenance as stored.
+	 *
+	 * @return array<string, mixed> The fields mailOf() answers.
+	 */
+	private function mailFields(array $stored): array {
 		$mail = $stored['mail'] ?? null;
 		if (is_array($mail) === false) {
 			$mail = [];
@@ -223,7 +233,7 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 			'date' => trim($this->scalar(value: ($mail['date'] ?? ''))),
 			'messageId' => trim($this->scalar(value: ($mail['messageId'] ?? ''))),
 		];
-	}//end mailOf()
+	}//end mailFields()
 
 	/**
 	 * The mail header fields of every collected mail on the case.
@@ -262,7 +272,17 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function threadOf(string $caseId, string $documentId, ?array $record = null): array {
-		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		return $this->threadFields(stored: $this->stored(document: [$caseId, $documentId], record: $record));
+	}//end threadOf()
+
+	/**
+	 * The conversation fields of a stored provenance.
+	 *
+	 * @param array<string, mixed> $stored The provenance as stored.
+	 *
+	 * @return array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}
+	 */
+	private function threadFields(array $stored): array {
 		$parentIds = [];
 		foreach ((array)($stored['parentIds'] ?? []) as $parentId) {
 			$parentId = trim($this->scalar(value: $parentId));
@@ -277,7 +297,7 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 			'parentIds' => $parentIds,
 			'sentAt' => trim($this->scalar(value: ($stored['sentAt'] ?? ''))),
 		];
-	}//end threadOf()
+	}//end threadFields()
 
 	/**
 	 * The conversation of every collected mail on the case.
@@ -338,13 +358,13 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	/**
 	 * The provenance as stored: on the record, else on this case's join, else [].
 	 *
-	 * @param string                    $caseId     The case uuid.
-	 * @param string                    $documentId The document uuid.
-	 * @param array<string, mixed>|null $record     The record when already read.
+	 * @param array{0: string, 1: string} $document The case uuid and the document uuid.
+	 * @param array<string, mixed>|null   $record   The record when already read.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function stored(string $caseId, string $documentId, ?array $record): array {
+	private function stored(array $document, ?array $record): array {
+		[$caseId, $documentId] = $document;
 		$record = ($record ?? $this->store->findRecord(recordId: $documentId) ?? []);
 		if (is_array($record['provenance'] ?? null) === true) {
 			return $record['provenance'];
