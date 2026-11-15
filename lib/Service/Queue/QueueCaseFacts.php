@@ -175,30 +175,46 @@ class QueueCaseFacts {
 			return $profile;
 		}
 
+		return $this->withThresholdsOf(
+			profile: $profile,
+			caseType: ['objectService' => $objectService, 'register' => $register, 'schema' => $caseTypeSchema, 'id' => $caseTypeId]
+		);
+	}//end profileForCaseType()
+
+	/**
+	 * The profile with the thresholds of the case type it reads; the profile as it is when the read fails or finds none.
+	 *
+	 * @param UrgencyProfile                                                         $profile  The instance profile.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the case type is
+	 *                                                                                          stored, and its id.
+	 *
+	 * @return UrgencyProfile The profile for that type.
+	 */
+	private function withThresholdsOf(UrgencyProfile $profile, array $caseType): UrgencyProfile {
 		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseTypeSchema,
-				id: $caseTypeId
+			$row = $this->findObjectAsArray(
+				objectService: $caseType['objectService'],
+				register: $caseType['register'],
+				schema: $caseType['schema'],
+				id: $caseType['id']
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'WorkQueue: case type read failed, scoring with the instance thresholds',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+				['caseType' => $caseType['id'], 'error' => $e->getMessage()]
 			);
 			return $profile;
 		}
 
-		if ($caseType === null) {
+		if ($row === null) {
 			return $profile;
 		}
 
 		return $profile->withCaseTypeThresholds(
-			criticalDays: ($caseType['queueCriticalDays'] ?? null),
-			warningDays: ($caseType['queueWarningDays'] ?? null)
+			criticalDays: ($row['queueCriticalDays'] ?? null),
+			warningDays: ($row['queueWarningDays'] ?? null)
 		);
-	}//end profileForCaseType()
+	}//end withThresholdsOf()
 
 	/**
 	 * Resolve a case's nearest active termijn deadline, falling back to the
