@@ -162,17 +162,6 @@ class BeroepService {
 		string $filingDate,
 		array $payload = [],
 	): array {
-		$payload = array_diff_key($payload, CallerIdentity::KEYS);
-		$store = $this->appealStore(otherSchemaKey: 'appeal_decision_schema');
-		if (in_array('', [$store['register'], $store['schema'], $store['otherSchema']], true) === true) {
-			throw new RuntimeException('Beroep schemas are not configured');
-		}
-
-		$contested = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $contestedDecisionId);
-		if ($contested === null) {
-			throw new RuntimeException('Contested beslissing not found');
-		}
-
 		$filing = [
 			'case' => $caseId,
 			'sourceObjection' => $sourceObjectionId,
@@ -180,8 +169,32 @@ class BeroepService {
 			'appellantFilingDate' => $filingDate,
 		];
 
-		return $this->saveAppeal(store: $store, record: $this->appealRecord(filing: $filing + ['payload' => $payload], contested: $contested));
+		return $this->registerFiling(filing: $filing, payload: array_diff_key($payload, CallerIdentity::KEYS));
 	}//end register()
+
+	/**
+	 * Store the beroep against the contested beslissing it names.
+	 *
+	 * @param array<string, string> $filing  The zaak, the objection it follows, the contested beslissing and the filing date.
+	 * @param array<string, mixed>  $payload The caller's payload, without caller identity.
+	 *
+	 * @return array<string, mixed> The stored beroep.
+	 *
+	 * @throws RuntimeException When the schemas are not configured or the contested beslissing is not found.
+	 */
+	private function registerFiling(array $filing, array $payload): array {
+		$store = $this->appealStore(otherSchemaKey: 'appeal_decision_schema');
+		if (in_array('', [$store['register'], $store['schema'], $store['otherSchema']], true) === true) {
+			throw new RuntimeException('Beroep schemas are not configured');
+		}
+
+		$contested = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $filing['contestedDecision']);
+		if ($contested === null) {
+			throw new RuntimeException('Contested beslissing not found');
+		}
+
+		return $this->saveAppeal(store: $store, record: $this->appealRecord(filing: $filing + ['payload' => $payload], contested: $contested));
+	}//end registerFiling()
 
 	/**
 	 * The new appeal record: defaults, then the caller's extra fields, then
