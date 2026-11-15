@@ -118,7 +118,7 @@ class RecordImportStore {
 
 		$caseId = $this->savedId(saved: $saved);
 		if ($caseId !== '' && $mapped['result'] !== '') {
-			$this->writeResult(objectService: $objectService, register: $register, caseId: $caseId, resultType: $mapped['result']);
+			$this->writeResult(objectService: $objectService, result: ['register' => $register, 'case' => $caseId, 'resultType' => $mapped['result']]);
 		}
 
 		return $caseId;
@@ -147,18 +147,18 @@ class RecordImportStore {
 	/**
 	 * The result a closed record ended with. A refusal is logged; the case stands.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseId        The case.
-	 * @param string $resultType    The result type uuid.
+	 * @param object                                                  $objectService The OpenRegister ObjectService.
+	 * @param array{register: string, case: string, resultType: string} $result        The dossiq register, the case and
+	 *                                                                                 the result type uuid.
 	 *
 	 * @return void
 	 */
-	private function writeResult(object $objectService, string $register, string $caseId, string $resultType): void {
+	private function writeResult(object $objectService, array $result): void {
+		$caseId = $result['case'];
 		try {
 			$objectService->saveObject(
-				object: ['case' => $caseId, 'resultType' => $resultType],
-				register: $register,
+				object: ['case' => $caseId, 'resultType' => $result['resultType']],
+				register: $result['register'],
 				schema: $this->settingsService->getConfigValue('result_schema'),
 				_rbac: false,
 				_multitenancy: false,
