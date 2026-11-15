@@ -96,7 +96,8 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 		}
 
 		$changes = [];
-		foreach ($this->latestPerCase(mapper: $mapper, schema: $schema, since: $since, readerId: $readerId) as $caseId => $entry) {
+		$window = ['schema' => $schema, 'since' => $since, 'readerId' => $readerId];
+		foreach ($this->latestPerCase(mapper: $mapper, window: $window) as $caseId => $entry) {
 			$case = $this->readableCase(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
 			if ($case !== null && $this->inScope(case: $case, scope: $scope) === true) {
 				$changes[] = $this->changeOf(entry: $entry, caseId: $caseId);
@@ -113,14 +114,14 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 	/**
 	 * The newest audit entry per case after the moment, by someone else.
 	 *
-	 * @param object            $mapper   The audit trail mapper.
-	 * @param string            $schema   The case schema id.
-	 * @param DateTimeImmutable $since    The moment.
-	 * @param string            $readerId The reader.
+	 * @param object                                                            $mapper The audit trail mapper.
+	 * @param array{schema: string, since: DateTimeImmutable, readerId: string} $window The case schema id, the moment
+	 *                                                                                  and the reader.
 	 *
 	 * @return array<string, object> The entry per case id, newest case first.
 	 */
-	private function latestPerCase(object $mapper, string $schema, DateTimeImmutable $since, string $readerId): array {
+	private function latestPerCase(object $mapper, array $window): array {
+		['schema' => $schema, 'since' => $since, 'readerId' => $readerId] = $window;
 		$filters = [];
 		if (ctype_digit($schema) === true) {
 			$filters['schema'] = $schema;
