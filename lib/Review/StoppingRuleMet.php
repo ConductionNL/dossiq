@@ -115,7 +115,10 @@ class StoppingRuleMet {
 		$metAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 		$numbers = $this->numbers(rule: $rule, sample: $sample);
 
-		$this->audit(caseId: $caseId, context: $numbers + ['rule' => (string)($rule['id'] ?? ($rule['uuid'] ?? '')), 'at' => $metAt], userId: $userId);
+		$this->audit(
+			caseId: $caseId,
+			entry: ['context' => $numbers + ['rule' => (string)($rule['id'] ?? ($rule['uuid'] ?? '')), 'at' => $metAt], 'userId' => $userId]
+		);
 
 		$this->recordOnTimeline(caseId: $caseId, numbers: $numbers);
 
@@ -189,15 +192,16 @@ class StoppingRuleMet {
 	/**
 	 * Write the entry on the case's audit trail.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param array<string, mixed> $context The rule, the sample and the numbers.
-	 * @param string $userId The actor.
+	 * @param string                                                $caseId The case UUID.
+	 * @param array{context: array<string, mixed>, userId: string} $entry  The rule, the sample and the numbers, and the actor.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the entry cannot be written.
 	 */
-	private function audit(string $caseId, array $context, string $userId): void {
+	private function audit(string $caseId, array $entry): void {
+		$context = $entry['context'];
+		$userId = $entry['userId'];
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
 		$register = $this->settingsService->getConfigValue('register');
