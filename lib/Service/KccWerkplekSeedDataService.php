@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\KccWerkplekSeedDataServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -267,7 +269,10 @@ class KccWerkplekSeedDataService implements KccWerkplekSeedDataServiceInterface 
 			// $object/$extend/$register, which either threw a
 			// TypeError or silently wrote the wrong data. Named
 			// arguments make the mapping unambiguous.
-			$target->objectService->saveObject(object: $row, register: $target->register, schema: $schema);
+			$target->objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $schema))
+			);
 			return $target->counterKey;
 		} catch (Throwable $e) {
 			$this->logger->error(

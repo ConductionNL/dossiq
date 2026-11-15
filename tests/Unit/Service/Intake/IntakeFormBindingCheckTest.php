@@ -26,6 +26,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Form\FormDestination;
+use OCA\Dossiq\Tests\Support\SchemaRow;
 
 /**
  * What is handed to the validator, and what comes back.
@@ -57,7 +59,9 @@ class IntakeFormBindingCheckTest extends TestCase {
 			public function __construct(private array &$asked) {
 			}//end __construct()
 
-			public function validate(array $mapping, object $schema, array $options = []): array {
+			public function validate(array $mapping, FormDestination $destination): array {
+				$schema = $destination->schema;
+				$options = ($destination->audience === null) ? [] : ['audience' => $destination->audience];
 				$this->asked[] = ['mapping' => $mapping, 'schema' => $schema];
 				$findings = [];
 				foreach ($mapping['fields'] as $field) {
@@ -77,7 +81,7 @@ class IntakeFormBindingCheckTest extends TestCase {
 
 		$mapper ??= new class() {
 			public function find(string|int $id, ?array $_extend = [], bool $_rbac = true, bool $_multitenancy = true): object {
-				return (object)['id' => $id, 'rbac' => $_rbac, 'properties' => ['title', 'description', 'caseType', 'communicationChannel']];
+				return SchemaRow::of(['id' => $id, 'rbac' => $_rbac, 'properties' => ['title', 'description', 'caseType', 'communicationChannel']]);
 			}//end find()
 		};
 

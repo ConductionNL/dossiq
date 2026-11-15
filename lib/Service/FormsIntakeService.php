@@ -47,6 +47,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\Contracts\FormsIntakeServiceInterface;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Service\Form\FormSubmission;
 use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Log\LoggerInterface;
@@ -335,8 +337,7 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 
 		return $objectService->saveObject(
 			object: $object,
-			register: $destination['register'],
-			schema: $destination['schema'],
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $destination['register'], schema: $destination['schema']))
 		);
 	}//end write()
 

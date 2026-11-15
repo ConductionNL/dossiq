@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Reads a case type's lifecycle rules and its statuses.
  *
@@ -217,7 +218,7 @@ class CaseTypeReader implements CaseTypeReaderInterface {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($id, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			return [];
 		}

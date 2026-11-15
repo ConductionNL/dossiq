@@ -22,6 +22,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
@@ -54,7 +56,9 @@ class CaseStatusStoreTest extends TestCase {
 			public mixed $searchResult = [];
 			public ?\Throwable $searchThrows = null;
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				if ($this->findThrows !== null) {
 					throw $this->findThrows;
@@ -62,7 +66,9 @@ class CaseStatusStoreTest extends TestCase {
 				return $this->findResult;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				return $this->saveResult ?? $object;
 			}

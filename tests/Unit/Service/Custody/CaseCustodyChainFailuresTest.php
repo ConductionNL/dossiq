@@ -24,6 +24,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object service over the in-memory register whose saves can be made to
@@ -67,7 +69,10 @@ class CustodyFailingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, mixed $register='', mixed $schema='', ?string $uuid=null): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if ($this->mode === 'answer-nothing') {
 			return 'stored somewhere';
 		}
@@ -76,7 +81,7 @@ class CustodyFailingObjectService {
 			throw new \RuntimeException('update refused');
 		}
 
-		return $this->inner->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		return $this->inner->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 	}//end saveObject()
 }//end class
 

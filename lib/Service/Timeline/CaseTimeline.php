@@ -50,6 +50,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -217,7 +218,7 @@ class CaseTimeline implements CaseTimelineInterface {
 		$data = $entry['data'];
 		$writer = $this->writer();
 
-		$object = $coordinates->objectService->find($caseId, register: $coordinates->register, schema: $coordinates->schema);
+		$object = $coordinates->objectService->find($caseId, new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema));
 		if ($object === null) {
 			$this->soften(context: ['kind' => (string)$data['kind'], 'case' => $caseId, 'reason' => 'the case could not be read']);
 			return '';
@@ -357,8 +358,7 @@ class CaseTimeline implements CaseTimelineInterface {
 		// entries of the case asked for come back.
 		return $coordinates->objectService->find(
 			$caseId,
-			register: $coordinates->register,
-			schema: $coordinates->schema,
+			new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema),
 			_rbac: false,
 			_multitenancy: false
 		);
@@ -470,7 +470,10 @@ class CaseTimeline implements CaseTimelineInterface {
 	 */
 	private function readRelated(TimelineCoordinates $coordinates, string $relatedId): mixed {
 		try {
-			$object = $coordinates->objectService->find($relatedId, register: $coordinates->register, schema: $coordinates->schema);
+			$object = $coordinates->objectService->find(
+				$relatedId,
+				new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema)
+			);
 		} catch (Throwable $e) {
 			$object = null;
 		}

@@ -28,6 +28,7 @@ use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 require_once __DIR__ . '/../../Fixtures/FakeTermijnStore.php';
 
@@ -72,19 +73,20 @@ final class AccruingAmountSettlerTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = [],
-				string|int|null $register = null,
-				string|int|null $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
-				bool $silent = false,
-				bool $_validation = true,
+				bool $_multitenancy = true
 			): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$silent = $options->policy->silent ?? false;
+				$_validation = $options->policy->validation ?? true;
 				$until = new DateTimeImmutable((string)($object['stoppedOn'] ?? 'today'));
 				$days = max(0, (int)(new DateTimeImmutable((string)$object['startDate']))->diff($until)->format('%r%a'));
 				$object['accrued'] = $days * 100;
-				return parent::saveObject($object, $extend, $register, $schema, $uuid, $_rbac, $_multitenancy, $silent, $_validation);
+				return parent::saveObject($object, $options, $_rbac, $_multitenancy);
 			}
 		};
 		$settings = $this->createMock(SettingsService::class);

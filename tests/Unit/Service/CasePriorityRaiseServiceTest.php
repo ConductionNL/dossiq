@@ -29,6 +29,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The term rule lifts a case's priority floor to the declared minimum, only
@@ -114,7 +116,9 @@ class CasePriorityRaiseServiceTest extends TestCase {
 			 *
 			 * @return array<string,mixed>
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				if ($this->case === null) {
 					throw new DoesNotExistException('gone');
@@ -133,7 +137,11 @@ class CasePriorityRaiseServiceTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): mixed {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->calls[] = ['patchObject', $objectId, $data, $register, $schema];
 				if ($this->patch instanceof \Throwable) {
 					throw $this->patch;

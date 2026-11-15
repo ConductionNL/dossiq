@@ -18,6 +18,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Queue\MentionQueueRecords
@@ -191,7 +193,10 @@ class MentionQueueRecordsTest extends TestCase {
 			/**
 			 * @return mixed
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				return $this->saved;
 			}
@@ -211,7 +216,11 @@ class MentionQueueRecordsTest extends TestCase {
 			/**
 			 * @return mixed
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): mixed {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->calls[] = ['patchObject', ['objectId' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]];
 				return $this->patched;
 			}

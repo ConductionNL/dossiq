@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
@@ -104,11 +105,14 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				?ObjectFindOptions $options = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): object {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				foreach ($this->map as $rows) {
 					foreach ($rows as $row) {
 						if (($row['id'] ?? null) === (string)$id) {
@@ -252,7 +256,11 @@ class ZgwZtcRulesServiceTest extends TestCase {
 				return ($this->search)($register, $schema, $filters);
 			}
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): mixed {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->find === null) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
 				}

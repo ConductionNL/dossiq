@@ -37,6 +37,8 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TranscriptionServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -276,7 +278,10 @@ class TranscriptionService implements TranscriptionServiceInterface {
 		$uuid = $this->evidenceUuid(evidence: $evidence);
 
 		try {
-			$objectService->saveObject(object: $evidence, register: $register, schema: $schema, uuid: $uuid);
+			$objectService->saveObject(
+				object: $evidence,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'TranscriptionService::persist failed: ' . $e->getMessage(),

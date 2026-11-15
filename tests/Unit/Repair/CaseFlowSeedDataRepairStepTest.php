@@ -33,6 +33,8 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CaseFlowSeedDataRepairStepTest extends TestCase {
 
@@ -86,13 +88,19 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The written fields with the id.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->saved[] = ['schema' => $schema, 'object' => $data + ['id' => $objectId], 'patch' => true];
 
 				return $data + ['id' => $objectId];
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($schema === $this->failsOnSchema) {
 					throw new RuntimeException('schema rejected the object');
 				}

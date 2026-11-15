@@ -21,6 +21,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Task 3.2: "Kenteken wijzigen" opens a change case and leaves the permit as it is.
@@ -55,7 +57,9 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ($this->broken === true) {
 					throw new \RuntimeException('database gone');
 				}
@@ -93,7 +97,10 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 				return array_merge($object, ['id' => 'case-new', 'identifier' => '2026-0042']);
 			}

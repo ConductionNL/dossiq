@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\Custody;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 use Throwable;
 
@@ -155,9 +157,10 @@ final class DossierRegister {
 		[$objectService, $register] = $this->context();
 		$objectService->saveObject(
 			object: $payload,
-			register: $register,
-			schema: $this->schema(key: 'case_schema'),
-			uuid: $caseId,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')),
+				uuid: $caseId
+			)
 		);
 	}//end saveCase()
 }//end class

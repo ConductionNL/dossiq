@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for AiAuditLog.
@@ -81,7 +82,9 @@ class AiAuditLogTest extends TestCase {
 
 			public ?\Throwable $failure = null;
 
-			public function saveObject(string $register, string $schema, array $object): void {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): void {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($this->failure !== null) {
 					throw $this->failure;
 				}

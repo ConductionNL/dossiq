@@ -34,6 +34,7 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The `findAll`/`saveObject` seam this test drives.
@@ -65,7 +66,7 @@ interface QuotaWritePathObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }
 
 /**
@@ -103,7 +104,10 @@ class TenantQuotaWritePathsTest extends TestCase {
 		$objectService = $this->createMock(QuotaWritePathObjectServiceStub::class);
 		$objectService->method('findAll')->willReturn($rows);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = $object;
 
 				return $object;

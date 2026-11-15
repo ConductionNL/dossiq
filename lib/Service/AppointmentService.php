@@ -36,6 +36,9 @@ use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -114,7 +117,10 @@ class AppointmentService implements AppointmentServiceInterface {
 
 		$appointmentData = $this->appointmentRecord(caseId: $caseId, data: $data, backendResult: $backendResult);
 
-		$result = $objectService->saveObject(object: $appointmentData, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $appointmentData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
 
 		$this->logBooked(caseId: $caseId, result: $result);
 
@@ -205,7 +211,7 @@ class AppointmentService implements AppointmentServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 
 		// Cancel in backend.
@@ -214,7 +220,10 @@ class AppointmentService implements AppointmentServiceInterface {
 		}
 
 		$data['status'] = 'cancelled';
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
 
 		return $result->jsonSerialize();
 	}//end cancelAppointment()
@@ -237,11 +246,14 @@ class AppointmentService implements AppointmentServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 		$data['status'] = 'no_show';
 
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
 		return $result->jsonSerialize();
 	}//end markNoShow()
 

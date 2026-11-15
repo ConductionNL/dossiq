@@ -46,6 +46,9 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * OpenRegister persistence and lookup for case-integrated email.
  *
@@ -132,7 +135,7 @@ class CaseEmailRepository implements CaseEmailRepositoryInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$caseObj = $objectService->find($caseId, register: $register, schema: $schema);
+		$caseObj = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		if ($caseObj === null) {
 			return [];
 		}
@@ -330,8 +333,7 @@ class CaseEmailRepository implements CaseEmailRepositoryInterface {
 		if (empty($register) === false && empty($schema) === false) {
 			$objectService->saveObject(
 				object: $message(),
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 			);
 		}
 

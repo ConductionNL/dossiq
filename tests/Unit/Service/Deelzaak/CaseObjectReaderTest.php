@@ -31,6 +31,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The slice of OpenRegister's ObjectService the reader calls, for mocking.
@@ -46,7 +48,9 @@ class CaseObjectReaderObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return null;
 	}//end find()
 }//end class
@@ -118,7 +122,11 @@ class CaseObjectReaderTest extends TestCase {
 	public function testFetchCaseByIdReadsTheCaseSchema(): void {
 		$this->objects->expects($this->once())
 			->method('find')
-			->with('case-1', 'dossiq', 'case')
+			->with(...LegacyObjectArgs::with(method: 'find', expected: [
+					'id' => 'case-1',
+					'register' => 'dossiq',
+					'schema' => 'case',
+				]))
 			->willReturn(['id' => 'case-1', 'title' => 'Bouw']);
 
 		$this->assertSame(['id' => 'case-1', 'title' => 'Bouw'], $this->reader()->fetchCaseById(caseUuid: 'case-1'));
@@ -196,7 +204,11 @@ class CaseObjectReaderTest extends TestCase {
 	public function testLoadCaseTypeReadsTheCaseTypeSchema(): void {
 		$this->objects->expects($this->once())
 			->method('find')
-			->with('omgevingsvergunning', 'dossiq', 'caseType')
+			->with(...LegacyObjectArgs::with(method: 'find', expected: [
+					'id' => 'omgevingsvergunning',
+					'register' => 'dossiq',
+					'schema' => 'caseType',
+				]))
 			->willReturn(['id' => 'type-1']);
 
 		$this->assertSame(['id' => 'type-1'], $this->reader()->loadCaseType(caseTypeId: 'omgevingsvergunning'));

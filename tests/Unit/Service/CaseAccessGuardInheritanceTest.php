@@ -55,6 +55,7 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for the seam between dossiq's guard and the platform's grants.
@@ -135,7 +136,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object, or null when absent.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->cases[$id] ?? null);
 			}
 		};
@@ -396,7 +399,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): array {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return ['id' => $id, 'assignee' => 'carol'];
 				}
 			}
@@ -432,7 +437,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed>|null The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return null;
 				}
 			}

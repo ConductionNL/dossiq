@@ -34,6 +34,8 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests for CaseSeats at its edges.
@@ -135,7 +137,10 @@ class CaseSeatsEdgeTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$register = $deletion->target->register ?? '';
+				$schema = $deletion->target->schema ?? '';
+				$uuid = $deletion->uuid ?? '';
 				throw new RuntimeException('delete refused');
 			}//end deleteObject()
 		};
@@ -223,7 +228,9 @@ class CaseSeatsEdgeTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = ''): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				return $this->answer;
 			}//end saveObject()
 		};

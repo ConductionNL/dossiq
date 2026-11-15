@@ -16,6 +16,7 @@ use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
@@ -84,7 +85,10 @@ class ConfiguredSchemaWriterTest extends TestCase {
 			 *
 			 * @return mixed The answer.
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = [$object, $register, $schema, $uuid];
 				if ($this->answer instanceof Throwable) {
 					throw $this->answer;

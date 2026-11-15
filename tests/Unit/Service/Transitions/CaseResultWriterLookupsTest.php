@@ -21,6 +21,8 @@ use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseResultWriter
@@ -58,7 +60,9 @@ class CaseResultWriterLookupsTest extends TestCase {
 			public array $saved = [];
 			public mixed $saveResult = null;
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$row = ($this->rows[$schema . ':' . $id] ?? null);
 				if ($row === 'throw') {
 					throw new RuntimeException('read failed');
@@ -66,7 +70,9 @@ class CaseResultWriterLookupsTest extends TestCase {
 				return $row;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = [$object, $register, $schema];
 				return $this->saveResult;
 			}

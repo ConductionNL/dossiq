@@ -51,6 +51,8 @@ use OCP\IGroupManager;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Only an opted-in case type's silent case closes, and it closes as the account.
@@ -281,7 +283,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			static fn (string $caseId): ?array => ($register->rows['case'][$caseId] ?? null)
 		);
 		$store->method('saveCase')->willReturnCallback(
-			static fn (array $case): array => $register->saveObject(object: $case, schema: 'case', uuid: (string)$case['id'])
+			static fn (array $case): array => $register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: (string)$case['id']))
 		);
 
 		$endings = $this->createMock(CaseEndingActs::class);
@@ -291,7 +293,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 				$gate->require(act: 'abort', case: $case);
 				$this->aborted[] = $this->actingUid().':'.$caseId;
 				$case['isFinalStatus'] = true;
-				$register->saveObject(object: $case, schema: 'case', uuid: $caseId);
+				$register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: $caseId));
 
 				return ['caseId' => $caseId];
 			}

@@ -28,6 +28,7 @@ use OCP\Migration\IRepairStep;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The four repair steps that walk one configured schema page by page: which
@@ -81,7 +82,11 @@ class RepairSchemaWalkGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($objectId === $this->refuse) {
 					throw new RuntimeException('refused');
 				}
