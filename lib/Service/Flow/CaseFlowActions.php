@@ -220,7 +220,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			count: $end['count']
 		);
 
-		$flow = $this->saveAndPublish(service: $service, document: $document, caseId: $caseId);
+		$flow = $this->saveAndPublish(service: $service, planned: ['document' => $document, 'caseId' => $caseId]);
 
 		return [
 			'id' => (string)$flow->getUuid(),
@@ -254,9 +254,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * Save the flow document, stamp the series source, publish and enable it.
 	 *
-	 * @param object               $service  OpenRegister's flow service.
-	 * @param array<string, mixed> $document The flow document.
-	 * @param string               $caseId   The case, for the log line.
+	 * @param object                                                 $service OpenRegister's flow service.
+	 * @param array{document: array<string, mixed>, caseId: string} $planned The flow document, and the case for the log line.
 	 *
 	 * @return object The published flow.
 	 *
@@ -264,7 +263,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
-	private function saveAndPublish(object $service, array $document, string $caseId): object {
+	private function saveAndPublish(object $service, array $planned): object {
+		$document = $planned['document'];
 		try {
 			$flow = $service->save(data: $document);
 
@@ -282,7 +282,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'CaseFlowActions: could not write the planned follow-up',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
+				['caseId' => $planned['caseId'], 'exception' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('plan_failed');

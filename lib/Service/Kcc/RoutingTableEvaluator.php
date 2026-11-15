@@ -125,7 +125,7 @@ class RoutingTableEvaluator {
 		}
 
 		$table = $this->decisionTable(compiled: $compiled);
-		$inputs = $this->deriveInputs(columns: $compiled['columns'], contactMoment: $contactMoment, now: $now);
+		$inputs = $this->deriveInputs(columns: $compiled['columns'], moment: ['contactMoment' => $contactMoment, 'now' => $now]);
 
 		return $this->routed(table: $table, inputs: $inputs);
 	}//end route()
@@ -513,13 +513,14 @@ class RoutingTableEvaluator {
 	 * keyword/regex predicates live HERE, and the shared engine only ever
 	 * sees their typed results — the humaniq#289 `derive` seam.
 	 *
-	 * @param array<int, array<string, mixed>> $columns The compiled columns.
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 * @param \DateTimeImmutable $now Reference time.
+	 * @param array<int, array<string, mixed>>                                   $columns The compiled columns.
+	 * @param array{contactMoment: array<string, mixed>, now: DateTimeImmutable} $moment  The contact moment and the reference time.
 	 *
 	 * @return array<string, mixed> Values keyed by column name.
 	 */
-	private function deriveInputs(array $columns, array $contactMoment, DateTimeImmutable $now): array {
+	private function deriveInputs(array $columns, array $moment): array {
+		$contactMoment = $moment['contactMoment'];
+		$now = $moment['now'];
 		$haystack = strtolower(
 			trim(
 				((string)($contactMoment['subject'] ?? '')) . ' ' . ((string)($contactMoment['summary'] ?? ''))

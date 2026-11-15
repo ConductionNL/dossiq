@@ -76,7 +76,7 @@ class HearingMinutesRecorder {
 	 */
 	public function guardRecordingConsent(string $sessionId, array $payload, array $current, string $register, string $schema): void {
 		$session = ['id' => $sessionId, 'register' => $register, 'schema' => $schema];
-		$this->guardStoredDenial(payload: $payload, current: $current, session: $session);
+		$this->guardStoredDenial(minutes: ['payload' => $payload, 'current' => $current], session: $session);
 
 		if (self::hasAudio(payload: $payload) === false) {
 			return;
@@ -152,15 +152,17 @@ class HearingMinutesRecorder {
 	 *
 	 * The refusal is recorded on the session's OpenRegister trail.
 	 *
-	 * @param array<string, mixed>  $payload Minutes payload.
-	 * @param array<string, mixed>  $current Current hearingSession record.
-	 * @param array<string, string> $session The session's `id`, `register` and `schema`.
+	 * @param array{payload: array<string, mixed>, current: array<string, mixed>} $minutes The minutes payload and the
+	 *                                                                                    current hearingSession record.
+	 * @param array<string, string>                                                $session The session's `id`, `register` and `schema`.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the payload carries another consent than a stored denial.
 	 */
-	private function guardStoredDenial(array $payload, array $current, array $session): void {
+	private function guardStoredDenial(array $minutes, array $session): void {
+		$payload = $minutes['payload'];
+		$current = $minutes['current'];
 		if (($current['recordingConsent'] ?? null) !== 'denied'
 			|| array_key_exists('recordingConsent', $payload) === false
 			|| (string)$payload['recordingConsent'] === 'denied'
