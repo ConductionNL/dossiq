@@ -10,8 +10,11 @@
  * reopens in, the pinned menu, the held row order — are declared as APP
  * DEFAULTS in the manifest's `personalisation` block, which `CnAppRoot` turns
  * into the preference group every surface then reads. The options that need
- * their own screen (substitution, linking your own mail) are mounted from
- * `src/personalSettings.js` into Nextcloud's own personal settings.
+ * their own screen (substitution, linking your own mail, the work digest,
+ * which notices reach you, the case types in your menu) are sections of the
+ * in-app user settings dialog, drawn by `src/views/settings/UserSettings.vue`.
+ * Nextcloud's personal settings carry no dossiq page (Ruben, 11 Oct 2026:
+ * user configuration goes into the user settings dialog).
  *
  * What must never happen is a third place. A preference offered in two
  * screens is a preference that disagrees with itself, and neither screen will
@@ -28,11 +31,13 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const personalSettings = fs.readFileSync(
-	path.join(ROOT, 'src', 'personalSettings.js'),
+const userSettings = fs.readFileSync(
+	path.join(ROOT, 'src', 'views', 'settings', 'UserSettings.vue'),
 	'utf8',
 )
+const app = fs.readFileSync(path.join(ROOT, 'src', 'App.vue'), 'utf8')
 const webpack = fs.readFileSync(path.join(ROOT, 'webpack.config.js'), 'utf8')
+const infoXml = fs.readFileSync(path.join(ROOT, 'appinfo', 'info.xml'), 'utf8')
 
 describe('the app defaults the personal layer starts from', () => {
 	it('declares every option this cluster names, and no more', () => {
@@ -59,25 +64,74 @@ describe('the app defaults the personal layer starts from', () => {
 })
 
 describe('the one personal settings screen', () => {
-	it('is reachable, because webpack builds it', () => {
-		// An entry point that stops being built is a settings section that
-		// renders an empty div: the PHP still registers the mount point and
-		// the bundle behind it is simply not there.
-		expect(webpack).toContain("'personalSettings.js'")
+	it('is the user settings dialog, which App.vue fills', () => {
+		// Filling CnAppRoot's #user-settings-sections slot is what puts the
+		// sections in the dialog, beside the library's own.
+		expect(app).toContain('<template #user-settings-sections>')
+		expect(app).toContain('<UserSettings')
 	})
 
-	it('is registered with Nextcloud rather than being an app page', () => {
+	it('is not a Nextcloud personal settings page', () => {
+		expect(infoXml).not.toMatch(/<personal>/)
+		expect(infoXml).not.toMatch(/<personal-section>/)
 		expect(
 			fs.existsSync(
 				path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php'),
 			),
-			'dossiq registers no personal settings section, so nothing mounts the bundle',
-		).toBe(true)
+		).toBe(false)
+		expect(
+			fs.existsSync(path.join(ROOT, 'lib', 'Sections', 'PersonalSection.php')),
+		).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src', 'personalSettings.js'))).toBe(
+			false,
+		)
+		expect(webpack).not.toContain('personalSettings.js')
 	})
 
-	it('mounts substitution and mail matching, the two options that need a screen', () => {
-		expect(personalSettings).toContain('SubstitutionSettings')
-		expect(personalSettings).toContain('CaseEmailMatchSettings')
+	it.each([
+		'SubstitutionSettings',
+		'CaseEmailMatchSettings',
+		'NotificationRoutingSettings',
+	])('keeps a home for %s in the dialog', (section) => {
+		expect(userSettings).toContain(`<${section} />`)
+	})
+
+	it('keeps a home for the daily digest in the dialog, declared as fields', () => {
+		expect(userSettings).toContain(':fields="workDigestFields"')
+		expect(userSettings).toContain('url="/apps/dossiq/api/personal-queue/digest"')
+	})
+
+	it('keeps the library sections beside its own, except the notification pane it replaces', () => {
+		// The credentials, the guided tour and the integrations are the
+		// library's sections; dossiq's Notices section is the screen over the
+		// notification preferences, so the library's pane stays out.
+		expect(app).toContain(
+			"return ['views', 'app', 'credentials', 'walkthrough', 'integrations']",
+		)
+		expect(app).toContain(':userSettingsSections="userSettingsSections"')
+		expect(userSettings).not.toContain('<CnCredentials')
+		expect(userSettings).not.toContain('id="cn-walkthrough"')
+	})
+
+	it('gives every section a nav icon', () => {
+		const sections = userSettings.match(/<NcAppSettingsSection/g) ?? []
+		const icons = userSettings.match(/<template #icon>/g) ?? []
+		expect(sections.length).toBeGreaterThan(0)
+		expect(icons).toHaveLength(sections.length)
+	})
+
+	it('has no case type picker: a pinned case type is a view, added to the menu from the list', () => {
+		expect(userSettings).not.toContain('menu-case-types')
+	})
+
+	it('opens with the library\'s Views in my menu, where the case type picker was (board DqPersoonlijkeInstellingen)', () => {
+		// @spec openspec/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
+		expect(app).toMatch(/return \['views', 'app',/)
+	})
+
+	it('opens on its own hash', () => {
+		expect(app).toContain("const USER_SETTINGS_HASH = '#user-settings'")
+		expect(app).toContain("addEventListener('hashchange'")
 	})
 
 	it('offers no second place to set a per-person preference', () => {

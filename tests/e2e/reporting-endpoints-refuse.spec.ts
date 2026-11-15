@@ -7,7 +7,7 @@
  * 🔴 WHAT THIS IS ABOUT, MEASURED RATHER THAN SUSPECTED. Deriving the
  * reporting endpoints from `appinfo/routes.php` rather than from anyone's list
  * found five controllers behind reporting-shaped URLs with no group check at
- * all. The worst of them is `GET /api/termijn/reports/jaarrekening`, the ANNUAL
+ * all. The worst of them is `GET /api/deadlines/reports/annual`, the ANNUAL
  * DWANGSOM STATEMENT: what the organisation paid out for missing its own
  * deadlines, answered to every authenticated account on the instance.
  *
@@ -47,10 +47,14 @@ import { getRequestToken } from './helpers/fixtures.ts'
  * this file adds is that the gate is real on a running instance.
  */
 const GATED = [
+	'/index.php/apps/dossiq/api/deadlines/reports/annual?year=2026',
+	'/index.php/apps/dossiq/api/deadlines/reports/quarterly?period=2026-Q1',
+	'/index.php/apps/dossiq/api/deadlines/dashboard/kpi',
+	'/index.php/apps/dossiq/api/doorlooptijd/metrics',
+	// The earlier addresses stay routed for one release, behind the same gate.
 	'/index.php/apps/dossiq/api/termijn/reports/jaarrekening?jaar=2026',
 	'/index.php/apps/dossiq/api/termijn/reports/kwartaal?periode=2026-Q1',
 	'/index.php/apps/dossiq/api/termijn/dashboard/kpi',
-	'/index.php/apps/dossiq/api/doorlooptijd/metrics',
 ]
 
 /** The group that may read a figure about every case. */
@@ -168,7 +172,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = controllerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(
 				response.status(),
 				`${url} must answer a member of ${READING_GROUP}; got ${response.status()}. `
@@ -181,7 +187,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = handlerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(response.status(), `${url} must refuse a case handler`).toBe(403)
 
 			// And the refusal says why, so an operator adds the account to the
@@ -194,7 +202,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		// The one that matters most, asserted on the BODY as well as the status:
 		// a 403 whose body still carried the payload would be the same leak with
 		// a different number on it.
-		const response = await (handlerApi as APIRequestContext).get(GATED[0])
+		const response = await (handlerApi as APIRequestContext).get(GATED[0], {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 
 		expect(response.status()).toBe(403)
 		const body = await response.text()

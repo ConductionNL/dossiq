@@ -48,10 +48,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Email\InboundMailIntake;
-use OCA\Dossiq\Service\Email\IntakeAccount;
-use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -60,6 +59,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Sweeps the intake mailbox through the filter pipeline.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
@@ -78,26 +80,24 @@ class InboundEmailJob extends TimedJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param ITimeFactory         $time       Time factory.
-	 * @param IAppConfig           $appConfig  App config.
-	 * @param IAppManager          $appManager App manager.
-	 * @param MailGatewayInterface $gateway    The mail gateway.
-	 * @param IntakeAccount        $account    The account and folder intake reads.
-	 * @param InboundMailIntake    $intake     The intake path.
-	 * @param LoggerInterface      $logger     Logger.
+	 * @param ITimeFactory             $time           Time factory.
+	 * @param IAppConfig               $appConfig      App config.
+	 * @param IAppManager              $appManager     App manager.
+	 * @param MailIntakeSource $mail The mail gateway, the intake account and the inbound mail intake.
+	 * @param LoggerInterface          $logger         Logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly IAppConfig $appConfig,
 		private readonly IAppManager $appManager,
-		private readonly MailGatewayInterface $gateway,
-		private readonly IntakeAccount $account,
-		private readonly InboundMailIntake $intake,
+		private readonly MailIntakeSource $mail,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$interval = (int)$this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'email_poll_interval',
 			(string)self::DEFAULT_INTERVAL_SECONDS,
 		);
@@ -109,60 +109,108 @@ class InboundEmailJob extends TimedJob {
 	}//end __construct()
 
 	/**
-	 * Run a single sweep.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument Job argument (unused).
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
 		try {
-			if ($this->appManager->isInstalled('openregister') === false) {
-				return;
-			}
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
 
-			if ($this->gateway->isAvailable() === false) {
-				$this->logger->info(
-					'Dossiq: mail intake is unavailable because the Mail app is not installed',
-					['app' => Application::APP_ID]
-				);
-				return;
-			}
-
-			if ($this->account->isConfigured() === false) {
-				return;
-			}
-
-			$messages = $this->gateway->messages(
-				$this->account->accountId(),
-				$this->account->folder(),
-				$this->batchSize()
-			);
-			if ($messages === []) {
-				return;
-			}
-
-			$counts = $this->intake->processBatch(
-				rows: $messages,
-				accountId: $this->account->accountId(),
-				mailbox: $this->account->folder()
-			);
-
-			$this->logger->info(
-				'Dossiq: the intake sweep processed {count} messages',
-				['count' => count($messages), 'outcomes' => $counts, 'app' => Application::APP_ID]
-			);
+	/**
+	 * Run a single sweep.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function work(): void {
+		try {
+			$this->sweep();
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'InboundEmailJob failed',
-				['error' => $e->getMessage(), 'app' => Application::APP_ID]
+				['error' => $e->getMessage(), 'app' => AppIdentity::APP_ID]
 			);
 		}//end try
-	}//end run()
+	}//end work()
+
+	/**
+	 * Read one batch from the intake mailbox and hand it to the intake.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function sweep(): void {
+		if ($this->intakeReady() === false) {
+			return;
+		}
+
+		$messages = $this->mail->gateway->messages(
+			$this->mail->account->accountId(),
+			$this->mail->account->folder(),
+			$this->batchSize()
+		);
+		if ($messages === []) {
+			return;
+		}
+
+		$this->processMessages(messages: $messages);
+	}//end sweep()
+
+	/**
+	 * Whether OpenRegister and the Mail app are there and an intake account is configured.
+	 *
+	 * @return bool
+	 */
+	private function intakeReady(): bool {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return false;
+		}
+
+		if ($this->mail->gateway->isAvailable() === false) {
+			$this->logger->info(
+				'Dossiq: mail intake is unavailable because the Mail app is not installed',
+				['app' => AppIdentity::APP_ID]
+			);
+			return false;
+		}
+
+		return $this->mail->account->isConfigured();
+	}//end intakeReady()
+
+	/**
+	 * Hand the batch to the intake and log what it did with it.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The batch.
+	 *
+	 * @return void
+	 */
+	private function processMessages(array $messages): void {
+		$counts = $this->mail->intake->processBatch(
+			rows: $messages,
+			accountId: $this->mail->account->accountId(),
+			mailbox: $this->mail->account->folder()
+		);
+
+		$this->logger->info(
+			'Dossiq: the intake sweep processed {count} messages',
+			['count' => count($messages), 'outcomes' => $counts, 'app' => AppIdentity::APP_ID]
+		);
+	}//end processMessages()
 
 	/**
 	 * How many messages one sweep takes.
@@ -173,7 +221,7 @@ class InboundEmailJob extends TimedJob {
 	 */
 	private function batchSize(): int {
 		$size = (int)$this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'email_poll_batch_size',
 			(string)self::DEFAULT_BATCH_SIZE,
 		);

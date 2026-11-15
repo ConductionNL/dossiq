@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 /**
  * Hierarchical fall-through strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class HierarchicalStrategy implements RoutingStrategyInterface {
 	/**
@@ -59,23 +59,7 @@ class HierarchicalStrategy implements RoutingStrategyInterface {
 	 * @spec openspec/specs/role-based-step-routing/spec.md
 	 */
 	public function resolve(array $rule, array $case, array $roles): array {
-		$rawTypes = $rule['roleTypes'] ?? [];
-		if (is_array($rawTypes) === false) {
-			$rawTypes = [];
-		}
-
-		$priorities = [];
-		foreach ($rawTypes as $type) {
-			$value = (string)$type;
-			if ($value !== '') {
-				$priorities[] = $value;
-			}
-		}
-
-		$fallback = (string)($rule['fallback'] ?? '');
-		if ($fallback !== '') {
-			$priorities[] = $fallback;
-		}
+		$priorities = $this->priorities(rule: $rule);
 
 		foreach ($priorities as $type) {
 			$matches = $this->matchesFor(roles: $roles, type: $type);
@@ -86,6 +70,48 @@ class HierarchicalStrategy implements RoutingStrategyInterface {
 
 		return [];
 	}//end resolve()
+
+	/**
+	 * The role types to try, in order, with the fallback last.
+	 *
+	 * @param array<string, mixed> $rule The routing rule
+	 *
+	 * @return array<int, string>
+	 */
+	private function priorities(array $rule): array {
+		$rawTypes = $rule['roleTypes'] ?? [];
+		if (is_array($rawTypes) === false) {
+			$rawTypes = [];
+		}
+
+		$priorities = $this->roleTypesOf(rawTypes: $rawTypes);
+
+		$fallback = (string)($rule['fallback'] ?? '');
+		if ($fallback !== '') {
+			$priorities[] = $fallback;
+		}
+
+		return $priorities;
+	}//end priorities()
+
+	/**
+	 * The non-empty role types a rule lists, as strings.
+	 *
+	 * @param array<mixed> $rawTypes The rule's `roleTypes`.
+	 *
+	 * @return array<int, string>
+	 */
+	private function roleTypesOf(array $rawTypes): array {
+		$priorities = [];
+		foreach ($rawTypes as $type) {
+			$value = (string)$type;
+			if ($value !== '') {
+				$priorities[] = $value;
+			}
+		}
+
+		return $priorities;
+	}//end roleTypesOf()
 
 	/**
 	 * Collect participants for a specific role type.

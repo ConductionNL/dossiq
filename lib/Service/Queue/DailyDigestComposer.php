@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -36,13 +36,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DailyDigestComposerInterface;
 
 /**
  * Composes one person's digest, or decides there is none.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class DailyDigestComposer {
+class DailyDigestComposer implements DailyDigestComposerInterface {
 	/**
 	 * How many items the digest names before it says "and the rest".
 	 *
@@ -57,7 +58,7 @@ class DailyDigestComposer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly PersonalQueueService $queue,
@@ -72,7 +73,7 @@ class DailyDigestComposer {
 	 *
 	 * @return array<string, mixed>|null The digest, or null when the queue is empty.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function compose(string $userId, DateTimeImmutable $now): ?array {
 		$queue = $this->queue->forPerson(userId: $userId, now: $now);
@@ -83,7 +84,7 @@ class DailyDigestComposer {
 		}
 
 		$late = array_values(
-			array_filter($items, static fn (array $item): bool => (($item['tier'] ?? '') === 'overdue'))
+			array_filter($items, static fn (array $item): bool => (($item['deadlineTier'] ?? '') === 'overdue'))
 		);
 
 		$named = [];
@@ -92,7 +93,7 @@ class DailyDigestComposer {
 				'id' => (string)$item['id'],
 				'title' => (string)$item['title'],
 				'source' => (string)$item['source'],
-				'tier' => (string)($item['tier'] ?? 'normal'),
+				'deadlineTier' => (string)($item['deadlineTier'] ?? 'normal'),
 			];
 		}
 

@@ -99,18 +99,29 @@ class LibresignResultAssembler {
 	public const UNKNOWN = LibresignStatusMapper::UNKNOWN;
 
 	/**
+	 * Gives a signed version its original's access exception, when wired.
+	 *
+	 * @var callable|null
+	 */
+	private $signedVersionOf;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRootFolder $rootFolder Reads the LibreSign-produced signed file by id.
 	 * @param ZgwDocumentService $documentService The EXISTING binary document storage service.
 	 * @param LibresignStatusMapper $statusMapper Maps LibreSign status values onto the internal
 	 *                                            vocabulary (stateless; defaults to a fresh instance).
+	 * @param callable|null $signedVersionOf `(originalId, signedFileId, signatory)`: gives the signed version
+	 *                                       its original's access exception.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
 		private readonly ZgwDocumentService $documentService,
 		private readonly LibresignStatusMapper $statusMapper = new LibresignStatusMapper(),
+		?callable $signedVersionOf = null,
 	) {
+		$this->signedVersionOf = $signedVersionOf;
 	}//end __construct()
 
 	/**
@@ -154,14 +165,7 @@ class LibresignResultAssembler {
 			throw new RuntimeException('libresign_signed_file_missing');
 		}
 
-		$content = $this->readSignedFileContent(uid: $signatory, fileId: $signedFileId);
-		$fileName = 'beschikking-' . $fileId . '-signed.pdf';
-
-		// Persist through the EXISTING zaakdossier binary storage path — no new storage
-		// mechanism. storeRaw() returns the byte count; getFileId() resolves the id it just
-		// wrote, both against the same service.
-		$this->documentService->storeRaw(uuid: $fileId, fileName: $fileName, content: $content);
-		$newFileId = $this->documentService->getFileId(uuid: $fileId, fileName: $fileName);
+		$newFileId = $this->storeSignedCopy(original: ['fileId' => $fileId, 'signatory' => $signatory], signedFileId: $signedFileId);
 
 		return [
 			'signedBestandId' => (string)$newFileId,
@@ -171,6 +175,33 @@ class LibresignResultAssembler {
 			'signingMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end assembleSignedResult()
+
+	/**
+	 * Store the signed file beside the original and give it the original's readers.
+	 *
+	 * @param array{fileId: string, signatory: string} $original     The original PDF file id and the signer UID.
+	 * @param int                                       $signedFileId The signed file's id in the signer's storage.
+	 *
+	 * @return mixed The id of the stored signed copy.
+	 */
+	private function storeSignedCopy(array $original, int $signedFileId): mixed {
+		['fileId' => $fileId, 'signatory' => $signatory] = $original;
+		$content = $this->readSignedFileContent(uid: $signatory, fileId: $signedFileId);
+		$fileName = 'beschikking-' . $fileId . '-signed.pdf';
+
+		// Persist through the EXISTING zaakdossier binary storage path — no new storage
+		// mechanism. storeRaw() returns the byte count; getFileId() resolves the id it just
+		// wrote, both against the same service.
+		$this->documentService->storeRaw(uuid: $fileId, fileName: $fileName, content: $content);
+		$newFileId = $this->documentService->getFileId(uuid: $fileId, fileName: $fileName);
+
+		// The signed version of a document only some people may see is seen by the same people.
+		if ($this->signedVersionOf !== null) {
+			($this->signedVersionOf)($fileId, (int)$newFileId, $signatory);
+		}
+
+		return $newFileId;
+	}//end storeSignedCopy()
 
 	/**
 	 * Build the validatierapport for a resolved LibreSign status.

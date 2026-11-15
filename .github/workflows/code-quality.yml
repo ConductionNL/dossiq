@@ -158,17 +158,9 @@ concurrency:
   # superseding really is correct.
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
-# Permission CEILING for the called quality pipeline. GitHub statically
-# validates the called workflow's declared job permissions against this
-# grant — even for jobs that are disabled — so it must cover the maximum
-# any nested job declares: journeydoc-capture (contents+actions write),
-# update-baseline / features-extract (contents write), and the Quality
-# Report PR comment (issues / pull-requests write).
+# Read-only by default. The write grants live on the `quality` job below.
 permissions:
-  contents: write
-  actions: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   quality:
@@ -177,37 +169,27 @@ jobs:
     # 2026-09-11). This call must stay at @main: an input the called workflow
     # does not declare makes the whole call fail, so pinning to a ref that
     # predates #758 breaks every run.
+    # Permission CEILING for the called quality pipeline. GitHub statically
+    # validates the called workflow's declared job permissions against this
+    # grant, even for jobs that are disabled, so it must cover the maximum
+    # any nested job declares: journeydoc-capture (contents+actions write),
+    # update-baseline / features-extract (contents write), and the Quality
+    # Report PR comment (issues / pull-requests write).
+    permissions:
+      contents: write
+      actions: write
+      issues: write
+      pull-requests: write
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: dossiq
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      # stable31 is REMOVED, not "dropped for coverage".
-      #
-      # The original reason recorded here — "openregister declares
-      # min-version=32" — is STALE: measured 2026-08-08, openregister@development
-      # declares min-version="28" (openregister#2380 reverted it). Do not rely on
-      # it. What made the stable31 leg worthless still happened, though:
-      # `occ app:enable openregister` failed with only a ::warning::, so the run
-      # continued WITHOUT its data layer and every /apps/openregister/... call
-      # returned Nextcloud's HTML 404 page — a red that said nothing.
-      #
-      # The standing reason is dossiq's own floor: appinfo/info.xml declares
-      # <nextcloud min-version="32"/>, so a leg below 32 would test a
-      # configuration this app does not claim to support.
-      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php holds the two in sync.
-      # newman, playwright and journeydoc-capture all pin
-      # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
-      # version openregister can load.
-      #
-      # THE LIST IS THE WHOLE DECLARED RANGE. An earlier revision of this comment
-      # said "stable33 is deliberately NOT added: this removes an impossible leg,
-      # it does not widen the matrix" — but the same change also dropped stable32,
-      # which was NOT impossible, it was the declared floor. appinfo/info.xml
-      # declares <nextcloud min-version="32" max-version="34"/>, so 32, 33 and 34
-      # each get a leg. tests/Unit/AppInfo/NextcloudFloorMatrixTest.php is what
-      # holds this list and that floor in sync.
-      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
+      # No `nextcloud-test-refs` override: the shared quality.yml derives the
+      # Nextcloud matrix from appinfo/info.xml (min-version..max-version), so
+      # every declared major — stable35 included — gets a leg and the tested
+      # range cannot drift from the declared one.
+      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php mirrors that derivation.
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
@@ -228,8 +210,9 @@ jobs:
       # merged or deleted (the checkout step does `git clone --depth 1 --branch
       # "$ref"`, which fails outright). dossiq's own appinfo/routes.php depends
       # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
-      # needs the `settings#load` route it ships — `development` is where that
-      # plumbing lands first.
+      # needs the `settings#load` route it ships. openregister develops on
+      # `main` since 2026-11-09 (ADR-122) and `development` is frozen, so `main`
+      # is where that plumbing lands first.
       #
       # decidiq is here so the e2e suite can reach the surfaces that need it.
       # Without it, `retired-surfaces.spec.ts` ("decidiq registers the
@@ -249,7 +232,7 @@ jobs:
       # missing-dependency screen and `integrations-page.spec.ts` fails on
       # every run. `app` is `integriq`, verified in its appinfo/info.xml on
       # `development` on 2026-09-14.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
       # SBOM was disabled here until @conduction/nextcloud-vue's dependency
       # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
       # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
@@ -371,7 +354,14 @@ jobs:
       # own 25 minute globalTimeout. See
       # tests/e2e/playwright.config.ts for both, and for why the
       # instance-mutating specs become a teardown that runs on every shard.
-      e2e-shards: 3
+      #
+      # EIGHT SHARDS since 2026-10-08. At three, every nightly since 09-17
+      # stopped each shard at its globalTimeout with about 560 tests never run
+      # (run 37722353743: 155, 250 and 155 unrun), so the suite had no verdict
+      # on most of itself. Eight is the shared workflow's maximum; each leg is
+      # its own Nextcloud and Postgres, so the shared-memory ceiling above does
+      # not move. A CI-minutes cost Ruben accepted for a full nightly verdict.
+      e2e-shards: 8
       # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
       # that has never run here; enable it in a follow-up once this job has a
       # measured baseline. The threshold below is inert while this is false.
@@ -501,6 +491,15 @@ jobs:
       # here — the job reported `skipped`, which the Quality Report renders
       # identically to a pass.
       enable-hydra-gates: true
+      # Gate 122 (SIG unit ratchet) blocks: a unit this change adds or makes
+      # worse must stay at NLOC 60, McCabe 10 and at most 4 parameters, and a
+      # new duplicated fragment of 6+ lines fails. Units the change does not
+      # touch, or touches without making worse, are inherited and do not count.
+      hydra-gates-sig-blocking: true
+      # Maintainability floor: no rating in .maintainability-floor.json may drop
+      # more than 0.01 against the merge base (pull request) or below the
+      # committed floor (push). The floor is raised after improving merges.
+      enable-maintainability-floor: true
       # No `hydra-gates-ref` here on purpose. The shared workflow defaults it
       # to @main, and this workflow is itself consumed at @main, so the two
       # sides move together and a gate fix reaches this repo without a commit

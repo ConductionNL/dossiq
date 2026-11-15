@@ -21,14 +21,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\BelplanRoutingService;
+use OCA\Dossiq\Kernel\Contracts\BelplanRoutingServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -38,7 +38,7 @@ use OCP\IUserSession;
 /**
  * Real-time read-only specialist availability API.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
  */
 class SpecialistBeschikbaarheidController extends Controller {
 	/**
@@ -46,13 +46,13 @@ class SpecialistBeschikbaarheidController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param BelplanRoutingService $routingService The routing service.
+	 * @param BelplanRoutingServiceInterface $routingService The routing service.
 	 * @param IUserSession $userSession The user session.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BelplanRoutingService $routingService,
+		private readonly BelplanRoutingServiceInterface $routingService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -67,7 +67,7 @@ class SpecialistBeschikbaarheidController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
 	 */
 	public function index(string $vaardigheid = ''): JSONResponse {
 		if ($this->userSession->getUser() === null) {

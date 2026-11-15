@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import * as ncVue from '@conduction/nextcloud-vue'
 import {
 	buildManifest,
 	CnPageRenderer,
@@ -15,30 +16,46 @@ import {
 } from '@conduction/nextcloud-vue'
 // @vue/compat REMOVED (ADR-066 task 6.1): lib + dossiq source are compat-
 // construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
+import { getCapabilities } from '@nextcloud/capabilities'
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
 	translate as t,
 } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { createApp, h, markRaw } from 'vue'
+import { createApp, h, markRaw, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import { registerCaseSections } from './components/case/registerCaseSections.js'
 import appIcons from './icons.js'
 import logger from './logger.js'
 import bundledManifest from './manifest.json'
-import menuLayout from './menu-layout.json'
+import menuLayoutFull from './menu-layout.json'
+import menuLayoutSimple from './menu-layout.simple.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
-import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
+import { withConfigLabels } from './utils/configLabels.js'
+import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
+import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
+import {
+	buildProfiledManifest,
+	resolveStructureProfile,
+	STRUCTURE_FULL,
+	STRUCTURE_SETTING,
+} from './utils/structureProfile.js'
+import {
+	translateBannerCopy,
+	translateFieldOverrideLabels,
+	translateLensLabels,
+} from './utils/translateLensLabels.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
@@ -72,10 +89,6 @@ registerIcons(appIcons)
 // way doriath and hermiq do, before the first page renders.
 registerBuiltinDashboardWidgets()
 
-// The `case-sections` container type, which is what lets the case page's tab
-// strip hold six tabs instead of fourteen. See the module for why it goes in
-// the SHARED catalog and not in `registry.js`.
-registerCaseSections()
 try {
 	registerTranslations()
 } catch (e) {
@@ -179,10 +192,73 @@ const fragments = fragmentCtx
 // a merge that fails validation is discarded whole, and an admin-gated link
 // that disappears when some unrelated part of the delta is malformed is the
 // kind of failure nobody reports because it looks like "not allowed".
-const builtManifest = markRaw({
-	...buildManifest(bundledManifest, fragments, menuLayout),
-	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
-})
+//
+// THE STRUCTURE PROFILE picks the layout file. The page controller provides
+// `menu_structure` as initial state: `simple` (the default) or `full` (the
+// navigation and pages as they were). Both are built from the same manifest
+// and the same fragments, so every page stays routable in either. See
+// `utils/structureProfile.js` for what a profile file may hold.
+const structureProfile = resolveStructureProfile(
+	loadState('dossiq', STRUCTURE_SETTING, ''),
+)
+const menuLayout =
+	structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple
+// The simple profile's brand block names the instance through its theming
+// capabilities (`@theming.name`, `@theming.emblem|@theming.logo`), so the
+// navigation shows the municipality the instance belongs to without the app
+// naming one. The emblem is what thematiq exposes for the active set
+// (`nldesign.logos.emblem`, the shield of the workplace boards); without one
+// the wordmark from Nextcloud's theming stands in.
+/**
+ * The theming values the simple profile's nav placeholders read.
+ *
+ * @param {object|null} capabilities `getCapabilities()`.
+ * @return {object} Nextcloud's theming block, `staffAppName`, and `emblem` from thematiq's
+ *   `nldesign.logos.emblem`, or '' when the set ships none.
+ *
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ */
+function navTheming(capabilities) {
+	const theming = capabilities?.theming ?? {}
+	const emblem = capabilities?.nldesign?.logos?.emblem
+	return {
+		...theming,
+		emblem: typeof emblem === 'string' ? emblem : '',
+		// The name staff know the app by (admin setting `staff_app_name`).
+		staffAppName: String(loadState('dossiq', 'staff_app_name', '') || ''),
+	}
+}
+
+const profiledManifest = {
+	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
+		theming: navTheming(getCapabilities()),
+	}),
+	runtime: {
+		user: { isAdmin: currentPermissions().includes('admin') },
+		// Which Woo review reports the page controller offers this user
+		// (woo-review-reports): the menu entry's `visibleIf` reads it.
+		woo: {
+			throughputReader:
+				loadState('dossiq', 'woo_reports', {}).throughput === true,
+			reportsOffered:
+				loadState('dossiq', 'woo_reports', {}).throughput === true
+				|| loadState('dossiq', 'woo_reports', {}).parties === true,
+		},
+	},
+}
+// The app config the pages resolve `@config.<key>` against (DashboardController
+// provides it): the contacts and organisations lists open on the municipality's
+// city. A lens whose setting is empty is left out (utils/configLenses.js).
+const appConfig = loadState('dossiq', 'config', {})
+const builtManifest = markRaw(
+	translateFieldOverrideLabels(
+		translateBannerCopy(
+			translateLensLabels(withConfigLabels(withConfiguredLenses(profiledManifest, appConfig), appConfig), (label) => t('dossiq', label)),
+			(label) => t('dossiq', label),
+		),
+		(label) => t('dossiq', label),
+	),
+)
 
 // Case-type navigation now lives on the Cases index page itself: a folder
 // sidebar (config.folderSidebar) lists the live `caseType` objects and filters
@@ -236,6 +312,21 @@ const router = createRouter({
 // redirects rather than errors, and what it deliberately does NOT close.
 router.beforeEach(permissionGuard)
 
+// The browser tab names the page ("Cases - Dossiq - Nextcloud"), the way
+// Nextcloud's own apps do, instead of the same server-rendered title on every
+// route. See `utils/pageTitle.js`.
+// A list narrowed to one case type (a "My case types" entry, `?caseType=`) is
+// named after that case type. Those entries come with the backend delta, which
+// lands after the first route, so the title follows the resolved menu.
+const retitlePage = installPageTitles(
+	router,
+	builtManifest,
+	(label) => t('dossiq', label),
+	document,
+	() => resolvedManifest.value?.menu,
+)
+watch(() => resolvedManifest.value?.menu, retitlePage)
+
 // The case page subscribes to the case it is showing (gap register row 2.20).
 // It is wired here rather than in a component because `#CaseDetail` is rendered
 // by the library's CnPageRenderer and has no dossiq component in its tree; the
@@ -243,6 +334,10 @@ router.beforeEach(permissionGuard)
 // screen". See src/services/caseLiveUpdates.js for what an event does, and for
 // the one thing it deliberately does not cover.
 installCaseLiveUpdates(router, () => useObjectStore())
+// The team the team queue opens on (@myTeam). Read through the namespace so
+// a library without the hook does not stop the app from starting.
+installMyTeamSource(ncVue.registerMyTeamSource)
+installMyTeamNameSource(ncVue.registerMyTeamNameSource)
 
 tryLoadTranslations()
 
@@ -256,7 +351,6 @@ const pageTypesProp = { ...defaultPageTypes }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
-const cellWidgetsProp = { ...cellWidgets }
 
 const app = createApp({
 	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
@@ -289,7 +383,6 @@ const app = createApp({
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
-			cellWidgets: cellWidgetsProp,
 		})
 	},
 })
@@ -300,6 +393,8 @@ const app = createApp({
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
 app.config.globalProperties.$mapFormatters = mapFormattersProp
+// Every page reads `@config.<key>` off this (nextcloud-vue `cnAppConfig`).
+app.provide('cnAppConfig', appConfig)
 
 app.use(pinia)
 app.use(router)

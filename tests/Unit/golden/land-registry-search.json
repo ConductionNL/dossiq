@@ -1,0 +1,838 @@
+{
+    "no match": {
+        "answer": {
+            "lookupStatus": "NOT_FOUND",
+            "parcel": [],
+            "dormant": false,
+            "extras": []
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "one or more matches": {
+        "answer": {
+            "lookupStatus": "FOUND",
+            "parcel": {
+                "kadastraleGemeente": null,
+                "kadastraleGemeenteCode": null,
+                "sectie": "A",
+                "perceelnummer": 1234,
+                "appartementsrechtVolgnummer": null,
+                "kadastraleAanduiding": null,
+                "oppervlakte": null,
+                "soortCultuurBebouwd": [],
+                "zakelijkGerechtigden": [],
+                "geo": null
+            },
+            "dormant": false,
+            "extras": {
+                "tier": "test",
+                "count": 2,
+                "matches": [
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": "A",
+                        "perceelnummer": 1234,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    },
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": null,
+                        "perceelnummer": null,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    }
+                ]
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "with a volgnummer": {
+        "answer": {
+            "lookupStatus": "FOUND",
+            "parcel": {
+                "kadastraleGemeente": null,
+                "kadastraleGemeenteCode": null,
+                "sectie": "A",
+                "perceelnummer": 1234,
+                "appartementsrechtVolgnummer": null,
+                "kadastraleAanduiding": null,
+                "oppervlakte": null,
+                "soortCultuurBebouwd": [],
+                "zakelijkGerechtigden": [],
+                "geo": null
+            },
+            "dormant": false,
+            "extras": {
+                "tier": "test",
+                "count": 2,
+                "matches": [
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": "A",
+                        "perceelnummer": 1234,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    },
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": null,
+                        "perceelnummer": null,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    }
+                ]
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234",
+                        "appartementsrechtVolgnummer": "A12"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "empty volgnummer is left out": {
+        "answer": {
+            "lookupStatus": "NOT_FOUND",
+            "parcel": [],
+            "dormant": false,
+            "extras": []
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "context is passed to the logs": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "http-503"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK lookup returned a non-success status",
+                {
+                    "status": 503,
+                    "context": {
+                        "caseId": "c-1"
+                    }
+                }
+            ]
+        ]
+    },
+    "context on a transport failure": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "transport-error"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234",
+                        "appartementsrechtVolgnummer": "A1"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK kadastrale-aanduiding lookup failed",
+                {
+                    "kadastraleGemeenteCode": "VBSTD",
+                    "sectie": "A",
+                    "perceelnummer": "1234",
+                    "error": "connection refused",
+                    "context": {
+                        "caseId": "c-2"
+                    }
+                }
+            ]
+        ]
+    },
+    "empty gemeentecode": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-gemeentecode"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "sectie of digits": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-sectie"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "sectie of three letters": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-sectie"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "empty sectie": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-sectie"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "perceelnummer with letters": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-perceelnummer"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "perceelnummer of six digits": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-perceelnummer"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "volgnummer without A": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-volgnummer"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "volgnummer too long": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-volgnummer"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "gemeentecode checked before sectie": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-gemeentecode"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "sectie checked before perceelnummer": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-sectie"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "perceelnummer checked before volgnummer": {
+        "answer": {
+            "lookupStatus": "INVALID_INPUT",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "invalid-perceelnummer"
+            }
+        },
+        "requests": [],
+        "logs": []
+    },
+    "status 199": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "http-199"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK lookup returned a non-success status",
+                {
+                    "status": 199,
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "status 299": {
+        "answer": {
+            "lookupStatus": "FOUND",
+            "parcel": {
+                "kadastraleGemeente": null,
+                "kadastraleGemeenteCode": null,
+                "sectie": "A",
+                "perceelnummer": 1234,
+                "appartementsrechtVolgnummer": null,
+                "kadastraleAanduiding": null,
+                "oppervlakte": null,
+                "soortCultuurBebouwd": [],
+                "zakelijkGerechtigden": [],
+                "geo": null
+            },
+            "dormant": false,
+            "extras": {
+                "tier": "test",
+                "count": 2,
+                "matches": [
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": "A",
+                        "perceelnummer": 1234,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    },
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": null,
+                        "perceelnummer": null,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    }
+                ]
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "status 300": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "http-300"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK lookup returned a non-success status",
+                {
+                    "status": 300,
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "status 404": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "http-404"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK lookup returned a non-success status",
+                {
+                    "status": 404,
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "status 500": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "http-500"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK lookup returned a non-success status",
+                {
+                    "status": 500,
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "body not json": {
+        "answer": {
+            "lookupStatus": "NOT_FOUND",
+            "parcel": [],
+            "dormant": false,
+            "extras": []
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "embedded not a list": {
+        "answer": {
+            "lookupStatus": "NOT_FOUND",
+            "parcel": [],
+            "dormant": false,
+            "extras": []
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "no embedded": {
+        "answer": {
+            "lookupStatus": "NOT_FOUND",
+            "parcel": [],
+            "dormant": false,
+            "extras": []
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    },
+    "unreadable status": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "transport-error"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK kadastrale-aanduiding lookup failed",
+                {
+                    "kadastraleGemeenteCode": "VBSTD",
+                    "sectie": "A",
+                    "perceelnummer": "1234",
+                    "error": "status unreadable",
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "transport failure": {
+        "answer": {
+            "lookupStatus": "LOOKUP_ERROR",
+            "parcel": [],
+            "dormant": false,
+            "extras": {
+                "reason": "transport-error"
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://api.brk.kadaster.nl/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json",
+                        "X-Api-Key": "key-1"
+                    }
+                }
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BRK kadastrale-aanduiding lookup failed",
+                {
+                    "kadastraleGemeenteCode": "VBSTD",
+                    "sectie": "A",
+                    "perceelnummer": "1234",
+                    "error": "connection refused",
+                    "context": []
+                }
+            ]
+        ]
+    },
+    "base url with trailing slash, no api key": {
+        "answer": {
+            "lookupStatus": "FOUND",
+            "parcel": {
+                "kadastraleGemeente": null,
+                "kadastraleGemeenteCode": null,
+                "sectie": "A",
+                "perceelnummer": 1234,
+                "appartementsrechtVolgnummer": null,
+                "kadastraleAanduiding": null,
+                "oppervlakte": null,
+                "soortCultuurBebouwd": [],
+                "zakelijkGerechtigden": [],
+                "geo": null
+            },
+            "dormant": false,
+            "extras": {
+                "tier": "live",
+                "count": 2,
+                "matches": [
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": "A",
+                        "perceelnummer": 1234,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    },
+                    {
+                        "kadastraleGemeente": null,
+                        "kadastraleGemeenteCode": null,
+                        "sectie": null,
+                        "perceelnummer": null,
+                        "appartementsrechtVolgnummer": null,
+                        "kadastraleAanduiding": null,
+                        "oppervlakte": null,
+                        "soortCultuurBebouwd": [],
+                        "zakelijkGerechtigden": [],
+                        "geo": null
+                    }
+                ]
+            }
+        },
+        "requests": [
+            {
+                "uri": "https://brk.example/v2/kadastraalonroerendezaken",
+                "options": {
+                    "timeout": 10,
+                    "query": {
+                        "kadastraleGemeenteCode": "VBSTD",
+                        "sectie": "A",
+                        "perceelnummer": "1234"
+                    },
+                    "headers": {
+                        "Accept": "application/hal+json"
+                    }
+                }
+            }
+        ],
+        "logs": []
+    }
+}

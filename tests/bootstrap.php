@@ -335,7 +335,7 @@ require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
 
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
-// (PublicationService, MandaatValidationService) cannot be mocked without these.
+// (PublicationService and others) cannot be mocked without these.
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
@@ -423,15 +423,6 @@ if (getenv('DOSSIQ_REAL_FLOW_ENGINE') === '1'
 
 unset($dossiqOpenRegisterLib, $dossiqOpenRegisterVendor);
 
-// IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
-// OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
-// interface is present (e.g. when the openregister app is installed). Must be
-// in place before \OC_App::loadApp('dossiq') below tries to load that class.
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
 // Decision-event stubs — loaded when the decision app is absent so the dossiq
 // delegation services + DecisionConcludedListener can be unit-tested against its
 // event contract. These stubs no-op when the real classes are present.
@@ -461,6 +452,12 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
 }
 
+// The read half of the governance-body contract (decidiq#1694), which
+// GovernanceBodyReader dispatches. One spelling only, for the same reason.
+if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // The connection-registry events (adopt-connection-registry) ride the same loop:
 // IntegrationStatusService sends them by name, exactly like the delivery seam.
@@ -479,9 +476,30 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 // these stubs the adapter's resolve would only ever answer null, every test
 // would exercise the absent branch alone, and the branch that turns a handled
 // event with no tracked message into a refusal could never be reached.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent'] as $stubEvent) {
+// OutboundSendDecisionRequestedEvent rides it too (opt-out-before-send):
+// OptOutGate asks integriq by name before a case mail goes out.
+// SourceRequestedEvent rides it too (webhook-steps-through-integriq): the
+// retired webhook translation asks integriq for a Source by name.
+// DocumentSearchRequestedEvent and DocumentFetchRequestedEvent ride it too
+// (woo-requests-gather-documents-from-sources): WooSources searches and fetches
+// integriq's Microsoft 365 connection by name.
+// The three StUF-ZDS events ride it too (stuf onto integriq, decision 193):
+// StufIntegriqBridge sends outbound StUF and forwards confirmations by name.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent', 'StufZdsCaseRequestedEvent', 'StufZdsCaseConcludedEvent', 'StufZdsConfirmationReceivedEvent', 'StufProviderQueryEvent', 'StufCaseQueryEvent', 'StufPersonQueryEvent', 'StufCaseMutationEvent', 'StufDocumentMutationEvent', 'StufProviderRequestReceivedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Portaliq's citizen write and withdrawal facts (dossiq#3142). portaliq raises
+// one typed event per act a resident takes on their own case, and dossiq's two
+// listeners tell the case handler. Both are bound by FQN string behind a
+// class_exists guard so dossiq stays installable without portaliq; without
+// these stubs the guard could only ever answer false and the listeners could
+// never be exercised against the real getter names.
+foreach (['PortalClientWriteEvent', 'PortalClientWithdrawalEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Portaliq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Portaliq/Event/' . $stubEvent . '.php';
 	}
 }
 
@@ -492,6 +510,13 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusR
 // branch alone, and static analysis would report the resolution as dead code.
 if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
 	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
+}
+
+// Shillinq's invoice command (dossiq-delivers-nothing phase 5, decision 174).
+// ShillinqIntegrationService raises it by name so dossiq installs without
+// shillinq; without this stub only the absent branch could ever run.
+if (class_exists('\\OCA\\Shillinq\\Event\\BillablePeriodClosedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
@@ -616,6 +641,10 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletedEventStub.php';
+}
+
 // people-on-the-case: OpenRegister's three person-link events, so
 // PersonLinkListenerTest can exercise handle() against the real getLink()
 // shape on a bare container. Declaration-only stubs, shared with psalm and
@@ -626,18 +655,107 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
 }
 
+// flow-nodes-to-their-owners: the events that hand a sent mail and a generated
+// document back to dossiq. OpenRegister's FlowEmailSentEvent (from
+// feat/flow-send-email-external-recipients) and Filinq's two document events.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\FlowEmailSentEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/FlowEmailSentEvent.php';
+}
+
+foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Filinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Shillinq's payout commands (inbound-payable-from-another-app, REQ-IPY-001 and
+// REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent', 'PayablesRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
+	}
+}
+
+// Filinq's detector refusal (dossiq#3191): FilinqRedactionClient recognises it
+// by name, so only the tests need the class.
+if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
+}
+
+// Filinq's review gate (partly-public-documents-get-a-redacted-copy): the
+// redaction step is tested against filinq's own guard, gate and run identity,
+// with the marks kept in memory.
+if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
+}
+
+// Filinq's anonymise options (redaction-four-eyes-setting): the redaction
+// client passes the acting user, the output format and whether the run is a
+// Woo case through them.
+if (class_exists('\\OCA\\Filinq\\Service\\AnonymizeOptions') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Service/AnonymizeOptions.php';
+}
+
+foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
+	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
+	}
+}
+
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not
 // exist. Declaration-only, shared with psalm and phpstan.
+// a-request-form-opens-the-case-at-once: the event OpenRegister sends when a
+// draft leaves draft (openregister#4566), so the receipt listeners' tests can
+// drive it.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectActivatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectActivatedEvent.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
+}
+
+// tenancy-onto-openregister-organisation 6.9: the organisation update event,
+// so OrganisationStatusChangeListenerTest can drive handle() with the real shape.
+if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
+}
+
+// woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
+// (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
+// the real getter names. Declaration-only, shared with psalm and phpstan.
+// The two types those events carry. Declaration-only, so the stubs stay as
+// typed as OpenRegister's own and StubApiDriftTest has nothing to report.
+if (class_exists('\\OCA\\OpenRegister\\Db\\Decision') === false) {
+	include_once __DIR__ . '/Stubs/Db/Decision.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Service\\Decision\\ReviewPolicy') === false) {
+	include_once __DIR__ . '/Stubs/Service/Decision/ReviewPolicy.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
+}
+// reviewer-owns-their-decisions REQ-DEC-003 (openregister#4592): the visibility
+// question CaseDecisionAccessListener answers for a case-type supervisor.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionVisibilityRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
+}
+
+// identity-survives-a-move: a move out of the register is a deleting event to a guard.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectLeavingEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectLeavingEventStub.php';
 }
 
 // termijnbewaking-op-engine-timers: the business-timer surface the termijn
@@ -647,6 +765,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
 	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
 }
+
+include_once __DIR__ . '/Stubs/Service/Flow/Timer/TimerFiringStubs.php';
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';

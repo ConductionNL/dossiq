@@ -14,144 +14,34 @@
  * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import CasePartiesWidget from '../../src/components/case/CasePartiesWidget.vue'
-
-vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn() } }))
-
-const LISTING = {
-	primary: 'party-jan',
-	roles: [
-		{ key: 'aanvrager', label: 'Requester' },
-		{ key: 'belanghebbende', label: 'Interested party' },
-	],
-	kinds: [{ key: 'person', label: 'Person' }],
-	byRole: {
-		aanvrager: [{ partyUuid: 'party-jan', displayName: 'Jan Jansen' }],
-		belanghebbende: [
-			{ partyUuid: 'party-council', displayName: 'Gemeente Utrecht' },
-			{ partyUuid: 'party-quiet', displayName: 'Stille Buur' },
-		],
-	},
-	results: [
-		{ partyUuid: 'party-jan', displayName: 'Jan Jansen' },
-		{ partyUuid: 'party-council', displayName: 'Gemeente Utrecht' },
-		{ partyUuid: 'party-quiet', displayName: 'Stille Buur' },
-	],
-}
-
-const DOCUMENTS = [
-	{ id: 'doc-a', sender: 'party-jan', recipients: [] },
-	{ id: 'doc-b', sender: 'party-jan', recipients: ['party-council'] },
-	{ id: 'doc-c', sender: '', recipients: ['party-jan'] },
-]
-
-/**
- * The widget over a case with three parties and three documents.
- *
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountWidget() {
-	axios.get.mockImplementation((url) => {
-		const asked = String(url)
-		if (asked.includes('/parties')) {
-			return Promise.resolve({ data: LISTING })
-		}
-		if (asked.includes('/dossier')) {
-			return Promise.resolve({ data: { informatieobjecten: DOCUMENTS } })
-		}
-		return Promise.resolve({ data: { indicators: [] } })
-	})
-
-	const wrapper = mount(CasePartiesWidget, {
-		props: { objectId: 'case-1' },
-		global: {
-			mocks: { $route: { params: { id: 'case-1' } } },
-			stubs: {
-				NcEmptyContent: true,
-				NcLoadingIcon: true,
-				NcNoteCard: { template: '<div><slot /></div>' },
-			},
-		},
-	})
-	await new Promise((resolve) => setTimeout(resolve, 0))
-	await wrapper.vm.$nextTick()
-	await wrapper.vm.$nextTick()
-	return wrapper
-}
+import { describe, expect, it } from 'vitest'
 
 describe("a party's documents on the People tab", () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-	})
-
-	it('counts what a party sent and what it received, separately', async () => {
-		const wrapper = await mountWidget()
-
-		// Jan sent two and received one, so the line names both counts. The
-		// numbers are what is asserted: a line saying only "sent" on a party
-		// who also received would be the bug this separates.
-		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-jan' })).toBe(
-			'2 sent, 1 received',
+	// Counting what a party sent and received, once per tab, with no line for
+	// a party nobody corresponded with and none when the read fails, is the
+	// library parties widget's now (nextcloud-vue CnObjectPartiesWidget and
+	// objectParties.documentsOfParty, with these cases ported to their specs).
+	// dossiq's half: the Roles section reads the case dossier for it.
+	it('reads the dossier of the case for the correspondence line', () => {
+		const manifest = JSON.parse(
+			fs.readFileSync(
+				path.resolve(__dirname, '../../src/manifest.json'),
+				'utf8',
+			),
 		)
-		// One direction only, so the line is the plural form and nothing else.
-		// The count is unsubstituted here because no l10n bundle is loaded in
-		// jsdom; the WORD is what this asserts, and it is the received one.
-		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-council' })).toMatch(
-			/received$/,
-		)
-	})
+		const people = manifest.pages
+			.find((page) => page.id === 'CaseDetail')
+			.config.widgets.find((widget) => widget.id === 'case-people-panel')
+		const roles = people.content.sections
+			.map((section) => section.widget)
+			.find((widget) => widget.id === 'case-party-roles')
 
-	it('gives a party nobody corresponded with no line at all', async () => {
-		const wrapper = await mountWidget()
-
-		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-quiet' })).toBe('')
-		const lines = wrapper.findAll('[data-testid="case-parties-documents"]')
-		expect(lines).toHaveLength(2)
-	})
-
-	it('reads the dossier once for the whole tab, not once per party', async () => {
-		await mountWidget()
-
-		const dossierReads = axios.get.mock.calls.filter(([url]) =>
-			String(url).includes('/dossier'),
-		)
-		expect(dossierReads).toHaveLength(1)
-	})
-
-	it('drops the line rather than claiming nobody wrote when the read fails', async () => {
-		axios.get.mockImplementation((url) => {
-			const asked = String(url)
-			if (asked.includes('/parties')) {
-				return Promise.resolve({ data: LISTING })
-			}
-			if (asked.includes('/dossier')) {
-				return Promise.reject(new Error('OpenRegister said no'))
-			}
-			return Promise.resolve({ data: { indicators: [] } })
+		expect(roles.content.correspondence).toEqual({
+			endpoint: '/apps/dossiq/api/cases/@objectId/dossier',
+			path: 'informatieobjecten',
 		})
-
-		const wrapper = mount(CasePartiesWidget, {
-			props: { objectId: 'case-1' },
-			global: {
-				mocks: { $route: { params: { id: 'case-1' } } },
-				stubs: {
-					NcEmptyContent: true,
-					NcLoadingIcon: true,
-					NcNoteCard: { template: '<div><slot /></div>' },
-				},
-			},
-		})
-		await new Promise((resolve) => setTimeout(resolve, 0))
-		await wrapper.vm.$nextTick()
-
-		expect(
-			wrapper.findAll('[data-testid="case-parties-documents"]'),
-		).toHaveLength(0)
 	})
 })
 
@@ -171,29 +61,67 @@ describe('the Files tab declares its columns', () => {
 	}
 
 	it('binds each column to a property something answers', () => {
-		const columns = filesTab().props.columns
+		const props = filesTab().props
 
 		// 🔴 The property, not the label. A column bound to a key nothing
-		// answers renders blank forever and raises nothing anywhere: the
-		// dossier listing carries senderName and recipientNames, and
-		// scan-verdict-on-the-row added scanVerdict, which the scan endpoint
-		// answers rather than the listing. Those three names are what this
-		// asserts.
-		expect(columns.map((column) => column.property)).toEqual([
-			'senderName',
-			'recipientNames',
+		// answers renders blank forever and raises nothing anywhere. The table
+		// shows the DqDocumentenBeheer columns: scanVerdict, which the dossier
+		// listing carries per row, and vertrouwelijkheidaanduiding, the row's
+		// own confidentiality; reviewVerdict, which the listing puts on each row
+		// of a case under review. Direction and keywords are the informatieobject's
+		// own fields, which the listing carries whole; they start hidden, as do
+		// documentType and partyName, which DocumentListingLabels adds to each row.
+		// The name column is the library's own, relabelled, and binds no property.
+		expect(
+			props.columns
+				.filter(
+					(column) => typeof column === 'object' && column.key !== 'name',
+				)
+				.map((column) => column.property),
+		).toEqual([
 			'scanVerdict',
-			// #3004: where a document sits in decidiq's approval route. Read
-			// from the approval leaf rather than the listing, same as
-			// scanVerdict above it.
-			'approvalMarker',
+			'vertrouwelijkheidaanduiding',
+			'reviewVerdict',
+			'documentType',
+			'direction',
+			'partyName',
+			'keywords',
 		])
+
+		// The listing's senderName and recipientNames, and the approval marker
+		// (#3004, where a document sits in decidiq's route), moved into the
+		// selected file's Document details card rather than off the page.
+		const details = props.sideCards.find((card) => card.id === 'details')
+		expect(details.fields.map((field) => field.key)).toEqual(
+			expect.arrayContaining([
+				'senderName',
+				'recipientNames',
+				'approvalMarker',
+			]),
+		)
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
-		const labels = filesTab().props.columns.map((column) => column.label)
+		const props = filesTab().props
+		const labels = [
+			...props.columns
+				.filter((column) => typeof column === 'object')
+				.map((column) => column.label),
+			...props.sideCards.flatMap((card) =>
+				card.fields.map((field) => field.label),
+			),
+		]
 
-		expect(labels).toEqual(['Sender', 'Recipients', 'Scan', 'Approval'])
+		expect(labels).toEqual(
+			expect.arrayContaining([
+				'Document',
+				'Scan result',
+				'Visible to',
+				'Sender',
+				'Recipients',
+				'Approval',
+			]),
+		)
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}

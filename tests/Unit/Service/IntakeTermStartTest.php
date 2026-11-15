@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * The stamp a case is given at intake.
@@ -203,6 +204,129 @@ class IntakeTermStartTest extends TestCase {
 			'The platform\'s own creation moment is the fallback, not the moment this ran.',
 		);
 	}//end testTheArrivalMomentComesFromTheCase()
+
+	/**
+	 * The term starts at the stamp a case carries, and is derived when it carries none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	public function testTheTermStartIsTheStampOrDerivedFromTheArrival(): void {
+		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
+		$intake = $this->intake(answering: $monday);
+
+		self::assertSame(
+			'2026-01-05T09:00:00+01:00',
+			$intake->termStartFor(case: ['termStartsAt' => '2026-01-05T09:00:00+01:00'])->format('c'),
+			'A stamped case starts where it was stamped.',
+		);
+		self::assertSame(
+			$monday->format('c'),
+			$intake->termStartFor(case: ['receivedAt' => '2026-03-08T20:14:00+01:00'])->format('c'),
+			'A Sunday arrival without a stamp starts on the Monday the calendar names.',
+		);
+	}//end testTheTermStartIsTheStampOrDerivedFromTheArrival()
+
+	/**
+	 * An unreadable stamp is said in the log and the start is derived instead.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	public function testAnUnreadableStampFallsBackToTheArrival(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')
+			->with(self::stringContains('does not read as a date'));
+		$intake = new IntakeTermStart(
+			calendar: $this->roll(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00')),
+			logger: $logger,
+		);
+
+		self::assertSame(
+			'2026-03-09T09:00:00+01:00',
+			$intake->termStartFor(case: ['termStartsAt' => 'not a date', 'receivedAt' => '2026-03-08T20:14:00+01:00'])->format('c'),
+		);
+	}//end testAnUnreadableStampFallsBackToTheArrival()
+
+	/**
+	 * Without a calendar the term starts at the arrival itself.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	public function testWithoutACalendarTheTermStartsAtArrival(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$intake = new IntakeTermStart(calendar: new WorkingDayRoll(settings: $settings));
+
+		self::assertSame(
+			'2026-03-08T20:14:00+01:00',
+			$intake->termStartFor(case: ['receivedAt' => 'garbage', 'registrationDate' => '2026-03-08T20:14:00+01:00'])->format('c'),
+			'An unreadable candidate is skipped, not fatal.',
+		);
+	}//end testWithoutACalendarTheTermStartsAtArrival()
+
+	/**
+	 * A receipt known only to the day, on a working day, is not outside.
+	 *
+	 * An imported `receiptDate` of 2026-03-10 reads as midnight. Compared as
+	 * instants, the clock starting at nine that Tuesday would call the request
+	 * "received outside working hours", a claim nobody computed: the receipt
+	 * says the day, not the hour.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function testADayOnlyReceiptOnAWorkingDayIsInside(): void {
+		$nineAm = new DateTimeImmutable('2026-03-10T09:00:00+01:00');
+		$case = ['properties' => [['propertyDefinition' => 'def-1', 'name' => 'receiptDate', 'value' => '2026-03-10']]];
+
+		$stamp = $this->intake(answering: $nineAm)->stampForCase(case: $case);
+
+		self::assertSame($nineAm->format('c'), $stamp['termStartsAt']);
+		self::assertFalse($stamp['receivedOutsideWorkingHours'], 'The receipt names the day only, and the term starts that day.');
+	}//end testADayOnlyReceiptOnAWorkingDayIsInside()
+
+	/**
+	 * A receipt known only to the day, on a Sunday, is outside.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function testADayOnlyReceiptOnASundayIsOutside(): void {
+		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
+		$case = ['properties' => [['name' => 'receiptDate', 'value' => '2026-03-08']]];
+
+		$stamp = $this->intake(answering: $monday)->stampForCase(case: $case);
+
+		self::assertTrue($stamp['receivedOutsideWorkingHours']);
+	}//end testADayOnlyReceiptOnASundayIsOutside()
+
+	/**
+	 * An imported receipt answer is the arrival, after a supplied moment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function testAnImportedReceiptAnswerIsTheArrival(): void {
+		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));
+		$answered = ['properties' => [['name' => 'receiptDate', 'value' => '2026-09-01']], '@self' => ['created' => '2026-10-06T10:00:00+02:00']];
+
+		self::assertSame('2026-09-01', $intake->arrivalOf(case: $answered)->format('Y-m-d'), 'The import\'s receipt wins over the creation moment.');
+		self::assertSame(
+			'2026-08-30T20:00:00+02:00',
+			$intake->arrivalOf(case: (['receivedAt' => '2026-08-30T20:00:00+02:00'] + $answered))->format('c'),
+			'A supplied moment is more precise than a day, and comes first.',
+		);
+		self::assertSame('2026-09-01', $intake->receiptAnswerOf(case: ['properties' => json_encode($answered['properties'])]), 'A JSON-encoded list reads the same.');
+		self::assertSame('', $intake->receiptAnswerOf(case: ['properties' => [['name' => 'receiptDate', 'value' => '  ']]]), 'A blank answer is no answer.');
+	}//end testAnImportedReceiptAnswerIsTheArrival()
 
 	/**
 	 * The subject, wired to a calendar that answers one instant.

@@ -12,11 +12,12 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\GemachtigdeRoleTypeSeeder;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Exactly one generic Gemachtigde role type, on every case type.
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 class GemachtigdeRoleTypeSeederTest extends TestCase {
 
@@ -86,7 +87,10 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->writes[] = ['object' => $object, 'uuid' => $uuid];
 				return $object;
 			}
@@ -125,7 +129,7 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function testTheGenericRoleTypeIsCreatedWhenNothingHoldsIt(): void {
 		$this->objects->rows = [
@@ -147,7 +151,7 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function testASecondRunCreatesNothing(): void {
 		$this->objects->rows = [
@@ -167,7 +171,7 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function testTheShippedRowIsAdoptedRatherThanDuplicated(): void {
 		$this->objects->rows = [
@@ -201,7 +205,7 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function testARoleTypeScopedToACaseTypeDoesNotSatisfyTheGenericOne(): void {
 		$this->objects->rows = [
@@ -226,7 +230,7 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function testAnAbsentOpenRegisterIsReportedRatherThanThrown(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);

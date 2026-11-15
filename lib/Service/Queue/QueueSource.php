@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ namespace OCA\Dossiq\Service\Queue;
 /**
  * A declared queue source.
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 interface QueueSource {
 	/**
@@ -51,7 +51,7 @@ interface QueueSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string;
 
@@ -62,7 +62,7 @@ interface QueueSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string;
 
@@ -75,7 +75,7 @@ interface QueueSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string;
 
@@ -88,7 +88,7 @@ interface QueueSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array;
 
@@ -106,7 +106,7 @@ interface QueueSource {
 	 *
 	 * @throws \RuntimeException When the source cannot be read.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function itemsFor(string $userId): array;
 }//end interface

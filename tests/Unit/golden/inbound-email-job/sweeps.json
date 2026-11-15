@@ -1,0 +1,154 @@
+{
+    "no openregister": [
+        {
+            "isInstalled": "openregister"
+        }
+    ],
+    "no mail app": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": false
+        },
+        {
+            "info": "Dossiq: mail intake is unavailable because the Mail app is not installed",
+            "context": {
+                "app": "dossiq"
+            }
+        }
+    ],
+    "no intake account": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": true
+        },
+        {
+            "isConfigured": false
+        }
+    ],
+    "an empty mailbox": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": true
+        },
+        {
+            "isConfigured": true
+        },
+        {
+            "messages": [
+                7,
+                "INBOX",
+                25
+            ]
+        }
+    ],
+    "a batch": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": true
+        },
+        {
+            "isConfigured": true
+        },
+        {
+            "messages": [
+                7,
+                "INBOX",
+                25
+            ]
+        },
+        {
+            "processBatch": [
+                2,
+                7,
+                "INBOX"
+            ]
+        },
+        {
+            "info": "Dossiq: the intake sweep processed {count} messages",
+            "context": {
+                "count": 2,
+                "outcomes": {
+                    "matched": 1,
+                    "unmatched": 1
+                },
+                "app": "dossiq"
+            }
+        }
+    ],
+    "a batch size of zero falls back": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": true
+        },
+        {
+            "isConfigured": true
+        },
+        {
+            "messages": [
+                7,
+                "INBOX",
+                50
+            ]
+        },
+        {
+            "processBatch": [
+                2,
+                7,
+                "INBOX"
+            ]
+        },
+        {
+            "info": "Dossiq: the intake sweep processed {count} messages",
+            "context": {
+                "count": 2,
+                "outcomes": {
+                    "matched": 1,
+                    "unmatched": 1
+                },
+                "app": "dossiq"
+            }
+        }
+    ],
+    "a failing intake": [
+        {
+            "isInstalled": "openregister"
+        },
+        {
+            "isAvailable": true
+        },
+        {
+            "isConfigured": true
+        },
+        {
+            "messages": [
+                7,
+                "INBOX",
+                25
+            ]
+        },
+        {
+            "processBatch": [
+                2,
+                7,
+                "INBOX"
+            ]
+        },
+        {
+            "error": "InboundEmailJob failed",
+            "context": {
+                "error": "register down",
+                "app": "dossiq"
+            }
+        }
+    ]
+}

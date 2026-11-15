@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 declare(strict_types=1);
@@ -31,15 +31,14 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 
 /**
- * The addressed parties of a case, for a handler that files a letter.
+ * The addressed parties of a case, for a class that files a letter.
  *
- * Requires the using class to hold a `$container`, which both handlers do and
- * which is how they already reach the dossier service. Through the container
- * rather than the constructor for the same reason: a handler is built
- * whenever the Flow node catalogue is, and a constructor dependency would
- * drag the party stack into every catalogue read.
+ * Requires the using class to hold a `$container`, which
+ * {@see \OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler} does. Through
+ * the container rather than the constructor, so an instance without the
+ * party writer still files the letter, with no addressee.
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 trait AddressesTheCase {
 
@@ -62,7 +61,7 @@ trait AddressesTheCase {
 	 *
 	 * @return array<int, string> The addressed parties, [] when there are none.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	protected function addressedParties(string $caseId): array {
 		if (trim($caseId) === '') {

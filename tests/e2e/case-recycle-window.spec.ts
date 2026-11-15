@@ -84,7 +84,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
+	// @e2e openspec/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
 	//
 	// The date matters more than the row does. A lens that listed the case
 	// with an empty "recover until" cell would satisfy a presence assertion
@@ -102,7 +102,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 			`a case nothing holds must delete: ${JSON.stringify(deleted.body)}`,
 		).toBeLessThan(300)
 
-		const res = await api.get(`${DOSSIQ}/cases/deleted`)
+		const res = await api.get(`${DOSSIQ}/cases/deleted`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(res.status()).toBe(200)
 
 		const rows = ((await res.json()) as any).results ?? []
@@ -116,18 +118,19 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(typeof row.daysRemaining).toBe('number')
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
+	// @e2e openspec/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
 	//
 	// The same scenario through the page a handler actually opens, because the
 	// endpoint answering correctly and the lens rendering are two facts. The
-	// page is `CasesDeleted` (src/views/cases/DeletedCasesView.vue), a custom
-	// page on dossiq's history-mode router, so the URL is a PATH: `#/cases/deleted`
-	// would render the Dashboard under this assertion.
-	test('CasesDeleted (DeletedCasesView) renders the case and the date its window ends', async ({
+	// page is `CasesDeleted`, an index over dossiq's /api/cases/deleted on the
+	// history-mode router, so the URL is a PATH: `#/cases/deleted` would render
+	// the Dashboard under this assertion.
+	test('CasesDeleted renders the case and the date its window ends', async ({
 		page,
 	}) => {
+		const title = `${RUN_PREFIX} shown in the lens`
 		const seeded = await seedCase(api, token, {
-			title: `${RUN_PREFIX} shown in the lens`,
+			title,
 			caseType: caseTypeId,
 		})
 		const caseId = objectId(seeded)
@@ -135,17 +138,17 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		await tryDeleteObject(api, token, 'case', caseId)
 
 		await page.goto('/index.php/apps/dossiq/cases/deleted')
-		const row = page.getByTestId(`deleted-case-${caseId}`)
+		const row = page.getByRole('row').filter({ hasText: title })
 
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		await expect(
-			row.getByTestId('window-ends-on'),
+			row,
 			'the row must carry the date the window ends, not an empty cell',
 		).toContainText(/\d{4}-\d{2}-\d{2}/)
-		await expect(row.getByTestId(`restore-${caseId}`)).toBeVisible()
+		await expect(row.getByRole('button', { name: 'Restore' })).toBeVisible()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before
+	// @e2e openspec/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before
 	//
 	// The control on the whole change: the recovery window must not have
 	// turned the delete guard into a formality. A case with a running term is
@@ -161,6 +164,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 			case: heldId,
 			status: 'lopend',
 			startDate: '2026-01-05T09:00:00+00:00',
+			// Required by deadlineInstance (60-termijnbewaking.json): the end
+			// date as first calculated, before any extension moved it.
+			endDateCalculated: '2046-02-16',
 			endDateCurrent: '2046-02-16',
 		})
 		seededTerms.push(objectId(term))
@@ -169,15 +175,20 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(refused.status).toBe(HOOK_STOPPED)
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === heldId),
 			'a refused delete must not put the case in the trash',
 		).toBe(false)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-case-is-got-back
+	// @e2e openspec/specs/case-management/spec.md#a-case-is-got-back
 	//
 	// The restore is asserted twice: the case is live again, AND the act was
 	// recorded. A restore that worked and recorded nothing leaves a trail
@@ -199,8 +210,13 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(((await restored.json()) as any).success).toBe(true)
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a restored case must leave the trash',
@@ -208,6 +224,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const trail = await api.get(
 			`/index.php/apps/openregister/api/deleted/${encodeURIComponent(caseId)}/destruction`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(
 			trail.status(),
@@ -215,7 +232,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		).toBeLessThan(500)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#only-the-declared-role-destroys
+	// @e2e openspec/specs/case-management/spec.md#only-the-declared-role-destroys
 	//
 	// Playwright runs as admin, and an admin holds every right, so the
 	// assertion that a handler WITHOUT the role is refused cannot be made
@@ -233,6 +250,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const preview = await api.get(
 			`${DOSSIQ}/case/${encodeURIComponent(caseId)}/destruction-preview`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(preview.status()).toBe(200)
 
@@ -244,7 +262,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(body.deletionWindow).toBeTruthy()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#nothing-survives-a-destruction
+	// @e2e openspec/specs/case-management/spec.md#nothing-survives-a-destruction
 	//
 	// The window is a refusal and not decoration: inside it the case can still
 	// come back, so destroying it needs the window waived explicitly. This
@@ -269,15 +287,20 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(((await refused.json()) as any).code).toBe('recovery_window_open')
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a refused destruction must leave the case in the trash',
 		).toBe(true)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-case-whose-purpose-ended-is-still-archived
+	// @e2e openspec/specs/case-management/spec.md#a-case-whose-purpose-ended-is-still-archived
 	//
 	// The two clocks come back as two values with two labels. The assertion is
 	// on the SEPARATION, not on either date: a single date field answered
@@ -294,6 +317,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const res = await api.get(
 			`${DOSSIQ}/case/${encodeURIComponent(caseId)}/retention-clocks`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(res.status()).toBe(200)
 

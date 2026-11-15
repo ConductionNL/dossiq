@@ -1,0 +1,158 @@
+{
+  "_note": "portal-contribution T3 (decision 128): the four supplier notices, mailed to the supplier's own contact address. A supplier has no Nextcloud account and is no party on these objects, so each rule addresses OpenRegister's `email` recipient kind, which follows `supplierRef` to the supplier (a system read bounded to the object's organisation) and mails its `contactEmail` after asking integriq (REQ-ERO-007, openregister build/dep-dossiq-email-recipient). The rule keys match the `notifications` list PortalContributionProvider declares for the supplier audience. The two date rules run on OpenRegister's daily scan and re-arm when the date moves (dedupe on the watched date).",
+  "components": {
+    "schemas": {
+      "supplierMessage": {
+        "version": "1.1.0",
+        "x-openregister-notifications": {
+          "newSupplierMessage": {
+            "trigger": {
+              "type": "created",
+              "filter": {
+                "field": "direction",
+                "operator": "equals",
+                "value": "outbound"
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "email"
+            ],
+            "recipients": [
+              {
+                "kind": "email",
+                "field": "supplierRef.contactEmail"
+              }
+            ],
+            "messageCategory": "service",
+            "defaultLocale": "nl",
+            "subject": {
+              "nl": "Nieuw bericht van de gemeente: {{subject}}",
+              "en": "New message from the municipality: {{subject}}"
+            },
+            "message": {
+              "nl": "Er staat een nieuw bericht voor u klaar. Log in op het leveranciersportaal om het te lezen.",
+              "en": "A new message is waiting for you. Sign in to the supplier portal to read it."
+            }
+          }
+        }
+      },
+      "supplierContract": {
+        "version": "1.1.0",
+        "x-openregister-notifications": {
+          "contractExpiring": {
+            "trigger": {
+              "type": "scheduled",
+              "intervalSec": 86400,
+              "filter": {
+                "endDate": {
+                  "operator": "withinNext",
+                  "value": "P90D"
+                }
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "email"
+            ],
+            "recipients": [
+              {
+                "kind": "email",
+                "field": "supplierRef.contactEmail"
+              }
+            ],
+            "messageCategory": "service",
+            "defaultLocale": "nl",
+            "subject": {
+              "nl": "Contract {{number}} loopt af op {{endDate}}",
+              "en": "Contract {{number}} ends on {{endDate}}"
+            },
+            "message": {
+              "nl": "Uw contract {{number}} ({{subject}}) loopt af op {{endDate}}. Neem contact op met uw contactpersoon bij de gemeente als u wilt verlengen.",
+              "en": "Your contract {{number}} ({{subject}}) ends on {{endDate}}. Contact your account manager at the municipality if you want to renew it."
+            }
+          }
+        }
+      },
+      "caseSupplierInvoice": {
+        "version": "1.1.0",
+        "x-openregister-notifications": {
+          "invoiceDue": {
+            "trigger": {
+              "type": "scheduled",
+              "intervalSec": 86400,
+              "filter": {
+                "dueDate": {
+                  "operator": "withinNext",
+                  "value": "P7D"
+                },
+                "status": {
+                  "operator": "in",
+                  "values": [
+                    "received",
+                    "under_review",
+                    "approved"
+                  ]
+                }
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "email"
+            ],
+            "recipients": [
+              {
+                "kind": "email",
+                "field": "supplierRef.contactEmail"
+              }
+            ],
+            "messageCategory": "service",
+            "defaultLocale": "nl",
+            "subject": {
+              "nl": "Betaaltermijn van factuur {{number}} eindigt op {{dueDate}}",
+              "en": "Payment term of invoice {{number}} ends on {{dueDate}}"
+            },
+            "message": {
+              "nl": "De betaaltermijn van uw factuur {{number}} eindigt op {{dueDate}}. In het leveranciersportaal ziet u de status van de betaling.",
+              "en": "The payment term of your invoice {{number}} ends on {{dueDate}}. The supplier portal shows where the payment stands."
+            }
+          }
+        }
+      },
+      "supplierTender": {
+        "version": "1.1.0",
+        "x-openregister-notifications": {
+          "tenderPublished": {
+            "trigger": {
+              "type": "updated",
+              "condition": {
+                "field": "awardDate",
+                "operator": "changed"
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "email"
+            ],
+            "recipients": [
+              {
+                "kind": "email",
+                "field": "supplierRef.contactEmail"
+              }
+            ],
+            "messageCategory": "service",
+            "defaultLocale": "nl",
+            "subject": {
+              "nl": "De gunning van {{title}} is bekend",
+              "en": "The award for {{title}} is published"
+            },
+            "message": {
+              "nl": "De gemeente heeft besloten over de gunning van {{title}}. Log in op het leveranciersportaal om de uitkomst voor uw inschrijving te zien.",
+              "en": "The municipality has decided on the award for {{title}}. Sign in to the supplier portal to see the outcome for your tender."
+            }
+          }
+        }
+      }
+    }
+  }
+}

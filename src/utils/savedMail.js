@@ -31,7 +31,7 @@ export function looksLikeMail(node) {
 }
 
 /**
- * The case the Files tab is open on.
+ * The case page that is open, read from the address.
  *
  * Read from the route rather than from the action's props, for the reason
  * every other dialog on this page reads it there: `open-modal` and `handler`
@@ -40,7 +40,7 @@ export function looksLikeMail(node) {
  *
  * @return {string} The case uuid, or ''.
  */
-function caseIdFromLocation() {
+export function caseIdFromLocation() {
 	const match = String(window?.location?.pathname || '').match(
 		/\/apps\/dossiq\/cases\/([^/?#]+)/,
 	)
@@ -70,64 +70,128 @@ function caseIdFromLocation() {
  * @spec openspec/specs/case-email-integration/spec.md
  */
 export async function readFileAsMessage(...args) {
+	const node = clickedNode(args)
+	const fileId = fileIdOf(node)
+	if (fileId === null) {
+		return
+	}
+
+	const refusal = readRefusal(node)
+	if (refusal !== '') {
+		showError(refusal)
+		return
+	}
+
+	await fileAsMessage(caseIdFromLocation(), fileId)
+}
+
+/**
+ * Whether a value is a non-null object.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean} True for an object.
+ */
+function isObject(value) {
+	return value !== null && typeof value === 'object'
+}
+
+/**
+ * The clicked node: the last object argument, or the `item` it wraps.
+ *
+ * @param {Array<unknown>} args The dispatch arguments.
+ * @return {object|null} The node.
+ */
+function clickedNode(args) {
 	let node = null
 	for (const arg of args) {
-		if (arg !== null && typeof arg === 'object') {
-			node = arg.item && typeof arg.item === 'object' ? arg.item : arg
+		if (isObject(arg)) {
+			node = isObject(arg.item) ? arg.item : arg
 		}
 	}
+	return node
+}
 
+/**
+ * The clicked node's file id.
+ *
+ * @param {object|null} node The node.
+ * @return {number|null} The id, or null when there is no usable one.
+ */
+function fileIdOf(node) {
 	const fileId = Number(node?.fileid ?? node?.fileId ?? 0)
 	if (!Number.isFinite(fileId) || fileId <= 0) {
-		return
+		return null
 	}
+	return fileId
+}
 
+/**
+ * Why this file is not read as a message here, or '' when it is.
+ *
+ * @param {object} node The clicked node.
+ * @return {string} The sentence to show.
+ */
+function readRefusal(node) {
 	if (!looksLikeMail(node)) {
-		showError(
-			t(
-				'dossiq',
-				'This is not a saved mail file, so there is no message in it to read.',
-			),
+		return t(
+			'dossiq',
+			'This is not a saved mail file, so there is no message in it to read.',
 		)
-		return
 	}
-
-	const caseId = caseIdFromLocation()
-	if (caseId === '') {
-		showError(t('dossiq', 'This file is not on a case.'))
-		return
+	if (caseIdFromLocation() === '') {
+		return t('dossiq', 'This file is not on a case.')
 	}
+	return ''
+}
 
+/**
+ * Ask the server to read the file as a message and file it on the case, and
+ * say what it answered.
+ *
+ * @param {string} caseId The case.
+ * @param {number} fileId The file.
+ * @return {Promise<void>}
+ */
+async function fileAsMessage(caseId, fileId) {
 	try {
 		const { data } = await axios.post(
 			generateUrl(
 				`/apps/dossiq/api/cases/${encodeURIComponent(caseId)}/files/${fileId}/read-as-message`,
 			),
 		)
-
-		// 🔴 A 200 IS NOT A MESSAGE. The endpoint answers 200 with
-		// `outcome: kept` when integriq is absent or the file could not be
-		// read, because both are real answers to what the handler asked. A
-		// success toast over one of those would tell them the case now holds a
-		// message it does not.
-		if (data?.outcome !== 'imported') {
-			showError(
-				data?.reason
-					|| t('dossiq', 'This file could not be read as a message.'),
-			)
-			return
-		}
-
-		showSuccess(
-			t('dossiq', 'Filed as a message: {subject}', {
-				subject: data.subject || '',
-			}),
-		)
-		emit('cn:page:refresh')
+		showReadAnswer(data)
 	} catch (e) {
 		showError(
 			e?.response?.data?.error
 				|| t('dossiq', 'This file could not be read as a message.'),
 		)
 	}
+}
+
+/**
+ * Say what the read answered.
+ *
+ * @param {object|undefined} data The answer.
+ * @return {void}
+ */
+function showReadAnswer(data) {
+	// 🔴 A 200 IS NOT A MESSAGE. The endpoint answers 200 with
+	// `outcome: kept` when integriq is absent or the file could not be
+	// read, because both are real answers to what the handler asked. A
+	// success toast over one of those would tell them the case now holds a
+	// message it does not.
+	if (data?.outcome !== 'imported') {
+		showError(
+			data?.reason
+				|| t('dossiq', 'This file could not be read as a message.'),
+		)
+		return
+	}
+
+	showSuccess(
+		t('dossiq', 'Filed as a message: {subject}', {
+			subject: data.subject || '',
+		}),
+	)
+	emit('cn:page:refresh')
 }

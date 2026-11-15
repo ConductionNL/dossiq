@@ -22,12 +22,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Review\PagesSeen;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for WOO decision tests (OpenRegister object-first signature).
@@ -44,7 +51,7 @@ interface WOODecisionObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -71,6 +78,11 @@ interface WOODecisionObjectServiceStub {
  * Unit tests for WOODecisionService.
  *
  * @covers \OCA\Dossiq\Service\WOODecisionService
+ * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
+ * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOODecisionServiceTest extends TestCase {
 
@@ -95,6 +107,11 @@ class WOODecisionServiceTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * @var ContractDecisionDelegationService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ContractDecisionDelegationService $delegation;
+
+	/**
 	 * @var WOODecisionService
 	 */
 	private WOODecisionService $service;
@@ -109,12 +126,15 @@ class WOODecisionServiceTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$this->delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
 
 		$this->service = new WOODecisionService(
 			$this->settingsService,
 			$this->assessmentService,
 			$this->userSession,
 			$this->logger,
+			decisionDelegation: $this->delegation,
 		);
 	}//end setUp()
 
@@ -138,6 +158,32 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->service->assembleDecision('case-uuid-001');
 	}//end testAssembleDecisionThrowsWhenDocumentsOutstanding()
+
+	/**
+	 * The decision waits for the last page: page 7 of one in-scope document unseen answers 409 and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheDecisionWaitsForTheLastPage(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+		$pagesSeen = $this->createMock(PagesSeen::class);
+		$pagesSeen->method('unseenInCase')->with('case-001')->willReturn(['doc-7' => [7]]);
+		$pagesSeen->method('assertAllSeen')->with('case-001')->willThrowException(
+			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+		);
+		$this->settingsService->expects($this->never())->method('getObjectService');
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, pagesSeen: $pagesSeen, decisionDelegation: $this->delegation);
+
+		$this->assertSame(['doc-7' => [7]], $service->unseenPages(caseId: 'case-001'));
+		$this->assertSame([], $this->service->unseenPages(caseId: 'case-001'));
+		try {
+			$service->assembleDecision(caseId: 'case-001');
+			$this->fail('A decision was assembled with a required page unseen.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-pages-unseen', $e->getRule());
+			$this->assertSame(409, $e->getStatus());
+		}
+	}//end testTheDecisionWaitsForTheLastPage()
 
 	/**
 	 * AssembleDecision throws RuntimeException when OpenRegister is unavailable.
@@ -187,6 +233,7 @@ class WOODecisionServiceTest extends TestCase {
 			['register', '', 'dossiq'],
 			['decision_schema', '', 'decision'],
 			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', ''],
 		]);
 
 		$user = $this->createMock(\OCP\IUser::class);
@@ -203,4 +250,387 @@ class WOODecisionServiceTest extends TestCase {
 		$this->assertContains('5.1.5', $result['weigeringsgronden']);
 	}//end testAssembleDecisionSucceedsWhenAllAssessed()
 
+	/**
+	 * The assembled decision answers what the draft of its document did (REQ-CDD-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
+	 */
+	public function testTheDecisionCarriesTheDraftStatus(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+		$objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([]);
+		$objectServiceMock->method('saveObject')->willReturn(
+			new class {
+				public function getUuid(): string {
+					return 'decision-uuid-002';
+				}
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', ''],
+		]);
+		$drafted = ['status' => 'failed', 'reason' => 'template not found: woo-besluit', 'informatieobject' => '', 'fileId' => 0];
+		$drafts = $this->createMock(CaseDocumentDrafts::class);
+		$drafts->expects($this->exactly(2))->method('draft')->willReturnCallback(
+			static fn (string $caseId, string $purpose): array => array_merge($drafted, ['reason' => $caseId . '/' . $purpose])
+		);
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $drafts, decisionDelegation: $this->delegation);
+
+		$result = $service->assembleDecision('case-uuid-002');
+
+		$this->assertSame('decision-uuid-002', $result['decisionId'], 'a draft that failed does not undo the decision');
+		$this->assertSame('case-uuid-002/' . WOODecisionService::DRAFT_PURPOSE, $result['draft']['reason']);
+		$this->assertSame('case-uuid-002/' . WOODecisionService::INVENTORY_PURPOSE, $result['inventoryDraft']['reason']);
+		$this->assertSame('failed', $result['draft']['status']);
+	}//end testTheDecisionCarriesTheDraftStatus()
+
+	/**
+	 * An assembled decision makes the case ready to publish, and never unpublishes it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	public function testAnAssembledDecisionMakesTheCaseReady(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-a' => ['title' => 'A'],
+				'case-b' => ['title' => 'B', 'wooPublicationStatus' => 'published'],
+			],
+		);
+
+		$this->assertSame('ready', $store->row(schema: 'case', uuid: 'case-a')['wooPublicationStatus']);
+		$this->assertSame('A', $store->row(schema: 'case', uuid: 'case-a')['title']);
+		$this->assertSame('published', $store->row(schema: 'case', uuid: 'case-b')['wooPublicationStatus']);
+	}//end testAnAssembledDecisionMakesTheCaseReady()
+
+	/**
+	 * The decision's summary names the request by the case's title, never by its uuid.
+	 *
+	 * The publication shows it under its title on the public site and in
+	 * search results.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheDecisionSummaryNamesTheRequestByItsTitle(): void {
+		$this->assertSame(
+			expected: 'Besluit op het Woo-verzoek "Raadsstukken over de nieuwe brug"',
+			actual: WOODecisionService::publicationSummary(caseTitle: 'Raadsstukken over de nieuwe brug'),
+		);
+	}//end testTheDecisionSummaryNamesTheRequestByItsTitle()
+
+	/**
+	 * A case without a title still gives a readable summary.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheDecisionSummaryWithoutATitleStaysReadable(): void {
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: WOODecisionService::publicationSummary(caseTitle: ''));
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: WOODecisionService::publicationSummary(caseTitle: '   '));
+	}//end testTheDecisionSummaryWithoutATitleStaysReadable()
+
+	/**
+	 * The assembled decision is written with the summary built from the case, and no uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheAssembledDecisionCarriesTheReadableSummary(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-with-title' => ['title' => 'Raadsstukken over de nieuwe brug'],
+				'case-without-title' => ['title' => ''],
+			],
+		);
+
+		$byCase = [];
+		foreach ($store->all(schema: 'decision') as $decision) {
+			$byCase[$decision['case']] = $decision['description'];
+		}
+
+		$this->assertSame(expected: 'Besluit op het Woo-verzoek "Raadsstukken over de nieuwe brug"', actual: $byCase['case-with-title']);
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: $byCase['case-without-title']);
+		foreach ($byCase as $caseId => $description) {
+			$this->assertStringNotContainsString(needle: (string)$caseId, haystack: $description);
+		}
+	}//end testTheAssembledDecisionCarriesTheReadableSummary()
+
+	/**
+	 * The recorded decision is listed on its case, which is what the case
+	 * page's "Record the decision" checklist item reads. A decision listed
+	 * there before is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
+	 */
+	public function testTheRecordedDecisionIsListedOnItsCase(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-new' => ['title' => 'Brug'],
+				'case-earlier' => ['title' => 'Plein', 'decisions' => ['decision-before']],
+			],
+		);
+
+		$decisionOf = [];
+		foreach ($store->all(schema: 'decision') as $decision) {
+			$decisionOf[$decision['case']] = (string)$decision['id'];
+		}
+
+		$this->assertSame(
+			expected: [$decisionOf['case-new']],
+			actual: $store->find(id: 'case-new', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
+		);
+		$this->assertSame(
+			expected: ['decision-before', $decisionOf['case-earlier']],
+			actual: $store->find(id: 'case-earlier', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
+		);
+	}//end testTheRecordedDecisionIsListedOnItsCase()
+
+	/**
+	 * A decision id the caller sends opens a new decision and leaves the decision it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testAForgedIdInTheDecisionDataDoesNotTouchTheNamedDecision(): void {
+		$victim = ['case' => 'case-other', 'description' => 'Een ander besluit'];
+		$store  = $this->assembleForCases(
+			cases: ['case-new' => ['title' => 'Brug']],
+			decisionData: ['id' => 'decision-victim', 'uuid' => 'decision-victim', '@self' => ['id' => 'decision-victim']],
+			decisions: ['decision-victim' => $victim],
+		);
+
+		$this->assertSame($victim + ['id' => 'decision-victim'], $store->row(schema: 'decision', uuid: 'decision-victim'));
+		$this->assertCount(2, $store->all(schema: 'decision'));
+		$created = $store->all(schema: 'decision')[1];
+		$this->assertSame('case-new', $created['case']);
+		$this->assertArrayNotHasKey('uuid', $created);
+	}//end testAForgedIdInTheDecisionDataDoesNotTouchTheNamedDecision()
+
+	/**
+	 * Assemble a decision for each seeded case against an in-memory register.
+	 *
+	 * @param array<string, array<string, mixed>> $cases        The case rows by uuid.
+	 * @param array<string, mixed>                $decisionData The caller's decision fields.
+	 * @param array<string, array<string, mixed>> $decisions    Stored decision rows by uuid.
+	 *
+	 * @return \OCA\Dossiq\Tests\Support\InMemoryRegister The register after assembly.
+	 */
+	private function assembleForCases(array $cases, array $decisionData = [], array $decisions = []): \OCA\Dossiq\Tests\Support\InMemoryRegister {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+
+		$store = new \OCA\Dossiq\Tests\Support\LifecycleRegister();
+		foreach ($cases as $uuid => $row) {
+			$store->seed(schema: 'case', uuid: $uuid, row: $row);
+		}
+
+		foreach ($decisions as $uuid => $row) {
+			$store->seed(schema: 'decision', uuid: $uuid, row: $row);
+		}
+
+		$objects = new class($store) {
+			/**
+			 * @param \OCA\Dossiq\Tests\Support\InMemoryRegister $store The rows.
+			 */
+			public function __construct(private readonly \OCA\Dossiq\Tests\Support\InMemoryRegister $store) {
+			}
+
+			/**
+			 * @param int|string $id       The uuid.
+			 * @param mixed      $_extend  Ignored.
+			 * @param bool       $files    Ignored.
+			 * @param int|string $register Ignored.
+			 * @param int|string $schema   The schema.
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
+				return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
+			}
+
+			/**
+			 * @param string               $register Ignored.
+			 * @param string               $schema   The schema.
+			 * @param array<string, mixed> $filters  Filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				return $this->store->searchObjectsBySlug($register, $schema, $filters);
+			}
+
+			/**
+			 * @param array<string, mixed> $object   The row.
+			 * @param int|string           $register Ignored.
+			 * @param int|string           $schema   The schema.
+			 * @param string|null          $uuid     The uuid.
+			 *
+			 * @return mixed
+			 */
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$row = $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
+				if ($schema !== 'decision') {
+					return $row;
+				}
+
+				return new class((string)$row['id']) {
+					/**
+					 * @param string $id The uuid.
+					 */
+					public function __construct(private readonly string $id) {
+					}
+
+					/**
+					 * @return string
+					 */
+					public function getUuid(): string {
+						return $this->id;
+					}
+				};
+			}
+		};
+
+		$this->settingsService->method('getObjectService')->willReturn($objects);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', 'case'],
+		]);
+
+		foreach (array_keys($cases) as $caseId) {
+			$this->service->assembleDecision((string)$caseId, $decisionData);
+		}
+
+		return $store;
+	}//end assembleForCases()
+
+	/**
+	 * A fully assessed case whose store records what is saved; answers the store.
+	 *
+	 * @return \PHPUnit\Framework\MockObject\MockObject The object-service double.
+	 */
+	private function assessedCase() {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+
+		$objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([
+			['documentRef' => 'doc-001', 'classification' => 'openbaar', 'weigeringsgronden' => []],
+			['documentRef' => 'doc-002', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.5']],
+		]);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', 'case'],
+		]);
+
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+
+		return $objectServiceMock;
+	}//end assessedCase()
+
+	/**
+	 * The decision is raised in decidiq as a woo-decision about the case, with the tally.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testTheDecisionIsRaisedInDecidiq(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->method('saveObject')->willReturn(new class {
+			public function getUuid(): string {
+				return 'decision-uuid-001';
+			}
+		});
+
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->expects($this->once())->method('raiseDecision')
+			->with(
+				'woo-decision',
+				'case-uuid-001',
+				[
+					'subjectRegister' => 'dossiq',
+					'subjectSchema' => 'case',
+					'subjectId' => 'case-uuid-001',
+					'subjectLabel' => 'Besluit op een Woo-verzoek',
+				],
+				$this->callback(static function (array $context): bool {
+					return $context['actorId'] === 'j.dejong'
+						&& $context['summary']['openbaar'] === 1
+						&& $context['summary']['niet_openbaar'] === 1
+						&& $context['weigeringsgronden'] === ['5.1.5']
+						&& $context['assessmentCount'] === 2;
+				})
+			)
+			->willReturn('decidiq-decision-7');
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, decisionDelegation: $delegation);
+		$result = $service->assembleDecision('case-uuid-001');
+
+		$this->assertSame('decidiq-decision-7', $result['decisionRef']);
+		$this->assertSame('decision-uuid-001', $result['decisionId']);
+	}//end testTheDecisionIsRaisedInDecidiq()
+
+	/**
+	 * When decidiq refuses the raise, nothing is recorded and the case is not made ready.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testARefusedRaiseRecordsNothing(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willThrowException(new \RuntimeException('decidiq is not installed'));
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, decisionDelegation: $delegation);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable: decidiq is not installed');
+		$service->assembleDecision('case-uuid-001');
+	}//end testARefusedRaiseRecordsNothing()
+
+	/**
+	 * Without the decision seam no decision is assembled at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testWithoutTheSeamNothingIsRecorded(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable: the decision seam is not wired');
+		$service->assembleDecision('case-uuid-001');
+	}//end testWithoutTheSeamNothingIsRecorded()
 }//end class

@@ -5,7 +5,7 @@
  *
  * How old the work still standing is, per status, answered now.
  *
- * `ProcessMiningController` and `BottleneckDetectionJob` compute durations over
+ * `ProcessMiningController` and `StalledCaseDetector` compute durations over
  * CLOSED cases. That is a different number, and a teamleider asking "how old is
  * what we still have" cannot get it from finished work: a queue nobody has
  * touched in four months contributes nothing to a report about cases that ended.
@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 
 declare(strict_types=1);
@@ -50,15 +50,17 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
  * The age of the open workload, per status (REQ-TERM-069).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
-class OpenWorkloadAgeService {
+class OpenWorkloadAgeService implements OpenWorkloadAgeServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -77,10 +79,12 @@ class OpenWorkloadAgeService {
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -95,23 +99,51 @@ class OpenWorkloadAgeService {
 	 *
 	 * @throws RefusedException When the open cases could not be read at all.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function report(?DateTimeImmutable $now = null): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
 		$rows = $this->openCases();
 
+		$perStatus = $this->statusRows(ages: $this->agesByStatus(rows: $rows, today: $today));
+
+		return [
+			'generatedAt' => $today->format('Y-m-d'),
+			'openCases' => count($rows),
+			'truncated' => (count($rows) >= self::MAX_ROWS),
+			'perStatus' => $perStatus,
+		];
+	}//end report()
+
+	/**
+	 * The ages in days of the open cases, grouped by the status they sit in.
+	 *
+	 * @param array<int, array<string, mixed>> $rows  The open cases.
+	 * @param DateTimeImmutable                $today Today, at midnight.
+	 *
+	 * @return array<string, array<int, int>> Ages by status; a case without a readable age is left out.
+	 */
+	private function agesByStatus(array $rows, DateTimeImmutable $today): array {
 		$ages = [];
 		foreach ($rows as $row) {
 			$status = $this->statusOf(row: $row);
 			$age = $this->ageOf(row: $row, today: $today);
-			if ($age === null) {
-				continue;
+			if ($age !== null) {
+				$ages[$status][] = $age;
 			}
-
-			$ages[$status][] = $age;
 		}//end foreach
 
+		return $ages;
+	}//end agesByStatus()
+
+	/**
+	 * One row per status, the status holding the oldest case first.
+	 *
+	 * @param array<string, array<int, int>> $ages Ages by status.
+	 *
+	 * @return array<int, array{status: string, cases: int, averageDays: int, medianDays: int, oldestDays: int}> The rows.
+	 */
+	private function statusRows(array $ages): array {
 		$perStatus = [];
 		foreach ($ages as $status => $days) {
 			$perStatus[] = [
@@ -128,13 +160,8 @@ class OpenWorkloadAgeService {
 			static fn (array $a, array $b): int => ($b['oldestDays'] <=> $a['oldestDays'])
 		);
 
-		return [
-			'generatedAt' => $today->format('Y-m-d'),
-			'openCases' => count($rows),
-			'truncated' => (count($rows) >= self::MAX_ROWS),
-			'perStatus' => $perStatus,
-		];
-	}//end report()
+		return $perStatus;
+	}//end statusRows()
 
 	/**
 	 * The open cases, filtered by the store rather than by this reading.
@@ -159,11 +186,25 @@ class OpenWorkloadAgeService {
 			return [];
 		}
 
+		return $this->searchOpen(objectService: $objectService, scope: [$register, $schema]);
+	}//end openCases()
+
+	/**
+	 * Ask the store for the open cases of the configured register and case schema.
+	 *
+	 * @param object                       $objectService OR ObjectService.
+	 * @param array{0: string, 1: string} $scope         The register and the case schema.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws RefusedException When the store could not be asked.
+	 */
+	private function searchOpen(object $objectService, array $scope): array {
 		try {
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				register: $scope[0],
+				schema: $scope[1],
 				filters: ['isFinalStatus' => 0, '_limit' => self::MAX_ROWS]
 			);
 		} catch (\Throwable $e) {
@@ -182,8 +223,8 @@ class OpenWorkloadAgeService {
 				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
-		}
-	}//end openCases()
+		}//end try
+	}//end searchOpen()
 
 	/**
 	 * The status a case is sitting in.
@@ -243,7 +284,7 @@ class OpenWorkloadAgeService {
 			return 0;
 		}
 
-		return (int)$from->diff($today)->days;
+		return $this->days->between(from: $from, to: $today);
 	}//end ageOf()
 
 	/**

@@ -44,7 +44,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ namespace OCA\Dossiq\Service\Dashboard;
 /**
  * Reads the widget role declarations, and says what one reader may receive.
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class WidgetRoles {
 	/**
@@ -76,7 +76,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, array<string, mixed>> The widget definitions, in manifest order.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
+	 * @spec openspec/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
 	 */
 	public function dashboardWidgets(array $manifest): array {
 		$widgets = [];
@@ -100,23 +100,27 @@ class WidgetRoles {
 	 * says WHERE a widget goes, and counting it as one would ask the same
 	 * widget to declare its audience twice, in two places that can disagree.
 	 *
+	 * A page that offers VIEWS (`config.views[].widgets`, the landing page's
+	 * My work and My team) declares widgets there too, and they are read the
+	 * same way: a widget that moved into a view still says who may see it.
+	 *
 	 * @param array<string, mixed> $page One manifest page.
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function definitionsOn(array $page): array {
-		$onConfig = [];
-		if (is_array($page['config']['widgets'] ?? null) === true) {
-			$onConfig = $page['config']['widgets'];
-		}
+		$candidates = array_merge(
+			$this->listAt(value: ($page['config']['widgets'] ?? null)),
+			$this->listAt(value: ($page['widgets'] ?? null))
+		);
 
-		$onPage = [];
-		if (is_array($page['widgets'] ?? null) === true) {
-			$onPage = $page['widgets'];
+		foreach ($this->listAt(value: ($page['config']['views'] ?? null)) as $view) {
+			if (is_array($view) === true) {
+				$candidates = array_merge($candidates, $this->listAt(value: ($view['widgets'] ?? null)));
+			}
 		}
-
-		$candidates = array_merge($onConfig, $onPage);
 
 		$definitions = [];
 		foreach ($candidates as $widget) {
@@ -129,13 +133,30 @@ class WidgetRoles {
 	}//end definitionsOn()
 
 	/**
+	 * A manifest value as a list, or an empty one when it is not a list.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<int|string, mixed> The list.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md
+	 */
+	private function listAt(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
+	}//end listAt()
+
+	/**
 	 * The roles one widget declares.
 	 *
 	 * @param array<string, mixed> $widget One widget definition.
 	 *
 	 * @return array<int, string> The roles, empty when it declares none.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
+	 * @spec openspec/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
 	 */
 	public function rolesOf(array $widget): array {
 		$declared = ($widget[self::ROLES_KEY] ?? null);
@@ -168,7 +189,7 @@ class WidgetRoles {
 	 *
 	 * @return string One of `visible`, `hidden`, `unresolvable`.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function verdictFor(array $widget, array $held, array $known): string {
 		$roles = $this->rolesOf(widget: $widget);
@@ -206,7 +227,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, string> The field names.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function fieldsOf(array $widget): array {
 		$content = ($widget['content'] ?? ($widget['props']['content'] ?? []));
@@ -246,9 +267,24 @@ class WidgetRoles {
 	 * @return array{withhold: array<int, string>, unresolvable: array<int, string>}
 	 *         The fields to remove, and the widgets that could not be resolved.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function withheldFields(array $manifest, array $held, array $known): array {
+		[$shown, $restricted, $unresolvable] = $this->fieldVerdicts(manifest: $manifest, held: $held, known: $known);
+
+		return ['withhold' => $this->withheld(shown: $shown, restricted: $restricted), 'unresolvable' => $unresolvable];
+	}//end withheldFields()
+
+	/**
+	 * The fields a visible widget shows, the fields a hidden widget shows, and the unresolvable widgets.
+	 *
+	 * @param array<string, mixed> $manifest The app manifest.
+	 * @param array<int, string> $held The groups this reader is in.
+	 * @param array<int, string> $known Every group that exists.
+	 *
+	 * @return array{0: array<string, true>, 1: array<string, true>, 2: array<int, string>} Shown, restricted, unresolvable.
+	 */
+	private function fieldVerdicts(array $manifest, array $held, array $known): array {
 		$shown = [];
 		$restricted = [];
 		$unresolvable = [];
@@ -271,6 +307,18 @@ class WidgetRoles {
 			}
 		}
 
+		return [$shown, $restricted, $unresolvable];
+	}//end fieldVerdicts()
+
+	/**
+	 * The restricted fields no visible widget shows.
+	 *
+	 * @param array<string, true> $shown The fields a visible widget shows.
+	 * @param array<string, true> $restricted The fields a hidden widget shows.
+	 *
+	 * @return array<int, string> The fields to remove.
+	 */
+	private function withheld(array $shown, array $restricted): array {
 		$withhold = [];
 		foreach (array_keys($restricted) as $field) {
 			if (isset($shown[$field]) === false) {
@@ -278,8 +326,8 @@ class WidgetRoles {
 			}
 		}
 
-		return ['withhold' => $withhold, 'unresolvable' => $unresolvable];
-	}//end withheldFields()
+		return $withhold;
+	}//end withheld()
 
 	/**
 	 * A dashboard payload with the fields this reader may not see taken out.
@@ -293,7 +341,7 @@ class WidgetRoles {
 	 *
 	 * @return array<string, mixed> The payload, narrowed.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function narrow(array $payload, array $withhold): array {
 		foreach ($withhold as $field) {

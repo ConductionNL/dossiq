@@ -1,0 +1,40 @@
+{
+    "zgwResource": "statustype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "omschrijving": "{{ name }}",
+        "omschrijvingGeneriek": "{{ description }}",
+        "caseType": "{{ _baseUrl | replace({\"catalogi/v1/statustypen\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}",
+        "sequenceNumber": "{{ order }}",
+        "isEindstatus": "{{ isFinal }}",
+        "statustekst": "{{ publicLabel | default(name) }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "description": "{{ omschrijvingGeneriek }}",
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}",
+        "order": "{{ volgnummer }}",
+        "isFinal": "{{ isEindstatus }}",
+        "publicLabel": "{{ statustekst }}"
+    },
+    "reverseCast": {
+        "order": "int",
+        "isFinal": "bool"
+    },
+    "cast": {
+        "sequenceNumber": "int",
+        "isEindstatus": "bool"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        }
+    }
+}

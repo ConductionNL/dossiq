@@ -2,25 +2,22 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * A reader arranges the dashboard they read, and is offered two lists they
- * could not have configured themselves.
+ * A dashboard's layout is the administrator's, through buildiq, and a reader
+ * is offered two lists they could not have configured themselves.
  *
- * Both declarations fail SILENTLY when they are wrong, which is the only
- * reason they are worth a test. `userLayout` on a page CnDashboardPage does
- * not read renders exactly the page that never mentioned it, and so does
- * `userLayout` on a page that reads it for a user who never dragged a widget:
- * those two states are indistinguishable on screen. A preset whose filter
+ * The preset declarations fail SILENTLY when they are wrong, which is the
+ * only reason they are worth a test. A preset whose filter
  * carries a token nothing resolves is sent as the literal string, matches no
  * row, and arrives as a card that is permanently empty rather than refused.
  *
  * So the assertions here are about the DECLARATION rather than the render:
- * every dashboard carries the key and nothing else does, every preset carries
+ * no page keeps a reader's own arrangement, every preset carries
  * its own register and schema so the reader is asked for neither, every filter
  * key is a property the case schema actually declares or a lens OpenRegister
  * reserves, and every sentinel token in a preset filter is one the manifest
  * schema's own pattern admits.
  *
- * @spec openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 import fs from 'fs'
@@ -44,8 +41,9 @@ const schema = readJson('tests', 'schemas', 'app-manifest-v2.schema.json')
 
 /** The five pages a handler or a team lead lands on. */
 const DASHBOARDS = [
+	// Not MyWorkHome: its widgets live in its views, not on its own grid,
+	// so it is checked on its own below (landing-view-layouts).
 	'Dashboard',
-	'MyWorkHome',
 	'Doorlooptijd',
 	'ProcessMiningDashboard',
 	'TermijnDashboard',
@@ -101,16 +99,26 @@ const RESERVED_FILTER_KEYS = new Set([
 	'_archived',
 ])
 
-describe('a reader keeps their own arrangement of a dashboard', () => {
-	it.each(DASHBOARDS)('%s declares userLayout', (id) => {
-		expect(page(id).config.userLayout).toBe(true)
+describe('the layout of a dashboard is the administrator\'s, through buildiq', () => {
+	it('keeps no reader\'s own arrangement on any page', () => {
+		// Ruben, 18 October 2026: layout is buildiq's. See layoutIsBuildiqs.spec.js
+		// for why `userLayout` would keep buildiq's geometry out of the manifest.
+		const carrying = (manifest.pages || [])
+			.filter((p) => p.config && 'userLayout' in p.config)
+			.map((p) => p.id)
+		expect(carrying).toEqual([])
 	})
 
-	it('declares it on the dashboards and nowhere else', () => {
-		const carrying = (manifest.pages || [])
-			.filter((p) => p.config && p.config.userLayout)
-			.map((p) => p.id)
-		expect(carrying.sort()).toEqual([...DASHBOARDS].sort())
+	it('draws no in-page Edit button on any page: changing the layout is buildiq\'s', () => {
+		// Ruben, 18 October 2026: "indeling aanpassen needs to go everywhere,
+		// that's a buildiq functionality under the buildiq button".
+		// CnDashboardPage draws its Edit toggle only with `allowEdit`.
+		const editable = [
+			...(manifest.pages || []),
+			...(readJson('src', 'menu-layout.simple.json').pages || []),
+			...(readJson('src', 'menu-layout.json').pages || []),
+		].filter((p) => p.config && p.config.allowEdit === true)
+		expect(editable.map((p) => p.id)).toEqual([])
 	})
 
 	it('leaves membership with the manifest: every dashboard still ships widgets', () => {
@@ -118,6 +126,15 @@ describe('a reader keeps their own arrangement of a dashboard', () => {
 			const widgets = page(id).config.widgets || []
 			expect(widgets.length, `${id} ships no widgets`).toBeGreaterThan(0)
 		}
+	})
+})
+
+describe('the landing page keeps its views', () => {
+	it('declares its views, the app id and a stable page id', () => {
+		const home = page('MyWorkHome')
+		expect(home.config.appId).toBe('dossiq')
+		expect(home.config.pageId).toBe('MyWorkHome')
+		expect(home.config.views.length).toBeGreaterThan(0)
 	})
 })
 
@@ -133,6 +150,16 @@ describe('the two lists a handler wants are offered by name', () => {
 			expect(preset.kind, `${preset.id} has no kind`).toBeTruthy()
 			expect(preset.label, `${preset.id} has no label`).toBeTruthy()
 		}
+	})
+
+	it("narrows the team queue to the reader's own teams, unclaimed", () => {
+		// my-teams-queue: a team is a Nextcloud group and `@myGroups` is the
+		// reader's group ids, an IN filter. While they load, or for a reader
+		// in no group, the list waits and shows its prompt.
+		const queue = presets.find((p) => p.id === 'your-teams-queue').widget.content
+		expect(queue.filter.assignedGroup).toBe('@myGroups')
+		expect(queue.filter.assignee).toBe('IS NULL')
+		expect(queue.prompt).toBeTruthy()
 	})
 
 	it('asks the reader for neither a register nor a schema', () => {

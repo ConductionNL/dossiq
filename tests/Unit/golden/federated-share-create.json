@@ -1,0 +1,81 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "success": false,
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "no case": {
+        "status": 400,
+        "body": {
+            "success": false,
+            "error": "caseId and remoteCloudId are required"
+        },
+        "calls": []
+    },
+    "no remote": {
+        "status": 400,
+        "body": {
+            "success": false,
+            "error": "caseId and remoteCloudId are required"
+        },
+        "calls": []
+    },
+    "case id \"0\"": {
+        "status": 400,
+        "body": {
+            "success": false,
+            "error": "caseId and remoteCloudId are required"
+        },
+        "calls": []
+    },
+    "no access to the case": {
+        "status": 403,
+        "body": {
+            "success": false,
+            "error": "Access denied: you are not assigned to this case"
+        },
+        "calls": [
+            "canUserAccessCase case-1 behandelaar"
+        ]
+    },
+    "shared with every option": {
+        "status": 200,
+        "body": {
+            "success": true,
+            "share": {
+                "id": "fed-1"
+            }
+        },
+        "calls": [
+            "canUserAccessCase case-1 behandelaar",
+            "createFederatedShare [\"case-1\",\"bob@remote.example\",[\"title\"],[\"doc-1\"],\"bewerken\",\"behandelaar\"]"
+        ]
+    },
+    "shared with the defaults": {
+        "status": 200,
+        "body": {
+            "success": true,
+            "share": {
+                "id": "fed-1"
+            }
+        },
+        "calls": [
+            "canUserAccessCase case-1 behandelaar",
+            "createFederatedShare [\"case-1\",\"bob@remote.example\",[],[],\"bekijken\",\"behandelaar\"]"
+        ]
+    },
+    "the remote refuses": {
+        "status": 502,
+        "body": {
+            "success": false,
+            "error": "The remote server refused the share"
+        },
+        "calls": [
+            "canUserAccessCase case-1 behandelaar",
+            "createFederatedShare [\"case-1\",\"bob@remote.example\",[\"title\"],[\"doc-1\"],\"bewerken\",\"behandelaar\"]"
+        ]
+    }
+}

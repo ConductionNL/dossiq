@@ -16,14 +16,11 @@
  * a helper that looks supported and get a 404 with no hint why.
  *
  * `pollReadStatus` is not corrected to the real route, it is removed, because
- * dossiq should not be polling from the browser at all. Read status arrives
- * the other way now: integriq's seam reports delivery by event and
- * `DigitalPostDeliveredListener` writes it onto the message. `IntegriqAdapter`
- * answers `getReadStatus` with `unknown`, and `BerichtenboxService` is
- * explicit about what that means, stamping `readPolledAt` and refusing to move
- * the record. A button wired to the poll route would therefore tell a handler
- * nothing, at the cost of looking like it asked. The route and the guarded
- * controller stay, for the server-side job that a real transport will need.
+ * there is nothing to poll. Logius Berichtenbox has no read status (integriq
+ * spec `berichtenbox-client`), so the server-side poll route, the
+ * `getReadStatus` seam and the daily `BerichtenboxReadStatusJob` were removed
+ * as well. Delivery arrives by event: integriq reports it and
+ * `DigitalPostDeliveredListener` writes it onto the message.
  *
  * `tests/vitest/berichtenboxApiRoutes.spec.js` reads this file against
  * `appinfo/routes.php` so the next drift is caught by a test rather than by a

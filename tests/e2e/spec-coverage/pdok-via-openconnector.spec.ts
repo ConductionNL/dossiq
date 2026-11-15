@@ -123,11 +123,10 @@ test.describe('PDOK via openconnector — shim routing', () => {
 	// fetches the openconnector URL directly and then asserts that the
 	// openconnector URL was fetched. Whatever the shim does, that passes.
 	//
-	// And it cannot be repaired here. `suggest()` is imported only by
-	// `src/components/map/AddressSearch.vue`, which is used only by
-	// `src/components/map/LocationPicker.vue`, which nothing in `src/` mounts,
-	// and the webpack bundle exports no global, so there is no journey and no
-	// handle by which a page could reach the function. The scenario now
+	// And it cannot be repaired here. No component in `src/` calls `suggest()`
+	// (the address search is the library's CnAddressSearch), and the webpack
+	// bundle exports no global, so there is no journey and no handle by which
+	// a page could reach the function. The scenario now
 	// carries a reason-bearing `@e2e exclude` naming its real coverage,
 	// `tests/vitest/pdokService.spec.js`, which calls the real `suggest()`.
 	//

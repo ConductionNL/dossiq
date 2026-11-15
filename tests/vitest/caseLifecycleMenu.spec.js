@@ -117,8 +117,57 @@ describe('the one lifecycle menu', () => {
 		expect(entry(menu, 'resume').reason).toBe('This case is not suspended.')
 		expect(entry(menu, 'reopen').disabled).toBe(true)
 		expect(entry(menu, 'reopen').reason).toBe(
-			'Only a closed case can be reopened.',
+			'Only for a finished or archived case.',
 		)
+	})
+
+	// REQ-TEL-001: a case that used every extension its case type allows.
+	it('refuses a second extension with its own sentence when the case type allows one', () => {
+		const used = {
+			...OPEN,
+			canExtend: false,
+			extensionCount: 1,
+			maxExtensions: 1,
+		}
+		const menu = buildActsMenu({ transitions: [], state: used, acts: ACTS })
+
+		expect(entry(menu, 'extend').disabled).toBe(true)
+		expect(entry(menu, 'extend').reason).toBe(
+			'The term of this case was already extended as often as its case type allows.',
+		)
+	})
+
+	it('keeps the case type sentence when the case type allows no extension at all', () => {
+		const never = {
+			...OPEN,
+			canExtend: false,
+			extensionCount: 0,
+			maxExtensions: null,
+		}
+		const menu = buildActsMenu({ transitions: [], state: never, acts: ACTS })
+
+		expect(entry(menu, 'extend').reason).toBe(
+			'This case type does not allow an extension.',
+		)
+	})
+
+	// Board DqVolgendeStap: "Eén keer, met een reden. De verzoeker krijgt bericht."
+	it('says beforehand that an extension needs a reason and tells the requester', () => {
+		const once = { ...OPEN, extensionCount: 0, maxExtensions: 1 }
+		const free = { ...OPEN, extensionCount: 0, maxExtensions: null }
+
+		expect(
+			entry(
+				buildActsMenu({ transitions: [], state: once, acts: ACTS }),
+				'extend',
+			).explainer,
+		).toBe('Once, with a reason. The requester gets a message.')
+		expect(
+			entry(
+				buildActsMenu({ transitions: [], state: free, acts: ACTS }),
+				'extend',
+			).explainer,
+		).toBe('With a reason. The requester gets a message.')
 	})
 
 	it('shows an act the role forbids, disabled, naming the group', () => {
@@ -140,8 +189,9 @@ describe('the one lifecycle menu', () => {
 	})
 
 	it('puts the irreversible acts after the ordinary ones', () => {
-		// Transitions, then the term gestures, then the three ways to end it.
-		// A hurried handler should not meet Archive at the top of a list.
+		// Board DqVolgendeStap: the moves, Finish, the term gestures, then
+		// Abort and Archive. A hurried handler should not meet Archive at the
+		// top of a list.
 		const menu = buildActsMenu({
 			transitions: [{ id: 'lc-approve', label: 'Approve' }],
 			state: OPEN,
@@ -149,9 +199,10 @@ describe('the one lifecycle menu', () => {
 		})
 		const at = (id) => menu.findIndex((row) => row.id === id)
 
-		expect(at('lc-approve')).toBeLessThan(at('suspend'))
-		expect(at('suspend')).toBeLessThan(at('finish'))
-		expect(at('finish')).toBeLessThan(at('archive'))
+		expect(at('lc-approve')).toBeLessThan(at('finish'))
+		expect(at('finish')).toBeLessThan(at('suspend'))
+		expect(at('suspend')).toBeLessThan(at('abort'))
+		expect(at('abort')).toBeLessThan(at('archive'))
 	})
 })
 

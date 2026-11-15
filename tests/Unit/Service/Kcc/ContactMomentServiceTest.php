@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Kcc\ContactMomentPayload
  */
 class ContactMomentServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

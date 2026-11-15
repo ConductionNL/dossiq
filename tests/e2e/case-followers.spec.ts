@@ -178,11 +178,12 @@ test.describe('Following a case', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
-	// BREAKS IF: the strip stops reading `@self.watching`, or the PUT stops
+	// BREAKS IF: the header toggle stops reading `@self.watching`, or the PUT stops
 	// landing. The reload is the point: an optimistic flip that never reached
 	// OpenRegister looks identical to one that did until the page is read back.
+	// @e2e openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
 	// @e2e case-access-control::follow-survives-a-reload
 	test('the Follow button on the case page takes the subscription, and it survives a reload', async ({
 		page,
@@ -192,16 +193,20 @@ test.describe('Following a case', () => {
 		await page.goto(`${APP_URL}cases/${cases.fromThePage}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const toggle = page.getByTestId('case-follow-toggle')
+		const toggle = page.getByTestId('cn-follow-toggle-button')
 		await expect(toggle).toBeVisible({ timeout: 30_000 })
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+		// One Follow control on the page (one-follow-control-in-the-header):
+		// the header toggle, and no second strip in the banner row.
+		await expect(toggle).toHaveCount(1)
+		await expect(page.getByTestId('case-follow')).toHaveCount(0)
 
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute(
+		await expect(page.getByTestId('cn-follow-toggle-button')).toHaveAttribute(
 			'aria-pressed',
 			'true',
 		)
@@ -212,7 +217,7 @@ test.describe('Following a case', () => {
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
 	// BREAKS IF: `_watching` stops being resolved inside the query, or starts
 	// being read as "no restriction" when the caller follows nothing. The
@@ -227,14 +232,14 @@ test.describe('Following a case', () => {
 		expect(ids).not.toContain(cases.dropped)
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
-	// BREAKS IF: the Followers section stops rendering, or the panel starts
-	// drawing a refusal as an empty list. The admin driving this run may update
-	// the case, so a refusal here is a real failure and not a permission the
-	// fixture forgot.
+	// BREAKS IF: the header's Follow popover stops listing who follows the case.
+	// Followers show there only (Ruben, 20 Oct 2026): the People tab carries no
+	// Followers section any more. The admin driving this run may update the
+	// case, so a refusal here is a real failure and not a missing permission.
 	// @e2e case-access-control::the-people-tab-names-who-follows-the-case
-	test('the People tab names who follows the case', async ({ page }) => {
+	test('the header popover names who follows the case', async ({ page }) => {
 		await follow(cases.listed)
 
 		const errors = trackDossiqErrors(page)
@@ -245,23 +250,20 @@ test.describe('Following a case', () => {
 			timeout: 30_000,
 		})
 
+		await page.getByTestId('cn-follow-toggle-count').click()
+		const popover = page.getByTestId('cn-follow-toggle-popover')
+		await expect(popover).toBeVisible({ timeout: 20_000 })
+		await expect(popover.locator('.cn-follow-toggle__row')).not.toHaveCount(0)
+
+		// The People tab lists the parties and the seats, not the followers.
 		const strip = page.locator('.cn-tabs-widget')
 		await strip.getByRole('tab', { name: 'People', exact: true }).click()
-
-		const panel = page.locator('[data-testid="case-followers"]')
-		await expect(panel).toBeVisible({ timeout: 20_000 })
-		await expect(
-			panel.locator('[data-testid="case-followers-person"]'),
-		).not.toHaveCount(0)
-
-		// Nobody's subscription is removable from here: taking one off needs
-		// `manage`, and a button that 403s on press teaches nobody anything.
-		await expect(panel.locator('button')).toHaveCount(0)
+		await expect(page.locator('[data-testid="cn-section-case-followers"]')).toHaveCount(0)
 
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-unfollow
+	// @e2e openspec/specs/case-management/spec.md#unfollow
 	//
 	// BREAKS IF: the DELETE stops landing, which is the failure the two verbs
 	// exist to prevent: a strip that PUT in both directions reports success and
@@ -275,7 +277,7 @@ test.describe('Following a case', () => {
 		await page.goto(`${APP_URL}cases/${cases.dropped}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const toggle = page.getByTestId('case-follow-toggle')
+		const toggle = page.getByTestId('cn-follow-toggle-button')
 		await expect(toggle).toBeVisible({ timeout: 30_000 })
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
 
@@ -290,7 +292,7 @@ test.describe('Following a case', () => {
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-a-follower-hears
+	// @e2e openspec/specs/case-management/spec.md#a-follower-hears
 	//
 	// BREAKS IF: the annotation never reaches the live schema. That is the
 	// silent one: OpenRegister folds `x-openregister-notifications` into the
@@ -328,7 +330,7 @@ test.describe('Following a case', () => {
 		expect(rules.caseAssigned?.trigger?.type).toBe('created')
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-a-follower-hears
+	// @e2e openspec/specs/case-management/spec.md#a-follower-hears
 	//
 	// BREAKS IF: the fan-out stops reaching the watchers. The control is the
 	// unfollowed case moving through the SAME transition in the same run: a
