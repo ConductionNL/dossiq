@@ -2124,6 +2124,9 @@
 					"message-applicant": {
 						"group": "Case"
 					},
+					"ask-partner": {
+						"group": "Case"
+					},
 					"dso-forward": {
 						"group": "Case"
 					},
@@ -6875,6 +6878,7 @@
 					"case-version-move",
 					"cross-domain-lookup",
 					"message-applicant",
+					"ask-partner",
 					"dso-forward",
 					"dso-collaborate",
 					"request-information",

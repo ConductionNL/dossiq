@@ -6528,6 +6528,21 @@
 						}
 					},
 					{
+						"id": "ask-partner",
+						"type": "open-modal",
+						"target": "PartnerAskDialog",
+						"label": "Ask a partner",
+						"icon": "AccountArrowRightOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					},
+					{
 						"id": "export-dossier",
 						"type": "api-call",
 						"label": "Download dossier",
