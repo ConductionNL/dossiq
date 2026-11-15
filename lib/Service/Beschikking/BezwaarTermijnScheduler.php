@@ -123,7 +123,10 @@ class BezwaarTermijnScheduler {
 			return;
 		}
 
-		$trigger = self::triggerRecord(decisionId: $decisionId, bekendmaking: $bekendmaking, endDate: $endDate, herinnering: $herinnering);
+		$trigger = self::triggerRecord(
+			decisionId: $decisionId,
+			dates: ['announcementDate' => $bekendmaking, 'objectionTermEndDate' => $endDate, 'reminderDate' => $herinnering]
+		);
 		$this->saveTrigger(target: $target, trigger: $trigger);
 	}//end createBezwaarTrigger()
 
@@ -152,23 +155,22 @@ class BezwaarTermijnScheduler {
 	/**
 	 * The BezwaarTrigger scheduling record.
 	 *
-	 * @param string $decisionId   The beschikking UUID.
-	 * @param string $bekendmaking The bekendmaking date.
-	 * @param string $endDate      The bezwaartermijn end date.
-	 * @param string $herinnering  The reminder date.
+	 * @param string                $decisionId The beschikking UUID.
+	 * @param array<string, string> $dates      `announcementDate` (the bekendmaking date), `objectionTermEndDate`
+	 *                                          (the bezwaartermijn end date) and `reminderDate`.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private static function triggerRecord(string $decisionId, string $bekendmaking, string $endDate, string $herinnering): array {
-		$archiveDate = (new DateTimeImmutable($endDate))->add(new DateInterval('P1D'))->format('Y-m-d');
+	private static function triggerRecord(string $decisionId, array $dates): array {
+		$archiveDate = (new DateTimeImmutable($dates['objectionTermEndDate']))->add(new DateInterval('P1D'))->format('Y-m-d');
 
 		return [
 			'decisionId' => $decisionId,
-			'announcementDate' => $bekendmaking,
-			'objectionTermEndDate' => $endDate,
-			'reminderDate' => $herinnering,
+			'announcementDate' => $dates['announcementDate'],
+			'objectionTermEndDate' => $dates['objectionTermEndDate'],
+			'reminderDate' => $dates['reminderDate'],
 			'objectionReceived' => false,
 			'archiveTriggerActive' => true,
 			'archiveDate' => $archiveDate,
