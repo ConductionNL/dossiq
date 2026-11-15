@@ -207,19 +207,31 @@ class CaseConversationService implements CaseConversationServiceInterface {
 			return ['ok' => false, 'reason' => self::REASON_NO_CASE];
 		}
 
-		[$conversations, $found] = $this->ended(
-			caseData: $case,
+		return $this->endOn(
+			onCase: ['caseId' => $caseId, 'case' => $case],
 			end: ['roomId' => $roomId, 'participants' => $participants, 'durationSeconds' => $durationSeconds]
 		);
+	}//end recordConversationEnd()
+
+	/**
+	 * Complete the room's conversation on the case and write it, or refuse an unknown room.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>} $onCase The case UUID and the case.
+	 * @param array<string, mixed>                              $end    The `roomId`, the `participants` and the `durationSeconds`.
+	 *
+	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
+	 */
+	private function endOn(array $onCase, array $end): array {
+		[$conversations, $found] = $this->ended(caseData: $onCase['case'], end: $end);
 
 		if ($found === null) {
 			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
 		}
 
-		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
+		$this->cases->write(caseId: $onCase['caseId'], changes: ['conversations' => $conversations]);
 
 		return ['ok' => true, 'conversation' => $found];
-	}//end recordConversationEnd()
+	}//end endOn()
 
 	/**
 	 * The case's conversations with the room's conversation completed, and that conversation.
