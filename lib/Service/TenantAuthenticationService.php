@@ -104,7 +104,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
-			return $this->matrixDecision(tenantId: $tenantId, userId: $userId, action: $action);
+			return $this->matrixDecision(tenantId: $tenantId, request: ['userId' => $userId, 'action' => $action]);
 		} catch (RefusedException $e) {
 			// A refusal already says what happened and with which status.
 			// Folding it into the fail-closed branch below is what made an
@@ -122,9 +122,8 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	/**
 	 * Decide one action from the active matrix and the user's role inside the tenant.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $userId   NC user ID.
-	 * @param string $action   Requested action.
+	 * @param string                                $tenantId Tenant UUID.
+	 * @param array{userId: string, action: string} $request  NC user ID and the requested action.
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
 	 *
@@ -132,7 +131,8 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
-	private function matrixDecision(string $tenantId, string $userId, string $action): array {
+	private function matrixDecision(string $tenantId, array $request): array {
+		['userId' => $userId, 'action' => $action] = $request;
 		$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
 		if ($matrix === null) {
 			return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
