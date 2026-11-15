@@ -117,6 +117,21 @@ class ZtcRelatedTypeLookup {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function expandRelatedCaseTypes(array $related, object $objectService, array $ztMapping, string $baseUrl): array {
+		return $this->expandedRelations(
+			related: $related,
+			lookup: ['objectService' => $objectService, 'ztMapping' => $ztMapping, 'baseUrl' => $baseUrl]
+		);
+	}//end expandRelatedCaseTypes()
+
+	/**
+	 * The relations with each uuid expanded to every zaaktype of its identifier, deduplicated by zaaktype URL.
+	 *
+	 * @param array                $related The stored relations
+	 * @param array<string, mixed> $lookup  The `objectService`, the zaaktypen mapping as `ztMapping` and the `baseUrl`
+	 *
+	 * @return array The expanded relations
+	 */
+	private function expandedRelations(array $related, array $lookup): array {
 		$seen = [];
 		$unique = [];
 		foreach ($related as $rel) {
@@ -127,7 +142,12 @@ class ZtcRelatedTypeLookup {
 
 			$urls = [$ztRef];
 			if (str_starts_with($ztRef, 'http') === false) {
-				$urls = $this->sameIdentifierUrls(objectService: $objectService, ztMapping: $ztMapping, ztRef: $ztRef, baseUrl: $baseUrl);
+				$urls = $this->sameIdentifierUrls(
+					objectService: $lookup['objectService'],
+					ztMapping: $lookup['ztMapping'],
+					ztRef: $ztRef,
+					baseUrl: $lookup['baseUrl']
+				);
 			}
 
 			foreach ($urls as $url) {
@@ -139,7 +159,7 @@ class ZtcRelatedTypeLookup {
 		}
 
 		return $unique;
-	}//end expandRelatedCaseTypes()
+	}//end expandedRelations()
 
 	/**
 	 * The informatieobjecttype URLs of a zaaktype, through its ZIOT records.
