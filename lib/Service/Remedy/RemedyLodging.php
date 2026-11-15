@@ -120,7 +120,7 @@ class RemedyLodging implements RemedyLodgingInterface {
 			]
 		);
 
-		return self::lodged(record: $record, opened: $opened, isTimely: $isTimely);
+		return self::lodged(record: $record, opened: $opened) + ['isTimely' => $isTimely];
 	}//end lodge()
 
 	/**
@@ -178,20 +178,18 @@ class RemedyLodging implements RemedyLodgingInterface {
 	/**
 	 * What lodging a remedy answers.
 	 *
-	 * @param array<string, mixed> $record   The recorded objection.
-	 * @param array<string, mixed> $opened   The opened remedy case, for its id and deadline.
-	 * @param bool                 $isTimely Whether the remedy was lodged in time.
+	 * @param array<string, mixed> $record The recorded objection.
+	 * @param array<string, mixed> $opened The opened remedy case, for its id and deadline.
 	 *
-	 * @return array{caseId: string, objectionId: string, deadline: string, isTimely: bool}
+	 * @return array{caseId: string, objectionId: string, deadline: string}
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */
-	private static function lodged(array $record, array $opened, bool $isTimely): array {
+	private static function lodged(array $record, array $opened): array {
 		return [
 			'caseId' => self::openedIdOf(opened: $opened),
 			'objectionId' => (string)($record['id'] ?? ($record['uuid'] ?? '')),
 			'deadline' => (string)($opened['plannedEndDate'] ?? ($opened['deadline'] ?? '')),
-			'isTimely' => $isTimely,
 		];
 	}//end lodged()
 
