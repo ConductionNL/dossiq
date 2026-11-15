@@ -1076,10 +1076,10 @@
     },
     {
       "file": "lib/Service/StateMachineService.php",
-      "method": "logTransition",
+      "method": "savedLog",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`logTransition()` answers `return []` when the read fails; the catch logs at error (\"StateMachineService: failed to persist transition log\"), so a failed read and an absent record are the same answer."
+      "reason": "`savedLog()`, behind `logTransition()`, answers `return []` when the read fails; the catch logs at error (\"StateMachineService: failed to persist transition log\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Status/CaseStateFieldRuleProjector.php",
