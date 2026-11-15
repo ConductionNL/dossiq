@@ -224,12 +224,10 @@ class CallbackService implements CallbackServiceInterface {
 	 */
 	public function cancel(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
-		$existing = $this->findOwned(
-			store: new CallbackStore(objectService: $objectService, register: $register, schema: $schema),
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
-		);
+		$existing = $this->found(store: new CallbackStore(objectService: $objectService, register: $register, schema: $schema), id: $id);
+		if ($isPrivileged === false && ((string)($existing['preferredAgent'] ?? '')) !== $agentId) {
+			throw new OCSBadRequestException('Callback request not found');
+		}
 
 		$existing['status'] = 'cancelled';
 		$existing['nextAttemptAt'] = null;
@@ -305,18 +303,16 @@ class CallbackService implements CallbackServiceInterface {
 	}//end resolve()
 
 	/**
-	 * Find a callback by id and enforce ownership.
+	 * Find a callback by id.
 	 *
 	 * @param CallbackStore $store Where the callbacks live.
 	 * @param string $id The callback id.
-	 * @param string $agentId The authenticated agent's user id.
-	 * @param bool $isPrivileged Whether ownership is bypassed.
 	 *
 	 * @return array<string, mixed> The callback record.
 	 *
-	 * @throws OCSBadRequestException When not found or not owned.
+	 * @throws OCSBadRequestException When not found.
 	 */
-	private function findOwned(CallbackStore $store, string $id, string $agentId, bool $isPrivileged): array {
+	private function found(CallbackStore $store, string $id): array {
 		try {
 			$found = $store->objectService->find($id, register: $store->register, schema: $store->schema);
 		} catch (\Throwable $e) {
@@ -328,12 +324,8 @@ class CallbackService implements CallbackServiceInterface {
 			throw new OCSBadRequestException('Callback request not found');
 		}
 
-		if ($isPrivileged === false && ((string)($arr['preferredAgent'] ?? '')) !== $agentId) {
-			throw new OCSBadRequestException('Callback request not found');
-		}
-
 		return $arr;
-	}//end findOwned()
+	}//end found()
 
 	/**
 	 * Normalise an ObjectService result to a plain array.
