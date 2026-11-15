@@ -803,10 +803,10 @@
     },
     {
       "file": "lib/Service/MandaatGebruikService.php",
-      "method": "getDecisionByMandaat",
+      "method": "mandateRows",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getDecisionByMandaat()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`mandateRows()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Milestone/MilestoneRepository.php",

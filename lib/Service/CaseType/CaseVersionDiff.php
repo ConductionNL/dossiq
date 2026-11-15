@@ -85,7 +85,7 @@ class CaseVersionDiff {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function between(array $case, string $sourceId, string $targetId): array {
-		return $this->diff(case: $case, versions: [$sourceId, $targetId]);
+		return $this->differences(case: $case, versions: [$sourceId, $targetId]);
 	}//end between()
 
 	/**
@@ -96,7 +96,7 @@ class CaseVersionDiff {
 	 *
 	 * @return array<string, mixed> The differences, and whether the case can land.
 	 */
-	private function diff(array $case, array $versions): array {
+	private function differences(array $case, array $versions): array {
 		[$sourceId, $targetId] = $versions;
 		$sourceStatuses = $this->statusesByName(caseTypeId: $sourceId);
 		$targetStatuses = $this->statusesByName(caseTypeId: $targetId);
@@ -128,7 +128,7 @@ class CaseVersionDiff {
 			'refusals' => $this->refusalsFor(statusName: $statusName, mapped: $mapped),
 			'canMove' => ($mapped !== []),
 		];
-	}//end diff()
+	}//end differences()
 
 	/**
 	 * The statuses of one version, keyed by their comparable name.
