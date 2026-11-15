@@ -4,7 +4,7 @@
  * OpenRegister's AuditTrailMapper, recording what it is asked to write.
  *
  * Extends the stub, so the write keeps the real signature
- * (`createAuditTrailEntry(ObjectEntity $object, string $action, array $context = [], ...)`)
+ * (`recordObjectEvent(ObjectAuditEvent $event)`)
  * and a call with a wrong argument fails here as it would live. `findAll()`
  * mirrors the real filter on `object_uuid` and on an action prefix
  * (`dossiq.bezwaar.*`), read on ConductionNL/openregister development.
@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use OCA\OpenRegister\Db\AuditTrail;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
 use OCA\OpenRegister\Db\AuditTrailMapper;
-use OCA\OpenRegister\Db\ObjectEntity;
 use RuntimeException;
 
 class RecordingAuditTrailMapper extends AuditTrailMapper {
@@ -58,31 +58,20 @@ class RecordingAuditTrailMapper extends AuditTrailMapper {
 	/**
 	 * Record one row.
 	 *
-	 * @param ObjectEntity         $object    The object the entry relates to.
-	 * @param string               $action    The action.
-	 * @param array<string, mixed> $context   The context.
-	 * @param string|null          $actorId   Explicit actor id.
-	 * @param string|null          $actorName Explicit actor name.
-	 * @param string|null          $ipAddress Explicit client address.
+	 * @param ObjectAuditEvent $event The object, action, context and actor.
 	 *
 	 * @return AuditTrail The entry.
 	 */
-	public function createAuditTrailEntry(
-		ObjectEntity $object,
-		string $action,
-		array $context = [],
-		?string $actorId = null,
-		?string $actorName = null,
-		?string $ipAddress = null,
-	): AuditTrail {
+	public function recordObjectEvent(ObjectAuditEvent $event): AuditTrail {
+		$action = $event->action;
 		if ($this->failsAll === true || in_array($action, $this->failingActions, true) === true) {
 			throw new RuntimeException('audit store refused '.$action);
 		}
 
-		$this->rows[] = ['object' => (string) $object->getUuid(), 'action' => $action, 'context' => $context, 'actor' => $actorId];
+		$this->rows[] = ['object' => (string) $event->object->getUuid(), 'action' => $action, 'context' => $event->context, 'actor' => $event->options->actor->id];
 
-		return parent::createAuditTrailEntry(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorName, ipAddress: $ipAddress);
-	}//end createAuditTrailEntry()
+		return parent::recordObjectEvent(event: $event);
+	}//end recordObjectEvent()
 
 	/**
 	 * The rows written so far, filtered the way the real mapper filters.

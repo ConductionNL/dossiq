@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Activity\CaseActivityStamp;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
@@ -80,12 +80,12 @@ class CaseLastActivityListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseActivityStamp        $stamp        Writes the date onto the case.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param CaseActivityStampInterface        $stamp        Writes the date onto the case.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly CaseActivityStamp $stamp,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseActivityStampInterface $stamp,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 
@@ -170,7 +170,7 @@ class CaseLastActivityListener implements IEventListener {
 	 * @return string The case uuid, or ''.
 	 */
 	private function caseWithoutDate(array $after): string {
-		if (trim((string)($after[CaseActivityStamp::FIELD] ?? '')) !== '') {
+		if (trim((string)($after[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return '';
 		}
 

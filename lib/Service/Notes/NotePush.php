@@ -67,7 +67,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notes;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotePushInterface;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -80,7 +81,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class NotePush {
+class NotePush implements NotePushInterface {
 
 	/**
 	 * The app-config key naming the reserved informatieobjecttype for a note.
@@ -289,7 +290,7 @@ class NotePush {
 		$eventClass = '\\' . self::DELIVERY_EVENT;
 
 		return new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			subjectRegister: '',
 			subjectSchema: '',
 			subjectId: $attempt->caseId,
@@ -386,9 +387,10 @@ class NotePush {
 	 */
 	private function unbound(): array {
 		return $this->outcome(
-			outcome: self::OUTCOME_NO_REGISTER,
-			reason: 'This case is not bound to an external register, so nothing was sent '
-				. 'and nothing is recorded.',
+			said: [
+				self::OUTCOME_NO_REGISTER,
+				'This case is not bound to an external register, so nothing was sent and nothing is recorded.',
+			],
 			caseRecord: self::RECORD_NONE,
 		);
 	}//end unbound()
@@ -428,7 +430,7 @@ class NotePush {
 	 */
 	private function answer(NoteAttempt $attempt, NoteVerdict $verdict): array {
 		if ($this->record(attempt: $attempt, verdict: $verdict) === true) {
-			return $this->outcome(outcome: $verdict->outcome, reason: $verdict->reason, caseRecord: self::RECORD_WRITTEN);
+			return $this->outcome(said: [$verdict->outcome, $verdict->reason], caseRecord: self::RECORD_WRITTEN);
 		}
 
 		$this->logger->error(
@@ -445,7 +447,7 @@ class NotePush {
 			$told = ($verdict->reason . ' ' . self::RECORD_LOST_REASON);
 		}
 
-		return $this->outcome(outcome: $verdict->outcome, reason: $told, caseRecord: self::RECORD_LOST);
+		return $this->outcome(said: [$verdict->outcome, $told], caseRecord: self::RECORD_LOST);
 	}//end answer()
 
 	/**
@@ -477,23 +479,16 @@ class NotePush {
 	/**
 	 * One outcome, in the shape every caller reads.
 	 *
-	 * @param string $outcome     The outcome code.
-	 * @param string $reason      The reason, when there is one.
-	 * @param string $receiverUrl The receiver's url, on a send.
-	 * @param string $caseRecord  Whether the case was told: written, lost or none.
+	 * @param array{0: string, 1: string} $said       The outcome code, and the reason when there is one.
+	 * @param string                      $caseRecord Whether the case was told: written, lost or none.
 	 *
 	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
 	 */
-	private function outcome(
-		string $outcome,
-		string $reason,
-		string $receiverUrl = '',
-		string $caseRecord = self::RECORD_NONE,
-	): array {
+	private function outcome(array $said, string $caseRecord): array {
 		return [
-			'outcome' => $outcome,
-			'reason' => $reason,
-			'receiverUrl' => $receiverUrl,
+			'outcome' => $said[0],
+			'reason' => $said[1],
+			'receiverUrl' => '',
 			'caseRecord' => $caseRecord,
 		];
 	}//end outcome()

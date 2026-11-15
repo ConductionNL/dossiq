@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
+use OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar
  */
 class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 

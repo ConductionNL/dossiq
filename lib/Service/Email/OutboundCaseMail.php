@@ -38,10 +38,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -93,7 +94,7 @@ class OutboundCaseMail {
 			return ['transport' => $transport, 'from' => (string)$account['email'], 'account' => $account];
 		}
 
-		$from = trim($this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''));
+		$from = trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', ''));
 		if ($from === '' || str_ends_with($from, '@example.nl') === true) {
 			throw new RefusedException(
 				rule: 'mail-sender-not-configured',
@@ -131,16 +132,66 @@ class OutboundCaseMail {
 		array $attachments = [],
 		?string $plain = null,
 	): array {
+		$mail = ['to' => $to, 'subject' => $subject, 'body' => $body, 'unsubscribe' => $unsubscribe, 'attachments' => $attachments, 'plain' => $plain];
 		if ($sender['transport'] === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
-			return $this->throughAccount(
-				account: (array)$sender['account'],
-				to: $to,
-				subject: $subject,
-				bodies: $this->transport->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain),
-				attachments: $attachments
-			);
+			return $this->viaAccount(sender: $sender, mail: $mail);
 		}
 
+		return $this->viaMailer(sender: $sender, mail: $mail);
+	}//end send()
+
+	/**
+	 * Send the mail through the sender's own mail account.
+	 *
+	 * @param array<string, mixed> $sender From senderFor(), carrying the `account`.
+	 * @param array<string, mixed> $mail   The recipient, subject, bodies, link material and attachments.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function viaAccount(array $sender, array $mail): array {
+		$bodies = $this->transport->optOut->bodies(body: $mail['body'], unsubscribe: $mail['unsubscribe'], plain: $mail['plain']);
+		return $this->throughAccount(
+			account: (array)$sender['account'],
+			message: [
+				'to' => [$mail['to']],
+				'subject' => $mail['subject'],
+				'html' => $bodies['html'],
+				'plain' => $bodies['plain'],
+				'attachments' => array_values(array_map('strval', $mail['attachments'])),
+			]
+		);
+	}//end viaAccount()
+
+	/**
+	 * Send the mail through the Nextcloud mailer, which carries no attachments.
+	 *
+	 * @param array<string, mixed> $sender From senderFor().
+	 * @param array<string, mixed> $mail   The recipient, subject, bodies, link material and attachments.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function viaMailer(array $sender, array $mail): array {
+		$this->refuseAttachments(attachments: $mail['attachments']);
+
+		$message = $this->mailerMessage(sender: $sender, to: $mail['to']);
+		$message->setSubject($mail['subject']);
+		$this->transport->optOut->dress(message: $message, body: $mail['body'], unsubscribe: $mail['unsubscribe'], plain: $mail['plain']);
+
+		$this->sendThroughMailer(message: $message);
+
+		return ['state' => OutboundState::SENT, 'outboxId' => null];
+	}//end viaMailer()
+
+	/**
+	 * Refuse attachments on the mailer path: only a Mail account reads them from the sender's files.
+	 *
+	 * @param array<int, string> $attachments Paths in the sending user's own files.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException attachments-need-mail-account.
+	 */
+	private function refuseAttachments(array $attachments): void {
 		if ($attachments !== []) {
 			throw new RefusedException(
 				rule: 'attachments-need-mail-account',
@@ -148,22 +199,43 @@ class OutboundCaseMail {
 				status: RefusedException::STATUS_UNPROCESSABLE
 			);
 		}
+	}//end refuseAttachments()
 
+	/**
+	 * A mailer message from the configured sender to one recipient.
+	 *
+	 * @param array<string, mixed> $sender From senderFor().
+	 * @param string               $to     The recipient.
+	 *
+	 * @return IMessage The message, without subject or body.
+	 */
+	private function mailerMessage(array $sender, string $to): IMessage {
 		$message = $this->mailer->createMessage();
 		$message->setFrom(
-			[(string)$sender['from'] => $this->appConfig->getValueString(Application::APP_ID, 'email_from_name', 'Dossiq')]
+			[(string)$sender['from'] => $this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_name', 'Dossiq')]
 		);
 		$message->setTo([$to]);
-		$message->setSubject($subject);
-		$this->transport->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
 
+		return $message;
+	}//end mailerMessage()
+
+	/**
+	 * Hand the message to Nextcloud's mailer; a refusing server is a refusal here, its text kept in the log.
+	 *
+	 * @param IMessage $message The message.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException mail-transport-unavailable.
+	 */
+	private function sendThroughMailer(IMessage $message): void {
 		try {
 			$this->mailer->send($message);
 		} catch (Throwable $e) {
 			// M4: the transport's text can carry the SMTP host; it stays in the log.
 			$this->logger->error(
 				'Dossiq: Nextcloud\'s mailer refused a case message',
-				['app' => Application::APP_ID, 'exception' => $e]
+				['app' => AppIdentity::APP_ID, 'exception' => $e]
 			);
 			throw new RefusedException(
 				rule: 'mail-transport-unavailable',
@@ -172,34 +244,21 @@ class OutboundCaseMail {
 				previous: $e
 			);
 		}
-
-		return ['state' => OutboundState::SENT, 'outboxId' => null];
-	}//end send()
+	}//end sendThroughMailer()
 
 	/**
 	 * Hand one message to the Mail account.
 	 *
-	 * @param array<string, mixed>               $account     The account.
-	 * @param string                             $to          The recipient.
-	 * @param string                             $subject     The subject.
-	 * @param array{html: string, plain: string} $bodies      The bodies, link included.
-	 * @param array<int, string>                 $attachments Paths in the sending user's own files.
+	 * @param array<string, mixed> $account The account.
+	 * @param array{to: list<string>, subject: string, html: string, plain: string, attachments: list<string>} $message The recipient,
+	 *        the subject, the bodies with the link included, and paths in the sending user's own files.
 	 *
 	 * @return array{state: string, outboxId: int|null} SENT, SENT_NOT_FILED or QUEUED.
 	 *
 	 * @throws RefusedException mail-account-unavailable when the mail app took nothing.
 	 */
-	private function throughAccount(array $account, string $to, string $subject, array $bodies, array $attachments): array {
-		$result = $this->gateway->sendMessage(
-			accountId: (int)($account['id'] ?? 0),
-			message: [
-				'to' => [$to],
-				'subject' => $subject,
-				'html' => $bodies['html'],
-				'plain' => $bodies['plain'],
-				'attachments' => array_values(array_map('strval', $attachments)),
-			]
-		);
+	private function throughAccount(array $account, array $message): array {
+		$result = $this->gateway->sendMessage(accountId: (int)($account['id'] ?? 0), message: $message);
 
 		if ($result['state'] === OutboundState::UNAVAILABLE) {
 			throw new RefusedException(

@@ -61,6 +61,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseRebindService
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitExecutor
  * @uses \OCA\Dossiq\Controller\Support\TranslatesRefusals
+ * @uses \OCA\Dossiq\Controller\Support\CaseCaller
  */
 class CaseSplitAndRebindContractTest extends TestCase {
 

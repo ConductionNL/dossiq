@@ -31,13 +31,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\GeneratedDocumentFilerInterface;
 use OCA\Dossiq\Service\Actions\AddressesTheCase;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
@@ -49,21 +50,10 @@ use RuntimeException;
 /**
  * Turns a generated file into an informatieobject on the case.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class GeneratedDocumentFiler {
+class GeneratedDocumentFiler implements GeneratedDocumentFilerInterface {
 	use AddressesTheCase;
-
-	/**
-	 * The metadata key that marks a request whose caller files the document itself.
-	 *
-	 * The Generate document button files the document so it can answer with
-	 * the informatieobject it made; the listener leaves such a document alone,
-	 * or the case would get it twice.
-	 *
-	 * @var string
-	 */
-	public const FILED_BY_CALLER = 'dossiqFiledByCaller';
 
 	/**
 	 * The metadata key naming the document type.
@@ -95,7 +85,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @return bool True when it names a document type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function wantsFiling(array $metadata): bool {
 		return trim((string)($metadata[self::TYPE] ?? '')) !== '';
@@ -114,7 +104,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @throws RuntimeException When the metadata names no type or the file cannot be read.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function file(string $caseId, int $fileId, string $title, string $mime, array $metadata): array {
 		$type = trim((string)($metadata[self::TYPE] ?? ''));
@@ -123,14 +113,28 @@ class GeneratedDocumentFiler {
 		}
 
 		$file = $this->readFile(fileId: $fileId);
+		$record = $this->recordOf(document: ['caseId' => $caseId, 'title' => $title, 'mime' => $mime, 'type' => $type], metadata: $metadata);
 
+		return $this->dossier->uploadDocument($caseId, $file->getName(), $file->getContent(), $record);
+	}//end file()
+
+	/**
+	 * The dossier record of a generated document.
+	 *
+	 * @param array{caseId: string, title: string, mime: string, type: string} $document The case, the title, the
+	 *                                                                           file's type and the document type.
+	 * @param array<string, mixed>                                             $metadata What the request passed through.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function recordOf(array $document, array $metadata): array {
 		$record = [
-			'title' => $title,
-			'informatieobjecttype' => $this->catalogueType(name: $type),
+			'title' => $document['title'],
+			'informatieobjecttype' => $this->catalogueType(name: $document['type']),
 			'direction' => (string)($metadata['direction'] ?? 'outgoing'),
 			'auteur' => $this->currentAuthor(),
-			'format' => $mime,
-			'recipients' => $this->recipients(caseId: $caseId, metadata: $metadata),
+			'format' => $document['mime'],
+			'recipients' => $this->recipients(caseId: $document['caseId'], metadata: $metadata),
 		];
 
 		$classification = trim((string)($metadata['vertrouwelijkheidaanduiding'] ?? ($metadata['classification'] ?? '')));
@@ -138,8 +142,8 @@ class GeneratedDocumentFiler {
 			$record['vertrouwelijkheidaanduiding'] = $classification;
 		}
 
-		return $this->dossier->uploadDocument($caseId, $file->getName(), $file->getContent(), $record);
-	}//end file()
+		return $record;
+	}//end recordOf()
 
 	/**
 	 * The catalogue id of a document type the metadata names, so every road

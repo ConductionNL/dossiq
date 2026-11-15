@@ -112,6 +112,22 @@
                 "simulatedValues": ["OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter"],
                 "simulatedMessage": "A mock adapter answers here. No template reaches Filinq. Install Filinq, or clear beschikking_template_adapter if it names the mock."
             }
+        },
+        {
+            "key": "smartdocuments",
+            "title": "SmartDocuments",
+            "description": "Rendering a decision through SmartDocuments, for a decision template whose engine is vendor:smartdocuments.",
+            "order": 130,
+            "unconfiguredMessage": "Decision templates on vendor:smartdocuments are refused until an administrator enables the SmartDocuments source in Integriq.",
+            "sourceTemplate": "smartdocuments"
+        },
+        {
+            "key": "xential",
+            "title": "Xential",
+            "description": "Rendering a decision through Xential, for a decision template whose engine is vendor:xential.",
+            "order": 140,
+            "unconfiguredMessage": "Decision templates on vendor:xential are refused until an administrator enables the Xential source in Integriq.",
+            "sourceTemplate": "xential"
         }
     ]
 }

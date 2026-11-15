@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseResultWriterTest extends TestCase {
 

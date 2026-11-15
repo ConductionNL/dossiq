@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
-use OCA\Dossiq\Service\Termijn\NoticeOfDefaultRows;
+use OCA\Dossiq\Kernel\Contracts\NoticeOfDefaultRowsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,8 +53,8 @@ class DeadlineNoticesController extends Controller {
 	 * @param IRequest                 $request     Request.
 	 * @param IUserSession             $userSession User session.
 	 * @param LoggerInterface          $logger      Logger.
-	 * @param ReportingAudience        $audience    Who may read a figure about every case.
-	 * @param NoticeOfDefaultRows|null $notices     The notices of default by case, with their penalty.
+	 * @param ReportingAudienceInterface        $audience    Who may read a figure about every case.
+	 * @param NoticeOfDefaultRowsInterface|null $notices     The notices of default by case, with their penalty.
 	 *        Nullable so an instance that never wired it answers "not available".
 	 */
 	public function __construct(
@@ -62,8 +62,8 @@ class DeadlineNoticesController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ReportingAudience $audience,
-		private readonly ?NoticeOfDefaultRows $notices = null,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly ?NoticeOfDefaultRowsInterface $notices = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

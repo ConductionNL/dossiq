@@ -49,6 +49,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\ComplaintDispositionController
  *
  * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Controller\Support\ComplaintMutationGate
  */
 class ComplaintControllerTest extends TestCase {
 

@@ -36,6 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
 /**
@@ -45,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStore {
+class CaseTypeStore implements CaseTypeStoreInterface {
 	/**
 	 * Constructor.
 	 *
@@ -115,7 +117,7 @@ class CaseTypeStore {
 			return [];
 		}
 
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: $caseTypeId);
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => $caseTypeId]);
 	}//end rowsOfType()
 
 	/**
@@ -188,7 +190,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, unordered.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsWithIdentifier(string $identifier): array {
 		$identifier = trim($identifier);
@@ -198,8 +200,7 @@ class CaseTypeStore {
 
 		return $this->search(
 			schemaKey: 'case_type_schema',
-			filterKey: 'identifier',
-			filterValue: $identifier
+			filter: ['identifier' => $identifier]
 		);
 	}//end versionsWithIdentifier()
 
@@ -230,7 +231,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {
@@ -269,7 +270,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function sharedRows(string $schemaKey): array {
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: 'IS NULL');
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => 'IS NULL']);
 	}//end sharedRows()
 
 	/**
@@ -329,13 +330,13 @@ class CaseTypeStore {
 	 * filter and would read `filter[identifier]` as the empty set, which
 	 * presents as a case type with no versions rather than as an error.
 	 *
-	 * @param string $schemaKey   The settings key naming the schema.
-	 * @param string $filterKey   The property to narrow on.
-	 * @param string $filterValue The value, or `IS NULL` for rows carrying none.
+	 * @param string                $schemaKey The settings key naming the schema.
+	 * @param array<string, string> $filter    The one property to narrow on, with its value
+	 *                                         or `IS NULL` for rows carrying none.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function search(string $schemaKey, string $filterKey, string $filterValue): array {
+	private function search(string $schemaKey, array $filter): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
@@ -346,11 +347,7 @@ class CaseTypeStore {
 
 		try {
 			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					$filterKey => $filterValue,
-					'_limit' => 200,
-				]
+				['@self' => ['register' => $register, 'schema' => $schema]] + $filter + ['_limit' => 200]
 			);
 		} catch (Throwable $e) {
 			return [];
@@ -374,15 +371,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asRow(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asRow()
 
 	/**

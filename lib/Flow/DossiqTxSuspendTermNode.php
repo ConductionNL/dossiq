@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SuspendTermHandler;
+use OCA\Dossiq\Kernel\Contracts\SuspendTermHandlerInterface;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
@@ -36,14 +36,14 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
     /**
      * Constructor.
      *
-     * @param SuspendTermHandler $handler The handler this node runs.
+     * @param SuspendTermHandlerInterface $handler The handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SuspendTermHandler $handler,
+        private readonly SuspendTermHandlerInterface $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {

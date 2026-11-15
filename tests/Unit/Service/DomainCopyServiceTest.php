@@ -229,6 +229,25 @@ class DomainCopyServiceTest extends TestCase {
 		self::assertSame(expected: 'not_found', actual: $result['reason']);
 		self::assertSame(expected: '', actual: $result['domain']);
 	}//end testCopyingADomainThatIsNotThereIsRefused()
+
+	/**
+	 * The answer keeps its shape: the whole refusal, and a copy's keys in order with its domain linked.
+	 *
+	 * @return void
+	 */
+	public function testTheAnswerKeepsItsShape(): void {
+		self::assertSame(
+			expected: ['complete' => false, 'domain' => '', 'carried' => [], 'notCarried' => [], 'reason' => 'not_found'],
+			actual: $this->service()->copy(domainId: 'dom-nowhere', name: 'Nieuw')
+		);
+
+		$this->copier->method('copy')->willReturn([]);
+		$result = $this->service()->copy(domainId: 'dom-vth', name: 'Kopie');
+		self::assertSame(expected: ['complete', 'domain', 'carried', 'notCarried', 'reason'], actual: array_keys($result));
+		self::assertSame(expected: '', actual: $result['reason']);
+		$created = $this->harness->register->row(schema: 'caseTypeGroup', uuid: $result['domain']);
+		self::assertSame(expected: ['Kopie', 'Vergunning, toezicht, handhaving', 'ODRN'], actual: [$created['groupName'], $created['description'], $created['partner']]);
+	}//end testTheAnswerKeepsItsShape()
 	/**
 	 * A template that could not be carried is named by its name as text,
 	 * though the store answers the name as a language map.

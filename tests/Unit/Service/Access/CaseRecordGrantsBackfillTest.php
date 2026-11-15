@@ -32,6 +32,7 @@ use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Notification\INotification;
 use Psr\Container\ContainerInterface;
+use OCA\OpenRegister\Service\Rbac\SpecialRightGrant;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -195,8 +196,8 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			public function __construct(private readonly CaseRecordGrantsBackfillTest $test) {
 			}
 
-			public function giveInEveryOrganisation(string $right, string $group, ?string $register = null, ?array $schemas = null): array {
-				return $this->test->recordGive(['right' => $right, 'group' => $group, 'register' => $register, 'schemas' => $schemas]);
+			public function giveInEveryOrganisation(SpecialRightGrant $grant): array {
+				return $this->test->recordGive(['right' => $grant->right, 'group' => $grant->group, 'register' => $grant->register, 'schemas' => $grant->schemas]);
 			}
 		};
 		$container = $this->createMock(ContainerInterface::class);

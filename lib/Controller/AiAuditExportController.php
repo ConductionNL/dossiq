@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  *
  * @link https://conduction.nl
  */
@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -45,7 +45,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  */
 class AiAuditExportController extends Controller {
 	/**
@@ -98,7 +98,7 @@ class AiAuditExportController extends Controller {
 	 * @param IRequest $request Incoming request
 	 * @param IUserSession $userSession Current user session
 	 * @param IGroupManager $groupManager Group manager (for RBAC check)
-	 * @param AiAuditService $auditService The AI oversight audit service (audit listing)
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service (audit listing)
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -106,7 +106,7 @@ class AiAuditExportController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly AiAuditService $auditService,
+		private readonly AiAuditServiceInterface $auditService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -122,44 +122,12 @@ class AiAuditExportController extends Controller {
 	#[NoAdminRequired]
 	public function export(): DataDownloadResponse|JSONResponse {
 		try {
-			$user = $this->userSession->getUser();
-			if ($user === null) {
-				return new JSONResponse(
-					['message' => 'Authentication required'],
-					Http::STATUS_UNAUTHORIZED,
-				);
+			$refusal = $this->exportRefusal();
+			if ($refusal !== null) {
+				return $refusal;
 			}
 
-			$uid = $user->getUID();
-			if ($this->isAllowed(uid: $uid) === false) {
-				return new JSONResponse(
-					['message' => 'Audit export requires auditor role'],
-					Http::STATUS_FORBIDDEN,
-				);
-			}
-
-			$caseId = $this->request->getParam('caseId');
-			$type = $this->request->getParam('type');
-			$format = strtolower((string)$this->request->getParam('format', 'csv'));
-
-			$entries = $this->collectEntries(
-				filters: array_filter(['caseId' => $caseId, 'type' => $type]),
-			);
-
-			if ($format === 'json') {
-				return new JSONResponse(
-					[
-						'entries' => $entries,
-						'count' => count($entries),
-					]
-				);
-			}
-
-			return new DataDownloadResponse(
-				data: $this->buildCsv(entries: $entries),
-				filename: 'ai-audit-export.csv',
-				contentType: 'text/csv',
-			);
+			return $this->exportedEntries();
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: AI audit export failed',
@@ -172,6 +140,60 @@ class AiAuditExportController extends Controller {
 			);
 		}//end try
 	}//end export()
+
+	/**
+	 * Refuse a caller without a session (401) or without the auditor role (403).
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may export.
+	 */
+	private function exportRefusal(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['message' => 'Authentication required'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
+
+		if ($this->isAllowed(uid: $user->getUID()) === false) {
+			return new JSONResponse(
+				['message' => 'Audit export requires auditor role'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+
+		return null;
+	}//end exportRefusal()
+
+	/**
+	 * The audit entries the request filters on, as JSON or as a CSV download.
+	 *
+	 * @return DataDownloadResponse|JSONResponse
+	 */
+	private function exportedEntries(): DataDownloadResponse|JSONResponse {
+		$caseId = $this->request->getParam('caseId');
+		$type = $this->request->getParam('type');
+		$format = strtolower((string)$this->request->getParam('format', 'csv'));
+
+		$entries = $this->collectEntries(
+			filters: array_filter(['caseId' => $caseId, 'type' => $type]),
+		);
+
+		if ($format === 'json') {
+			return new JSONResponse(
+				[
+					'entries' => $entries,
+					'count' => count($entries),
+				]
+			);
+		}
+
+		return new DataDownloadResponse(
+			data: $this->buildCsv(entries: $entries),
+			filename: 'ai-audit-export.csv',
+			contentType: 'text/csv',
+		);
+	}//end exportedEntries()
 
 	/**
 	 * Check whether the given user id belongs to an allowed group (or is an
@@ -248,23 +270,7 @@ class AiAuditExportController extends Controller {
 		fputcsv($handle, self::CSV_COLUMNS);
 
 		foreach ($entries as $entry) {
-			$row = [];
-			foreach (self::CSV_COLUMNS as $column) {
-				$value = ($entry[$column] ?? '');
-				if (is_array($value) === true) {
-					$value = (string)json_encode($value);
-				} elseif (is_bool($value) === true) {
-					$isTrue = ($value === true);
-					$value = '0';
-					if ($isTrue === true) {
-						$value = '1';
-					}
-				}
-
-				$row[] = (string)$value;
-			}
-
-			fputcsv($handle, $row);
+			fputcsv($handle, $this->csvRow(entry: $entry));
 		}
 
 		rewind($handle);
@@ -273,4 +279,43 @@ class AiAuditExportController extends Controller {
 
 		return $csv;
 	}//end buildCsv()
+
+	/**
+	 * One entry as its CSV cells, in column order.
+	 *
+	 * @param array<string, mixed> $entry The audit entry.
+	 *
+	 * @return array<int, string>
+	 */
+	private function csvRow(array $entry): array {
+		$row = [];
+		foreach (self::CSV_COLUMNS as $column) {
+			$row[] = $this->csvCell(value: ($entry[$column] ?? ''));
+		}
+
+		return $row;
+	}//end csvRow()
+
+	/**
+	 * One value as a CSV cell: an array as JSON, a boolean as 1 or 0.
+	 *
+	 * @param mixed $value The field's value.
+	 *
+	 * @return string
+	 */
+	private function csvCell(mixed $value): string {
+		if (is_array($value) === true) {
+			return (string)json_encode($value);
+		}
+
+		if (is_bool($value) === true && $value === true) {
+			return '1';
+		}
+
+		if (is_bool($value) === true) {
+			return '0';
+		}
+
+		return (string)$value;
+	}//end csvCell()
 }//end class

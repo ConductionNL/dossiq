@@ -61,6 +61,20 @@ final class BackfillCaseLastActivityTest extends TestCase {
 			public array $patches = [];
 
 			/**
+			 * Every search, as [query, _rbac, _multitenancy].
+			 *
+			 * @var array<int, array{0: array<string, mixed>, 1: bool, 2: bool}>
+			 */
+			public array $searches = [];
+
+			/**
+			 * Whether every search throws.
+			 *
+			 * @var bool
+			 */
+			public bool $unreadable = false;
+
+			/**
 			 * @param array<string, array<string, mixed>> $rows   Cases by id.
 			 * @param array<int, string>                  $refuse Case ids whose write fails.
 			 */
@@ -84,6 +98,11 @@ final class BackfillCaseLastActivityTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function searchObjects(array $query, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->searches[] = [$query, $_rbac, $_multitenancy];
+				if ($this->unreadable === true) {
+					throw new RuntimeException('store down');
+				}
+
 				return array_slice(array_values($this->rows), (int)($query['_offset'] ?? 0), (int)($query['_limit'] ?? 100));
 			}
 
@@ -235,4 +254,68 @@ final class BackfillCaseLastActivityTest extends TestCase {
 		$this->runOver(store: $store);
 		$this->assertCount(expectedCount: 1, haystack: $store->patches);
 	}//end testAFailedCaseIsTriedAgainNextTime()
+
+	/**
+	 * Cases are read unscoped, page by page, past a full first page.
+	 *
+	 * @return void
+	 */
+	public function testEveryPageIsReadUnscoped(): void {
+		$cases = [];
+		for ($i = 0; $i < 201; $i++) {
+			$cases['c'.$i] = ['id' => 'c'.$i, '@self' => ['id' => 'c'.$i, 'created' => '2026-08-15T09:00:00+00:00']];
+		}
+
+		$store = $this->store(cases: $cases);
+		$lines = $this->runOver(store: $store);
+
+		$this->assertSame(expected: ['lastActivityAt backfill: 201 dated, 0 failed, 0 already dated.'], actual: $lines);
+		$this->assertCount(expectedCount: 2, haystack: $store->searches);
+		foreach ($store->searches as $index => [$query, $rbac, $multitenancy]) {
+			$this->assertSame(expected: 200, actual: $query['_limit']);
+			$this->assertSame(expected: $index * 200, actual: $query['_offset']);
+			$this->assertFalse($rbac);
+			$this->assertFalse($multitenancy);
+		}
+	}//end testEveryPageIsReadUnscoped()
+
+	/**
+	 * Cases that cannot be read skip the step and leave it open for the next upgrade.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableCasesSkipTheStepAndKeepItOpen(): void {
+		$store = $this->store(cases: ['c-bare' => ['id' => 'c-bare', '@self' => ['id' => 'c-bare', 'created' => '2026-08-15T09:00:00+00:00']]]);
+		$store->unreadable = true;
+
+		$this->assertSame(
+			expected: ['lastActivityAt backfill: the cases could not be read, skipped.'],
+			actual: $this->runOver(store: $store)
+		);
+
+		$store->unreadable = false;
+		$this->runOver(store: $store);
+		$this->assertCount(expectedCount: 1, haystack: $store->patches);
+	}//end testUnreadableCasesSkipTheStepAndKeepItOpen()
+
+	/**
+	 * Without OpenRegister the step says so and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterTheStepIsSkipped(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->expects($this->once())->method('info')
+			->with('lastActivityAt backfill: OpenRegister or the case schema is not available, skipped.');
+
+		$step = new BackfillCaseLastActivity(
+			settingsService: $settings,
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			dates: $this->caseDatesFrozenAt(instant: '2026-10-29T12:00:00+00:00', zone: 'UTC'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+		$step->run($output);
+	}//end testWithoutOpenRegisterTheStepIsSkipped()
 }//end class

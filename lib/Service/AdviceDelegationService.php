@@ -38,12 +38,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceDelegationServiceInterface;
+
 /**
  * Raises and consumes decidesk `advice` Decisions.
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
-class AdviceDelegationService {
+class AdviceDelegationService implements AdviceDelegationServiceInterface {
 	/**
 	 * Constructor.
 	 *

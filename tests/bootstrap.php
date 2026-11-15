@@ -693,6 +693,13 @@ if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === 
 	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
 }
 
+// Filinq's anonymise options (redaction-four-eyes-setting): the redaction
+// client passes the acting user, the output format and whether the run is a
+// Woo case through them.
+if (class_exists('\\OCA\\Filinq\\Service\\AnonymizeOptions') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Service/AnonymizeOptions.php';
+}
+
 foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
 	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
 		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
@@ -746,6 +753,11 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
 }
 
+// identity-survives-a-move: a move out of the register is a deleting event to a guard.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectLeavingEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectLeavingEventStub.php';
+}
+
 // termijnbewaking-op-engine-timers: the business-timer surface the termijn
 // mapping arms and the fired-listener consumes. The event stub mirrors the
 // REAL engine constructor signature — a stub that agrees with the caller
@@ -753,6 +765,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
 	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
 }
+
+include_once __DIR__ . '/Stubs/Service/Flow/Timer/TimerFiringStubs.php';
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';

@@ -44,6 +44,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
  * @uses \OCA\Dossiq\Service\CaseEmailService
  * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
  */
 class FlowEmailSentListenerTest extends TestCase {
 

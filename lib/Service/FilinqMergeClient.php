@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\FilinqMergeClientInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -37,7 +38,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
  */
-class FilinqMergeClient {
+class FilinqMergeClient implements FilinqMergeClientInterface {
 
 	/**
 	 * Filinq's merge service, below its app namespace root.

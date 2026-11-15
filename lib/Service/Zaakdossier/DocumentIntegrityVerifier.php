@@ -33,7 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentIntegrityVerifierInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
  */
-class DocumentIntegrityVerifier {
+class DocumentIntegrityVerifier implements DocumentIntegrityVerifierInterface {
 
 	use SearchesObjects;
 
@@ -83,31 +84,14 @@ class DocumentIntegrityVerifier {
 	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
 	 */
 	public function verifyNext(int $batch = 200): int {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->documentStore();
+		if ($store === null) {
 			return 0;
 		}
 
-		$offset = $this->appConfig->getValueInt(Application::APP_ID, self::CURSOR_KEY, 0);
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => $batch, '_offset' => $offset],
-		);
-
-		$next = ($offset + count($rows));
-		if (count($rows) < $batch) {
-			$next = 0;
-		}
-
-		$this->appConfig->setValueInt(Application::APP_ID, self::CURSOR_KEY, $next);
-
 		$checked = 0;
-		foreach ($rows as $row) {
-			if ($this->verifyOne(objectService: $objectService, register: $register, schema: $schema, row: $row) === true) {
+		foreach ($this->nextBatch(store: $store, batch: $batch) as $row) {
+			if ($this->verifyOne(store: $store, row: $row) === true) {
 				$checked++;
 			}
 		}
@@ -116,52 +100,131 @@ class DocumentIntegrityVerifier {
 	}//end verifyNext()
 
 	/**
+	 * The object service, register and document schema, null when any is missing.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function documentStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end documentStore()
+
+	/**
+	 * The next batch of documents from the cursor, moving the cursor on, or back to the start after the last.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The document store.
+	 * @param int                                                             $batch How many documents to read.
+	 *
+	 * @return array<int, array<string, mixed>> The documents.
+	 */
+	private function nextBatch(array $store, int $batch): array {
+		$offset = $this->appConfig->getValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, 0);
+		$rows   = $this->searchObjectsAsArraysUnscoped(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: ['_limit' => $batch, '_offset' => $offset],
+		);
+
+		$next = ($offset + count($rows));
+		if (count($rows) < $batch) {
+			$next = 0;
+		}
+
+		$this->appConfig->setValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, $next);
+
+		return $rows;
+	}//end nextBatch()
+
+	/**
 	 * Check one document, or give one whose file was never hashed its first hash.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The document schema.
-	 * @param array<string, mixed> $row           The document.
+	 * @param array{objectService: object, register: string, schema: string} $store The document store.
+	 * @param array<string, mixed>                                            $row   The document.
 	 *
 	 * @return bool Whether the document was checked.
 	 *
-	 * @spec openspec/changes/a-document-without-a-checksum-gets-one/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
 	 */
-	private function verifyOne(object $objectService, string $register, string $schema, array $row): bool {
-		$integrity = $row['integrity'] ?? null;
-		$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
-		if ($id === '') {
+	private function verifyOne(array $store, array $row): bool {
+		$check = $this->checkOf(row: $row);
+		if ($check === null) {
 			return false;
 		}
 
-		if (is_array($integrity) === false || (string)($integrity['value'] ?? '') === '') {
-			$integrity = $this->firstHashOf(fileId: (int)($row['fileId'] ?? 0));
-			if ($integrity === []) {
-				return false;
-			}
-		}
-
-		$status = $this->statusOf(stored: (string)$integrity['value'], fileId: (int)($row['fileId'] ?? 0));
+		$check['integrity']['status'] = $this->statusOf(stored: (string)$check['integrity']['value'], fileId: (int)($row['fileId'] ?? 0));
 		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $id,
-				changes: [
-					'integrity' => [
-						...$integrity,
-						'status' => $status,
-						'checkedAt' => (new DateTimeImmutable())->format(format: 'Y-m-d\TH:i:s'),
-					],
-				],
-			);
+			$this->recordCheck(store: $store, check: $check);
 		} catch (Throwable) {
 			return false;
 		}
 
 		return true;
 	}//end verifyOne()
+
+	/**
+	 * The document's id and the integrity to check it against, null when it has no id or nothing to check.
+	 *
+	 * The stored integrity, or its file's first hash when it never had one.
+	 *
+	 * @param array<string, mixed> $row The document.
+	 *
+	 * @return array{id: string, integrity: array<string, mixed>}|null The check.
+	 */
+	private function checkOf(array $row): ?array {
+		$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+		if ($id === '') {
+			return null;
+		}
+
+		$integrity = $this->integrityOf(row: $row);
+		if ($integrity === []) {
+			return null;
+		}
+
+		return ['id' => $id, 'integrity' => $integrity];
+	}//end checkOf()
+
+	/**
+	 * The document's stored integrity, or its file's first hash when it never had one; [] when neither.
+	 *
+	 * @param array<string, mixed> $row The document.
+	 *
+	 * @return array<string, mixed> The integrity to check against.
+	 */
+	private function integrityOf(array $row): array {
+		$integrity = ($row['integrity'] ?? null);
+		if (is_array($integrity) === true && (string)($integrity['value'] ?? '') !== '') {
+			return $integrity;
+		}
+
+		return $this->firstHashOf(fileId: (int)($row['fileId'] ?? 0));
+	}//end integrityOf()
+
+	/**
+	 * Write the outcome of a check onto the document, stamped with when it was made.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The document store.
+	 * @param array{id: string, integrity: array<string, mixed>}               $check The document's id and its checked integrity.
+	 *
+	 * @return void
+	 */
+	private function recordCheck(array $store, array $check): void {
+		$check['integrity']['checkedAt'] = (new DateTimeImmutable())->format(format: 'Y-m-d\TH:i:s');
+		$this->patchObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			id: $check['id'],
+			changes: ['integrity' => $check['integrity']],
+		);
+	}//end recordCheck()
 
 	/**
 	 * The hash of a document's file as it is now, empty when there is no file or it is too large to hash.

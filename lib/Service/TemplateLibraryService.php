@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
 use Psr\Log\LoggerInterface;
@@ -37,8 +38,10 @@ use RuntimeException;
  * Service for loading and activating zaaktype templates.
  *
  * @spec openspec/specs/template-library/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class TemplateLibraryService {
+class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
 	/**
 	 * Path to the templates directory.
@@ -79,47 +82,79 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, array<string, mixed>> List of template metadata
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function listTemplates(): array {
 		$templates = [];
 
 		foreach ($this->templateFiles() as $file) {
-			$content = file_get_contents($file);
-			if ($content === false) {
+			$template = $this->templateMetadata(file: $file);
+			if ($template === null) {
 				continue;
 			}
 
-			$data = json_decode($content, true);
-			if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-				$this->logger->warning(
-					'Invalid template file: ' . basename($file),
-					['app' => Application::APP_ID]
-				);
-				continue;
-			}
-
-			$templates[] = [
-				'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
-				'title' => $data['title'] ?? '',
-				'description' => $data['description'] ?? '',
-				'category' => $data['category'] ?? 'general',
-				'version' => $data['version'] ?? '1.0.0',
-				'file' => basename($file),
-				'fills' => $this->fillsOf(data: $data),
-				'notes' => $this->notesOf(data: $data),
-			];
+			$templates[] = $template;
 		}//end foreach
 
 		return $templates;
 	}//end listTemplates()
 
 	/**
+	 * One template file's metadata, or null when it cannot be read or is not valid JSON.
+	 *
+	 * @param string $file The template file path.
+	 *
+	 * @return array<string, mixed>|null The template metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateMetadata(string $file): ?array {
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return null;
+		}
+
+		$data = json_decode($content, true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+			$this->logger->warning(
+				'Invalid template file: ' . basename($file),
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		return $this->metadataOf(data: $data, file: $file);
+	}//end templateMetadata()
+
+	/**
+	 * The metadata the library lists for one template.
+	 *
+	 * @param array<string, mixed> $data The decoded template.
+	 * @param string               $file The template file path.
+	 *
+	 * @return array<string, mixed> The template metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function metadataOf(array $data, string $file): array {
+		return [
+			'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
+			'title' => $data['title'] ?? '',
+			'description' => $data['description'] ?? '',
+			'category' => $data['category'] ?? 'general',
+			'version' => $data['version'] ?? '1.0.0',
+			'file' => basename($file),
+			'fills' => $this->fillsOf(data: $data),
+			'notes' => $this->notesOf(data: $data),
+		];
+	}//end metadataOf()
+
+	/**
 	 * The template JSON files in the templates directory.
 	 *
 	 * @return array<int, string> File paths, or an empty list when the directory is missing or unreadable.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function templateFiles(): array {
 		if (is_dir($this->templatesDir) === false) {
@@ -158,7 +193,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, string> The notes, blanks and non-strings left out.
 	 *
-	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
+	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
 	 */
 	private function notesOf(array $data): array {
 		if (isset($data['notes']) === false || is_array($data['notes']) === false) {
@@ -182,7 +217,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<string, mixed>|null The full template data or null if not found
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadTemplate(string $templateId): ?array {
 		foreach ($this->templateFiles() as $file) {
@@ -224,7 +259,7 @@ class TemplateLibraryService {
 	 *
 	 * @throws \RuntimeException If template not found or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function activateTemplate(string $templateId): array {
 		$template = $this->caseTypeTemplate(templateId: $templateId);
@@ -239,17 +274,7 @@ class TemplateLibraryService {
 			throw new RuntimeException('Dossiq register not configured');
 		}
 
-		// Create the case type.
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		// No `?? []`: the refusal above already proved this is an array, so
-		// the coalesce was dead and phpstan said so.
-		$caseTypeData = $template['caseType'];
-		$caseType = $objectService->saveObject(
-			object: $caseTypeData,
-			register: $register,
-			schema: $caseTypeSchema,
-		);
-		$caseTypeId = $caseType->getUuid();
+		$caseTypeId = $this->createCaseType(template: $template, store: [$objectService, $register]);
 
 		$created = $this->createTemplateEntities(
 			activation: new TemplateActivation(objectService: $objectService, register: $register, caseTypeId: $caseTypeId),
@@ -260,11 +285,37 @@ class TemplateLibraryService {
 
 		$this->logger->info(
 			'Template activated: ' . $templateId . ' -> caseType ' . $caseTypeId,
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		return $result;
 	}//end activateTemplate()
+
+	/**
+	 * Create the template's case type and answer its id.
+	 *
+	 * @param array<string, mixed>        $template The template, with a case type.
+	 * @param array{0: object, 1: string} $store    OpenRegister's ObjectService and the register.
+	 *
+	 * @return string The new case type's id.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function createCaseType(array $template, array $store): string {
+		[$objectService, $register] = $store;
+		// Create the case type.
+		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+		// No `?? []`: the refusal above already proved this is an array, so
+		// the coalesce was dead and phpstan said so.
+		$caseTypeData = $template['caseType'];
+		$caseType = $objectService->saveObject(
+			object: $caseTypeData,
+			register: $register,
+			schema: $caseTypeSchema,
+		);
+
+		return $caseType->getUuid();
+	}//end createCaseType()
 
 	/**
 	 * The template to activate, refused when it is missing or describes no case type.
@@ -390,7 +441,7 @@ class TemplateLibraryService {
 	 *
 	 * @return string The workflow uuid, or the empty string when the template declares none.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function createWorkflowTemplate(TemplateActivation $activation, array $template): string {
 		$workflow = ($template['workflowTemplate'] ?? null);
@@ -452,7 +503,7 @@ class TemplateLibraryService {
 			$this->logger->warning(
 				'Template transition names a status the template does not declare, dropped: '
 				. (string)($transition['label'] ?? ''),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

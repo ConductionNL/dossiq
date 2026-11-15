@@ -23,7 +23,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Integration\CaseLeafProvider
+ * @covers \OCA\Dossiq\Integration\CaseLeafReader
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Integration\CaseLeafRegister
  */
 class CaseLeafProviderTest extends TestCase {
 
@@ -246,4 +248,79 @@ class CaseLeafProviderTest extends TestCase {
 
 		self::assertSame(expected: 'In behandeling', actual: $answer['cases'][0]['statusName']);
 	}//end testFallsBackToThePublicLabelForAnEmptyStatusName()
+
+	/**
+	 * The parties, then each party's cases, then the case types and the
+	 * statuses are read, each once and in that order.
+	 *
+	 * @return void
+	 */
+	public function testReadsPartiesThenCasesThenTheirTypesAndStatuses(): void {
+		$this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7');
+
+		self::assertSame(
+			[
+				['brpPerson', ['masterEntityRef' => 'master-7', '_limit' => CaseLeafProvider::MAX_ROWS]],
+				['kvkCompany', ['masterEntityRef' => 'master-7', '_limit' => CaseLeafProvider::MAX_ROWS]],
+				['case', ['requester' => 'org-1', '_limit' => CaseLeafProvider::MAX_ROWS]],
+				['caseType', ['_ids' => ['t-melding', 't-subsidie'], '_limit' => CaseLeafProvider::MAX_ROWS]],
+				['statusType', ['_ids' => ['s-done', 's-besluit'], '_limit' => CaseLeafProvider::MAX_ROWS]],
+			],
+			$this->objects->reads
+		);
+	}//end testReadsPartiesThenCasesThenTheirTypesAndStatuses()
+
+	/**
+	 * Without a register or an object service the surface is not configured.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredSurfaceAnswers503(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$leaf = new CaseLeafProvider(
+			settingsService: $settings,
+			userManager: $this->createMock(IUserManager::class),
+			urlGenerator: $this->createMock(IURLGenerator::class),
+			logger: $this->createMock(LoggerInterface::class)
+		);
+
+		self::assertSame(
+			['status' => 503, 'error' => 'The case surface is not configured.'],
+			$leaf->byMasterEntity(ref: 'master-7')
+		);
+		self::assertSame(
+			['status' => 400, 'error' => 'Unknown case status filter.'],
+			$leaf->byMasterEntity(ref: 'master-7', status: 'pending')
+		);
+		self::assertSame(['status' => 200, 'cases' => []], $leaf->byMasterEntity(ref: ''));
+	}//end testAnUnconfiguredSurfaceAnswers503()
+	/**
+	 * Open cases sort by deadline, earliest first, and a case without a
+	 * deadline sorts after every dated one.
+	 *
+	 * @return void
+	 */
+	public function testOpenCasesSortByDeadlineWithUndatedLast(): void {
+		$rows = [
+			'brpPerson' => [['id' => 'p-1', 'masterEntityRef' => 'master-9']],
+			'kvkCompany' => [],
+			'case' => [
+				['id' => 'c-undated', 'requester' => 'p-1', 'isFinalStatus' => false],
+				['id' => 'c-late', 'requester' => 'p-1', 'isFinalStatus' => false, 'deadline' => '2026-12-01'],
+				['id' => 'c-early', 'requester' => 'p-1', 'isFinalStatus' => false, 'deadline' => '2026-03-15'],
+			],
+			'caseType' => [],
+			'statusType' => [],
+		];
+
+		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-9', status: 'open');
+
+		self::assertSame(expected: 200, actual: $answer['status']);
+		self::assertSame(
+			expected: ['c-early', 'c-late', 'c-undated'],
+			actual: array_column(array: $answer['cases'], column_key: 'id')
+		);
+	}//end testOpenCasesSortByDeadlineWithUndatedLast()
 }//end class

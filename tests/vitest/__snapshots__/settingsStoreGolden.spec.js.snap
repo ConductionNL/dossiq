@@ -1,0 +1,216 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`settings store > fetches and saves as before 1`] = `
+{
+  "logged": [
+    [
+      "Error fetching Dossiq settings:",
+      "Failed to fetch settings: Forbidden",
+    ],
+    [
+      "Error fetching Dossiq settings:",
+      "offline",
+    ],
+    [
+      "Error saving Dossiq settings:",
+      "Failed to save settings: Bad Request",
+    ],
+  ],
+  "outcomes": [
+    {
+      "action": "fetch",
+      "answer": {
+        "a": 1,
+      },
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": {
+          "a": 1,
+        },
+        "error": null,
+        "initialized": true,
+        "isAdmin": true,
+        "loading": false,
+        "openRegisters": true,
+      },
+    },
+    {
+      "action": "fetch",
+      "answer": {
+        "b": 2,
+      },
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": {
+          "b": 2,
+        },
+        "error": null,
+        "initialized": true,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+    {
+      "action": "fetch",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": null,
+        "error": "Failed to fetch settings: Forbidden",
+        "initialized": false,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+    {
+      "action": "fetch",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": null,
+        "error": "offline",
+        "initialized": false,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+    {
+      "action": "save",
+      "answer": {
+        "c": 3,
+      },
+      "asked": [
+        {
+          "init": {
+            "body": "{"register":"dossiq"}",
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": {
+          "c": 3,
+        },
+        "error": null,
+        "initialized": false,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+    {
+      "action": "save",
+      "answer": {
+        "d": 4,
+      },
+      "asked": [
+        {
+          "init": {
+            "body": "{"register":"dossiq"}",
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": {
+          "d": 4,
+        },
+        "error": null,
+        "initialized": false,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+    {
+      "action": "save",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "body": "{"register":"dossiq"}",
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/settings",
+        },
+      ],
+      "state": {
+        "config": null,
+        "error": "Failed to save settings: Bad Request",
+        "initialized": false,
+        "isAdmin": false,
+        "loading": false,
+        "openRegisters": false,
+      },
+    },
+  ],
+}
+`;

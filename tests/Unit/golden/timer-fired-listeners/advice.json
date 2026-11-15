@@ -1,0 +1,41 @@
+{
+    "plain event": [],
+    "acted on": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "another app": [],
+    "another source": [],
+    "no source": [],
+    "a warning rung": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "no rung": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "no account": [
+        {
+            "runAsWhenNobodyIsSignedIn": "unavailable"
+        }
+    ],
+    "a failing operation": [
+        {
+            "runAsWhenNobodyIsSignedIn": "failed"
+        },
+        {
+            "error": "Dossiq advice: timer fire handling failed",
+            "context": {
+                "advice": "adv-1",
+                "rung": "slaBreached:0",
+                "error": "store down"
+            }
+        }
+    ],
+    "without adviceId": [],
+    "an empty adviceId": []
+}

@@ -26,27 +26,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\OutboundStateInterface;
+
 /**
  * The four answers a send through a mail account can give.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
-final class OutboundState {
-
-	/**
-	 * Sent, and the copy is in the account's sent folder.
-	 */
-	public const SENT = 'sent';
+final class OutboundState implements OutboundStateInterface {
 
 	/**
 	 * Sent, but the copy could not be filed (no sent folder, or the IMAP write failed).
 	 */
 	public const SENT_NOT_FILED = 'sent-not-filed';
-
-	/**
-	 * Taken into the mail app's outbox but not sent yet; the mail app retries it.
-	 */
-	public const QUEUED = 'queued';
 
 	/**
 	 * Not taken at all: the mail app or the account could not be reached.

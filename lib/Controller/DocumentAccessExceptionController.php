@@ -26,9 +26,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionWriter;
-use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentCaseWriteGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -54,9 +54,9 @@ class DocumentAccessExceptionController extends Controller {
 	 * @param string                        $appName     The app name.
 	 * @param IRequest                      $request     The request.
 	 * @param IUserSession                  $userSession The caller.
-	 * @param DocumentCaseWriteGuard        $caseWrites  The change right on every case of the document.
-	 * @param InformatieobjectReader        $reader      The read rule on the document.
-	 * @param DocumentAccessExceptionWriter $writer      Writes the exception and restricts the file.
+	 * @param DocumentCaseWriteGuardInterface        $caseWrites  The change right on every case of the document.
+	 * @param InformatieobjectReaderInterface        $reader      The read rule on the document.
+	 * @param DocumentAccessExceptionWriterInterface $writer      Writes the exception and restricts the file.
 	 *
 	 * @return void
 	 */
@@ -64,9 +64,9 @@ class DocumentAccessExceptionController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly DocumentCaseWriteGuard $caseWrites,
-		private readonly InformatieobjectReader $reader,
-		private readonly DocumentAccessExceptionWriter $writer,
+		private readonly DocumentCaseWriteGuardInterface $caseWrites,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DocumentAccessExceptionWriterInterface $writer,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -89,26 +89,14 @@ class DocumentAccessExceptionController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$refusal = $this->ensureMayChange(user: $user, documentId: $infoObjectId);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$record = $this->reader->loadReadable(user: $user, infoObjectId: $infoObjectId);
+		$record = $this->changeableRecord(user: $user, infoObjectId: $infoObjectId);
 		if ($record instanceof JSONResponse) {
 			return $record;
 		}
 
-		try {
-			$exception = $this->writer->validated(
-				input: [
-					'users' => $this->request->getParam('users', []),
-					'groups' => $this->request->getParam('groups', []),
-					'reason' => $this->request->getParam('reason', ''),
-				]
-			);
-		} catch (InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		$exception = $this->requestedException();
+		if ($exception instanceof JSONResponse) {
+			return $exception;
 		}
 
 		try {
@@ -141,12 +129,7 @@ class DocumentAccessExceptionController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$refusal = $this->ensureMayChange(user: $user, documentId: $infoObjectId);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$record = $this->reader->loadReadable(user: $user, infoObjectId: $infoObjectId);
+		$record = $this->changeableRecord(user: $user, infoObjectId: $infoObjectId);
 		if ($record instanceof JSONResponse) {
 			return $record;
 		}
@@ -166,6 +149,49 @@ class DocumentAccessExceptionController extends Controller {
 
 		return new JSONResponse(['removed' => $removed]);
 	}//end destroy()
+
+	/**
+	 * The document's record, or the refusal when the caller may not change it.
+	 *
+	 * The case check runs first, so a caller who may not change a case of the
+	 * document learns nothing about the document itself.
+	 *
+	 * @param IUser  $user         The caller.
+	 * @param string $infoObjectId The informatieobject id.
+	 *
+	 * @return array<string, mixed>|JSONResponse The record, or a 403/404/503 refusal.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-only-a-caller-who-may-change-every-case-of-the-document-sets-the-exception
+	 */
+	private function changeableRecord(IUser $user, string $infoObjectId): array|JSONResponse {
+		$refusal = $this->ensureMayChange(user: $user, documentId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->reader->loadReadable(user: $user, infoObjectId: $infoObjectId);
+	}//end changeableRecord()
+
+	/**
+	 * The exception the request asks for, validated, or the 400 refusal.
+	 *
+	 * @return array{users: list<string>, groups: list<string>, reason: string}|JSONResponse
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-only-a-caller-who-may-change-every-case-of-the-document-sets-the-exception
+	 */
+	private function requestedException(): array|JSONResponse {
+		try {
+			return $this->writer->validated(
+				input: [
+					'users' => $this->request->getParam('users', []),
+					'groups' => $this->request->getParam('groups', []),
+					'reason' => $this->request->getParam('reason', ''),
+				]
+			);
+		} catch (InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end requestedException()
 
 	/**
 	 * The refusal when the caller may not change a case of the document, else null.

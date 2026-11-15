@@ -84,32 +84,87 @@ class QueueFigures {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function fold(array $openCases, DateTimeImmutable $today, array $typeTitles): array {
-		$todayText = $today->format('Y-m-d');
-		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
-		$figures = [
-			'queueCount' => 0,
-			'queueNewToday' => 0,
-			'queueDueSoon' => 0,
-			'queueOldestDays' => 0,
-			'queueOldestType' => '',
-			'queueOldestDueDays' => null,
-		];
-		$oldestStart = null;
-		$byType = [];
-
+		$run = new QueueFoldRun(today: $today, typeTitles: $typeTitles);
+		$run->weekEnd = $today->modify('+7 days')->format('Y-m-d');
 		foreach ($openCases as $case) {
-			$unassigned = ((string)($case['assignee'] ?? '') === '');
-			$byType = $this->tallyType(byType: $byType, type: (string)($case['caseType'] ?? ''), unassigned: $unassigned);
-			if ($unassigned === true) {
-				$figures = $this->addWaiting(figures: $figures, case: $case, today: $todayText, weekEnd: $weekEnd);
-				$start = substr((string)($case['startDate'] ?? ''), 0, 10);
-				if ($start !== '' && $start <= $todayText && ($oldestStart === null || $start < $oldestStart)) {
-					$oldestStart = $start;
-					$figures = $this->noteOldest(figures: $figures, case: $case, today: $today, typeTitles: $typeTitles);
-				}
-			}
+			$this->foldCase(run: $run, openCase: $case);
 		}
 
+		return $run->figures + ['queueByType' => self::typeRows(run: $run)];
+	}//end fold()
+
+	/**
+	 * Fold one open case: count it under its type, and when it has no handler, as waiting.
+	 *
+	 * @param QueueFoldRun $run  The fold.
+	 * @param array         $openCase The case.
+	 *
+	 * @return void
+	 */
+	private function foldCase(QueueFoldRun $run, array $openCase): void {
+		$this->tallyType(run: $run, openCase: $openCase);
+		if (self::isUnassigned(openCase: $openCase) === false) {
+			return;
+		}
+
+		$this->addWaiting(run: $run, openCase: $openCase);
+		$this->noteIfOldest(run: $run, openCase: $openCase);
+	}//end foldCase()
+
+	/**
+	 * Whether a case has no handler.
+	 *
+	 * @param array $openCase The case.
+	 *
+	 * @return bool True when no one is assigned.
+	 */
+	private static function isUnassigned(array $openCase): bool {
+		return ((string)($openCase['assignee'] ?? '') === '');
+	}//end isUnassigned()
+
+	/**
+	 * Name a waiting case the oldest when it started before the oldest so far.
+	 *
+	 * @param QueueFoldRun $run  The fold.
+	 * @param array         $openCase The waiting case.
+	 *
+	 * @return void
+	 */
+	private function noteIfOldest(QueueFoldRun $run, array $openCase): void {
+		$start = substr((string)($openCase['startDate'] ?? ''), 0, 10);
+		if (self::isOlderStart(run: $run, start: $start) === false) {
+			return;
+		}
+
+		$run->oldestStart = $start;
+		$this->noteOldest(run: $run, openCase: $openCase);
+	}//end noteIfOldest()
+
+	/**
+	 * Whether a waiting case started on a readable day, no later than today, before the oldest so far.
+	 *
+	 * @param QueueFoldRun $run   The fold.
+	 * @param string       $start The case's start day, Y-m-d.
+	 *
+	 * @return bool True when it is the new oldest.
+	 */
+	private static function isOlderStart(QueueFoldRun $run, string $start): bool {
+		if ($start === '' || $start > $run->todayText) {
+			return false;
+		}
+
+		return ($run->oldestStart === null || $start < $run->oldestStart);
+	}//end isOlderStart()
+
+	/**
+	 * The by-type rows, the type with the most open cases first.
+	 *
+	 * @param QueueFoldRun $run The finished fold.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private static function typeRows(QueueFoldRun $run): array {
+		$byType = $run->byType;
 		uasort(
 			$byType,
 			static function (array $a, array $b): int {
@@ -120,54 +175,48 @@ class QueueFigures {
 		$rows = [];
 		foreach ($byType as $type => $counts) {
 			$type = (string)$type;
-			$rows[] = ['caseType' => $type, 'title' => ($typeTitles[$type] ?? $type)] + $counts;
+			$rows[] = ['caseType' => $type, 'title' => ($run->typeTitles[$type] ?? $type)] + $counts;
 		}
 
-		return $figures + ['queueByType' => $rows];
-	}//end fold()
+		return $rows;
+	}//end typeRows()
 
 	/**
-	 * Count one open case under its type.
+	 * Count one open case under its type; a case without a type id is not counted.
 	 *
-	 * @param array<string, array{open: int, waiting: int}> $byType The counts so far.
-	 * @param string $type The case type id; an empty id is not counted.
-	 * @param bool $unassigned Whether the case has no handler.
+	 * @param QueueFoldRun $run  The fold.
+	 * @param array         $openCase The case.
 	 *
-	 * @return array<string, array{open: int, waiting: int}> The counts.
+	 * @return void
 	 */
-	private function tallyType(array $byType, string $type, bool $unassigned): array {
+	private function tallyType(QueueFoldRun $run, array $openCase): void {
+		$type = (string)($openCase['caseType'] ?? '');
 		if ($type === '') {
-			return $byType;
+			return;
 		}
 
-		$counts = ($byType[$type] ?? ['open' => 0, 'waiting' => 0]);
+		$counts = ($run->byType[$type] ?? ['open' => 0, 'waiting' => 0]);
 		$counts['open']++;
-		$counts['waiting'] += (int)$unassigned;
-		$byType[$type] = $counts;
-
-		return $byType;
+		$counts['waiting'] += (int)self::isUnassigned(openCase: $openCase);
+		$run->byType[$type] = $counts;
 	}//end tallyType()
 
 	/**
 	 * Count one case without a handler.
 	 *
-	 * @param array<string, int> $figures The figures so far.
-	 * @param array $case The case.
-	 * @param string $today Today, Y-m-d.
-	 * @param string $weekEnd Seven days from today, Y-m-d.
+	 * @param QueueFoldRun $run  The fold.
+	 * @param array         $openCase The case.
 	 *
-	 * @return array<string, int> The figures.
+	 * @return void
 	 */
-	private function addWaiting(array $figures, array $case, string $today, string $weekEnd): array {
-		$start = substr((string)($case['startDate'] ?? ''), 0, 10);
-		$deadline = substr((string)($case['deadline'] ?? ''), 0, 10);
+	private function addWaiting(QueueFoldRun $run, array $openCase): void {
+		$start = substr((string)($openCase['startDate'] ?? ''), 0, 10);
+		$deadline = substr((string)($openCase['deadline'] ?? ''), 0, 10);
 
-		$figures['queueCount']++;
-		$figures['queueNewToday'] += (int)($start === $today);
-		$figures['queueDueSoon'] += (int)($deadline !== '' && $deadline >= $today && $deadline < $weekEnd);
-		$figures['queueOldestDays'] = max($figures['queueOldestDays'], $this->daysSince(date: $start, today: $today));
-
-		return $figures;
+		$run->figures['queueCount']++;
+		$run->figures['queueNewToday'] += (int)($start === $run->todayText);
+		$run->figures['queueDueSoon'] += (int)($deadline !== '' && $deadline >= $run->todayText && $deadline < $run->weekEnd);
+		$run->figures['queueOldestDays'] = max($run->figures['queueOldestDays'], $this->daysSince(date: $start, today: $run->todayText));
 	}//end addWaiting()
 
 	/**
@@ -175,30 +224,26 @@ class QueueFigures {
 	 * deadline (negative once passed, null without a readable deadline), for
 	 * the "Waiting longest" tile's line (DqTeamwachtrij).
 	 *
-	 * @param array<string, mixed> $figures The figures so far.
-	 * @param array $case The oldest case so far.
-	 * @param DateTimeImmutable $today Today, at midnight.
-	 * @param array<string, string> $typeTitles Case type titles by id.
+	 * @param QueueFoldRun $run  The fold.
+	 * @param array         $openCase The oldest case so far.
 	 *
-	 * @return array<string, mixed> The figures.
+	 * @return void
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	private function noteOldest(array $figures, array $case, DateTimeImmutable $today, array $typeTitles): array {
-		$type = (string)($case['caseType'] ?? '');
-		$figures['queueOldestType'] = ($typeTitles[$type] ?? $type);
-		$figures['queueOldestDueDays'] = null;
+	private function noteOldest(QueueFoldRun $run, array $openCase): void {
+		$type = (string)($openCase['caseType'] ?? '');
+		$run->figures['queueOldestType'] = ($run->typeTitles[$type] ?? $type);
+		$run->figures['queueOldestDueDays'] = null;
 
-		$deadline = substr((string)($case['deadline'] ?? ''), 0, 10);
+		$deadline = substr((string)($openCase['deadline'] ?? ''), 0, 10);
 		if ($deadline !== '') {
 			try {
-				$figures['queueOldestDueDays'] = $this->dayCount->signed(from: $today, to: new DateTimeImmutable($deadline));
+				$run->figures['queueOldestDueDays'] = $this->dayCount->signed(from: $run->today, to: new DateTimeImmutable($deadline));
 			} catch (\Exception $e) {
-				$figures['queueOldestDueDays'] = null;
+				$run->figures['queueOldestDueDays'] = null;
 			}
 		}
-
-		return $figures;
 	}//end noteOldest()
 
 	/**

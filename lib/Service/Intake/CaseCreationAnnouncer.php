@@ -103,16 +103,42 @@ class CaseCreationAnnouncer {
 			return false;
 		}
 
+		$caseId = $this->caseIdOf(saved: $saved);
+
+		return $this->dispatchAsSystem(objectService: $objectService, event: $event, caseId: $caseId);
+	}//end announce()
+
+	/**
+	 * The uuid of the written case, or an empty string when it carries none.
+	 *
+	 * @param mixed $saved What the write returned.
+	 *
+	 * @return string The case uuid.
+	 *
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function caseIdOf(mixed $saved): string {
 		$caseId = '';
 		if (is_object($saved) === true && method_exists($saved, 'getUuid') === true) {
 			$caseId = (string)$saved->getUuid();
 		}
 
-		$dispatch = function () use ($event): bool {
-			$this->dispatcher->dispatchTyped($event);
+		return $caseId;
+	}//end caseIdOf()
 
-			return true;
-		};
+	/**
+	 * Dispatch the event, under the system identity when OpenRegister offers one, logging a failing listener.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService the case was written through.
+	 * @param Event  $event         The created event.
+	 * @param string $caseId        The case uuid, for the log.
+	 *
+	 * @return bool True when the event went out.
+	 *
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function dispatchAsSystem(object $objectService, Event $event, string $caseId): bool {
+		$dispatch = $this->dispatcherOf(event: $event);
 
 		try {
 			if (method_exists($objectService, 'runAsSystem') === true) {
@@ -128,7 +154,24 @@ class CaseCreationAnnouncer {
 		}
 
 		return false;
-	}//end announce()
+	}//end dispatchAsSystem()
+
+	/**
+	 * A callable that dispatches the event and answers true.
+	 *
+	 * @param Event $event The created event.
+	 *
+	 * @return callable(): bool The dispatch.
+	 *
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
+	 */
+	private function dispatcherOf(Event $event): callable {
+		return function () use ($event): bool {
+			$this->dispatcher->dispatchTyped($event);
+
+			return true;
+		};
+	}//end dispatcherOf()
 
 	/**
 	 * The created event for what the write returned, or null when it cannot be built.

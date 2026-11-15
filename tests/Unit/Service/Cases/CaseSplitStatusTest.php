@@ -61,6 +61,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseSplitStatusTest extends TestCase {
 
