@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
@@ -42,7 +41,6 @@ use OCP\IUserSession;
  * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
 class DocumentVerdictsController extends Controller {
-	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
@@ -82,7 +80,10 @@ class DocumentVerdictsController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+			return new JSONResponse(
+				['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		return new JSONResponse($this->verdicts->forCase(caseId: $id));

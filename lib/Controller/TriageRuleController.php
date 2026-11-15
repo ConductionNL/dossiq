@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -45,7 +44,6 @@ use OCP\IUserSession;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  */
 class TriageRuleController extends Controller {
-	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
@@ -223,7 +221,10 @@ class TriageRuleController extends Controller {
 		}
 
 		if ($this->hasAccess(caseId: $caseId, user: $user, mutate: $mutate) === false) {
-			return $this->noAccess();
+			return new JSONResponse(
+				['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		return null;

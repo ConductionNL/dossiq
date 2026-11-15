@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
@@ -46,7 +45,6 @@ use OCP\IUserSession;
  * @spec openspec/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
  */
 class CaseReplyDraftController extends Controller {
-	use AnswersNoCaseAccess;
 
 	/**
 	 * The longest draft kept, in characters.
@@ -156,7 +154,10 @@ class CaseReplyDraftController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return $this->noAccess();
+			return new JSONResponse(
+				['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		return $user;
