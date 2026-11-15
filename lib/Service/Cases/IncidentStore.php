@@ -43,7 +43,6 @@ use OCA\Dossiq\Kernel\Contracts\IncidentStoreInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\RecordsOrRefuses;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -56,7 +55,6 @@ use Throwable;
 class IncidentStore implements IncidentStoreInterface {
 
 	use SearchesObjects;
-	use RecordsOrRefuses;
 
 	/**
 	 * The refusal when the incident cannot be found.
@@ -464,7 +462,17 @@ class IncidentStore implements IncidentStoreInterface {
 	private function write(array $incident, ?string $uuid): array {
 		unset($incident['@self'], $incident['id'], $incident['uuid']);
 
-		return $this->storedOrRefused(record: $incident, uuid: $uuid);
+		try {
+			$saved = $this->store(record: $incident, uuid: $uuid);
+		} catch (Throwable $e) {
+			throw $this->unrecorded(previous: $e);
+		}
+
+		if ($saved === null) {
+			throw $this->unrecorded(previous: null);
+		}
+
+		return $saved;
 	}//end write()
 
 	/**

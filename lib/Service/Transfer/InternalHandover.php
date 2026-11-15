@@ -56,7 +56,6 @@ use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\DelegatesToDossierRegister;
-use OCA\Dossiq\Service\Support\RecordsOrRefuses;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -69,7 +68,6 @@ use Throwable;
 class InternalHandover {
 
 	use SearchesObjects;
-	use RecordsOrRefuses;
 	use DelegatesToDossierRegister;
 
 	/**
@@ -666,7 +664,17 @@ class InternalHandover {
 	private function saveTransfer(array $record, ?string $uuid): array {
 		unset($record['@self'], $record['announcement']);
 
-		return $this->storedOrRefused(record: $record, uuid: $uuid);
+		try {
+			$saved = $this->storeTransferRow(record: $record, uuid: $uuid);
+		} catch (Throwable $e) {
+			throw $this->unrecorded(previous: $e);
+		}
+
+		if ($saved === null) {
+			throw $this->unrecorded(previous: null);
+		}
+
+		return $saved;
 	}//end saveTransfer()
 
 	/**
@@ -677,7 +685,7 @@ class InternalHandover {
 	 *
 	 * @return array<string, mixed>|null The stored record, or null when the store answered nothing.
 	 */
-	private function store(array $record, ?string $uuid): ?array {
+	private function storeTransferRow(array $record, ?string $uuid): ?array {
 		[$objectService, $register] = $this->context();
 
 		return $this->saveObjectAsArray(
@@ -687,7 +695,7 @@ class InternalHandover {
 			object: $record,
 			uuid: $uuid,
 		);
-	}//end store()
+	}//end storeTransferRow()
 
 	/**
 	 * The refusal when a transfer record could not be stored.
