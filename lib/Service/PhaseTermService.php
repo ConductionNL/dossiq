@@ -111,16 +111,32 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return null;
 		}
 
-		$moment = ($when ?? new DateTimeImmutable());
+		return $this->clockPhase(
+			phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId],
+			moment: ($when ?? new DateTimeImmutable())
+		);
+	}//end enterPhase()
+
+	/**
+	 * Stop the other running phases and start this phase's clock, when it has days of its own.
+	 *
+	 * @param array<string, string> $phase  The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 * @param DateTimeImmutable     $moment The moment the case enters it.
+	 *
+	 * @return array<string, mixed>|null The started clock, or null when the phase has no term.
+	 */
+	private function clockPhase(array $phase, DateTimeImmutable $moment): ?array {
+		$caseId = $phase['caseId'];
+		$statusTypeId = $phase['statusTypeId'];
 		$this->stopRunningPhases(caseId: $caseId, when: $moment, except: $statusTypeId);
 
-		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
+		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $phase['caseTypeId'], statusTypeId: $statusTypeId);
 		if ($days <= 0) {
 			return null;
 		}
 
 		return $this->startPhaseClock(clock: ['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days], moment: $moment);
-	}//end enterPhase()
+	}//end clockPhase()
 
 	/**
 	 * Start a phase's clock on a case.
