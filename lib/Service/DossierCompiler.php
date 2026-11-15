@@ -117,7 +117,7 @@ class DossierCompiler {
 
 		$objectService = $this->requireObjectService();
 		$schemas = $this->dossierSchemas();
-		$case = $this->requireCase(objectService: $objectService, schemas: $schemas, caseId: $caseId);
+		$case = $this->requireCase(store: [$objectService, $schemas], caseId: $caseId);
 
 		// Build the ordered set of case UUIDs whose documents belong in
 		// the dossier: the primair besluit case(s) first, then the case
@@ -154,9 +154,10 @@ class DossierCompiler {
 	/**
 	 * The case a dossier is compiled for, or an exception when it cannot be loaded.
 	 *
-	 * @param object                                                          $objectService The OpenRegister ObjectService.
-	 * @param array{register: string, caseSchema: string, docSchema: string} $schemas       The configured ids.
-	 * @param string                                                          $caseId        The case UUID.
+	 * @param array{0: object, 1: array{register: string, caseSchema: string, docSchema: string}} $store  The OpenRegister
+	 *                                                                                                 ObjectService and
+	 *                                                                                                 the configured ids.
+	 * @param string                                                                                $caseId The case UUID.
 	 *
 	 * @return array<string, mixed> The case.
 	 *
@@ -164,7 +165,8 @@ class DossierCompiler {
 	 *
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
-	private function requireCase(object $objectService, array $schemas, string $caseId): array {
+	private function requireCase(array $store, string $caseId): array {
+		[$objectService, $schemas] = $store;
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $schemas['register'],
