@@ -265,13 +265,32 @@ trait SearchesObjects {
 		string $id,
 		array $changes,
 	): ?array {
+		return $this->patchStoredObject(
+			address: new StoredObjectAddress(objectService: $objectService, register: $register, schema: $schema, id: $id),
+			changes: $changes
+		);
+	}//end patchObjectAsArray()
+
+	/**
+	 * Write only these fields onto the stored object at the address, through patchObject() or a merged save.
+	 *
+	 * @param StoredObjectAddress  $address The object service and where the object lives.
+	 * @param array<string, mixed> $changes The fields to write, and nothing else.
+	 *
+	 * @return array<string, mixed>|null The stored object, or null if it cannot be represented as one.
+	 *
+	 * @throws RuntimeException When the object cannot be read on the fallback path,
+	 *                           or the service offers no seam that writes partially.
+	 */
+	private function patchStoredObject(StoredObjectAddress $address, array $changes): ?array {
+		$objectService = $address->objectService;
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $this->objectToArrayOrNull(
 				value: $objectService->patchObject(
-					objectId: $id,
+					objectId: $address->id,
 					data: $changes,
-					register: $register,
-					schema: $schema
+					register: $address->register,
+					schema: $address->schema
 				)
 			);
 		}
@@ -284,9 +303,9 @@ trait SearchesObjects {
 
 		$stored = $this->findObjectAsArray(
 			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
+			register: $address->register,
+			schema: $address->schema,
+			id: $address->id
 		);
 		if ($stored === null) {
 			throw new RuntimeException('object_not_found_for_partial_write');
@@ -296,12 +315,12 @@ trait SearchesObjects {
 
 		return $this->saveObjectAsArray(
 			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			register: $address->register,
+			schema: $address->schema,
 			object: array_merge($stored, $changes),
-			uuid: $id
+			uuid: $address->id
 		);
-	}//end patchObjectAsArray()
+	}//end patchStoredObject()
 
 	/**
 	 * Coerce an ObjectService write result to an array.
