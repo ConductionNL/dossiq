@@ -109,6 +109,22 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
 	 */
 	public function record(string $caseId, string $readerId, string $purpose, string $note): array {
+		return $this->recordPurpose(caseId: $caseId, visit: ['readerId' => $readerId, 'purpose' => $purpose, 'note' => $note]);
+	}//end record()
+
+	/**
+	 * Check the purpose and record the visit when the case is in a category that asks for one.
+	 *
+	 * @param string                                                 $caseId The case uuid.
+	 * @param array{readerId: string, purpose: string, note: string} $visit  `readerId` the reader's user id; `purpose` one of {@see
+	 *                                                                       self::PURPOSES}; `note` the reader's own words, for `other`.
+	 *
+	 * @return array{recorded: bool, required: bool, roleAdded?: bool} Whether a purpose was required and recorded, and whether it bound the reader to a role.
+	 *
+	 * @throws RefusedException When the purpose is invalid, the case cannot be read, or the entry cannot be written.
+	 */
+	private function recordPurpose(string $caseId, array $visit): array {
+		[$readerId, $purpose, $note] = [$visit['readerId'], $visit['purpose'], $visit['note']];
 		$note = trim($note);
 		$this->assertPurpose(purpose: $purpose, note: $note);
 
@@ -121,7 +137,7 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			visit: new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId),
 			context: ['purpose' => $purpose, 'note' => $note, 'categories' => $categories]
 		);
-	}//end record()
+	}//end recordPurpose()
 
 	/**
 	 * Write the purpose to the case's trail and bind the reader to the role it names.

@@ -154,6 +154,26 @@ class VaststellingService implements VaststellingServiceInterface {
 		float $actualCost,
 		float $totalAdvances,
 	): array {
+		return $this->settle(
+			determinationId: $determinationId,
+			amounts: ['grantedAmount' => $grantedAmount, 'actualCost' => $actualCost, 'totalAdvances' => $totalAdvances]
+		);
+	}//end finalize()
+
+	/**
+	 * Write the vaststelling at its determined amount, and answer the clawback when advances exceed it.
+	 *
+	 * @param string                                                               $determinationId The settlement id.
+	 * @param array{grantedAmount: float, actualCost: float, totalAdvances: float} $amounts         `grantedAmount` the granted amount; `actualCost`
+	 *                                                                                              the total actual costs; `totalAdvances` the
+	 *                                                                                              cumulative disbursed advances.
+	 *
+	 * @return array<string, mixed> The finalisation result with optional clawback.
+	 *
+	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 */
+	private function settle(string $determinationId, array $amounts): array {
+		[$grantedAmount, $actualCost, $totalAdvances] = [$amounts['grantedAmount'], $amounts['actualCost'], $amounts['totalAdvances']];
 		$determined = $this->computeVastgesteldBedrag(grantedAmount: $grantedAmount, actualCost: $actualCost);
 		$overpayment = $this->computeOverpayment(totalAdvances: $totalAdvances, determinedAmount: $determined);
 		$written = $this->writeDetermination(
@@ -175,7 +195,7 @@ class VaststellingService implements VaststellingServiceInterface {
 			'determination' => $written['saved'],
 			'terugvordering' => $this->clawbackFor(current: $written['current'], overpayment: $overpayment),
 		];
-	}//end finalize()
+	}//end settle()
 
 	/**
 	 * The patch that settles a vaststelling.

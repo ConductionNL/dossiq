@@ -124,6 +124,19 @@ class InspectionRunCarryOver {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
 	public function taskData(string $schema, array $object, ?array $template): array {
+		return $this->carriedTask(schema: $schema, carried: ['object' => $object, 'template' => $template]);
+	}//end taskData()
+
+	/**
+	 * The task data of one carried-over inspection object.
+	 *
+	 * @param string               $schema  The source schema slug.
+	 * @param array<string, mixed> $carried `object` the source object; `template` the template it was filled against, when found.
+	 *
+	 * @return array<string, mixed> The task fields for OpenRegister's import path.
+	 */
+	private function carriedTask(string $schema, array $carried): array {
+		[$object, $template] = [$carried['object'], $carried['template']];
 		$source = self::SOURCES[$schema];
 		$run = new InspectionCarryOverRun();
 		$run->schema = $schema;
@@ -136,7 +149,7 @@ class InspectionRunCarryOver {
 		$data = self::withOptionalFields(data: self::withOpenState(data: $data, object: $object), object: $object);
 
 		return array_merge($data, $this->performer(object: $object));
-	}//end taskData()
+	}//end carriedTask()
 
 	/**
 	 * The fields every carried-over task has.

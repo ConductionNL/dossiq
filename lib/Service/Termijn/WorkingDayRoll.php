@@ -350,6 +350,19 @@ class WorkingDayRoll {
 	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfterOrCalendarDays(DateTimeImmutable $start, int $days, string $mode): DateTimeImmutable {
+		return $this->endOrFallback(start: $start, count: ['days' => $days, 'mode' => $mode]);
+	}//end endAfterOrCalendarDays()
+
+	/**
+	 * The end the calendar counts, or the end in calendar days (logged) when it does not answer.
+	 *
+	 * @param DateTimeImmutable              $start The day the term starts.
+	 * @param array{days: int, mode: string} $count `days` how many days it runs; `mode` `calendarDays` or `workingDays`.
+	 *
+	 * @return DateTimeImmutable The end date.
+	 */
+	private function endOrFallback(DateTimeImmutable $start, array $count): DateTimeImmutable {
+		[$days, $mode] = [$count['days'], $count['mode']];
 		$computed = $this->endAfter(start: $start, days: $days, mode: $mode);
 		if ($computed !== null) {
 			return $computed;
@@ -362,7 +375,7 @@ class WorkingDayRoll {
 		);
 
 		return $start->add(new DateInterval('P' . max(0, $days) . 'D'));
-	}//end endAfterOrCalendarDays()
+	}//end endOrFallback()
 
 	/**
 	 * How many days lie between two dates, counted in one mode.

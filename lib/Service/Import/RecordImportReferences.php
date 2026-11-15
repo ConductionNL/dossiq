@@ -209,6 +209,21 @@ class RecordImportReferences {
 	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function repoint(object $objectService, array $import, array $oldValues, string $caseId): int {
+		return $this->repointAll(objectService: $objectService, repointing: ['import' => $import, 'oldValues' => $oldValues, 'caseId' => $caseId]);
+	}//end repoint()
+
+	/**
+	 * Repoint every reference of the import from the old values to the case.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $repointing    `import` the declaration; `oldValues` the moved record's id and slug; `caseId` the case.
+	 *
+	 * @return int How many references moved.
+	 *
+	 * @throws Throwable When a referencing record cannot be read or written.
+	 */
+	private function repointAll(object $objectService, array $repointing): int {
+		[$import, $oldValues, $caseId] = [$repointing['import'], $repointing['oldValues'], $repointing['caseId']];
 		$move = [
 			'objectService' => $objectService,
 			'oldValues' => array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== ''))),
@@ -221,7 +236,7 @@ class RecordImportReferences {
 		}
 
 		return $moved;
-	}//end repoint()
+	}//end repointAll()
 
 	/**
 	 * Point the values one `references` entry names at the case.

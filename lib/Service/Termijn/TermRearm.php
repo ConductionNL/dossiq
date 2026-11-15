@@ -111,6 +111,22 @@ class TermRearm {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forDefinition(string $caseId, string $caseTypeSlug, string $reason): array {
+		return $this->rearmFor(caseId: $caseId, rebinding: ['caseTypeSlug' => $caseTypeSlug, 'reason' => $reason]);
+	}//end forDefinition()
+
+	/**
+	 * Re-arm the case's running terms against the definition, or keep them when there is none.
+	 *
+	 * @param string                                      $caseId    The case whose terms are re-armed.
+	 * @param array{caseTypeSlug: string, reason: string} $rebinding `caseTypeSlug` the TARGET case type, as the slug the term definitions are keyed
+	 *                                                               by. A uuid matches no definition and the re-arm silently does nothing, so
+	 *                                                               callers holding one convert it through {@see CaseTypeSlugResolver} first;
+	 *                                                               `reason` why the case was rebound, for the trail.
+	 *
+	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
+	 */
+	private function rearmFor(string $caseId, array $rebinding): array {
+		[$caseTypeSlug, $reason] = [$rebinding['caseTypeSlug'], $rebinding['reason']];
 		$rebind  = new TermRebind(caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason);
 		$running = $this->runningOf(caseId: $caseId);
 		if ($running === []) {
@@ -124,7 +140,7 @@ class TermRearm {
 		$rearmed = $this->rearmAll(rebind: $rebind, running: $running);
 
 		return ['rearmed' => $rearmed, 'kept' => (count($running) - $rearmed), 'note' => ''];
-	}//end forDefinition()
+	}//end rearmFor()
 
 	/**
 	 * The case's running term instances.

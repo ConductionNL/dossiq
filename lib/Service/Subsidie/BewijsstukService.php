@@ -180,6 +180,22 @@ class BewijsstukService implements BewijsstukServiceInterface {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-007-bewijsstukken-management-with-bewaartermijn
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
+		return $this->createRecord(payload: $payload, evidence: ['contents' => $contents, 'regelingRetention' => $regelingRetention]);
+	}//end create()
+
+	/**
+	 * Check the evidence type, build the retained record with its hash, and store it.
+	 *
+	 * @param array<string, mixed>                                      $payload  The bewijsstuk metadata.
+	 * @param array{contents: string|null, regelingRetention: int|null} $evidence `contents` raw file contents to hash, if available;
+	 *                                                                            `regelingRetention` regeling-configured retention override.
+	 *
+	 * @return array<string, mixed> The created bewijsstuk record.
+	 *
+	 * @throws OCSBadRequestException When validation/persistence fails.
+	 */
+	private function createRecord(array $payload, array $evidence): array {
+		[$contents, $regelingRetention] = [$evidence['contents'], $evidence['regelingRetention']];
 		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$linkedIn = (string)($payload['linkedIn'] ?? '');
 		$type = (string)($payload['evidenceType'] ?? '');
@@ -193,7 +209,7 @@ class BewijsstukService implements BewijsstukServiceInterface {
 		}
 
 		return $this->saveRecord(store: $store, record: $record);
-	}//end create()
+	}//end createRecord()
 
 	/**
 	 * Refuse an evidence type the phase does not allow.
