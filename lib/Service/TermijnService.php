@@ -627,20 +627,34 @@ class TermijnService implements TermijnServiceInterface {
 			'basis' => $basis,
 			'rationale' => $rationale,
 			'daysImpact' => $daysImpact,
+			'documentLink' => $documentLink,
 		];
-		if ($documentLink !== '') {
-			$event['documentLink'] = $documentLink;
+
+		return $this->storeEvent(event: $event, extras: ['moment' => $moment, 'items' => $items, 'notice' => $notice]);
+	}//end recordEvent()
+
+	/**
+	 * Store the event row with its items and notice, and mirror it on the case.
+	 *
+	 * @param array<string, mixed> $event  The base row; `documentLink` is kept only when not empty.
+	 * @param array<string, mixed> $extras When it happened (`moment`), the `items` and the `notice`.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function storeEvent(array $event, array $extras): ?array {
+		if ($event['documentLink'] === '') {
+			unset($event['documentLink']);
 		}
 
-		$event = $this->withItems(event: $event, items: $items);
-		$event = $this->withNotice(event: $event, notice: $notice);
+		$event = $this->withItems(event: $event, items: $extras['items']);
+		$event = $this->withNotice(event: $event, notice: $extras['notice']);
 
 		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
 
-		$this->mirrorEvent(event: $event, moment: $moment);
+		$this->mirrorEvent(event: $event, moment: $extras['moment']);
 
 		return $saved;
-	}//end recordEvent()
+	}//end storeEvent()
 
 	/**
 	 * The event with the notice it carries, when there is one.
