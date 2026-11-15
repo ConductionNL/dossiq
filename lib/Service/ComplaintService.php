@@ -281,26 +281,7 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function listComplaints(array $filters = []): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$params = array_merge(['_limit' => 100, '_offset' => 0], $filters);
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $params
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'complaint_schema', filters: array_merge(['_limit' => 100, '_offset' => 0], $filters));
 	}//end listComplaints()
 
 	/**

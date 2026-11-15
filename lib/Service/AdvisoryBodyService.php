@@ -68,26 +68,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findAll(array $filters = []): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$results = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: array_merge($filters, ['_limit' => 200]),
-		);
-
-		return $results;
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'advisory_body_schema', filters: array_merge($filters, ['_limit' => 200]));
 	}//end findAll()
 
 	/**
