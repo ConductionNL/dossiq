@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Closure;
-use OCA\Dossiq\Controller\Support\UnwiredNotice;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
@@ -215,7 +214,12 @@ class WOOAssessmentController extends Controller {
 		}
 
 		if ($this->extensionNotice === null) {
-			return UnwiredNotice::OUTCOME;
+			return [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
+			];
 		}
 
 		return $this->extensionNotice->tell(
