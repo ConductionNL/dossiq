@@ -646,4 +646,44 @@ class DossiqAskPersonNodeTest extends TestCase {
 		self::assertNotSame('', $node->getDisplayName());
 		self::assertNotSame('', $node->getDescription());
 	}//end testItAnnouncesItsIdentity()
+
+	/**
+	 * Without a signalKey the answer lands under `answer`.
+	 */
+	public function testWithoutASignalKeyTheAnswerLandsUnderAnswer(): void {
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1'];
+
+		$out = $this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: array_merge($this->config(), ['signalKey' => '  ']), context: $this->context($resume)));
+
+		self::assertSame('completed', $out[0]['json']['answer']['decision']);
+		self::assertSame('task-1', $out[0]['json']['answer']['taskId']);
+	}//end testWithoutASignalKeyTheAnswerLandsUnderAnswer()
+
+	/**
+	 * A heartbeat below the floor is raised to five minutes; a longer one is kept.
+	 */
+	public function testTheHeartbeatIsNeverShorterThanFiveMinutes(): void {
+		foreach (['1' => 5, '60' => 60] as $configured => $expected) {
+			$this->written = [];
+			$before = time();
+			try {
+				$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: array_merge($this->config(), ['heartbeatMinutes' => $configured]), context: $this->context(self::resumeSlot('ask-indiener'))));
+				self::fail('The node must suspend while the task is outstanding.');
+			} catch (FlowSuspension $suspension) {
+				$wait = $suspension->getResumeAt()->getTimestamp() - $before;
+				self::assertGreaterThanOrEqual($expected * 60, $wait, 'heartbeat ' . $configured);
+				self::assertLessThan(($expected * 60) + 60, $wait, 'heartbeat ' . $configured);
+			}
+		}
+	}//end testTheHeartbeatIsNeverShorterThanFiveMinutes()
+
+	public function testItIsOfferedToAdminsAndUsersWithItsIcon(): void {
+		$node = $this->node();
+
+		self::assertSame('account-question', $node->getIcon());
+		self::assertTrue($node->isAvailableForScope(\OCP\WorkflowEngine\IManager::SCOPE_ADMIN));
+		self::assertTrue($node->isAvailableForScope(\OCP\WorkflowEngine\IManager::SCOPE_USER));
+		self::assertFalse($node->isAvailableForScope(999));
+	}//end testItIsOfferedToAdminsAndUsersWithItsIcon()
 }//end class
