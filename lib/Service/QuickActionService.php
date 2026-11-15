@@ -124,7 +124,7 @@ class QuickActionService implements QuickActionServiceInterface {
 			throw new RuntimeException('zaaktype is required');
 		}
 
-		[$objectService, $register, $caseSchema] = $this->resolveCase();
+		$store = $this->resolveCase();
 
 		$record = $this->caseTypeFields(reference: $caseType) + [
 			'initiator' => $burgerId,
@@ -134,6 +134,23 @@ class QuickActionService implements QuickActionServiceInterface {
 			'description' => (string)($details['description'] ?? ''),
 		];
 
+		return ['caseId' => $this->createdCaseId(store: $store, record: $record)];
+	}//end executeNieuweZaak()
+
+	/**
+	 * Write a new case and answer its id; a failed write is logged.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store  The object service, register and case schema.
+	 * @param array<string, mixed>                   $record The case to write.
+	 *
+	 * @return string The new case's id.
+	 *
+	 * @throws RuntimeException When the write fails.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
+	 */
+	private function createdCaseId(array $store, array $record): string {
+		[$objectService, $register, $caseSchema] = $store;
 		try {
 			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
 		} catch (Throwable $e) {
@@ -144,8 +161,8 @@ class QuickActionService implements QuickActionServiceInterface {
 			throw new RuntimeException('Could not create case');
 		}
 
-		return ['caseId' => (string)($created['id'] ?? ($created['uuid'] ?? ''))];
-	}//end executeNieuweZaak()
+		return (string)($created['id'] ?? ($created['uuid'] ?? ''));
+	}//end createdCaseId()
 
 	/**
 	 * Register a klacht as an Awb 9:1 case linked to the original case.
