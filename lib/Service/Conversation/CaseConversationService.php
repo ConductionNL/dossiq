@@ -105,7 +105,22 @@ class CaseConversationService implements CaseConversationServiceInterface {
 			return ['ok' => false, 'reason' => self::REASON_NO_TALK];
 		}
 
-		$name = $this->roomName(case: $case, subject: $subject);
+		return $this->openConversation(onCase: ['caseId' => $caseId, 'case' => $case], start: ['subject' => $subject, 'startedBy' => $startedBy]);
+	}//end startConversation()
+
+	/**
+	 * Open the Talk room for the case and record the conversation on it.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>}   $onCase The case UUID and the case.
+	 * @param array{subject: string|null, startedBy: string|null} $start  What the conversation is about, and who started it.
+	 *
+	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
+	 *         The conversation record, or a refusal naming its reason.
+	 */
+	private function openConversation(array $onCase, array $start): array {
+		$case = $onCase['case'];
+		$startedBy = $start['startedBy'];
+		$name = $this->roomName(case: $case, subject: $start['subject']);
 		$room = $this->broker->createRoom(
 			name: $name,
 			moderators: $this->moderatorsOf(case: $case, startedBy: $startedBy),
@@ -116,10 +131,10 @@ class CaseConversationService implements CaseConversationServiceInterface {
 
 		$record = $this->conversationRecord(room: $room, start: ['subject' => $name, 'startedBy' => $startedBy]);
 
-		$this->appendConversation(onCase: ['caseId' => $caseId, 'case' => $case], record: $record);
+		$this->appendConversation(onCase: $onCase, record: $record);
 
 		return ['ok' => true, 'conversation' => $record];
-	}//end startConversation()
+	}//end openConversation()
 
 	/**
 	 * The record of a conversation just started.
