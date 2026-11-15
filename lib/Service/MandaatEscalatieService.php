@@ -91,17 +91,28 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 			'createdAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
 
+		return $this->saveCreated(row: $row);
+	}//end createEscalatie()
+
+	/**
+	 * Save a new escalation and log that it was created.
+	 *
+	 * @param array<string, mixed> $row The escalation row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function saveCreated(array $row): array {
 		$saved = $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $row);
 		$this->logger->info(
 			'Mandaat escalation created',
 			[
-				'caseId' => $caseId,
-				'reason' => $escalationReason,
+				'caseId' => $row['caseId'],
+				'reason' => $row['escalationReason'],
 				'target' => $row['targetUserId'],
 			]
 		);
 		return $saved;
-	}//end createEscalatie()
+	}//end saveCreated()
 
 	/**
 	 * Resolve the next-higher mandate holder for a decision type.
@@ -391,7 +402,15 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 			return 0;
 		}
 
-		return $this->rerouteRows(store: $store, rows: $rows, newUserId: $newUserId);
+		$retargeted = array_map(
+			static function (array $row) use ($newUserId): array {
+				$row['targetUserId'] = $newUserId;
+				return $row;
+			},
+			$rows
+		);
+
+		return $this->rerouteRows(store: $store, rows: $retargeted);
 	}//end autoRerouteOnPersonnelChange()
 
 	/**
@@ -414,16 +433,14 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	 * Point each escalation at the new user, counting the ones that saved.
 	 *
 	 * @param array{0: object, 1: string, 2: string} $store The escalation store.
-	 * @param array<int, array<string, mixed>> $rows The open escalations.
-	 * @param string $newUserId New user id.
+	 * @param array<int, array<string, mixed>> $rows The open escalations, pointed at the new user.
 	 *
 	 * @return int Number of rerouted escalations.
 	 */
-	private function rerouteRows(array $store, array $rows, string $newUserId): int {
+	private function rerouteRows(array $store, array $rows): int {
 		[$objectService, $register, $schema] = $store;
 		$count = 0;
 		foreach ($rows as $row) {
-			$row['targetUserId'] = $newUserId;
 			try {
 				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
 				$count++;

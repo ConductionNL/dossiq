@@ -270,7 +270,7 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 			return ['projected' => false, 'reason' => $e->getMessage()];
 		}
 
-		return $this->createPlan(plans: $plans, caseId: $caseId, definition: $definition);
+		return $this->createPlan(plans: $plans, plan: ['caseId' => $caseId, 'definition' => $definition]);
 	}//end projectAtCaseStart()
 
 	/**
@@ -301,13 +301,14 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 	/**
 	 * Hand the converted definition to OpenRegister's case layer.
 	 *
-	 * @param object                                                                       $plans      The resolved CasePlanService.
-	 * @param string                                                                       $caseId     The case object uuid.
-	 * @param array{settings: array<string, mixed>, items: array<int, array<string, mixed>>} $definition The converted definition.
+	 * @param object                                               $plans The resolved CasePlanService.
+	 * @param array{caseId: string, definition: array<string, mixed>} $plan  The case object uuid, and the converted definition
+	 *                                                                      (`settings` and `items`).
 	 *
 	 * @return array{projected: boolean, reason: string} What it did, and why.
 	 */
-	private function createPlan(object $plans, string $caseId, array $definition): array {
+	private function createPlan(object $plans, array $plan): array {
+		['caseId' => $caseId, 'definition' => $definition] = $plan;
 		$registerId = $this->configuredId(key: 'register');
 		$schemaId = $this->configuredId(key: 'case_schema');
 

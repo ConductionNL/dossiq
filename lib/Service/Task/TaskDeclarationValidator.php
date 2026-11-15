@@ -135,7 +135,7 @@ class TaskDeclarationValidator {
 		}
 
 		$path = sprintf('steps[%d].%s', $index, TaskDeclaration::BLOCK);
-		$refusals = $this->misplaced(step: $step, task: $task, index: $index);
+		$refusals = $this->misplaced(step: $step, where: new TaskKeyAt(task: $task, path: sprintf('steps[%d]', $index)));
 
 		if (is_array(($step[TaskDeclaration::BLOCK] ?? null)) === false) {
 			return $refusals;
@@ -145,9 +145,9 @@ class TaskDeclarationValidator {
 
 		return array_merge(
 			$refusals,
-			$this->formRefusals(form: $declaration['form'], task: $task, path: $path . '.form'),
-			$this->groupRefusals(groups: $declaration['candidateGroups'], task: $task, path: $path . '.candidateGroups'),
-			$this->effectRefusals(effects: $declaration['effects'], task: $task, path: $path . '.effects'),
+			$this->formRefusals(form: $declaration['form'], where: new TaskFormAt(task: $task, path: $path . '.form')),
+			$this->groupRefusals(groups: $declaration['candidateGroups'], where: new TaskKeyAt(task: $task, path: $path . '.candidateGroups')),
+			$this->effectRefusals(effects: $declaration['effects'], where: new TaskKeyAt(task: $task, path: $path . '.effects')),
 		);
 	}//end refusalsForStep()
 
@@ -155,12 +155,11 @@ class TaskDeclarationValidator {
 	 * A declaration key written beside the block instead of inside it.
 	 *
 	 * @param array<string, mixed> $step  The step.
-	 * @param string               $task  The task's name.
-	 * @param integer              $index Its position.
+	 * @param TaskKeyAt            $where The task's name and the step's path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function misplaced(array $step, string $task, int $index): array {
+	private function misplaced(array $step, TaskKeyAt $where): array {
 		$refusals = [];
 		foreach (self::MISPLACED as $key) {
 			if (array_key_exists($key, $step) === false) {
@@ -168,11 +167,11 @@ class TaskDeclarationValidator {
 			}
 
 			$refusals[] = self::refusal(
-				path: sprintf('steps[%d].%s', $index, $key),
+				path: $where->path . '.' . $key,
 				code: 'misplaced_task_key',
 				message: sprintf(
 					'Task "%s" sets "%s" outside its task block. Nothing reads it there.',
-					$task,
+					$where->task,
 					$key
 				)
 			);
@@ -185,12 +184,11 @@ class TaskDeclarationValidator {
 	 * Refuse a form that cannot be resolved, naming the form and the task.
 	 *
 	 * @param array<string, mixed>|null $form The declared form.
-	 * @param string                    $task The task's name.
-	 * @param string                    $path The path for the refusal.
+	 * @param TaskFormAt                $where The task and the form's path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function formRefusals(?array $form, string $task, string $path): array {
+	private function formRefusals(?array $form, TaskFormAt $where): array {
 		if ($form === null) {
 			return [];
 		}
@@ -199,11 +197,11 @@ class TaskDeclarationValidator {
 		if (in_array($kind, self::FORM_KINDS, true) === false) {
 			return [
 				self::refusal(
-					path: $path . '.kind',
+					path: $where->path . '.kind',
 					code: 'unresolvable_form',
 					message: sprintf(
 						'Task "%s" names a form of kind "%s", which does not exist. Use one of: %s.',
-						$task,
+						$where->task,
 						$kind,
 						implode(', ', self::FORM_KINDS)
 					)
@@ -212,31 +210,30 @@ class TaskDeclarationValidator {
 		}
 
 		if ($kind === 'external') {
-			return $this->externalFormRefusals(form: $form, task: $task, path: $path);
+			return $this->externalFormRefusals(form: $form, where: $where);
 		}
 
-		return $this->fieldFormRefusals(form: $form, task: $task, path: $path);
+		return $this->fieldFormRefusals(form: $form, where: $where);
 	}//end formRefusals()
 
 	/**
 	 * A bound Forms form needs an id to be bound to.
 	 *
 	 * @param array<string, mixed> $form The declared form.
-	 * @param string               $task The task's name.
-	 * @param string               $path The path for the refusal.
+	 * @param TaskFormAt           $where The task and the form's path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function externalFormRefusals(array $form, string $task, string $path): array {
+	private function externalFormRefusals(array $form, TaskFormAt $where): array {
 		if ((int)($form['formId'] ?? 0) > 0) {
 			return [];
 		}
 
 		return [
 			self::refusal(
-				path: $path . '.formId',
+				path: $where->path . '.formId',
 				code: 'unresolvable_form',
-				message: sprintf('Task "%s" names an external form without a form id. Nobody can open it.', $task)
+				message: sprintf('Task "%s" names an external form without a form id. Nobody can open it.', $where->task)
 			),
 		];
 	}//end externalFormRefusals()
@@ -250,26 +247,24 @@ class TaskDeclarationValidator {
 	 * a form the engine renders.
 	 *
 	 * @param array<string, mixed> $form The declared form.
-	 * @param string               $task The task's name.
-	 * @param string               $path The path for the refusal.
+	 * @param TaskFormAt           $where The task and the form's path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function fieldFormRefusals(array $form, string $task, string $path): array {
-		$at       = new TaskFormAt(task: $task, path: $path);
-		$refusals = self::schemaRefusals(form: $form, at: $at);
+	private function fieldFormRefusals(array $form, TaskFormAt $where): array {
+		$refusals = self::schemaRefusals(form: $form, at: $where);
 		$fields   = ($form['fields'] ?? []);
 		if (is_array($fields) === false || $fields === []) {
 			$refusals[] = self::refusal(
-				path: $path . '.fields',
+				path: $where->path . '.fields',
 				code: 'unresolvable_form',
-				message: sprintf('Task "%s" declares a form with no fields, which asks the handler for nothing.', $task)
+				message: sprintf('Task "%s" declares a form with no fields, which asks the handler for nothing.', $where->task)
 			);
 
 			return $refusals;
 		}
 
-		return array_merge($refusals, self::unnamedFieldRefusals(fields: $fields, at: $at));
+		return array_merge($refusals, self::unnamedFieldRefusals(fields: $fields, at: $where));
 	}//end fieldFormRefusals()
 
 	/**
@@ -336,12 +331,11 @@ class TaskDeclarationValidator {
 	 * Refuse a candidate group nobody has.
 	 *
 	 * @param array<int, string> $groups The declared groups.
-	 * @param string             $task   The task's name.
-	 * @param string             $path   The path for the refusal.
+	 * @param TaskKeyAt          $where  The task and the groups' path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function groupRefusals(array $groups, string $task, string $path): array {
+	private function groupRefusals(array $groups, TaskKeyAt $where): array {
 		$refusals = [];
 		foreach ($groups as $position => $group) {
 			if ($this->groups->groupExists($group) === true) {
@@ -349,9 +343,9 @@ class TaskDeclarationValidator {
 			}
 
 			$refusals[] = self::refusal(
-				path: sprintf('%s[%d]', $path, (int)$position),
+				path: sprintf('%s[%d]', $where->path, (int)$position),
 				code: 'unresolvable_group',
-				message: sprintf('Task "%s" names the candidate group "%s", which does not exist.', $task, $group)
+				message: sprintf('Task "%s" names the candidate group "%s", which does not exist.', $where->task, $group)
 			);
 		}
 
@@ -362,12 +356,11 @@ class TaskDeclarationValidator {
 	 * Refuse an effect naming a handler the registry does not have.
 	 *
 	 * @param array<int, array<string, mixed>> $effects The declared effects.
-	 * @param string                           $task    The task's name.
-	 * @param string                           $path    The path for the refusal.
+	 * @param TaskKeyAt                        $where   The task and the effects' path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function effectRefusals(array $effects, string $task, string $path): array {
+	private function effectRefusals(array $effects, TaskKeyAt $where): array {
 		$known = $this->handlers->getRegisteredTypes();
 		if ($this->retired !== null) {
 			$known = array_merge($known, $this->retired->runnableTypes());
@@ -380,11 +373,11 @@ class TaskDeclarationValidator {
 			}
 
 			$refusals[] = self::refusal(
-				path: sprintf('%s[%d].type', $path, (int)$position),
+				path: sprintf('%s[%d].type', $where->path, (int)$position),
 				code: 'unresolvable_effect',
 				message: sprintf(
 					'Task "%s" declares the effect "%s", which no handler answers to. Known effects: %s.',
-					$task,
+					$where->task,
 					$type,
 					implode(', ', $known)
 				)

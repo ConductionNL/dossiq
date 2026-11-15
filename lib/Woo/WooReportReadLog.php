@@ -101,7 +101,7 @@ class WooReportReadLog implements WooReportReadLogInterface {
 		];
 		$written = 0;
 		foreach ($caseIds as $caseId) {
-			$this->recordOn(target: $target, caseId: $caseId, context: $context);
+			$this->recordOn(target: $target, read: ['caseId' => $caseId, 'context' => $context]);
 
 			$written++;
 		}
@@ -131,16 +131,17 @@ class WooReportReadLog implements WooReportReadLogInterface {
 	/**
 	 * Record the throughput read on one case.
 	 *
-	 * @param array{0: object, 1: object, 2: string, 3: string} $target  The audit target.
-	 * @param string                                            $caseId  The case read.
-	 * @param array<string, mixed>                              $context The reader, the moment and the scope.
+	 * @param array{0: object, 1: object, 2: string, 3: string}       $target The audit target.
+	 * @param array{caseId: string, context: array<string, mixed>} $read   The case read, and the reader, the moment
+	 *                                                                    and the scope.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the entry cannot be written.
 	 */
-	private function recordOn(array $target, string $caseId, array $context): void {
+	private function recordOn(array $target, array $read): void {
 		[$objectService, $mapper, $register, $schema] = $target;
+		['caseId' => $caseId, 'context' => $context] = $read;
 		$readerId = $context['reader'];
 		try {
 			$case = $objectService->find($caseId, register: $register, schema: $schema);

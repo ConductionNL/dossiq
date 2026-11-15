@@ -594,3 +594,37 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation: the existing `ZtcCrossReferenceTest` (8), `ZtcRelatedTypeLookupTest` and
         `ZtcWriteGateGoldenTest`, green before and after. Own test: `ZtcStoredUuidUrlsTest` (2).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8n Six stale suppressions (PHPMD reports nothing without them, measured one at a time
+        against `phpmd.xml`): CouplingBetweenObjects on `StufController`, `PauseChaseService` and
+        `IntakeRequirementsListener`, ExcessiveParameterList on `InboundMailIntake` and on
+        `AcknowledgementService::__construct`, and TooManyMethods on `DeadlineReportingService`
+        (after 8j moved the payout statement out). Docblocks only; no code moved. phpmd, phpcs and
+        `tests/Unit/Architecture` green on the six files. The other 98 complexity-type suppressions
+        in `lib/` still report their rule when lifted, so they need a split, not a deletion.
+  - [x] 8o `CaseTypeRightsByRole` (1: ExcessiveClassComplexity 50 against 50). The Decide column
+        (which mandates hold for this case type, per role, and the highest ceiling worded) is
+        the new `CaseType/RoleMandateCeilings` (`byRole()`, with `forCaseType()` and `ceiling()`;
+        bodies moved unchanged). The service builds it in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 4 tests added to
+        `CaseTypeRightsByRoleTest` (14 in all) for the case-type scoping by id, slug and
+        identifier, the register query, the ceiling cell and an unreadable register across roles.
+        Unchanged and green after but for one `@uses` line.
+        Own test: `tests/Unit/Service/CaseType/RoleMandateCeilingsTest` (4); taking the lowest
+        ceiling instead of the highest turns 9 tests red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8p `MenuCaseTypesService` (1: ExcessiveClassComplexity 50 against 50). Reading one stored
+        case type row as a menu entry (its uuid from `uuid`, `id` or `@self.id`, the title in the
+        reader's language, the identifier, the trimmed icon, the handling teams, and the public
+        shape the menu is sent) is the new `CaseType/CaseTypeMenuEntry` (`uuidOf()`, `entry()`,
+        `publicRow()`; bodies moved unchanged, `publicRow()` no longer static so no StaticAccess
+        finding replaces the one removed). The service keeps the reads, the team filter, the
+        superseded-version folding and the user's choice; it builds the entry reader in its
+        constructor, so its constructor, interface and container binding are unchanged.
+        phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `MenuCaseTypesServiceTest` (16 in all) for the icon, the uuid precedence with the first
+        row of a uuid winning, and `byIdentifier()`. Unchanged and green after but for one
+        `@uses` line. Own test: `tests/Unit/Service/CaseType/CaseTypeMenuEntryTest` (3);
+        dropping the integer-id branch turns it red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.

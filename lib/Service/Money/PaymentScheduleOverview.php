@@ -77,7 +77,7 @@ class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
 		$instalments = [];
 		foreach ($this->decisionsOf(caseId: $caseId) as $decision) {
 			foreach ((array)($decision['paymentSchedule']['instalments'] ?? []) as $instalment) {
-				$instalments[] = $this->rowOf(decision: $decision, instalment: (array)$instalment, today: $today);
+				$instalments[] = $this->rowOf(held: ['decision' => $decision, 'instalment' => (array)$instalment], today: $today);
 			}
 		}
 
@@ -93,13 +93,13 @@ class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
 	/**
 	 * One instalment as the case page reads it.
 	 *
-	 * @param array<string, mixed> $decision   The decision that holds it.
-	 * @param array<string, mixed> $instalment The instalment.
-	 * @param DateTimeImmutable    $today      The day the state counts from.
+	 * @param array{decision: array<string, mixed>, instalment: array<string, mixed>} $held  The instalment, and the decision that holds it.
+	 * @param DateTimeImmutable                                                       $today The day the state counts from.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(array $decision, array $instalment, DateTimeImmutable $today): array {
+	private function rowOf(array $held, DateTimeImmutable $today): array {
+		['decision' => $decision, 'instalment' => $instalment] = $held;
 		return [
 			'decisionId' => (string)($decision['id'] ?? $decision['uuid'] ?? ''),
 			'label' => (string)($instalment['label'] ?? ''),

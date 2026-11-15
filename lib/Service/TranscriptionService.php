@@ -258,7 +258,7 @@ class TranscriptionService implements TranscriptionServiceInterface {
 			return $evidence;
 		}
 
-		$this->saveEvidence(objectService: $objectService, evidence: $evidence, register: $register, schema: $schema);
+		$this->saveEvidence(store: [$objectService, $register, $schema], evidence: $evidence);
 
 		return $evidence;
 	}//end persist()
@@ -266,14 +266,13 @@ class TranscriptionService implements TranscriptionServiceInterface {
 	/**
 	 * Save an evidence record under its own uuid, logging when the save fails.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param array<string, mixed> $evidence      The evidence record.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The field evidence schema.
+	 * @param array{0: object, 1: string, 2: string} $store    OpenRegister's ObjectService, the register and the field evidence schema.
+	 * @param array<string, mixed>                  $evidence The evidence record.
 	 *
 	 * @return void
 	 */
-	private function saveEvidence(object $objectService, array $evidence, string $register, string $schema): void {
+	private function saveEvidence(array $store, array $evidence): void {
+		[$objectService, $register, $schema] = $store;
 		$uuid = $this->evidenceUuid(evidence: $evidence);
 
 		try {

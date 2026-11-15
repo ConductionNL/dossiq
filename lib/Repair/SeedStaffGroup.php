@@ -252,7 +252,7 @@ class SeedStaffGroup implements IRepairStep {
 	}//end handlingTeamMembers()
 
 	/**
-	 * Every user a case is assigned to.
+	 * Every user a case in the case register is assigned to, page by page.
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 *
@@ -265,19 +265,6 @@ class SeedStaffGroup implements IRepairStep {
 			return [];
 		}
 
-		return $this->assigneesIn(objectService: $objectService, register: $register, caseSchema: $caseSchema);
-	}//end assignees()
-
-	/**
-	 * Every user a case in the case register is assigned to, page by page.
-	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $caseSchema    The case schema.
-	 *
-	 * @return array<int, string> User ids, possibly repeated.
-	 */
-	private function assigneesIn(object $objectService, string $register, string $caseSchema): array {
 		$userIds = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$filters = ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
@@ -290,7 +277,7 @@ class SeedStaffGroup implements IRepairStep {
 		}
 
 		return $userIds;
-	}//end assigneesIn()
+	}//end assignees()
 
 	/**
 	 * The assignee of every row that names one.

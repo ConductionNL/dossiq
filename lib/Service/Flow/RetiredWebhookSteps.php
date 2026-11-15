@@ -136,7 +136,7 @@ class RetiredWebhookSteps {
 			$body['transition'] = $config[self::TRANSITION_KEY];
 		}
 
-		$step = $this->call(url: trim((string)($config['url'] ?? '')), timeout: self::WEBHOOK_TIMEOUT, output: $config);
+		$step = $this->call(target: ['url' => trim((string)($config['url'] ?? '')), 'timeout' => self::WEBHOOK_TIMEOUT], output: $config);
 		$step['config']['body'] = $body;
 
 		$headers = $this->headers(headers: ($config['headers'] ?? []));
@@ -164,7 +164,7 @@ class RetiredWebhookSteps {
 			$timeout = self::CALL_WEBHOOK_TIMEOUT;
 		}
 
-		$step = $this->call(url: $this->actionUrl(config: $config), timeout: $timeout, output: $config);
+		$step = $this->call(target: ['url' => $this->actionUrl(config: $config), 'timeout' => $timeout], output: $config);
 
 		$template = (string)($config['payloadTemplate'] ?? '');
 		if ($template === '') {
@@ -216,15 +216,16 @@ class RetiredWebhookSteps {
 	/**
 	 * A POST source-call step to the URL: its base as a Source, its path and query as the endpoint.
 	 *
-	 * @param string               $url     The URL the retired step called.
-	 * @param int                  $timeout The timeout a newly created Source gets.
-	 * @param array<string, mixed> $output  The retired configuration, for its `output` key.
+	 * @param array{url: string, timeout: int} $target The URL the retired step called, and the timeout a newly
+	 *                                                 created Source gets.
+	 * @param array<string, mixed>             $output The retired configuration, for its `output` key.
 	 *
 	 * @return array{type: string, config: array<string, mixed>} The step, without a body.
 	 *
 	 * @throws UnmappableStep When the URL is unusable or Integriq gives no Source.
 	 */
-	private function call(string $url, int $timeout, array $output): array {
+	private function call(array $target, array $output): array {
+		['url' => $url, 'timeout' => $timeout] = $target;
 		[$base, $endpoint] = $this->baseAndEndpoint(url: $url);
 
 		$outputKey = trim((string)($output['output'] ?? ''));

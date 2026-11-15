@@ -1321,24 +1321,24 @@
     },
     {
       "file": "lib/Service/Termijn/WorkingDayRoll.php",
-      "method": "daysBetween",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`daysBetween()` answers `return null` when the organisation calendar refuses a working-day span; the catch logs at warning. Null means \"the calendar did not answer\", and the caller falls back to calendar days rather than reporting a span computed on a calendar nobody administered."
-    },
-    {
-      "file": "lib/Service/Termijn/WorkingDayRoll.php",
-      "method": "endAfter",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`endAfter()` answers `return null` when the organisation calendar refuses a working-day end date; the catch logs at warning. Null is deliberately NOT a date: `TermijnService::endDateFor()` reads it as \"the calendar did not answer\", logs that the term is SHORTER than it is owed, and counts calendar days, which is the documented D-2 degradation."
-    },
-    {
-      "file": "lib/Service/Termijn/WorkingDayRoll.php",
       "method": "firstWorkingMomentAtOrAfter",
       "occurrence": 1,
       "class": "degradation",
       "reason": "`firstWorkingMomentAtOrAfter()` asks the engine calendar for the first working moment at or after an instant. Null means the calendar did not answer, and the caller then starts the term on the moment it already had rather than guessing a working day; a silent fallback to 'today is a working day' would start a citizen's clock on a Sunday on any instance without OpenRegister. Logged at warning naming the moment."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "workingDayEnd",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`workingDayEnd()`, the working-day branch of `endAfter()`, answers `return null` when the organisation calendar refuses a working-day end date; the catch logs at warning. Null is deliberately NOT a date: `TermijnService::endDateFor()` reads it as \"the calendar did not answer\", logs that the term is SHORTER than it is owed, and counts calendar days, which is the documented D-2 degradation."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "workingDaysBetween",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`workingDaysBetween()`, the working-day branch of `daysBetween()`, answers `return null` when the organisation calendar refuses a working-day span; the catch logs at warning. Null means \"the calendar did not answer\", and the caller falls back to calendar days rather than reporting a span computed on a calendar nobody administered."
     },
     {
       "file": "lib/Service/Termijn/WorkingDayRoll.php",
@@ -1545,10 +1545,10 @@
     },
     {
       "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
-      "method": "mergeOntoStored",
+      "method": "storedRow",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`mergeOntoStored()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: refusing to update a row that cannot be read\"), so a failed read and an absent record are the same answer."
+      "reason": "`storedRow()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: refusing to update a row that cannot be read\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",

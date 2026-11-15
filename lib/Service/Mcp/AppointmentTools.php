@@ -95,18 +95,9 @@ class AppointmentTools implements AppointmentToolsInterface {
 		string $citizenPhone = '',
 		string $notes = '',
 	): array {
-		$refusal = $this->bookingRefusal(caseId: $caseId);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		if (trim($productId) === '' || trim($locationId) === '' || trim($dateTime) === '') {
-			return $this->error(code: 'slot_required', message: 'Name the product, the location and the time.');
-		}
-
-		$result = $this->appointments->bookAppointment(
-			$caseId,
-			[
+		return $this->book(
+			caseId: $caseId,
+			details: [
 				'productId' => $productId,
 				'locationId' => $locationId,
 				'dateTime' => $dateTime,
@@ -117,9 +108,28 @@ class AppointmentTools implements AppointmentToolsInterface {
 				'notes' => $this->orNull(value: $notes),
 			]
 		);
-
-		return $this->answer(result: $result);
 	}//end scheduleAppointment()
+
+	/**
+	 * Book the appointment unless the caller may not, or the slot is incomplete.
+	 *
+	 * @param string               $caseId  The case UUID.
+	 * @param array<string, mixed> $details The booking as the service takes it; the slot fields are strings.
+	 *
+	 * @return array<string, mixed> The booked appointment, or an error envelope.
+	 */
+	private function book(string $caseId, array $details): array {
+		$refusal = $this->bookingRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if (trim((string)$details['productId']) === '' || trim((string)$details['locationId']) === '' || trim((string)$details['dateTime']) === '') {
+			return $this->error(code: 'slot_required', message: 'Name the product, the location and the time.');
+		}
+
+		return $this->answer(result: $this->appointments->bookAppointment($caseId, $details));
+	}//end book()
 
 	/**
 	 * Why the current user may not book on a case, or null when they may.

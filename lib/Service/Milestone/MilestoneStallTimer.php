@@ -42,11 +42,9 @@ namespace OCA\Dossiq\Service\Milestone;
 use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per case on the milestone it waits on.
@@ -146,14 +144,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
 	private function arm(MilestoneStallSpan $span): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$config = $this->timerConfig(span: $span);
-
-		return $this->armOn(engine: $engine, config: $config, caseId: $span->caseId);
+		return $this->timers()->arm(config: fn (): array => $this->timerConfig(span: $span), logContext: ['case' => $span->caseId]);
 	}//end arm()
 
 	/**
@@ -187,18 +178,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'normal',
-				'message'        => 'mijlpaal-vertraagd',
-				'openIncident'   => false,
-			],
-		];
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')];
 	}//end escalationRules()
 
 	/**
@@ -218,26 +198,6 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	}//end timerMetadata()
 
 	/**
-	 * Hand the configuration to the engine.
-	 *
-	 * @param object               $engine The timer engine.
-	 * @param array<string, mixed> $config The timer configuration.
-	 * @param string               $caseId The case id, for the log.
-	 *
-	 * @return string ARMED, or UNAVAILABLE.
-	 */
-	private function armOn(object $engine, array $config, string $caseId): string {
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq milestone: the engine refused the stall timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
-	}//end armOn()
-
-	/**
 	 * Cancel the case's milestone timers (and only those).
 	 *
 	 * @param string $caseId The case id.
@@ -246,30 +206,15 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $caseId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq milestone: the engine refused to cancel the stall timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, logContext: ['case' => $caseId]);
 	}//end cancel()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq milestone', timer: 'stall timer');
+	}//end timers()
 }//end class

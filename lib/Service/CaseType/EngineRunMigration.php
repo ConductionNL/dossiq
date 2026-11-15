@@ -144,6 +144,19 @@ class EngineRunMigration {
 			);
 		}
 
+		return $this->migratedAnswer(outcome: $outcome);
+	}//end migrate()
+
+	/**
+	 * The answer for a run the engine was asked to move, or its refusal.
+	 *
+	 * @param mixed $outcome What the engine answered.
+	 *
+	 * @return array{asked: bool, migrated: bool, reason: string} The run moved.
+	 *
+	 * @throws RefusedException When the engine did not move the run.
+	 */
+	private function migratedAnswer(mixed $outcome): array {
 		if ($this->migrated(outcome: $outcome) === false) {
 			throw new RefusedException(
 				rule: 'engine-refused-the-run-migration',
@@ -153,7 +166,7 @@ class EngineRunMigration {
 		}
 
 		return ['asked' => true, 'migrated' => true, 'reason' => $this->reasonOf(outcome: $outcome)];
-	}//end migrate()
+	}//end migratedAnswer()
 
 	/**
 	 * Why the engine was not asked, or '' when it was reachable.

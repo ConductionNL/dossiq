@@ -306,7 +306,7 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	 */
 	public function mergeChunks(string $uuid, string $fileName, int $totalParts): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
-		$content = $this->readChunks(folder: $folder, uuid: $uuid, totalParts: $totalParts);
+		$content = $this->readChunks(folder: $folder, document: ['uuid' => $uuid, 'totalParts' => $totalParts]);
 
 		// Write the merged file.
 		$file = $folder->newFile(path: $fileName);
@@ -320,15 +320,15 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	/**
 	 * Concatenate every `_part_{n}` file in order.
 	 *
-	 * @param Folder $folder     The document folder.
-	 * @param string $uuid       The document UUID.
-	 * @param int    $totalParts The total number of parts.
+	 * @param Folder                                 $folder   The document folder.
+	 * @param array{uuid: string, totalParts: int} $document The document UUID and the total number of parts.
 	 *
 	 * @return string The merged content.
 	 *
 	 * @throws InvalidArgumentException If not all chunks are present.
 	 */
-	private function readChunks(Folder $folder, string $uuid, int $totalParts): string {
+	private function readChunks(Folder $folder, array $document): string {
+		['uuid' => $uuid, 'totalParts' => $totalParts] = $document;
 		$content = '';
 
 		for ($i = 1; $i <= $totalParts; $i++) {

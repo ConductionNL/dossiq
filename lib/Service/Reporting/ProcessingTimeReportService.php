@@ -128,7 +128,7 @@ class ProcessingTimeReportService implements ProcessingTimeReportServiceInterfac
 		$typeIds = $this->resolveTypes(types: $run->types, key: $run->caseType);
 		$scoped  = [];
 		foreach ($records as $row) {
-			$record = $this->prepareRecord(row: $row, types: $run->types, finals: $run->finals);
+			$record = $this->prepareRecord(row: $row, run: $run);
 			if ($run->caseType === null || in_array($record['caseType'], $typeIds, true) === true) {
 				$scoped[] = $record;
 			}
@@ -451,22 +451,21 @@ class ProcessingTimeReportService implements ProcessingTimeReportServiceInterfac
 	 *
 	 * A record that names its type by slug is filed under the type's id.
 	 *
-	 * @param array<string, mixed>                $row    The stored record.
-	 * @param array<string, array<string, mixed>> $types  Prepared types.
-	 * @param array<string, true>                 $finals Ids of the final status types.
+	 * @param array<string, mixed> $row The stored record.
+	 * @param ProcessingTimeRun    $run The report being built: its prepared types and the ids of the final status types.
 	 *
 	 * @return array<string, mixed> The prepared record.
 	 */
-	private function prepareRecord(array $row, array $types, array $finals): array {
+	private function prepareRecord(array $row, ProcessingTimeRun $run): array {
 		return [
 			'id'         => (string)($row['id'] ?? ''),
 			'title'      => (string)($row['title'] ?? ''),
 			'identifier' => (string)($row['identifier'] ?? ''),
-			'caseType'   => (string)$this->resolveType(types: $types, key: (string)($row['caseType'] ?? '')),
+			'caseType'   => (string)$this->resolveType(types: $run->types, key: (string)($row['caseType'] ?? '')),
 			'startDate'  => $this->dates->toCalendarDateOrNull(value: ($row['startDate'] ?? null)),
 			'endDate'    => $this->dates->toCalendarDateOrNull(value: ($row['endDate'] ?? null)),
 			'deadline'   => $this->dates->toCalendarDateOrNull(value: ($row['deadline'] ?? null)),
-			'isFinal'    => isset($finals[(string)($row['status'] ?? '')]),
+			'isFinal'    => isset($run->finals[(string)($row['status'] ?? '')]),
 		];
 	}//end prepareRecord()
 

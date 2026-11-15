@@ -28,10 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingValueRulesInterface;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Listener\Support\OwnPageRender;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -68,10 +67,7 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== AppIdentity::APP_ID
-		) {
+		if ((new OwnPageRender())->matches(event: $event) === false) {
 			return;
 		}
 

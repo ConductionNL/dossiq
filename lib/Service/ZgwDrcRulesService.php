@@ -320,13 +320,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		array $body,
 		?array $existingObject = null,
 	): array {
-		// Drc-006: Check lock requirement.
-		$lockError = $this->validateLock(body: $body, existingObject: $existingObject);
-		if ($lockError !== null) {
-			return $lockError;
-		}
-
-		return $this->isValid(body: $body);
+		return $this->rulesEnkelvoudiginformatieobjectenUpdate(body: $body, existingObject: $existingObject);
 	}//end rulesEnkelvoudiginformatieobjectenPatch()
 
 	/**

@@ -60,9 +60,6 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — four declarations decide
- *  one save, and each of them is injected so a test can drive exactly one.
- *
  * @spec openspec/specs/semantic-case-intake/spec.md
  */
 class IntakeRequirementsListener implements IEventListener {

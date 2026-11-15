@@ -87,7 +87,7 @@ class HandlerActsAsSystem implements HandlerActsAsSystemInterface {
 	 */
 	public function run(string $caseId, IUser $user, string $stepField, array $stepIn, callable $operation): mixed {
 		$this->assertHandler(caseId: $caseId, user: $user);
-		$this->assertAtStep(caseId: $caseId, stepField: $stepField, stepIn: $stepIn);
+		$this->assertAtStep(caseId: $caseId, step: ['field' => $stepField, 'in' => $stepIn]);
 
 		$objectService = $this->settings->getObjectService();
 		if ($objectService === null) {
@@ -122,9 +122,9 @@ class HandlerActsAsSystem implements HandlerActsAsSystemInterface {
 	/**
 	 * Refuse when the case is final or not at the act's step.
 	 *
-	 * @param string             $caseId    The case UUID.
-	 * @param string             $stepField The case field that says the act's step is reached.
-	 * @param array<int, string> $stepIn    The values of that field the act is allowed at.
+	 * @param string                                     $caseId The case UUID.
+	 * @param array{field: string, in: array<int, string>} $step   The case field that says the act's step is reached,
+	 *                                                            and the values of it the act is allowed at.
 	 *
 	 * @return void
 	 *
@@ -132,7 +132,8 @@ class HandlerActsAsSystem implements HandlerActsAsSystemInterface {
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
-	private function assertAtStep(string $caseId, string $stepField, array $stepIn): void {
+	private function assertAtStep(string $caseId, array $step): void {
+		['field' => $stepField, 'in' => $stepIn] = $step;
 		$case = $this->store->loadCase(caseId: $caseId);
 		$atStep = ($case !== null
 			&& in_array(($case['isFinalStatus'] ?? false), [true, 1, '1', 'true'], true) === false

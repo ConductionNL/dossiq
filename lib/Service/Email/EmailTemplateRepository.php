@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -71,21 +72,8 @@ class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findActiveByCaseType(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		$rows = (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+			schemaKey: 'email_template_schema',
 			filters: [
 				'caseType' => $caseTypeId,
 				'_limit' => 100,

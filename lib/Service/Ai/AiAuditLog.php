@@ -134,7 +134,7 @@ class AiAuditLog {
 				return $empty;
 			}
 
-			return $this->pageFrom(storage: $storage, filters: $filters, window: $window);
+			return $this->pageFrom(storage: $storage, query: ['filters' => $filters, 'window' => $window]);
 		} catch (\Exception $e) {
 			$this->logger->error('Failed to list AI audit entries', ['error' => $e->getMessage()]);
 			return $empty;
@@ -144,15 +144,17 @@ class AiAuditLog {
 	/**
 	 * Read one page of audit entries from the storage, as the list answer.
 	 *
-	 * @param array{register: string, schema: string} $storage The storage config.
-	 * @param array<string, mixed>                    $filters Optional filters: 'caseId', 'type'.
-	 * @param AuditPageWindow                         $window  Page size and paging offset, already clamped.
+	 * @param array{register: string, schema: string}                     $storage The storage config.
+	 * @param array{filters: array<string, mixed>, window: AuditPageWindow} $query   Optional filters ('caseId', 'type'),
+	 *                                                                             and page size and paging offset,
+	 *                                                                             already clamped.
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
 	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
-	private function pageFrom(array $storage, array $filters, AuditPageWindow $window): array {
+	private function pageFrom(array $storage, array $query): array {
+		['filters' => $filters, 'window' => $window] = $query;
 		$entries = $this->searchObjectsAsArrays(
 			objectService: $this->container->get('OCA\OpenRegister\Service\ObjectService'),
 			register: $storage['register'],

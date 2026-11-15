@@ -88,14 +88,11 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 		$size = (int)($metadata['sizeBytes'] ?? 0);
 		$mode = $this->modeFor(size: $size);
 
-		$archivalId = uniqid(prefix: 'archival-', more_entropy: true);
-
-		$documentRecord = $this->documentRecord(caseId: $caseId, archivalId: $archivalId, metadata: $metadata);
+		$documentRecord = $this->documentRecord(caseId: $caseId, metadata: $metadata);
 
 		$this->persistDocument(payload: $documentRecord);
-		$this->appendCaseAudit(
+		$this->appendLinkedAudit(
 			caseId: $caseId,
-			eventType: 'email_linked',
 			payload: [
 				'mailMessageId' => $documentRecord['mailMessageId'],
 				'subject' => $documentRecord['subject'],
@@ -104,7 +101,7 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 		);
 
 		return [
-			'archivalId' => $archivalId,
+			'archivalId' => $documentRecord['archivalId'],
 			'mode' => $mode,
 			'pdfStatus' => 'pending',
 		];
@@ -129,17 +126,18 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	}//end modeFor()
 
 	/**
-	 * The document record of a linked email.
+	 * The document record of a linked email, under a new archival identifier.
 	 *
-	 * @param string               $caseId     Owning case UUID.
-	 * @param string               $archivalId The archival identifier.
-	 * @param array<string, mixed> $metadata   Email metadata, with the message size in bytes.
+	 * @param string               $caseId   Owning case UUID.
+	 * @param array<string, mixed> $metadata Email metadata, with the message size in bytes.
 	 *
 	 * @return array<string, mixed> The document record.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
 	 */
-	private function documentRecord(string $caseId, string $archivalId, array $metadata): array {
+	private function documentRecord(string $caseId, array $metadata): array {
+		$archivalId = uniqid(prefix: 'archival-', more_entropy: true);
+
 		// Who this message is FROM, as a party of the case rather than as
 		// the address in the header. The address stays on `from`; this is
 		// the party a handler can open. An address nobody on the case
@@ -398,15 +396,16 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	}//end archivalTarget()
 
 	/**
-	 * Append an audit event to the case audit trail (OR-managed).
+	 * Append the `email_linked` event to the case audit trail (OR-managed).
 	 *
-	 * @param string $caseId Case UUID.
-	 * @param string $eventType Audit event name.
+	 * @param string               $caseId  Case UUID.
 	 * @param array<string, mixed> $payload Event metadata.
 	 *
 	 * @return void
 	 */
-	private function appendCaseAudit(string $caseId, string $eventType, array $payload): void {
+	private function appendLinkedAudit(string $caseId, array $payload): void {
+		$eventType = 'email_linked';
+
 		// OR audit trails are append-only — best-effort write through the
 		// ObjectService audit hook. Failures here are non-fatal.
 		try {
@@ -430,5 +429,5 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 				['caseId' => $caseId, 'eventType' => $eventType, 'error' => $e->getMessage()]
 			);
 		}//end try
-	}//end appendCaseAudit()
+	}//end appendLinkedAudit()
 }//end class

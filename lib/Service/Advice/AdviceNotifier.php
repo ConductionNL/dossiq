@@ -121,15 +121,7 @@ class AdviceNotifier {
 		string $summary='',
 	): void {
 		if ($to === 'requested') {
-			$advisor = (string)($current['advisor'] ?? '');
-			if ($advisor !== '') {
-				$this->sendUserNotification(
-					userId: $advisor,
-					subject: 'advies_aangevraagd',
-					objectId: $adviceId,
-					message: (string)($current['subject'] ?? '')
-				);
-			}
+			$this->notifyRequested(current: $current, adviceId: $adviceId);
 
 			return;
 		}
@@ -143,6 +135,26 @@ class AdviceNotifier {
 			);
 		}
 	}//end fireTransitionNotification()
+
+	/**
+	 * Tell the advisor an advice was requested of them, when the advice names one.
+	 *
+	 * @param array<string, mixed> $current  The advice as it stands.
+	 * @param string               $adviceId The advice id.
+	 *
+	 * @return void
+	 */
+	private function notifyRequested(array $current, string $adviceId): void {
+		$advisor = (string)($current['advisor'] ?? '');
+		if ($advisor !== '') {
+			$this->sendUserNotification(
+				userId: $advisor,
+				subject: 'advies_aangevraagd',
+				objectId: $adviceId,
+				message: (string)($current['subject'] ?? '')
+			);
+		}
+	}//end notifyRequested()
 
 	/**
 	 * Notify the adviseur that an advice request was created.

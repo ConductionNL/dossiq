@@ -418,23 +418,22 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('No case id');
 		}
 
-		[$objectService, $register] = $this->dossierRegister()->context();
-		$case = $this->readCase(objectService: $objectService, register: $register, caseId: $caseId);
+		$context = $this->dossierRegister()->context();
+		$case = $this->readCase(context: $context, caseId: $caseId);
 
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseTypeId === '') {
 			throw new RuntimeException('Case has no case type');
 		}
 
-		return $this->caseTypeRule(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, flag: $flag);
+		return (($this->readCaseType(context: $context, caseTypeId: $caseTypeId)[$flag] ?? false) === true);
 	}//end caseTypeFlag()
 
 	/**
 	 * Read the case.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossier register.
-	 * @param string $caseId        The trimmed case id.
+	 * @param array{0: object, 1: string} $context The OpenRegister object service and the dossier register.
+	 * @param string                      $caseId  The trimmed case id.
 	 *
 	 * @return array<string, mixed> The case.
 	 *
@@ -442,10 +441,10 @@ class CaseTransferConsentGate {
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
-	private function readCase(object $objectService, string $register, string $caseId): array {
+	private function readCase(array $context, string $caseId): array {
 		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
+			objectService: $context[0],
+			register: $context[1],
 			schema: $this->dossierRegister()->schema(key: 'case_schema'),
 			id: $caseId,
 		);
@@ -457,23 +456,21 @@ class CaseTransferConsentGate {
 	}//end readCase()
 
 	/**
-	 * Read the case type and answer one of its boolean rules.
+	 * Read the case type.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossier register.
-	 * @param string $caseTypeId    The case type id.
-	 * @param string $flag          The case type property.
+	 * @param array{0: object, 1: string} $context    The OpenRegister object service and the dossier register.
+	 * @param string                      $caseTypeId The case type id.
 	 *
-	 * @return bool Whether the case type sets the flag to true.
+	 * @return array<string, mixed> The case type.
 	 *
 	 * @throws RuntimeException When the case type is not found.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
-	private function caseTypeRule(object $objectService, string $register, string $caseTypeId, string $flag): bool {
+	private function readCaseType(array $context, string $caseTypeId): array {
 		$caseType = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
+			objectService: $context[0],
+			register: $context[1],
 			schema: $this->dossierRegister()->schema(key: 'case_type_schema'),
 			id: $caseTypeId,
 		);
@@ -481,8 +478,8 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('Case type not found');
 		}
 
-		return (($caseType[$flag] ?? false) === true);
-	}//end caseTypeRule()
+		return $caseType;
+	}//end readCaseType()
 
 	/**
 	 * The consents recorded for a case that name this receiver.

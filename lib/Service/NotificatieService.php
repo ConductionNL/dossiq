@@ -115,19 +115,30 @@ class NotificatieService {
 			'kenmerken' => $characteristics,
 		];
 
+		$this->deliverOrWarn(notification: $notification);
+	}//end publish()
+
+	/**
+	 * Deliver the notification, logging a warning when delivery fails.
+	 *
+	 * @param array $notification The notification payload
+	 *
+	 * @return void
+	 */
+	private function deliverOrWarn(array $notification): void {
 		try {
 			$this->deliver(notification: $notification);
 		} catch (\Exception $e) {
 			$this->logger->warning(
 				'Failed to deliver notification',
 				[
-					'notificationChannel' => $channel,
-					'action' => $action,
+					'notificationChannel' => $notification['notificationChannel'],
+					'action' => $notification['action'],
 					'exception' => $e->getMessage(),
 				]
 			);
 		}
-	}//end publish()
+	}//end deliverOrWarn()
 
 	/**
 	 * Find matching subscriptions and deliver the notification.

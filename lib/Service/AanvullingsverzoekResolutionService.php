@@ -116,6 +116,21 @@ class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutio
 			moment: $moment
 		);
 		$run->outstanding = $this->outstanding(items: $run->items);
+
+		return $this->recordAs(run: $run, complete: $complete);
+	}//end recordAnswer()
+
+	/**
+	 * Record the answer as partial or as complete; complete is refused while items are outstanding.
+	 *
+	 * @param AanvullingAnswerRun $run      The answer being recorded.
+	 * @param boolean             $complete Whether the handler says it is complete.
+	 *
+	 * @return array<string, mixed> The recorded answer.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The handler's own answer to "is it complete?", passed on as asked.
+	 */
+	private function recordAs(AanvullingAnswerRun $run, bool $complete): array {
 		$this->refuseClosingWhileOutstanding(run: $run, complete: $complete);
 
 		if ($complete === false) {
@@ -123,7 +138,7 @@ class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutio
 		}
 
 		return $this->recordFullAnswer(run: $run);
-	}//end recordAnswer()
+	}//end recordAs()
 
 	/**
 	 * The case's open request.

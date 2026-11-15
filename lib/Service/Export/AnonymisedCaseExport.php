@@ -120,7 +120,7 @@ class AnonymisedCaseExport {
 			$typeId = trim((string)($case['caseType'] ?? ''));
 			if (array_key_exists($typeId, $fieldsByType) === false) {
 				$fieldsByType[$typeId] = $this->identifyingFieldsOf(
-					caseType: $this->caseTypeOf(objectService: $objectService, register: $registerId, schema: $caseTypeSchema, id: $typeId)
+					caseType: $this->caseTypeOf(store: [$objectService, $registerId, $caseTypeSchema], id: $typeId)
 				);
 			}
 
@@ -246,16 +246,15 @@ class AnonymisedCaseExport {
 	/**
 	 * The case type, or a refusal when it cannot be read.
 	 *
-	 * @param object $objectService The object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The case type schema.
-	 * @param string $id            The case type id.
+	 * @param array{0: object, 1: string, 2: string} $store The object service, the register and the case type schema.
+	 * @param string                                $id    The case type id.
 	 *
 	 * @return array<string, mixed> The case type.
 	 *
 	 * @throws RuntimeException When the case type cannot be read.
 	 */
-	private function caseTypeOf(object $objectService, string $register, string $schema, string $id): array {
+	private function caseTypeOf(array $store, string $id): array {
+		[$objectService, $register, $schema] = $store;
 		$caseType = null;
 		if ($id !== '') {
 			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);

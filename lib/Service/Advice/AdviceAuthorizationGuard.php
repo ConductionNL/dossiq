@@ -103,7 +103,7 @@ class AdviceAuthorizationGuard {
 			return;
 		}
 
-		if ($this->mayTransition(advice: $advice, to: $to, uid: $uid) === true) {
+		if ($this->mayTransition(advice: $advice, move: ['to' => $to, 'uid' => $uid]) === true) {
 			return;
 		}
 
@@ -163,14 +163,14 @@ class AdviceAuthorizationGuard {
 	 * status — the default is deny.
 	 *
 	 * @param array<string, mixed> $advice The current advice record.
-	 * @param string $to Target status.
-	 * @param string $uid The caller's user id.
+	 * @param array{to: string, uid: string} $move Target status and the caller's user id.
 	 *
 	 * @return bool True when the transition is allowed for this caller.
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function mayTransition(array $advice, string $to, string $uid): bool {
+	private function mayTransition(array $advice, array $move): bool {
+		['to' => $to, 'uid' => $uid] = $move;
 		$advisor = (string)($advice['advisor'] ?? '');
 		$isAdviseur = ($advisor !== '' && $advisor === $uid);
 

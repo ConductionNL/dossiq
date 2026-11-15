@@ -132,19 +132,11 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function raise(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->caseMutator(caseId: $caseId);
-		if ($user instanceof JSONResponse) {
-			return $user;
-		}
-
-		return $this->answer(
+		return $this->asMutator(caseId: $caseId, run: fn (IUser $user): array => $this->flags->raise(
 			caseId: $caseId,
-			run: fn (): array => $this->flags->raise(
-				caseId: $caseId,
-				userId: $user->getUID(),
-				reason: $reason
-			),
-		);
+			userId: $user->getUID(),
+			reason: $reason
+		));
 	}//end raise()
 
 	/**
@@ -159,20 +151,29 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function clear(string $caseId, string $reason = ''): JSONResponse {
+		return $this->asMutator(caseId: $caseId, run: fn (IUser $user): array => $this->flags->clear(
+			caseId: $caseId,
+			userId: $user->getUID(),
+			reason: $reason
+		));
+	}//end clear()
+
+	/**
+	 * Run a gesture for a caller who may change the case.
+	 *
+	 * @param string   $caseId The case.
+	 * @param callable $run    The gesture, given the caller.
+	 *
+	 * @return JSONResponse The refusal of the caller, or the gesture's answer.
+	 */
+	private function asMutator(string $caseId, callable $run): JSONResponse {
 		$user = $this->caseMutator(caseId: $caseId);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
 
-		return $this->answer(
-			caseId: $caseId,
-			run: fn (): array => $this->flags->clear(
-				caseId: $caseId,
-				userId: $user->getUID(),
-				reason: $reason
-			),
-		);
-	}//end clear()
+		return $this->answer(caseId: $caseId, run: fn (): array => $run($user));
+	}//end asMutator()
 
 	/**
 	 * The signed-in user when they may change the case, else the refusal.

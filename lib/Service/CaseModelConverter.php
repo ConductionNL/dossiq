@@ -94,7 +94,7 @@ final class CaseModelConverter {
 		$items = [];
 		foreach ($order as $id) {
 			if (trim((string)($byId[$id]['parentId'] ?? '')) === '') {
-				$items[] = $this->convertItem(item: $byId[$id], index: $index, seen: []);
+				$items[] = $this->convertItem(item: $byId[$id], walk: ['index' => $index, 'seen' => []]);
 			}
 		}
 
@@ -151,14 +151,16 @@ final class CaseModelConverter {
 	 * Convert one plan item and, for a stage, its children.
 	 *
 	 * @param array<string, mixed>   $item  The dossiq plan item.
-	 * @param PlanItemIndex          $index Every plan item, keyed by id, and the declared order of ids.
-	 * @param array<string, boolean> $seen  Ancestor ids, to catch a parent cycle.
+	 * @param array{index: PlanItemIndex, seen: array<string, boolean>} $walk Every plan item, keyed by id, and the
+	 *                                                                       declared order of ids; ancestor ids, to
+	 *                                                                       catch a parent cycle.
 	 *
 	 * @return array<string, mixed> The OpenRegister node.
 	 *
 	 * @throws UnexpectedValueException Naming the item it refuses.
 	 */
-	private function convertItem(array $item, PlanItemIndex $index, array $seen): array {
+	private function convertItem(array $item, array $walk): array {
+		$seen = $walk['seen'];
 		$id = trim((string)($item['id'] ?? ''));
 		if (isset($seen[$id]) === true) {
 			throw new UnexpectedValueException(sprintf("caseModel plan item '%s' is its own ancestor.", $id));
@@ -170,7 +172,7 @@ final class CaseModelConverter {
 			return $node;
 		}
 
-		$node['children'] = $this->childrenOf(id: $id, index: $index, seen: $seen);
+		$node['children'] = $this->childrenOf(id: $id, walk: ['index' => $walk['index'], 'seen' => $seen]);
 
 		return $node;
 	}//end convertItem()
@@ -258,19 +260,20 @@ final class CaseModelConverter {
 	 * Convert the direct children of a stage, in declared order.
 	 *
 	 * @param string                 $id    The stage's id.
-	 * @param PlanItemIndex          $index Every plan item, keyed by id, and the declared order of ids.
-	 * @param array<string, boolean> $seen  Ancestor ids, to catch a parent cycle.
+	 * @param array{index: PlanItemIndex, seen: array<string, boolean>} $walk Every plan item, keyed by id, and the
+	 *                                                                       declared order of ids; ancestor ids, to
+	 *                                                                       catch a parent cycle.
 	 *
 	 * @return array<int, array<string, mixed>> The child nodes.
 	 *
 	 * @throws UnexpectedValueException Naming the child it refuses.
 	 */
-	private function childrenOf(string $id, PlanItemIndex $index, array $seen): array {
-		$byId = $index->byId;
+	private function childrenOf(string $id, array $walk): array {
+		$byId = $walk['index']->byId;
 		$children = [];
-		foreach ($index->order as $childId) {
+		foreach ($walk['index']->order as $childId) {
 			if (trim((string)($byId[$childId]['parentId'] ?? '')) === $id) {
-				$children[] = $this->convertItem(item: $byId[$childId], index: $index, seen: $seen);
+				$children[] = $this->convertItem(item: $byId[$childId], walk: $walk);
 			}
 		}
 

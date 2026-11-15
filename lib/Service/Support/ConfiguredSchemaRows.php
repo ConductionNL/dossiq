@@ -75,6 +75,30 @@ final class ConfiguredSchemaRows {
 	}//end search()
 
 	/**
+	 * One object of a configured schema by its uuid, or null when it, OpenRegister or the configuration is absent.
+	 *
+	 * @param string $schemaKey The settings key naming the schema.
+	 * @param string $id        The object uuid.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec exclude shared read helper; each caller carries its own spec
+	 */
+	public function find(string $schemaKey, string $id): ?array {
+		$target = $this->target(schemaKey: $schemaKey);
+		if ($target === null) {
+			return null;
+		}
+
+		return $this->findObjectAsArray(
+			objectService: $target['objectService'],
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $id,
+		);
+	}//end find()
+
+	/**
 	 * The object service, the configured register and the schema a key names,
 	 * or null when any of them is missing.
 	 *

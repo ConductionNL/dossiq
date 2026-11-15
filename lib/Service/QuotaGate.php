@@ -170,20 +170,22 @@ class QuotaGate implements QuotaGateInterface {
 			return;
 		}
 
-		$this->notifyAdmins(tenantId: $tenantId, quotaType: $quotaType, used: $result['currentUsage'], limit: $limit);
+		$this->notifyAdmins(
+			tenantId: $tenantId,
+			parameters: ['quotaType' => $quotaType, 'used' => $result['currentUsage'], 'limit' => $limit]
+		);
 	}//end record()
 
 	/**
 	 * Send the soft limit notice to every administrator of the tenant.
 	 *
-	 * @param string $tenantId  The tenant.
-	 * @param string $quotaType The quota type.
-	 * @param int    $used      Usage after the write.
-	 * @param int    $limit     The hard limit.
+	 * @param string                                          $tenantId   The tenant.
+	 * @param array{quotaType: string, used: int, limit: int} $parameters The quota type, usage after the write
+	 *                                                                    and the hard limit.
 	 *
 	 * @return void
 	 */
-	private function notifyAdmins(string $tenantId, string $quotaType, int $used, int $limit): void {
+	private function notifyAdmins(string $tenantId, array $parameters): void {
 		try {
 			$admins = $this->adminsOf(tenantId: $tenantId);
 		} catch (Throwable $e) {
@@ -200,7 +202,7 @@ class QuotaGate implements QuotaGateInterface {
 					->setObject('tenant', $tenantId)
 					->setSubject(
 						NotifierInterface::SUBJECT_QUOTA_SOFT_LIMIT,
-						['quotaType' => $quotaType, 'used' => $used, 'limit' => $limit]
+						$parameters
 					);
 				$this->notifications->notify($notification);
 			} catch (Throwable $e) {

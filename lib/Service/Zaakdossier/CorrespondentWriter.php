@@ -87,10 +87,37 @@ class CorrespondentWriter {
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function applyEdit(string $documentId, array $current, array $metadata, string $direction): array {
+		$edited = $this->editedCorrespondents(current: $current, metadata: $metadata);
+		if ($edited === null) {
+			return [];
+		}
+
+		$caseId = $this->caseOf(documentId: $documentId);
+		$resolved = $this->resolveFor(
+			caseId: $caseId,
+			sender: $edited['sender'],
+			recipients: $edited['recipients'],
+			direction: $direction,
+		);
+
+		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
+
+		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
+	}//end applyEdit()
+
+	/**
+	 * The sender and recipients after the edit, or null when the edit names neither.
+	 *
+	 * @param array<string, mixed> $current  The stored document.
+	 * @param array<string, mixed> $metadata The submitted edit.
+	 *
+	 * @return array{sender: mixed, recipients: mixed}|null The submitted value of each, else the stored one.
+	 */
+	private function editedCorrespondents(array $current, array $metadata): ?array {
 		$namesSender = array_key_exists('sender', $metadata);
 		$namesRecipients = array_key_exists('recipients', $metadata);
 		if ($namesSender === false && $namesRecipients === false) {
-			return [];
+			return null;
 		}
 
 		$sender = ($current['sender'] ?? null);
@@ -103,18 +130,8 @@ class CorrespondentWriter {
 			$recipients = $metadata['recipients'];
 		}
 
-		$caseId = $this->caseOf(documentId: $documentId);
-		$resolved = $this->resolveFor(
-			caseId: $caseId,
-			sender: $sender,
-			recipients: $recipients,
-			direction: $direction,
-		);
-
-		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
-
-		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
-	}//end applyEdit()
+		return ['sender' => $sender, 'recipients' => $recipients];
+	}//end editedCorrespondents()
 
 	/**
 	 * The case a document is filed on, read from its joins.

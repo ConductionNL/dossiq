@@ -102,11 +102,11 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 		$objectService = $this->requireObjectService();
 
 		$target = new CatalogueRegister(objectService: $objectService, register: $register);
-		[$casesByType, $urlByType] = $this->collectAll(target: $target, schema: $schema);
+		$collected = $this->collectAll(target: $target, schema: $schema);
 
-		$caseTypeOf = $this->caseTypesOf(target: $target, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+		$caseTypeOf = $this->caseTypesOf(target: $target, caseIds: $this->caseIdsIn(casesByType: $collected[0]));
 
-		$rows = $this->rowsFor(casesByType: $casesByType, urlByType: $urlByType, caseTypeOf: $caseTypeOf);
+		$rows = $this->rowsFor(collected: $collected, caseTypeOf: $caseTypeOf);
 
 		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
 
@@ -164,15 +164,15 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	/**
 	 * One catalogue row per object type, with its case type count.
 	 *
-	 * @param array<string, array<string, true>> $casesByType The cases, by type.
-	 * @param array<string, string>              $urlByType   An object url, by type.
-	 * @param array<string, string>|null         $caseTypeOf  The case type of each case, null when unknown.
+	 * @param array{0: array<string, array<string, true>>, 1: array<string, string>} $collected  The cases by type, and an object url by type.
+	 * @param array<string, string>|null                                         $caseTypeOf The case type of each case, null when unknown.
 	 *
 	 * @return array<int, array<string, mixed>> The unsorted rows.
 	 *
 	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
 	 */
-	private function rowsFor(array $casesByType, array $urlByType, ?array $caseTypeOf): array {
+	private function rowsFor(array $collected, ?array $caseTypeOf): array {
+		[$casesByType, $urlByType] = $collected;
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
 			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));

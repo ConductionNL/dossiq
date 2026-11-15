@@ -288,7 +288,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		}
 
 		try {
-			$results = $this->searchForBurger(target: $target, burgerId: $burgerId, limit: $limit);
+			$results = $this->searchForBurger(target: $target, filters: ['geidentificeerdeBurgerId' => $burgerId, '_limit' => max(1, $limit)]);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: failed to list contactmomenten: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 			return [];
@@ -321,22 +321,21 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	/**
 	 * Search the contactmomenten of an identified burger.
 	 *
-	 * @param array{0: object, 1: string, 2: string} $target   The ObjectService, register and schema.
-	 * @param string                                 $burgerId The identified burger reference.
-	 * @param int                                    $limit    Maximum number of records.
+	 * @param array{0: object, 1: string, 2: string} $target  The ObjectService, register and schema.
+	 * @param array<string, mixed>                   $filters The identified burger reference and the maximum number of records.
 	 *
 	 * @return array<int, array<string, mixed>> The raw rows.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
-	private function searchForBurger(array $target, string $burgerId, int $limit): array {
+	private function searchForBurger(array $target, array $filters): array {
 		[$objectService, $register, $schema] = $target;
 
 		return $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['geidentificeerdeBurgerId' => $burgerId, '_limit' => max(1, $limit)],
+			filters: $filters,
 		);
 	}//end searchForBurger()
 
@@ -490,7 +489,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 			'identificationScore' => round($score, 2),
 		];
 
-		$updated = $this->patchContactmoment(target: $target, interactionId: $interactionId, changes: $changes);
+		$updated = $this->patchContactmoment(target: $target, patch: ['id' => $interactionId, 'changes' => $changes]);
 
 		return $this->normalize(result: $updated);
 	}//end linkUnlinkedContactmoment()
@@ -498,9 +497,8 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	/**
 	 * Patch a contactmoment, turning any failure into one RuntimeException.
 	 *
-	 * @param array{0: object, 1: string, 2: string} $target        The ObjectService, register and schema.
-	 * @param string                                 $interactionId The contactmoment UUID.
-	 * @param array<string, mixed>                   $changes       The fields to set.
+	 * @param array{0: object, 1: string, 2: string}                 $target The ObjectService, register and schema.
+	 * @param array{id: string, changes: array<string, mixed>} $patch  The contactmoment UUID and the fields to set.
 	 *
 	 * @return array<string, mixed>|null The updated row.
 	 *
@@ -508,7 +506,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
-	private function patchContactmoment(array $target, string $interactionId, array $changes): ?array {
+	private function patchContactmoment(array $target, array $patch): ?array {
 		[$objectService, $register, $schema] = $target;
 
 		try {
@@ -516,8 +514,8 @@ class ContactMomentService implements ContactMomentServiceInterface {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				id: $interactionId,
-				changes: $changes,
+				id: $patch['id'],
+				changes: $patch['changes'],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: failed to link contactmoment: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);

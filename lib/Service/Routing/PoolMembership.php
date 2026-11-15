@@ -88,8 +88,9 @@ class PoolMembership {
 		}
 
 		$members = [];
+		$target = ['roleType' => $roleType, 'team' => $team];
 		foreach ($roles as $role) {
-			$member = $this->member(role: $role, roleType: $roleType, team: $team);
+			$member = $this->member(role: $role, target: $target);
 			if ($member === null || isset($members[$member['participant']]) === true) {
 				continue;
 			}
@@ -103,16 +104,16 @@ class PoolMembership {
 	/**
 	 * One role row as a pool member, or null when it does not hold the roleType or the team.
 	 *
-	 * @param mixed  $role     The role row bound to the case.
-	 * @param string $roleType The roleType the rule targets.
-	 * @param string $team     The team the rule narrows to, or '' for all of them.
+	 * @param mixed                                 $role   The role row bound to the case.
+	 * @param array{roleType: string, team: string} $target The roleType the rule targets, and the team it narrows to
+	 *                                                      ('' for all of them).
 	 *
 	 * @return array{participant: string, weight: float, team: string}|null
 	 *
 	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
 	 */
-	private function member(mixed $role, string $roleType, string $team): ?array {
-		if ($this->holdsRoleType(role: $role, roleType: $roleType) === false) {
+	private function member(mixed $role, array $target): ?array {
+		if ($this->holdsRoleType(role: $role, roleType: $target['roleType']) === false) {
 			return null;
 		}
 
@@ -122,7 +123,7 @@ class PoolMembership {
 		}
 
 		$memberTeam = trim((string)($role['team'] ?? ''));
-		if ($this->inTeam(memberTeam: $memberTeam, team: $team) === false) {
+		if ($this->inTeam(memberTeam: $memberTeam, team: $target['team']) === false) {
 			return null;
 		}
 

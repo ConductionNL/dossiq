@@ -75,11 +75,11 @@ class SubjectLinkRule {
 
 		$holder = $this->holderOf(caseId: $link['to']);
 		if ($holder !== null && $this->idOf(case: $holder) !== $link['from']) {
-			return $this->refused(rule: 'subject_taken', target: $target, other: $this->identifierOf(case: $holder));
+			return $this->refused(rule: 'subject_taken', cases: ['target' => $target, 'other' => $this->identifierOf(case: $holder)]);
 		}
 
 		if ($this->hangsUnder(caseId: $link['from'], ancestorId: $link['to']) === true) {
-			return $this->refused(rule: 'subject_cycle', target: $target, other: $this->identifierOf(case: ($pair['origin'] ?? [])));
+			return $this->refused(rule: 'subject_cycle', cases: ['target' => $target, 'other' => $this->identifierOf(case: ($pair['origin'] ?? []))]);
 		}
 
 		return null;
@@ -149,12 +149,13 @@ class SubjectLinkRule {
 	 * The refusal for one broken rule.
 	 *
 	 * @param string $rule   `subject_taken` or `subject_cycle`.
-	 * @param string $target The case that would hang as the subject.
-	 * @param string $other  The other case the notice names.
+	 * @param array{target: string, other: string} $cases The case that would hang as the subject, and the other
+	 *                                                    case the notice names.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function refused(string $rule, string $target, string $other): array {
+	private function refused(string $rule, array $cases): array {
+		['target' => $target, 'other' => $other] = $cases;
 		$notice = $this->notices->linkRefused(rule: $rule, target: $target, other: $other);
 
 		return [

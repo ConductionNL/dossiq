@@ -122,11 +122,30 @@ class IncidentStore implements IncidentStoreInterface {
 		string $reporter = '',
 		string $assignee = '',
 	): array {
-		$caseId = trim($caseId);
-		$description = trim($description);
-		$happened = (new StoredInstant())->parse(value: $eventDate);
+		$report = [
+			'case' => trim($caseId),
+			'description' => trim($description),
+			'happened' => (new StoredInstant())->parse(value: $eventDate),
+			'reporter' => $reporter,
+			'assignee' => $assignee,
+		];
 
-		if ($caseId === '' || $description === '' || $happened === null) {
+		return $this->recordComplete(report: $report);
+	}//end record()
+
+	/**
+	 * Record a report that names a case, a parseable date and a description.
+	 *
+	 * @param array<string, mixed> $report The trimmed case and description, the parsed date as `happened`
+	 *                                     (null when it did not parse) and the untrimmed reporter and assignee.
+	 *
+	 * @return array<string, mixed> The stored incident.
+	 *
+	 * @throws RefusedException When the report is incomplete or cannot be written.
+	 */
+	private function recordComplete(array $report): array {
+		$happened = $report['happened'];
+		if ($report['case'] === '' || $report['description'] === '' || $happened === null) {
 			throw new RefusedException(
 				rule: self::INCOMPLETE,
 				sentence: 'A report needs a case, a date and a description, so nothing was recorded.',
@@ -136,18 +155,18 @@ class IncidentStore implements IncidentStoreInterface {
 
 		return $this->write(
 			incident: [
-				'case' => $caseId,
+				'case' => $report['case'],
 				'eventDate' => $happened->format('c'),
 				'recordedAt' => (new DateTimeImmutable())->format('c'),
-				'reporter' => trim($reporter),
-				'description' => $description,
-				'assignee' => trim($assignee),
+				'reporter' => trim($report['reporter']),
+				'description' => $report['description'],
+				'assignee' => trim($report['assignee']),
 				'state' => 'open',
 				'outcome' => '',
 			],
 			uuid: null,
 		);
-	}//end record()
+	}//end recordComplete()
 
 	/**
 	 * The incidents on a case, in the order the record puts them.

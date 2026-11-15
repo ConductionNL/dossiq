@@ -316,7 +316,22 @@ class ProcessingTimeCalculator {
 	 */
 	public function monthlyTrend(array $completed, array $types, int $months, DateTimeImmutable $today): array {
 		$buckets = $this->trendBuckets(today: $today, months: $months);
-		foreach ($completed as $record) {
+
+		return $this->trendRows(buckets: $this->tallied(buckets: $buckets, read: ['completed' => $completed, 'types' => $types]));
+	}//end monthlyTrend()
+
+	/**
+	 * The month buckets with each completed record counted, and counted within SLA when it was.
+	 *
+	 * @param array<string, array<string, mixed>> $buckets The month buckets.
+	 * @param array<string, array>                $read    The completed records (`completed`) and the prepared types
+	 *                                                     keyed by id (`types`).
+	 *
+	 * @return array<string, array<string, mixed>> The buckets, counted.
+	 */
+	private function tallied(array $buckets, array $read): array {
+		$types = $read['types'];
+		foreach ($read['completed'] as $record) {
 			$key = substr((string)($record['endDate'] ?? ''), 0, 7);
 			if (isset($buckets[$key]) === false) {
 				continue;
@@ -334,8 +349,8 @@ class ProcessingTimeCalculator {
 			}
 		}
 
-		return $this->trendRows(buckets: $buckets);
-	}//end monthlyTrend()
+		return $buckets;
+	}//end tallied()
 
 	/**
 	 * One empty bucket per month, oldest first, ending with this month.

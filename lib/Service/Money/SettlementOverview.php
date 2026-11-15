@@ -54,6 +54,15 @@ class SettlementOverview {
 	public const SETTLEMENT_SCHEMA = 'subsidieVaststelling';
 
 	/**
+	 * The field each schema names its parent by.
+	 */
+	private const REFERENCE_FIELD = [
+		self::APPLICATION_SCHEMA => 'case',
+		self::EXECUTION_SCHEMA => 'subsidieaanvraag',
+		self::SETTLEMENT_SCHEMA => 'subsidieuitvoering',
+	];
+
+	/**
 	 * Rows read per step.
 	 */
 	private const LIMIT = 50;
@@ -84,10 +93,10 @@ class SettlementOverview {
 	 */
 	public function forCase(string $caseId): array {
 		$settlements = [];
-		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, field: 'case', value: $caseId)) as $applicationId) {
-			foreach ($this->idsOf(rows: $this->rows(schema: self::EXECUTION_SCHEMA, field: 'subsidieaanvraag', value: $applicationId)) as $executionId) {
-				foreach ($this->rows(schema: self::SETTLEMENT_SCHEMA, field: 'subsidieuitvoering', value: $executionId) as $settlement) {
-					$settlements[] = $this->rowOf(settlement: $settlement, applicationId: $applicationId, executionId: $executionId);
+		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId)) as $applicationId) {
+			foreach ($this->idsOf(rows: $this->rows(schema: self::EXECUTION_SCHEMA, value: $applicationId)) as $executionId) {
+				foreach ($this->rows(schema: self::SETTLEMENT_SCHEMA, value: $executionId) as $settlement) {
+					$settlements[] = $this->rowOf(settlement: $settlement, settles: ['applicationId' => $applicationId, 'executionId' => $executionId]);
 				}
 			}
 		}
@@ -103,17 +112,16 @@ class SettlementOverview {
 	/**
 	 * One settlement as the case page reads it.
 	 *
-	 * @param array<string, mixed> $settlement    The settlement.
-	 * @param string               $applicationId The application it settles.
-	 * @param string               $executionId   The execution it settles.
+	 * @param array<string, mixed>                              $settlement The settlement.
+	 * @param array{applicationId: string, executionId: string} $settles    The application and the execution it settles.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(array $settlement, string $applicationId, string $executionId): array {
+	private function rowOf(array $settlement, array $settles): array {
 		return [
 			'id' => $this->idOf(row: $settlement),
-			'applicationId' => $applicationId,
-			'executionId' => $executionId,
+			'applicationId' => $settles['applicationId'],
+			'executionId' => $settles['executionId'],
 			'determinationDate' => substr((string)($settlement['determinationDate'] ?? ''), 0, 10),
 			'actualCostTotal' => $this->amountOf(value: $settlement['actualCostTotal'] ?? null),
 			'determinedAmount' => $this->amountOf(value: $settlement['determinedAmount'] ?? null),
@@ -206,15 +214,14 @@ class SettlementOverview {
 	}//end idOf()
 
 	/**
-	 * The rows of a schema whose field holds the value.
+	 * The rows of a schema whose reference field holds the value.
 	 *
-	 * @param string $schema The schema slug.
-	 * @param string $field  The reference field.
-	 * @param string $value  The id it must hold.
+	 * @param string $schema The schema slug, one of REFERENCE_FIELD's keys.
+	 * @param string $value  The id its reference field must hold.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	private function rows(string $schema, string $field, string $value): array {
+	private function rows(string $schema, string $value): array {
 		$objectService = $this->settings->getObjectService();
 		if ($objectService === null || $value === '') {
 			return [];
@@ -225,7 +232,7 @@ class SettlementOverview {
 				'filters' => [
 					'register' => AppIdentity::REGISTER_SLUG,
 					'schema' => $schema,
-					$field => $value,
+					self::REFERENCE_FIELD[$schema] => $value,
 				],
 				'limit' => self::LIMIT,
 			]

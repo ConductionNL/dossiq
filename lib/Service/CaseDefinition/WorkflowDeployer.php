@@ -161,7 +161,7 @@ class WorkflowDeployer {
 			$ids[(self::OUTCOME_LISTS[$outcome['kind']] ?? 'created')][] = $outcome['id'];
 		}
 
-		return $this->workflowOutcome(created: $ids['created'], replaced: $ids['replaced'], skipped: $ids['skipped']);
+		return $this->workflowOutcome(ids: $ids);
 	}//end deployEntries()
 
 	/**
@@ -312,13 +312,12 @@ class WorkflowDeployer {
 	/**
 	 * What the workflow deployment amounts to, said in the caller's vocabulary.
 	 *
-	 * @param array<int, string> $created  The templates deployed.
-	 * @param array<int, string> $replaced The templates replaced.
-	 * @param array<int, string> $skipped  The templates left alone.
+	 * @param array<string, array<int, string>> $ids The templates deployed (`created`), replaced (`replaced`) and left alone (`skipped`).
 	 *
 	 * @return array<string, mixed> The outcome.
 	 */
-	private function workflowOutcome(array $created, array $replaced, array $skipped): array {
+	private function workflowOutcome(array $ids): array {
+		['created' => $created, 'replaced' => $replaced, 'skipped' => $skipped] = $ids;
 		if ($created === [] && $replaced === [] && $skipped === []) {
 			return ['status' => 'error', 'message' => 'No workflow in the package was deployed.'];
 		}

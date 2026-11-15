@@ -340,7 +340,8 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 	}//end declaredOn()
 
 	/**
-	 * Close a case judged inadmissible with the declared result, then tell the applicant.
+	 * Close a case judged inadmissible with the declared result, then tell the applicant,
+	 * and answer what was recorded, what the close did and what happened to the message.
 	 *
 	 * @param array<string, mixed> $judgement The recorded verdict: caseId, case, declaration and record.
 	 *
@@ -361,7 +362,18 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 
 		$told = $this->tellApplicant(judgement: $judgement);
 
-		return $this->closedResult(record: $record, closed: $closed, told: $told, moment: $declaration['moment']);
+		return [
+			'verdict' => $record['verdict'],
+			'record' => $record,
+			'closed' => true,
+			'close' => $closed,
+			// What happened to the message, reported rather than assumed, so a
+			// surface can say "and the applicant was not told, because the case
+			// carries no address" instead of leaving it to be discovered.
+			'applicantTold' => $told['sent'],
+			'applicantMessage' => $told,
+			'moment' => $declaration['moment'],
+		];
 	}//end closeInadmissible()
 
 	/**
@@ -383,31 +395,6 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 			);
 		}
 	}//end requireDeclaredResult()
-
-	/**
-	 * What was recorded, what the close did and what happened to the message.
-	 *
-	 * @param array<string, mixed> $record The recorded verdict.
-	 * @param mixed                $closed What the close did.
-	 * @param array<string, mixed> $told   What happened to the message.
-	 * @param mixed                $moment The declaration's moment.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function closedResult(array $record, mixed $closed, array $told, mixed $moment): array {
-		return [
-			'verdict' => $record['verdict'],
-			'record' => $record,
-			'closed' => true,
-			'close' => $closed,
-			// What happened to the message, reported rather than assumed, so a
-			// surface can say "and the applicant was not told, because the case
-			// carries no address" instead of leaving it to be discovered.
-			'applicantTold' => $told['sent'],
-			'applicantMessage' => $told,
-			'moment' => $moment,
-		];
-	}//end closedResult()
 
 	/**
 	 * Tell the applicant through the declared moment, after the close.

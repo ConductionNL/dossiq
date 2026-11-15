@@ -52,6 +52,7 @@ use RuntimeException;
 class WooSearchPlans implements WooSearchPlansInterface {
 
 	use SearchesObjects;
+	use StoresWooRows;
 
 	/**
 	 * The plan's config key.
@@ -458,21 +459,7 @@ class WooSearchPlans implements WooSearchPlansInterface {
 	 * @return array<string, mixed> The row as stored.
 	 */
 	private function save(string $configKey, array $row, string $uuid): array {
-		[$objectService, $register, $schema] = $this->target(configKey: $configKey);
-		unset($row['id'], $row['uuid'], $row['@self']);
-
-		$existing = null;
-		if ($uuid !== '') {
-			$existing = $uuid;
-		}
-
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
-
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			$saved = $saved->jsonSerialize();
-		}
-
-		return (array)$saved;
+		return $this->storeRow(target: $this->target(configKey: $configKey), row: $row, uuid: $uuid);
 	}//end save()
 
 	/**
@@ -494,16 +481,4 @@ class WooSearchPlans implements WooSearchPlansInterface {
 
 		return [$objectService, $register, $schema];
 	}//end target()
-
-	/**
-	 * A row's uuid.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
 }//end class

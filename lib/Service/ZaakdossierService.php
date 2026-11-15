@@ -164,27 +164,38 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			infoSchema: $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
 		);
 
-		// Who the document came from and who it went to, resolved against the
-		// parties this case has. See CorrespondentWriter::resolveFor().
-		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
-		$correspondents = $this->correspondentsOf(upload: $upload, direction: $direction);
-
-		$informatieobject = $this->uploadedRecord(
-			upload: $upload,
-			profile: new UploadedDocumentProfile(
-				type: $type,
-				classification: $classification,
-				direction: $direction,
-				correspondents: $correspondents,
-			),
-		);
+		$profile = $this->profileOf(upload: $upload, typed: [$type, $classification]);
+		$informatieobject = $this->uploadedRecord(upload: $upload, profile: $profile);
 
 		$infoId = $this->storeUploadedRecord(store: $store, upload: $upload, informatieobject: $informatieobject);
 
-		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $correspondents);
+		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $profile->correspondents);
 
 		return $this->uploadSummary(infoId: $infoId, informatieobject: $informatieobject);
 	}//end uploadDocument()
+
+	/**
+	 * The upload's type and classification, with who it came from and who it went to.
+	 *
+	 * @param DocumentUpload              $upload The upload: its case and metadata.
+	 * @param array{0: string, 1: string} $typed  The resolved type and classification.
+	 *
+	 * @return UploadedDocumentProfile The profile.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function profileOf(DocumentUpload $upload, array $typed): UploadedDocumentProfile {
+		// Who the document came from and who it went to, resolved against the
+		// parties this case has. See CorrespondentWriter::resolveFor().
+		$direction = $this->normaliser->direction(value: ($upload->metadata['direction'] ?? null));
+
+		return new UploadedDocumentProfile(
+			type: $typed[0],
+			classification: $typed[1],
+			direction: $direction,
+			correspondents: $this->correspondentsOf(upload: $upload, direction: $direction),
+		);
+	}//end profileOf()
 
 	/**
 	 * Who the document came from and who it went to, resolved against the case's parties.
@@ -327,10 +338,20 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	private function storeUploadedRecord(InformatieobjectStore $store, DocumentUpload $upload, array $informatieobject): string {
-		$objectService = $store->objectService;
-		$register = $store->register;
-		$infoSchema = $store->infoSchema;
+		[$record, $infoId] = $this->recordOfFile(upload: $upload, informatieobject: $informatieobject);
 
+		return $this->savedRecordId(store: $store, record: [$record, $infoId]);
+	}//end storeUploadedRecord()
+
+	/**
+	 * Store the upload's bytes on its case, and the record they belong to: the one the file already has, merged.
+	 *
+	 * @param DocumentUpload       $upload           The upload: its case, file name and bytes.
+	 * @param array<string, mixed> $informatieobject The record as built for the upload.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string} The record to save, and its id ('' for a new one).
+	 */
+	private function recordOfFile(DocumentUpload $upload, array $informatieobject): array {
 		$fileId = $this->recordStore->storeFileOnObject(objectId: $upload->caseId, fileName: $upload->fileName, content: $upload->content);
 		$existing = [];
 		if ($fileId > 0) {
@@ -340,7 +361,23 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		$infoId = (string)($existing['id'] ?? '');
 		unset($existing['id'], $existing['@self']);
-		$record = array_merge($existing, $informatieobject);
+
+		return [array_merge($existing, $informatieobject), $infoId];
+	}//end recordOfFile()
+
+	/**
+	 * Save the record, updating it when it has an id, and answer its id.
+	 *
+	 * @param InformatieobjectStore                     $store  The object service, register and informatieobject schema.
+	 * @param array{0: array<string, mixed>, 1: string} $record The record, and its id ('' for a new one).
+	 *
+	 * @return string The record's id.
+	 */
+	private function savedRecordId(InformatieobjectStore $store, array $record): string {
+		[$record, $infoId] = $record;
+		$objectService = $store->objectService;
+		$register = $store->register;
+		$infoSchema = $store->infoSchema;
 		if ($infoId !== '') {
 			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
 		}
@@ -351,7 +388,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		}
 
 		return $infoId;
-	}//end storeUploadedRecord()
+	}//end savedRecordId()
 
 	/**
 	 * The record an uploaded document gets.

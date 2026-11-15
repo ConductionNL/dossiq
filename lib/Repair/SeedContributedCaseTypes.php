@@ -195,9 +195,8 @@ class SeedContributedCaseTypes implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function addSafely(array $target, array $contributed): int {
-		[$objectService, $register, $schema] = $target;
 		try {
-			return $this->addOne(objectService: $objectService, register: $register, schema: $schema, contributed: $contributed);
+			return $this->addOne(target: $target, contributed: $contributed);
 		} catch (Throwable $e) {
 			// ONE APP'S BAD DECLARATION MUST NOT COST THE OTHERS THEIRS,
 			// which is the rule the registry already applies to a provider
@@ -214,16 +213,15 @@ class SeedContributedCaseTypes implements IRepairStep {
 	/**
 	 * Store one contributed case type, unless its identifier is already taken.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The case-type schema.
-	 * @param array<string, mixed> $contributed   The normalised declaration.
+	 * @param array{0: object, 1: string, 2: string} $target      The object service, the register and the case-type schema.
+	 * @param array<string, mixed>                   $contributed The normalised declaration.
 	 *
 	 * @return int 1 when a case type was created, 0 when one already existed.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function addOne(object $objectService, string $register, string $schema, array $contributed): int {
+	private function addOne(array $target, array $contributed): int {
+		[$objectService, $register, $schema] = $target;
 		$identifier = (string)($contributed['identifier'] ?? '');
 		$filters = ['identifier' => $identifier];
 		$existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);

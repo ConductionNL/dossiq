@@ -137,7 +137,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return;
 		}
 
-		$this->applyHold(caseId: $caseId, place: $place, reason: $this->holdReason(schemaSlug: $schemaSlug, place: $place));
+		$this->applyHold(caseId: $caseId, hold: ['place' => $place, 'reason' => $this->holdReason(schemaSlug: $schemaSlug, place: $place)]);
 	}//end handle()
 
 	/**
@@ -183,12 +183,13 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * the case in its current hold state and is logged.
 	 *
 	 * @param string $caseId The case UUID to hold/release.
-	 * @param bool $place True to place a hold, false to release.
-	 * @param string $reason Human-readable reason recorded on the hold.
+	 * @param array{place: bool, reason: string} $hold True to place a hold, false to release, and the
+	 *                                                 human-readable reason recorded on the hold.
 	 *
 	 * @return void
 	 */
-	private function applyHold(string $caseId, bool $place, string $reason): void {
+	private function applyHold(string $caseId, array $hold): void {
+		['place' => $place, 'reason' => $reason] = $hold;
 		$target = $this->holdTarget(caseId: $caseId, place: $place);
 		if ($target === []) {
 			return;

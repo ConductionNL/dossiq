@@ -199,7 +199,7 @@ class InstalledPackageExamples {
 	private function write(PackageInstallRun $run, array $groups): array {
 		$missing = array_column($groups, 'missing');
 		if ($missing !== []) {
-			return $this->missingRefusal(run: $run, groups: $groups, missing: $missing);
+			return $this->missingRefusal(run: $run, unmet: ['groups' => $groups, 'missing' => $missing]);
 		}
 
 		$result = $this->writer->writePackage(package: $run->id, groups: $groups);
@@ -217,19 +217,18 @@ class InstalledPackageExamples {
 	/**
 	 * The refusal for examples that need something the instance lacks.
 	 *
-	 * @param PackageInstallRun                $run     The install.
-	 * @param array<int, array<string, mixed>> $groups  The example groups.
-	 * @param array<int, mixed>                $missing What the groups miss.
+	 * @param PackageInstallRun                                                         $run   The install.
+	 * @param array{groups: array<int, array<string, mixed>>, missing: array<int, mixed>} $unmet The example groups, and what they miss.
 	 *
 	 * @return array<string, mixed> The outcome, with `missing`.
 	 */
-	private function missingRefusal(PackageInstallRun $run, array $groups, array $missing): array {
+	private function missingRefusal(PackageInstallRun $run, array $unmet): array {
 		return $this->outcome(
 			status: PackageInstaller::REFUSED,
 			id: $run->id,
 			version: $run->version,
-			message: "The examples of package '{$run->id}' need " . implode('; ', array_column($groups, 'reason')) . '.',
-		) + ['missing' => array_values(array_unique($missing))];
+			message: "The examples of package '{$run->id}' need " . implode('; ', array_column($unmet['groups'], 'reason')) . '.',
+		) + ['missing' => array_values(array_unique($unmet['missing']))];
 	}//end missingRefusal()
 
 	/**

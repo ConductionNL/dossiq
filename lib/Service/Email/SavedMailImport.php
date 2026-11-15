@@ -117,15 +117,27 @@ class SavedMailImport implements SavedMailImportInterface {
 			);
 		}
 
-		$file = new SavedMailFile(caseId: $caseId, fileName: $fileName);
+		return $this->parseOntoCase(parser: $parser, mail: ['file' => new SavedMailFile(caseId: $caseId, fileName: $fileName), 'raw' => $raw]);
+	}//end import()
+
+	/**
+	 * Parse the saved mail and file it on the case; a file the reader refuses is kept as it is.
+	 *
+	 * @param object                                 $parser integriq's mail reader.
+	 * @param array{file: SavedMailFile, raw: string} $mail   The case and file name, and the file's bytes.
+	 *
+	 * @return array<string, mixed> What the import did.
+	 */
+	private function parseOntoCase(object $parser, array $mail): array {
+		$file = $mail['file'];
 		try {
-			$parsed = $parser->parse($fileName, $raw);
+			$parsed = $parser->parse($file->fileName, $mail['raw']);
 		} catch (Throwable $e) {
 			return $this->unreadableFile(file: $file, failure: $e);
 		}
 
 		return $this->fileOnCase(file: $file, parsed: $parsed);
-	}//end import()
+	}//end parseOntoCase()
 
 	/**
 	 * Why the input cannot be read at all, or '' when it can: no case, no

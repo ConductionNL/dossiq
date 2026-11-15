@@ -251,14 +251,12 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function newestFromLink(string $caseId, array $share): ?array {
-		$actorId = 'link:' . trim((string)($share['accessLinkUuid'] ?? ''));
-		$alreadyCollected = (int)($share['lastCollectedNote'] ?? 0);
-
-		return $this->newestComment(
-			caseId: $caseId,
-			actorId: $actorId,
-			after: $alreadyCollected
+		$cursor = new LinkCommentCursor(
+			actorId: 'link:' . trim((string)($share['accessLinkUuid'] ?? '')),
+			after: (int)($share['lastCollectedNote'] ?? 0)
 		);
+
+		return $this->newestComment(caseId: $caseId, cursor: $cursor);
 	}//end newestFromLink()
 
 	/**
@@ -315,9 +313,8 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 * The newest comment on the case written as this link, later than the one
 	 * already collected.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $actorId The link principal, `link:<uuid>`.
-	 * @param int $after The id already collected.
+	 * @param string            $caseId The case UUID.
+	 * @param LinkCommentCursor $cursor The link principal and the id already collected.
 	 *
 	 * @return array<string, mixed>|null The comment, or null when there is nothing new.
 	 *
@@ -325,7 +322,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
-	private function newestComment(string $caseId, string $actorId, int $after): ?array {
+	private function newestComment(string $caseId, LinkCommentCursor $cursor): ?array {
 		// A read that could not be made must not answer "nothing new". The
 		// handler would read that as "the body has not replied", press on, and
 		// close a consultation whose advice was sitting there unread.
@@ -334,7 +331,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			throw new RuntimeException('This instance cannot read the comments on a case, so advice cannot be collected');
 		}
 
-		return $this->newestOf(rows: $this->commentRows(notes: $notes, caseId: $caseId), actorId: $actorId, after: $after);
+		return $this->newestOf(rows: $this->commentRows(notes: $notes, caseId: $caseId), cursor: $cursor);
 	}//end newestComment()
 
 	/**
@@ -364,16 +361,15 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	/**
 	 * The newest link comment not collected yet.
 	 *
-	 * @param mixed  $rows    The comment rows.
-	 * @param string $actorId The consultation link's actor id.
-	 * @param int    $after   The id the last collected comment had.
+	 * @param mixed             $rows   The comment rows.
+	 * @param LinkCommentCursor $cursor The consultation link's actor id and the id the last collected comment had.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function newestOf(mixed $rows, string $actorId, int $after): ?array {
+	private function newestOf(mixed $rows, LinkCommentCursor $cursor): ?array {
 		$newest = null;
 		foreach ((array)$rows as $row) {
-			if ($this->isUncollectedLinkComment(row: $row, actorId: $actorId, after: $after) === false) {
+			if ($this->isUncollectedLinkComment(row: $row, cursor: $cursor) === false) {
 				continue;
 			}
 
@@ -401,15 +397,14 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 * Whether one comment is this link's, and newer than the one already
 	 * collected.
 	 *
-	 * @param mixed $row The comment as OpenRegister returned it.
-	 * @param string $actorId The link principal, `link:<uuid>`.
-	 * @param int $after The id already collected.
+	 * @param mixed             $row    The comment as OpenRegister returned it.
+	 * @param LinkCommentCursor $cursor The link principal and the id already collected.
 	 *
 	 * @return bool True when it counts as advice nobody has recorded yet.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
-	private function isUncollectedLinkComment(mixed $row, string $actorId, int $after): bool {
+	private function isUncollectedLinkComment(mixed $row, LinkCommentCursor $cursor): bool {
 		if (is_array($row) === false) {
 			return false;
 		}
@@ -418,11 +413,11 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			return false;
 		}
 
-		if ((string)($row['actorId'] ?? '') !== $actorId) {
+		if ((string)($row['actorId'] ?? '') !== $cursor->actorId) {
 			return false;
 		}
 
-		return ((int)($row['id'] ?? 0) > $after);
+		return ((int)($row['id'] ?? 0) > $cursor->after);
 	}//end isUncollectedLinkComment()
 
 	/**

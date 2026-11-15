@@ -263,18 +263,30 @@ class IntakeTriageController extends Controller {
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'judge admissibility of case ' . $caseId, e: $e);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: judging admissibility of case ' . $caseId . ' failed: ' . $e->getMessage()
-			);
-
-			return new JSONResponse(
-				['message' => 'The verdict was not recorded.', 'error' => 'admissibility-failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->admissibilityFailed(caseId: $caseId, e: $e);
 		}//end try
 
 		return new JSONResponse($recorded);
 	}//end judgeAdmissibility()
+
+	/**
+	 * Log a verdict that could not be recorded, and answer it.
+	 *
+	 * @param string    $caseId The case.
+	 * @param Throwable $e      What went wrong.
+	 *
+	 * @return JSONResponse The 500.
+	 */
+	private function admissibilityFailed(string $caseId, Throwable $e): JSONResponse {
+		$this->logger->error(
+			'Dossiq: judging admissibility of case ' . $caseId . ' failed: ' . $e->getMessage()
+		);
+
+		return new JSONResponse(
+			['message' => 'The verdict was not recorded.', 'error' => 'admissibility-failed'],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end admissibilityFailed()
 
 	/**
 	 * The triage queue, with its sleeping items taken out and each item's likely case suggested.

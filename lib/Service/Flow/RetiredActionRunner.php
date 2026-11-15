@@ -165,10 +165,8 @@ class RetiredActionRunner {
 		}
 
 		return ['type' => $type] + $this->runSteps(
-			steps: $steps,
 			registry: $registry,
-			case: $case,
-			runContext: $this->runContext(context: $context),
+			run: ['steps' => $steps, 'case' => $case, 'context' => $this->runContext(context: $context)],
 		);
 	}//end run()
 
@@ -196,21 +194,19 @@ class RetiredActionRunner {
 	/**
 	 * Run the steps in order, each on the previous one's items.
 	 *
-	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps      The steps.
-	 * @param FlowNodeRegistry                                              $registry   OpenRegister's node catalogue.
-	 * @param array<string, mixed>                                          $case       The case.
-	 * @param array<string, mixed>                                          $runContext The run context.
+	 * @param FlowNodeRegistry     $registry OpenRegister's node catalogue.
+	 * @param array<string, mixed> $run      The `steps`, the `case` they start on and the run `context`.
 	 *
 	 * @return array{ok: bool, error?: string} The result row, without its type.
 	 *
 	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
-	private function runSteps(array $steps, FlowNodeRegistry $registry, array $case, array $runContext): array {
-		$items = [['json' => $case]];
+	private function runSteps(FlowNodeRegistry $registry, array $run): array {
+		$items = [['json' => $run['case']]];
 		try {
-			foreach ($steps as $step) {
-				$items = $registry->get(type: $step['type'])->execute(call: new FlowNodeCall(items: $items, config: $step['config'], context: $runContext));
+			foreach ($run['steps'] as $step) {
+				$items = $registry->get(type: $step['type'])->execute(call: new FlowNodeCall(items: $items, config: $step['config'], context: $run['context']));
 			}
 		} catch (Throwable $e) {
 			$message = $e->getMessage();

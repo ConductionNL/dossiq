@@ -108,11 +108,17 @@ class RemedyLodging implements RemedyLodgingInterface {
 
 		$received = ($this->dates->tryParse(value: ($objection['receivedDate'] ?? null)) ?? $this->dates->today());
 		$isTimely = $this->isTimely(decision: $decision, termDays: $remedy['termDays'], received: $received);
-		$opened = $this->openRemedyCase(store: $store, caseId: $caseId, remedy: $remedy, received: $received);
+		$opened = $this->openRemedyCase(store: $store, opening: ['caseId' => $caseId, 'remedy' => $remedy, 'received' => $received]);
 		$openedId = self::openedIdOf(opened: $opened);
 
-		$record = $this->recordObjection(store: $store, openedId: $openedId, decision: $decision,
-			objection: ['receivedDate' => $received->format('Y-m-d'), 'isTimely' => $isTimely] + $objection);
+		$record = $this->recordObjection(
+			store: $store,
+			filing: [
+				'openedId' => $openedId,
+				'decision' => $decision,
+				'objection' => ['receivedDate' => $received->format('Y-m-d'), 'isTimely' => $isTimely] + $objection,
+			]
+		);
 
 		return self::lodged(record: $record, opened: $opened, isTimely: $isTimely);
 	}//end lodge()
@@ -242,17 +248,17 @@ class RemedyLodging implements RemedyLodgingInterface {
 	/**
 	 * Open the remedy case, titled after the decided case.
 	 *
-	 * @param array{objectService: object, register: string, caseSchema: string} $store    Where the cases live.
-	 * @param string                                                            $caseId   The decided case.
-	 * @param array<string, mixed>                                              $remedy   The remedy declaration: its kind, for the title,
-	 *                                                                                    and its case type.
-	 * @param DateTimeImmutable                                                 $received When the remedy came in.
+	 * @param array{objectService: object, register: string, caseSchema: string}              $store   Where the cases live.
+	 * @param array{caseId: string, remedy: array<string, mixed>, received: DateTimeImmutable} $opening The decided case, the remedy
+	 *                                                                                         declaration (its kind, for the title, and its
+	 *                                                                                         case type) and when the remedy came in.
 	 *
 	 * @return array<string, mixed> The opened case, or an empty array.
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */
-	private function openRemedyCase(array $store, string $caseId, array $remedy, DateTimeImmutable $received): array {
+	private function openRemedyCase(array $store, array $opening): array {
+		['caseId' => $caseId, 'remedy' => $remedy, 'received' => $received] = $opening;
 		$decided = $this->findObjectAsArray(
 			objectService: $store['objectService'],
 			register: $store['register'],
@@ -275,10 +281,9 @@ class RemedyLodging implements RemedyLodgingInterface {
 	/**
 	 * Record the objection on the opened case, withdrawing the case when that fails.
 	 *
-	 * @param array{objectService: object, register: string, caseSchema: string} $store     Where the cases live.
-	 * @param string                                                            $openedId  The opened remedy case.
-	 * @param array<string, mixed>                                              $decision  The contested decision.
-	 * @param array<string, mixed>                                              $objection The objection payload.
+	 * @param array{objectService: object, register: string, caseSchema: string}                     $store  Where the cases live.
+	 * @param array{openedId: string, decision: array<string, mixed>, objection: array<string, mixed>} $filing The opened remedy case,
+	 *                                                                                                the contested decision and the objection payload.
 	 *
 	 * @return array<string, mixed> The recorded objection.
 	 *
@@ -286,15 +291,15 @@ class RemedyLodging implements RemedyLodgingInterface {
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */
-	private function recordObjection(array $store, string $openedId, array $decision, array $objection): array {
+	private function recordObjection(array $store, array $filing): array {
 		try {
 			$record = $this->objections->onBezwaarCreated(
-				objectionCaseId: $openedId,
-				contestedDecisionId: (string)($decision['id'] ?? ''),
-				objectionPayload: $objection,
+				objectionCaseId: $filing['openedId'],
+				contestedDecisionId: (string)($filing['decision']['id'] ?? ''),
+				objectionPayload: $filing['objection'],
 			);
 		} catch (Throwable $e) {
-			$this->withdrawOpened(store: $store, caseId: $openedId);
+			$this->withdrawOpened(store: $store, caseId: $filing['openedId']);
 			throw new RuntimeException($e->getMessage(), 0, $e);
 		}
 

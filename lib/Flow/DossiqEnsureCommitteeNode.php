@@ -201,8 +201,8 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
         $config = $call->config;
         $this->validateConfig(config: $config);
 
-        $field     = $this->configString(config: $config, key: 'committeeField', fallback: self::DEFAULT_COMMITTEE_FIELD);
-        $outputKey = $this->configString(config: $config, key: 'outputKey', fallback: self::DEFAULT_OUTPUT_KEY);
+        $field     = $this->configString(config: $config, setting: ['committeeField' => self::DEFAULT_COMMITTEE_FIELD]);
+        $outputKey = $this->configString(config: $config, setting: ['outputKey' => self::DEFAULT_OUTPUT_KEY]);
 
         $out = [];
         foreach ($items as $item) {
@@ -364,13 +364,14 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * Read a config value, falling back when absent or blank.
      *
      * @param array  $config   The step configuration.
-     * @param string $key      The key.
-     * @param string $fallback The fallback.
+     * @param array<string, string> $setting The key, and its fallback.
      *
      * @return string The value.
      */
-    private function configString(array $config, string $key, string $fallback): string {
-        $value = trim((string) ($config[$key] ?? ''));
+    private function configString(array $config, array $setting): string {
+        $key      = (string) array_key_first($setting);
+        $fallback = $setting[$key];
+        $value    = trim((string) ($config[$key] ?? ''));
         if ($value === '') {
             return $fallback;
         }

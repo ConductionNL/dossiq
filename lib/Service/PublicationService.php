@@ -119,7 +119,7 @@ class PublicationService implements PublicationServiceInterface {
 		}
 
 		$entry = $this->entryFor(caseId: $caseId, channel: $channel);
-		$case = $this->loadCase(objectService: $objectService, caseId: $caseId, register: $entry['register'], schema: $entry['schema']);
+		$case = $this->loadCase(objectService: $objectService, entry: $entry);
 		$entry += $this->stampOf(payload: $payload);
 
 		// Hand the outbound leg to integriq (ADR-041 seam): dossiq composes
@@ -195,14 +195,9 @@ class PublicationService implements PublicationServiceInterface {
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
 	private function publicationsWith(array $case, array $entry): array {
-		$publications = $this->upsertPublication(
-			publications: $this->extractPublications(case: $case),
-			channel: $entry['channel'],
-			publishedAt: $entry['publishedAt'],
-			notes: $entry['notes']
-		);
+		$publications = $this->upsertPublication(publications: $this->extractPublications(case: $case), entry: $entry);
 
-		return $this->attachDelivery(publications: $publications, channel: $entry['channel'], delivery: $entry['delivery']);
+		return $this->attachDelivery(publications: $publications, entry: $entry);
 	}//end publicationsWith()
 
 	/**
@@ -309,15 +304,14 @@ class PublicationService implements PublicationServiceInterface {
 	 * Attach a delivery record to the publication entry for a channel.
 	 *
 	 * @param array<int, array<string, mixed>> $publications The publications list.
-	 * @param string $channel The channel whose entry carries the delivery.
-	 * @param array<string, mixed> $delivery The delivery record.
+	 * @param array<string, mixed> $entry The entry: the channel whose publication carries the delivery, and the delivery record.
 	 *
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
-	private function attachDelivery(array $publications, string $channel, array $delivery): array {
+	private function attachDelivery(array $publications, array $entry): array {
 		foreach ($publications as $i => $pub) {
-			if ((string)($pub['channel'] ?? '') === $channel) {
-				$publications[$i]['delivery'] = $delivery;
+			if ((string)($pub['channel'] ?? '') === $entry['channel']) {
+				$publications[$i]['delivery'] = $entry['delivery'];
 				break;
 			}
 		}
@@ -329,17 +323,16 @@ class PublicationService implements PublicationServiceInterface {
 	 * Load a case from OpenRegister and normalise it to its array form.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $caseId The case id.
-	 * @param mixed $register The configured register id.
-	 * @param mixed $schema The configured case schema id.
+	 * @param array<string, mixed> $entry The entry: the case id, and the configured register and case schema ids.
 	 *
 	 * @return array<string, mixed> The case data.
 	 *
 	 * @throws \RuntimeException When the case cannot be loaded or does not exist.
 	 */
-	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): array {
+	private function loadCase(object $objectService, array $entry): array {
+		$caseId = $entry['caseId'];
 		try {
-			$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+			$obj = $objectService->find(id: $caseId, register: $entry['register'], schema: $entry['schema']);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',
@@ -366,32 +359,28 @@ class PublicationService implements PublicationServiceInterface {
 	 * channel has its timestamp and notes replaced rather than being duplicated.
 	 *
 	 * @param array<int, array<string, mixed>> $publications The existing publications list.
-	 * @param string $channel The publication channel.
-	 * @param string $publishedAt The publication timestamp.
-	 * @param string|null $notes Optional publication notes.
+	 * @param array<string, mixed> $entry The entry: the channel, the publication timestamp and the optional notes.
 	 *
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
-	private function upsertPublication(array $publications, string $channel, string $publishedAt, ?string $notes): array {
+	private function upsertPublication(array $publications, array $entry): array {
+		$record = [
+			'channel' => $entry['channel'],
+			'publishedAt' => $entry['publishedAt'],
+			'notes' => $entry['notes'],
+		];
+
 		$upserted = false;
 		foreach ($publications as $i => $pub) {
-			if ((string)($pub['channel'] ?? '') === $channel) {
-				$publications[$i] = [
-					'channel' => $channel,
-					'publishedAt' => $publishedAt,
-					'notes' => $notes,
-				];
+			if ((string)($pub['channel'] ?? '') === $record['channel']) {
+				$publications[$i] = $record;
 				$upserted = true;
 				break;
 			}
 		}
 
 		if ($upserted === false) {
-			$publications[] = [
-				'channel' => $channel,
-				'publishedAt' => $publishedAt,
-				'notes' => $notes,
-			];
+			$publications[] = $record;
 		}
 
 		return $publications;

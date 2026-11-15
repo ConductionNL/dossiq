@@ -136,12 +136,24 @@ class SystemCaseStore {
 			return null;
 		}
 
-		$currentId = $caseTypeId;
-		$seen      = [$caseTypeId => true];
+		return $this->latestVersion(store: [$objectService, $register], first: [$caseTypeId, $current]);
+	}//end currentCaseType()
+
+	/**
+	 * The version nothing has superseded, walking `supersededBy` from the first one read.
+	 *
+	 * @param array{0: object, 1: string}              $store The OpenRegister ObjectService and the dossiq register.
+	 * @param array{0: string, 1: array<string, mixed>} $first The id the caller named, and the row it names.
+	 *
+	 * @return array<string, mixed> The current version, with its own `id`.
+	 */
+	private function latestVersion(array $store, array $first): array {
+		[$currentId, $current] = $first;
+		$seen      = [$currentId => true];
 		$next      = trim((string)($current['supersededBy'] ?? ''));
 		while ($next !== '' && isset($seen[$next]) === false) {
 			$seen[$next] = true;
-			$row = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $next);
+			$row = $this->caseType(objectService: $store[0], register: $store[1], caseTypeId: $next);
 			if ($row === null) {
 				break;
 			}
@@ -154,7 +166,7 @@ class SystemCaseStore {
 		$current['id'] = $currentId;
 
 		return $current;
-	}//end currentCaseType()
+	}//end latestVersion()
 
 	/**
 	 * A case by id, or an empty array when it is absent or cannot be read.
@@ -205,9 +217,11 @@ class SystemCaseStore {
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
 	public function write(object $objectService, string $register, array $case, ?array $caseType = null): ?array {
-		$case = $this->withOpeningDefaults(objectService: $objectService, register: $register, case: $case, caseType: $caseType);
+		$store = [$objectService, $register];
+		$caseType ??= $this->caseTypeNamedBy(store: $store, case: $case);
+		$case = $this->withOpeningDefaults(case: $case, caseType: $caseType);
 
-		$written = $this->saveAsSystem(objectService: $objectService, register: $register, case: $case);
+		$written = $this->saveAsSystem(store: $store, case: $case);
 		$saved = $written['saved'];
 		$failed = $written['failed'];
 
@@ -221,24 +235,36 @@ class SystemCaseStore {
 	}//end write()
 
 	/**
+	 * The case type the case names in `caseType`, or null when it names none or it cannot be read.
+	 *
+	 * @param array{0: object, 1: string} $store The OpenRegister ObjectService and the dossiq register.
+	 * @param array<string, mixed>        $case  The case to write.
+	 *
+	 * @return array<string, mixed>|null The case type.
+	 *
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 */
+	private function caseTypeNamedBy(array $store, array $case): ?array {
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseTypeId === '') {
+			return null;
+		}
+
+		return $this->caseType(objectService: $store[0], register: $store[1], caseTypeId: $caseTypeId);
+	}//end caseTypeNamedBy()
+
+	/**
 	 * The case with the opening fields it lacks taken from its case type.
 	 *
-	 * @param object                    $objectService The OpenRegister ObjectService.
-	 * @param string                    $register      The dossiq register.
-	 * @param array<string, mixed>      $case          The case to write.
-	 * @param array<string, mixed>|null $caseType      Its case type, or null to read it from `caseType`.
+	 * @param array<string, mixed>      $case     The case to write.
+	 * @param array<string, mixed>|null $caseType Its case type, or null when it has none.
 	 *
 	 * @return array<string, mixed> The case.
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
-	private function withOpeningDefaults(object $objectService, string $register, array $case, ?array $caseType): array {
-		$caseTypeId = trim((string)($case['caseType'] ?? ''));
-		if ($caseType === null && $caseTypeId !== '') {
-			$caseType = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
-		}
-
+	private function withOpeningDefaults(array $case, ?array $caseType): array {
 		if ($caseType !== null) {
 			$case = $this->openingDefaults->apply(case: $case, caseType: $caseType);
 		}
@@ -249,16 +275,16 @@ class SystemCaseStore {
 	/**
 	 * Write the case as the system, logging a failed write.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
-	 * @param array<string, mixed> $case          The case to write.
+	 * @param array{0: object, 1: string} $store The OpenRegister ObjectService and the dossiq register.
+	 * @param array<string, mixed>        $case  The case to write.
 	 *
 	 * @return array{saved: mixed, failed: bool} What the write returned, and whether it failed.
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
-	private function saveAsSystem(object $objectService, string $register, array $case): array {
+	private function saveAsSystem(array $store, array $case): array {
+		[$objectService, $register] = $store;
 		$saved  = null;
 		$failed = false;
 		try {

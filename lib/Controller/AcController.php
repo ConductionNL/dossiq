@@ -151,14 +151,9 @@ class AcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		$unavailable = $this->consumerServiceUnavailable();
-		if ($unavailable !== null) {
-			return $unavailable;
+		$refusal = $this->zgwService->validateJwtAuth($this->request) ?? $this->consumerServiceUnavailable();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {

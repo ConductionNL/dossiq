@@ -117,29 +117,28 @@ class AccrualNoticeController extends Controller {
 		$instance = $this->termInstanceOf(caseId: $request['caseId'], instanceId: $request['instanceId']);
 		$refused = $this->refusalFor(instance: $instance, request: $request, user: $user);
 
-		return ($refused ?? $this->storeNotice(instance: $instance, request: $request, body: $body));
+		return ($refused ?? $this->storeNotice(instance: $instance, request: $request));
 	}//end register()
 
 	/**
 	 * Register the notice on its term instance, answering 201 or the 400 that says why not.
 	 *
-	 * @param array<string, mixed>|null                                                                 $instance The term instance.
-	 * @param array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable} $request  The notice's fields.
-	 * @param array<string, mixed>                                                                      $body     The request body.
+	 * @param array<string, mixed>|null $instance The term instance.
+	 * @param array<string, mixed>      $request  The notice's fields, as {@see noticeRequest()} reads them.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
-	private function storeNotice(?array $instance, array $request, array $body): JSONResponse {
+	private function storeNotice(?array $instance, array $request): JSONResponse {
 		try {
 			$row = $this->service->registerNotice(
 				(string)($instance['id'] ?? $request['instanceId']),
 				$request['receipt'],
 				$request['channel'],
-				(string)($body['documentLink'] ?? ''),
-				trim((string)($body['sender'] ?? ''))
+				$request['documentLink'],
+				$request['sender']
 			);
 			return new JSONResponse($row, Http::STATUS_CREATED);
 		} catch (Throwable $e) {
@@ -153,7 +152,7 @@ class AccrualNoticeController extends Controller {
 	 *
 	 * @param array<string, mixed> $body The request body.
 	 *
-	 * @return array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable}|JSONResponse
+	 * @return array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable, documentLink: string, sender: string}|JSONResponse
 	 *
 	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
@@ -175,7 +174,14 @@ class AccrualNoticeController extends Controller {
 			return new JSONResponse(['message' => 'receiptDate is not a date'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return ['caseId' => $caseId, 'instanceId' => $instanceId, 'channel' => $channel, 'receipt' => $receipt];
+		return [
+			'caseId' => $caseId,
+			'instanceId' => $instanceId,
+			'channel' => $channel,
+			'receipt' => $receipt,
+			'documentLink' => (string)($body['documentLink'] ?? ''),
+			'sender' => trim((string)($body['sender'] ?? '')),
+		];
 	}//end noticeRequest()
 
 	/**

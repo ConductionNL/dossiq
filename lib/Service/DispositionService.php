@@ -90,11 +90,7 @@ class DispositionService implements DispositionServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDisposition(string $complaintId, array $data): array {
-		return $this->createDisposition(
-			complaintId: $complaintId,
-			data: $data,
-			approval: self::APPROVAL_NOT_REQUIRED
-		);
+		return $this->createDisposition(data: $data, filing: ['complaintId' => $complaintId, 'approval' => self::APPROVAL_NOT_REQUIRED]);
 	}//end submitDisposition()
 
 	/**
@@ -113,19 +109,15 @@ class DispositionService implements DispositionServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDispositionForApproval(string $complaintId, array $data): array {
-		return $this->createDisposition(
-			complaintId: $complaintId,
-			data: $data,
-			approval: self::APPROVAL_REQUIRED
-		);
+		return $this->createDisposition(data: $data, filing: ['complaintId' => $complaintId, 'approval' => self::APPROVAL_REQUIRED]);
 	}//end submitDispositionForApproval()
 
 	/**
 	 * Shared disposition-creation implementation for both approval modes.
 	 *
-	 * @param string $complaintId Complaint UUID
-	 * @param array<string, mixed> $data Disposition data
-	 * @param string $approval One of self::APPROVAL_REQUIRED or self::APPROVAL_NOT_REQUIRED
+	 * @param array<string, mixed>                        $data   Disposition data
+	 * @param array{complaintId: string, approval: string} $filing Complaint UUID, and one of self::APPROVAL_REQUIRED or
+	 *                                                            self::APPROVAL_NOT_REQUIRED
 	 *
 	 * @return array<string, mixed> Created disposition
 	 *
@@ -133,18 +125,18 @@ class DispositionService implements DispositionServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
-	private function createDisposition(string $complaintId, array $data, string $approval): array {
+	private function createDisposition(array $data, array $filing): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateDisposition(data: $data);
 
 		[$objectService, $register, $schema] = $this->dispositionStore();
 
-		$data = $this->withComplaint(data: $data, complaintId: $complaintId, approval: $approval);
+		$data = $this->withComplaint(data: $data, filing: $filing);
 
 		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
 		$this->logger->info(
-			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['opinion'],
+			'Disposition submitted for complaint ' . $filing['complaintId'] . ' with oordeel: ' . $data['opinion'],
 			['app' => AppIdentity::APP_ID],
 		);
 
@@ -179,19 +171,19 @@ class DispositionService implements DispositionServiceInterface {
 	/**
 	 * The disposition data with its complaint, closure date and, when required, its approval status.
 	 *
-	 * @param array<string, mixed> $data Disposition data
-	 * @param string $complaintId Complaint UUID
-	 * @param string $approval One of self::APPROVAL_REQUIRED or self::APPROVAL_NOT_REQUIRED
+	 * @param array<string, mixed>                        $data   Disposition data
+	 * @param array{complaintId: string, approval: string} $filing Complaint UUID, and one of self::APPROVAL_REQUIRED or
+	 *                                                            self::APPROVAL_NOT_REQUIRED
 	 *
 	 * @return array<string, mixed> The data to store.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
-	private function withComplaint(array $data, string $complaintId, string $approval): array {
-		$data['complaint'] = $complaintId;
+	private function withComplaint(array $data, array $filing): array {
+		$data['complaint'] = $filing['complaintId'];
 		$data['closureDate'] = $data['closureDate'] ?? date('Y-m-d');
 
-		if ($approval === self::APPROVAL_REQUIRED) {
+		if ($filing['approval'] === self::APPROVAL_REQUIRED) {
 			$data['approvalStatus'] = 'awaiting_approval';
 		}
 

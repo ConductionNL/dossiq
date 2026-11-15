@@ -200,11 +200,10 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function migrateOne(array $matrix, object $objectService, bool $dryRun): array {
-		$tableSchema = StoredDecisionTables::SCHEMA;
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
-		$projected = $this->projectedTable(matrix: $matrix, marker: $marker, tableSchema: $tableSchema);
+		$projected = $this->projectedTable(matrix: $matrix, marker: $marker);
 		if ($projected['refusal'] !== null) {
 			return $projected['refusal'];
 		}
@@ -225,30 +224,26 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 		}
 
-		return $this->storeTable(
-			objectService: $objectService,
-			table: $table,
-			marker: $marker,
-			outcome: $outcome
-		);
+		return $this->storeTable(objectService: $objectService, reconciled: ($reconciled + ['marker' => $marker]));
 
 	}//end migrateOne()
 
 	/**
 	 * The matrix projected as a decision table, or the refusal row when it cannot be.
 	 *
-	 * @param array<string, mixed> $matrix      The stored matrix, with its id.
-	 * @param string               $marker      The migration marker.
-	 * @param string               $tableSchema The decision-table schema.
+	 * The table is projected onto StoredDecisionTables::SCHEMA, which is always set.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix, with its id.
+	 * @param string               $marker The migration marker.
 	 *
 	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, table: array<string, mixed>}
 	 *         The refusal, else the table.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function projectedTable(array $matrix, string $marker, string $tableSchema): array {
+	private function projectedTable(array $matrix, string $marker): array {
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
-		if ($id === '' || $tableSchema === '') {
+		if ($id === '') {
 			return [
 				'refusal' => ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'],
 				'table' => [],
@@ -321,20 +316,15 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 * Save the projected table.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $table         The projected table.
-	 * @param string               $marker        The provenance marker.
-	 * @param string               $outcome       `created` or `updated`.
+	 * @param array<string, mixed> $reconciled    The `outcome` (`created` or `updated`), the projected `table`
+	 *                                            and the provenance `marker`.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function storeTable(
-		object $objectService,
-		array $table,
-		string $marker,
-		string $outcome,
-	): array {
+	private function storeTable(object $objectService, array $reconciled): array {
+		['outcome' => $outcome, 'table' => $table, 'marker' => $marker] = $reconciled;
 		try {
 			$objectService->saveObject(object: $table, register: StoredDecisionTables::REGISTER, schema: StoredDecisionTables::SCHEMA);
 		} catch (Throwable $e) {

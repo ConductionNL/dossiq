@@ -78,7 +78,7 @@ class ConcludedDecisionRecord {
 		string $subjectId,
 		string $externalRef,
 	): array {
-		$record = $this->decisionRecord(objectService: $objectService, register: $register, schema: $schema, decisionId: $decisionId);
+		$record = $this->decisionRecord(store: [$objectService, $register, $schema], decisionId: $decisionId);
 
 		if (is_array($record) === true) {
 			$caseId = (string)($record['case'] ?? $record['caseRef'] ?? $externalRef);
@@ -99,16 +99,16 @@ class ConcludedDecisionRecord {
 	/**
 	 * The record that stores this decision as its `decisionRef`, when one is found.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The subject register (numeric ID or slug, may be empty).
-	 * @param string $schema        The subject schema (numeric ID or slug, may be empty).
-	 * @param string $decisionId    The decidesk decisionId.
+	 * @param array{0: object, 1: string, 2: string} $store      The OpenRegister ObjectService, the subject register and
+	 *                                                          the subject schema (numeric IDs or slugs, may be empty).
+	 * @param string                                 $decisionId The decidesk decisionId.
 	 *
 	 * @return mixed The first match, or null when there is none or the lookup failed.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	private function decisionRecord(object $objectService, string $register, string $schema, string $decisionId): mixed {
+	private function decisionRecord(array $store, string $decisionId): mixed {
+		[$objectService, $register, $schema] = $store;
 		$record = null;
 		if ($register !== '' && $schema !== '' && $decisionId !== '') {
 			try {

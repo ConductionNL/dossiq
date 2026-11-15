@@ -50,7 +50,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Listener\Support\SchemaMembership;
+use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\Dossiq\Service\Support\ReferenceId;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -68,6 +68,13 @@ use Throwable;
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseInheritedDeadlineListener implements IEventListener {
+	use ReadsCaseWrites;
+
+	/**
+	 * The check named in the log when a payload cannot be read.
+	 */
+	private const PAYLOAD_CHECK = 'inherited deadline listener';
+
 	/**
 	 * Constructor.
 	 *
@@ -193,17 +200,6 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	}//end deadlineFrom()
 
 	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		return (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'inherited deadline listener');
-	}//end payload()
-
-	/**
 	 * The id a reference carries, whether it arrived as a uuid or as a row.
 	 *
 	 * @param mixed $value A uuid string, or an array carrying `id`/`uuid`.
@@ -213,15 +209,4 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	private function referenceId(mixed $value): string {
 		return ReferenceId::of(value: $value);
 	}//end referenceId()
-
-	/**
-	 * Whether the supplied payload belongs to the `case` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return bool True when this is a case.
-	 */
-	private function isCaseSchema(array $object): bool {
-		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
-	}//end isCaseSchema()
 }//end class

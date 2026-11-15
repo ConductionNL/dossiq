@@ -90,20 +90,20 @@ class CaseMergedListener implements IEventListener {
 		$isReversal = ($event->isReversal() === true);
 
 		foreach ($mergedIds as $mergedId) {
-			$this->apply(mergedId: (string)$mergedId, survivorId: $survivorId, isReversal: $isReversal);
+			$this->apply(merge: ['mergedId' => (string)$mergedId, 'survivorId' => $survivorId], isReversal: $isReversal);
 		}
 	}//end handle()
 
 	/**
 	 * Apply one direction of the merge to one case.
 	 *
-	 * @param string $mergedId   The case that was merged away.
-	 * @param string $survivorId The surviving case.
-	 * @param bool   $isReversal True when the platform reversed the merge.
+	 * @param array{mergedId: string, survivorId: string} $merge      The case that was merged away and the surviving case.
+	 * @param bool                                        $isReversal True when the platform reversed the merge.
 	 *
 	 * @return void
 	 */
-	private function apply(string $mergedId, string $survivorId, bool $isReversal): void {
+	private function apply(array $merge, bool $isReversal): void {
+		['mergedId' => $mergedId, 'survivorId' => $survivorId] = $merge;
 		try {
 			if ($isReversal === true) {
 				$this->mergeService->applyReversal(mergedId: $mergedId, survivorId: $survivorId);

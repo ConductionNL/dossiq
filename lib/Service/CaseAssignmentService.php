@@ -189,11 +189,12 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 		}
 
 		$this->write(caseId: $caseId, assignee: $toUser);
-		$this->notifyReceiver(toUser: $toUser, fromUser: $previous, caseId: $caseId);
+		$move = ['caseId' => $caseId, 'from' => $previous, 'to' => $toUser];
+		$this->notifyReceiver(move: $move);
 
 		$this->logger->info(
 			'Dossiq CaseAssignmentService: case reassigned',
-			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
+			['app' => AppIdentity::APP_ID, ...$move, 'actor' => $actorId]
 		);
 
 		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
@@ -205,13 +206,11 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 	 * The `cases_reassigned` subject the bulk release already sends, with a
 	 * count of one. A failed notification never undoes the move.
 	 *
-	 * @param string $toUser   The receiving handler.
-	 * @param string $fromUser The previous handler, or empty.
-	 * @param string $caseId   The case UUID.
+	 * @param array{caseId: string, from: string, to: string} $move The case UUID, the previous handler (or empty) and the receiving one.
 	 *
 	 * @return void
 	 */
-	private function notifyReceiver(string $toUser, string $fromUser, string $caseId): void {
+	private function notifyReceiver(array $move): void {
 		if ($this->notificationManager === null) {
 			return;
 		}
@@ -219,15 +218,15 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 		try {
 			$notification = $this->notificationManager->createNotification();
 			$notification->setApp(AppIdentity::APP_ID)
-				->setUser($toUser)
+				->setUser($move['to'])
 				->setDateTime(new DateTime())
-				->setObject('case', $caseId)
-				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
+				->setObject('case', $move['caseId'])
+				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $move['from'], 'count' => 1]);
 			$this->notificationManager->notify($notification);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
+				['app' => AppIdentity::APP_ID, 'caseId' => $move['caseId'], 'toUser' => $move['to']]
 			);
 		}
 	}//end notifyReceiver()

@@ -319,11 +319,11 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function planned(string $caseId): array {
-		$today = new DateTimeImmutable('today');
+		$query = new PlannedFlowQuery(caseId: $caseId, today: new DateTimeImmutable('today'));
 
 		$results = [];
 		foreach ($this->ledger->plannedFlows() as $flow) {
-			$row = $this->plannedRow(flow: $flow, caseId: $caseId, today: $today);
+			$row = $this->plannedRow(flow: $flow, query: $query);
 			if ($row !== null) {
 				$results[] = $row;
 			}
@@ -337,16 +337,15 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * The row of a planned flow of this case still to come, or null.
 	 *
-	 * @param object            $flow   The flow row.
-	 * @param string            $caseId The case UUID.
-	 * @param DateTimeImmutable $today  Midnight today.
+	 * @param object           $flow  The flow row.
+	 * @param PlannedFlowQuery $query The case UUID and midnight today.
 	 *
 	 * @return array<string, mixed>|null The planned row, or null when it does not belong on the list.
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
-	private function plannedRow(object $flow, string $caseId, DateTimeImmutable $today): ?array {
-		$marker = $this->markerOfCase(flow: $flow, caseId: $caseId, today: $today);
+	private function plannedRow(object $flow, PlannedFlowQuery $query): ?array {
+		$marker = $this->markerOfCase(flow: $flow, query: $query);
 		if ($marker === null) {
 			return null;
 		}
@@ -372,21 +371,20 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * The planned-follow-up marker of an enabled flow of this case, or null.
 	 *
-	 * @param object            $flow   The flow row.
-	 * @param string            $caseId The case UUID.
-	 * @param DateTimeImmutable $today  Midnight today.
+	 * @param object           $flow  The flow row.
+	 * @param PlannedFlowQuery $query The case UUID and midnight today.
 	 *
 	 * @return array<string, mixed>|null The marker, or null for a disabled flow or another case's.
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
-	private function markerOfCase(object $flow, string $caseId, DateTimeImmutable $today): ?array {
+	private function markerOfCase(object $flow, PlannedFlowQuery $query): ?array {
 		if ($flow->getEnabled() === false) {
 			return null;
 		}
 
-		$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []), from: $today);
-		if ($marker === null || $marker['case'] !== $caseId) {
+		$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []), from: $query->today);
+		if ($marker === null || $marker['case'] !== $query->caseId) {
 			return null;
 		}
 
