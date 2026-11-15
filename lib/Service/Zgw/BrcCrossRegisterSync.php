@@ -83,21 +83,20 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			return;
 		}
 
-		$this->syncWithSchema(objectService: $objectService, zbSchema: $zbSchema, caseUrl: $caseUrl, decisionUrl: $decisionUrl);
+		$this->syncWithSchema(store: [$objectService, $zbSchema], link: ['caseUrl' => $caseUrl, 'decisionUrl' => $decisionUrl]);
 	}//end syncZaakBesluitToZrc()
 
 	/**
 	 * Save the zaakbesluit in the cases register once the case and register are known.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $zbSchema      The case decision schema.
-	 * @param string $caseUrl       The zaak URL.
-	 * @param string $decisionUrl   The besluit URL.
+	 * @param array{0: object, 1: string}                 $store OpenRegister's object service and the case decision schema.
+	 * @param array{caseUrl: string, decisionUrl: string} $link  The zaak URL and the besluit URL.
 	 *
 	 * @return void
 	 */
-	private function syncWithSchema(object $objectService, string $zbSchema, string $caseUrl, string $decisionUrl): void {
-		$zaakUuid = $this->caseUuidOf(caseUrl: $caseUrl);
+	private function syncWithSchema(array $store, array $link): void {
+		[$objectService, $zbSchema] = $store;
+		$zaakUuid = $this->caseUuidOf(caseUrl: $link['caseUrl']);
 
 		if ($zaakUuid === '') {
 			return;
@@ -116,7 +115,7 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 				register: $register,
 				zbSchema: $zbSchema,
 				zaakUuid: $zaakUuid,
-				decisionUrl: $decisionUrl
+				decisionUrl: $link['decisionUrl']
 			)
 		);
 	}//end syncWithSchema()
