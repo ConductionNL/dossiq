@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "leverancier-zaakportaal-01-schema-foundation",
-  "app": "procest",
-  "kind": "config",
-  "depends_on": []
-}

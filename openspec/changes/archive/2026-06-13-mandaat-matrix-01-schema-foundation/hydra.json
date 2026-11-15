@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "mandaat-matrix-01-schema-foundation",
-  "app": "procest",
-  "kind": "config",
-  "depends_on": []
-}

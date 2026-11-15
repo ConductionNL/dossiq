@@ -1,4 +1,0 @@
-- [x] statusType offPath, 1.9.0, digest recorded
-- [x] case-stages offPathField on both stage configs
-- [x] jeugdwet 1.14.0 marks its two side statuses
-- [x] PHPUnit + vitest

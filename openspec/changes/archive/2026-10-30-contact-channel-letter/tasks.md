@@ -1,4 +1,0 @@
-- [x] schema enum + labels, 1.6.0
-- [x] service, timeline kind, pipelinq bridge
-- [x] LogContactDialog option, case widgets (channelMap, enumLabels, icons)
-- [x] PHPUnit ContactMomentServiceTest, vitest contactMomentColumns

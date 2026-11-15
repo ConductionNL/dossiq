@@ -1,3 +1,0 @@
-- [x] utils/partnerOrganisations.js over the search endpoint
-- [x] CaseShareOrganisationDialog + CaseSharingTab use it
-- [x] vitest caseShareOrganisationDialog (red first, both endpoints mocked)

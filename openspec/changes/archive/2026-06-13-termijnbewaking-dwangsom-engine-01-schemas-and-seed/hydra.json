@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "termijnbewaking-dwangsom-engine-01-schemas-and-seed",
-  "app": "procest",
-  "kind": "config",
-  "depends_on": []
-}

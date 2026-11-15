@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "leverancier-zaakportaal-14-kpi-frontend",
-  "app": "procest",
-  "kind": "code",
-  "depends_on": ["leverancier-zaakportaal-13-kpi-backend"]
-}

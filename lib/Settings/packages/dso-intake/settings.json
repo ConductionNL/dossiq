@@ -1,9 +1,0 @@
-{
-  "dso_vergunningaanvraag_schema": {
-    "schema": {
-      "app": "integriq",
-      "register": ["integriq", "openconnector"],
-      "slug": "dso_verzoek"
-    }
-  }
-}

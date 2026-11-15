@@ -1,2 +1,0 @@
-- [x] src/manifest.json and src/menu-layout.simple.json: drop `rowTitle: "strong"` from the Statussen and Resultaten tables
-- [x] tests/vitest/caseTypeStatusesTabBoard.spec.js

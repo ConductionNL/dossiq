@@ -1,9 +1,0 @@
-{
-  "id": "ontvangstbevestiging",
-  "title": "Ontvangstbevestiging",
-  "description": "Bevestigt dat een aanvraag binnen is, met het kenmerk en de beslistermijn.",
-  "category": "document",
-  "version": "2.0.0",
-  "documentType": "Ontvangstbevestiging",
-  "body": "Geachte heer, mevrouw,\n\nWij hebben uw aanvraag over {{case.title}} ontvangen en geregistreerd onder kenmerk {{case.identifier}}.\n\nWij nemen uiterlijk op {{case.deadline}} een besluit op uw aanvraag. Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten. Geldt er op deze aanvraag geen wettelijke beslistermijn, dan leest u dat in het burgerportaal bij de zaak.\n\nU volgt deze zaak via het burgerportaal.\n\nMet vriendelijke groet,\n\nDe behandelaar"
-}

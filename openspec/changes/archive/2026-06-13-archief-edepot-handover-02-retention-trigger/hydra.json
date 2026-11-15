@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "archief-edepot-handover-02-retention-trigger",
-  "app": "procest",
-  "kind": "code",
-  "depends_on": ["archief-edepot-handover-01-schema-config"]
-}

@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "case-types-01-seed-and-stores",
-  "app": "procest",
-  "kind": "config",
-  "depends_on": []
-}

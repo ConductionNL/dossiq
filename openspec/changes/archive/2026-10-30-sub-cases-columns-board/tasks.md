@@ -1,1 +1,0 @@
-- [x] 1.1 config (tests/vitest/subCasesColumnsBoard.spec.js)

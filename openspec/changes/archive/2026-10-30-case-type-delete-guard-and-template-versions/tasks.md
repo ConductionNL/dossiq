@@ -1,4 +1,0 @@
-- [x] CaseTypeDeleteGuard with tests
-- [x] EmailTemplateVersionListener with tests
-- [x] Both registered in ObjectListenerRegistrar
-- [x] Dutch for the refusals

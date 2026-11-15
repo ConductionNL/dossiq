@@ -1,2 +1,0 @@
-- [x] menu-layout.simple.json channelIcons
-- [x] vitest configLabels (red first)

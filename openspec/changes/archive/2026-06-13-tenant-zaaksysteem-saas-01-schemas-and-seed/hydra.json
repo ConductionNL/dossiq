@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "tenant-zaaksysteem-saas-01-schemas-and-seed",
-  "app": "procest",
-  "kind": "config",
-  "depends_on": []
-}

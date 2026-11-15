@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "termijnbewaking-dwangsom-engine-06-dwangsom-calculation",
-  "app": "procest",
-  "kind": "code",
-  "depends_on": ["termijnbewaking-dwangsom-engine-05-ingebrekestelling"]
-}
