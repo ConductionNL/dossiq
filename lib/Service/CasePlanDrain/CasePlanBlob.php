@@ -191,7 +191,7 @@ class CasePlanBlob {
 		$keys = $this->keysOf(nodes: ($definition['items'] ?? []));
 		$history = [];
 		foreach ($eventLog as $index => $entry) {
-			$history[] = $this->historyRow(entry: $entry, index: $index, keys: $keys);
+			$history[] = $this->historyRow(entry: $entry, place: ['index' => $index, 'keys' => $keys]);
 		}
 
 		return $history;
@@ -201,14 +201,15 @@ class CasePlanBlob {
 	 * One event log entry as a history entry, refusing what cannot be carried.
 	 *
 	 * @param mixed              $entry The event log entry.
-	 * @param int|string         $index Its position in the log.
-	 * @param array<int, string> $keys  The definition's item keys.
+	 * @param array{index: int|string, keys: array<int, string>} $place Its position in the log, and the
+	 *                                                                definition's item keys.
 	 *
 	 * @return array<string, string> Entry `{item, from?, to, at}`.
 	 *
 	 * @throws UnexpectedValueException `unreadable_event:<index>`, `orphan_item:<key>` or `unreadable_moment:<index>`.
 	 */
-	private function historyRow(mixed $entry, int|string $index, array $keys): array {
+	private function historyRow(mixed $entry, array $place): array {
+		['index' => $index, 'keys' => $keys] = $place;
 		if (is_array($entry) === false) {
 			throw new UnexpectedValueException('unreadable_event:' . $index);
 		}

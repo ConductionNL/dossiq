@@ -270,7 +270,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 			$statuses ??= $this->statusesById(target: $target, caseTypeId: (string)($caseType->row['id'] ?? ''));
 			$changes = $this->labels->healed(template: $template, caseType: $caseType->row, statusesById: $statuses);
-			$this->patchHealed(target: $target, id: $id, changes: $changes);
+			$this->patchHealed(target: $target, healed: ['id' => $id, 'changes' => $changes]);
 		}//end foreach
 	}//end healBackfilled()
 
@@ -292,14 +292,14 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * Write a template's healed labels through the partial write; nothing when nothing was healed.
 	 *
 	 * @param BackfillTarget $target The register and schemas.
-	 * @param string $id The template id.
-	 * @param array<string, mixed> $changes The healed fields.
+	 * @param array{id: string, changes: array<string, mixed>} $healed The template id and the healed fields.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
-	private function patchHealed(BackfillTarget $target, string $id, array $changes): void {
+	private function patchHealed(BackfillTarget $target, array $healed): void {
+		['id' => $id, 'changes' => $changes] = $healed;
 		if ($changes === []) {
 			return;
 		}
