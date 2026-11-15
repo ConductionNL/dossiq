@@ -159,21 +159,21 @@ class CaseRelationStore {
 			return;
 		}
 
-		$payload = $this->relationPayload(case: $case, relations: $relations, typedLinks: $typedLinks);
+		$payload = $this->relationPayload(case: $case, links: ['relations' => $relations, 'typed' => $typedLinks]);
 
-		$this->saveRelations(objectService: $objectService, payload: $payload, register: $register, schema: $schema);
+		$this->saveRelations(store: [$objectService, $register, $schema], payload: $payload);
 	}//end persistRelations()
 
 	/**
 	 * The case with its relations and typed link lists set.
 	 *
-	 * @param array<string, mixed>                   $case       Case object to update.
-	 * @param array<int, array<string, mixed>>       $relations  Relation entries.
-	 * @param array<string, array<int, string>>|null $typedLinks The typed link lists, by property.
+	 * @param array<string, mixed> $case  Case object to update.
+	 * @param array<string, mixed> $links The `relations` entries, and the `typed` link lists by property (or null).
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function relationPayload(array $case, array $relations, ?array $typedLinks): array {
+	private function relationPayload(array $case, array $links): array {
+		['relations' => $relations, 'typed' => $typedLinks] = $links;
 		$payload = $case;
 		$payload['relatedCases'] = json_encode(array_values($relations));
 
@@ -190,14 +190,13 @@ class CaseRelationStore {
 	/**
 	 * Save the case, logging a failure.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $payload       The case to save.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The case schema.
+	 * @param array{0: object, 1: string, 2: string} $store   OpenRegister's object service, the register and the case schema.
+	 * @param array<string, mixed>                  $payload The case to save.
 	 *
 	 * @return void
 	 */
-	private function saveRelations(object $objectService, array $payload, string $register, string $schema): void {
+	private function saveRelations(array $store, array $payload): void {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -241,11 +240,7 @@ class CaseRelationStore {
 		}
 
 		try {
-			$answer = $this->askOpenRegister(
-				objectService: $objectService,
-				caseUuid: $caseUuid,
-				incoming: $incoming
-			);
+			$answer = $this->askOpenRegister(objectService: $objectService, ask: ['caseUuid' => $caseUuid, 'incoming' => $incoming]);
 		} catch (\Throwable $e) {
 			// A degradation, not a miss: OpenRegister is there and could not
 			// answer. The case page keeps working without its relation groups,
@@ -269,12 +264,12 @@ class CaseRelationStore {
 	 * first, then its schema, as OpenRegister's own uses/used controllers do.
 	 *
 	 * @param object $objectService OpenRegister's object service.
-	 * @param string $caseUuid Case UUID.
-	 * @param bool $incoming Whether to ask for the reverse direction.
+	 * @param array{caseUuid: string, incoming: bool} $ask The case UUID, and whether to ask for the reverse direction.
 	 *
 	 * @return array<string, mixed> The envelope.
 	 */
-	private function askOpenRegister(object $objectService, string $caseUuid, bool $incoming): array {
+	private function askOpenRegister(object $objectService, array $ask): array {
+		['caseUuid' => $caseUuid, 'incoming' => $incoming] = $ask;
 		$register = $this->settingsService->getConfigValue('register');
 		$schema   = $this->settingsService->getConfigValue('case_schema');
 		if ($register !== '' && $schema !== '') {
