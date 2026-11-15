@@ -132,13 +132,29 @@ class SessionService {
 		$write->chairpersonId = $chairpersonId;
 		$write->payload = $payload;
 		$write->invitees = $invitees;
+
+		return $this->plan(write: $write, scheduledDate: $scheduledDate);
+	}//end schedule()
+
+	/**
+	 * Plan the session at its start, when the plan keeps the inspection floor and the invitee roles.
+	 *
+	 * @param SessionWrite $write         The session, who chairs it, the payload and the invitees.
+	 * @param string       $scheduledDate ISO-8601 start.
+	 *
+	 * @return array<string, mixed> The stored session.
+	 *
+	 * @throws InvalidArgumentException When the plan breaks its rules.
+	 * @throws RuntimeException When the register cannot be reached or refuses the write.
+	 */
+	private function plan(SessionWrite $write, string $scheduledDate): array {
 		$write->scheduled = $this->caseDates->parse(value: $scheduledDate, field: 'scheduledDate');
 		$write->now = $this->timeFactory->now();
 		$write->definition->rules()->assertInspectionFloor(scheduled: $write->scheduled, now: $write->now);
-		$write->definition->rules()->assertInvitees(invitees: $invitees);
+		$write->definition->rules()->assertInvitees(invitees: $write->invitees);
 
 		return $this->save(write: $write, record: $this->plannedRecord(write: $write));
-	}//end schedule()
+	}//end plan()
 
 	/**
 	 * Record that a party waived a session the case type lets them waive.
