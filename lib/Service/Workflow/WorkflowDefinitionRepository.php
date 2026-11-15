@@ -385,7 +385,7 @@ class WorkflowDefinitionRepository {
 				return $this->createDefinition(context: $context, payload: $payload);
 			}
 
-			$written = $this->updateDefinition(context: $context, uuid: $uuid, payload: $payload);
+			$written = $this->updateDefinition(context: $context, update: ['uuid' => $uuid, 'payload' => $payload]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to save workflow definition',
@@ -401,14 +401,14 @@ class WorkflowDefinitionRepository {
 	 * Merge the changed properties onto a stored definition and write it.
 	 *
 	 * @param array{objectService: object, register: string, schema: string} $context The store context.
-	 * @param string $uuid The row to update.
-	 * @param array<string, mixed> $payload The properties to write.
+	 * @param array{uuid: string, payload: array<string, mixed>} $update The row to update, and the properties to write.
 	 *
 	 * @return mixed What the object service wrote, or null when the stored row is unreadable.
 	 *
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
-	private function updateDefinition(array $context, string $uuid, array $payload): mixed {
+	private function updateDefinition(array $context, array $update): mixed {
+		['uuid' => $uuid, 'payload' => $payload] = $update;
 		$merged = $this->mergeOntoStored(
 			context: $context,
 			uuid: $uuid,
