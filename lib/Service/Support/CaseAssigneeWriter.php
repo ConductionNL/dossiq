@@ -80,9 +80,6 @@ class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 		string $actorId,
 		string $batchId,
 	): bool {
-		[$objectService] = $this->context();
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-
 		$batch = new ReassignmentBatch(
 			fromUser: trim((string)($case['assignee'] ?? '')),
 			toUser: $toUser,
@@ -91,11 +88,26 @@ class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 			now: (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		);
 
+		return $this->writeReassigned(item: ['id' => $caseId, 'case' => $case], batch: $batch);
+	}//end reassignOne()
+
+	/**
+	 * Write one case to its new handler; a failed write is logged and answered false.
+	 *
+	 * @param array{id: string, case: array<string, mixed>} $item  The case uuid and the stored case.
+	 * @param ReassignmentBatch                             $batch The handlers, who ordered it, the act and the moment.
+	 *
+	 * @return bool True when the case was written.
+	 */
+	private function writeReassigned(array $item, ReassignmentBatch $batch): bool {
+		[$objectService] = $this->context();
+		$schema = (string)$this->settingsService->getConfigValue('case_schema');
+
 		$written = $this->reassignItem(
 			objectService: $objectService,
 			schema: $schema,
-			id: $caseId,
-			item: $case,
+			id: $item['id'],
+			item: $item['case'],
 			batch: $batch,
 		);
 
@@ -105,12 +117,12 @@ class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 			// only thing left is a member row saying so.
 			$this->logger->warning(
 				'Dossiq: a case in a bulk redistribution was not written',
-				['case' => $caseId, 'toUser' => $toUser, 'batchId' => $batchId],
+				['case' => $item['id'], 'toUser' => $batch->toUser, 'batchId' => $batch->batchId],
 			);
 		}
 
 		return $written;
-	}//end reassignOne()
+	}//end writeReassigned()
 
 	/**
 	 * A fresh batch id, for a caller that is about to start one act.
