@@ -200,23 +200,6 @@ final class StepConfigValidator {
 	}//end escalationErrors()
 
 	/**
-	 * Build a structured error record.
-	 *
-	 * @param string $path The JSON-pointer-like path to the bad value.
-	 * @param string $code The stable error code (snake_case).
-	 * @param string $message An internal description (never user-facing).
-	 *
-	 * @return array{path: string, code: string, message: string}
-	 */
-	private static function error(string $path, string $code, string $message): array {
-		return [
-			'path' => $path,
-			'code' => $code,
-			'message' => $message,
-		];
-	}//end error()
-
-	/**
 	 * One error whose sentence is fixed by its code.
 	 *
 	 * @param string $path Dotted path to the offending field.
@@ -225,7 +208,7 @@ final class StepConfigValidator {
 	 * @return array{path: string, code: string, message: string}
 	 */
 	private static function entryError(string $path, string $code): array {
-		return self::error(path: $path, code: $code, message: self::MESSAGES[$code]);
+		return ['path' => $path, 'code' => $code, 'message' => self::MESSAGES[$code]];
 	}//end entryError()
 
 	/**
@@ -266,12 +249,12 @@ final class StepConfigValidator {
 
 		$value = ($sla['value'] ?? null);
 		if (is_int($value) === false || $value < 1 || $value > self::SLA_VALUE_MAX) {
-			$errors[] = self::error(
-				path: $path . '.value',
-				code: 'out_of_range',
-				message: 'sla.value must be a positive integer not greater than '
-				. self::SLA_VALUE_MAX
-			);
+			$errors[] = [
+				'path' => $path . '.value',
+				'code' => 'out_of_range',
+				'message' => 'sla.value must be a positive integer not greater than '
+				. self::SLA_VALUE_MAX,
+			];
 		}
 
 		return $errors;
@@ -290,11 +273,11 @@ final class StepConfigValidator {
 
 		$unit = ($sla['unit'] ?? null);
 		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
-			$errors[] = self::error(
-				path: $path . '.unit',
-				code: 'unknown_sla_unit',
-				message: 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS)
-			);
+			$errors[] = [
+				'path' => $path . '.unit',
+				'code' => 'unknown_sla_unit',
+				'message' => 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS),
+			];
 		}
 
 		return $errors;
@@ -360,22 +343,22 @@ final class StepConfigValidator {
 			return [self::entryError(path: $path, code: 'malformed_auto_actions')];
 		}
 
-		return self::actionErrors(actions: $actions, path: $path, actionCatalog: $actionCatalog);
+		return self::actionErrors(actions: $actions, where: ['path' => $path, 'actionCatalog' => $actionCatalog]);
 	}//end validateAutoActions()
 
 	/**
 	 * Validate each entry of `config.autoActions`.
 	 *
 	 * @param array<mixed> $actions The autoActions list.
-	 * @param string $path The path prefix for any error.
-	 * @param array<int, string> $actionCatalog The known action keys.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The path prefix for any error and the
+	 *                                                                      known action keys.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 */
-	private static function actionErrors(array $actions, string $path, array $actionCatalog): array {
+	private static function actionErrors(array $actions, array $where): array {
 		$errors = [];
 		foreach ($actions as $index => $action) {
-			$error = self::actionRefError(action: $action, entryPath: $path . "[$index]", actionCatalog: $actionCatalog);
+			$error = self::actionRefError(action: $action, where: ['path' => $where['path'] . "[$index]"] + $where);
 			if ($error !== null) {
 				$errors[] = $error;
 			}
@@ -388,35 +371,33 @@ final class StepConfigValidator {
 	 * Validate one entry of `config.autoActions`.
 	 *
 	 * @param mixed $action The action reference.
-	 * @param string $entryPath The entry's path.
-	 * @param array<int, string> $actionCatalog The known action keys.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The entry's path and the known action keys.
 	 *
 	 * @return array{path: string, code: string, message: string}|null The error, or null.
 	 */
-	private static function actionRefError(mixed $action, string $entryPath, array $actionCatalog): ?array {
+	private static function actionRefError(mixed $action, array $where): ?array {
 		if (is_array($action) === false) {
-			return self::entryError(path: $entryPath, code: 'malformed_action_ref');
+			return self::entryError(path: $where['path'], code: 'malformed_action_ref');
 		}
 
-		return self::actionKeyError(key: ($action['key'] ?? null), keyPath: $entryPath . '.key', actionCatalog: $actionCatalog);
+		return self::actionKeyError(key: ($action['key'] ?? null), where: ['path' => $where['path'] . '.key'] + $where);
 	}//end actionRefError()
 
 	/**
 	 * Validate the key of one `config.autoActions` entry.
 	 *
 	 * @param mixed $key The action key.
-	 * @param string $keyPath The key's path.
-	 * @param array<int, string> $actionCatalog The known action keys.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The key's path and the known action keys.
 	 *
 	 * @return array{path: string, code: string, message: string}|null The error, or null.
 	 */
-	private static function actionKeyError(mixed $key, string $keyPath, array $actionCatalog): ?array {
+	private static function actionKeyError(mixed $key, array $where): ?array {
 		if (is_string($key) === false || $key === '') {
-			return self::entryError(path: $keyPath, code: 'malformed_action_key');
+			return self::entryError(path: $where['path'], code: 'malformed_action_key');
 		}
 
-		if (in_array($key, $actionCatalog, true) === false) {
-			return self::entryError(path: $keyPath, code: 'unknown_action_key');
+		if (in_array($key, $where['actionCatalog'], true) === false) {
+			return self::entryError(path: $where['path'], code: 'unknown_action_key');
 		}
 
 		return null;
