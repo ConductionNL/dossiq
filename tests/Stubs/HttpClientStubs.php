@@ -5,7 +5,7 @@
  *
  * The vendored `nextcloud/ocp` package shipped in this app does not include the
  * `OCP\Http\Client` namespace, so services that depend on `IClientService`
- * (PublicationService, MandaatValidationService) cannot be mocked without these
+ * (PublicationService and others) cannot be mocked without these
  * stub interfaces. They mirror the real Nextcloud signatures closely enough for
  * createMock() to build a usable double.
  *

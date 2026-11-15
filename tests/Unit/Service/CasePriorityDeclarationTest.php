@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -250,7 +250,6 @@ class CasePriorityDeclarationTest extends TestCase {
 	public function testNoServiceWritesTheLiteralCasePriority(): void {
 		foreach (
 			[
-				'lib/Service/DsoIntakeService.php',
 				'lib/Service/ComplaintService.php',
 				'lib/Service/DemoCaseloadSeedDataService.php',
 			] as $relative

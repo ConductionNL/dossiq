@@ -37,10 +37,16 @@ use Psr\Log\NullLogger;
  * Unit tests for ShippedConfigurationService and its fingerprint.
  *
  * @covers \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @covers \OCA\Dossiq\Service\Starter\ShippedFingerprint
  *
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class SeedDataOriginTest extends TestCase {
 
@@ -94,7 +100,7 @@ class SeedDataOriginTest extends TestCase {
 
 		self::assertTrue(
 			condition: $this->shipped->stamp(
-				set: ShippedSets::BEZWAAR_BEROEP,
+				set: ShippedSets::MUNICIPAL_ROLES,
 				targetSchema: 'caseType',
 				targetObject: 'ct-1',
 				object: $caseType,
@@ -104,7 +110,7 @@ class SeedDataOriginTest extends TestCase {
 		$state = $this->shipped->stateOf(targetSchema: 'caseType', targetObject: 'ct-1', object: $caseType);
 
 		self::assertSame(expected: ShippedConfigurationService::STATE_SHIPPED, actual: $state['state']);
-		self::assertSame(expected: ShippedSets::BEZWAAR_BEROEP, actual: $state['set']);
+		self::assertSame(expected: ShippedSets::MUNICIPAL_ROLES, actual: $state['set']);
 		self::assertSame(expected: '1.0.0', actual: $state['setVersion']);
 	}//end testASeededObjectNobodyEditedReadsAsShipped()
 
@@ -118,7 +124,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -130,7 +136,7 @@ class SeedDataOriginTest extends TestCase {
 		$state = $this->shipped->stateOf(targetSchema: 'caseType', targetObject: 'ct-1', object: $edited);
 
 		self::assertSame(expected: ShippedConfigurationService::STATE_CHANGED, actual: $state['state']);
-		self::assertSame(expected: ShippedSets::BEZWAAR_BEROEP, actual: $state['set']);
+		self::assertSame(expected: ShippedSets::MUNICIPAL_ROLES, actual: $state['set']);
 	}//end testAnEditedShippedObjectReadsAsChangedHere()
 
 	/**
@@ -162,13 +168,13 @@ class SeedDataOriginTest extends TestCase {
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
 		);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -208,7 +214,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar', 'processingDeadline' => 'P6W'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -218,7 +224,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -242,7 +248,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar', 'processingDeadline' => 'P6W'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -256,7 +262,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -274,7 +280,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -294,7 +300,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -317,6 +323,33 @@ class SeedDataOriginTest extends TestCase {
 	}//end testTheOverviewNamesTheStateAndTheWaitingUpdate()
 
 	/**
+	 * A row seeded from a later version than the set now ships is not offered
+	 * the older one: "Neem 1.0.0" on a case type at 1.3.0 would downgrade it.
+	 *
+	 * @return void
+	 */
+	public function testAnOlderShippedVersionIsNotOfferedAsAnUpdate(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'Sloopmelding'];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$ledger = $this->harness->register->all(schema: 'shippedOrigin')[0];
+		$ledger['setVersion'] = '1.3.0';
+		$this->harness->seed(schema: 'shippedOrigin', uuid: (string)$ledger['id'], row: $ledger);
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: '1.0.0', actual: $overview[0]['latestVersion']);
+		self::assertFalse(condition: $overview[0]['updateAvailable']);
+	}//end testAnOlderShippedVersionIsNotOfferedAsAnUpdate()
+
+	/**
 	 * A seeded row somebody deleted here is reported as removed, not dropped.
 	 *
 	 * @return void
@@ -325,7 +358,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -339,6 +372,64 @@ class SeedDataOriginTest extends TestCase {
 		self::assertSame(expected: 'removed', actual: $overview[0]['state']);
 		self::assertFalse(condition: $overview[0]['updateAvailable']);
 	}//end testASeededRowDeletedHereIsReportedAsRemoved()
+
+	/**
+	 * A row nobody saved since its stamp reads as shipped in the overview,
+	 * although the stored row now hashes differently: the schema gained a
+	 * property, and the store reads it back empty on every row.
+	 *
+	 * @return void
+	 */
+	public function testTheOverviewReadsARowNobodySavedSinceItsStampAsShipped(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'College-besluit', '@self' => ['updated' => '2026-10-12T21:28:06+00:00']];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType + ['goalPrompt' => null]);
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: ShippedConfigurationService::STATE_SHIPPED, actual: $overview[0]['state']);
+		self::assertSame(
+			expected: ShippedConfigurationService::STATE_SHIPPED,
+			actual: $this->shipped->stateOf(
+				targetSchema: 'caseType',
+				targetObject: 'ct-1',
+				object: $caseType + ['goalPrompt' => null],
+			)['state']
+		);
+	}//end testTheOverviewReadsARowNobodySavedSinceItsStampAsShipped()
+
+	/**
+	 * A row saved after its stamp, and different from it, reads as changed in
+	 * the overview.
+	 *
+	 * @return void
+	 */
+	public function testTheOverviewReadsARowEditedAfterItsStampAsChanged(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'College-besluit', '@self' => ['updated' => '2026-10-12T21:28:06+00:00']];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$edited = ['title' => 'Collegebesluit', '@self' => ['updated' => gmdate('c', (time() + 60))]];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: array_merge($caseType, $edited));
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: ShippedConfigurationService::STATE_CHANGED, actual: $overview[0]['state']);
+	}//end testTheOverviewReadsARowEditedAfterItsStampAsChanged()
 
 	/**
 	 * The fingerprint ignores what the platform writes and notices what a

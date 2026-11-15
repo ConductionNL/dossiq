@@ -53,6 +53,11 @@ Where pipelinq refuses an OUTBOUND append because an indicator blocks it, that
 refusal SHALL be reported to the handler with the indicator named, and the
 dossiq record SHALL still be written.
 
+The case page's Log contact action SHALL save through dossiq's case route, so
+that the append runs and its refusal can reach the handler who logged the
+moment (board DqZaakContactmomenten). It SHALL NOT save past dossiq's service
+straight to the object API.
+
 #### Scenario: A logged call reaches both records
 @e2e tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts
 
@@ -60,6 +65,16 @@ dossiq record SHALL still be written.
 - **WHEN** the moment is saved
 - **THEN** a dossiq contact moment SHALL exist
 - **AND** pipelinq SHALL have been asked to append the same moment with `direction = inbound` and the case as its host
+
+#### Scenario: The handler who logged a refused moment is told, with the indicator
+@e2e exclude A refusal from another app cannot be staged in the browser; PipelinqCaseControllerTest::testALoggedMomentCarriesPipelinqsRefusal and the vitest "the Log contact dialog" assert the answer and the dialog.
+
+- **GIVEN** a handler logging an outbound contact moment on a case from the case page
+- **AND** pipelinq refusing the append because the party carries an indicator that blocks outbound contact
+- **WHEN** the moment is saved
+- **THEN** the dialog SHALL say the moment is on the case
+- **AND** it SHALL say pipelinq did not take it, naming the indicator
+- **AND** it SHALL stay open until the handler closes it
 
 #### Scenario: pipelinq refusing does not lose the handler's work
 @e2e exclude A refusal from another app cannot be staged in the browser; ContactMomentBridgeTest::testARefusalDoesNotLoseTheDossiqWrite asserts it.
@@ -103,9 +118,13 @@ Dossiq SHALL declare to pipelinq, per case type, the ordered set of party kinds
 that type accepts, naming the target `dossiq:case:<caseType>`. The order
 declared SHALL be the order handlers are offered.
 
-The party kind vocabulary a picker offers SHALL come from pipelinq when pipelinq
-answers. Dossiq's own three kinds SHALL remain as the fallback for an instance
-without pipelinq, and SHALL NOT be offered beside pipelinq's.
+The party kind vocabulary the case's party surface offers SHALL come from
+pipelinq when pipelinq answers. Dossiq's own three kinds SHALL remain as the
+fallback for an instance without pipelinq, and SHALL NOT be offered beside
+pipelinq's. On the case (board DqZaakPartijen) the Roles section SHALL list the
+kinds the case's type accepts, in declared order and saying who answered, and
+SHALL mark a party whose kind the type does not accept. On the case type (board
+DqZaaktype) an admin SHALL declare the accepted kinds and their order.
 
 #### Scenario: A subsidy case type declares two kinds
 @e2e tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts
@@ -113,6 +132,15 @@ without pipelinq, and SHALL NOT be offered beside pipelinq's.
 - **GIVEN** a case type accepting an aanvrager and a gemachtigde
 - **WHEN** its acceptance is declared
 - **THEN** pipelinq SHALL hold `dossiq:case:<caseType>` with those two kinds in that order
+
+#### Scenario: The case shows what its type accepts and marks a party outside it
+@e2e exclude Needs a pipelinq party of a kind the case type does not accept; PipelinqCaseControllerTest::testPartyKindsAreAskedForTheCasesType asserts the read and the vitest suite covers the Roles section.
+
+- **GIVEN** a case whose type accepts an aanvrager and a gemachtigde
+- **AND** a party of another kind on the case
+- **WHEN** the Roles section is read
+- **THEN** it SHALL list the two kinds in that order, saying they come from pipelinq
+- **AND** it SHALL mark the other party's kind as not accepted by this case type
 
 #### Scenario: Without pipelinq the picker still offers something
 @e2e exclude Needs an instance without pipelinq; PartyKindConsumerTest::testTheShippedKindsAreTheFallback asserts it.

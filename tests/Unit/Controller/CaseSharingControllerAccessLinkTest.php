@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 
 declare(strict_types=1);

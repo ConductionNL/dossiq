@@ -27,7 +27,6 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const registrySource = read('src', 'registry.js')
-const iconsSource = read('src', 'icons.js')
 const panelSource = read(
 	'src',
 	'views',
@@ -58,9 +57,8 @@ describe('the live conversation section on the case', () => {
 		expect(registrySource).toContain('component: CaseConversationsPanel')
 	})
 
-	it('names an icon the icon registry carries', () => {
-		expect(section.widget.icon).toBe('PhoneInTalk')
-		expect(iconsSource).toContain('PhoneInTalk')
+	it('draws no title icon, as the boards draw none on card titles', () => {
+		expect(section.widget.icon).toBeUndefined()
 	})
 })
 
@@ -136,10 +134,11 @@ describe('the record the case keeps of a conversation', () => {
 
 describe('the panel that shows it', () => {
 	it('shows the moment, who joined and how long, not just the moment', () => {
-		expect(panelSource).toContain('recordSummary')
-		expect(panelSource).toContain('record.startedAt')
-		expect(panelSource).toContain('record?.participants')
-		expect(panelSource).toContain('record?.durationSeconds')
+		const lineSource = read('src', 'utils', 'conversationRecordLine.js')
+		expect(panelSource).toContain('conversationSummary(record)')
+		expect(lineSource).toContain('record?.startedAt')
+		expect(lineSource).toContain('record?.participants')
+		expect(lineSource).toContain('record?.durationSeconds')
 	})
 
 	it('says why rather than offering a conversation the instance cannot hold', () => {

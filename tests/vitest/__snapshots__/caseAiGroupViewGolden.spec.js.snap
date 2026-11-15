@@ -1,0 +1,92 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`groupView > answers every shape of report-group answer as before 1`] = `
+[
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "The report group could not be read.",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "The report group could not be read.",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "",
+    "state": "off",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "",
+    "state": "off",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "hermiq did not answer.",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "hermiq did not answer.",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": "hermiq.reports",
+    "nearDuplicates": [],
+    "reason": "busy",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "hermiq did not answer.",
+    "state": "unavailable",
+  },
+  {
+    "count": 0,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "",
+    "state": "grouped",
+  },
+  {
+    "count": 12,
+    "gate": null,
+    "nearDuplicates": [
+      {
+        "reportId": "r1",
+        "score": 0.9,
+      },
+      {
+        "reportId": "7",
+        "score": 0,
+      },
+    ],
+    "reason": "",
+    "state": "grouped",
+  },
+  {
+    "count": 3,
+    "gate": null,
+    "nearDuplicates": [],
+    "reason": "",
+    "state": "grouped",
+  },
+]
+`;

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -34,9 +34,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,21 +45,22 @@ use Throwable;
 /**
  * Lists a case's documents and loads one with its file content.
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
  */
-class WooCaseDocuments {
+class WooCaseDocuments implements WooCaseDocumentsInterface {
 
+	use FindsFilesById;
 	use SearchesObjects;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param IRootFolder     $rootFolder      Reads a document's file by its id.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly LoggerInterface $logger,
 	) {
@@ -71,7 +73,7 @@ class WooCaseDocuments {
 	 *
 	 * @return array<int, string> Informatieobject ids first, then legacy document ids.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function idsFor(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -105,9 +107,27 @@ class WooCaseDocuments {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function load(string $documentId): ?array {
+		$document = $this->meta(documentId: $documentId);
+		if ($document === null) {
+			return null;
+		}
+
+		return $this->withContent(document: $document);
+	}//end load()
+
+	/**
+	 * One document's row, without reading its file, or null.
+	 *
+	 * @param string $documentId An informatieobject id, or a legacy document id.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
+	 */
+	public function meta(string $documentId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || $documentId === '') {
@@ -122,12 +142,12 @@ class WooCaseDocuments {
 
 			$document = $this->find(objectService: $objectService, register: $register, schema: $schema, id: $documentId);
 			if ($document !== null) {
-				return $this->withContent(document: $document);
+				return $document;
 			}
 		}
 
 		return null;
-	}//end load()
+	}//end meta()
 
 	/**
 	 * The rows of one schema that name the case.
@@ -187,11 +207,9 @@ class WooCaseDocuments {
 		}
 
 		try {
-			foreach ($this->rootFolder->getById($fileId) as $node) {
-				if ($node instanceof File) {
-					$document['content'] = base64_encode($node->getContent());
-					break;
-				}
+			$file = $this->fileById(fileService: $this->settingsService->getFileService(), rootFolder: $this->rootFolder, fileId: $fileId);
+			if ($file !== null) {
+				$document['content'] = base64_encode($file->getContent());
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning('WooCaseDocuments: a document file could not be read', ['fileId' => $fileId, 'error' => $e->getMessage()]);

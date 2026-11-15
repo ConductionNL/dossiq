@@ -1,0 +1,28 @@
+{
+    "zgwResource": "kanaal",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "naam": "{{ name }}",
+        "documentatieLink": "{{ documentationLink }}",
+        "filters": "{{ filters }}"
+    },
+    "cast": {
+        "filters": "jsonToArray"
+    },
+    "reverseMapping": {
+        "name": "{{ naam }}",
+        "documentationLink": "{{ documentatieLink }}",
+        "filters": "{{ filters|json_encode|raw }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "name": {
+            "field": "name"
+        }
+    }
+}

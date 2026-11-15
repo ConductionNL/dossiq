@@ -33,6 +33,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Starter\ReusableProcessStepService
  *
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class ReusableProcessStepTest extends TestCase {
 

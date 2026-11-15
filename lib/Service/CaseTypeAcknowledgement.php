@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -42,29 +42,44 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCP\IL10N;
 
 /**
  * What a case type says about confirming receipt.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class CaseTypeAcknowledgement {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n Words the publication warnings in the reader's language.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+	) {
+	}//end __construct()
 
 	/**
 	 * The intake channels that count as an electronic submission.
 	 *
 	 * Awb 4:3a is about electronically submitted messages, so these are the
 	 * values of `case.intakeChannel` that owe an acknowledgement by default:
-	 * mail, the portal and an API intake. `manual`, `balie`, `phone`, `post`
-	 * and `other` are not electronic submissions and owe nothing unless a case
-	 * type names them, because mailing somebody about a conversation they just
-	 * had at the desk is worse than not mailing them.
+	 * mail, the portal, a Nextcloud Forms form (decision 236) and an API
+	 * intake. `manual`, `balie`, `phone`, `post` and `other` are not electronic
+	 * submissions and owe nothing unless a case type names them, because
+	 * mailing somebody about a conversation they just had at the desk is worse
+	 * than not mailing them.
+	 *
+	 * A case type switches one off by naming its own `intakeChannels` list
+	 * without it.
 	 *
 	 * @var array<int, string>
 	 */
-	public const ELECTRONIC_CHANNELS = ['email', 'website', 'zgw-api'];
+	public const ELECTRONIC_CHANNELS = ['email', 'website', 'forms', 'zgw-api'];
 
 	/**
 	 * The moment the statutory acknowledgement is declared at.
@@ -95,6 +110,8 @@ class CaseTypeAcknowledgement {
 		'defaultChannel' => 'email',
 		'contentOnPlatform' => false,
 		'language' => 'nl',
+		'addressFields' => [],
+		'emailCopy' => false,
 	];
 
 	/**
@@ -104,9 +121,32 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<string, mixed> The declaration, never empty.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
+		$declaration = $this->declaredOverDefaults(caseType: $caseType);
+		$declaration = $this->normalisedScalars(declaration: $declaration);
+
+		$declaration['addressFields'] = array_values(
+			array_filter(
+				array_map(static fn (mixed $path): string => trim((string)$path), (array)$declaration['addressFields']),
+				static fn (string $path): bool => $path !== ''
+			)
+		);
+
+		return $declaration;
+	}//end declarationFor()
+
+	/**
+	 * The defaults with every non-null value the case type declares laid over them.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<string, mixed> The declaration, not yet normalised.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function declaredOverDefaults(array $caseType): array {
 		$declared = ($caseType['acknowledgement'] ?? null);
 		if (is_array($declared) === false) {
 			$declared = [];
@@ -122,9 +162,23 @@ class CaseTypeAcknowledgement {
 			$declaration[$key] = $declared[$key];
 		}
 
+		return $declaration;
+	}//end declaredOverDefaults()
+
+	/**
+	 * The declaration with its flags as booleans, its channels as a list and its texts trimmed.
+	 *
+	 * @param array<string, mixed> $declaration The declaration, defaults filled in.
+	 *
+	 * @return array<string, mixed> The declaration.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function normalisedScalars(array $declaration): array {
 		$declaration['enabled'] = ($declaration['enabled'] !== false);
 		$declaration['statutory'] = ($declaration['statutory'] !== false);
 		$declaration['contentOnPlatform'] = ($declaration['contentOnPlatform'] === true);
+		$declaration['emailCopy'] = ($declaration['emailCopy'] === true);
 		$declaration['intakeChannels'] = $this->channelList(value: $declaration['intakeChannels']);
 		$declaration['defaultChannel'] = trim((string)$declaration['defaultChannel']);
 		$declaration['language'] = trim((string)$declaration['language']);
@@ -138,7 +192,42 @@ class CaseTypeAcknowledgement {
 		}
 
 		return $declaration;
-	}//end declarationFor()
+	}//end normalisedScalars()
+
+	/**
+	 * The e-mail addresses a case keeps where its case type declares them.
+	 *
+	 * A case type that keeps its sender in an object of its own (the request
+	 * as sent, a form's answers) names the path, so the duty is not refused for
+	 * want of an address the case does carry.
+	 *
+	 * @param array<string, mixed> $case     The case row.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The addresses, lowercased, in declared order.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/burger-notifications/spec.md#requirement-a-case-type-declares-where-its-senders-address-is-kept-req-ack-addr-001
+	 */
+	public function addressesOn(array $case, array $caseType): array {
+		$addresses = [];
+		foreach ($this->declarationFor(caseType: $caseType)['addressFields'] as $path) {
+			$value = $case;
+			foreach (explode('.', $path) as $key) {
+				$value = ((array)$value)[$key] ?? null;
+			}
+
+			if (is_string($value) === false) {
+				continue;
+			}
+
+			$address = strtolower(trim($value));
+			if (filter_var($address, FILTER_VALIDATE_EMAIL) !== false) {
+				$addresses[] = $address;
+			}
+		}
+
+		return $addresses;
+	}//end addressesOn()
 
 	/**
 	 * Does this case owe its sender an acknowledgement of receipt.
@@ -148,7 +237,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return boolean TRUE when the duty applies to this case.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function owesAcknowledgement(array $case, array $caseType): bool {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -183,11 +272,24 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return boolean TRUE when the message says one is waiting and carries no case content.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function contentStaysOnPlatform(array $caseType): bool {
 		return ($this->declarationFor(caseType: $caseType)['contentOnPlatform'] === true);
 	}//end contentStaysOnPlatform()
+
+	/**
+	 * Whether the acknowledgement also goes by e-mail when another channel took it.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return boolean TRUE when the case type declares `emailCopy`.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function sendsEmailCopy(array $caseType): bool {
+		return ($this->declarationFor(caseType: $caseType)['emailCopy'] === true);
+	}//end sendsEmailCopy()
 
 	/**
 	 * The channel this acknowledgement goes out through.
@@ -202,7 +304,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return string The channel slug.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function channelFor(array $case, array $caseType): string {
 		$chosen = trim((string)($case['communicationChannel'] ?? ''));
@@ -220,7 +322,7 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return string A BCP 47 language tag; `nl` unless the case type declares another.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function languageFor(array $caseType): string {
 		return (string)$this->declarationFor(caseType: $caseType)['language'];
@@ -243,11 +345,40 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<int, array<string, mixed>> The moments, statutory entry first.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function momentsFor(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
 
+		$moments = $this->declaredMoments(caseType: $caseType);
+
+		if ($this->namesTheStatutoryMoment(moments: $moments) === true) {
+			return $moments;
+		}
+
+		array_unshift(
+			$moments,
+			[
+				'moment' => self::MOMENT_RECEIVED,
+				'template' => self::TEMPLATE,
+				'statutory' => ($declaration['statutory'] === true),
+				'enabled' => ($declaration['enabled'] === true),
+			]
+		);
+
+		return $moments;
+	}//end momentsFor()
+
+	/**
+	 * The notification moments the case type declares, normalised, skipping entries without a moment.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, array<string, mixed>> The declared moments.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function declaredMoments(array $caseType): array {
 		$moments = [];
 		$declared = ($caseType['notificationMoments'] ?? null);
 		if (is_array($declared) === true) {
@@ -270,22 +401,8 @@ class CaseTypeAcknowledgement {
 			}
 		}
 
-		if ($this->namesTheStatutoryMoment(moments: $moments) === true) {
-			return $moments;
-		}
-
-		array_unshift(
-			$moments,
-			[
-				'moment' => self::MOMENT_RECEIVED,
-				'template' => self::TEMPLATE,
-				'statutory' => ($declaration['statutory'] === true),
-				'enabled' => ($declaration['enabled'] === true),
-			]
-		);
-
 		return $moments;
-	}//end momentsFor()
+	}//end declaredMoments()
 
 	/**
 	 * What publishing this case type should warn about, in sentences.
@@ -300,25 +417,24 @@ class CaseTypeAcknowledgement {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function publicationWarnings(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
 		$warnings = [];
 
 		if ($declaration['enabled'] === false) {
-			$warnings[] = 'This case type sends no acknowledgement of receipt. '
-				. 'Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($declaration['enabled'] === true && $declaration['intakeChannels'] === []) {
-			$warnings[] = 'This case type names no intake channel that owes an acknowledgement, '
-				. 'so none is ever sent. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type names no intake channel that owes an acknowledgement, so none is ever sent. '
+				. 'Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($this->statutoryMomentWasRemoved(caseType: $caseType) === true) {
-			$warnings[] = 'The statutory acknowledgement of receipt was removed from this case '
-				. 'type\'s automatic messages. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('The statutory acknowledgement of receipt was removed from this case type\'s automatic '
+				. 'messages. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		return $warnings;

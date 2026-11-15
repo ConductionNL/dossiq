@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Termijn;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -79,20 +80,32 @@ class TermDefinitions {
 	 * Resolve the active TermijnDefinitie for a zaaktype.
 	 *
 	 * Version-aware: returns the definition with the latest validFrom that
-	 * is <= today, where validUntil is null or > today.
+	 * is <= today, where validUntil is null or > today. Only a statutory
+	 * definition is answered: a service norm never becomes the statutory term.
 	 *
 	 * @param string $caseType Zaaktype slug.
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function activeFor(string $caseType): ?array {
 		if (isset($this->cache[$caseType]) === true) {
 			return $this->cache[$caseType];
 		}
 
-		$active = $this->allActiveFor(caseType: $caseType);
+		// STATUTORY ONLY. Every caller of this method means the term the Awb
+		// sets: the start on case creation, the rearm on a case-type change,
+		// the status clock and the Woo term. A case type whose only definition
+		// is a service norm (`kind: planned`) used to have that norm armed as
+		// its statutory term through the fallback in createTermijnInstance().
+		$active = array_values(
+			array_filter(
+				$this->allActiveFor(caseType: $caseType),
+				static fn (array $row): bool => self::isStatutory(definitie: $row)
+			)
+		);
 		if (count($active) === 0) {
 			return null;
 		}
@@ -115,7 +128,7 @@ class TermDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The active definitions.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function allActiveFor(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -126,20 +139,25 @@ class TermDefinitions {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseType]
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseType' => $caseType]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermDefinitions.allActiveFor lookup failed',
-				['caseType' => $caseType, 'error' => $e->getMessage()]
-			);
+			$this->logger->warning('TermDefinitions.allActiveFor lookup failed', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->activeNewestFirst(rows: $rows);
+	}//end allActiveFor()
+
+	/**
+	 * The definitions valid today, newest validFrom first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Candidate definitions.
+	 *
+	 * @return array<int, array<string, mixed>> The active definitions.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function activeNewestFirst(array $rows): array {
 		$today = (new DateTimeImmutable())->format('Y-m-d');
 		$active = $this->filterActiveDefinities(rows: $rows, today: $today);
 
@@ -150,7 +168,7 @@ class TermDefinitions {
 		);
 
 		return $active;
-	}//end allActiveFor()
+	}//end activeNewestFirst()
 
 	/**
 	 * Keep the TermijnDefinitie rows whose validity window covers today.
@@ -186,7 +204,7 @@ class TermDefinitions {
 	 *
 	 * @return string One of the two modes.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public static function countingModeOf(array $definitie): string {
 		$declared = trim((string)($definitie['countingMode'] ?? ''));
@@ -197,6 +215,65 @@ class TermDefinitions {
 
 		return WorkingDayRoll::MODE_CALENDAR_DAYS;
 	}//end countingModeOf()
+
+	/**
+	 * Whether a definition sets the statutory term.
+	 *
+	 * An absent kind reads as statutory, because every definition written
+	 * before the kinds existed is one; an unknown kind reads as statutory too,
+	 * the same reading {@see TermKind::ofInstance()} gives an instance.
+	 *
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return bool True when it sets the statutory term.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public static function isStatutory(array $definitie): bool {
+		$declared = trim((string)($definitie['kind'] ?? ''));
+		if ($declared === '' || in_array($declared, TermKind::ALL, true) === false) {
+			return true;
+		}
+
+		return $declared === TermKind::STATUTORY;
+	}//end isStatutory()
+
+	/**
+	 * The planned clock a case gets: the case type's own lead time, else the
+	 * service norm a `planned` definition declares.
+	 *
+	 * THE CASE TYPE'S OWN LEAD TIME WINS. A planned definition fills in only
+	 * when the case type declares none, so no case type that already carries
+	 * a planned lead time moves. That lead time counts working days, as its
+	 * schema says; a definition counts in the mode it declares, and the
+	 * shipped service norms count calendar days so they end on the
+	 * processing deadline the case type shows.
+	 *
+	 * @param int                       $declaredDays The case type's `plannedLeadTime` in days, 0 when undeclared.
+	 * @param array<string, mixed>|null $definition   The `planned` definition that resolved, if any.
+	 *
+	 * @return array{days: int, mode: string, extra: array<string, string>} The clock, with the
+	 *         fields to write on its instance. Zero days means no planned clock.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public static function plannedClock(int $declaredDays, ?array $definition): array {
+		if ($declaredDays > 0 || $definition === null) {
+			return ['days' => $declaredDays, 'mode' => WorkingDayRoll::MODE_WORKING_DAYS, 'extra' => []];
+		}
+
+		$extra = [];
+		$definitionId = trim((string)($definition['id'] ?? ''));
+		if ($definitionId !== '') {
+			$extra['deadlineDefinition'] = $definitionId;
+		}
+
+		return [
+			'days' => (int)($definition['standardDurationDays'] ?? 0),
+			'mode' => self::countingModeOf(definitie: $definition),
+			'extra' => $extra,
+		];
+	}//end plannedClock()
 
 	/**
 	 * The end date of a term, counted in the mode its definition declares and
@@ -217,22 +294,27 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The end date, after the Awt roll.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
-		return $this->rolled(date: $this->counted(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
+		return $this->rolled(date: $this->countedEndDateFor(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
 	}//end endDateFor()
 
 	/**
 	 * The end date the declared duration implies, before the Awt roll.
+	 *
+	 * Public for the one law that counts from it: a Woo extension runs from
+	 * the original end of the first four weeks, unrolled (Woo art. 4.4 lid 2).
 	 *
 	 * @param DateTimeImmutable    $start     The day the term starts.
 	 * @param int                  $days      The declared duration.
 	 * @param array<string, mixed> $definitie The definition.
 	 *
 	 * @return DateTimeImmutable The counted end date.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
-	private function counted(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
+	public function countedEndDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		$mode = self::countingModeOf(definitie: $definitie);
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
 			return self::plusDays(start: $start, days: $days);
@@ -250,7 +332,7 @@ class TermDefinitions {
 		);
 
 		return self::plusDays(start: $start, days: $days);
-	}//end counted()
+	}//end countedEndDateFor()
 
 	/**
 	 * A number of calendar days after a date.
@@ -278,7 +360,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The counted date.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	private static function plusDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		return $start->add(new DateInterval('P' . abs($days) . 'D'));

@@ -14,9 +14,9 @@
  * Monday, and a term computed against a stale local list is wrong in a way
  * nobody on the page can see.
  *
- * 🔑 IT LOOKS FOR THE LIST, NOT FOR THE WORDS. `Kcc\SlaCalculator` names
- * Koningsdag and Bevrijdingsdag in a docblock and holds nothing: it delegates
- * every question to `WorkingDayCalculator`. A scanner matching holiday names
+ * 🔑 IT LOOKS FOR THE LIST, NOT FOR THE WORDS. `Termijn\WorkingDayRoll` names
+ * Koningsdag in a docblock and holds nothing: it delegates every question to
+ * the engine's calendar. A scanner matching holiday names
  * would open a defect against a file that is already doing the right thing,
  * which is the mistake `DeclaredDisplayFlagHasReaderTest` records in this same
  * directory. So the evidence is a date literal in code, or the Easter
@@ -221,19 +221,20 @@ class NoLocalCalendarTest extends TestCase {
 	 * A file that only NAMES the holidays is not a holder.
 	 *
 	 * The control, and the reason this test looks for the list rather than the
-	 * words. `Kcc\SlaCalculator` lists Koningsdag and Bevrijdingsdag in its
-	 * docblock and delegates every question to `WorkingDayCalculator`; a
-	 * scanner matching names would report it and be wrong.
+	 * words. `Termijn\WorkingDayRoll` names Koningsdag in its docblock and
+	 * delegates every question to the engine's calendar; a scanner matching
+	 * names would report it and be wrong. (The control used to be
+	 * `Kcc\SlaCalculator`, retired by termijnbewaking-op-engine-timers 4.1.)
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testAFileThatOnlyNamesHolidaysIsNotAHolder(): void {
-		$source = (string)file_get_contents(self::ROOT.'/lib/Service/Kcc/SlaCalculator.php');
+		$source = (string)file_get_contents(self::ROOT.'/lib/Service/Termijn/WorkingDayRoll.php');
 		$this->assertStringContainsString('Koningsdag', $source, 'the control file still names a holiday');
 
-		$this->assertNotContains('lib/Service/Kcc/SlaCalculator.php', $this->holders());
+		$this->assertNotContains('lib/Service/Termijn/WorkingDayRoll.php', $this->holders());
 	}
 
 	/**

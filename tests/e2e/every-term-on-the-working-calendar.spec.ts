@@ -33,11 +33,11 @@ import {
 	cleanupRunObjects,
 	createObject,
 	deleteObject,
-	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	seedSuspendableCaseType,
 } from './helpers/fixtures.ts'
 
 /** The app's own API, which is the door a handler's action goes through. */
@@ -56,7 +56,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
-		caseTypeId = (await ensureCaseType(api, token)).id
+		caseTypeId = await seedSuspendableCaseType(api, token)
 	})
 
 	test.afterAll(async () => {
@@ -118,14 +118,14 @@ test.describe('Every statutory term lands on a working day', () => {
 		return { status: res.status(), body: decoded }
 	}
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// Awb 4:5. Fourteen days credited onto 12 December 2026 is Tweede
 	// Kerstdag, a Saturday, and the term cannot end on one.
 	test('a pause credit landing on Tweede Kerstdag moves to the next ordinary day', async () => {
 		const termId = await seedTerm('2026-12-12')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
@@ -144,7 +144,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('paused')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// THE CONTROL. The same fourteen days onto a Monday two days later land
 	// on the same Monday, 28 December, without any roll. A service that
@@ -153,7 +153,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	test('the same credit onto an ordinary end date adds exactly the days asked for', async () => {
 		const termId = await seedTerm('2026-12-14')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
@@ -165,20 +165,20 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('2026-12-28')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// Awb 4:15, the other half of REQ-TERM-018's third scenario: the unused
 	// remainder comes off and the result lands on a working day too.
 	test('an unused remainder taken off lands on a working day', async () => {
 		const termId = await seedTerm('2027-04-08', 'lopend')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
 		expect(paused.status).toBeLessThan(300)
 
-		const resumed = await post(`/termijn/instances/${termId}/hervat`, {
+		const resumed = await post(`/deadlines/instances/${termId}/resume`, {
 			aanvullingDatum: '2027-03-05',
 		})
 
@@ -196,7 +196,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('lopend')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#the-ingebrekestelling-grace-ends-on-a-sunday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#the-ingebrekestelling-grace-ends-on-a-sunday
 	//
 	// Awb 4:17. Fourteen days from a receipt on Sunday 7 June 2026 is Sunday
 	// 21 June, and the dwangsom cannot start running on one.

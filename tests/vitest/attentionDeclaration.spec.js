@@ -16,7 +16,7 @@
  * number than the app does, and a string without a translation is shown in
  * English. So every one of those is held here.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -24,6 +24,7 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
@@ -43,10 +44,11 @@ const builtSimple = buildProfiledManifest(
 	fragments,
 	readJson('src', 'menu-layout.simple.json'),
 )
-// The app's own "First today" card, as the simple dashboard ships it.
-const card = builtSimple.pages
-	.find((page) => page.id === 'Dashboard')
-	.config.widgets.find((widget) => widget.id === 'simple-first-today').content
+// The app's own "First today" card, as the simple landing page ships it in
+// its My work view (landing-views).
+const card = pageWidgets(
+	builtSimple.pages.find((page) => page.id === 'MyWorkHome'),
+).find((widget) => widget.id === 'simple-first-today').content
 
 const SEVERITIES = ['error', 'warning', 'info']
 const OPERATORS = ['gt', 'gte', 'lt', 'lte', 'eq', 'neq']
@@ -116,11 +118,14 @@ describe('appinfo/attention.json follows the attention feed contract', () => {
 })
 
 describe('the declared item is the dashboard\'s own "First today" card', () => {
-	it('declares the item the card shows', () => {
+	it('declares the item the card counts on', () => {
+		// The card on the landing page names ONE case, the first row of the
+		// same query (`{subject.title}`); the feed item counts them (`{value}`).
+		// What they share is the count: severity, condition, query and link.
 		expect(item).toBeTruthy()
 		expect(card.layout).toBe('attention')
-		expect(item.title).toBe(card.title)
-		expect(item.reason).toBe(card.reason)
+		expect(card.title).toBe('{subject.title}')
+		expect(item.reason).toContain('{value}')
 		expect(item.severity).toBe(card.variant)
 		expect(item.op ?? 'gt').toBe(card.visibleWhen.op)
 		expect(item.value ?? 0).toBe(card.visibleWhen.value)

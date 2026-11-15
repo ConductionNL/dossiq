@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BulkActionRegistrationListener implements IEventListener {
 
@@ -56,7 +56,7 @@ class BulkActionRegistrationListener implements IEventListener {
 	 *
 	 * @var array<int, class-string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const ACTIONS = [
 		TransitionCasesAction::class,
@@ -74,7 +74,7 @@ class BulkActionRegistrationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -89,7 +89,7 @@ class BulkActionRegistrationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (method_exists($event, 'registerAction') === false) {

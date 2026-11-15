@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\Intake\MessageFacts;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
@@ -101,6 +102,8 @@ interface ChannelIntakeObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Intake\MessageFacts
+ * @uses \OCA\Dossiq\Service\CommunicationChannel
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
  */
 class IntakeMessageRoutedListenerTest extends TestCase {
 
@@ -277,6 +280,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 			}
 		);
 		$dates->method('today')->willReturn(new \DateTimeImmutable('2026-09-18 00:00:00'));
+		$dates->method('tryParse')->willReturnCallback(
+			static function (mixed $value): ?\DateTimeImmutable {
+				$text = trim((string)(is_scalar($value) === true ? $value : ''));
+
+				return ($text === '') ? null : new \DateTimeImmutable($text);
+			}
+		);
+		$dates->method('formatMoment')->willReturnCallback(
+			static fn (\DateTimeInterface $moment): string => $moment->format(\DateTimeInterface::ATOM)
+		);
 
 		return new ChannelIntake(
 			settingsService: $settings,
@@ -327,6 +340,7 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		return new IntakeMessageRoutedListener(
 			intake: $intake,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->passThroughAccount(),
 		);
 	}//end listener()
 
@@ -344,6 +358,11 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		$this->assertSame('ct-mor', $case['caseType']);
 		$this->assertSame('teams', $case['intakeChannel']);
 		$this->assertSame('2026-09-18', $case['startDate']);
+		$this->assertSame(
+			'2026-09-18T08:30:00+00:00',
+			$case['receivedAt'],
+			'The term starts when the message arrived, not when the case row was written (REQ-TERM-043).'
+		);
 		$this->assertSame('Lantaarnpaal kapot', $case['title']);
 		$this->assertSame('case-1', $event->getCreatedRef());
 	}//end testARoutedMessageOpensACaseAndAnswersTheSlot()
@@ -525,4 +544,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 
 		$this->assertNull($event->getCreatedRef());
 	}//end testTheListenerNeverThrows()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

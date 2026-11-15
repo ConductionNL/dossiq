@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 
 declare(strict_types=1);
@@ -23,8 +23,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\TenantOnboardingService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\OnboardingStepGuideInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -36,22 +37,24 @@ use OCP\IUserSession;
 /**
  * Onboarding REST controller.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 class TenantOnboardingController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request Request.
-	 * @param TenantOnboardingService $onboarding Onboarding service.
+	 * @param TenantOnboardingServiceInterface $onboarding Onboarding service.
 	 * @param IUserSession $userSession User session.
+	 * @param OnboardingStepGuideInterface $guide What the checklist says under each step.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly TenantOnboardingService $onboarding,
+		private readonly TenantOnboardingServiceInterface $onboarding,
 		private readonly IUserSession $userSession,
+		private readonly OnboardingStepGuideInterface $guide,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -61,14 +64,14 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function progress(string $tenantId): JSONResponse {
 		return new JSONResponse(
 			[
 				'success' => true,
-				'progress' => $this->onboarding->getProgress($tenantId),
+				'progress' => $this->guide->withGuidance(progress: $this->onboarding->getProgress($tenantId)),
 			]
 		);
 	}//end progress()
@@ -81,7 +84,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function complete(string $tenantId, string $step): JSONResponse {
@@ -114,7 +117,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function activate(string $tenantId): JSONResponse {
@@ -130,15 +133,26 @@ class TenantOnboardingController extends Controller {
 	/**
 	 * POST /api/saas/tenants/{tenantId}/onboarding/initialise
 	 *
+	 * Answers 409 when no step was written: OpenRegister is unavailable, or the
+	 * Organisation has no audit anchor and none could be made.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function initialise(string $tenantId): JSONResponse {
 		$rows = $this->onboarding->createOnboarding($tenantId);
+		if ($rows === []) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'Onboarding could not start for this organisation'],
+				Http::STATUS_CONFLICT
+			);
+		}
+
 		return new JSONResponse(['success' => true, 'tasks' => $rows]);
 	}//end initialise()
 }//end class

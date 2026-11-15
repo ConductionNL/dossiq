@@ -35,45 +35,53 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseAttentionMarkerService;
-use OCA\Dossiq\Service\CaseRiskAssessmentService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionMarkerServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRiskAssessmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Derive the risk mirror and the marker set of a case about to be written.
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseMarkerDerivationListener implements IEventListener {
+	use ReadsCaseWrites;
+
+	/**
+	 * The check named in the log when a payload cannot be read.
+	 */
+	private const PAYLOAD_CHECK = 'marker derivation';
+
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService            $settingsService Schema slug bridge.
-	 * @param CaseRiskAssessmentService  $riskService     The assessed level and what it feeds.
-	 * @param CaseAttentionMarkerService $markerService   What raises a marker and what clears it.
+	 * @param SettingsServiceInterface            $settingsService Schema slug bridge.
+	 * @param CaseRiskAssessmentServiceInterface  $riskService     The assessed level and what it feeds.
+	 * @param CaseAttentionMarkerServiceInterface $markerService   What raises a marker and what clears it.
 	 * @param LoggerInterface            $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseRiskAssessmentService $riskService,
-		private readonly CaseAttentionMarkerService $markerService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseRiskAssessmentServiceInterface $riskService,
+		private readonly CaseAttentionMarkerServiceInterface $markerService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,17 +93,10 @@ class CaseMarkerDerivationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->apply(...));
 	}//end handle()
 
 	/**
@@ -107,13 +108,12 @@ class CaseMarkerDerivationListener implements IEventListener {
 	 * @return void
 	 */
 	private function apply(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
+		$payload = $this->caseAsSaved(event: $event, entity: $entity);
+		if ($payload === null) {
 			return;
 		}
 
 		$modified = $event->getModifiedData();
-		$payload = array_merge($payload, $modified);
 
 		// The rows a condition reads that are NOT on the case. One query, on
 		// the same footing as the case-type read the priority derivation
@@ -132,43 +132,4 @@ class CaseMarkerDerivationListener implements IEventListener {
 			)
 		);
 	}//end apply()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: marker derivation could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `case` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return boolean True when this is a case.
-	 */
-	private function isCaseSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
-	}//end isCaseSchema()
 }//end class

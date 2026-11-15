@@ -92,10 +92,12 @@ let rows = []
 /**
  * Mount the widget on a case type and let it read.
  *
+ * @param {object} [props] The widget props.
  * @return {Promise<object>} The mounted wrapper.
  */
-async function mountWidget() {
+async function mountWidget(props = {}) {
 	const wrapper = mount(CaseTypeTranslationsWidget, {
+		props,
 		global: { mocks: { $route: { params: { id: 'ct-1' } } } },
 	})
 	await flushPromises()
@@ -309,5 +311,130 @@ describe('the page is wired to the registry', () => {
 			),
 			'a widget with no layout cell is declared and never placed',
 		).toBe(true)
+	})
+})
+
+/**
+ * DqZaaktypeOverzicht draws a Vertalingen summary on the Overview tab: one
+ * row per language with how many labels it has and a pill, Compleet or the
+ * number missing. The editor stays on the Translations tab.
+ *
+ * @spec openspec/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
+ */
+describe('the translations summary (DqZaaktypeOverzicht)', () => {
+	it('draws one row per language with its count and a pill, and no editor', async () => {
+		caseType.title.en = 'Environmental permit'
+		rows = [{ property: 'title', language: 'en', status: 'human_reviewed' }]
+
+		const wrapper = await mountWidget({ content: { mode: 'summary' } })
+
+		const rowsShown = wrapper.findAll('.case-type-translations__summary-row')
+		expect(rowsShown).toHaveLength(2)
+		expect(rowsShown[0].attributes('data-language')).toBe('nl')
+		expect(rowsShown[0].find('.case-type-translations__summary-pill').text()).toBe('Fully translated')
+		expect(rowsShown[1].text()).toContain('1 of 2 labels')
+		expect(rowsShown[1].find('.case-type-translations__summary-pill').text()).toBe('1 missing')
+		expect(wrapper.find('[data-testid="case-type-translations-save"]').exists()).toBe(false)
+		expect(wrapper.find('.case-type-translations__tabs').exists()).toBe(false)
+	})
+
+	it('keeps the editor without the summary mode', async () => {
+		const wrapper = await mountWidget()
+		expect(wrapper.find('.case-type-translations__summary-row').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-type-translations-save"]').exists()).toBe(true)
+	})
+
+	it('puts the summary on the Overview tab and the editor on the Translations tab', () => {
+		const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
+		const page = simple.pages.find((entry) => entry.id === 'CaseTypeDetail')
+		const tabs = page.configAppend.widgets.find((widget) => widget.id === 'case-type-panels').content.tabs
+		const summary = page.configAppend.widgets.find((widget) => widget.id === 'case-type-translations-summary')
+		expect(tabs.find((tab) => tab.id === 'overview').widgetIds).toContain('case-type-translations-summary')
+		expect(tabs.find((tab) => tab.id === 'overview').widgetIds).not.toContain('case-type-translations')
+		expect(tabs.find((tab) => tab.id === 'translations').widgetId).toBe('case-type-translations')
+		expect(summary.type).toBe('CaseTypeTranslationsWidget')
+		expect(summary.content.mode).toBe('summary')
+		expect(summary.headerActions).toEqual([{ label: 'Edit', icon: 'Pencil', action: { type: 'navigate', target: '/settings/case-types/@objectId#translations' } }])
+		expect(summary.headerLink).toBeUndefined()
+	})
+
+	it('draws the Overview summary in a titled card, the tab editor bare (r25b)', () => {
+		const entry = registrySource.slice(registrySource.indexOf('CaseTypeTranslationsWidget: {'))
+		expect(entry.slice(0, entry.indexOf('},'))).toMatch(/chrome: 'card'/)
+	})
+})
+
+describe('the translations editor edge paths', () => {
+	it('says so and reads nothing when the route carries no case type id', async () => {
+		const wrapper = mount(CaseTypeTranslationsWidget, {
+			global: { mocks: { $route: { params: {} } } },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.error).toBe(true)
+		expect(wrapper.vm.loading).toBe(false)
+		expect(axios.get).not.toHaveBeenCalled()
+	})
+
+	it('switches the active language when a language tab is clicked', async () => {
+		const wrapper = await mountWidget()
+		const first = wrapper.vm.activeLanguage
+		const other = first === 'nl' ? 'en' : 'nl'
+
+		const tab = wrapper.findAllComponents({ name: 'NcButton' })
+			.find((b) => b.attributes('role') === 'tab' && b.attributes('data-language') === other)
+		await tab.trigger('click')
+
+		expect(wrapper.vm.activeLanguage).toBe(other)
+	})
+
+	it('records a draft when the field reports a new value', async () => {
+		const wrapper = await mountWidget()
+		wrapper.vm.activeLanguage = 'en'
+		await flushPromises()
+
+		const field = wrapper.findAllComponents({ name: 'NcTextField' })[0]
+		field.vm.$emit('update:value', 'Environmental permit')
+		await flushPromises()
+
+		expect(wrapper.vm.draftOf('title')).toBe('Environmental permit')
+	})
+
+	it('skips a sidecar row that names no property or no language', async () => {
+		rows = [
+			{ property: '', language: 'en', status: 'translated' },
+			{ property: 'title', language: '', status: 'translated' },
+			{ property: 'title', language: 'en', status: 'translated' },
+		]
+		const wrapper = await mountWidget()
+
+		expect(wrapper.vm.error).toBe(false)
+		expect(wrapper.vm.statuses.title).toEqual({ en: 'translated' })
+	})
+
+	it('shows the error toast when a label cannot be saved', async () => {
+		const { showError } = await import('@nextcloud/dialogs')
+		showError.mockClear()
+		axios.patch.mockRejectedValue(new Error('boom'))
+		const wrapper = await mountWidget()
+		wrapper.vm.activeLanguage = 'en'
+		await flushPromises()
+		wrapper.vm.setDraft('title', 'Environmental permit')
+		await flushPromises()
+
+		await wrapper.find('[data-testid="case-type-translations-save"]').trigger('click')
+		await flushPromises()
+
+		expect(showError).toHaveBeenCalledWith('The labels could not be saved.')
+	})
+
+	it('stops listening for the page refresh when it is torn down', async () => {
+		const { unsubscribe } = await import('@nextcloud/event-bus')
+		unsubscribe.mockClear()
+		const wrapper = await mountWidget()
+
+		wrapper.unmount()
+
+		expect(unsubscribe).toHaveBeenCalled()
 	})
 })

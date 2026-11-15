@@ -1,0 +1,58 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "supplierTender"
+  },
+  "rows": [
+    {
+      "id": "996a7906-08ee-5eea-a70b-5a9d7d630eb1",
+      "supplierRef": "21dd1f91-6680-52a4-8cb5-d415b3095060",
+      "caseRef": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "title": "Inschrijving aanbesteding jeugdzorg 2026",
+      "status": "evaluating",
+      "submittedDate": "{{date:-12}}",
+      "value": 1148000,
+      "priceScore": 36.2,
+      "qualityScore": 54.0,
+      "totalScore": 90.2,
+      "rank": 1
+    },
+    {
+      "id": "bde46dc3-7b3b-5f2d-b783-9fd48704efd0",
+      "supplierRef": "634af839-44a0-55e7-b92c-f14cb928aeb5",
+      "caseRef": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "title": "Inschrijving aanbesteding jeugdzorg 2026",
+      "status": "evaluating",
+      "submittedDate": "{{date:-12}}",
+      "value": 1096000,
+      "priceScore": 40.0,
+      "qualityScore": 46.8,
+      "totalScore": 86.8,
+      "rank": 2
+    },
+    {
+      "id": "b7ca3cd0-2ea2-58a8-b612-32dab7149508",
+      "supplierRef": "0d6aae87-bda6-5f39-996b-2e8276c2d165",
+      "caseRef": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "title": "Inschrijving aanbesteding jeugdzorg 2026",
+      "status": "evaluating",
+      "submittedDate": "{{date:-12}}",
+      "value": 1210000,
+      "priceScore": 32.1,
+      "qualityScore": 50.4,
+      "totalScore": 82.5,
+      "rank": 3
+    },
+    {
+      "id": "e05b5c05-8675-5a28-bfd3-b4f240993ab6",
+      "supplierRef": "a7d3aa0c-91f7-594d-a2c2-d53c0c90dd96",
+      "caseRef": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "title": "Inschrijving aanbesteding jeugdzorg 2026",
+      "status": "rejected",
+      "submittedDate": "{{date:-12}}",
+      "value": 1402000,
+      "rejectionReason": "Ongeldig: geen UEA"
+    }
+  ]
+}

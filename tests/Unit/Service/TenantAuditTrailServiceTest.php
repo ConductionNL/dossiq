@@ -22,15 +22,21 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
+use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class TenantAuditTrailServiceTest extends TestCase {
+	use MakesTenantAnchors;
+
 	private TenantAuditTrailService $svc;
 
 	/**
@@ -43,11 +49,14 @@ class TenantAuditTrailServiceTest extends TestCase {
 	/**
 	 * Build a service whose OpenRegister audit sink is available (or not).
 	 *
-	 * @param bool $orAvailable Whether the openregister app resolves.
+	 * @param bool        $orAvailable  Whether the openregister app resolves.
+	 * @param string|null $multitenancy What OpenRegister's SettingsService answers to
+	 *                                  isMultiTenancyEnabled(): 'on', 'off', 'throws',
+	 *                                  or null when the service does not resolve.
 	 *
 	 * @return TenantAuditTrailService
 	 */
-	private function makeService(bool $orAvailable = true): TenantAuditTrailService {
+	private function makeService(bool $orAvailable = true, ?string $multitenancy = 'on'): TenantAuditTrailService {
 		$appManager = $this->createMock(IAppManager::class);
 		$installed = [];
 		if ($orAvailable === true) {
@@ -66,14 +75,43 @@ class TenantAuditTrailServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
-				return (object)['uuid' => $id, 'register' => $register, 'schema' => $schema];
+			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
+				$entity = new ObjectEntity();
+				$entity->setUuid($id);
+				$entity->setSchema($schema);
+
+				return $entity;
+			}
+		};
+
+		// Stands in for OCA\OpenRegister\Service\SettingsService, whose real
+		// method on openregister development is `isMultiTenancyEnabled(): bool`.
+		$settingsService = new class($multitenancy) {
+			/**
+			 * @param string|null $answer What the probe answers.
+			 */
+			public function __construct(private readonly ?string $answer) {
+			}
+
+			/**
+			 * @return bool
+			 */
+			public function isMultiTenancyEnabled(): bool {
+				if ($this->answer === 'throws') {
+					throw new \RuntimeException('settings unreadable');
+				}
+
+				return $this->answer === 'on';
 			}
 		};
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			function (string $id) use ($objectService) {
+			function (string $id) use ($objectService, $settingsService, $multitenancy) {
+				if ($id === 'OCA\\OpenRegister\\Service\\SettingsService' && $multitenancy !== null) {
+					return $settingsService;
+				}
+
 				if ($id === 'OCA\\OpenRegister\\Db\\AuditTrailMapper') {
 					return $this->auditSink;
 				}
@@ -103,14 +141,12 @@ class TenantAuditTrailServiceTest extends TestCase {
 			public array $rows = [];
 
 			/**
-			 * @param object $object Anchor entity.
-			 * @param string $action Audit action.
-			 * @param array<string, mixed> $context Audit context.
+			 * @param ObjectAuditEvent $event Anchor entity, audit action and context.
 			 *
 			 * @return object
 			 */
-			public function createAuditTrailEntry(object $object, string $action, array $context = []): object {
-				$this->rows[] = ['object' => $object, 'action' => $action, 'context' => $context];
+			public function recordObjectEvent(ObjectAuditEvent $event): object {
+				$this->rows[] = ['object' => $event->object, 'action' => $event->action, 'context' => $event->context];
 				return (object)['id' => count($this->rows)];
 			}
 		};
@@ -153,7 +189,7 @@ class TenantAuditTrailServiceTest extends TestCase {
 
 		$row = $this->auditSink->rows[0];
 		$this->assertSame('procest.tenant.tenant.provisioned', $row['action']);
-		$this->assertSame('tenant-uuid-1', $row['object']->uuid, 'row must anchor to the tenant entity');
+		$this->assertSame('tenant-uuid-1', $row['object']->getUuid(), 'row must anchor to the tenant entity');
 		$this->assertSame('alice', $row['context']['actor']);
 		$this->assertSame('tenant:acme', $row['context']['resource']);
 	}
@@ -192,7 +228,7 @@ class TenantAuditTrailServiceTest extends TestCase {
 
 	public function testHardeningChecklistShape(): void {
 		$items = $this->svc->hardeningChecklist();
-		$this->assertGreaterThanOrEqual(7, count($items));
+		$this->assertGreaterThanOrEqual(6, count($items));
 		foreach ($items as $i) {
 			$this->assertArrayHasKey('key', $i);
 			$this->assertArrayHasKey('description', $i);
@@ -229,4 +265,112 @@ class TenantAuditTrailServiceTest extends TestCase {
 		$byKey = array_column($this->svc->hardeningChecklist(), 'status', 'key');
 		$this->assertSame('unverified', $byKey['isolation_pen_test']);
 	}
+
+	/**
+	 * With multitenancy on, both isolation items pass and name the row filter.
+	 *
+	 * @return void
+	 */
+	public function testTheIsolationItemsCiteTheOpenRegisterRowFilter(): void {
+		$items = array_column($this->makeService(multitenancy: 'on')->hardeningChecklist(), null, 'key');
+
+		foreach (['tenant_scoped_queries', 'no_tenant_info_leak'] as $key) {
+			$this->assertSame('pass', $items[$key]['status'], $key.' must pass when the probe says multitenancy is on');
+			$this->assertStringContainsString('MagicSearchHandler', $items[$key]['evidence']);
+			$this->assertStringContainsString('organisation', $items[$key]['evidence']);
+			$this->assertStringContainsString('isMultiTenancyEnabled', $items[$key]['evidence']);
+		}
+	}
+
+	/**
+	 * With multitenancy off, or a probe that throws, the items are unverified.
+	 *
+	 * @return void
+	 */
+	public function testTheIsolationItemsAreUnverifiedWhenMultitenancyIsOff(): void {
+		foreach (['off', 'throws'] as $answer) {
+			$byKey = array_column($this->makeService(multitenancy: $answer)->hardeningChecklist(), 'status', 'key');
+			$this->assertSame('unverified', $byKey['tenant_scoped_queries'], 'probe '.$answer);
+			$this->assertSame('unverified', $byKey['no_tenant_info_leak'], 'probe '.$answer);
+		}
+	}
+
+	/**
+	 * Without OpenRegister, or without its SettingsService, the items are unverified.
+	 *
+	 * @return void
+	 */
+	public function testTheIsolationItemsAreUnverifiedWhenOpenRegisterIsAbsent(): void {
+		$services = [
+			'app absent'     => $this->makeService(orAvailable: false, multitenancy: 'on'),
+			'service absent' => $this->makeService(orAvailable: true, multitenancy: null),
+		];
+		foreach ($services as $label => $service) {
+			$byKey = array_column($service->hardeningChecklist(), 'status', 'key');
+			$this->assertSame('unverified', $byKey['tenant_scoped_queries'], $label);
+			$this->assertSame('unverified', $byKey['no_tenant_info_leak'], $label);
+		}
+	}
+
+	/**
+	 * No item cites a schema or a search_path (REQ-TIS-002).
+	 *
+	 * @return void
+	 */
+	public function testNoChecklistItemMentionsASchemaOrASearchPath(): void {
+		foreach ($this->makeService()->hardeningChecklist() as $item) {
+			$text = strtolower($item['description'].' '.$item['evidence']);
+			$this->assertStringNotContainsString('schema', $text, $item['key']);
+			$this->assertStringNotContainsString('search_path', $text, $item['key']);
+		}
+	}
+
+	/**
+	 * No checklist item cites a tenant class this chain deleted (REQ-TAO-001).
+	 *
+	 * @return void
+	 */
+	public function testNoChecklistItemCitesADeletedTenantClass(): void {
+		$deleted = [
+			'TenantJwtService',
+			'TenantClaimValidationMiddleware',
+			'TenantClaimMismatchException',
+			'TenantMiddleware',
+			'TenantContextMiddleware',
+			'TenantController',
+			'TenantIsolationMiddleware',
+			'TenantSaasService',
+			'TenantSaasController',
+		];
+		$items   = $this->makeService()->hardeningChecklist();
+
+		$this->assertNotContains('claim_validation', array_column($items, 'key'), 'no token checks the tenant any more');
+		foreach ($items as $item) {
+			foreach ($deleted as $class) {
+				$this->assertDoesNotMatchRegularExpression(
+					'/\b'.$class.'\b/',
+					$item['description'].' '.$item['evidence'],
+					$item['key'].' cites '.$class
+				);
+			}
+		}
+	}
+
+	/**
+	 * A tenant with no anchor gets no row, an error, and persisted false (REQ-TOO-006).
+	 *
+	 * Built on the real service over an empty store: no tenant object exists
+	 * for the Organisation, so nothing can be anchored.
+	 *
+	 * @return void
+	 */
+	public function testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged(): void {
+		$this->startAnchorStore();
+
+		$entry = $this->realTenantAuditTrail()->emit(['action' => 'mandate.create.allowed', 'actor' => 'alice', 'tenantId' => 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e']);
+
+		$this->assertFalse($entry['persisted']);
+		$this->assertSame([], $this->anchorTrail->rows);
+		$this->assertNotSame([], $this->anchorErrors);
+	}//end testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged()
 }

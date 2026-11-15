@@ -1,0 +1,23 @@
+{
+  "_note": "stages-off-path (Ruben, 27 October 2026). A status off the case type's main path (a withdrawal, an extension request) is marked offPath, and the case's stages strip leaves it out unless the case is in it, as board DqSociaalDomein (design-system #678) and DqZaak draw the main path only. statusType moves to 1.9.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "statusType": {
+        "version": "1.9.0",
+        "properties": {
+          "offPath": {
+            "type": "boolean",
+            "default": false,
+            "title": "Off the main path",
+            "description": "A status a case only reaches by a side turn, such as a withdrawal or an extension request. The case's progress strip leaves it out unless the case is in it.",
+            "facetable": false
+          }
+        }
+      }
+    }
+  }
+}

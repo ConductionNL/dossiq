@@ -21,7 +21,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Service\TenantOnboardingService;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -36,11 +35,13 @@ class TenantOnboardingServiceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->svc = new TenantOnboardingService(
-			tenantSaasService: $this->createMock(TenantSaasService::class),
 			appManager: $this->createMock(IAppManager::class),
 			container: $this->createMock(ContainerInterface::class),
 			logger: $this->createMock(LoggerInterface::class),
 			billingService: $this->createMock(\OCA\Dossiq\Service\TenantBillingService::class),
+			tenantService: $this->createMock(\OCA\Dossiq\Service\TenantService::class),
+			steps: $this->createMock(\OCA\Dossiq\Service\Task\OnboardingSteps::class),
+			userSession: $this->createMock(\OCP\IUserSession::class),
 		);
 	}
 
@@ -74,6 +75,23 @@ class TenantOnboardingServiceTest extends TestCase {
 		$r = $this->svc->validateGoLive('tenant-1');
 		$this->assertFalse($r['ready']);
 		$this->assertContains('openregister_unavailable', $r['missing']);
+	}
+
+	/**
+	 * activate() has no way left to write a tenant status (task 6.8).
+	 *
+	 * The service no longer takes the tenant admin store at all, so nothing
+	 * it holds can change a tenant's status.
+	 *
+	 * @return void
+	 */
+	public function testActivateWritesNoTenantStatus(): void {
+		$types = array_map(
+			static fn (\ReflectionParameter $p): string => (string) $p->getType(),
+			(new \ReflectionMethod(TenantOnboardingService::class, '__construct'))->getParameters()
+		);
+
+		$this->assertNotContains('OCA\\Dossiq\\Service\\TenantSaasService', $types);
 	}
 
 	public function testActivateRefusesWhenNotReady(): void {

@@ -1,0 +1,18 @@
+{
+    "status": 200,
+    "data": {
+        "id": "inst-1",
+        "answeredBy": "requestSupervisorExtension"
+    },
+    "calls": [
+        {
+            "call": "extension::requestSupervisorExtension",
+            "args": [
+                "inst-1",
+                "wait",
+                "2026-04-01",
+                "doc-1"
+            ]
+        }
+    ]
+}

@@ -89,6 +89,10 @@ const SILENT = [
 	'publications',
 	'relatedCases',
 	'riskAssessment',
+	'routing',
+	'routingNote',
+	'routingTakeBacks',
+	'selectionListClass',
 	'skippedPhases',
 	'splitMovedItems',
 	'statusDwellTotals',
@@ -104,7 +108,24 @@ const SILENT = [
 	// `visible: false` and are written by the register's own expressions, so
 	// there is no input to control.
 	'portalTurn',
+	// The channel as it arrived when it was not a slug: a ZGW URL kept so a ZGW
+	// client reads back what it wrote (decision 171), never a filter.
+	'communicationChannelSource',
 	'assignedGroupPublicName',
+	// The earlier Woo request this one started from: a reference the draft search
+	// plan is copied from, `visible: false`, never a filter (woo-request-corpus-collection).
+	'wooStartFrom',
+	// What dossiq writes for the Woo requester (woo-dossier-shared-with-the-requester
+	// REQ-WDS-002, REQ-WDS-003): a sentence and a link the portal shows, never a filter.
+	'termNote',
+	'resultLink',
+	// The documents a requester sent with a request (decision 179): a list of
+	// file references the case page shows, never typed into a search box.
+	'attachments',
+	// The subject's BSN and the sensitive answers (social-domain-lookup-over-cases):
+	// only dossiq-sensitive reads them, so no desk list searches or filters on them.
+	'subjectBsn',
+	'sensitiveProperties',
 ]
 
 /**

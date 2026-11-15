@@ -29,15 +29,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Term\DependentTermOffer;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * Accept or decline a followed term move.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class CaseTermFollowController extends Controller {
 	/**
@@ -69,16 +69,16 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @param string             $appName         The app name.
 	 * @param IRequest           $request         The HTTP request.
-	 * @param DependentTermOffer $offers          Makes and settles the offer.
-	 * @param CaseAccessGuard    $caseAccessGuard Per-case authorization (fails closed).
+	 * @param DependentTermOfferInterface $offers          Makes and settles the offer.
+	 * @param CaseAccessGuardInterface    $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession       $userSession     The current session.
 	 * @param IL10N              $l10n            The translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DependentTermOffer $offers,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly DependentTermOfferInterface $offers,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
@@ -93,7 +93,7 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @return JSONResponse The recorded term event, or the rule that refused it.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $taskId): JSONResponse {
@@ -126,7 +126,7 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @return JSONResponse Whether the offer was closed.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	#[NoAdminRequired]
 	public function decline(string $caseId, string $taskId): JSONResponse {

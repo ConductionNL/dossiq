@@ -67,7 +67,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCP\DB\Exception;
+use OCA\Dossiq\Repair\Support\ColumnMove;
+use OCA\Dossiq\Repair\Support\MovesShardColumns;
+use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -79,6 +81,14 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class RenameDutchDeadlineColumns implements IRepairStep {
+	use ReadsRegisterShards;
+	use MovesShardColumns;
+
+	/**
+	 * The name every warning starts with.
+	 */
+	private const LOG_NAME = 'RenameDutchDeadlineColumns';
+
 	/**
 	 * Slug prefix of the registers in scope.
 	 *
@@ -208,54 +218,26 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 			return;
 		}
 
-		$renamed = 0;
-		$copied = 0;
-		$refused = 0;
-
-		foreach ($tables as $table) {
-			$columns = $this->columnsOf(table: $table);
-			$qTable = $this->quote(identifier: $table);
-
-			foreach (self::COLUMN_MAP as $old => $new) {
-				if (in_array($old, $columns, true) === false) {
-					// Already migrated, or this schema never had the property.
-					continue;
-				}
-
-				if ($this->hasCollision(table: $table, columns: $columns, target: $new) === true) {
-					$refused++;
-					continue;
-				}
-
-				$qOld = $this->quote(identifier: $old);
-				$qNew = $this->quote(identifier: $new);
-
-				if (in_array($new, $columns, true) === false) {
-					$sql = 'ALTER TABLE ' . $qTable . ' RENAME COLUMN ' . $qOld . ' TO ' . $qNew;
-					if ($this->exec(sql: $sql) === true) {
-						$renamed++;
-					}
-
-					continue;
-				}
-
-				// The mapper already added an empty English column: back-fill and
-				// leave the Dutch one, so this stays reversible.
-				$sql = 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld
-					. ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL';
-				if ($this->exec(sql: $sql) === true) {
-					$copied++;
-				}
-			}//end foreach
-		}//end foreach
-
+		$tally = $this->moveColumnsOfAll(tables: $tables);
 		$output->info(
-			'RenameDutchDeadlineColumns: ' . $renamed . ' column(s) renamed, '
-			. $copied . ' back-filled, ' . $refused . ' refused for ambiguity, across '
+			'RenameDutchDeadlineColumns: ' . $tally->renamed . ' column(s) renamed, '
+			. $tally->copied . ' back-filled, ' . $tally->refused . ' refused for ambiguity, across '
 			. count($tables) . ' dossiq shard table(s).'
 		);
 
 	}//end run()
+
+	/**
+	 * Whether two Dutch columns in this table both target one English name.
+	 *
+	 * @param string     $table Table name.
+	 * @param ColumnMove $move  The move, with the table's column names.
+	 *
+	 * @return bool True when the rename is ambiguous and must be skipped.
+	 */
+	protected function refusesMove(string $table, ColumnMove $move): bool {
+		return $this->hasCollision(table: $table, columns: $move->columns, target: $move->new);
+	}//end refusesMove()
 
 	/**
 	 * Whether two Dutch columns in this table both target one English name.
@@ -292,57 +274,14 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function shardTables(): array {
-		try {
-			$ids = $this->db->executeQuery(
-				'SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?',
-				[self::REGISTER_SLUG_PREFIX . '%']
-			)->fetchAll(\PDO::FETCH_COLUMN);
-		} catch (Exception $e) {
-			$this->logger->warning(
-				'RenameDutchDeadlineColumns: could not resolve the dossiq registers; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
+		$ids = $this->registerIdsOrNone(warning: 'could not resolve the dossiq registers; skipping.');
 		if ($ids === []) {
 			return [];
 		}
 
-		// Table discovery goes through information_schema, NOT IDBConnection.
-		// OCP\IDBConnection exposes neither getSchema() nor getPrefix() — it has
-		// only getQueryBuilder/getDatabasePlatform/getDatabaseProvider and a
-		// couple of shard helpers. Calling either is a runtime fatal that
-		// `php -l` and phpcs both report as clean; only phpstan catches it.
-		//
-		// The pattern here follows openregister's own RegisterService: match on
-		// the `openregister_table_` MARKER rather than a computed prefix.
-		// getQueryBuilder()->getTableName('') yields the literal `*PREFIX*`
-		// placeholder, which is resolved only when a query runs through the NC
-		// DB layer — a raw information_schema string never is, so building a
-		// LIKE from it matches zero tables and reports every register empty.
-		try {
-			$stmt = $this->db->prepare(
-				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
-			);
-			$stmt->bindValue('pattern', '%openregister\_table\_%');
-			$stmt->execute();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'RenameDutchDeadlineColumns: could not list tables; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$markers = [];
-		foreach ($ids as $id) {
-			$markers[] = 'openregister_table_' . ((int)$id) . '_';
-		}
-
+		$markers = $this->shardMarkers(ids: $ids);
 		$tables = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['table_name'] ?? '');
+		foreach ($this->openRegisterTableNames() as $name) {
 			if ($this->isShardOf(table: $name, markers: $markers) === true) {
 				$tables[] = $name;
 			}
@@ -384,73 +323,4 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 		return false;
 	}//end isShardOf()
 
-	/**
-	 * List the column names of a table.
-	 *
-	 * @param string $table Table name.
-	 *
-	 * @return array<int, string>
-	 */
-	private function columnsOf(string $table): array {
-		// Queried from information_schema for the same reason as shardTables():
-		// IDBConnection has no getSchema().
-		try {
-			$stmt = $this->db->prepare(
-				'SELECT column_name FROM information_schema.columns WHERE table_name = :table'
-			);
-			$stmt->bindValue('table', $table);
-			$stmt->execute();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'RenameDutchDeadlineColumns: could not read columns; skipping table.',
-				['table' => $table, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$columns = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['column_name'] ?? '');
-			if ($name !== '') {
-				$columns[] = $name;
-			}
-		}
-
-		return $columns;
-	}//end columnsOf()
-
-	/**
-	 * Execute one DDL/DML statement, logging and swallowing failure.
-	 *
-	 * A failure must not abort the repair run: the remaining tables are
-	 * independent, and an un-migrated column is still readable.
-	 *
-	 * @param string $sql The statement.
-	 *
-	 * @return bool Whether it succeeded.
-	 */
-	private function exec(string $sql): bool {
-		try {
-			$this->db->executeStatement($sql);
-			return true;
-		} catch (Exception $e) {
-			$this->logger->warning(
-				'RenameDutchDeadlineColumns: statement failed; leaving the column as it was.',
-				['sql' => $sql, 'exception' => $e->getMessage()]
-			);
-			return false;
-		}
-
-	}//end exec()
-
-	/**
-	 * Quote an identifier for the active platform.
-	 *
-	 * @param string $identifier Table or column name.
-	 *
-	 * @return string
-	 */
-	private function quote(string $identifier): string {
-		return $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
-	}//end quote()
 }//end class

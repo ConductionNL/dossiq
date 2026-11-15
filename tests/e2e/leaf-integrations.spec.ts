@@ -90,7 +90,7 @@ function linkedTypes(schemas: Record<string, any>, slug: string): string[] {
 test.describe('The leaf declarations, as Open Register stored them', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-import-accepts-the-templates
+	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-import-accepts-the-templates
 	test('the two create-from-email templates survived the import', async ({
 		request,
 	}) => {
@@ -116,7 +116,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 		)
 	})
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-case-button-appears-in-the-mail-sidebar
+	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-case-button-appears-in-the-mail-sidebar
 	test('only case and complaint are offered as create targets', async ({
 		request,
 	}) => {
@@ -139,7 +139,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 		expect(offered).toEqual(['case', 'complaint'])
 	})
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-a-conversation-can-be-linked-to-a-case
+	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-a-conversation-can-be-linked-to-a-case
 	test('the case carries the talk and deck leaves', async ({ request }) => {
 		const schemas = await storedSchemas(request)
 		const types = linkedTypes(schemas, 'case')
@@ -154,7 +154,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 		expect(types).toContain('maps')
 	})
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-inspection-location-on-the-map
+	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-inspection-location-on-the-map
 	test('the two inspection surfaces carry the maps leaf', async ({ request }) => {
 		const schemas = await storedSchemas(request)
 
@@ -167,7 +167,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 		expect(linkedTypes(schemas, 'inspectionChecklistRun')).toContain('photos')
 	})
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-forms-app-absent
+	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-forms-app-absent
 	test('a case type accepts and stores an intake form reference', async ({
 		request,
 	}) => {

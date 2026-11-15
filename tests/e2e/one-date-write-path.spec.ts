@@ -175,7 +175,7 @@ test.describe('Every date on a case is written through one path', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
+	// @e2e openspec/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
 	test('the same date through every write path stores one value', async ({
 		request,
 	}) => {
@@ -234,7 +234,7 @@ test.describe('Every date on a case is written through one path', () => {
 		).toEqual([DAY])
 	})
 
-	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
+	// @e2e openspec/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
 	test('each stored value carries the offset the tenant zone gives that date', async ({
 		request,
 	}) => {
@@ -266,7 +266,7 @@ test.describe('Every date on a case is written through one path', () => {
 		).toMatch(/^\+0[12]:00$/)
 	})
 
-	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#an-unreadable-date-is-refused-not-guessed
+	// @e2e openspec/specs/case-management/spec.md#an-unreadable-date-is-refused-not-guessed
 	test('an unreadable date is refused, not guessed', async ({ request }) => {
 		const token = await getRequestToken(request)
 		const caseId = cases['a bare date']
@@ -300,7 +300,7 @@ test.describe('Every date on a case is written through one path', () => {
 		)
 	})
 
-	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#a-belgian-tenant-gets-belgian-timestamps
+	// @e2e openspec/specs/case-management/spec.md#a-belgian-tenant-gets-belgian-timestamps
 	test('a Belgian tenant gets Belgian timestamps', async ({ request }) => {
 		if (BRUSSELS_TENANT === '') {
 			// The instance states no second tenant. Assert what this instance

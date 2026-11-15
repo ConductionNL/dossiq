@@ -55,7 +55,8 @@ describe('the column is declared where the browser will read it', () => {
 		const columns = filesWidget().props.columns
 		const scan = columns.find((column) => column.id === 'scan')
 		expect(scan).toBeTruthy()
-		expect(scan.label).toBe('Scan')
+		// Board DqDocumentenBeheer heads the column "Scan"; the key reads that in Dutch.
+		expect(scan.label).toBe('Scan result')
 		expect(scan.property).toBe('scanVerdict')
 	})
 

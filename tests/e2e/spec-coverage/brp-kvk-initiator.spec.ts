@@ -346,9 +346,9 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		// `case-requester.spec.ts` covers: picking a case type here opens the
 		// optional initiator step.
 		const dialog = await openInitiatorStep(page)
-		await expect(dialog.getByText('Person', { exact: true })).toBeVisible()
-		await expect(dialog.getByText('Company', { exact: true })).toBeVisible()
-		await expect(dialog.getByText('Contact', { exact: true })).toBeVisible()
+		// One search over persons, companies and contacts: each row says its
+		// kind (Resident, Organisation, Contact) instead of a tab per kind.
+		await expect(dialog.getByLabel('Search initiator')).toBeVisible()
 
 		// Optional, both halves: with nothing picked the confirm is disabled
 		// and Skip is not, so the only way on without an initiator is open.
@@ -364,10 +364,10 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		page,
 	}) => {
 		const dialog = await openInitiatorStep(page)
-		// Person is the default tab, so this is a search on `brpPerson`.
+		// One search over every source; the person row is the brpPerson hit.
 		await dialog.getByLabel('Search initiator').fill(PERSON.surname)
 		const result = dialog
-			.locator('.initiator-picker__result', { hasText: PERSON.name })
+			.locator('[data-testid="cn-search-select-row"]', { hasText: PERSON.name })
 			.first()
 		// "listed with name, birthdate, and BSN": the name matched above, the
 		// other two out of the result's detail line.
@@ -381,12 +381,11 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		page,
 	}) => {
 		const dialog = await openInitiatorStep(page)
-		await dialog.getByText('Company', { exact: true }).click()
 		// By number, not name: a KvK number is what a handler types off a
 		// letterhead, and it is the one field a trade name search cannot reach.
 		await dialog.getByLabel('Search initiator').fill(COMPANY.kvk)
 		const result = dialog
-			.locator('.initiator-picker__result', { hasText: COMPANY.name })
+			.locator('[data-testid="cn-search-select-row"]', { hasText: COMPANY.name })
 			.first()
 		await expect(result).toBeVisible({ timeout: 15_000 })
 		await expect(result).toContainText(`KVK ${COMPANY.kvk}`)
@@ -407,15 +406,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// nothing leaves the real endpoint answering and turns this back into the
 	// test it used to be.
 	//
-	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`.
-	//
-	//   find    /emptyDescription\(\)\{return"contact"===this\.activeTab\?/
-	//   replace 'emptyDescription(){return false?'
-	//   red on  "the picker must say the contacts source may be unavailable"
+	// The mutation check of 2026-09-12 targeted the old tabbed picker's empty
+	// description; the line is now the library CnPartyPicker's, whose own
+	// spec covers it. Re-run the mutation against the new bundle.
 	//
 	// That is the clause worth guarding: an empty list and an unavailable
 	// source look identical to a reader unless the picker says which it is.
-	test('contact tab shows an explicit empty state, never an error toast', async ({
+	test('an unavailable contacts source is named, never an error toast', async ({
 		page,
 	}) => {
 		// GIVEN the Contacts app is not installed: its endpoint is simply not
@@ -431,7 +428,6 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		})
 
 		const dialog = await openInitiatorStep(page)
-		await dialog.getByText('Contact', { exact: true }).click()
 
 		// Wait for the contacts search to ANSWER before judging the result.
 		// The picker shows its empty state as soon as a query is typed, so an
@@ -449,19 +445,12 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 			'the contacts source must have been asked and refused, or this proves nothing about a degrade',
 		).toBeGreaterThan(0)
 
-		// THEN the picker shows an explicit empty/unavailable state. BOTH
-		// halves: the title alone is also what an ordinary no-match search
-		// shows, and only the description tells the reader the source itself
-		// may be missing.
+		// THEN the picker names the source it could not search: an ordinary
+		// no-match search shows no rows too, and only this line tells the
+		// reader the source itself may be missing.
 		await expect(
-			dialog.getByText('No contacts found'),
-			'the picker must show an explicit empty state for the contact source',
-		).toBeVisible({
-			timeout: 15_000,
-		})
-		await expect(
-			dialog.getByText(/Contacts app may not be installed/i),
-			'the picker must say the contacts source may be unavailable',
+			dialog.getByText('Contact could not be searched, so this list may be incomplete.'),
+			'the picker must say the contacts source could not be searched',
 		).toBeVisible({ timeout: 15_000 })
 
 		// AND no error toast.
@@ -485,7 +474,7 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		const dialog = await openInitiatorStep(page)
 		await dialog.getByLabel('Search initiator').fill(PERSON.surname)
 		await dialog
-			.locator('.initiator-picker__result', { hasText: PERSON.name })
+			.locator('[data-testid="cn-search-select-row"]', { hasText: PERSON.name })
 			.first()
 			.click()
 		await expect(dialog.getByTestId('initiator-picker-selection')).toContainText(

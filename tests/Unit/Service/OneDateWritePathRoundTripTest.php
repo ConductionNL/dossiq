@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\Kcc\ContactMomentService as KccContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -98,6 +99,8 @@ interface RoundTripObjectStoreStub {
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Kcc\ContactMomentPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class OneDateWritePathRoundTripTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -355,7 +358,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
-				if ($schema === 'adviceRequest') {
+				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
 
@@ -490,6 +493,22 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			notificationManager: $this->createMock(originalClassName: INotificationManager::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(zone: $zone),
+			definitions: $this->wooDefinitions(),
 		);
 	}//end woo()
+
+	/**
+	 * The Woo term definition as seeded: 28 days, counted in calendar days.
+	 *
+	 * @return TermDefinitions The definitions double.
+	 */
+	private function wooDefinitions(): TermDefinitions {
+		$definitions = $this->createMock(originalClassName: TermDefinitions::class);
+		$definitions->method('activeFor')->willReturn(['standardDurationDays' => 28]);
+		$definitions->method('endDateFor')->willReturnCallback(
+			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
+		);
+
+		return $definitions;
+	}//end wooDefinitions()
 }//end class

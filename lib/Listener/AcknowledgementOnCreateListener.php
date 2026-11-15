@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -42,8 +42,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementOnCreateListener implements IEventListener {
 
@@ -62,13 +62,15 @@ class AcknowledgementOnCreateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IJobList                 $jobList      The background job list.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface          $logger       The logger.
+	 * @param ReceiptMoment            $receipt      Tells a receipt from a draft save.
 	 */
 	public function __construct(
 		private readonly IJobList $jobList,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -79,14 +81,13 @@ class AcknowledgementOnCreateListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// A receipt is the create of a case that is not a draft, or the moment
+		// a draft is sent (decision 180). A draft owes nobody a confirmation.
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}
@@ -115,31 +116,4 @@ class AcknowledgementOnCreateListener implements IEventListener {
 			['caseId' => $caseId, 'attempt' => 1]
 		);
 	}//end handle()
-
-	/**
-	 * Extract the OpenRegister object array from an event.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return array<string, mixed>|null The object, or null.
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
 }//end class

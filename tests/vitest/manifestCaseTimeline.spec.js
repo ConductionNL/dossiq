@@ -62,7 +62,6 @@ const OTHER_SIDEBARS = {
 	// an always-empty drawer.
 	AdviceDetail: 2,
 	WmsLayerDetail: 2,
-	TenantDetail: 2,
 	TransferDetail: 2,
 	WorkflowDefinitionDetail: 2,
 	StatusRecordDetail: 2,
@@ -79,7 +78,7 @@ describe('CaseDetail — one history tab (task 1.1)', () => {
 		)
 		expect(auditTabs).toHaveLength(1)
 		expect(auditTabs[0].id).toBe('audit')
-		expect(auditTabs[0].label).toBe('History')
+		expect(auditTabs[0].label).toBe('Audit trail')
 	})
 
 	it('has no version-history tab left on the case page', () => {
@@ -141,17 +140,18 @@ describe('CaseDetail — the audit log is not also a body tab (task 4.1)', () =>
 		// trail under the same name, which is the failure A05 exists to catch.
 		const config = caseDetail().config
 		const panels = config.widgets.find((widget) => widget.id === 'case-panels')
-		const tab = panels.content.tabs.find((entry) => entry.label === 'Timeline')
-		expect(tab, 'the Timeline tab is gone').toBeTruthy()
+		const tab = panels.content.tabs.find((entry) => entry.label === 'Case history')
+		expect(tab, 'the Case history tab is gone').toBeTruthy()
 		expect(tab.widgetId).toBe('case-timeline-panel')
 
 		const pane = config.widgets.find(
 			(widget) => widget.id === 'case-timeline-panel',
 		)
-		expect(pane.type).toBe('case-timeline-pane')
+		// The library timeline in manage mode reads OpenRegister's timeline
+		// (`/timeline`), never the audit trail.
+		expect(pane.type).toBe('timeline')
 		expect(pane.type).not.toBe('audit-trail')
-		// And the renderer behind that type exists, so the tab is not an empty
-		// panel wearing the right name.
-		expect(registrySource).toContain("'case-timeline-pane': {")
+		expect(pane.content.manage).toBe(true)
+		expect(pane.content.auditTrail).toBeUndefined()
 	})
 })

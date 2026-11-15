@@ -126,9 +126,11 @@ const OR = '/index.php/apps/openregister/api'
  * status of the case type, so "In behandeling" is on the page whatever the case
  * is in, and "Wacht op aanvulling" is never absent from it.
  */
-// The status pill is the library's own CnStatusBadge inside the configured
-// `stat` tile that replaced CaseHeaderRow, so it carries the library testid.
-const STATUS_BADGE = '[data-testid="cn-stat-widget-badge"]'
+// The case's current status, as the page shows it. The identity row's Status
+// tile (a library `stat` tile in badge mode) was removed in 353a31777; the
+// stages widget marks the current stage with aria-current="step", and its
+// label is the status name.
+const STATUS_BADGE = '[data-testid="cn-stages-widget"] [aria-current="step"]'
 
 /** Copy the applicant supplies when asked to complete their case. */
 const SUPPLIED_DESCRIPTION =

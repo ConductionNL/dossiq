@@ -67,55 +67,93 @@ class PackageValidator {
 	 *
 	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validatePackage(string $zipPath): array {
-		$result = [
-			'valid' => true,
-			'errors' => [],
+		$zip = new ZipArchive();
+		$openResult = $zip->open($zipPath, ZipArchive::RDONLY);
+		if ($openResult !== true) {
+			return $this->refusedPackage(errors: ['Failed to open ZIP archive: error code ' . $openResult]);
+		}
+
+		$manifestResult = $this->manifestOf(zip: $zip);
+		if ($manifestResult['errors'] !== []) {
+			$zip->close();
+			return $this->refusedPackage(errors: $manifestResult['errors']);
+		}
+
+		$result = $this->validatedPackage(zip: $zip, manifest: $manifestResult['manifest']);
+		$zip->close();
+		$this->logValidation(result: $result);
+
+		return $result;
+	}//end validatePackage()
+
+	/**
+	 * The answer for a package refused before its contents were read.
+	 *
+	 * @param string[] $errors Why.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
+	 */
+	private function refusedPackage(array $errors): array {
+		return [
+			'valid' => false,
+			'errors' => $errors,
 			'warnings' => [],
 			'manifest' => null,
 			'conflicts' => [],
 		];
+	}//end refusedPackage()
 
-		// Open the ZIP.
-		$zip = new ZipArchive();
-		$openResult = $zip->open($zipPath, ZipArchive::RDONLY);
-		if ($openResult !== true) {
-			$result['valid'] = false;
-			$result['errors'][] = 'Failed to open ZIP archive: error code ' . $openResult;
-			return $result;
-		}
-
-		// Check required files.
+	/**
+	 * The parsed manifest, or the errors that stop it: a required file missing
+	 * from the archive, or a manifest that cannot be read.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return array{manifest: ?array<string, mixed>, errors: string[]}
+	 */
+	private function manifestOf(\ZipArchive $zip): array {
 		$missingFiles = $this->findMissingRequiredFiles(zip: $zip);
 		if ($missingFiles !== []) {
-			$result['valid'] = false;
-			$result['errors'] = $missingFiles;
-			$zip->close();
-			return $result;
+			return [
+				'manifest' => null,
+				'errors' => $missingFiles,
+			];
 		}
 
-		// Parse manifest.
-		$manifestResult = $this->readManifest(zip: $zip);
-		if ($manifestResult['errors'] !== []) {
-			$result['valid'] = false;
-			$result['errors'] = $manifestResult['errors'];
-			$zip->close();
-			return $result;
-		}
+		return $this->readManifest(zip: $zip);
+	}//end manifestOf()
 
-		$result['manifest'] = $manifestResult['manifest'];
+	/**
+	 * Validate the manifest's structure, declared components and dependencies.
+	 *
+	 * @param \ZipArchive $zip      The opened ZIP archive.
+	 * @param mixed       $manifest The parsed manifest.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
+	 */
+	private function validatedPackage(\ZipArchive $zip, mixed $manifest): array {
+		$issues = $this->validateManifestContents(zip: $zip, manifest: (array)$manifest);
 
-		// Validate manifest structure, declared components and dependencies.
-		$issues = $this->validateManifestContents(zip: $zip, manifest: (array)$manifestResult['manifest']);
+		return [
+			'valid' => ($issues['errors'] === []),
+			'errors' => $issues['errors'],
+			'warnings' => $issues['warnings'],
+			'manifest' => $manifest,
+			'conflicts' => [],
+		];
+	}//end validatedPackage()
 
-		$result['errors'] = $issues['errors'];
-		$result['warnings'] = $issues['warnings'];
-		$result['valid'] = ($issues['errors'] === []);
-
-		$zip->close();
-
+	/**
+	 * Log a full validation's outcome.
+	 *
+	 * @param array<string, mixed> $result The answer: `valid`, `errors`, `warnings`, `manifest`, `conflicts`.
+	 *
+	 * @return void
+	 */
+	private function logValidation(array $result): void {
 		$validLabel = 'false';
 		if ($result['valid'] === true) {
 			$validLabel = 'true';
@@ -129,9 +167,34 @@ class PackageValidator {
 				'warningCount' => count($result['warnings']),
 			]
 		);
+	}//end logValidation()
+
+	/**
+	 * Validate a package the app ships on disk, as {@see PackageDirectory::read()} returns it.
+	 *
+	 * Structural only, and it writes nothing: the manifest names an id that is
+	 * its directory, a title, a version, what it requires and which parts it
+	 * carries; every part it declares is present and parses; every row carries
+	 * the id that lets a second install recognise it. Whether this instance
+	 * meets `requires` is the installer's question, asked after this one.
+	 *
+	 * @param array{id: string, files: array<string, string>} $package The package.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>}
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function validateShipped(array $package): array {
+		$shipped = new ShippedPackageRules();
+		$result = $shipped->check(package: $package);
+
+		$this->logger->info(
+			'Validated shipped package {id}: {errorCount} error(s)',
+			['id' => $package['id'], 'errorCount' => count($result['errors'])]
+		);
 
 		return $result;
-	}//end validatePackage()
+	}//end validateShipped()
 
 	/**
 	 * Collect an error for every required package file missing from the archive.
@@ -194,7 +257,6 @@ class PackageValidator {
 		$errors = $this->findMissingManifestFields(manifest: $manifest);
 
 		$components = (array)($manifest['components'] ?? []);
-		$dependencies = (array)($manifest['dependencies'] ?? []);
 
 		$componentIssues = $this->validateComponentFiles(zip: $zip, components: $components);
 		$errors = array_merge($errors, $componentIssues['errors']);
@@ -204,7 +266,7 @@ class PackageValidator {
 
 		$warnings = array_merge(
 			$warnings,
-			$this->buildDependencyWarnings(zip: $zip, components: $components, dependencies: $dependencies)
+			$this->buildDependencyWarnings(zip: $zip, manifest: $manifest)
 		);
 
 		return [
@@ -329,16 +391,15 @@ class PackageValidator {
 	 * that is the one worth naming.
 	 *
 	 * @param \ZipArchive $zip The opened ZIP archive.
-	 * @param array<mixed> $components The components declared in the manifest.
-	 * @param array<mixed> $dependencies The dependencies declared in the manifest.
+	 * @param array<mixed> $manifest The manifest, declaring its components and dependencies.
 	 *
 	 * @return string[] One warning per unresolvable dependency.
 	 */
-	private function buildDependencyWarnings(\ZipArchive $zip, array $components, array $dependencies): array {
-		$carried = $this->ids->idsCarriedBy(zip: $zip, components: $components);
+	private function buildDependencyWarnings(\ZipArchive $zip, array $manifest): array {
+		$carried = $this->ids->idsCarriedBy(zip: $zip, components: (array)($manifest['components'] ?? []));
 		$warnings = [];
 
-		foreach ($dependencies as $dependency) {
+		foreach ((array)($manifest['dependencies'] ?? []) as $dependency) {
 			// Both shapes: a plain ref, and the `{type, name}` entry older
 			// packages carry. An entry in neither shape is named as it stands
 			// rather than reported as `unknown`, which said nothing.
