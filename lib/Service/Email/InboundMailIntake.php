@@ -125,36 +125,23 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	public function processBatch(array $rows, int $accountId, string $mailbox): array {
 		$counts = [];
 		foreach ($rows as $row) {
-			$outcome = $this->processedOutcome(row: $row, folder: ['accountId' => $accountId, 'mailbox' => $mailbox]);
-			if ($outcome !== null) {
-				$counts[$outcome] = (($counts[$outcome] ?? 0) + 1);
+			try {
+				$outcome = $this->process(
+					message: $this->hydrate(row: $row, accountId: $accountId, mailbox: $mailbox)
+				);
+			} catch (Throwable $e) {
+				$this->logger->error(
+					'Dossiq: intake failed on one message and the rest of the batch continues',
+					['error' => $e->getMessage()]
+				);
+				continue;
 			}
-		}
+
+			$counts[$outcome] = (($counts[$outcome] ?? 0) + 1);
+		}//end foreach
 
 		return $counts;
 	}//end processBatch()
-
-	/**
-	 * Take one row of a batch through the whole path; a failure is logged and leaves the rest of the batch going.
-	 *
-	 * @param array<string, mixed>                    $row    The Mail app's message row.
-	 * @param array{accountId: int, mailbox: string} $folder The mail account and the folder the row was listed from.
-	 *
-	 * @return string|null The outcome, or null when the message failed.
-	 */
-	private function processedOutcome(array $row, array $folder): ?string {
-		try {
-			return $this->process(
-				message: $this->hydrate(row: $row, accountId: $folder['accountId'], mailbox: $folder['mailbox'])
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: intake failed on one message and the rest of the batch continues',
-				['error' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end processedOutcome()
 
 	/**
 	 * Take one message through the whole path.
