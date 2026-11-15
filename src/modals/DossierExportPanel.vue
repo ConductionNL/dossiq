@@ -75,6 +75,7 @@ import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Read-only view of the Awb-ordered dossier export plan for one case.
@@ -121,11 +122,7 @@ export default {
 		 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 	},
 

@@ -254,6 +254,88 @@ class LibresignSigningAdapterTest extends TestCase {
 	}//end testDeclinedStatusThrowsDeclinedException()
 
 	/**
+	 * The poll asks once per attempt, sleeps between attempts only, and logs every unrecognised status.
+	 *
+	 * @return void
+	 */
+	public function testThePollAsksSleepsAndLogsPerAttempt(): void {
+		$asked = [];
+		$apiClient = $this->createMock(LibresignApiClient::class);
+		$apiClient->method('requestSignature')->willReturn(['uuid' => 'req-7']);
+		$apiClient->method('getStatus')->willReturnCallback(
+			static function (string $uuid) use (&$asked): array {
+				$asked[] = $uuid;
+				return ['status' => 'odd-' . count($asked)];
+			}
+		);
+		$slept = [];
+		$warnings = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context) use (&$warnings): void {
+				$warnings[] = [$message, $context['uuid'], $context['raw']];
+			}
+		);
+		$adapter = new LibresignSigningAdapter(
+			apiClient: $apiClient,
+			appManager: $this->enabledAppManager(),
+			appConfig: $this->appConfig(['libresign_poll_attempts' => 3, 'libresign_poll_interval_seconds' => 4]),
+			userManager: $this->userManager('medewerker1', 'j.jansen@example.nl'),
+			rootFolder: $this->createMock(IRootFolder::class),
+			documentService: $this->createMock(ZgwDocumentService::class),
+			logger: $logger,
+			sleeper: static function (int $seconds) use (&$slept): void {
+				$slept[] = $seconds;
+			},
+		);
+
+		try {
+			$adapter->sign('12345', 'medewerker1', 'nvt');
+			$this->fail('An unanswered request must stay pending.');
+		} catch (RuntimeException $e) {
+			$this->assertSame('libresign_signing_pending', $e->getMessage());
+		}
+
+		$this->assertSame(['req-7', 'req-7', 'req-7'], $asked);
+		$this->assertSame([4, 4], $slept);
+		$message = 'LibresignSigningAdapter: unrecognised LibreSign status value';
+		$this->assertSame([[$message, 'req-7', 'odd-1'], [$message, 'req-7', 'odd-2'], [$message, 'req-7', 'odd-3']], $warnings);
+	}//end testThePollAsksSleepsAndLogsPerAttempt()
+
+	/**
+	 * A request LibreSign answers without a uuid is an API error, and nothing is polled.
+	 *
+	 * @return void
+	 */
+	public function testARequestWithoutAUuidIsAnApiError(): void {
+		$apiClient = $this->createMock(LibresignApiClient::class);
+		$apiClient->method('requestSignature')->willReturn([]);
+		$apiClient->expects($this->never())->method('getStatus');
+
+		$adapter = $this->makeAdapter(apiClient: $apiClient, pollConfig: ['libresign_poll_attempts' => 0]);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('libresign_api_error');
+		$adapter->sign('12345', 'medewerker1', 'nvt');
+	}//end testARequestWithoutAUuidIsAnApiError()
+
+	/**
+	 * Zero configured attempts still asks once.
+	 *
+	 * @return void
+	 */
+	public function testZeroAttemptsStillAsksOnce(): void {
+		$apiClient = $this->createMock(LibresignApiClient::class);
+		$apiClient->method('requestSignature')->willReturn(['uuid' => 'req-1']);
+		$apiClient->expects($this->once())->method('getStatus')->willReturn(['statusText' => 'pending']);
+
+		$adapter = $this->makeAdapter(apiClient: $apiClient, pollConfig: ['libresign_poll_attempts' => 0]);
+
+		$this->expectExceptionMessage('libresign_signing_pending');
+		$adapter->sign('12345', 'medewerker1', 'nvt');
+	}//end testZeroAttemptsStillAsksOnce()
+
+	/**
 	 * An UNKNOWN status is treated as pending — the poll window still exhausts to
 	 * libresign_signing_pending, never an implicit sign.
 	 *

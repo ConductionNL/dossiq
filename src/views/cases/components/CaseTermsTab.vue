@@ -23,8 +23,8 @@
   Registered in src/registry.js as `CaseTermsTab` and wired as a `component:`
   sidebar tab on CaseDetail in src/manifest.json.
 
-  @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
-  @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+  @spec openspec/specs/termijn-binding/spec.md
+  @spec openspec/specs/termijn-reporting/spec.md
 -->
 <template>
 	<div class="case-terms-tab" data-testid="case-terms-tab">
@@ -187,7 +187,7 @@ export default {
 		 * The clocks in reading order, each with a label, a hint and a tone.
 		 *
 		 * @return {Array} The rows to render.
-		 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+		 * @spec openspec/specs/termijn-binding/spec.md
 		 */
 		rows() {
 			return termRows(this.terms, t)
@@ -197,7 +197,7 @@ export default {
 		 * Whether any clock on this case has run out.
 		 *
 		 * @return {boolean} True when one has.
-		 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+		 * @spec openspec/specs/termijn-reporting/spec.md
 		 */
 		attention() {
 			return needsAttention(this.progress)
@@ -207,7 +207,7 @@ export default {
 		 * A DOM id for the progress bar, so its label associates with it.
 		 *
 		 * @return {string} The id.
-		 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+		 * @spec openspec/specs/termijn-reporting/spec.md
 		 */
 		progressId() {
 			return `case-terms-progress-${this.objectId || 'unknown'}`
@@ -223,7 +223,7 @@ export default {
 		 * Ask dossiq once, and render what came back.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+		 * @spec openspec/specs/termijn-reporting/spec.md
 		 */
 		async load() {
 			this.loading = true

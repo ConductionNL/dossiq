@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
-use Psr\Log\LoggerInterface;
 
 /**
  * Reads the stored relations of a document.
@@ -46,14 +45,12 @@ class DrcDocumentRelations {
 	 * @param ZgwRuleResults $results Builds the answers of a rule.
 	 * @param SettingsService $settingsService The settings service.
 	 * @param FieldValidator $fieldValidator The field validator.
-	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly ZgwRuleLookups $lookups,
 		private readonly ZgwRuleResults $results,
 		private readonly SettingsService $settingsService,
 		private readonly FieldValidator $fieldValidator,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -63,11 +60,16 @@ class DrcDocumentRelations {
 	 * OIO objects store the full informatieobject URL in the 'document' field.
 	 * This method searches by UUID first, then by partial URL match if needed.
 	 *
+	 * An empty list means both searches ran and found none. A search that cannot
+	 * run throws, so the caller refuses the delete instead of reading "no relations".
+	 *
 	 * @param string $register The register ID
 	 * @param string $schema The OIO schema ID
 	 * @param string $docUuid The document UUID
 	 *
 	 * @return array<string> Array of matching OIO UUIDs
+	 *
+	 * @throws \Throwable When the store cannot be searched.
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
@@ -77,7 +79,7 @@ class DrcDocumentRelations {
 		string $docUuid,
 	): array {
 		// First try by exact UUID (in case stored as UUID).
-		$results = $this->lookups->findAllObjectsByField(
+		$results = $this->lookups->idsByField(
 			register: $register,
 			schema: $schema,
 			field: 'document',
@@ -88,56 +90,57 @@ class DrcDocumentRelations {
 		}
 
 		// Also search by partial URL match (OIO may store full URL).
-		try {
-			$query = $this->lookups->objectService()->buildSearchQuery(
-				requestParams: ['document' => '%' . $docUuid . '%', '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Drc-007: OIO relation search with partial match failed: ' . $e->getMessage()
-			);
-			return [];
-		}//end try
+		return $this->lookups->idsByField(
+			register: $register,
+			schema: $schema,
+			field: 'document',
+			value: '%' . $docUuid . '%'
+		);
 	}//end findOioRelationsForDocument()
 
 	/**
 	 * Validate OIO uniqueness: object + informatieobject + objectType (drc-003 VNG).
 	 *
+	 * A search that cannot run refuses with the "could not be checked" answer.
+	 * It does not answer "duplicate": that would tell the caller a relation
+	 * exists that nobody found.
+	 *
 	 * @param string $ioUrl The informatieobject URL
 	 * @param string $objectUrl The object URL (zaak or besluit)
 	 * @param string $objectType The object type (zaak or besluit)
 	 *
-	 * @return array|null Validation error if duplicate found, null if unique
+	 * @return array|null The refusal, or null when the relation is new
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function checkOioUniqueness(string $ioUrl, string $objectUrl, string $objectType): ?array {
 		$register = $this->lookups->register();
-		$oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
-
 		if ($register === '') {
 			return null;
 		}
 
-		$duplicateError = $this->results->error(
+		try {
+			$duplicate = $this->relationExists(register: $register, ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		} catch (\Throwable $e) {
+			return $this->results->notVerified(rule: 'drc-003', object: 'document ' . $ioUrl . ' on ' . $objectUrl, cause: $e->getMessage());
+		}
+
+		if ($duplicate === false) {
+			return null;
+		}
+
+		return $this->duplicateRelationError();
+	}//end checkOioUniqueness()
+
+	/**
+	 * The refusal of an informatieobject + object + objectType combination that exists already.
+	 *
+	 * @return array The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function duplicateRelationError(): array {
+		return $this->results->error(
 			status: 400,
 			detail: 'De combinatie informatieobject + object + objectType bestaat al.',
 			invalidParams: [
@@ -148,128 +151,114 @@ class DrcDocumentRelations {
 				),
 			]
 		);
-
-		$ioUuid = $this->fieldValidator->extractUuid(url: $ioUrl);
-		$objectUuid = $this->fieldValidator->extractUuid(url: $objectUrl);
-
-		// Check OIO schema for existing duplicates.
-		if ($oioSchema !== '') {
-			$found = $this->searchDuplicateRelation(
-				register: $register,
-				schema: $oioSchema,
-				ioUrl: $ioUrl,
-				objectUrl: $objectUrl,
-				ioUuid: $ioUuid,
-				objectUuid: $objectUuid,
-				objectField: 'object'
-			);
-			if ($found === true) {
-				return $duplicateError;
-			}
-		}
-
-		// Drc-003a/b: Also check ZIO/BIO schemas — a relationship created via
-		// ZRC (zaakinformatieobjecten) or BRC (besluitinformatieobjecten) counts
-		// as a duplicate for OIO creation.
-		$crossSchemaKey = '';
-		$crossField = '';
-		if ($objectType === 'case') {
-			$crossSchemaKey = 'case_document_schema';
-			$crossField = 'case';
-		} elseif ($objectType === 'decision') {
-			$crossSchemaKey = 'decision_document_schema';
-			$crossField = 'decision';
-		}
-
-		if ($crossSchemaKey !== '') {
-			$crossSchema = $this->settingsService->getConfigValue(key: $crossSchemaKey);
-			if ($crossSchema !== '') {
-				$found = $this->searchDuplicateRelation(
-					register: $register,
-					schema: $crossSchema,
-					ioUrl: $ioUrl,
-					objectUrl: $objectUrl,
-					ioUuid: $ioUuid,
-					objectUuid: $objectUuid,
-					objectField: $crossField
-				);
-				if ($found === true) {
-					return $duplicateError;
-				}
-			}
-		}
-
-		return null;
-	}//end checkOioUniqueness()
+	}//end duplicateRelationError()
 
 	/**
-	 * Search for an existing relation in a schema by document+object combination.
+	 * Whether the relation is stored already, as an OIO or as its ZIO or BIO.
+	 *
+	 * Drc-003a/b: a relationship created via ZRC (zaakinformatieobjecten) or BRC
+	 * (besluitinformatieobjecten) counts as a duplicate for OIO creation.
 	 *
 	 * @param string $register The register ID
-	 * @param string $schema The schema ID to search
 	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL
-	 * @param string|null $ioUuid The extracted informatieobject UUID
-	 * @param string|null $objectUuid The extracted object UUID
-	 * @param string $objectField The field name for the object reference
+	 * @param string $objectUrl The object URL (zaak or besluit)
+	 * @param string $objectType The object type (zaak or besluit)
 	 *
-	 * @return bool True if a duplicate was found
+	 * @return bool True when a stored relation was found
+	 *
+	 * @throws \Throwable When the store cannot be searched.
 	 */
-	private function searchDuplicateRelation(
-		string $register,
-		string $schema,
-		string $ioUrl,
-		string $objectUrl,
-		?string $ioUuid,
-		?string $objectUuid,
-		string $objectField,
-	): bool {
-		try {
-			// Search by full URL.
-			$query = $this->lookups->objectService()->buildSearchQuery(
-				requestParams: ['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-			if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-				return true;
+	private function relationExists(string $register, string $ioUrl, string $objectUrl, string $objectType): bool {
+		$pair = $this->pairOf(ioUrl: $ioUrl, objectUrl: $objectUrl);
+		foreach ($this->placesFor(objectType: $objectType) as [$schemaKey, $objectField]) {
+			$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+			if ($schema === '') {
+				continue;
 			}
 
-			// Fallback: search by UUID (stored data may use UUID instead of URL).
-			if ($ioUuid !== null && $objectUuid !== null) {
-				$query = $this->lookups->objectService()->buildSearchQuery(
-					requestParams: ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1],
-					register: $register,
-					schema: $schema
-				);
-				$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-				if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
+			foreach ($this->duplicateQueries(pair: $pair, objectField: $objectField) as $requestParams) {
+				if ($this->anyFound(scope: [$register, $schema], requestParams: $requestParams) === true) {
 					return true;
 				}
-
-				// Full-text search using both UUIDs (field-specific LIKE
-				// with % is not supported by MagicMapper).
-				$query = $this->lookups->objectService()->buildSearchQuery(
-					requestParams: ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1],
-					register: $register,
-					schema: $schema
-				);
-				$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-				if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-					return true;
-				}
-			}//end if
-		} catch (\Throwable $e) {
-			// Fail-closed: treat an indeterminate check as a duplicate to prevent
-			// inadvertent duplicates when the storage backend is unavailable.
-			$this->logger->warning(
-				'Drc-003: Uniqueness check failed for schema {schema}: {message}',
-				['schema' => $schema, 'message' => $e->getMessage()]
-			);
-			return true;
-		}//end try
+			}
+		}
 
 		return false;
-	}//end searchDuplicateRelation()
+	}//end relationExists()
+
+	/**
+	 * The URL and the UUID of the document and of the object.
+	 *
+	 * @param string $ioUrl     The informatieobject URL
+	 * @param string $objectUrl The object URL
+	 *
+	 * @return array{document: array{0: string, 1: ?string}, object: array{0: string, 1: ?string}}
+	 */
+	private function pairOf(string $ioUrl, string $objectUrl): array {
+		return [
+			'document' => [$ioUrl, $this->fieldValidator->extractUuid(url: $ioUrl)],
+			'object' => [$objectUrl, $this->fieldValidator->extractUuid(url: $objectUrl)],
+		];
+	}//end pairOf()
+
+	/**
+	 * The schemas a relation of this object type can be stored in, each with the field naming the object.
+	 *
+	 * @param string $objectType The object type (zaak or besluit)
+	 *
+	 * @return list<array{0: string, 1: string}> Settings key of the schema, and the object field
+	 */
+	private function placesFor(string $objectType): array {
+		$crossRegister = ['case' => ['case_document_schema', 'case'], 'decision' => ['decision_document_schema', 'decision']];
+		$places = [['document_link_schema', 'object']];
+		if (isset($crossRegister[$objectType]) === true) {
+			$places[] = $crossRegister[$objectType];
+		}
+
+		return $places;
+	}//end placesFor()
+
+	/**
+	 * The searches for one stored relation, in order: by full URL, then by UUID
+	 * (stored data may use UUID instead of URL), then full text on both UUIDs
+	 * (field-specific LIKE with % is not supported by MagicMapper).
+	 *
+	 * @param array<string, array{0: string, 1: ?string}> $pair        URL and UUID of the `document` and of the `object`
+	 * @param string                                      $objectField The field name for the object reference
+	 *
+	 * @return list<array<string, mixed>> The request parameters of each search
+	 */
+	private function duplicateQueries(array $pair, string $objectField): array {
+		[$ioUrl, $ioUuid] = $pair['document'];
+		[$objectUrl, $objectUuid] = $pair['object'];
+
+		$queries = [['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1]];
+		if ($ioUuid !== null && $objectUuid !== null) {
+			$queries[] = ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1];
+			$queries[] = ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1];
+		}
+
+		return $queries;
+	}//end duplicateQueries()
+
+	/**
+	 * Whether one search finds a stored relation.
+	 *
+	 * @param array{0: string, 1: string} $scope         The register ID and the schema ID
+	 * @param array<string, mixed>        $requestParams The search parameters
+	 *
+	 * @return bool True if a duplicate was found
+	 *
+	 * @throws \Throwable When the store cannot be searched.
+	 */
+	private function anyFound(array $scope, array $requestParams): bool {
+		$query = $this->lookups->objectService()->buildSearchQuery(
+			requestParams: $requestParams,
+			register: $scope[0],
+			schema: $scope[1]
+		);
+		$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
+
+		return ($result['total'] ?? count($result['results'] ?? [])) > 0;
+	}//end anyFound()
 }//end class

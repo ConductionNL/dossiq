@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * The declared queue sources, resolved.
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 class QueueSourceCatalogue {
 	/**
@@ -79,7 +79,7 @@ class QueueSourceCatalogue {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -91,7 +91,7 @@ class QueueSourceCatalogue {
 	 *
 	 * @return array<int, string> The class names.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function declared(): array {
 		return self::SOURCES;
@@ -103,7 +103,7 @@ class QueueSourceCatalogue {
 	 * @return array{sources: array<int, QueueSource>, unavailable: array<int, array<string, string>>}
 	 *         The sources that resolved, and one entry per source that did not.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function resolve(): array {
 		$sources = [];

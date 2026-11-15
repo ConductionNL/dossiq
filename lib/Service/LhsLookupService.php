@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/vth-module/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -26,7 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\LhsLookupServiceInterface;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -41,9 +42,9 @@ use Throwable;
  * combination. Falls back to the embedded seed table when OpenRegister is
  * unavailable or the matrix has not been seeded yet.
  *
- * @spec openspec/changes/vth-module/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
  */
-class LhsLookupService {
+class LhsLookupService implements LhsLookupServiceInterface {
 
 	use SearchesObjects;
 
@@ -99,7 +100,7 @@ class LhsLookupService {
 	 * @param LoggerInterface $logger Logger
 	 * @param StoredDecisionTables|null $tables The stored LHS intervention table in OpenRegister.
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -118,19 +119,13 @@ class LhsLookupService {
 	 *
 	 * @throws RuntimeException If gedrag or gevolg are invalid
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
 	 */
 	public function lookup(string $behaviour, string $gevolg): array {
 		$behaviour = strtoupper(string: trim(string: $behaviour));
 		$gevolg = trim(string: $gevolg);
 
-		if (in_array(needle: $behaviour, haystack: self::VALID_GEDRAG, strict: true) === false) {
-			throw new RuntimeException('Invalid gedrag value: ' . $behaviour . '. Must be A, B, C or D.');
-		}
-
-		if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
-			throw new RuntimeException('Invalid gevolg value: ' . $gevolg . '. Must be 1, 2, 3 or 4.');
-		}
+		$this->requireValid(behaviour: $behaviour, gevolg: $gevolg);
 
 		// The stored decision table first (the LHS package seeds it), then the
 		// legacy matrix cells, then the embedded table.
@@ -144,9 +139,41 @@ class LhsLookupService {
 			return $cell;
 		}
 
-		// Fallback to embedded table. The validated $behaviour/$gevolg pair is
-		// guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
-		// null-coalescing default is required.
+		return $this->fallbackCell(behaviour: $behaviour, gevolg: $gevolg);
+	}//end lookup()
+
+	/**
+	 * Refuse a gedrag or gevolg outside the matrix.
+	 *
+	 * @param string $behaviour The normalised gedrag.
+	 * @param string $gevolg    The normalised gevolg.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When either value is invalid.
+	 */
+	private function requireValid(string $behaviour, string $gevolg): void {
+		if (in_array(needle: $behaviour, haystack: self::VALID_GEDRAG, strict: true) === false) {
+			throw new RuntimeException('Invalid gedrag value: ' . $behaviour . '. Must be A, B, C or D.');
+		}
+
+		if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
+			throw new RuntimeException('Invalid gevolg value: ' . $gevolg . '. Must be 1, 2, 3 or 4.');
+		}
+	}//end requireValid()
+
+	/**
+	 * The cell from the embedded fallback table.
+	 *
+	 * The validated $behaviour/$gevolg pair is guaranteed to be a key in
+	 * FALLBACK_MATRIX (4x4 = 16 cells), so no null-coalescing default is required.
+	 *
+	 * @param string $behaviour The validated gedrag.
+	 * @param string $gevolg    The validated gevolg.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fallbackCell(string $behaviour, string $gevolg): array {
 		$key = $behaviour . ':' . $gevolg;
 		$intervention = self::FALLBACK_MATRIX[$key];
 
@@ -157,7 +184,7 @@ class LhsLookupService {
 			'description' => '',
 			'source' => 'fallback',
 		];
-	}//end lookup()
+	}//end fallbackCell()
 
 	/**
 	 * Evaluate the stored LHS intervention table in OpenRegister's register.
@@ -179,7 +206,7 @@ class LhsLookupService {
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'LHS lookup: the stored decision table did not answer: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'table' => self::DECISION_TABLE]
+				['app' => AppIdentity::APP_ID, 'table' => self::DECISION_TABLE]
 			);
 		}
 
@@ -224,19 +251,31 @@ class LhsLookupService {
 				filters: ['behaviourRow' => $behaviour, 'consequenceColumn' => $gevolg, '_limit' => 1]
 			);
 
-			// The outer is_array() is always true ($results is typed array); the inner
-			// one on $results[0] is NOT redundant and stays.
-			if (isset($results[0]) === true && is_array($results[0]) === true) {
-				return array_merge($results[0], ['source' => 'register']);
-			}
-
-			return null;
+			return $this->firstCell(results: $results);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LHS matrix lookup from register failed, using fallback: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
 	}//end lookupFromRegister()
+
+	/**
+	 * The first lhsMatrixCell row of a search, marked as read from the register.
+	 *
+	 * @param array $results The search results
+	 *
+	 * @return array<string, mixed>|null Cell data or null when not found
+	 */
+	private function firstCell(array $results): ?array {
+		// The outer is_array() is always true ($results is typed array); the inner
+		// one on $results[0] is NOT redundant and stays.
+		if (isset($results[0]) === true && is_array($results[0]) === true) {
+			return array_merge($results[0], ['source' => 'register']);
+		}
+
+		return null;
+	}//end firstCell()
+
 }//end class

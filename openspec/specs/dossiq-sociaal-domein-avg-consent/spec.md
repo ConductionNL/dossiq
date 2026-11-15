@@ -28,11 +28,11 @@ Every sociaal-domein zaak MUST declare its special-category data scope via an em
 ### Requirement: Wijkteam-only access control with data-driven guards
 Access to zaak content MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user, not by role alone, with a `tweedeBehandelaarId` override and an FG-audit metadata-only mode.
 
-#### Scenario: Out-of-team query returns metadata only and is logged
+#### Scenario: Out-of-team query returns only that the case exists and is logged
 - **GIVEN** a zaak has `wijkteam = wijkteam-zuid` and `toegangsBeperking = alleen-behandelaar-en-wijkteam`
 - **WHEN** a staff member from `wijkteam-noord` queries the zaak
 - **THEN** the query layer checks `user.wijkteam` against `zaak.wijkteam`
-- **AND** on no match it returns only `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum`, and `deadlineDate`
+- **AND** on no match it returns only that a case exists, its domain and the contact person to ask, as board DqSociaalDomein shows it ("Alleen dat hij bestaat"); `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum` and `deadlineDate` are blocked
 - **AND** content fields (`ondersteuningsvraag`, `indicatiestelling`, `gezinsplan`, `vermogenstoets`, etc.) are blocked
 - **AND** the attempt is logged with `resultaat = geweigerd-geen-toegang`
 
@@ -240,3 +240,75 @@ hand-off SHALL carry that scope. A share SHALL NOT be created without one.
 - **GIVEN** a case shared with a partner organisation
 - **WHEN** the case's sharing is read
 - **THEN** it SHALL name the consent, the scope and the period it runs for
+
+### Requirement: A household the reader may not see says so in their language
+
+When the household endpoint refuses a reader, the household card SHALL show
+the refusal's sentence in the reader's language, not a load error.
+
+#### Scenario: Pieter outside the sensitive group
+- GIVEN a social domain case and a reader outside `dossiq-sensitive`
+- WHEN the Overview shows "Andere zaken van dit huishouden"
+- THEN it reads "Alleen wie met de bijzondere persoonsgegevens van deze zaak werkt, ziet het huishouden."
+
+### Requirement: A household is closed to administrators outside the sensitive group
+
+The household endpoints SHALL answer only to a reader in `dossiq-sensitive` who
+may read the case. Administering the instance SHALL NOT open a household.
+
+#### Scenario: an administrator outside the group
+- GIVEN an instance administrator who is not in `dossiq-sensitive`
+- WHEN they ask for a case's household cases or look the household up
+- THEN they are refused with 403 `household-not-allowed`
+
+### Requirement: The cross-domain lookup answers from cases too (REQ-AVG-CD-010)
+
+The cross-domain existence lookup SHALL also answer from open cases (`isFinalStatus` not true)
+whose `subjectBsn` is the person and whose case type's category belongs to a domain other than the
+caller's. It SHALL read those cases as the system, return only exists, domain and contact (the
+assignee, else the assigned group, else the domain), and log the act as before. A procedure record
+that moved onto a case (`migratedTo`) SHALL answer only through its case. An unreadable case store
+SHALL refuse, not answer "nothing exists".
+
+#### Scenario: A confidential case in another domain is known, nothing more
+- **GIVEN** an open Participatiewet case about the person that the caller cannot open
+- **WHEN** a Wmo consulent looks the person up on a ground
+- **THEN** the answer SHALL say an open case exists in Participatiewet and whom to call, and nothing else
+
+### Requirement: Sensitive data on a case keeps its access (REQ-AVG-CD-011)
+
+`case.subjectBsn` and `case.sensitiveProperties` SHALL be readable and writable only by the group
+`dossiq-sensitive`. A case-type field flagged `sensitive` SHALL keep its answers in
+`sensitiveProperties`.
+
+#### Scenario: A social-domain handler outside dossiq-sensitive reads neither
+- **GIVEN** a reader in dossiq-sociaal-domein and not in dossiq-sensitive
+- **WHEN** they read a case with a subject BSN and a sensitive answer
+- **THEN** neither SHALL be in what they read, and the ordinary answers SHALL be
+
+### Requirement: An internal move whose consent rule cannot be read is refused (REQ-CST-01a)
+
+A move of a case between teams of one organisation SHALL be refused when its case or its case type cannot be read. The refusal SHALL have the rule `consent-unchecked` and the sentence "De toestemming kon niet worden gecontroleerd, dus de zaak is niet overgedragen" (en "Consent could not be checked, so the case was not handed on."), as board DqOverdragen draws it in the move dialog This covers an empty case id, and a case or case type that is not found. It also covers a read that fails, and a store, register or case or case-type schema that is not configured. A case without a case type SHALL be refused the same way, because its rule cannot be checked.
+
+#### Scenario: The case type cannot be read
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** a case whose case type cannot be read because the store fails
+- **WHEN** the case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused with the rule `consent-unchecked`
+- **AND** the refusal SHALL say "Consent could not be checked, so the case was not handed on."
+
+#### Scenario: The case schema is not configured
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** no `case_schema` is configured
+- **WHEN** a case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused the same way
+
+#### Scenario: A case without a case type is refused
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** a case with no case type
+- **WHEN** the case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused with the rule `consent-unchecked`
+- **AND** consent SHALL count as needed for that case

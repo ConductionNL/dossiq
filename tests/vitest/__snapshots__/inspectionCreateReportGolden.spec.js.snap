@@ -1,0 +1,116 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`inspection store createReport > records every run as before 1`] = `
+{
+  "followUps": [
+    [
+      {
+        "case": "case-2",
+        "description": "Inspectierapport bevat 3 niet-conforme punten. Beoordeel de afwijkingen en plan opvolging.",
+        "relatedObject": "run-2",
+        "status": "available",
+        "title": "Opvolging vereist: 3 afwijkingen geconstateerd",
+      },
+    ],
+  ],
+  "logged": [
+    [
+      "Error creating report:",
+      "422",
+    ],
+    [
+      "Error creating report:",
+      "offline",
+    ],
+  ],
+  "outcomes": [
+    {
+      "error": null,
+      "loading": false,
+      "reports": [
+        "run-1",
+      ],
+      "saved": {
+        "failedItems": 0,
+        "id": "run-1",
+      },
+    },
+    {
+      "error": null,
+      "loading": false,
+      "reports": [
+        "run-1",
+        "run-2",
+      ],
+      "saved": {
+        "failedItems": 3,
+        "id": "run-2",
+      },
+    },
+    {
+      "error": "A photo is required",
+      "loading": false,
+      "reports": [
+        "run-1",
+        "run-2",
+      ],
+      "saved": null,
+    },
+    {
+      "error": "offline",
+      "loading": false,
+      "reports": [
+        "run-1",
+        "run-2",
+      ],
+      "saved": null,
+    },
+  ],
+  "posted": [
+    [
+      "/apps/dossiq/api/cases/case-1/checklist-results",
+      {
+        "checklistId": "t-1",
+        "inspectionDate": "2026-11-01",
+        "items": [
+          {
+            "itemId": "q1",
+          },
+        ],
+        "location": "Kade 1",
+        "remarks": "ok",
+      },
+    ],
+    [
+      "/apps/dossiq/api/cases/case-2/checklist-results",
+      {
+        "checklistId": "t-2",
+        "inspectionDate": "2026-11-10T09:30:00.000Z",
+        "items": [],
+        "location": undefined,
+        "remarks": undefined,
+      },
+    ],
+    [
+      "/apps/dossiq/api/cases/case-3/checklist-results",
+      {
+        "checklistId": "t-3",
+        "inspectionDate": "2026-11-10T09:30:00.000Z",
+        "items": [],
+        "location": undefined,
+        "remarks": undefined,
+      },
+    ],
+    [
+      "/apps/dossiq/api/cases/case-4/checklist-results",
+      {
+        "checklistId": "t-4",
+        "inspectionDate": "2026-11-10T09:30:00.000Z",
+        "items": [],
+        "location": undefined,
+        "remarks": undefined,
+      },
+    ],
+  ],
+}
+`;

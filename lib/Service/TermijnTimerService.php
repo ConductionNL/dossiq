@@ -37,11 +37,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Service\Term\ThresholdShares;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,13 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
  */
-class TermijnTimerService {
-	/**
-	 * The engine service class, resolved lazily.
-	 *
-	 * @var string
-	 */
-	public const ENGINE_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\FlowTimerService';
+class TermijnTimerService implements TermijnTimerServiceInterface {
 
 	/**
 	 * The engine's working-calendar resolver, resolved lazily.
@@ -90,18 +86,9 @@ class TermijnTimerService {
 	public const LADDER_DEFAULT = 'nl-termijn-default';
 
 	/**
-	 * Metadata marker the listener filters on.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-termijn';
-
-	/**
 	 * Metadata kinds.
 	 */
 	public const KIND_BESLISTERMIJN = 'beslistermijn';
-
-	public const KIND_HERSTELTERMIJN = 'hersteltermijn';
 
 	/**
 	 * Constructor.
@@ -163,7 +150,7 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEnd(
 		DateTimeImmutable $date,
@@ -187,7 +174,7 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEndFor(
 		DateTimeImmutable $date,
@@ -202,8 +189,6 @@ class TermijnTimerService {
 			organisation: $organisation,
 		);
 	}//end rollTermEndFor()
-
-
 
 	/**
 	 * Resolves a declared ladder's rungs to offsets. Built here when it was
@@ -231,6 +216,65 @@ class TermijnTimerService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
+	 */
+	public function armBeslistermijn(array $instance, array $definitie): ?string {
+		$instanceId = (string)($instance['id'] ?? '');
+		$start = $this->dates->tryParse($instance['startDate'] ?? null);
+		if ($instanceId === '' || $start === null) {
+			return null;
+		}
+
+		$run = new TimerArmRun(instance: $instance, definitie: $definitie, instanceId: $instanceId, start: $start);
+
+		return $this->arm(config: $this->beslistermijnConfig(run: $run), context: 'beslistermijn', instanceId: $instanceId);
+	}//end armBeslistermijn()
+
+	/**
+	 * The engine configuration of a beslistermijn timer.
+	 *
+	 * @param TimerArmRun $run The term being armed.
+	 *
+	 * @return array<string, mixed> The configuration.
+	 */
+	private function beslistermijnConfig(TimerArmRun $run): array {
+		$config = (new TermTimerFields())->subject(instance: $run->instance, label: 'Beslistermijn') + [
+			'legalEffect' => 'wettelijk',
+			'sla' => $this->slaFor(run: $run),
+			'ladder' => self::LADDER_DEFAULT,
+			'extensionMax' => max(1, (int)($run->definitie['countExtensions'] ?? 1)),
+			'anchorEvent' => 'case_created',
+			'anchorEventAt' => $this->anchorFor(start: $run->start),
+			'metadata' => $this->beslistermijnMetadata(run: $run),
+		];
+
+		return $this->withDeclaredLadder(config: $config, run: $run);
+	}//end beslistermijnConfig()
+
+	/**
+	 * The metadata of a beslistermijn timer.
+	 *
+	 * @param TimerArmRun $run The term being armed.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function beslistermijnMetadata(TimerArmRun $run): array {
+		return (new TermTimerFields())->metadata(instance: $run->instance, kind: self::KIND_BESLISTERMIJN) + [
+			'deadlineDefinition' => (string)($run->instance['deadlineDefinition'] ?? ''),
+			'basis' => (string)($run->definitie['legalBasis'] ?? 'AWB 4:13'),
+		];
+	}//end beslistermijnMetadata()
+
+	/**
+	 * The SLA of a beslistermijn timer, its value and its unit.
+	 *
+	 * The mode the definition declares decides BOTH halves of the SLA. A
+	 * value counted in calendar days under `unit: businessDays` would give
+	 * a ten working day term fourteen working days, which is two weeks the
+	 * case is not entitled to, so the unit never moves without the value.
+	 *
+	 * @param TimerArmRun $run The term being armed.
+	 *
+	 * @return array{value: int, unit: string} The SLA.
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) `TermDefinitions::countingModeOf()` is a
 	 *  pure function of the array handed to it: no state, no collaborators, and
@@ -242,67 +286,66 @@ class TermijnTimerService {
 	 *  class; injecting either is still not open, because TermijnService already
 	 *  depends on this one.
 	 */
-	public function armBeslistermijn(array $instance, array $definitie): ?string {
-		$instanceId = (string)($instance['id'] ?? '');
-		$start = $this->dates->tryParse($instance['startDate'] ?? null);
-		if ($instanceId === '' || $start === null) {
-			return null;
-		}
-
-		// The mode the definition declares decides BOTH halves of the SLA. A
-		// value counted in calendar days under `unit: businessDays` would give
-		// a ten working day term fourteen working days, which is two weeks the
-		// case is not entitled to, so the unit never moves without the value.
-		$mode = TermDefinitions::countingModeOf(definitie: $definitie);
+	private function slaFor(TimerArmRun $run): array {
+		$mode = TermDefinitions::countingModeOf(definitie: $run->definitie);
 		$slaUnit = WorkingDayRoll::UNIT_CALENDAR_DAYS;
 		if ($mode === WorkingDayRoll::MODE_WORKING_DAYS) {
 			$slaUnit = WorkingDayRoll::UNIT_BUSINESS_DAYS;
 		}
 
-		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start, mode: $mode);
-
-		$config = [
-			'subjectType' => 'object',
-			'subjectUuid' => $instanceId,
-			'appId' => 'dossiq',
-			'title' => 'Beslistermijn ' . (string)($instance['case'] ?? $instanceId),
-			'purpose' => 'due',
-			'legalEffect' => 'wettelijk',
-			'sla' => [
-				'value' => $slaDays,
-				'unit' => $slaUnit,
-			],
-			'ladder' => self::LADDER_DEFAULT,
-			'extensionMax' => max(1, (int)($definitie['countExtensions'] ?? 1)),
-			'anchorEvent' => 'case_created',
-			'anchorEventAt' => $this->anchorFor(start: $start),
-			'metadata' => [
-				'source' => self::METADATA_SOURCE,
-				'kind' => self::KIND_BESLISTERMIJN,
-				'termijnInstanceId' => $instanceId,
-				'caseId' => (string)($instance['case'] ?? ''),
-				'deadlineDefinition' => (string)($instance['deadlineDefinition'] ?? ''),
-				'basis' => (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
-			],
+		return [
+			'value' => $this->slaDaysFor(run: $run, mode: $mode),
+			'unit' => $slaUnit,
 		];
+	}//end slaFor()
 
-		// A declared ladder REPLACES the seeded one rather than sitting beside
-		// it. Two ladders on one timer is two escalations for one term, and
-		// the whole reason a share is resolved here, at the one moment the
-		// length of the term is known, is that the engine's ladder stays the
-		// ladder. An extension re-arms this timer, so the shares are resolved
-		// again from the new length.
-		$rules = $this->shares->rulesFor(
-			ladder: (array)($definitie['escalationLadder'] ?? []),
-			slaDays: $slaDays
-		);
+	/**
+	 * The configuration with the ladder the definition declares, when it declares one.
+	 *
+	 * A declared ladder REPLACES the seeded one rather than sitting beside
+	 * it. Two ladders on one timer is two escalations for one term, and
+	 * the whole reason a share is resolved here, at the one moment the
+	 * length of the term is known, is that the engine's ladder stays the
+	 * ladder. An extension re-arms this timer, so the shares are resolved
+	 * again from the new length.
+	 *
+	 * @param array<string, mixed> $config The configuration with the seeded ladder.
+	 * @param TimerArmRun          $run    The term being armed.
+	 *
+	 * @return array<string, mixed> The configuration.
+	 */
+	private function withDeclaredLadder(array $config, TimerArmRun $run): array {
+		$rules = $this->ladderRulesFor(run: $run, slaDays: $config['sla']['value']);
 		if ($rules !== []) {
 			unset($config['ladder']);
 			$config['escalationRules'] = $rules;
 		}
 
-		return $this->arm(config: $config, context: 'beslistermijn', instanceId: $instanceId);
-	}//end armBeslistermijn()
+		return $config;
+	}//end withDeclaredLadder()
+
+	/**
+	 * The escalation rules of the declared ladder, else the default rungs that fit the term.
+	 *
+	 * @param TimerArmRun $run     The term being armed.
+	 * @param int         $slaDays The term's length.
+	 *
+	 * @return array<int, array<string, mixed>> The rules, empty when the named ladder fits.
+	 */
+	private function ladderRulesFor(TimerArmRun $run, int $slaDays): array {
+		$rules = $this->shares->rulesFor(
+			ladder: (array)($run->definitie['escalationLadder'] ?? []),
+			slaDays: $slaDays
+		);
+		if ($rules === []) {
+			$rules = $this->shares->defaultRulesFor(
+				startDay: $this->dates->parse($this->dates->formatCalendarDate($run->start), 'startDate'),
+				end: $this->dates->tryParse($run->instance['endDateCurrent'] ?? null)
+			);
+		}
+
+		return $rules;
+	}//end ladderRulesFor()
 
 	/**
 	 * Where a beslistermijn timer counts from: the start of the day after the
@@ -356,7 +399,7 @@ class TermijnTimerService {
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function armHersteltermijn(array $instance, int $durationDays, array $chaseOffsets = []): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -364,82 +407,19 @@ class TermijnTimerService {
 			return null;
 		}
 
-		$config = [
-			'subjectType' => 'object',
-			'subjectUuid' => $instanceId,
-			'appId' => 'dossiq',
-			'title' => 'Hersteltermijn ' . (string)($instance['case'] ?? $instanceId),
-			'purpose' => 'due',
+		$config = (new TermTimerFields())->subject(instance: $instance, label: 'Hersteltermijn') + [
 			'legalEffect' => 'none',
 			'sla' => [
 				'value' => $durationDays,
 				'unit' => 'calendarDays',
 			],
-			'escalationRules' => array_merge(
-				[
-					[
-						'trigger' => 'slaBreached',
-						'offset' => 0,
-						'offsetUnit' => 'calendarDays',
-						'notifyRole' => ['handler'],
-						'escalateToRole' => [],
-						'priority' => 'high',
-						'message' => 'pauze-verlopen',
-						'openIncident' => false,
-					],
-				],
-				$this->chaseRules(offsets: $chaseOffsets)
-			),
+			'escalationRules' => (new TermTimerFields())->pauseRules(offsets: $chaseOffsets),
 			'anchorEvent' => 'hersteltermijn_start',
-			'metadata' => [
-				'source' => self::METADATA_SOURCE,
-				'kind' => self::KIND_HERSTELTERMIJN,
-				'termijnInstanceId' => $instanceId,
-				'caseId' => (string)($instance['case'] ?? ''),
-				'basis' => 'AWB 4:5',
-			],
+			'metadata' => (new TermTimerFields())->metadata(instance: $instance, kind: self::KIND_HERSTELTERMIJN) + ['basis' => 'AWB 4:5'],
 		];
 
 		return $this->arm(config: $config, context: 'hersteltermijn', instanceId: $instanceId);
 	}//end armHersteltermijn()
-
-	/**
-	 * The engine rules for the reminders on one pause.
-	 *
-	 * `preBreach` rather than a negative `slaBreached` offset, because
-	 * `preBreach:<days>` is the rung shape the fired listener already parses
-	 * and a second shape would need a second parser. The message is
-	 * `pauze-chase` so a human reading the engine's own log can tell a reminder
-	 * from the expiry beside it.
-	 *
-	 * @param array<int, int> $offsets Days before the pause ends, one per reminder.
-	 *
-	 * @return array<int, array<string, mixed>> The rules, empty when the reason does not chase.
-	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
-	 */
-	private function chaseRules(array $offsets): array {
-		$rules = [];
-		foreach ($offsets as $offset) {
-			$days = (int)$offset;
-			if ($days <= 0) {
-				continue;
-			}
-
-			$rules[] = [
-				'trigger' => 'preBreach',
-				'offset' => $days,
-				'offsetUnit' => 'calendarDays',
-				'notifyRole' => [],
-				'escalateToRole' => [],
-				'priority' => 'normal',
-				'message' => 'pauze-chase',
-				'openIncident' => false,
-			];
-		}//end foreach
-
-		return $rules;
-	}//end chaseRules()
 
 	/**
 	 * Suspend the beslistermijn timer (opschorting, AWB 4:5).
@@ -458,11 +438,7 @@ class TermijnTimerService {
 	 */
 	public function suspendBeslistermijn(array $instance, string $reason, ?DateTimeImmutable $until): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '') {
-			return false;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $timerId);
 		if ($engine === null) {
 			return false;
 		}
@@ -488,11 +464,7 @@ class TermijnTimerService {
 	 */
 	public function resumeBeslistermijn(array $instance, string $reason): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '') {
-			return false;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $timerId);
 		if ($engine === null) {
 			return false;
 		}
@@ -526,11 +498,11 @@ class TermijnTimerService {
 	 */
 	public function extendBeslistermijn(array $instance, int $days, string $rationale, bool $supervisor): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '' || $days <= 0) {
-			return false;
+		$engine = null;
+		if ($days > 0) {
+			$engine = $this->engineFor(timerId: $timerId);
 		}
 
-		$engine = $this->engine();
 		if ($engine === null) {
 			return false;
 		}
@@ -561,28 +533,21 @@ class TermijnTimerService {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function cancelForInstance(string $instanceId, string $reason): int {
-		if ($instanceId === '') {
-			return 0;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $instanceId);
 		if ($engine === null) {
 			return 0;
 		}
 
 		try {
-			return (int)$engine->cancelForSubject(subjectType: 'object', subjectUuid: $instanceId, reason: $reason, actor: null);
+			return (int)$engine->cancelForSubject(
+				subject: new TimerSubjectRef(type: 'object', uuid: $instanceId),
+				change: new TimerChange(reason: $reason, actor: null)
+			);
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'cancel', timerId: $instanceId, error: $e);
 			return 0;
 		}
 	}//end cancelForInstance()
-
-
-
-
-
-
 
 	/**
 	 * Arm one timer, returning the persisted uuid.
@@ -617,32 +582,25 @@ class TermijnTimerService {
 	 * The SLA in calendar days: start to the CURRENT deadline when known,
 	 * else the definition's standard duration.
 	 *
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 * @param array<string, mixed> $definitie The TermijnDefinitie row.
-	 * @param DateTimeImmutable $start The term's start.
-	 * @param string $mode Which days the term counts, calendar or working.
+	 * @param TimerArmRun $run  The term being armed.
+	 * @param string      $mode Which days the term counts, calendar or working.
 	 *
 	 * @return int Calendar days, at least 1 (the engine refuses 0).
 	 */
-	private function slaDaysFor(
-		array $instance,
-		array $definitie,
-		DateTimeImmutable $start,
-		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
-	): int {
-		$end = $this->dates->tryParse($instance['endDateCurrent'] ?? null);
+	private function slaDaysFor(TimerArmRun $run, string $mode): int {
+		$end = $this->dates->tryParse($run->instance['endDateCurrent'] ?? null);
 		if ($end !== null) {
 			// Both sides at day granularity in the administered zone. Reading
 			// one of them through the process zone is how a term lost a day
 			// between two servers.
-			$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
+			$startDay = $this->dates->parse($this->dates->formatCalendarDate($run->start), 'startDate');
 			$days = $this->spanFor(from: $startDay, to: $end, mode: $mode);
 			if ($end >= $startDay && $days !== null && $days > 0) {
 				return $days;
 			}
 		}
 
-		return max(1, (int)($definitie['standardDurationDays'] ?? 1));
+		return max(1, (int)($run->definitie['standardDurationDays'] ?? 1));
 	}//end slaDaysFor()
 
 	/**
@@ -659,7 +617,7 @@ class TermijnTimerService {
 	 *
 	 * @return int|null The span.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {
@@ -669,7 +627,6 @@ class TermijnTimerService {
 		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
 	}//end spanFor()
 
-
 	/**
 	 * Resolve the engine, or null when OpenRegister (or the timer stack) is absent.
 	 *
@@ -678,6 +635,21 @@ class TermijnTimerService {
 	private function engine(): ?object {
 		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
 	}//end engine()
+
+	/**
+	 * The engine, for a call on one timer: none when the timer is not known.
+	 *
+	 * @param string $timerId The timer or instance the call is about.
+	 *
+	 * @return object|null The engine, or null when there is no timer or no engine.
+	 */
+	private function engineFor(string $timerId): ?object {
+		if ($timerId === '') {
+			return null;
+		}
+
+		return $this->engine();
+	}//end engineFor()
 
 	/**
 	 * Log a degraded engine call. The domain flow proceeds on case data;

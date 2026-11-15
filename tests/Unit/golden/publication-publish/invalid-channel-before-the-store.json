@@ -1,0 +1,10 @@
+{
+    "invalid channel before the store": {
+        "exception": [
+            "InvalidArgumentException",
+            "Invalid publication channel: Website"
+        ],
+        "calls": [],
+        "logs": []
+    }
+}

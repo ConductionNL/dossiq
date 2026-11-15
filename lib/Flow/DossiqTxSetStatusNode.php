@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SetStatusHandler;
+use OCA\Dossiq\Kernel\Contracts\SetStatusHandlerInterface;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use UnexpectedValueException;
@@ -40,14 +40,14 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
     /**
      * Constructor.
      *
-     * @param SetStatusHandler $handler The transition handler this node runs.
+     * @param SetStatusHandlerInterface $handler The transition handler this node runs.
      * @param IL10N            $l10n    The localisation service.
      * @param IURLGenerator    $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SetStatusHandler $handler,
+        private readonly SetStatusHandlerInterface $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -112,7 +112,7 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
      *
      * @throws UnexpectedValueException When the step names no status.
      *
-     * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function validateConfig(array $config): void {
         parent::validateConfig(config: $config);

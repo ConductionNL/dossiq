@@ -42,8 +42,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CasePlanProjectionListener
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses \OCA\Dossiq\Service\CasePlanProjectionService
  * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CasePlanProjectionListenerTest extends TestCase {
 

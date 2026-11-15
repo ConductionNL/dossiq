@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -47,10 +48,12 @@ class ZtcRelatedTypeLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService Supplies the ZGW mappings
+	 * @param ZgwServiceInterface $zgwService Supplies the ZGW mappings
+	 * @param LanguageMapText $text Reads a translatable document type name as text
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -76,7 +79,8 @@ class ZtcRelatedTypeLookup {
 			}
 
 			$urls = [];
-			foreach ($this->searchIds(objectService: $objectService, mapping: $ztMapping, params: ['identifier' => $ident]) as $id) {
+			$caseTypes = new MappedObjects(objectService: $objectService, mapping: $ztMapping);
+			foreach ($this->searchIds(objects: $caseTypes, params: ['identifier' => $ident]) as $id) {
 				$urls[] = $baseUrl.'/zaaktypen/'.$id;
 			}
 
@@ -147,7 +151,8 @@ class ZtcRelatedTypeLookup {
 		}
 
 		$iotUrls = [];
-		foreach ($this->searchRowsOrNone(objectService: $objectService, mapping: $ziotMapping, params: ['caseType' => $uuid]) as $ziotData) {
+		$caseTypeLinks = new MappedObjects(objectService: $objectService, mapping: $ziotMapping);
+		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $uuid]) as $ziotData) {
 			$iotRef = $ziotData['informatieobjecttype'] ?? '';
 			if ($iotRef !== '') {
 				$sameName = $this->sameNameDocumentTypeUrls(objectService: $objectService, iotMapping: $iotMapping, iotRef: $iotRef, baseUrl: $baseUrl);
@@ -169,14 +174,16 @@ class ZtcRelatedTypeLookup {
 	 * @return array<string> The URLs (empty when the type has no name)
 	 */
 	private function sameNameDocumentTypeUrls(object $objectService, array $iotMapping, mixed $iotRef, string $baseUrl): array {
+		$documentTypes = new MappedObjects(objectService: $objectService, mapping: $iotMapping);
 		try {
-			$iotName = $this->findIn(objectService: $objectService, mapping: $iotMapping, id: $iotRef)['name'] ?? '';
+			$found = $this->findIn(objectService: $documentTypes->objectService, mapping: $documentTypes->mapping, id: $iotRef);
+			$iotName = $this->text->textOf(value: ($found['name'] ?? ''));
 			if ($iotName === '') {
 				return [];
 			}
 
 			$urls = [];
-			foreach ($this->searchIds(objectService: $objectService, mapping: $iotMapping, params: ['name' => $iotName]) as $id) {
+			foreach ($this->searchIds(objects: $documentTypes, params: ['name' => $iotName]) as $id) {
 				$urls[] = $baseUrl.'/informatieobjecttypen/'.$id;
 			}
 
@@ -206,7 +213,8 @@ class ZtcRelatedTypeLookup {
 		}
 
 		$urls = [];
-		foreach ($this->searchRowsOrNone(objectService: $objectService, mapping: $mapping, params: ['caseType' => $uuid]) as $row) {
+		$objects = new MappedObjects(objectService: $objectService, mapping: $mapping);
+		foreach ($this->searchRowsOrNone(objects: $objects, params: ['caseType' => $uuid]) as $row) {
 			$id = $row['id'] ?? ($row['@self']['id'] ?? '');
 			if ($id !== '') {
 				$urls[] = $baseUrl.'/'.$resource.'/'.$id;
@@ -236,17 +244,17 @@ class ZtcRelatedTypeLookup {
 	/**
 	 * Search a mapping's objects (at most 100) and return them as arrays.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mapping The ZGW mapping
+	 * @param MappedObjects $objects The object service with the ZGW mapping
 	 * @param array $params The search filters
 	 *
 	 * @return array<array> The matching objects
 	 */
-	private function searchRows(object $objectService, array $mapping, array $params): array {
+	private function searchRows(MappedObjects $objects, array $params): array {
+		$objectService = $objects->objectService;
 		$query = $objectService->buildSearchQuery(
 			requestParams: array_merge($params, ['_limit' => 100]),
-			register: $mapping['sourceRegister'],
-			schema: $mapping['sourceSchema']
+			register: $objects->mapping['sourceRegister'],
+			schema: $objects->mapping['sourceSchema']
 		);
 
 		return array_map(
@@ -261,18 +269,17 @@ class ZtcRelatedTypeLookup {
 	 * A failed search only means a list stays unenriched on a read, so it degrades to an empty
 	 * answer and is logged rather than failing the read.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mapping The ZGW mapping
+	 * @param MappedObjects $objects The object service with the ZGW mapping
 	 * @param array $params The search filters
 	 *
 	 * @return array<array> The matching objects, or none
 	 */
-	private function searchRowsOrNone(object $objectService, array $mapping, array $params): array {
+	private function searchRowsOrNone(MappedObjects $objects, array $params): array {
 		try {
-			return $this->searchRows(objectService: $objectService, mapping: $mapping, params: $params);
+			return $this->searchRows(objects: $objects, params: $params);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
-				'ZTC enrichment: the search of '.$mapping['sourceSchema'].' failed, so its list stays unenriched: '.$e->getMessage()
+				'ZTC enrichment: the search of '.$objects->mapping['sourceSchema'].' failed, so its list stays unenriched: '.$e->getMessage()
 			);
 			return [];
 		}
@@ -281,15 +288,14 @@ class ZtcRelatedTypeLookup {
 	/**
 	 * Search a mapping's objects and return their ids, skipping rows without one.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $mapping The ZGW mapping
+	 * @param MappedObjects $objects The object service with the ZGW mapping
 	 * @param array $params The search filters
 	 *
 	 * @return array<string> The ids
 	 */
-	private function searchIds(object $objectService, array $mapping, array $params): array {
+	private function searchIds(MappedObjects $objects, array $params): array {
 		$ids = [];
-		foreach ($this->searchRows(objectService: $objectService, mapping: $mapping, params: $params) as $row) {
+		foreach ($this->searchRows(objects: $objects, params: $params) as $row) {
 			$id = $row['id'] ?? ($row['@self']['id'] ?? '');
 			if ($id !== '') {
 				$ids[] = $id;

@@ -144,4 +144,25 @@ class AppointmentToolsTest extends TestCase {
 		$this->assertSame('not_authenticated', $this->tools->scheduleAppointment(caseId: 'c-1', productId: 'p-1', locationId: 'l-1', dateTime: 'x')['error']);
 		$this->assertSame('not_authenticated', $this->tools->cancelAppointment(appointmentId: 'a-1')['error']);
 	}//end testNoSessionBooksNothing()
+
+	public function testAGivenPhoneAndNoteArePassedOn(): void {
+		$this->signIn();
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->appointments->expects($this->once())->method('bookAppointment')
+			->with('c-1', $this->callback(
+				static fn (array $fields): bool => $fields['citizenPhone'] === '+31611111111' && $fields['notes'] === 'Rolstoeltoegang nodig'
+			))
+			->willReturn(['id' => 'a-2']);
+
+		$result = $this->tools->scheduleAppointment(
+			caseId: 'c-1',
+			productId: 'p-1',
+			locationId: 'l-1',
+			dateTime: '2026-11-03T10:00:00+01:00',
+			citizenPhone: '+31611111111',
+			notes: 'Rolstoeltoegang nodig',
+		);
+
+		$this->assertSame(['success' => true, 'appointment' => ['id' => 'a-2']], $result);
+	}//end testAGivenPhoneAndNoteArePassedOn()
 }//end class

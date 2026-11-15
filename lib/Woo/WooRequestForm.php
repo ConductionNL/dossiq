@@ -54,6 +54,28 @@ class WooRequestForm {
 	public const REQUESTER_FIELDS = ['verzoekerNaam', 'verzoekerEmail', 'verzoekerType'];
 
 	/**
+	 * The text fields a request is read for.
+	 *
+	 * @var array<int, string>
+	 */
+	private const TEXT_FIELDS = [
+		'subjectRef',
+		'onderwerp',
+		'omschrijving',
+		'origin',
+		'periodeVan',
+		'periodeTot',
+		'originReference',
+		'collectionId',
+		'toelichting',
+		'verzoekerNaam',
+		'verzoekerEmail',
+		'verzoekerType',
+		'verzoekerTelefoon',
+		'verzoekerAdres',
+	];
+
+	/**
 	 * The words a resident reads for each requester kind, lowercased, to the
 	 * value the case keeps. The portal shows these as the labels of the
 	 * choices (CitizenManifest::WOO_OPTIONS).
@@ -77,28 +99,43 @@ class WooRequestForm {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
 	 */
 	public function normalise(array $request): array {
+		$fields = $this->fieldsOf(request: $request);
+		self::requireOriginSubjectAndTopic(fields: $fields);
+		$fields = $this->withPeriod(fields: $fields);
+
+		// A date that was not given is left out, not written as '': the case
+		// schema declares both periods with `format: date`, which refuses ''.
+		return $this->withoutEmptyPeriods(
+			request: $this->caseRequest(fields: $fields, documentKinds: ($request['documentSoorten'] ?? null))
+		);
+	}//end normalise()
+
+	/**
+	 * Every text field the form reads, trimmed; a value that is not text reads as ''.
+	 *
+	 * @param array<string, mixed> $request The request.
+	 *
+	 * @return array<string, string> The fields.
+	 */
+	private function fieldsOf(array $request): array {
 		$fields = [];
-		foreach (
-			[
-				'subjectRef',
-				'onderwerp',
-				'omschrijving',
-				'origin',
-				'periodeVan',
-				'periodeTot',
-				'originReference',
-				'collectionId',
-				'toelichting',
-				'verzoekerNaam',
-				'verzoekerEmail',
-				'verzoekerType',
-				'verzoekerTelefoon',
-				'verzoekerAdres',
-			] as $key
-		) {
+		foreach (self::TEXT_FIELDS as $key) {
 			$fields[$key] = $this->text(value: ($request[$key] ?? null));
 		}
 
+		return $fields;
+	}//end fieldsOf()
+
+	/**
+	 * Refuse an unknown origin, a request without its resident, and one without a topic.
+	 *
+	 * @param array<string, string> $fields The fields.
+	 *
+	 * @return void
+	 *
+	 * @throws WooRequestRefused When one of them is missing.
+	 */
+	private static function requireOriginSubjectAndTopic(array $fields): void {
 		$origin = $fields['origin'];
 		if (in_array($origin, WooRequestIntake::ORIGINS, true) === false) {
 			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The origin must be one of: ' . implode(', ', WooRequestIntake::ORIGINS) . '.');
@@ -115,19 +152,48 @@ class WooRequestForm {
 		if ($fields['onderwerp'] === '') {
 			throw new WooRequestRefused(WooRequestRefused::INVALID, 'Say what the request is about.', 'onderwerp');
 		}
+	}//end requireOriginSubjectAndTopic()
 
+	/**
+	 * The fields with both periods read as `Y-m-d`, refusing an end before the start.
+	 *
+	 * @param array<string, string> $fields The fields.
+	 *
+	 * @return array<string, string> The fields.
+	 *
+	 * @throws WooRequestRefused When a date is unreadable or the end lies before the start.
+	 */
+	private function withPeriod(array $fields): array {
 		$from = $this->date(value: $fields['periodeVan'], field: 'periodeVan');
 		$to = $this->date(value: $fields['periodeTot'], field: 'periodeTot');
 		if ($from !== '' && $to !== '' && $from > $to) {
 			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The end date lies before the start date.', 'periodeTot');
 		}
 
-		$request = [
+		$fields['periodeVan'] = $from;
+		$fields['periodeTot'] = $to;
+
+		return $fields;
+	}//end withPeriod()
+
+	/**
+	 * The `wooRequest` the case carries, in its own order; the e-mail address,
+	 * the requester kind and the document kinds are checked in that order.
+	 *
+	 * @param array<string, string> $fields        The checked fields.
+	 * @param mixed                 $documentKinds The document kinds asked for.
+	 *
+	 * @return array<string, string|array<int, string>> The request.
+	 *
+	 * @throws WooRequestRefused When one of those three cannot be used.
+	 */
+	private function caseRequest(array $fields, mixed $documentKinds): array {
+		return [
 			'onderwerp' => $fields['onderwerp'],
 			'omschrijving' => $fields['omschrijving'],
-			'periodeVan' => $from,
-			'periodeTot' => $to,
-			'origin' => $origin,
+			'periodeVan' => $fields['periodeVan'],
+			'periodeTot' => $fields['periodeTot'],
+			'origin' => $fields['origin'],
 			'originReference' => $fields['originReference'],
 			'collectionId' => $fields['collectionId'],
 			'toelichting' => $fields['toelichting'],
@@ -136,13 +202,9 @@ class WooRequestForm {
 			'verzoekerType' => $this->requesterKind(value: $fields['verzoekerType']),
 			'verzoekerTelefoon' => $fields['verzoekerTelefoon'],
 			'verzoekerAdres' => $fields['verzoekerAdres'],
-			'documentSoorten' => $this->kinds(value: ($request['documentSoorten'] ?? null)),
+			'documentSoorten' => $this->kinds(value: $documentKinds),
 		];
-
-		// A date that was not given is left out, not written as '': the case
-		// schema declares both periods with `format: date`, which refuses ''.
-		return $this->withoutEmptyPeriods(request: $request);
-	}//end normalise()
+	}//end caseRequest()
 
 	/**
 	 * The document kinds asked for, each one from the declared list.
@@ -202,7 +264,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is none of the three.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	private function requesterKind(string $value): string {
 		$kind = (self::REQUESTER_WORDS[mb_strtolower($value)] ?? mb_strtolower($value));
@@ -297,7 +359,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is not a real date.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	private function date(string $value, string $field): string {
 		if ($value === '') {

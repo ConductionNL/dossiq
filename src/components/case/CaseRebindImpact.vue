@@ -111,22 +111,25 @@
 			<p v-else-if="impact.required.length === 0" class="rebind-impact__empty">
 				{{ t('dossiq', 'Nothing extra is needed.') }}
 			</p>
-			<RebindPropertyField
+			<CnSettingsField
 				v-for="row in impact.required"
 				:key="row.name"
-				:field="row"
-				:modelValue="answers[row.name] ?? ''"
-				@update:modelValue="(v) => answer(row.name, v)" />
+				:field="requiredField(row)"
+				:modelValue="answerValue(row)"
+				:error="problem(row)"
+				:hint="row.description || ''"
+				:data-testid="`case-rebind-required-${row.name}`"
+				@update:modelValue="(v) => answer(row.name, answerText(row, v))" />
 		</section>
 	</div>
 </template>
 
 <script>
+import { CnSettingsField } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import RebindPropertyField from './RebindPropertyField.vue'
 
 export default {
 	name: 'CaseRebindImpact',
@@ -134,8 +137,8 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
+		CnSettingsField,
 		NcSelect,
-		RebindPropertyField,
 	},
 
 	props: {
@@ -263,6 +266,74 @@ export default {
 		 */
 		answer(name, value) {
 			this.$emit('update:answers', { ...this.answers, [name]: value })
+		},
+
+		/**
+		 * One required field as a settings field: the control follows the
+		 * kind the server reported, a choice from its list, a yes/no as a
+		 * switch, a date, an e-mail address or a link in its own input.
+		 *
+		 * @param {object} row One `required` row: name, kind, choices, description.
+		 * @return {object} The settings field.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		requiredField(row) {
+			const types = { choice: 'select', boolean: 'switch', number: 'number', integer: 'number', date: 'date', 'date-time': 'datetime-local', email: 'email', url: 'url' }
+			return {
+				key: row.name,
+				label: row.name,
+				type: types[row.kind] || 'text',
+				options: row.kind === 'choice' ? (row.choices || []) : undefined,
+			}
+		},
+
+		/**
+		 * The stored answer in the shape its control holds: a switch takes a
+		 * boolean, everything else the text.
+		 *
+		 * @param {object} row The required row.
+		 * @return {string|boolean} The value.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		answerValue(row) {
+			const value = this.answers[row.name] ?? ''
+			return row.kind === 'boolean' ? value === 'true' : value
+		},
+
+		/**
+		 * The answer as the text the case stores, whatever the control emitted.
+		 *
+		 * @param {object} row The required row.
+		 * @param {unknown} value What the control emitted.
+		 * @return {string} The text.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		answerText(row, value) {
+			if (row.kind === 'boolean') {
+				return value ? 'true' : 'false'
+			}
+			return value === null || value === undefined ? '' : String(value)
+		},
+
+		/**
+		 * What is wrong with an answer, as the server judged it.
+		 *
+		 * @param {object} row The required row.
+		 * @return {string} The sentence, or '' when the answer is fine.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		problem(row) {
+			if (row.valid) {
+				return ''
+			}
+			if (!this.answers[row.name]) {
+				return t('dossiq', 'Fill this in to continue.')
+			}
+			return t('dossiq', 'This value does not fit this field.')
 		},
 	},
 }

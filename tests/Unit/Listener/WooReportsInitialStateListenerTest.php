@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WooListenerRegistrar;
 use OCA\Dossiq\Listener\WooReportsInitialStateListener;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
  * Dossiq's page gets `woo_reports`, offering the throughput only to a reader while it is on.
  *
  * @covers \OCA\Dossiq\Listener\WooReportsInitialStateListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\WooListenerRegistrar
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
@@ -95,11 +95,24 @@ class WooReportsInitialStateListenerTest extends TestCase {
 	public function testOnlyAReaderIsOfferedTheThroughputWhileItIsOn(): void {
 		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding'];
 
-		$this->assertSame(['throughput' => false], $this->provided(stored: [], uid: 'lead'));
-		$this->assertSame(['throughput' => false], $this->provided(stored: $on, uid: 'reviewer-a'));
-		$this->assertSame(['throughput' => false], $this->provided(stored: $on, uid: null));
-		$this->assertSame(['throughput' => true], $this->provided(stored: $on, uid: 'lead'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: [], uid: 'lead'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: 'reviewer-a'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: null));
+		$this->assertSame(['throughput' => true, 'parties' => false], $this->provided(stored: $on, uid: 'lead'));
 	}//end testOnlyAReaderIsOfferedTheThroughputWhileItIsOn()
+
+	/**
+	 * The parties report is offered to a signed-in user while it is on, and to nobody signed out.
+	 *
+	 * @return void
+	 */
+	public function testThePartiesReportIsOfferedWhileItIsOn(): void {
+		$on = [WooReportSwitches::PARTIES => 'true'];
+
+		$this->assertSame(['throughput' => false, 'parties' => true], $this->provided(stored: $on, uid: 'reviewer-a'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: null));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: [WooReportSwitches::PARTIES => 'false'], uid: 'reviewer-a'));
+	}//end testThePartiesReportIsOfferedWhileItIsOn()
 
 	/**
 	 * Another app's page, a logged-out page or another event gets nothing.

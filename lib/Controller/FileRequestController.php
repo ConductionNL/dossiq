@@ -13,10 +13,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\People\FileRequestService;
-use OCA\Dossiq\Service\People\PartyIndicatorReader;
-use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PartyIndicatorReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonLinkReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -32,24 +33,22 @@ use RuntimeException;
 class FileRequestController extends Controller {
 
 	/**
-	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
-	 * @param PersonLinkReader $people The people on the case.
-	 * @param FileRequestService $fileRequests Sends the request.
-	 * @param PartyIndicatorReader $indicators What the parties' indicators refuse.
-	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
+	 * @param PersonLinkReaderInterface $people The people on the case.
+	 * @param FileRequestServiceInterface $fileRequests Sends the request.
+	 * @param PartyIndicatorReaderInterface $indicators What the parties' indicators refuse.
+	 * @param CaseAccessGuardInterface $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly PersonLinkReader $people,
-		private readonly FileRequestService $fileRequests,
-		private readonly PartyIndicatorReader $indicators,
-		private readonly CaseAccessGuard $access,
+		private readonly PersonLinkReaderInterface $people,
+		private readonly FileRequestServiceInterface $fileRequests,
+		private readonly PartyIndicatorReaderInterface $indicators,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

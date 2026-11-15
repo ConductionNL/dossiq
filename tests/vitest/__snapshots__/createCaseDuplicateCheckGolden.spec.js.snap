@@ -1,0 +1,346 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createCaseWithDuplicateCheck > asks, saves and refuses as before 1`] = `
+[
+  {
+    "answer": {
+      "id": "saved",
+      "type": "zaak",
+    },
+    "calls": [
+      [
+        "check",
+        {
+          "caseType": "ct-1",
+          "stripped": true,
+          "title": "A",
+        },
+      ],
+      [
+        "policy",
+        "ct-1",
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "save",
+        "zaak",
+        {
+          "caseType": "ct-1",
+          "title": "A",
+        },
+      ],
+    ],
+  },
+  {
+    "answer": {
+      "id": "saved",
+      "type": "case",
+    },
+    "calls": [
+      [
+        "initiator",
+        "contacts",
+        {
+          "name": "Jan",
+          "party": "p-1",
+        },
+      ],
+      [
+        "check",
+        {
+          "caseType": "ct-1",
+          "initiatorDisplayName": "Jan",
+          "requester": "p-1",
+          "stripped": true,
+          "title": "A",
+        },
+      ],
+      [
+        "policy",
+        "ct-1",
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "save",
+        "case",
+        {
+          "caseType": "ct-1",
+          "initiatorDisplayName": "Jan",
+          "requester": "p-1",
+          "title": "A",
+        },
+      ],
+    ],
+  },
+  {
+    "answer": {
+      "id": "saved",
+      "type": "case",
+    },
+    "calls": [
+      [
+        "initiator",
+        "contacts",
+        {
+          "name": "Zonder partij",
+        },
+      ],
+      [
+        "check",
+        {
+          "initiatorDisplayName": "Zonder partij",
+          "stripped": true,
+          "title": "A",
+        },
+      ],
+      [
+        "policy",
+        undefined,
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "save",
+        "case",
+        {
+          "initiatorDisplayName": "Zonder partij",
+          "title": "A",
+        },
+      ],
+    ],
+  },
+  {
+    "calls": [
+      [
+        "check",
+        {
+          "caseType": "ct-2",
+          "stripped": true,
+          "title": "B",
+        },
+      ],
+      [
+        "policy",
+        "ct-2",
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [
+            {
+              "uuid": "c-1",
+            },
+            {
+              "uuid": "c-2",
+            },
+          ],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "cases",
+        [
+          "c-1",
+          "c-2",
+        ],
+      ],
+      [
+        "warning",
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        "warn",
+        true,
+      ],
+    ],
+    "thrown": "The case was not filed.",
+  },
+  {
+    "answer": {
+      "id": "saved",
+      "type": "case",
+    },
+    "calls": [
+      [
+        "check",
+        {
+          "caseType": "ct-2",
+          "stripped": true,
+          "title": "B",
+        },
+      ],
+      [
+        "policy",
+        "ct-2",
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [
+            {
+              "uuid": "c-1",
+            },
+            {
+              "uuid": "c-2",
+            },
+          ],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "cases",
+        [
+          "c-1",
+          "c-2",
+        ],
+      ],
+      [
+        "warning",
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        "warn",
+        true,
+      ],
+      [
+        "save",
+        "case",
+        {
+          "caseType": "ct-2",
+          "duplicateOverrideOf": [
+            "c-1",
+          ],
+          "duplicateOverrideReason": "Andere aanvrager",
+          "title": "B",
+        },
+      ],
+    ],
+  },
+  {
+    "answer": {
+      "id": "saved",
+      "type": "case",
+    },
+    "calls": [
+      [
+        "check",
+        {
+          "caseType": "ct-2",
+          "stripped": true,
+          "title": "B",
+        },
+      ],
+      [
+        "policy",
+        "ct-2",
+      ],
+      [
+        "affordances",
+        {
+          "checked": true,
+          "matches": [
+            {
+              "uuid": "c-1",
+            },
+            {
+              "uuid": "c-2",
+            },
+          ],
+          "mayOverride": true,
+          "policy": "warn",
+        },
+      ],
+      [
+        "cases",
+        [
+          "c-1",
+          "c-2",
+        ],
+      ],
+      [
+        "warning",
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        [
+          {
+            "uuid": "c-1",
+          },
+          {
+            "uuid": "c-2",
+          },
+        ],
+        "warn",
+        true,
+      ],
+      [
+        "save",
+        "case",
+        {
+          "caseType": "ct-2",
+          "duplicateOverrideOf": [],
+          "title": "B",
+        },
+      ],
+    ],
+  },
+]
+`;

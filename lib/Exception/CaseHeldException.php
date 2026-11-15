@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseHeldException extends RuntimeException {
 
@@ -133,7 +133,7 @@ class CaseHeldException extends RuntimeException {
 	 *
 	 * @return self|null The refusal, or null when the stop was something else.
 	 *
-	 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public static function fromHookErrors(array $errors): ?self {
 		if (($errors['error'] ?? '') !== self::ERROR_CODE) {
@@ -159,7 +159,7 @@ class CaseHeldException extends RuntimeException {
 	 *
 	 * @return array<int, string> One or more of {@see self::RULES}.
 	 *
-	 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getRules(): array {
 		return $this->rules;
@@ -170,7 +170,7 @@ class CaseHeldException extends RuntimeException {
 	 *
 	 * @return array{message: string, error: string, blockedBy: array<int, string>}
 	 *
-	 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function toResponseBody(): array {
 		return [

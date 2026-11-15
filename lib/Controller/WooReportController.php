@@ -22,11 +22,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Woo\WooReportReadLog;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Woo\WooReportSwitches;
-use OCA\Dossiq\Woo\WooThroughputReport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -34,6 +35,7 @@ use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -54,23 +56,44 @@ class WooReportController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param WooReportSwitches $switches The organisation switches.
-	 * @param WooThroughputReport $throughputReport The throughput report.
-	 * @param WooReportReadLog $readLog The read log on the audit trail.
+	 * @param WooThroughputReportInterface $throughputReport The throughput report.
+	 * @param WooReportReadLogInterface $readLog The read log on the audit trail.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
+	 * @param CaseDateNormaliserInterface|null $dates Reads a moment as the tenant's calendar date.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly WooReportSwitches $switches,
-		private readonly WooThroughputReport $throughputReport,
-		private readonly WooReportReadLog $readLog,
+		private readonly WooThroughputReportInterface $throughputReport,
+		private readonly WooReportReadLogInterface $readLog,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
+		private readonly ?CaseDateNormaliserInterface $dates = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * Which reports this user is offered: `{throughput, parties}`, the same
+	 * answer the menu reads from the initial state. The reports page shows a
+	 * widget only when its report is offered; the report endpoints still
+	 * refuse anyone else on every read.
+	 *
+	 * @return JSONResponse The offer, or 401 without a session.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	#[NoAdminRequired]
+	public function offered(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse($this->switches->offeredToCurrentUser());
+	}//end offered()
 
 	/**
 	 * Throughput per reviewer per day, for one case (`?case=`) or a period (`?from=&to=`).
@@ -90,11 +113,30 @@ class WooReportController extends Controller {
 			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusal = $this->throughputRefusal(user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->recordedThroughput(user: $user);
+	}//end throughput()
+
+	/**
+	 * Refuse a throughput read while the report is off, or by anyone outside the reader group.
+	 *
+	 * The group is the only way in: no admin bypass (REQ-WRR-002).
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return JSONResponse|null The 403, or null when the caller may read the report.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function throughputRefusal(IUser $user): ?JSONResponse {
 		if ($this->switches->isOn(switch: WooReportSwitches::THROUGHPUT) === false) {
 			return $this->notSwitchedOn();
 		}
 
-		// The group is the only way in: no admin bypass (REQ-WRR-002).
 		if ($this->switches->maySeeThroughput(userId: $user->getUID()) === false) {
 			return new JSONResponse(
 				[
@@ -105,9 +147,24 @@ class WooReportController extends Controller {
 			);
 		}
 
+		return null;
+	}//end throughputRefusal()
+
+	/**
+	 * Read the report for the requested case or period, record the read, and answer it.
+	 *
+	 * A read that cannot be recorded is not answered.
+	 *
+	 * @param IUser $user The reader.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function recordedThroughput(IUser $user): JSONResponse|DataDownloadResponse {
 		$caseId = trim((string)$this->request->getParam('case', ''));
-		$from = trim((string)$this->request->getParam('from', ''));
-		$to = trim((string)$this->request->getParam('to', ''));
+		$from = $this->calendarDate(value: trim((string)$this->request->getParam('from', '')));
+		$to = $this->calendarDate(value: trim((string)$this->request->getParam('to', '')));
 		$scope = ['from' => $from, 'to' => $to];
 		if ($caseId !== '') {
 			$scope = ['case' => $caseId];
@@ -123,6 +180,20 @@ class WooReportController extends Controller {
 			);
 		}
 
+		return $this->throughputAnswer(scope: $scope, report: $report);
+	}//end recordedThroughput()
+
+	/**
+	 * The report as the CSV download the request asks for, or as JSON with its scope.
+	 *
+	 * @param array<string, string> $scope  The case or the period.
+	 * @param array<string, mixed>  $report The report.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function throughputAnswer(array $scope, array $report): JSONResponse|DataDownloadResponse {
 		if ($this->request->getParam('format', '') === 'csv') {
 			return new DataDownloadResponse(
 				$this->throughputReport->toCsv(rows: $report['rows']),
@@ -132,7 +203,25 @@ class WooReportController extends Controller {
 		}
 
 		return new JSONResponse(['scope' => $scope] + $report);
-	}//end throughput()
+	}//end throughputAnswer()
+
+	/**
+	 * A period bound as the tenant's calendar date. A dashboard date range
+	 * sends moments (`2026-10-01T22:00:00.000Z`); the report counts days, so
+	 * a moment is read as the day it falls on in the tenant's zone. A plain
+	 * date, or anything else, passes as given and the report judges it.
+	 *
+	 * @param string $value The bound as it arrived.
+	 *
+	 * @return string The bound as `Y-m-d`, or the value unchanged.
+	 */
+	private function calendarDate(string $value): string {
+		if ($this->dates === null || preg_match('/^\d{4}-\d{2}-\d{2}T/', $value) !== 1) {
+			return $value;
+		}
+
+		return ($this->dates->toCalendarDateOrNull(value: $value) ?? $value);
+	}//end calendarDate()
 
 	/**
 	 * Read one case, or a period when no case is named.
@@ -181,4 +270,20 @@ class WooReportController extends Controller {
 			default => $this->l10n->t('The Woo assessments cannot be read, so the report cannot be made.'),
 		};
 	}//end sentence()
+
+	/**
+	 * throughput() on its old address.
+	 *
+	 * Deprecated alias of /api/document-review/reports/throughput; remove after the next major.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 *
+	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
+	 */
+	#[NoAdminRequired]
+	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {
+		return $this->throughput();
+	}//end throughputLegacyPath()
 }//end class

@@ -35,7 +35,7 @@ The app MUST create or detect the Dossiq register and all required schemas in Op
 #### Scenario 1.3: Settings endpoint returns register/schema configuration
 - GIVEN the register is configured
 - WHEN a GET request is made to `/apps/dossiq/api/settings`
-- THEN the response MUST include `register` (register ID), `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`, and `default_case_type`
+- THEN the response MUST include `register` (register ID), `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`
 - AND the `openRegisters` field MUST be `true`
 
 #### Scenario 1.4: Admin can save schema configuration
@@ -345,12 +345,6 @@ The admin settings MUST provide UI for creating and configuring case types with 
 - WHEN they type "P8W" (8 weeks) or "P42D" (42 days)
 - THEN the input MUST accept ISO 8601 duration format
 - AND `formatDuration()` from `caseHelpers.js` MUST display it in human-readable form
-
-#### Scenario 10.5: Default case type selection
-- GIVEN the admin has configured multiple case types
-- WHEN they set one as the default via settings
-- THEN the `default_case_type` config key MUST be updated with the selected case type ID
-- AND new cases created without explicit type selection SHOULD use this default
 
 ### Requirement 11: Navigation MUST include all primary views
 The app navigation MUST show menu items for Dashboard, My Work, Cases, Tasks, and settings.

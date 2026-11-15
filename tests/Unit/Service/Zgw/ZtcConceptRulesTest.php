@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcChange
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
@@ -41,7 +42,7 @@ class ZtcConceptRulesTest extends TestCase {
 	 * @return ZtcConceptRules
 	 */
 	private function rules(): ZtcConceptRules {
-		return new ZtcConceptRules(results: new ZgwRuleResults());
+		return new ZtcConceptRules(results: new ZgwRuleResults(logger: $this->createMock(\Psr\Log\LoggerInterface::class)));
 	}//end rules()
 
 	/**

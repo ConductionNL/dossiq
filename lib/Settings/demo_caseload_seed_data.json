@@ -225,6 +225,7 @@
       "caseType": "omgevingsvergunning",
       "status": "In behandeling",
       "title": "Uitbouw keuken Rembrandtkade 21",
+      "lastActivityInDays": -6,
       "description": "De aanvrager wil de keuken vier meter uitbouwen. De constructieberekening is compleet.",
       "assignee": "admin",
       "priority": "normal",

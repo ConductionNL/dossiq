@@ -37,9 +37,19 @@ export const CASE_SURFACE = 'case'
  */
 export function referenceId(value) {
 	if (value !== null && typeof value === 'object') {
-		return String(value.id ?? value.uuid ?? '').trim()
+		return trimmedText(value.id ?? value.uuid)
 	}
 
+	return trimmedText(value)
+}
+
+/**
+ * A value as trimmed text, the empty string for null and undefined.
+ *
+ * @param {string|number|null|undefined} value The value.
+ * @return {string} The text.
+ */
+function trimmedText(value) {
 	return String(value ?? '').trim()
 }
 
@@ -88,30 +98,50 @@ async function readObject(schema, id) {
  */
 export async function fetchCaseFeatures(caseId) {
 	try {
-		const caseRecord = await readObject('case', caseId)
-		const caseTypeId = referenceId(caseRecord.caseType)
-		if (caseTypeId === '') {
-			return []
-		}
-
-		const caseType = await readObject('caseType', caseTypeId)
-		const slugs = caseSurfaceSlugs(caseType)
+		const slugs = await caseFeatureSlugs(caseId)
 		if (slugs.length === 0) {
 			return []
 		}
-
-		const query = new URLSearchParams({ surface: CASE_SURFACE })
-		for (const slug of slugs) {
-			query.append(`caseType[aiFeatures][${slug}]`, CASE_SURFACE)
-		}
-
-		const { data } = await axios.get(
-			`${generateUrl('/apps/dossiq/api/assistant/ai-features')}?${query.toString()}`,
-		)
-		return Array.isArray(data?.features) ? data.features : []
+		return await fetchSurfaceFeatures(slugs)
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The slugs the case's type places on the case surface; none when the case
+ * has no type, without reading further.
+ *
+ * @param {string} caseId The case uuid.
+ * @return {Promise<Array<string>>} The slugs, in declaration order.
+ */
+async function caseFeatureSlugs(caseId) {
+	const caseRecord = await readObject('case', caseId)
+	const caseTypeId = referenceId(caseRecord.caseType)
+	if (caseTypeId === '') {
+		return []
+	}
+
+	const caseType = await readObject('caseType', caseTypeId)
+	return caseSurfaceSlugs(caseType)
+}
+
+/**
+ * Ask dossiq's feature endpoint for the declared case-surface features.
+ *
+ * @param {Array<string>} slugs The declared slugs.
+ * @return {Promise<Array<object>>} The features, or none when the answer carries no list.
+ */
+async function fetchSurfaceFeatures(slugs) {
+	const query = new URLSearchParams({ surface: CASE_SURFACE })
+	for (const slug of slugs) {
+		query.append(`caseType[aiFeatures][${slug}]`, CASE_SURFACE)
+	}
+
+	const { data } = await axios.get(
+		`${generateUrl('/apps/dossiq/api/assistant/ai-features')}?${query.toString()}`,
+	)
+	return Array.isArray(data?.features) ? data.features : []
 }
 
 /**
@@ -179,8 +209,8 @@ export function whereItRuns(feature) {
 		return t('dossiq', 'Unavailable: hermiq does not offer this feature here.')
 	}
 
-	const provider = String(feature.provider ?? '').trim()
-	const residency = String(feature.residency ?? '').trim()
+	const provider = trimmedText(feature.provider)
+	const residency = trimmedText(feature.residency)
 	if (provider === '' || residency === '') {
 		return t('dossiq', 'hermiq did not say which provider runs this, or where.')
 	}
@@ -200,54 +230,81 @@ export function whereItRuns(feature) {
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-two-hundred-reports-read-as-one-item-with-a-count
  */
 export function groupView(answer) {
-	const view = {
+	if (answer === null || answer === undefined) {
+		return { ...noGroupView(), state: 'unavailable', reason: t('dossiq', 'The report group could not be read.') }
+	}
+	if (answer.declared !== true) {
+		return noGroupView()
+	}
+	if (!hasGroup(answer)) {
+		return unavailableGroupView(answer)
+	}
+	return groupedView(answer.group)
+}
+
+/**
+ * The view of a group: its count with the near-duplicates beside it.
+ *
+ * @param {object} group The group hermiq answered.
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} The view.
+ */
+function groupedView(group) {
+	return { ...noGroupView(), state: 'grouped', count: Number(group.count ?? 0), nearDuplicates: nearDuplicatesOf(group) }
+}
+
+/**
+ * Whether hermiq answered with a group.
+ *
+ * @param {object} answer The report-group answer.
+ * @return {boolean} True when the group is available and is an object.
+ */
+function hasGroup(answer) {
+	return answer.available === true && answer.group !== null && typeof answer.group === 'object'
+}
+
+/**
+ * The view of a case type that does not group reports.
+ *
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} A fresh view.
+ */
+function noGroupView() {
+	return {
 		state: 'off',
 		count: 0,
 		nearDuplicates: [],
 		reason: '',
 		gate: null,
 	}
-	if (answer === null || answer === undefined) {
-		return {
-			...view,
-			state: 'unavailable',
-			reason: t('dossiq', 'The report group could not be read.'),
-		}
-	}
+}
 
-	if (answer.declared !== true) {
-		return view
+/**
+ * The view when hermiq did not answer with a group: its reason, else a default, and its gate.
+ *
+ * @param {object} answer The report-group answer.
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} The view.
+ */
+function unavailableGroupView(answer) {
+	return {
+		...noGroupView(),
+		state: 'unavailable',
+		reason: String(answer.reason ?? '') || t('dossiq', 'hermiq did not answer.'),
+		gate: answer.gate ?? null,
 	}
+}
 
-	if (
-		answer.available !== true
-		|| answer.group === null
-		|| typeof answer.group !== 'object'
-	) {
-		return {
-			...view,
-			state: 'unavailable',
-			reason:
-				String(answer.reason ?? '') || t('dossiq', 'hermiq did not answer.'),
-			gate: answer.gate ?? null,
-		}
-	}
-
-	const nearDuplicates = (
-		Array.isArray(answer.group.nearDuplicates) ? answer.group.nearDuplicates : []
-	)
+/**
+ * The near-duplicates of a group that name a report, as id and score.
+ *
+ * @param {object} group The group hermiq answered.
+ * @return {Array<{reportId: string, score: number}>} The near-duplicates.
+ */
+function nearDuplicatesOf(group) {
+	return (Array.isArray(group.nearDuplicates) ? group.nearDuplicates : [])
 		.filter((member) => member && String(member.reportId ?? '') !== '')
 		.map((member) => ({
 			reportId: String(member.reportId),
 			score: Number(member.score ?? 0),
 		}))
-
-	return {
-		...view,
-		state: 'grouped',
-		count: Number(answer.group.count ?? 0),
-		nearDuplicates,
-	}
 }
 
 /**

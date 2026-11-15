@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatImportServiceInterface;
 use OCA\Dossiq\Service\Mandaat\MandaatCsvParser;
 use OCA\Dossiq\Service\Mandaat\MandaatRepository;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -47,9 +48,9 @@ use RuntimeException;
  * or write goes through {@see MandaatRepository}; what stays here is the import
  * decision — new vs changed vs removed — and the approval state machine.
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
-class MandaatImportService {
+class MandaatImportService implements MandaatImportServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -86,26 +87,62 @@ class MandaatImportService {
 	 *
 	 * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
-	public function importFromCsv(
-		string $decisionNumber,
-		string $decisionName,
-		string $decideskUuid,
-		string $csvContents,
-	): array {
+	public function importFromCsv(string $decisionNumber, string $decisionName, string $decideskUuid, string $csvContents): array {
+		$rows = $this->parsedRows(csvContents: $csvContents);
+
+		// Resolve rol-name → rolId.
+		$resolved = $this->resolveRoleReferences(rows: $rows);
+
+		$decision = $this->saveDraftDecision(decisionNumber: $decisionNumber, decisionName: $decisionName, decideskUuid: $decideskUuid);
+
+		$tally = $this->tallyFor(decision: $decision, decisionNumber: $decisionNumber);
+
+		// Create one mandaat per CSV row.
+		foreach ($resolved as $row) {
+			$this->importRow(tally: $tally, row: $row);
+		}
+
+		return $this->importSummary(tally: $tally, resolved: $resolved);
+	}//end importFromCsv()
+
+	/**
+	 * The data rows of the CSV.
+	 *
+	 * @param string $csvContents The CSV payload (RFC 4180; first row is header).
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws RuntimeException When the CSV has no data rows.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function parsedRows(string $csvContents): array {
 		$rows = $this->csvParser->parse(csv: $csvContents);
 		if (count($rows) === 0) {
 			throw new RuntimeException('CSV is empty or missing data rows');
 		}
 
-		// Resolve rol-name → rolId.
-		$resolved = $this->resolveRoleReferences(rows: $rows);
+		return $rows;
+	}//end parsedRows()
 
+	/**
+	 * Create the decision as a concept.
+	 *
+	 * @param string $decisionNumber Decision identifier.
+	 * @param string $decisionName Decision name.
+	 * @param string $decideskUuid Source Decidesk decision id.
+	 *
+	 * @return array<string, mixed> The stored decision.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function saveDraftDecision(string $decisionNumber, string $decisionName, string $decideskUuid): array {
 		// Create the decision (concept). The schemaConfigKey stays
 		// 'mandaterings_besluit_schema': it is the app-config key the schema id
 		// is already stored under on existing installs, not a display name.
-		$decision = $this->repository->save(
+		return $this->repository->save(
 			schemaConfigKey: 'mandaterings_besluit_schema',
 			object: [
 				'decisionNumber' => $decisionNumber,
@@ -114,68 +151,136 @@ class MandaatImportService {
 				'decideskUuid' => $decideskUuid,
 			]
 		);
+	}//end saveDraftDecision()
 
-		// Find the prior decision version (by decisionNumber) for diff.
+	/**
+	 * A tally for the new decision, against the mandates of its prior version.
+	 *
+	 * @param array<string, mixed> $decision The stored decision.
+	 * @param string $decisionNumber Decision identifier.
+	 *
+	 * @return MandateImportTally The tally.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function tallyFor(array $decision, string $decisionNumber): MandateImportTally {
+		$tally = new MandateImportTally();
+		$tally->decisionId = (string)$decision['id'];
+		$tally->prior = $this->priorMandatesOf(decisionNumber: $decisionNumber);
+
+		return $tally;
+	}//end tallyFor()
+
+	/**
+	 * The mandates of the prior decision version with this number, for the diff.
+	 *
+	 * @param string $decisionNumber The decision number.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function priorMandatesOf(string $decisionNumber): array {
 		$prior = $this->repository->findPriorDecision(decisionNumber: $decisionNumber);
-		$priorMandaten = [];
-		if ($prior !== null) {
-			$priorMandaten = $this->repository->findMandatenForBesluit(
-				decisionId: (string)($prior['id'] ?? '')
-			);
+		if ($prior === null) {
+			return [];
 		}
 
-		// Create one mandaat per CSV row.
-		$newCount = 0;
-		$changedCount = 0;
-		$unchangedCount = 0;
-		$diff = [];
-		foreach ($resolved as $row) {
-			$payload = $this->buildMandatePayload(row: $row, decisionId: (string)$decision['id']);
+		return $this->repository->findMandatenForBesluit(
+			decisionId: (string)($prior['id'] ?? '')
+		);
+	}//end priorMandatesOf()
 
-			$this->repository->save(schemaConfigKey: 'mandaat_schema', object: $payload);
+	/**
+	 * Store the mandate of one CSV row and add its change to the tally.
+	 *
+	 * @param MandateImportTally   $tally The import so far.
+	 * @param array<string, mixed> $row   The resolved CSV row.
+	 *
+	 * @return void
+	 */
+	private function importRow(MandateImportTally $tally, array $row): void {
+		$payload = $this->buildMandatePayload(row: $row, decisionId: $tally->decisionId);
 
-			$existing = $this->findPriorMandate(
-				priorMandaten: $priorMandaten,
-				mandateNumber: (string)$row['mandaatNummer']
-			);
+		$this->repository->save(schemaConfigKey: 'mandaat_schema', object: $payload);
 
-			if ($existing === null) {
-				$newCount++;
-				$diff[] = ['mandaatNummer' => (string)$row['mandaatNummer'], 'change' => 'NEW'];
-				continue;
-			}
+		$existing = $this->findPriorMandate(
+			priorMandaten: $tally->prior,
+			mandateNumber: (string)$row['mandaatNummer']
+		);
 
-			$changedFields = $this->collectChangedFields(existing: $existing, payload: $payload);
+		$this->tallyChange(tally: $tally, entry: $this->changeOf(existing: $existing, payload: $payload));
+	}//end importRow()
 
-			if (count($changedFields) > 0) {
-				$changedCount++;
-				$diff[] = [
-					'mandaatNummer' => (string)$row['mandaatNummer'],
-					'change' => 'CHANGED',
-					'fields' => $changedFields,
-				];
-				continue;
-			}
+	/**
+	 * The diff entry of one mandate: new, changed with its fields, or unchanged.
+	 *
+	 * @param array<string, mixed>|null $existing The prior mandate with this number, or null.
+	 * @param array<string, mixed>      $payload  The mandate as imported.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function changeOf(?array $existing, array $payload): array {
+		$number = (string)$payload['mandateNumber'];
+		if ($existing === null) {
+			return ['mandaatNummer' => $number, 'change' => 'NEW'];
+		}
 
-			$unchangedCount++;
-			$diff[] = ['mandaatNummer' => (string)$row['mandaatNummer'], 'change' => 'UNCHANGED'];
-		}//end foreach
+		$changedFields = $this->collectChangedFields(existing: $existing, payload: $payload);
+		if (count($changedFields) > 0) {
+			return [
+				'mandaatNummer' => $number,
+				'change' => 'CHANGED',
+				'fields' => $changedFields,
+			];
+		}
 
+		return ['mandaatNummer' => $number, 'change' => 'UNCHANGED'];
+	}//end changeOf()
+
+	/**
+	 * Add one diff entry to the tally and count it.
+	 *
+	 * @param MandateImportTally   $tally The import so far.
+	 * @param array<string, mixed> $entry The diff entry.
+	 *
+	 * @return void
+	 */
+	private function tallyChange(MandateImportTally $tally, array $entry): void {
+		$tally->diff[] = $entry;
+		if ($entry['change'] === 'NEW') {
+			$tally->newCount++;
+			return;
+		}
+
+		if ($entry['change'] === 'CHANGED') {
+			$tally->changedCount++;
+			return;
+		}
+
+		$tally->unchangedCount++;
+	}//end tallyChange()
+
+	/**
+	 * The import answer: the counts and the diff, the removed mandates last.
+	 *
+	 * @param MandateImportTally               $tally    The finished import.
+	 * @param array<int, array<string, mixed>> $resolved The resolved CSV rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function importSummary(MandateImportTally $tally, array $resolved): array {
 		// REMOVED = in prior, not in new.
-		$removed = $this->collectRemovedMandaten(priorMandaten: $priorMandaten, resolved: $resolved);
-		$removedCount = count($removed);
-		$diff = array_merge($diff, $removed);
+		$removed = $this->collectRemovedMandaten(priorMandaten: $tally->prior, resolved: $resolved);
 
 		return [
-			'mandateDecisionId' => (string)$decision['id'],
+			'mandateDecisionId' => $tally->decisionId,
 			'totalMandaten' => count($resolved),
-			'newCount' => $newCount,
-			'changedCount' => $changedCount,
-			'removedCount' => $removedCount,
-			'unchangedCount' => $unchangedCount,
-			'diff' => $diff,
+			'newCount' => $tally->newCount,
+			'changedCount' => $tally->changedCount,
+			'removedCount' => count($removed),
+			'unchangedCount' => $tally->unchangedCount,
+			'diff' => array_merge($tally->diff, $removed),
 		];
-	}//end importFromCsv()
+	}//end importSummary()
 
 	/**
 	 * Resolve every CSV row's rolNaam to a gemandateerdeRol id.
@@ -213,7 +318,7 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed> The mandaat object payload.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function buildMandatePayload(array $row, string $decisionId): array {
 		return [
@@ -264,7 +369,7 @@ class MandaatImportService {
 	 *
 	 * @return array<int, string> Changed field names; empty when unchanged.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
@@ -312,64 +417,105 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function approveImport(string $decisionId): array {
-		$context = $this->repository->resolveApprovalContext();
-		$objectService = $context['objectService'];
-		$register = $context['register'];
-		$bSchema = $context['bSchema'];
-		$mSchema = $context['mSchema'];
+		$run = new MandateApproval();
+		$run->context = $this->repository->resolveApprovalContext();
+		$run->decisionId = $decisionId;
+		$run->decision = $this->draftDecision(run: $run);
+		$run->now = (new DateTimeImmutable())->format('Y-m-d');
 
+		$this->determineDecision(run: $run);
+
+		// Flip mandaten to active.
+		$this->repository->activateMandatenForBesluit(
+			objectService: $run->context['objectService'],
+			register: $run->context['register'],
+			mSchema: $run->context['mSchema'],
+			decisionId: $decisionId,
+			now: $run->now
+		);
+
+		$this->lapsePriorDecision(run: $run);
+
+		return $run->decision;
+	}//end approveImport()
+
+	/**
+	 * The decision being approved, which must exist and still be a concept.
+	 *
+	 * @param MandateApproval $run The approval.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the decision is missing or not in concept status.
+	 */
+	private function draftDecision(MandateApproval $run): array {
 		try {
 			$decision = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $bSchema,
-				id: $decisionId
+				objectService: $run->context['objectService'],
+				register: $run->context['register'],
+				schema: $run->context['bSchema'],
+				id: $run->decisionId
 			);
 		} catch (\Throwable $e) {
 			$decision = null;
 		}
 
 		if ($decision === null) {
-			throw new RuntimeException('Besluit not found: ' . $decisionId);
+			throw new RuntimeException('Besluit not found: ' . $run->decisionId);
 		}
 
 		if (($decision['status'] ?? '') !== 'draft') {
 			throw new RuntimeException('Besluit is not in concept status');
 		}
 
-		$now = (new DateTimeImmutable())->format('Y-m-d');
+		return $decision;
+	}//end draftDecision()
+
+	/**
+	 * Store the decision as determined, in force from today unless it names a day.
+	 *
+	 * @param MandateApproval $run The approval; it then holds the stored decision.
+	 *
+	 * @return void
+	 */
+	private function determineDecision(MandateApproval $run): void {
+		$decision = $run->decision;
 		$decision['status'] = 'determined';
-		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $now);
-		$decision = ($this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $bSchema,
+		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $run->now);
+		$run->decision = ($this->saveObjectAsArray(
+			objectService: $run->context['objectService'],
+			register: $run->context['register'],
+			schema: $run->context['bSchema'],
 			object: $decision
 		) ?? $decision);
+	}//end determineDecision()
 
-		// Flip mandaten to active.
-		$this->repository->activateMandatenForBesluit(
-			objectService: $objectService,
-			register: $register,
-			mSchema: $mSchema,
-			decisionId: $decisionId,
-			now: $now
-		);
-
-		// Expire prior besluit.
+	/**
+	 * Expire the prior decision with the same number, when there is one.
+	 *
+	 * @param MandateApproval $run The approval.
+	 *
+	 * @return void
+	 */
+	private function lapsePriorDecision(MandateApproval $run): void {
 		$prior = $this->repository->findPriorDecision(
-			decisionNumber: (string)$decision['decisionNumber'],
-			excludeId: $decisionId
+			decisionNumber: (string)$run->decision['decisionNumber'],
+			excludeId: $run->decisionId
 		);
-		if ($prior !== null) {
-			$prior['status'] = 'lapsed';
-			$prior['expiryDate'] = $now;
-			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $bSchema, object: $prior);
+		if ($prior === null) {
+			return;
 		}
 
-		return $decision;
-	}//end approveImport()
+		$prior['status'] = 'lapsed';
+		$prior['expiryDate'] = $run->now;
+		$this->saveObjectAsArray(
+			objectService: $run->context['objectService'],
+			register: $run->context['register'],
+			schema: $run->context['bSchema'],
+			object: $prior
+		);
+	}//end lapsePriorDecision()
 }//end class

@@ -296,4 +296,66 @@ class VergunningaanvraagCreatedListenerTest extends TestCase {
 
 		$this->assertGreaterThanOrEqual(1, $this->adminNotices);
 	}//end testWithoutAnAccountNothingIsWritten()
+
+	/**
+	 * A second event for the same record is skipped with an info line, and the case is made once.
+	 *
+	 * @return void
+	 */
+	public function testASecondEventForTheSameRecordIsSkipped(): void {
+		$this->configureVerzoekSchema();
+		$this->dsoCaseService->expects($this->once())->method('createZaakFromVergunningaanvraag');
+		$lines = [];
+		$this->logger->method('info')->willReturnCallback(
+			static function (string $message) use (&$lines): void {
+				$lines[] = $message;
+			}
+		);
+
+		$this->listener->handle(event: new ObjectUpdatedEvent($this->verzoek(id: 'twice-1', status: 'mapped'), null));
+		$this->listener->handle(event: new ObjectUpdatedEvent($this->verzoek(id: 'twice-1', status: 'mapped'), null));
+
+		$this->assertSame(
+			[
+				'Dossiq DSO listener: zaak created for vergunningaanvraag',
+				'Dossiq DSO listener: skipping duplicate event for vergunningaanvraag twice-1',
+			],
+			$lines
+		);
+	}//end testASecondEventForTheSameRecordIsSkipped()
+
+	/**
+	 * A case that could not be made is logged as an error with the record and the reason.
+	 *
+	 * @return void
+	 */
+	public function testAFailedCaseIsLoggedAsAnError(): void {
+		$this->configureVerzoekSchema();
+		$this->dsoCaseService->method('createZaakFromVergunningaanvraag')->willThrowException(new \RuntimeException('register down'));
+		$this->logger->expects($this->never())->method('info');
+		$this->logger->expects($this->once())->method('error')->with(
+			'Dossiq DSO listener: failed to create zaak for vergunningaanvraag failing-1: register down',
+			['app' => 'dossiq', 'objectId' => 'failing-1', 'exception' => 'register down']
+		);
+
+		$this->listener->handle(event: new ObjectUpdatedEvent($this->verzoek(id: 'failing-1', status: 'mapped'), null));
+	}//end testAFailedCaseIsLoggedAsAnError()
+
+	/**
+	 * A record on the schema without an id is warned about and makes no case.
+	 *
+	 * @return void
+	 */
+	public function testARecordWithoutAnIdMakesNoCase(): void {
+		$this->configureVerzoekSchema();
+		$this->dsoCaseService->expects($this->never())->method('createZaakFromVergunningaanvraag');
+		$this->logger->expects($this->once())->method('warning')->with(
+			'Dossiq DSO listener: event for vergunningaanvraag schema but no object id found',
+			['app' => 'dossiq']
+		);
+		$entity = $this->createMock(\OCA\OpenRegister\Db\ObjectEntity::class);
+		$entity->method('jsonSerialize')->willReturn(['@self' => ['schema' => '60'], 'status' => 'mapped']);
+
+		$this->listener->handle(event: new ObjectCreatedEvent($entity));
+	}//end testARecordWithoutAnIdMakesNoCase()
 }//end class

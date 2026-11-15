@@ -107,6 +107,60 @@ reaches the records that already exist. A second run SHALL grant and revoke noth
 - **WHEN** the case is reconciled
 - **THEN** the assignee SHALL hold a read grant only
 
+### Requirement: A rule of the case reads the whole case (REQ-CRA-011)
+
+A private record is read by a slice of the people on the case, so a search under the caller's own
+access answers only that slice. A rule that holds for the case SHALL NOT read it that way. Such a
+rule (what still holds up the decision, which required pages nobody saw, which documents a rule may
+mark, whether a document already has a record) SHALL read every record of the case regardless of
+the caller's grants, and SHALL keep only the records that name that case. `CaseReviewerAccess::recordsOf()`
+is that read; `DocumentRelevance::forCase()` makes the same read for the reviews. A writer that
+looks up a record before it writes SHALL use this read, so it never makes a second record for a
+document whose record the caller cannot read. The write itself SHALL run under the caller's own
+access: a caller without an update grant is refused by OpenRegister. A route that reaches such a
+rule SHALL check access to the case first and SHALL NOT answer a record's row from this read; a
+person lists records through OpenRegister, under their own access.
+
+A writer that creates a declared record SHALL call `CaseReviewerAccess::reconcileAfterCreate()` in
+the same request. The record is stored by then, so a reconcile that cannot run SHALL be logged and
+answered as `failed`, SHALL NOT undo the write, and SHALL leave the record without grants.
+
+#### Scenario: A batch reviewer marks a document they were not given
+@e2e exclude Read and write over an object service double, covered by tests/Unit/Review/DocumentRelevanceTest.php testMarkingChangesTheReviewTheCallerCannotRead and tests/Unit/Controller/DocumentReviewControllerTest.php testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts; the live refusal is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with a review on document 9 that `p.bakker` holds no grant on
+- **WHEN** `p.bakker` marks document 9
+- **THEN** the write SHALL address the review that exists, and no second review SHALL be made for document 9
+
+#### Scenario: The decision waits for a page on a review the caller cannot read
+@e2e exclude Rule over an object service double, covered by tests/Unit/Review/PagesSeenTest.php testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead.
+- **GIVEN** an in-scope document with required page 7 unseen, on a review the caller holds no grant on
+- **WHEN** the caller asks whether every required page was seen
+- **THEN** the answer SHALL be the refusal `review-pages-unseen`
+
+#### Scenario: A reconcile that cannot run keeps the write
+@e2e exclude Failure path over a sharing double, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite.
+- **GIVEN** a writer that stored two records and a sharing service that throws
+- **WHEN** it calls `reconcileAfterCreate()`
+- **THEN** the answer SHALL be `{status: failed, refused: 2}` and no exception SHALL reach the writer
+
+#### Scenario: A count over records the caller cannot read
+@e2e exclude Count over an object service double, covered by tests/Unit/Woo/WooCollectionReportTest.php testExclusionsTheCallerCannotReadStillCountAndAreNotShown.
+- **GIVEN** a case with two exclusions the caller holds no grant on
+- **WHEN** the caller asks for the collection report
+- **THEN** the totals SHALL count both, and the report SHALL list no exclusion and split none per custodian
+
+#### Scenario: A gate that asks whether a record exists
+@e2e exclude Gate over an object service double, covered by tests/Unit/Woo/WooSearchPlansTest.php testAPlanTheCallerCannotReadStillCountsAsRecordedAndIsNotShown and testRecordingOverAPlanTheCallerCannotReadMakesNoSecondPlan.
+- **GIVEN** a recorded search plan the caller holds no grant on
+- **WHEN** the caller gathers documents, or records the plan again
+- **THEN** the gather SHALL NOT be refused for want of a plan, the plan SHALL NOT be shown to the caller, and no second plan SHALL be made
+
+#### Scenario: An act on one record by a person
+@e2e exclude Read over an object service double, covered by tests/Unit/Woo/WooCollectionQueryTest.php testAQueryTheCallerCannotReadIsNotRerun.
+- **GIVEN** a stored query the caller holds no grant on
+- **WHEN** the caller runs it again
+- **THEN** the answer SHALL be `query_not_found`: a re-run answers a search over the query's terms, so it reads under the caller's own access
+
 ### Requirement: A reader is somebody the register admits (REQ-CRA-009)
 
 OpenRegister keeps a record's schema as the ceiling of a grant, and the dossiq register is closed to
@@ -138,11 +192,83 @@ existing record without RBAC so a record the caller cannot see is never created 
 
 `POST /api/cases/reviewer-access/reconcile`, administrator only (fails closed), SHALL reconcile every
 case of every case type that declares reviewer access and answer the summed counts and the cases
-with a refusal; 503 with `unavailable` when OpenRegister has no per-object sharing.
+with a refusal; 503 with `unavailable` when OpenRegister has no per-object sharing. It runs the
+walk the upgrade runs (REQ-CRA-012), so it is the fallback for an upgrade that said it did not
+finish. Its `status` SHALL be `incomplete`, never `reconciled`, when a case is in `failed` or a
+case type in `unfinished`.
 
 #### Scenario: A non-administrator
 - **WHEN** a coordinator who is no administrator posts to the route
 - **THEN** the answer SHALL be 403 and nothing SHALL be reconciled
+
+### Requirement: Existing records are reconciled on upgrade (REQ-CRA-012)
+
+A record made before its schema became private, or before its case type changed who reads it,
+carries no grant or the wrong one, and the people on its case are refused it. An upgrade SHALL
+therefore reconcile every case of every case type that declares reviewer access, in the repair
+step `ReconcileCaseRecordGrants`, registered last in `post-migration`. No instance SHALL depend on
+an administrator calling a route after the upgrade.
+
+The walk (`CaseRecordGrantsBackfill::run()`) SHALL ask `CaseReviewerAccess::reconcile()` per case,
+SHALL read the cases a page at a time, and SHALL read every record of a case, however many. It
+SHALL be safe to run again: a record that already carries the right grants is left alone.
+
+The walk SHALL read the case types itself, a page at a time and regardless of the caller, and
+SHALL NOT use the shared case type listing: that listing answers one page and answers nothing
+when its read fails, and a walk over nothing would report every case reconciled. A case type read
+that fails SHALL stop the run as an error, said like every other unfinished run.
+
+OpenRegister writes a grant only for a signed-in owner, owning group member, administrator or a
+member of a group that holds the organisation's special right `grant_manage` on the record
+(decisions 222 and 234), and an upgrade has nobody signed in. The walk SHALL run as dossiq's
+background service account, inside `BackgroundServiceAccount::runAs()`, SHALL put the session back
+when it ends, and SHALL name that account in its answer. Before it walks, it SHALL give the group
+`dossiq-background-service` the special right `grant_manage` in every organisation, narrowed to
+dossiq's register and to the schemas the case types declare under `reviewerAccess.records`, read
+from the declarations rather than listed. The account SHALL NOT be given `read` on those schemas;
+it SHALL find each record by a rule read, and nothing read that way SHALL be answered to a caller.
+
+When no service account is usable (none chosen, unknown, disabled, or not in the group), the walk
+SHALL write nothing, SHALL answer `no-service-account`, and SHALL NOT borrow an administrator or
+any other account. When OpenRegister cannot give the special right, it SHALL write nothing and
+answer `no-grant-right`. The administrator route of REQ-CRA-004 walks as the administrator who
+calls it and gives no right.
+
+The step SHALL never throw and SHALL never report more than it did. A case that threw, a record
+OpenRegister refused, a case type with more cases than one run walks (50,000), no usable service
+account, no special right and no per-object sharing SHALL each be said as a warning in the upgrade
+output and as an error in the log, with the counts, up to twenty case ids and the route of
+REQ-CRA-004.
+
+#### Scenario: A review made by an earlier upgrade
+@e2e exclude Upgrade step over the shipped register with a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testTheRegisteredStepGivesAnExistingReviewItsGrantsWithNobodySignedIn; the upgrade on a running instance is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, a batch of `p.bakker` and a review in that batch with no owner and no grant
+- **WHEN** the instance is upgraded with nobody signed in
+- **THEN** `j.devries` and `p.bakker` SHALL read and update the review, and the output SHALL say the counts and the service account it ran as
+- **AND** nobody SHALL be signed in afterwards, and the service account SHALL still not read the review
+
+#### Scenario: No usable service account, while an administrator exists
+@e2e exclude Upgrade step over the shipped register, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testWithoutAUsableServiceAccountTheRegisteredStepRefusesToBorrowAnAdministrator.
+- **GIVEN** an enabled administrator `root`, and a background service account that is not chosen, disabled or not in its group
+- **WHEN** the instance is upgraded with nobody signed in
+- **THEN** no grant SHALL be written, nobody SHALL be signed in at any point, and the output SHALL be a warning that no administrator account is used instead
+
+#### Scenario: The upgrade runs twice
+@e2e exclude Idempotency over a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testRunningTheRegisteredStepTwiceChangesNothingTheSecondTime.
+- **WHEN** the step runs a second time
+- **THEN** it SHALL add and revoke no grant
+
+#### Scenario: A case that could not be reconciled
+@e2e exclude Failure path over a reconcile double, covered by tests/Unit/Service/Access/CaseRecordGrantsBackfillTest.php testACaseThatThrowsIsNamedAndTheWalkGoesOn and tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testAnUnfinishedRunIsAWarningAndAnErrorNeverASuccess.
+- **GIVEN** a case whose reconcile throws
+- **WHEN** the step runs
+- **THEN** the other cases SHALL still be reconciled, and the output SHALL be a warning that names the case, never a success
+
+#### Scenario: The case types could not be read
+@e2e exclude Failure path over a store double, covered by tests/Unit/Service/Access/CaseRecordGrantsBackfillTest.php testACaseTypeReadThatFailsIsNotARunOverNoCases and testACaseTypeBeyondTheFirstPageOfCaseTypesIsStillWalked.
+- **GIVEN** a store that fails the read of the case types
+- **WHEN** the step runs
+- **THEN** the output SHALL be a warning that the reconcile did not finish, never "0 cases reconciled", and the session SHALL be put back
 
 ### Requirement: A case with private records changes hands only through a supervisor (REQ-CRA-005)
 

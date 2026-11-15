@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -31,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
@@ -49,6 +51,7 @@ class WooReportSwitchesTest extends TestCase {
 		$config->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => ($stored[$key] ?? $default)
 		);
+		$config->method('hasKey')->willReturnCallback(static fn (string $app, string $key): bool => array_key_exists($key, $stored));
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturnCallback(static fn (string $gid): bool => isset($groups[$gid]));
 		$groupManager->method('isInGroup')->willReturnCallback(
@@ -114,7 +117,13 @@ class WooReportSwitchesTest extends TestCase {
 		$switches->assertSaveAllowed(data: [WooReportSwitches::THROUGHPUT => true, WooReportSwitches::READERS => 'woo-leiding']);
 
 		$stillOn = $this->switches(stored: [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding']);
-		foreach ([[$switches, [WooReportSwitches::THROUGHPUT => 'true']], [$stillOn, [WooReportSwitches::READERS => '']]] as [$subject, $data]) {
+		$refusals = [
+			[$switches, [WooReportSwitches::THROUGHPUT => 'true']],
+			[$stillOn, [WooReportSwitches::READERS => '']],
+			[$switches, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::THROUGHPUT] => 'true']],
+			[$stillOn, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::READERS] => '']],
+		];
+		foreach ($refusals as [$subject, $data]) {
 			try {
 				$subject->assertSaveAllowed(data: $data);
 				$this->fail('Refusal expected for '.json_encode($data));
@@ -124,4 +133,40 @@ class WooReportSwitchesTest extends TestCase {
 			}
 		}
 	}//end testASaveWithoutAnExistingReaderGroupIsRefused()
+
+	/**
+	 * A setting stored under its earlier key is read while the current key was never written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public function testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten(): void {
+		$legacy = ['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding', 'wooCollectionPartiesReport' => 'true'];
+		$switches = $this->switches(stored: $legacy);
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::THROUGHPUT));
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('woo-leiding', $switches->readerGroup());
+
+		// Written under the current key, even empty, the current key wins.
+		$switches = $this->switches(stored: $legacy + [WooReportSwitches::PARTIES => 'false', WooReportSwitches::READERS => '']);
+		$this->assertFalse($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('', $switches->readerGroup());
+	}//end testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten()
+
+	/**
+	 * A save posted under the earlier keys is carried onto the current ones; the current key wins.
+	 *
+	 * @return void
+	 */
+	public function testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes(): void {
+		$this->assertSame(
+			['wooCollectionPartiesReport' => 'true', WooReportSwitches::PARTIES => 'true'],
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: ['wooCollectionPartiesReport' => 'true'])
+		);
+		$this->assertSame(
+			[WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'],
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
+		);
+	}//end testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes()
 }//end class

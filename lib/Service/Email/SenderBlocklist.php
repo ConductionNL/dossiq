@@ -36,7 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
 use OCP\IAppConfig;
 
 /**
@@ -51,12 +52,7 @@ use OCP\IAppConfig;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class SenderBlocklist {
-
-	/**
-	 * The app-config key holding the block half.
-	 */
-	public const BLOCKLIST_KEY = 'email_intake_blocklist';
+class SenderBlocklist implements SenderBlocklistInterface {
 
 	/**
 	 * Constructor.
@@ -78,7 +74,7 @@ class SenderBlocklist {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function entries(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::BLOCKLIST_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::BLOCKLIST_KEY, '');
 		$parts = preg_split('/[\s,;]+/', strtolower(trim($raw)));
 		if ($parts === false) {
 			return [];
@@ -108,7 +104,7 @@ class SenderBlocklist {
 		}
 
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::BLOCKLIST_KEY,
 			implode(',', array_values(array_unique($cleaned)))
 		);

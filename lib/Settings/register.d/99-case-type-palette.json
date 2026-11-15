@@ -1,0 +1,44 @@
+{
+  "_note": "case-type-colour-icon (Ruben, 20 October 2026). A case type carries the colour and the icon the boards draw it in: its type pill on a case, its tag in a case list and its entry in the menu. The colour is a name from the same NL Design System hue list as statusType.colour, which gains teal for the boards' permit and subsidy tone, so a themed install repoints one token. The icon is a name from the app's registered icon set (src/icons.js), offered as a select that shows each icon. Both are optional: a case type without them draws as before. caseType moves to 1.26.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.26.0",
+        "properties": {
+          "colour": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "blue-light",
+              "green",
+              "green-light",
+              "orange",
+              "orange-light",
+              "red",
+              "red-light",
+              "purple",
+              "purple-light",
+              "teal",
+              "teal-light",
+              "grey",
+              "grey-light"
+            ],
+            "title": "Colour",
+            "description": "The hue this case type is drawn in, on its type pill and its tag in case lists. A name from the NL Design System palette, as a status colour is. Leave it empty and the case type draws neutral.",
+            "facetable": false
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon",
+            "maxLength": 64,
+            "description": "The icon this case type is drawn with, on its type pill and its entry in the menu. A name from the app's icon set. Leave it empty and the menu shows the filter icon."
+          }
+        }
+      }
+    }
+  }
+}

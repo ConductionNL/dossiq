@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
-use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -59,15 +59,15 @@ class MilestoneStallTimerListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService     $settingsService Names the case and milestone record schemas.
-	 * @param MilestoneStallTimer $timer           Arms and cancels the timer.
-	 * @param MilestoneStallActs  $acts            Reads a case and tells a stalled one.
+	 * @param SettingsServiceInterface     $settingsService Names the case and milestone record schemas.
+	 * @param MilestoneStallTimerInterface $timer           Arms and cancels the timer.
+	 * @param MilestoneStallActsInterface  $acts            Reads a case and tells a stalled one.
 	 * @param LoggerInterface     $logger          Logs a failed sync.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly MilestoneStallTimer $timer,
-		private readonly MilestoneStallActs $acts,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly MilestoneStallTimerInterface $timer,
+		private readonly MilestoneStallActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -89,7 +89,7 @@ class MilestoneStallTimerListener implements IEventListener {
 			}
 
 			$case = $this->caseToSync(event: $event, saved: $saved);
-			if ($case !== null && $this->timer->sync(case: $case) === MilestoneStallTimer::DUE) {
+			if ($case !== null && $this->timer->sync(case: $case) === MilestoneStallTimerInterface::DUE) {
 				$this->acts->notifyIfStalled(case: $case);
 			}
 		} catch (Throwable $e) {

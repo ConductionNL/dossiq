@@ -140,7 +140,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 		await page.goto(`${APP_URL}?caseType=${caseTypeId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const bar = page.getByTestId('case-type-field-filters')
+		const bar = page.getByTestId('related-field-filters')
 		await expect(bar).toBeVisible()
 		await expect(bar).toContainText(`${RUN_PREFIX}-bouwkosten`)
 		await expect(
@@ -154,7 +154,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 		await page.goto(APP_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByTestId('case-type-field-filters')).toHaveCount(0)
+		await expect(page.getByTestId('related-field-filters')).toHaveCount(0)
 	})
 })
 
@@ -206,7 +206,7 @@ test.describe('the case list filters on a case type own fields', () => {
 					'the field filter survived the case type it belongs to, so the list is narrowed by a field these cases do not have',
 			})
 			.not.toContain('_related')
-		await expect(page.getByTestId('case-type-field-filters')).toHaveCount(0)
+		await expect(page.getByTestId('related-field-filters')).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-search-via-or-unified-search/spec.md#scenario-a-refused-filter-is-not-an-empty-result
@@ -222,7 +222,7 @@ test.describe('the case list filters on a case type own fields', () => {
 		await dismissSupportDialog(page)
 
 		await expect(
-			page.getByTestId('case-type-field-filters-refusal'),
+			page.getByTestId('related-field-filters-refusal'),
 		).toBeVisible()
 	})
 })

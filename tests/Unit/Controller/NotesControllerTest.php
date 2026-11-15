@@ -28,9 +28,11 @@ use OCA\Dossiq\Controller\NotesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
+use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -39,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for NotesController.
  *
  * @covers \OCA\Dossiq\Controller\NotesController
+ * @uses \OCA\Dossiq\Service\Notes\MentionedNote
  */
 class NotesControllerTest extends TestCase {
 
@@ -73,6 +76,11 @@ class NotesControllerTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * @var IUserManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IUserManager $userManager;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var NotesController
@@ -100,8 +108,9 @@ class NotesControllerTest extends TestCase {
 			->getMock();
 		$this->caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['hasCaseMutationAccess'])
+			->onlyMethods(['hasCaseMutationAccess', 'hasCaseReadAccess'])
 			->getMock();
+		$this->userManager = $this->createMock(IUserManager::class);
 
 		$this->controller = new NotesController(
 			request: $this->request,
@@ -110,8 +119,19 @@ class NotesControllerTest extends TestCase {
 			logger: $this->logger,
 			notePush: $this->notePush,
 			caseAccessGuard: $this->caseAccessGuard,
+			userManager: $this->userManager,
 		);
 	}//end setUp()
+
+	/**
+	 * Let the caller read the case and make every mentioned user exist.
+	 *
+	 * @return void
+	 */
+	private function withReadableCaseAndKnownUsers(): void {
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+	}//end withReadableCaseAndKnownUsers()
 
 	/**
 	 * Build a mock authenticated user.
@@ -188,6 +208,7 @@ class NotesControllerTest extends TestCase {
 	 */
 	public function testMentionSuccessDelegatesAndReturns200(): void {
 		$this->userSession->method('getUser')->willReturn($this->mockUser(uid: 'alice', displayName: 'Alice'));
+		$this->withReadableCaseAndKnownUsers();
 		$this->withBody(
 			[
 				'objectId' => 'case-1',
@@ -203,10 +224,7 @@ class NotesControllerTest extends TestCase {
 			->with(
 				actorUserId: 'alice',
 				actorDisplayName: 'Alice',
-				objectId: 'case-1',
-				register: 'dossiq',
-				schema: 'case',
-				noteId: 'note-9',
+				note: $this->equalTo(new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9')),
 				mentionedUserIds: ['bob', 'carol'],
 			)
 			->willReturn(2);
@@ -225,6 +243,7 @@ class NotesControllerTest extends TestCase {
 	 */
 	public function testMentionServiceExceptionMapsTo500(): void {
 		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withReadableCaseAndKnownUsers();
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
 
 		$this->service->method('notifyMention')->willThrowException(new \RuntimeException('boom'));
@@ -233,6 +252,89 @@ class NotesControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertArrayHasKey('error', $response->getData());
 	}//end testMentionServiceExceptionMapsTo500()
+
+	/**
+	 * A caller who cannot read the case gets a 403 and nobody is notified.
+	 *
+	 * @return void
+	 */
+	public function testAMentionOnACaseTheCallerCannotReadIsRefused(): void {
+		$user = $this->mockUser('outsider', 'Outsider');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseReadAccess')
+			->with(caseId: 'case-1', user: $user)
+			->willReturn(false);
+		$this->service->expects($this->never())->method('notifyMention');
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testAMentionOnACaseTheCallerCannotReadIsRefused()
+
+	/**
+	 * Mentioned user ids with no account behind them are not notified.
+	 *
+	 * @return void
+	 */
+	public function testMentionSkipsUsersThatDoNotExist(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'ghost', 'carol']]);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->userManager->method('get')
+			->willReturnCallback(fn (string $uid): ?IUser => ($uid === 'ghost' ? null : $this->mockUser($uid, $uid)));
+		$this->service->expects($this->once())
+			->method('notifyMention')
+			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
+			->willReturn(2);
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testMentionSkipsUsersThatDoNotExist()
+
+	/**
+	 * Mentioned users who may not read the case are not notified.
+	 *
+	 * @return void
+	 */
+	public function testMentionSkipsUsersWhoCannotReadTheCase(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'outsider', 'carol']]);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->caseAccessGuard->method('hasCaseReadAccess')
+			->willReturnCallback(static fn (string $caseId, IUser $user): bool => $caseId === 'case-1' && $user->getUID() !== 'outsider');
+		$this->service->expects($this->once())
+			->method('notifyMention')
+			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
+			->willReturn(2);
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['notified' => 2], $response->getData());
+	}//end testMentionSkipsUsersWhoCannotReadTheCase()
+
+	/**
+	 * When no mentioned user exists, nobody is notified and the answer says so.
+	 *
+	 * @return void
+	 */
+	public function testMentionOfOnlyUnknownUsersNotifiesNobody(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['ghost']]);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->userManager->method('get')->willReturn(null);
+		$this->service->expects($this->never())->method('notifyMention');
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['notified' => 0], $response->getData());
+	}//end testMentionOfOnlyUnknownUsersNotifiesNobody()
 	/**
 	 * A caller with no mutation access to the case cannot send its notes.
 	 *
@@ -288,4 +390,95 @@ class NotesControllerTest extends TestCase {
 		// the caller a failure that reads as though the case now carries it.
 		$this->assertSame('lost', $response->getData()['caseRecord']);
 	}//end testACallerWithMutationAccessGetsTheOutcome()
+
+	/**
+	 * A push without a session is a 401 and asks nothing of the guard.
+	 *
+	 * @return void
+	 */
+	public function testAPushWithoutASessionIsUnauthorised(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->caseAccessGuard->expects($this->never())->method('hasCaseMutationAccess');
+		$this->notePush->expects($this->never())->method('push');
+
+		$response = $this->controller->push('case-1');
+
+		$this->assertSame(401, $response->getStatus());
+		$this->assertSame(['error' => 'Not authenticated'], $response->getData());
+	}//end testAPushWithoutASessionIsUnauthorised()
+
+	/**
+	 * A blank case id is a 400 before the guard is asked.
+	 *
+	 * @return void
+	 */
+	public function testAPushWithoutACaseIdIsABadRequest(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('handler', 'Handler'));
+		$this->caseAccessGuard->expects($this->never())->method('hasCaseMutationAccess');
+
+		$response = $this->controller->push('  ');
+
+		$this->assertSame(400, $response->getStatus());
+		$this->assertSame(['error' => 'A case id is required'], $response->getData());
+	}//end testAPushWithoutACaseIdIsABadRequest()
+
+	/**
+	 * An allowed push without a note is a 400 and pushes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAllowedPushWithoutANoteIsABadRequest(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('handler', 'Handler'));
+		$this->caseAccessGuard->expects($this->once())->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturn(['note' => []]);
+		$this->notePush->expects($this->never())->method('push');
+
+		$response = $this->controller->push('my-own-case');
+
+		$this->assertSame(400, $response->getStatus());
+		$this->assertSame(['error' => 'A note is required'], $response->getData());
+	}//end testAnAllowedPushWithoutANoteIsABadRequest()
+
+	/**
+	 * A push that throws is a logged 500 that names no internals.
+	 *
+	 * @return void
+	 */
+	public function testAFailingPushIsALoggedServerError(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('handler', 'Handler'));
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturn(['note' => ['id' => 1]]);
+		$this->notePush->method('push')->willThrowException(new \RuntimeException('wire cut'));
+		$this->logger->expects($this->once())->method('error')->with(
+			'NotesController: a note push failed',
+			['caseId' => 'my-own-case', 'exception' => 'wire cut']
+		);
+
+		$response = $this->controller->push('my-own-case');
+
+		$this->assertSame(500, $response->getStatus());
+		$this->assertSame(['error' => 'The note could not be sent'], $response->getData());
+	}//end testAFailingPushIsALoggedServerError()
+
+	/**
+	 * A failing mention dispatch is a logged 500 carrying the message.
+	 *
+	 * @return void
+	 */
+	public function testAFailingMentionDispatchIsALoggedServerError(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('alice', 'Alice'));
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->request->method('getParams')->willReturn(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
+		$this->service->method('notifyMention')->willThrowException(new \RuntimeException('bus down'));
+		$this->logger->expects($this->once())->method('error')->with(
+			'Failed to dispatch note mention notifications: bus down',
+			['app' => 'dossiq']
+		);
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(500, $response->getStatus());
+		$this->assertSame(['error' => 'Could not dispatch mention notifications: bus down'], $response->getData());
+	}//end testAFailingMentionDispatchIsALoggedServerError()
 }//end class

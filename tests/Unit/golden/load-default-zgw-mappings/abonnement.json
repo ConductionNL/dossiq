@@ -1,0 +1,24 @@
+{
+    "zgwResource": "abonnement",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "callbackUrl": "{{ callbackUrl }}",
+        "auth": "{{ auth }}",
+        "kanalen": "{{ kanalen }}"
+    },
+    "cast": {
+        "kanalen": "jsonToArray"
+    },
+    "reverseMapping": {
+        "callbackUrl": "{{ callbackUrl }}",
+        "auth": "{{ auth }}",
+        "kanalen": "{{ kanalen|json_encode|raw }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": []
+}

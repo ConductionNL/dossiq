@@ -25,6 +25,9 @@ const manifest = readJson('src', 'manifest.json')
 const en = readJson('l10n', 'en.json').translations
 const nl = readJson('l10n', 'nl.json').translations
 
+// Titles that are the same word in Dutch, so an identical entry is a translation.
+const SAME_IN_DUTCH = ['Dashboard']
+
 const steps = (manifest.walkthrough?.tours ?? []).flatMap((tour) =>
 	tour.steps.map((step, index) => ({ tour: tour.id, number: index + 1, ...step })),
 )
@@ -45,7 +48,9 @@ describe('tour step titles', () => {
 		(title) => {
 			expect(en[title]).toBe(title)
 			expect(nl[title]).toBeTruthy()
-			expect(nl[title]).not.toBe(title)
+			if (!SAME_IN_DUTCH.includes(title)) {
+				expect(nl[title]).not.toBe(title)
+			}
 		},
 	)
 })

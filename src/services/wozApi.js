@@ -38,7 +38,7 @@ const BASE_URL = generateUrl('/apps/dossiq/api/external/woz')
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozValue(postcode, huisnummer, options = {}) {
 	const params = { postcode, huisnummer }
@@ -61,7 +61,7 @@ export async function lookupWozValue(postcode, huisnummer, options = {}) {
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
 	const response = await axios.get(`${BASE_URL}/value`, {
@@ -77,7 +77,7 @@ export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
  * @return {Promise<{lookupStatus: string, wozObject: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozObject(wozobjectnummer) {
 	const response = await axios.get(
