@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
+use OCA\Dossiq\BulkAction\Support\DeclaresBulkAction;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
@@ -66,6 +67,7 @@ use Throwable;
 class MoveCaseTypeVersionAction implements BulkActionInterface {
 
 	use ReadsCaseObject;
+	use DeclaresBulkAction;
 
 	/**
 	 * The action id every caller names.
@@ -91,17 +93,6 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
-
-	/**
-	 * The action id.
-	 *
-	 * @return string The id.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	public function getId(): string {
-		return self::ID;
-	}//end getId()
 
 	/**
 	 * The label.
@@ -173,9 +164,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 			throw new InvalidArgumentException('target is required: name the case type version to move onto');
 		}
 
-		if (trim((string)($parameters['reason'] ?? '')) === '') {
-			throw new InvalidArgumentException('reason is required');
-		}
+		$this->requireReason(parameters: $parameters);
 	}//end validateParameters()
 
 	/**

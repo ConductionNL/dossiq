@@ -36,6 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
+use OCA\Dossiq\Controller\Support\AnswersUnassignedCaller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
@@ -53,6 +55,9 @@ use OCP\IUserSession;
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 class CaseAccessLinkController extends Controller {
+	use AnswersUnassignedCaller;
+	use AnswersFlaggedRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -86,14 +91,11 @@ class CaseAccessLinkController extends Controller {
 	public function index(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
 		return new JSONResponse(['results' => $this->linkShares->listForCase(caseId: $caseId)]);
@@ -211,7 +213,7 @@ class CaseAccessLinkController extends Controller {
 	private function guard(string $linkId): JSONResponse|string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
@@ -222,10 +224,7 @@ class CaseAccessLinkController extends Controller {
 		if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
 			|| $this->linkShares->belongsToCase((int)$linkId, $caseId) === false
 		) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
 		return $user->getUID();

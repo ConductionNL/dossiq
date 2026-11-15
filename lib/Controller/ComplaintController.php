@@ -127,17 +127,10 @@ class ComplaintController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function show(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$complaint = $this->mutationGate()->readable(id: $id);
+		if ($complaint instanceof JSONResponse) {
+			return $complaint;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeAccess(complaint: $complaint, userId: $userId);
 
 		return new JSONResponse($complaint);
 	}//end show()

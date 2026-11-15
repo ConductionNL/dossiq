@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCP\AppFramework\Controller;
@@ -52,6 +53,8 @@ use OCP\IUserSession;
  * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class CaseTermFollowController extends Controller {
+	use AnswersSignedOutCallers;
+
 	/**
 	 * The status each refusal answers with.
 	 *
@@ -163,10 +166,7 @@ class CaseTermFollowController extends Controller {
 	private function requireHandler(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {

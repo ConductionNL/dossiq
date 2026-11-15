@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\SerialisedRows;
 use RuntimeException;
 use Throwable;
 
@@ -227,17 +228,6 @@ class CaseFlowSeedIndex {
 			return [];
 		}
 
-		$out = [];
-		foreach ($value as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
+		return (new SerialisedRows())->arrays(rows: $value);
 	}//end normalise()
 }//end class

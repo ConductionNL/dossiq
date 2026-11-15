@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
 use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DispositionServiceInterface;
@@ -111,17 +112,10 @@ class ComplaintDispositionController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function submitDisposition(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		try {
 			$data = $this->accessGuard->parseBody();
@@ -189,17 +183,10 @@ class ComplaintDispositionController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function generateLetter(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		$disposition = $this->dispositionService->getDispositionForComplaint($id);
 		if ($disposition === null) {
@@ -210,4 +197,13 @@ class ComplaintDispositionController extends Controller {
 		$result = $this->dispositionService->generateResponseLetter($id, $dispositionId);
 		return new JSONResponse($result);
 	}//end generateLetter()
+
+	/**
+	 * The gate that refuses a write to a complaint the caller may not change.
+	 *
+	 * @return ComplaintMutationGate
+	 */
+	private function mutationGate(): ComplaintMutationGate {
+		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);
+	}//end mutationGate()
 }//end class

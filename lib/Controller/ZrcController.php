@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersRuleRefusals;
 use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Kernel\AppIdentity;
@@ -66,6 +67,7 @@ use OCP\IRequest;
  */
 class ZrcController extends ZgwController {
 	use MapsZgwRows;
+	use AnswersRuleRefusals;
 	use GuardsZgwRequests;
 
 	/**
@@ -212,11 +214,9 @@ class ZrcController extends ZgwController {
 	private function createValidated(string $resource, array $mappingConfig): JSONResponse {
 		$originalBody = $this->zgwService->getRequestBody($this->request);
 		$ruleResult = $this->validateCreate(resource: $resource, body: $originalBody, mappingConfig: $mappingConfig);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->createFromBody(

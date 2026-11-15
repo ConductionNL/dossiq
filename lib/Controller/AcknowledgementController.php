@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
@@ -62,6 +63,7 @@ use Throwable;
  * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementController extends Controller {
+	use AnswersSignedOutCallers;
 
 	/**
 	 * Constructor.
@@ -196,16 +198,4 @@ class AcknowledgementController extends Controller {
 			Http::STATUS_INTERNAL_SERVER_ERROR
 		);
 	}//end recordFailed()
-
-	/**
-	 * The 401 for a caller without a session.
-	 *
-	 * @return JSONResponse
-	 */
-	private function notSignedIn(): JSONResponse {
-		return new JSONResponse(
-			['error' => $this->l10n->t('You are not signed in.')],
-			Http::STATUS_UNAUTHORIZED
-		);
-	}//end notSignedIn()
 }//end class
