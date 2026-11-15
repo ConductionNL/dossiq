@@ -525,7 +525,10 @@ class TermijnService implements TermijnServiceInterface {
 		$updated = $this->updateTermijnInstance(termInstanceId: $termInstanceId, patch: $patch);
 
 		if ($updated !== null) {
-			$this->recordCompletion(termInstanceId: $termInstanceId, voltooiDatum: $voltooiDatum, documentLink: $documentLink, rationale: $rationale);
+			$this->recordCompletion(
+				termInstanceId: $termInstanceId,
+				completion: ['voltooiDatum' => $voltooiDatum, 'documentLink' => $documentLink, 'rationale' => $rationale]
+			);
 		}
 
 		return $updated;
@@ -534,15 +537,14 @@ class TermijnService implements TermijnServiceInterface {
 	/**
 	 * Record the completion event and cancel every open timer of the instance.
 	 *
-	 * @param string            $termInstanceId Instance id.
-	 * @param DateTimeImmutable $voltooiDatum   When completed.
-	 * @param string            $documentLink   Optional document ref.
-	 * @param string            $rationale      Why the term ended.
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
 	 *
 	 * @return void
 	 */
-	private function recordCompletion(string $termInstanceId, DateTimeImmutable $voltooiDatum, string $documentLink, string $rationale): void {
-		$why = $this->completionReason(rationale: $rationale);
+	private function recordCompletion(string $termInstanceId, array $completion): void {
+		$why = $this->completionReason(rationale: $completion['rationale']);
 
 		$this->recordEvent(
 			termInstanceId: $termInstanceId,
@@ -556,8 +558,8 @@ class TermijnService implements TermijnServiceInterface {
 			// caller reads exactly as it did.
 			rationale: $why,
 			daysImpact: 0,
-			moment: $voltooiDatum,
-			documentLink: $documentLink,
+			moment: $completion['voltooiDatum'],
+			documentLink: $completion['documentLink'],
 		);
 
 		// Completion cancels every open timer of the instance, in the
