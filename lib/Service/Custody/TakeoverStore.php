@@ -36,7 +36,6 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -46,6 +45,7 @@ use Throwable;
  */
 class TakeoverStore {
 
+	use ReadsDossierRows;
 	use SearchesObjects;
 
 	/**
@@ -158,41 +158,6 @@ class TakeoverStore {
 			previous: $previous,
 		);
 	}//end unrecorded()
-
-	/**
-	 * The uuid of a stored row, however the register spelled it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or an empty string.
-	 */
-	public function uuidOf(array $row): string {
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-	}//end uuidOf()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	public function context(): array {
-		return $this->dossierRegister->context();
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	public function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 
 	/**
 	 * The stored case, or a refusal.
