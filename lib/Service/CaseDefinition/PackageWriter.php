@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;
@@ -558,7 +559,9 @@ class PackageWriter {
 			return false;
 		}
 
-		return $this->holds(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $packageId);
+		return $this->holds(
+			address: new StoredObjectAddress(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $packageId)
+		);
 	}//end holdsRow()
 
 	/**

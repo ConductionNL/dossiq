@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use Psr\Log\LoggerInterface;
 use ZipArchive;
 
@@ -217,7 +218,9 @@ class WorkflowDeployer {
 		}
 
 		$packageId = $this->existingId(row: $template);
-		$conflict = ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true);
+		$conflict = ($packageId !== '' && $this->holds(
+			address: new StoredObjectAddress(objectService: $objectService, register: $register, schema: $schema, id: $packageId)
+		) === true);
 
 		if ($conflict === true && $target->strategy === self::STRATEGY_SKIP) {
 			return ['kind' => 'skipped', 'id' => $packageId, 'message' => ''];
