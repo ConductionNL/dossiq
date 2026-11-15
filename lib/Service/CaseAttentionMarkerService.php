@@ -221,8 +221,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 				$problems,
 				$this->problemsWith(
 					declaration: $declaration,
-					named: $this->name(id: $id, index: (int)$index),
-					duplicate: ($id !== '' && in_array($id, $seen, true) === true)
+					naming: ['named' => $this->name(id: $id, index: (int)$index), 'duplicate' => ($id !== '' && in_array($id, $seen, true) === true)]
 				)
 			);
 
@@ -257,20 +256,20 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 	 * something is wrong sends an administrator through the whole list looking
 	 * for the row it meant.
 	 *
-	 * @param array<string, mixed> $declaration The declared marker.
-	 * @param string               $named       What to call it in a sentence.
-	 * @param boolean              $duplicate   Whether its id is already taken.
+	 * @param array<string, mixed>                  $declaration The declared marker.
+	 * @param array{named: string, duplicate: bool} $naming      What to call it in a sentence, and whether its id is already taken.
 	 *
 	 * @return array<int, string> The reasons, empty when the declaration is whole.
 	 */
-	private function problemsWith(array $declaration, string $named, bool $duplicate): array {
+	private function problemsWith(array $declaration, array $naming): array {
+		$named = $naming['named'];
 		$problems = [];
 
 		if (trim((string)($declaration['id'] ?? '')) === '') {
 			$problems[] = sprintf('The %s has no id.', $named);
 		}
 
-		if ($duplicate === true) {
+		if ($naming['duplicate'] === true) {
 			$problems[] = sprintf('The %s is declared twice.', $named);
 		}
 

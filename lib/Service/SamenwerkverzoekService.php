@@ -166,6 +166,18 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
 	public function respondToSamenwerking(string $samenwerkId, bool $accept, string $advies): array {
+		return $this->respond(samenwerkId: $samenwerkId, response: ['accept' => $accept, 'advies' => $advies]);
+	}//end respondToSamenwerking()
+
+	/**
+	 * Write the response onto the pending samenwerkverzoek and announce it.
+	 *
+	 * @param string                              $samenwerkId The samenwerkverzoek id.
+	 * @param array{accept: bool, advies: string} $response    Whether the authority accepts, and its advice.
+	 *
+	 * @return array<string, mixed> The stored samenwerkverzoek.
+	 */
+	private function respond(string $samenwerkId, array $response): array {
 		$objectService = $this->getObjectService();
 
 		$register = $this->configString(key: 'register', default: '');
@@ -179,13 +191,13 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		);
 
 		$request = $this->requirePending(request: $request, samenwerkId: $samenwerkId);
-		$request = $this->withResponse(request: $request, response: ['accept' => $accept, 'advies' => $advies]);
+		$request = $this->withResponse(request: $request, response: $response);
 
 		return $this->saveResponse(
 			store: ['objectService' => $objectService, 'register' => $register, 'schema' => $requestSchema, 'samenwerkId' => $samenwerkId],
 			request: $request
 		);
-	}//end respondToSamenwerking()
+	}//end respond()
 
 	/**
 	 * Store the answered samenwerkverzoek and log the response.
