@@ -224,12 +224,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 		}
 
-		return $this->storeTable(
-			objectService: $objectService,
-			table: $table,
-			marker: $marker,
-			outcome: $outcome
-		);
+		return $this->storeTable(objectService: $objectService, reconciled: ($reconciled + ['marker' => $marker]));
 
 	}//end migrateOne()
 
@@ -321,20 +316,15 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	 * Save the projected table.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $table         The projected table.
-	 * @param string               $marker        The provenance marker.
-	 * @param string               $outcome       `created` or `updated`.
+	 * @param array<string, mixed> $reconciled    The `outcome` (`created` or `updated`), the projected `table`
+	 *                                            and the provenance `marker`.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function storeTable(
-		object $objectService,
-		array $table,
-		string $marker,
-		string $outcome,
-	): array {
+	private function storeTable(object $objectService, array $reconciled): array {
+		['outcome' => $outcome, 'table' => $table, 'marker' => $marker] = $reconciled;
 		try {
 			$objectService->saveObject(object: $table, register: StoredDecisionTables::REGISTER, schema: StoredDecisionTables::SCHEMA);
 		} catch (Throwable $e) {
