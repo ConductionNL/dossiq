@@ -44,7 +44,6 @@ use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Support\WritesRecordOrRefuses;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -56,9 +55,6 @@ use Throwable;
 class IncidentStore implements IncidentStoreInterface {
 
 	use SearchesObjects;
-	use WritesRecordOrRefuses {
-		writeOrRefuse as private write;
-	}
 
 	/**
 	 * The refusal when the incident cannot be found.
@@ -158,7 +154,7 @@ class IncidentStore implements IncidentStoreInterface {
 		}
 
 		return $this->write(
-			record: [
+			incident: [
 				'case' => $report['case'],
 				'eventDate' => $happened->format('c'),
 				'recordedAt' => (new DateTimeImmutable())->format('c'),
@@ -335,7 +331,7 @@ class IncidentStore implements IncidentStoreInterface {
 		);
 
 		return $this->write(
-			record: array_merge(
+			incident: array_merge(
 				$incident,
 				$this->record->handoverChange(incident: $incident, assignee: $assignee),
 			),
@@ -369,7 +365,7 @@ class IncidentStore implements IncidentStoreInterface {
 		$incident['state'] = 'afgehandeld';
 		$incident['outcome'] = $outcome;
 
-		return $this->write(record: $incident, uuid: $this->uuidOf(row: $incident));
+		return $this->write(incident: $incident, uuid: $this->uuidOf(row: $incident));
 	}//end settle()
 
 	/**
@@ -452,6 +448,32 @@ class IncidentStore implements IncidentStoreInterface {
 			return [];
 		}
 	}//end rows()
+
+	/**
+	 * Store one incident, new or existing.
+	 *
+	 * @param array<string, mixed> $incident The incident.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed> The stored incident.
+	 *
+	 * @throws RefusedException When it could not be stored.
+	 */
+	private function write(array $incident, ?string $uuid): array {
+		unset($incident['@self'], $incident['id'], $incident['uuid']);
+
+		try {
+			$saved = $this->store(record: $incident, uuid: $uuid);
+		} catch (Throwable $e) {
+			throw $this->unrecorded(previous: $e);
+		}
+
+		if ($saved === null) {
+			throw $this->unrecorded(previous: null);
+		}
+
+		return $saved;
+	}//end write()
 
 	/**
 	 * Save the incident in the register.

@@ -35,7 +35,6 @@ namespace OCA\Dossiq\Service\Custody;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Support\WritesRecordOrRefuses;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,7 +47,6 @@ class TakeoverStore {
 
 	use ReadsDossierRows;
 	use SearchesObjects;
-	use WritesRecordOrRefuses;
 
 	/**
 	 * The register and the configured schemas, read and refused the one shared way.
@@ -108,7 +106,19 @@ class TakeoverStore {
 	 * @throws RefusedException When it could not be stored.
 	 */
 	public function write(array $record, ?string $uuid): array {
-		return $this->writeOrRefuse(record: $record, uuid: $uuid);
+		unset($record['@self'], $record['id'], $record['uuid']);
+
+		try {
+			$saved = $this->store(record: $record, uuid: $uuid);
+		} catch (Throwable $e) {
+			throw $this->unrecorded(previous: $e);
+		}
+
+		if ($saved === null) {
+			throw $this->unrecorded(previous: null);
+		}
+
+		return $saved;
 	}//end write()
 
 	/**
