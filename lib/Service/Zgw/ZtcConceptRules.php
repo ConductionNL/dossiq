@@ -196,6 +196,19 @@ class ZtcConceptRules {
 			return $body;
 		}
 
+		$body['concept'] = $this->storedDraft(existingObject: $existingObject);
+
+		return $body;
+	}//end preserveConcept()
+
+	/**
+	 * The concept value the stored object carries, its string and integer spellings read as booleans.
+	 *
+	 * @param array $existingObject The existing object data
+	 *
+	 * @return mixed True or false when it is spelled as one, else the value as stored
+	 */
+	private function storedDraft(array $existingObject): mixed {
 		$existingDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
 		if ($existingDraft === 'true' || $existingDraft === '1' || $existingDraft === 1) {
 			$existingDraft = true;
@@ -203,10 +216,8 @@ class ZtcConceptRules {
 			$existingDraft = false;
 		}
 
-		$body['concept'] = $existingDraft;
-
-		return $body;
-	}//end preserveConcept()
+		return $existingDraft;
+	}//end storedDraft()
 
 	/**
 	 * Check if a direct concept resource is published (ztc-009).
