@@ -144,7 +144,7 @@ class StoppingRules implements StoppingRulesInterface {
 
 		$uuid = $this->existingUuid(caseId: $caseId);
 
-		$rule = $this->ruleOf(caseId: $caseId, targetRecall: $targetRecall, confidence: $confidence, userId: $userId);
+		$rule = $this->ruleOf(declared: ['case' => $caseId, 'targetRecall' => $targetRecall, 'confidence' => $confidence, 'declaredBy' => $userId]);
 
 		$saved = $this->save(rule: $rule, uuid: $uuid);
 		$this->reconcile(caseId: $caseId);
@@ -192,21 +192,14 @@ class StoppingRules implements StoppingRulesInterface {
 	/**
 	 * The stopping rule as declared now.
 	 *
-	 * @param string $caseId       The case uuid.
-	 * @param float  $targetRecall The target recall.
-	 * @param float  $confidence   The confidence.
-	 * @param string $userId       Who declares it.
+	 * @param array{case: string, targetRecall: float, confidence: float, declaredBy: string} $declared The case uuid, the target
+	 *                                                                                           recall, the confidence and
+	 *                                                                                           who declares it.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function ruleOf(string $caseId, float $targetRecall, float $confidence, string $userId): array {
-		return [
-			'case' => $caseId,
-			'targetRecall' => $targetRecall,
-			'confidence' => $confidence,
-			'declaredBy' => $userId,
-			'declaredAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-		];
+	private function ruleOf(array $declared): array {
+		return $declared + ['declaredAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)];
 	}//end ruleOf()
 
 	/**

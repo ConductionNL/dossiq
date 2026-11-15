@@ -266,7 +266,9 @@ class MilestoneService implements MilestoneServiceInterface {
 	): array {
 		[$objectService, $register, $schema] = $this->milestoneRecordStore();
 
-		$recordData = $this->milestoneRecord(caseId: $caseId, definitionId: $definitionId, userId: $userId, trigger: $trigger);
+		$recordData = $this->milestoneRecord(
+			reached: ['caseId' => $caseId, 'definitionId' => $definitionId, 'userId' => $userId, 'trigger' => $trigger]
+		);
 
 		$record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
 
@@ -306,22 +308,22 @@ class MilestoneService implements MilestoneServiceInterface {
 	/**
 	 * The milestone record to write, stamped now.
 	 *
-	 * @param string $caseId The case UUID
-	 * @param string $definitionId The milestone definition UUID
-	 * @param string $userId The user marking the milestone
-	 * @param string $trigger How it was triggered (manual, workflow, auto)
+	 * @param array{caseId: string, definitionId: string, userId: string, trigger: string} $reached The case UUID, the milestone
+	 *                                                                                       definition UUID, the user marking
+	 *                                                                                       it and how it was triggered
+	 *                                                                                       (manual, workflow, auto).
 	 *
 	 * @return array<string, string> The record data
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function milestoneRecord(string $caseId, string $definitionId, string $userId, string $trigger): array {
+	private function milestoneRecord(array $reached): array {
 		return [
-			'case' => $caseId,
-			'milestoneDefinition' => $definitionId,
+			'case' => $reached['caseId'],
+			'milestoneDefinition' => $reached['definitionId'],
 			'reachedAt' => date('Y-m-d\TH:i:s'),
-			'reachedBy' => $userId,
-			'trigger' => $trigger,
+			'reachedBy' => $reached['userId'],
+			'trigger' => $reached['trigger'],
 		];
 	}//end milestoneRecord()
 

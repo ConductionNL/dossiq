@@ -183,7 +183,7 @@ class QuickActionService implements QuickActionServiceInterface {
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
 		$deadline = $this->klachtDeadline();
-		$record = $this->klachtRecord(caseId: $caseId, summary: $summary, burgerId: $burgerId, deadline: $deadline);
+		$record = $this->klachtRecord(klacht: ['caseId' => $caseId, 'summary' => $summary, 'burgerId' => $burgerId, 'deadline' => $deadline]);
 
 		try {
 			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
@@ -236,24 +236,24 @@ class QuickActionService implements QuickActionServiceInterface {
 	/**
 	 * The klacht case record to write.
 	 *
-	 * @param string $caseId The case being complained about (may be empty).
-	 * @param string $summary The klacht text.
-	 * @param string $burgerId The identified burger reference.
-	 * @param string $deadline The decision deadline.
+	 * @param array{caseId: string, summary: string, burgerId: string, deadline: string} $klacht The case being complained about
+	 *                                                                                      (may be empty), the klacht text, the
+	 *                                                                                      identified burger reference and the
+	 *                                                                                      decision deadline.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
-	private function klachtRecord(string $caseId, string $summary, string $burgerId, string $deadline): array {
+	private function klachtRecord(array $klacht): array {
 		return $this->caseTypeFields(reference: self::KLACHT_ZAAKTYPE) + [
-			'initiator' => $burgerId,
+			'initiator' => $klacht['burgerId'],
 			'sourceChannel' => 'kcc_telefoon',
 			'startDate' => $this->dates->todayAsCalendarDate(),
-			'deadline' => $deadline,
+			'deadline' => $klacht['deadline'],
 			'title' => 'Klacht (Awb 9:1)',
-			'description' => $summary,
-			'gerelateerdeZaak' => $caseId,
+			'description' => $klacht['summary'],
+			'gerelateerdeZaak' => $klacht['caseId'],
 		];
 	}//end klachtRecord()
 
