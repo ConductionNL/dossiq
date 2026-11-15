@@ -114,9 +114,9 @@ class CaseConversationService implements CaseConversationServiceInterface {
 			return ['ok' => false, 'reason' => self::REASON_NO_TALK];
 		}
 
-		$record = $this->conversationRecord(name: $name, room: $room, startedBy: $startedBy);
+		$record = $this->conversationRecord(room: $room, start: ['subject' => $name, 'startedBy' => $startedBy]);
 
-		$this->appendConversation(caseId: $caseId, case: $case, record: $record);
+		$this->appendConversation(onCase: ['caseId' => $caseId, 'case' => $case], record: $record);
 
 		return ['ok' => true, 'conversation' => $record];
 	}//end startConversation()
@@ -124,22 +124,22 @@ class CaseConversationService implements CaseConversationServiceInterface {
 	/**
 	 * The record of a conversation just started.
 	 *
-	 * @param string               $name      The room name, which is the subject.
-	 * @param array<string, mixed> $room      The Talk room, with its id and url.
-	 * @param string|null          $startedBy User id that started it.
+	 * @param array<string, mixed>                          $room  The Talk room, with its id and url.
+	 * @param array{subject: string, startedBy: string|null} $start The room name, which is the subject, and the user id
+	 *                                                              that started it.
 	 *
 	 * @return array<string, mixed> The conversation record.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function conversationRecord(string $name, array $room, ?string $startedBy): array {
+	private function conversationRecord(array $room, array $start): array {
 		return [
 			'kind' => 'conversation',
-			'subject' => $name,
+			'subject' => $start['subject'],
 			'roomId' => $room['id'],
 			'roomUrl' => $room['url'],
 			'startedAt' => $this->cases->now(),
-			'startedBy' => ($startedBy ?? ''),
+			'startedBy' => ($start['startedBy'] ?? ''),
 			'participants' => [],
 			'durationSeconds' => 0,
 			'endedAt' => '',
@@ -149,16 +149,16 @@ class CaseConversationService implements CaseConversationServiceInterface {
 	/**
 	 * Append a conversation record to the case and log it.
 	 *
-	 * @param string               $caseId Case UUID.
-	 * @param array<string, mixed> $case   The case.
-	 * @param array<string, mixed> $record The conversation record.
+	 * @param array{caseId: string, case: array<string, mixed>} $onCase The case UUID and the case.
+	 * @param array<string, mixed>                              $record The conversation record.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function appendConversation(string $caseId, array $case, array $record): void {
-		$conversations = $this->cases->conversationsOf(case: $case);
+	private function appendConversation(array $onCase, array $record): void {
+		$caseId = $onCase['caseId'];
+		$conversations = $this->cases->conversationsOf(case: $onCase['case']);
 		$conversations[] = $record;
 		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
 
