@@ -88,6 +88,14 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\WOODeadlineService
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
+ * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
+ * @uses \OCA\Dossiq\Service\InformationRequestRun
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\ExtensionRun
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class StatutoryTermParityTest extends TestCase {
 	use MakesCaseDateNormaliser;

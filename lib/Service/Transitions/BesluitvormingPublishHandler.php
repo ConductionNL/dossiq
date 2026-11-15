@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\BesluitvormingPublishHandlerInterface;
 use OCA\Dossiq\Service\PublicationService;
 use Psr\Log\LoggerInterface;
 
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class BesluitvormingPublishHandler implements ActionHandlerInterface {
+class BesluitvormingPublishHandler implements ActionHandlerInterface, BesluitvormingPublishHandlerInterface {
 	/**
 	 * Constructor.
 	 *

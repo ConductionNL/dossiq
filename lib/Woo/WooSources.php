@@ -33,8 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
  */
-class WooSources {
+class WooSources implements WooSourcesInterface {
 
 	/**
 	 * Nextcloud files, searched through the unified search provider `files`.
@@ -60,11 +61,6 @@ class WooSources {
 	 * Documents on other cases, searched through OpenRegister's unified search provider.
 	 */
 	public const SOURCE_CASES = 'cases';
-
-	/**
-	 * The Microsoft 365 connection integriq holds: SharePoint, Teams and mail.
-	 */
-	public const SOURCE_MICROSOFT365 = 'microsoft365';
 
 	/**
 	 * The most rows one source answers per search (design risks: narrow, do not page).
@@ -92,7 +88,7 @@ class WooSources {
 	 * @param IAppManager      $appManager      Whether integriq is installed and enabled.
 	 * @param IEventDispatcher $dispatcher      Carries the search and fetch to integriq.
 	 * @param IAppConfig       $appConfig       Holds the connection key.
-	 * @param SettingsService  $settingsService The register and the document schema, for the cases source.
+	 * @param SettingsServiceInterface  $settingsService The register and the document schema, for the cases source.
 	 * @param IL10N            $l10n            Source labels.
 	 * @param LoggerInterface  $logger          Logs a search or fetch integriq could not answer.
 	 */
@@ -100,7 +96,7 @@ class WooSources {
 		private readonly IAppManager $appManager,
 		private readonly IEventDispatcher $dispatcher,
 		private readonly IAppConfig $appConfig,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -120,38 +116,70 @@ class WooSources {
 		$reason = $this->microsoft365Refusal();
 
 		return [
-			[
-				'id' => self::SOURCE_FILES,
-				'label' => $this->l10n->t('Files'),
-				'kind' => 'platform',
-				'available' => true,
-				'reason' => '',
-				'search' => ['provider' => 'files', 'filters' => []],
-			],
-			[
-				'id' => self::SOURCE_CASES,
-				'label' => $this->l10n->t('Cases'),
-				'kind' => 'platform',
-				'available' => true,
-				'reason' => '',
-				'search' => [
-					'provider' => 'openregister_objects',
-					'filters' => [
-						'register' => $this->settingsService->getConfigValue('register'),
-						'schema' => $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
-					],
-				],
-			],
-			[
-				'id' => self::SOURCE_MICROSOFT365,
-				'label' => $this->l10n->t('SharePoint, Teams and mail'),
-				'kind' => 'integriq',
-				'available' => ($reason === ''),
-				'reason' => $reason,
-				'search' => null,
-			],
+			$this->filesSource(),
+			$this->casesSource(),
+			$this->microsoft365Source(reason: $reason),
 		];
 	}//end list()
+
+	/**
+	 * The Files source, always available.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function filesSource(): array {
+		return [
+			'id' => self::SOURCE_FILES,
+			'label' => $this->l10n->t('Files'),
+			'kind' => 'platform',
+			'available' => true,
+			'reason' => '',
+			'search' => ['provider' => 'files', 'filters' => []],
+		];
+	}//end filesSource()
+
+	/**
+	 * The Cases source, always available, searched in the dossier's document schema.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function casesSource(): array {
+		return [
+			'id' => self::SOURCE_CASES,
+			'label' => $this->l10n->t('Cases'),
+			'kind' => 'platform',
+			'available' => true,
+			'reason' => '',
+			'search' => ['provider' => 'openregister_objects', 'filters' => [
+				'register' => $this->settingsService->getConfigValue('register'),
+				'schema' => $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
+			]],
+		];
+	}//end casesSource()
+
+	/**
+	 * The SharePoint, Teams and mail source, available when integriq can answer.
+	 *
+	 * @param string $reason Why it cannot be searched, or '' when it can.
+	 *
+	 * @return array<string, mixed> The source, as `{id, label, kind, available, reason, search}`.
+	 *
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	 */
+	private function microsoft365Source(string $reason): array {
+		return [
+			'id' => self::SOURCE_MICROSOFT365,
+			'label' => $this->l10n->t('SharePoint, Teams and mail'),
+			'kind' => 'integriq',
+			'available' => ($reason === ''),
+			'reason' => $reason,
+			'search' => null,
+		];
+	}//end microsoft365Source()
 
 	/**
 	 * Whether a source id is one this class knows.
@@ -187,7 +215,7 @@ class WooSources {
 
 		$result = $this->ask(
 			relative: self::SEARCH_EVENT,
-			arguments: [Application::APP_ID, $this->connectionKey(), $userId, $terms, $from, $to, [], self::ROW_LIMIT],
+			arguments: [AppIdentity::APP_ID, $this->connectionKey(), $userId, $terms, $from, $to, [], self::ROW_LIMIT],
 		);
 		if ($result === null) {
 			return ['rows' => [], 'remaining' => 0, 'notices' => [], 'refusal' => 'integriq-did-not-answer'];
@@ -216,7 +244,7 @@ class WooSources {
 			return null;
 		}
 
-		$result = $this->ask(relative: self::FETCH_EVENT, arguments: [Application::APP_ID, $this->connectionKey(), $userId, $handle]);
+		$result = $this->ask(relative: self::FETCH_EVENT, arguments: [AppIdentity::APP_ID, $this->connectionKey(), $userId, $handle]);
 		if ($result === null || is_string($result['content'] ?? null) === false || trim((string)($result['fileName'] ?? '')) === '') {
 			return null;
 		}
@@ -251,7 +279,7 @@ class WooSources {
 	 * @return string The key.
 	 */
 	private function connectionKey(): string {
-		return $this->appConfig->getValueString(Application::APP_ID, self::CONNECTION_KEY, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONNECTION_KEY, '');
 	}//end connectionKey()
 
 	/**

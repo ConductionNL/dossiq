@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\People\PersonNumberLookup
+ * @uses \OCA\Dossiq\Service\Support\TrustedRevealRead
  */
 class PersonNumberLookupTest extends TestCase {
 

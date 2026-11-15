@@ -167,4 +167,48 @@ class WooRefusalGroundDeleteGuardTest extends TestCase {
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertStringContainsString('could not be checked', $event->getErrors()['message']);
 	}//end testAnUncheckableDeleteIsRefused()
+
+	/**
+	 * A citing schema that cannot be read refuses the delete.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableCitingSchemaRefusesTheDelete(): void {
+		$this->store->missingSchemas = ['decision'];
+		$event = $this->deleteOf(code: '5.1.2.e');
+
+		$this->guard()->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertStringContainsString('could not be checked', $event->getErrors()['message']);
+	}//end testAnUnreadableCitingSchemaRefusesTheDelete()
+
+	/**
+	 * A ground without a code is not held.
+	 *
+	 * @return void
+	 */
+	public function testAGroundWithoutACodePasses(): void {
+		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['weigeringsgronden' => ['']]);
+		$event = $this->deleteOf(code: '  ');
+
+		$this->guard()->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAGroundWithoutACodePasses()
+
+	/**
+	 * A ground named by its schema url is guarded too.
+	 *
+	 * @return void
+	 */
+	public function testAGroundNamedByItsSchemaUrlIsGuarded(): void {
+		$this->store->seed(schema: 'decision', uuid: 'd-1', row: ['weigeringsgronden' => ['5.1.2.e']]);
+		$event = $this->deleteOf(code: '5.1.2.e', schema: 'https://x/api/schemas/wooRefusalGround');
+
+		$this->guard()->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertStringContainsString('Retire it instead', $event->getErrors()['message']);
+	}//end testAGroundNamedByItsSchemaUrlIsGuarded()
 }//end class

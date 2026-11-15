@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -34,9 +35,11 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
  * @covers \OCA\Dossiq\Service\TermDeclarationReader
+ * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\CaseTermBinding
  */
 class FixedDateTermTest extends TestCase {
 	use BindsTermFixtures;
@@ -111,9 +114,11 @@ class FixedDateTermTest extends TestCase {
 		);
 
 		$this->service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 	}//end setUp()
@@ -136,6 +141,34 @@ class FixedDateTermTest extends TestCase {
 		self::assertSame('2027-03-01', $this->written[1]['endDateCurrent']);
 		self::assertSame(TermKind::STATUTORY, $this->written[0]['kind']);
 	}//end testASubsidyRoundClosesOnADate()
+
+	/**
+	 * Every declared clock is bound and answered in order: statutory, planned, internal; no ids binds nothing.
+	 *
+	 * @return void
+	 */
+	public function testEveryDeclaredClockIsAnsweredInOrder(): void {
+		$this->declarations->method('forCaseType')->willReturn(
+			$this->declared(['fixedEndDate' => '2027-03-01', 'plannedLeadTimeDays' => 10, 'internalTargetDays' => 5])
+		);
+
+		self::assertSame([], $this->service->bindForCase(caseId: '', caseTypeId: 'ct1'));
+		self::assertSame([], $this->service->bindForCase(caseId: 'c1', caseTypeId: ''));
+		self::assertSame([], $this->written);
+
+		$bound = $this->service->bindForCase(
+			caseId: 'c1',
+			caseTypeId: 'ct1',
+			start: new DateTimeImmutable('2027-01-11T09:00:00+00:00'),
+			plannedStart: '2027-01-12',
+		);
+
+		self::assertSame([TermKind::STATUTORY, TermKind::PLANNED, TermKind::INTERNAL], array_column($bound, 'kind'));
+		self::assertSame(['written-0', 'written-1', 'written-2'], array_column($bound, 'id'));
+		self::assertSame('2027-01-12', $bound[1]['plannedStartDate']);
+		self::assertArrayNotHasKey('plannedStartDate', $bound[2]);
+		self::assertSame('2027-01-11T09:00:00+00:00', $bound[2]['startDate']);
+	}//end testEveryDeclaredClockIsAnsweredInOrder()
 
 	/**
 	 * A fixed date already past creates the case with an expired term.

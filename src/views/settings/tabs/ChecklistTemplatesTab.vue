@@ -3,7 +3,7 @@
   items are an editable table of sub-objects.
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
-  @spec openspec/changes/vth-module/tasks.md#task-5
+  @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 -->
 <template>
 	<div class="checklists-tab">
@@ -362,7 +362,7 @@ export default {
 		 * @param {object} checklist Checklist row.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 		 */
 		confirmDelete(checklist) {
 			this.pendingDeleteChecklist = checklist
@@ -374,7 +374,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 		 */
 		async onConfirmDelete() {
 			const checklist = this.pendingDeleteChecklist

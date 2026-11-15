@@ -221,6 +221,29 @@ class BerichtenboxControllerContractTest extends TestCase {
 	}//end testSendReportsAServiceFailureAs400WithSuccessFalse()
 
 	/**
+	 * A refusal because no digital post provider is set up answers the code
+	 * `provider-not-configured`, keeping the adapter's own code as `cause`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/berichtenbox-integration/spec.md#requirement-a-send-without-a-provider-says-so-by-code
+	 */
+	public function testSendWithoutAProviderAnswersProviderNotConfigured(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->berichtenboxService->method('sendMessage')
+			->willReturn(['refused' => true, 'code' => 'digital-post-source-unset', 'error' => 'No source. Nothing was sent.']);
+
+		$response = $this->controller->send();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('provider-not-configured', $response->getData()['code']);
+		$this->assertSame('digital-post-source-unset', $response->getData()['cause']);
+		$this->assertSame('No source. Nothing was sent.', $response->getData()['error']);
+	}//end testSendWithoutAProviderAnswersProviderNotConfigured()
+
+	/**
 	 * A successful send answers 200 with the service's record under `message`.
 	 *
 	 * @return void

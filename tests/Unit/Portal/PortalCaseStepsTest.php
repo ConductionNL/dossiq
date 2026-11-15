@@ -36,6 +36,8 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Portal\CaseSteps
  * @uses   \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses   \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Portal\PortalCaseReads
  */
 class PortalCaseStepsTest extends TestCase {
 	private const CASE_ID = '22222222-2222-4222-8222-222222222222';

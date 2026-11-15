@@ -18,7 +18,7 @@
  * that are repeated here; if the library changes those lines this copy goes
  * stale, and the note says so rather than pretending otherwise.
  *
- * @spec openspec/specs/dashboard/spec.md#REQ-DASH-025
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

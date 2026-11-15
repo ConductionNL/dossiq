@@ -57,6 +57,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */

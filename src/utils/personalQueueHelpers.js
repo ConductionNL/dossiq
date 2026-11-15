@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 /** What the reader is offered when they try to remove live work. */
@@ -23,7 +23,7 @@ export const OFFER_HIDE_GROUP = 'hide-group-for-today'
  *
  * @return {boolean} Always false.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export function canDismiss() {
 	return false
@@ -35,7 +35,7 @@ export function canDismiss() {
  * @param {object} item The queue item.
  * @return {{offer: string, group: string}} The offer and the group it applies to.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export function offerInsteadOfDismissing(item) {
 	return { offer: OFFER_HIDE_GROUP, group: String(item?.source ?? '') }

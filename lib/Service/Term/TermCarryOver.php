@@ -109,76 +109,91 @@ class TermCarryOver {
 			return ['outcome' => self::MISSING, 'instance' => '', 'timer' => ''];
 		}
 
-		$instanceId = (string)($instance['id'] ?? '');
-		$state = (string)($term['state'] ?? self::STATE_RUNNING);
-		if ($state === self::STATE_CLOSED) {
-			// Completing the term cancels every open timer of the instance in
-			// the same operation (markTermijnCompleted, REQ-TOT-001), so the fresh timer goes with it.
-			$this->terms->markTermijnCompleted(
-				termInstanceId: $instanceId,
-				voltooiDatum: $this->dates->tryParse(($term['closedOn'] ?? null)),
-				rationale: self::REASON . ': daar al afgesloten',
-			);
-
-			return ['outcome' => self::COMPLETED, 'instance' => $instanceId, 'timer' => ''];
+		if ((string)($term['state'] ?? self::STATE_RUNNING) === self::STATE_CLOSED) {
+			return $this->closed(instance: $instance, term: $term);
 		}
 
-		$deadline = (string)$this->dates->toCalendarDateOrNull(value: ($term['endDate'] ?? null));
-		$extensions = max(0, (int)($term['extensions'] ?? 0));
-		$suspended = ($state === self::STATE_SUSPENDED);
-		if ($this->unchanged(instance: $instance, deadline: $deadline, extensions: $extensions, suspended: $suspended) === true) {
-			return ['outcome' => self::KEPT, 'instance' => $instanceId, 'timer' => (string)($instance['engineTimerId'] ?? '')];
+		$carried = $this->carriedOf(term: $term, extensionDays: $extensionDays);
+		if ($this->unchanged(instance: $instance, carried: $carried) === true) {
+			return ['outcome' => self::KEPT, 'instance' => (string)($instance['id'] ?? ''), 'timer' => (string)($instance['engineTimerId'] ?? '')];
 		}
 
 		$definitie = ($this->terms->getTermijnDefinitie(caseType: $definitionSlug) ?? []);
-		$carried = $this->rearm(instance: $instance, definitie: $definitie, deadline: $deadline, extensions: $extensions, suspended: $suspended);
-		$this->recordExtensions(
-			instanceId: $instanceId,
-			extensions: $extensions,
-			reason: trim((string)($term['extensionReason'] ?? '')),
-			basis: (string)($definitie['legalBasis'] ?? ''),
-			days: max(0, $extensionDays),
-		);
-
-		return $carried;
+		return $this->carryOnto(instance: $instance, carried: $carried->withDefinitie(definitie: $definitie));
 	}//end carry()
 
 	/**
-	 * Cancel the fresh timer, write the source's term and arm it again.
+	 * Complete the case's term: the source closed it. Completing it cancels every open timer of the instance in
+	 * the same operation (markTermijnCompleted, REQ-TOT-001), so the fresh timer goes with it.
 	 *
-	 * @param array<string, mixed> $instance   The statutory instance.
-	 * @param array<string, mixed> $definitie  The term definition, or [].
-	 * @param string               $deadline   The source's end date, `Y-m-d`, or ''.
-	 * @param int                  $extensions How often the source was extended.
-	 * @param bool                 $suspended  Whether the source was suspended.
+	 * @param array<string, mixed> $instance The case's statutory term instance.
+	 * @param array<string, mixed> $term     The source's term state.
 	 *
-	 * @return array{outcome: string, instance: string, timer: string}
+	 * @return array{outcome: string, instance: string, timer: string} Completed.
 	 */
-	private function rearm(array $instance, array $definitie, string $deadline, int $extensions, bool $suspended): array {
+	private function closed(array $instance, array $term): array {
+		$instanceId = (string)($instance['id'] ?? '');
+		$this->terms->markTermijnCompleted(
+			termInstanceId: $instanceId,
+			voltooiDatum: $this->dates->tryParse(($term['closedOn'] ?? null)),
+			rationale: self::REASON . ': daar al afgesloten',
+		);
+
+		return ['outcome' => self::COMPLETED, 'instance' => $instanceId, 'timer' => ''];
+	}//end closed()
+
+	/**
+	 * The term state the source declares.
+	 *
+	 * @param array<string, mixed> $term          The source's term state.
+	 * @param int                  $extensionDays What one extension is worth, from the case type.
+	 *
+	 * @return CarriedTerm The carried term.
+	 */
+	private function carriedOf(array $term, int $extensionDays): CarriedTerm {
+		return new CarriedTerm(
+			deadline: (string)$this->dates->toCalendarDateOrNull(value: ($term['endDate'] ?? null)),
+			extensions: max(0, (int)($term['extensions'] ?? 0)),
+			suspended: ((string)($term['state'] ?? self::STATE_RUNNING) === self::STATE_SUSPENDED),
+			reason: trim((string)($term['extensionReason'] ?? '')),
+			days: max(0, $extensionDays),
+		);
+	}//end carriedOf()
+
+	/**
+	 * Re-arm the case's term on the carried state and record its extensions.
+	 *
+	 * @param array<string, mixed> $instance The case's statutory term instance.
+	 * @param CarriedTerm          $carried  The carried state, under its definition.
+	 *
+	 * @return array{outcome: string, instance: string, timer: string} Carried, or not armed.
+	 */
+	private function carryOnto(array $instance, CarriedTerm $carried): array {
+		$outcome = $this->rearm(instance: $instance, carried: $carried);
+		$this->recordExtensions(instanceId: (string)($instance['id'] ?? ''), carried: $carried);
+
+		return $outcome;
+	}//end carryOnto()
+
+	/**
+	 * Cancel the instance's timers, write the carried state, and arm a fresh timer on it.
+	 *
+	 * @param array<string, mixed> $instance The case's statutory term instance.
+	 * @param CarriedTerm          $carried  The carried state, under its definition.
+	 *
+	 * @return array{outcome: string, instance: string, timer: string} Carried, or not armed.
+	 */
+	private function rearm(array $instance, CarriedTerm $carried): array {
 		$instanceId = (string)($instance['id'] ?? '');
 		$this->timers->cancelForInstance(instanceId: $instanceId, reason: self::REASON);
-
-		$patch = [
-			'countExtensions' => $extensions,
-			'status' => $this->statusFor(extensions: $extensions, suspended: $suspended),
-			'engineTimerId' => '',
-		];
-		if ($deadline !== '') {
-			$patch['endDateCurrent'] = $deadline;
-		}
-
-		$written = ($this->terms->updateTermijnInstance(termInstanceId: $instanceId, patch: $patch) ?? (array_merge($instance, $patch)));
-		$timerId = $this->timers->armBeslistermijn(instance: $written, definitie: $definitie);
+		$written = $this->rewritten(instance: $instance, carried: $carried);
+		$timerId = $this->timers->armBeslistermijn(instance: $written, definitie: $carried->definitie);
 		if ($timerId === null) {
 			return ['outcome' => self::NOT_ARMED, 'instance' => $instanceId, 'timer' => ''];
 		}
 
-		$this->terms->updateTermijnInstance(
-			termInstanceId: $instanceId,
-			patch: ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]
-		);
-
-		if ($suspended === true) {
+		$this->terms->updateTermijnInstance(termInstanceId: $instanceId, patch: ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]);
+		if ($carried->suspended === true) {
 			$written['engineTimerId'] = $timerId;
 			$this->timers->suspendBeslistermijn(instance: $written, reason: self::REASON . ': opgeschort', until: null);
 		}
@@ -187,78 +202,63 @@ class TermCarryOver {
 	}//end rearm()
 
 	/**
-	 * Put the source's extensions on the term's trail, so the case reads why its end moved.
+	 * Write the carried state onto the instance, and answer the instance as written.
 	 *
-	 * The end date itself is already the source's; these rows carry the reason
-	 * and keep a later rebind from losing the extension (TermRearm replays them).
+	 * @param array<string, mixed> $instance The case's statutory term instance.
+	 * @param CarriedTerm          $carried  The carried state.
 	 *
-	 * @param string $instanceId The statutory instance.
-	 * @param int    $extensions How often the source was extended.
-	 * @param string $reason     The source's extension reason, or ''.
-	 * @param string $basis      The definition's legal basis, or ''.
-	 * @param int    $days       What one extension is worth.
+	 * @return array<string, mixed> The instance as written, or as patched when the store answered nothing.
+	 */
+	private function rewritten(array $instance, CarriedTerm $carried): array {
+		$patch = ['countExtensions' => $carried->extensions, 'status' => $carried->status(), 'engineTimerId' => ''];
+		if ($carried->deadline !== '') {
+			$patch['endDateCurrent'] = $carried->deadline;
+		}
+
+		return ($this->terms->updateTermijnInstance(termInstanceId: (string)($instance['id'] ?? ''), patch: $patch) ?? (array_merge($instance, $patch)));
+	}//end rewritten()
+
+	/**
+	 * Record each carried extension as a verdaging on the instance.
+	 *
+	 * @param string      $instanceId The instance.
+	 * @param CarriedTerm $carried    The carried state, under its definition.
 	 *
 	 * @return void
 	 */
-	private function recordExtensions(string $instanceId, int $extensions, string $reason, string $basis, int $days): void {
+	private function recordExtensions(string $instanceId, CarriedTerm $carried): void {
+		$reason = $carried->reason;
 		if ($reason === '') {
 			$reason = self::REASON;
 		}
 
-		for ($i = 0; $i < $extensions; $i++) {
+		for ($i = 0; $i < $carried->extensions; $i++) {
 			$this->terms->recordEvent(
 				termInstanceId: $instanceId,
 				type: 'verdaging',
-				basis: $basis,
+				basis: (string)($carried->definitie['legalBasis'] ?? ''),
 				rationale: $reason,
-				daysImpact: $days,
+				daysImpact: $carried->days,
 			);
 		}
 	}//end recordExtensions()
 
 	/**
-	 * Whether the term already says what the source says.
+	 * Whether the instance already carries the state, with a timer armed on it.
 	 *
-	 * A second run over a half-finished import finds the term it carried the
-	 * first time; reading the instance against the source, rather than against
-	 * "no extension, not suspended", is what keeps that run from arming the
-	 * same term twice.
+	 * @param array<string, mixed> $instance The case's statutory term instance.
+	 * @param CarriedTerm          $carried  The carried state.
 	 *
-	 * @param array<string, mixed> $instance   The statutory instance.
-	 * @param string               $deadline   The source's end date, or ''.
-	 * @param int                  $extensions How often the source was extended.
-	 * @param bool                 $suspended  Whether the source was suspended.
-	 *
-	 * @return bool True when nothing needs to move.
+	 * @return bool True when nothing needs rewriting.
 	 */
-	private function unchanged(array $instance, string $deadline, int $extensions, bool $suspended): bool {
+	private function unchanged(array $instance, CarriedTerm $carried): bool {
 		$current = (string)$this->dates->toCalendarDateOrNull(value: ($instance['endDateCurrent'] ?? null));
 
-		return (string)($instance['status'] ?? '') === $this->statusFor(extensions: $extensions, suspended: $suspended)
-			&& (int)($instance['countExtensions'] ?? 0) === $extensions
-			&& ($deadline === '' || $deadline === $current)
+		return (string)($instance['status'] ?? '') === $carried->status()
+			&& (int)($instance['countExtensions'] ?? 0) === $carried->extensions
+			&& ($carried->deadline === '' || $carried->deadline === $current)
 			&& (string)($instance['engineTimerId'] ?? '') !== '';
 	}//end unchanged()
-
-	/**
-	 * The instance status a source's term state reads as.
-	 *
-	 * @param int  $extensions How often the source was extended.
-	 * @param bool $suspended  Whether the source was suspended.
-	 *
-	 * @return string `paused`, `verlengd` or `lopend`.
-	 */
-	private function statusFor(int $extensions, bool $suspended): string {
-		if ($suspended === true) {
-			return 'paused';
-		}
-
-		if ($extensions > 0) {
-			return 'verlengd';
-		}
-
-		return 'lopend';
-	}//end statusFor()
 
 	/**
 	 * The case's statutory instance that is not completed, when there is one.

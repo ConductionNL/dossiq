@@ -18,7 +18,7 @@ vi.mock('@nextcloud/axios', () => ({
 	default: { get: (...a) => mockGet(...a), post: vi.fn() },
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
-vi.mock('@nextcloud/l10n', () => ({ translate: (_app, s) => s }))
+vi.mock('@nextcloud/l10n', () => ({ getLanguage: () => 'en', translate: (_app, s) => s, translatePlural: (_app, one, other, n) => (n === 1 ? one : other) }))
 vi.mock('@nextcloud/vue', () => {
 	const stub = (name) => ({ name, render: () => null })
 	return {
@@ -28,6 +28,9 @@ vi.mock('@nextcloud/vue', () => {
 		NcNoteCard: stub('NcNoteCard'),
 	}
 })
+vi.mock('@conduction/nextcloud-vue', () => ({
+	CnStatusBadge: { name: 'CnStatusBadge', props: ['label', 'variant', 'size'], render: () => null },
+}))
 vi.mock('../../src/utils/caseConversation.js', () => ({
 	conversationError: () => '',
 	declareMajor: vi.fn(),
@@ -97,5 +100,46 @@ describe('CaseConversationsPanel on a manifest card', () => {
 
 		expect(wrapper.vm.resolvedCaseId).toBe('inline-id')
 		expect(wrapper.vm.conversations).toHaveLength(1)
+	})
+})
+
+describe('a held conversation as DqZaakContact "Live gesprek" draws it', () => {
+	beforeEach(() => {
+		mockGet.mockReset()
+		mockGet.mockResolvedValue({ data: { available: true } })
+	})
+
+	const held = {
+		...seededCase,
+		isMajor: false,
+		conversations: [{
+			roomId: '184',
+			subject: 'Gesprek met Sanne de Vries over de stukken',
+			startedAt: '2026-10-04T10:30:00',
+			endedAt: '2026-10-04T10:42:00',
+			participants: ['Pieter Jansen', 'Sanne de Vries'],
+			durationSeconds: 720,
+		}],
+	}
+
+	it('leaves out the empty actions row when the buttons stand in the card title', async () => {
+		const wrapper = mountPanel({ objectData: held, actionsInHeader: true })
+		await flushPromises()
+		expect(wrapper.find('.case-conversations__actions').exists()).toBe(false)
+	})
+
+	it('marks an ended conversation with a status pill', async () => {
+		const wrapper = mountPanel({ objectData: held, actionsInHeader: true })
+		await flushPromises()
+		const badge = wrapper.findComponent({ name: 'CnStatusBadge' })
+		expect(badge.exists()).toBe(true)
+		expect(badge.props('label')).toBe('Conversation over')
+	})
+
+	it('says under the list what the list holds', async () => {
+		const wrapper = mountPanel({ objectData: held, actionsInHeader: true })
+		await flushPromises()
+		expect(wrapper.find('.case-conversations__footnote').text())
+			.toBe('Every conversation you start from this case lands here: when it was held, who joined and how long it lasted.')
 	})
 })

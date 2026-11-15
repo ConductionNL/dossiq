@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest'
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
 const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
 const page = manifest.pages.find((p) => p.id === 'CaseObjects')
 
 describe('the Objects index', () => {
@@ -34,6 +35,18 @@ describe('the Objects index', () => {
 		expect(page.config.allowExport).toBe(true)
 		expect(page.config.viewModes).toEqual(['table'])
 		expect(page.config.viewSwitch).toEqual(['table'])
+	})
+
+	it('lives at /objects, in the Cases part of the menu of the simple profile', () => {
+		expect(page.route).toBe('/objects')
+		expect(layout.settingsSection).not.toContain('CaseObjectsMenu')
+		expect(layout.menu.find((item) => item.id === 'CaseObjectsMenu').order).toBe(28)
+	})
+
+	it('puts the object first in the simple profile, then its case and the status of that case', () => {
+		const config = layout.pages.find((p) => p.id === 'CaseObjects').config
+		expect(config.columns.map((c) => c.key)).toEqual(['objectIdentification', 'objectType', 'case', 'caseStatus'])
+		expect(config.columns[2].secondaryRefs.caseRecord).toEqual({ field: 'case', register: 'dossiq', schema: 'case' })
 	})
 
 	it('keeps the View case row action', () => {

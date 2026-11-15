@@ -90,6 +90,7 @@ const SILENT = [
 	'relatedCases',
 	'riskAssessment',
 	'routing',
+	'routingNote',
 	'routingTakeBacks',
 	'selectionListClass',
 	'skippedPhases',

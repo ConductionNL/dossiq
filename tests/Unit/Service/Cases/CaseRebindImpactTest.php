@@ -40,6 +40,11 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Cases\RebindAnswer
+ * @uses \OCA\Dossiq\Service\Cases\RebindChoice
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
+ * @uses \OCA\Dossiq\Service\Cases\RebindLanding
  */
 class CaseRebindImpactTest extends TestCase {
 

@@ -48,13 +48,24 @@ class ZuiddrechtOutboxTest extends TestCase {
 	 * @return void
 	 */
 	public function testThreeLabelledChangesWait(): void {
-		$rows   = $this->outbox();
+		$rows   = array_values(array_filter($this->outbox(), static fn (array $o): bool => $o['data']['status'] !== 'synced'));
 		$labels = array_column(array_column($rows, 'data'), 'label');
 		$this->assertSame(expected: ['Molenweg 4, checklist', 'Kerkplein 7, foto', 'Molenweg 4, bevinding'], actual: $labels);
 
 		$states = array_count_values(array_column(array_column($rows, 'data'), 'status'));
 		$this->assertSame(expected: ['pending' => 2, 'conflict' => 1], actual: $states);
 	}//end testThreeLabelledChangesWait()
+
+	/**
+	 * The morning's synchronisation, at 07:42, dates the phones' offline line (DqInspectie).
+	 *
+	 * @return void
+	 */
+	public function testTheDayWasSynchronisedAtSevenFortyTwo(): void {
+		$synced = array_values(array_filter($this->outbox(), static fn (array $o): bool => $o['data']['status'] === 'synced'));
+		$this->assertCount(expectedCount: 1, haystack: $synced);
+		$this->assertSame(expected: '{{datetime:0 07:42}}', actual: $synced[0]['data']['lastAttemptAt']);
+	}//end testTheDayWasSynchronisedAtSevenFortyTwo()
 
 	/**
 	 * The schema declares the label the rows carry.
@@ -77,7 +88,8 @@ class ZuiddrechtOutboxTest extends TestCase {
 	 * @return void
 	 */
 	public function testThePendingChangesSayWhatTheyHold(): void {
-		$summaries = array_column(array_column($this->outbox(), 'data'), 'summary', 'label');
+		$pending   = array_filter($this->outbox(), static fn (array $o): bool => $o['data']['status'] === 'pending');
+		$summaries = array_column(array_column($pending, 'data'), 'summary', 'label');
 		$this->assertSame(expected: ['Molenweg 4, checklist' => "18 antwoorden, 4 foto's", 'Kerkplein 7, foto' => 'Vraag 7'], actual: $summaries);
 	}//end testThePendingChangesSayWhatTheyHold()
 }//end class

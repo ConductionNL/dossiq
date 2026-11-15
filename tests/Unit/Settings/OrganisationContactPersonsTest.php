@@ -184,6 +184,7 @@ class OrganisationContactPersonsTest extends TestCase {
 			expected: [
 				'{{object:persoon-marja.id}}'      => ['chair', true],
 				'{{object:persoon-kees-dewit.id}}' => ['secretary', false],
+				'{{object:persoon-ans-bos.id}}'      => ['treasurer', false],
 			],
 			actual: $roles
 		);

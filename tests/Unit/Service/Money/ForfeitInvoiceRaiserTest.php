@@ -170,6 +170,22 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 		);
 	}//end testAForfeitRaisesAnInvoiceToThePayerOnTheCase()
 
+	/**
+	 * Without a request type, an administration or an amount, the invoice takes the defaults.
+	 *
+	 * @return void
+	 */
+	public function testTheInvoiceDefaults(): void {
+		$raiser = $this->raiser(
+			caseType: ['forfeitRaisesInvoice' => true, 'forfeitPayerRoleType' => 'rt-offender'],
+			people: [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']],
+		);
+
+		self::assertSame('pr-1', $raiser->raise(action: ['case' => 'case-7']));
+		$payload = $this->leaf->calls[0][4];
+		self::assertSame(['dwangsom', 0.0, ''], [$payload['requestType'], $payload['amount'], $payload['administrationId']]);
+	}//end testTheInvoiceDefaults()
+
 	public function testNothingIsRaisedWhenTheCaseTypeDoesNotSaySoOrNobodyCanPay(): void {
 		$payer = [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']];
 		$cases = [

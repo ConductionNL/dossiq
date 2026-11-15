@@ -140,6 +140,32 @@ function localDay(date) {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+/**
+ * What a lodging sends: the day it was received, how, the grounds and what is asked for.
+ *
+ * @param {object} dialog The lodging dialog.
+ * @return {object} The body.
+ */
+function lodging(dialog) {
+	return {
+		receivedDate: localDay(dialog.receivedDate),
+		receivedChannel: dialog.channel.id,
+		grounds: dialog.grounds.trim(),
+		requestedRelief: dialog.requestedRelief.trim(),
+	}
+}
+
+/**
+ * The sentence for a lodging that failed: the server's message, its error, or the plain one.
+ *
+ * @param {Error} failure The failure.
+ * @return {string} The sentence.
+ */
+function lodgeRefusal(failure) {
+	const data = failure?.response?.data
+	return String(data?.message || data?.error || t('dossiq', 'This could not be registered.'))
+}
+
 export default {
 	name: 'RemedyLodgeDialog',
 
@@ -258,29 +284,11 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const { data } = await axios.post(
-					generateUrl(
-						String(this.lodgeUrl).replace(
-							'{caseId}',
-							encodeURIComponent(this.targetCaseId),
-						),
-					),
-					{
-						receivedDate: localDay(this.receivedDate),
-						receivedChannel: this.channel.id,
-						grounds: this.grounds.trim(),
-						requestedRelief: this.requestedRelief.trim(),
-					},
-				)
+				const { data } = await axios.post(generateUrl(String(this.lodgeUrl).replace('{caseId}', encodeURIComponent(this.targetCaseId))), lodging(this))
 				this.lodged = data || {}
 				emit(PAGE_REFRESH, {})
 			} catch (failure) {
-				const data = failure?.response?.data
-				this.error = String(
-					data?.message
-						|| data?.error
-						|| t('dossiq', 'This could not be registered.'),
-				)
+				this.error = lodgeRefusal(failure)
 			} finally {
 				this.busy = false
 			}

@@ -205,7 +205,7 @@ describe('the case-tasks widget on the library task widget', () => {
 		// and a fifth moves the complexity rather than removing it.
 		const where = panels.caseTabOf('case-tasks')
 		expect(where, 'case-tasks is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('Work')
+		expect(where.tab).toBe('Tasks')
 		expect(where.label).toBe('Tasks')
 
 		// A tab child in `layout` renders twice: once in the grid and once in
@@ -331,10 +331,13 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		// 🔴 CnLifecycleActions asks OpenRegister for an OBJECT's available
 		// transitions; an engine task is not an object, so it 404s and no
 		// button renders. The verbs come from the tasks source; Finish goes
-		// through dossiq's own completion route.
+		// through dossiq's own completion route, Cancel through its cancel route.
 		const config = page('TaskDetail').config
 		expect(config).not.toHaveProperty('lifecycleActions')
-		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
+		expect(config.verbEndpoints).toEqual({
+			complete: '/apps/dossiq/api/case-tasks/{id}/complete',
+			cancel: '/apps/dossiq/api/case-tasks/{id}/cancel',
+		})
 	})
 
 	it('needs no dossiq widget for the waiting case or the case card', () => {

@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  * Runs the return against an in-memory register holding a C1-shaped dossier.
  *
  * @covers \OCA\Dossiq\Woo\WooDossierReturn
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  */
 class WooDossierReturnTest extends TestCase {
 

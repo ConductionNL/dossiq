@@ -1,0 +1,86 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "prepare": "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+    },
+    {
+        "bindValue": [
+            "pattern",
+            "%openregister\\_table\\_%"
+        ]
+    },
+    {
+        "execute": {
+            "pattern": "%openregister\\_table\\_%"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_85"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_85"
+        }
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_85\" RENAME COLUMN \"onderwerp\" TO \"subject\"",
+        "params": []
+    },
+    {
+        "warning": "RenameDutchDeadlineColumns: refusing an ambiguous rename; two source columns target one destination.",
+        "context": {
+            "table": "oc_openregister_table_17_85",
+            "sources": [
+                "omschrijving",
+                "beschrijving"
+            ],
+            "target": "description"
+        }
+    },
+    {
+        "warning": "RenameDutchDeadlineColumns: refusing an ambiguous rename; two source columns target one destination.",
+        "context": {
+            "table": "oc_openregister_table_17_85",
+            "sources": [
+                "omschrijving",
+                "beschrijving"
+            ],
+            "target": "description"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_86"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_86"
+        }
+    },
+    {
+        "warning": "RenameDutchDeadlineColumns: could not read columns; skipping table.",
+        "context": {
+            "table": "oc_openregister_table_17_86",
+            "exception": "columns unreadable"
+        }
+    },
+    {
+        "output": "RenameDutchDeadlineColumns: 1 column(s) renamed, 0 back-filled, 2 refused for ambiguity, across 2 dossiq shard table(s)."
+    }
+]

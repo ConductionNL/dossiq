@@ -85,6 +85,7 @@ consults for the day a date lands on, after this change.
 |---|---|---|---|---|
 | `lib/BackgroundJob/AcknowledgementDispatchJob.php` | 136 | neither | | the retry counter for an acknowledgement that failed to send, `attempt + 1` passed to `IJobList::add()`. It is one of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/LinkCollectionToCaseJob.php` | 90 | neither | | queues the same dossier link again when the service account is missing, through `IJobList::add()`. One of the `->add(` matches the pattern cannot anchor to a date type |
+| `lib/Repair/RestoreDeclaredBackgroundJobs.php` | 81 | neither | | puts a declared background job back on the job list through `IJobList::add()`. One of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/Service/Setup/ExampleDataFragments.php` | 177 | neither | | example data dates relative to the moment the set is loaded (`@today+2d`), so a fresh install shows deadlines this week; fictional data, not a term anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |
@@ -116,6 +117,8 @@ consults for the day a date lands on, after this change.
 | `lib/Service/CaseLifecycleService.php` | 516, 521 | statutory | engine calendar | extends a case end date by the case type's period, which is the term a handler is judged on |
 | `lib/Service/CaseTermsService.php` | 249 | statutory | engine calendar | binds the planned end, the internal target, the phase term and a case type's fixed closing date; every one of them is a date somebody is held to, and `endAfter()` is the single line that turns a day count into one |
 | `lib/Service/ComplaintAnalyticsService.php` | 247 | neither | | a six month reporting window |
+| `lib/Service/Complaint/ComplaintPatternFigures.php` | 278 | neither | | the Awb handling term a complaint without its own deadline is measured against, for a quarter report; it sets no deadline |
+| `lib/Service/Complaint/QuarterPeriod.php` | 111 | neither | | the first and last day of a report quarter and its trailing twelve months |
 | `lib/Service/Termijn/TermDashboardFigures.php` | 83 | neither | | a seven day window on the deadline dashboard: which running terms end this week. It compares against each term's own `endDateCurrent`, which the engine already rolled; the quarter it reports on is a reporting window |
 | `lib/Service/ComplaintService.php` | 408 | statutory | `WorkingDayCalculator` | Awb 9:11 klachttermijn in weeks; the service already consults the calculator for working days |
 | `lib/Service/DeadlineExtensionService.php` | 150 | statutory | `rollTermEndFor` | an extension named in days (Woo art. 4.4 lid 2) asks for the current end plus those days; the asked-for date then goes through the same Algemene termijnenwet roll as every extension (`one-term-engine`) |
@@ -123,6 +126,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/DemoCaseloadReport.php` | 86 | neither | | a three day horizon in a demo report |
 | `lib/Service/DemoCaseloadSeedDataService.php` | 343 | neither | | demo seed data |
 | `lib/Service/Doorlooptijd/CaseEnricher.php` | 233 | business | engine calendar | the dashboard's derived expected end; it mirrors a statutory term, so it rolls with it or it contradicts it on screen |
+| `lib/Service/Doorlooptijd/ClosedCaseTally.php` | 102 | neither | | the twelve-month cutoff and the window start of the throughput summary; moved out of `DeadlineComplianceCalculator::computeSummary` |
 | `lib/Service/Doorlooptijd/CaseTypeThroughputCalculator.php` | 202 | neither | | month buckets for the processing-time download |
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |

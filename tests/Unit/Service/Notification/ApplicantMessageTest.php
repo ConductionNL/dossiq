@@ -23,6 +23,7 @@ use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -104,4 +105,33 @@ class ApplicantMessageTest extends TestCase {
 
 		self::assertTrue($outcome['sent']);
 	}//end testAPortalOnlyResidentIsHandedToTheSenderWithTheCase()
+	/**
+	 * An undeclared moment and a case without address send nothing; a sent message names its case,
+	 * merges the context, and lands on the public timeline.
+	 *
+	 * @return void
+	 */
+	public function testEveryOutcomeOfASend(): void {
+		$notifications = $this->createMock(TermijnNotificationService::class);
+		$notifications->expects(self::once())->method('sendTermijnNotification')
+			->with('niet-ontvankelijk', '', 'aanvrager@example.nl', ['case' => 'Z-7', 'extra' => 'x'], self::anything())
+			->willReturn([]);
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->expects(self::once())->method('record')->with(
+			'case-1',
+			TimelineKinds::PORTAL_MESSAGE,
+			'Bericht aan de aanvrager verzonden',
+			self::callback(static fn (array $fields): bool => $fields['moment'] === 'case-decided' && $fields['template'] === 'niet-ontvankelijk' && $fields['sentAt'] !== ''),
+			CaseTimeline::PUBLIC_ENTRY
+		)->willReturn('entry-1');
+		$messages = $this->messages($notifications, $timeline);
+
+		self::assertSame('moment-not-declared', $messages->send(['id' => 'case-1'], self::CASE_TYPE, 'case-opened', 'x')['reason']);
+		self::assertSame('no-address', $messages->send(['id' => 'case-1'], self::CASE_TYPE, 'case-decided', 'niet-ontvankelijk')['reason']);
+
+		$outcome = $messages->send(['id' => 'case-1', 'identifier' => 'Z-7', 'email' => 'aanvrager@example.nl'], self::CASE_TYPE, 'case-decided', 'niet-ontvankelijk', ['extra' => 'x']);
+		self::assertTrue($outcome['sent']);
+		self::assertSame(['', 'aanvrager@example.nl', 'niet-ontvankelijk'], [$outcome['reason'], $outcome['recipient'], $outcome['template']]);
+		self::assertNotSame('', $outcome['sentAt']);
+	}//end testEveryOutcomeOfASend()
 }//end class

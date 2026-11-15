@@ -14,7 +14,7 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 
-const source = fs.readFileSync(path.resolve(__dirname, '../../src/dialogs/BeschikkingComposerDialog.vue'), 'utf8')
+const source = fs.readFileSync(path.resolve(__dirname, '../../src/dialogs/GenerateDocumentDialog.vue'), 'utf8')
 const style = source.slice(source.indexOf('<style'))
 
 /**

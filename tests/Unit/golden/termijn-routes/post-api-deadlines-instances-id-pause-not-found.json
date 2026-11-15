@@ -1,0 +1,16 @@
+{
+    "status": 200,
+    "data": [],
+    "calls": [
+        {
+            "call": "pause::registerPauze",
+            "args": [
+                "inst-1",
+                0,
+                "",
+                "",
+                ""
+            ]
+        }
+    ]
+}

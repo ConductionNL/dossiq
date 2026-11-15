@@ -15,7 +15,7 @@
   (ADR-102). Only Open Register blocks; everything else says what it would
   have added, so an administrator can decide whether they want it.
 
-  @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+  @spec openspec/specs/admin-settings/spec.md
 -->
 <template>
 	<div class="prerequisites" data-testid="prerequisites-block">
@@ -28,19 +28,7 @@
 		</NcNoteCard>
 
 		<table class="prerequisites__table" data-testid="prerequisites-platform">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'Platform') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
+			<PrerequisitesTableHead :label="t('dossiq', 'Platform')" />
 			<tbody>
 				<tr data-testid="prerequisite-php">
 					<th scope="row">
@@ -64,19 +52,7 @@
 		</table>
 
 		<table class="prerequisites__table" data-testid="prerequisites-extensions">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'PHP extension') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
+			<PrerequisitesTableHead :label="t('dossiq', 'PHP extension')" />
 			<tbody>
 				<tr
 					v-for="row in extensions"
@@ -92,34 +68,10 @@
 		</table>
 
 		<table class="prerequisites__table" data-testid="prerequisites-apps">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'App') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
-			<tbody>
+			<PrerequisitesTableHead :label="t('dossiq', 'App')" />
+			<tbody v-for="(apps, group) in appGroups" :key="group">
 				<tr
-					v-for="row in required"
-					:key="row.id"
-					:data-testid="`prerequisite-app-${row.id}`">
-					<th scope="row">
-						{{ row.name || row.id }}
-					</th>
-					<td>{{ t('dossiq', row.unlocks) }}</td>
-					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr
-					v-for="row in optional"
+					v-for="row in apps"
 					:key="row.id"
 					:data-testid="`prerequisite-app-${row.id}`">
 					<th scope="row">
@@ -137,11 +89,12 @@
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import PrerequisitesTableHead from './PrerequisitesTableHead.vue'
 
 export default {
 	name: 'PrerequisitesTab',
 
-	components: { NcNoteCard },
+	components: { NcNoteCard, PrerequisitesTableHead },
 
 	data() {
 		// An absent state renders an empty block rather than throwing. The
@@ -167,11 +120,21 @@ export default {
 	computed: {
 		/**
 		 * @return {Array} The required apps this instance does not have.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		missingRequired() {
 			return this.required.filter((row) => row.present !== true)
+		},
+
+		/**
+		 * The apps in the order the table lists them, one body each: required, then optional.
+		 *
+		 * @return {Array<Array>} The required and the optional apps.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		appGroups() {
+			return [this.required, this.optional]
 		},
 	},
 
@@ -186,7 +149,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The word.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		mark(present) {
 			return present === true ? t('dossiq', 'present') : t('dossiq', 'missing')
@@ -197,7 +160,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The class.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		markClass(present) {
 			return present === true
@@ -222,10 +185,6 @@ export default {
 
 .prerequisites__table td:nth-child(2)::first-letter {
 	text-transform: uppercase;
-}
-
-.prerequisites__here {
-	inline-size: 120px;
 }
 
 /*

@@ -1,3 +1,5 @@
 # Screens
 
-- No screen: the tour is an overlay that points at the app menu; it has no page of its own, and the menu is drawn on every board.
+- dossiq/DqRondleiding rondleiding bij het eerste bezoek: welkomstkaart, zes stappen en de aanwijzer bij het menu https://identity.conduction.nl/screens/board?id=dossiq/DqRondleiding
+
+Components: CnAppNav, CnBuildiqEditButton, CnCardGrid, CnDashboardPage, CnKpiGrid, CnObjectCard, CnPageHeader, CnStatsBlock, CnStatusBadge, CnWalkthrough, CnWizardDialog

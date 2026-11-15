@@ -1,7 +1,7 @@
 # werkvoorraad-intelligent-queue Specification
 
 ## Purpose
-TBD - created by archiving change werkvoorraad-intelligent-queue. Update Purpose after archive.
+Order the work queue by a deterministic urgency score, and give each person their queue and each coordinator the team's workload.
 
 ## Requirements
 

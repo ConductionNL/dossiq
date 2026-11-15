@@ -100,6 +100,7 @@ interface RoundTripObjectStoreStub {
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Kcc\ContactMomentPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class OneDateWritePathRoundTripTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -357,7 +358,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
-				if ($schema === 'adviceRequest') {
+				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
 

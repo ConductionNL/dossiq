@@ -1,0 +1,31 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "prepare": "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+    },
+    {
+        "bindValue": [
+            "pattern",
+            "%openregister\\_table\\_%"
+        ]
+    },
+    {
+        "execute": {
+            "pattern": "%openregister\\_table\\_%"
+        }
+    },
+    {
+        "warning": "RenameDutchDirectionValues: could not list tables; skipping.",
+        "context": {
+            "exception": "tables unreadable"
+        }
+    },
+    {
+        "output": "RenameDutchDirectionValues: no dossiq shard tables on this install; nothing to do."
+    }
+]

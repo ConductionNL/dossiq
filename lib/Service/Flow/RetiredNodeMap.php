@@ -37,12 +37,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeMapInterface;
+
 /**
  * Lookup over the retired-node table.
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
-class RetiredNodeMap {
+class RetiredNodeMap implements RetiredNodeMapInterface {
 
 	/**
 	 * The prefix of a configured-action node; the rest of the id is the action type.

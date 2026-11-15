@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\IL10N;
 /**
  * Open cases the reader coordinates.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class CoordinatorSeatSource extends RegisterBackedSource {
 	/**
@@ -58,7 +58,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		SettingsService $settings,
@@ -73,7 +73,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string {
 		return 'coordinator-seat';
@@ -84,7 +84,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Cases you coordinate');
@@ -95,7 +95,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('A case leaves when you hand the seat on, or when it is closed.');
@@ -106,7 +106,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['flow:DossiqTxSetStatusNode', 'flow:DossiqTxCreateSubCaseNode'];
@@ -124,7 +124,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $userId);
@@ -132,37 +132,82 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 			return [];
 		}
 
+		$schema = $this->caseSchema();
+
+		$items = [];
+		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => 0]) as $row) {
+			$item = $this->itemFor(row: $row, coordinated: $coordinated, userId: $userId);
+			if ($item !== null) {
+				$items[] = $item;
+			}
+		}
+
+		return $items;
+	}//end itemsFor()
+
+	/**
+	 * The configured case schema, `case` when unset.
+	 *
+	 * @return string The schema.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function caseSchema(): string {
 		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
 		if ($schema === '') {
 			$schema = 'case';
 		}
 
-		$items = [];
-		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => 0]) as $row) {
-			$id = $this->idOf(row: $row);
-			if ($id === '' || in_array($id, $coordinated, true) === false) {
-				continue;
-			}
+		return $schema;
+	}//end caseSchema()
 
-			// The cases the reader is already HANDLING are their own group.
-			// Listing them twice is two rows for one piece of work, and the
-			// reader would close one and wonder about the other.
-			if (trim((string)($row['assignee'] ?? '')) === $userId) {
-				continue;
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'case',
-				subjectId: $id,
-				title: (string)($row['title'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'deadline'),
-				coveredFor: null,
-				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
-			);
+	/**
+	 * The queue item for one open case, or null when the person does not coordinate it or already handles it.
+	 *
+	 * @param array<string, mixed> $row         The case row.
+	 * @param array<int, string>   $coordinated The cases the person coordinates.
+	 * @param string               $userId      The person.
+	 *
+	 * @return QueueItem|null The item.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function itemFor(array $row, array $coordinated, string $userId): ?QueueItem {
+		$id = $this->idOf(row: $row);
+		if ($id === '' || in_array($id, $coordinated, true) === false) {
+			return null;
 		}
 
-		return $items;
-	}//end itemsFor()
+		// The cases the reader is already HANDLING are their own group.
+		// Listing them twice is two rows for one piece of work, and the
+		// reader would close one and wonder about the other.
+		if ($this->handledBy(row: $row, userId: $userId) === true) {
+			return null;
+		}
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'case',
+			subjectId: $id,
+			title: (string)($row['title'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'deadline'),
+			coveredFor: null,
+			route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
+		);
+	}//end itemFor()
+
+	/**
+	 * Whether the case's assignee is the person.
+	 *
+	 * @param array<string, mixed> $row    The case row.
+	 * @param string               $userId The person.
+	 *
+	 * @return bool True when they handle it.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function handledBy(array $row, string $userId): bool {
+		return trim((string)($row['assignee'] ?? '')) === $userId;
+	}//end handledBy()
 }//end class

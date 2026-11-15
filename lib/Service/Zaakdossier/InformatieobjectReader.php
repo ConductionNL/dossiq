@@ -27,14 +27,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Dossiq\Review\DocumentVerdicts;
+use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -47,9 +48,9 @@ use OCP\IUser;
 /**
  * Resolves informatieobjecten behind the per-object clearance guard.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class InformatieobjectReader {
+class InformatieobjectReader implements InformatieobjectReaderInterface {
 	/**
 	 * Constructor.
 	 *
@@ -57,7 +58,7 @@ class InformatieobjectReader {
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
 	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
-	 * @param DocumentVerdicts|null $reviewVerdicts The review verdict of each document, for the row pill.
+	 * @param DocumentVerdictsInterface|null $reviewVerdicts The review verdict of each document, for the row pill.
 	 * @param AccessExceptionNames|null $exceptionNames The display names of an access exception, for the Who can see this card.
 	 *
 	 * @return void
@@ -67,7 +68,7 @@ class InformatieobjectReader {
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
 		private readonly ?ScanVerdictReader $verdicts = null,
-		private readonly ?DocumentVerdicts $reviewVerdicts = null,
+		private readonly ?DocumentVerdictsInterface $reviewVerdicts = null,
 		private readonly ?AccessExceptionNames $exceptionNames = null,
 	) {
 	}//end __construct()
@@ -80,7 +81,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<string, mixed>|JSONResponse The document, or an error response.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function loadReadable(IUser $user, string $infoObjectId): array|JSONResponse {
 		try {
@@ -110,7 +111,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<int, array<string, mixed>> The documents the user may read.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function filterForUser(IUser $user, array $informatieobjecten): array {
 		return $this->accessGuard->filterDossierForUser(
@@ -127,7 +128,7 @@ class InformatieobjectReader {
 	 *
 	 * @return JSONResponse|null Null when readable, otherwise the error response.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function guardReadable(IUser $user, string $infoObjectId): ?JSONResponse {
 		$result = $this->loadReadable(user: $user, infoObjectId: $infoObjectId);
@@ -146,7 +147,7 @@ class InformatieobjectReader {
 	 *
 	 * @return string|null The content, or null when the file is missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function contentFor(string $uuid, string $fileName): ?string {
 		try {
@@ -166,7 +167,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function withScanVerdicts(array $documents): array {
 		if ($this->verdicts === null) {
@@ -183,9 +184,10 @@ class InformatieobjectReader {
 	}//end withScanVerdicts()
 
 	/**
-	 * Put each document's review verdict on its row, so the Files tab draws the
-	 * verdict pill and the Assess button from the listing. A document the
-	 * verdicts do not name (a case that reviews nothing) carries none.
+	 * Put each document's review verdict and the codes of the grounds it cites
+	 * on its row, so the Files tab draws the verdict pill, its grounds and the
+	 * Assess button from the listing. A document the verdicts do not name (a
+	 * case that reviews nothing) carries neither.
 	 *
 	 * @param string                           $caseId    The case UUID.
 	 * @param array<int, array<string, mixed>> $documents The rows the caller may see.
@@ -200,14 +202,16 @@ class InformatieobjectReader {
 		}
 
 		$byDocument = $this->reviewVerdicts->byDocument(caseId: $caseId);
+		$grounds = $this->reviewVerdicts->groundsByDocument(caseId: $caseId);
 		return array_map(
-			static function (array $document) use ($byDocument): array {
-				$verdict = $byDocument[(string)($document['id'] ?? '')] ?? null;
+			static function (array $document) use ($byDocument, $grounds): array {
+				$documentId = (string)($document['id'] ?? '');
+				$verdict = $byDocument[$documentId] ?? null;
 				if ($verdict === null) {
 					return $document;
 				}
 
-				return [...$document, 'reviewVerdict' => $verdict];
+				return [...$document, 'reviewVerdict' => $verdict, 'reviewGrounds' => ($grounds[$documentId] ?? [])];
 			},
 			$documents
 		);

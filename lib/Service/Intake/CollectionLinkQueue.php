@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
+use OCA\Dossiq\Kernel\Contracts\CollectionLinkQueueInterface;
 use OCP\BackgroundJob\IJobList;
 
 /**
@@ -33,7 +34,7 @@ use OCP\BackgroundJob\IJobList;
  *
  * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
  */
-class CollectionLinkQueue {
+class CollectionLinkQueue implements CollectionLinkQueueInterface {
 
 	/**
 	 * Constructor.

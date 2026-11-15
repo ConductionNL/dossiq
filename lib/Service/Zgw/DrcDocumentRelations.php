@@ -122,17 +122,24 @@ class DrcDocumentRelations {
 		try {
 			$duplicate = $this->relationExists(register: $register, ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
 		} catch (\Throwable $e) {
-			return $this->results->notVerified(
-				rule: 'drc-003',
-				object: 'document ' . $ioUrl . ' on ' . $objectUrl,
-				cause: $e->getMessage()
-			);
+			return $this->results->notVerified(rule: 'drc-003', object: 'document ' . $ioUrl . ' on ' . $objectUrl, cause: $e->getMessage());
 		}
 
 		if ($duplicate === false) {
 			return null;
 		}
 
+		return $this->duplicateRelationError();
+	}//end checkOioUniqueness()
+
+	/**
+	 * The refusal of an informatieobject + object + objectType combination that exists already.
+	 *
+	 * @return array The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function duplicateRelationError(): array {
 		return $this->results->error(
 			status: 400,
 			detail: 'De combinatie informatieobject + object + objectType bestaat al.',
@@ -144,7 +151,7 @@ class DrcDocumentRelations {
 				),
 			]
 		);
-	}//end checkOioUniqueness()
+	}//end duplicateRelationError()
 
 	/**
 	 * Whether the relation is stored already, as an OIO or as its ZIO or BIO.
@@ -162,32 +169,17 @@ class DrcDocumentRelations {
 	 * @throws \Throwable When the store cannot be searched.
 	 */
 	private function relationExists(string $register, string $ioUrl, string $objectUrl, string $objectType): bool {
-		$crossRegister = ['case' => ['case_document_schema', 'case'], 'decision' => ['decision_document_schema', 'decision']];
-		$places = [['document_link_schema', 'object']];
-		if (isset($crossRegister[$objectType]) === true) {
-			$places[] = $crossRegister[$objectType];
-		}
-
-		$ioUuid = $this->fieldValidator->extractUuid(url: $ioUrl);
-		$objectUuid = $this->fieldValidator->extractUuid(url: $objectUrl);
-
-		foreach ($places as [$schemaKey, $objectField]) {
+		$pair = $this->pairOf(ioUrl: $ioUrl, objectUrl: $objectUrl);
+		foreach ($this->placesFor(objectType: $objectType) as [$schemaKey, $objectField]) {
 			$schema = $this->settingsService->getConfigValue(key: $schemaKey);
 			if ($schema === '') {
 				continue;
 			}
 
-			$found = $this->searchDuplicateRelation(
-				register: $register,
-				schema: $schema,
-				ioUrl: $ioUrl,
-				objectUrl: $objectUrl,
-				ioUuid: $ioUuid,
-				objectUuid: $objectUuid,
-				objectField: $objectField
-			);
-			if ($found === true) {
-				return true;
+			foreach ($this->duplicateQueries(pair: $pair, objectField: $objectField) as $requestParams) {
+				if ($this->anyFound(scope: [$register, $schema], requestParams: $requestParams) === true) {
+					return true;
+				}
 			}
 		}
 
@@ -195,65 +187,78 @@ class DrcDocumentRelations {
 	}//end relationExists()
 
 	/**
-	 * Search for an existing relation in a schema by document+object combination.
+	 * The URL and the UUID of the document and of the object.
 	 *
-	 * @param string $register The register ID
-	 * @param string $schema The schema ID to search
-	 * @param string $ioUrl The informatieobject URL
+	 * @param string $ioUrl     The informatieobject URL
 	 * @param string $objectUrl The object URL
-	 * @param string|null $ioUuid The extracted informatieobject UUID
-	 * @param string|null $objectUuid The extracted object UUID
-	 * @param string $objectField The field name for the object reference
+	 *
+	 * @return array{document: array{0: string, 1: ?string}, object: array{0: string, 1: ?string}}
+	 */
+	private function pairOf(string $ioUrl, string $objectUrl): array {
+		return [
+			'document' => [$ioUrl, $this->fieldValidator->extractUuid(url: $ioUrl)],
+			'object' => [$objectUrl, $this->fieldValidator->extractUuid(url: $objectUrl)],
+		];
+	}//end pairOf()
+
+	/**
+	 * The schemas a relation of this object type can be stored in, each with the field naming the object.
+	 *
+	 * @param string $objectType The object type (zaak or besluit)
+	 *
+	 * @return list<array{0: string, 1: string}> Settings key of the schema, and the object field
+	 */
+	private function placesFor(string $objectType): array {
+		$crossRegister = ['case' => ['case_document_schema', 'case'], 'decision' => ['decision_document_schema', 'decision']];
+		$places = [['document_link_schema', 'object']];
+		if (isset($crossRegister[$objectType]) === true) {
+			$places[] = $crossRegister[$objectType];
+		}
+
+		return $places;
+	}//end placesFor()
+
+	/**
+	 * The searches for one stored relation, in order: by full URL, then by UUID
+	 * (stored data may use UUID instead of URL), then full text on both UUIDs
+	 * (field-specific LIKE with % is not supported by MagicMapper).
+	 *
+	 * @param array<string, array{0: string, 1: ?string}> $pair        URL and UUID of the `document` and of the `object`
+	 * @param string                                      $objectField The field name for the object reference
+	 *
+	 * @return list<array<string, mixed>> The request parameters of each search
+	 */
+	private function duplicateQueries(array $pair, string $objectField): array {
+		[$ioUrl, $ioUuid] = $pair['document'];
+		[$objectUrl, $objectUuid] = $pair['object'];
+
+		$queries = [['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1]];
+		if ($ioUuid !== null && $objectUuid !== null) {
+			$queries[] = ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1];
+			$queries[] = ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1];
+		}
+
+		return $queries;
+	}//end duplicateQueries()
+
+	/**
+	 * Whether one search finds a stored relation.
+	 *
+	 * @param array{0: string, 1: string} $scope         The register ID and the schema ID
+	 * @param array<string, mixed>        $requestParams The search parameters
 	 *
 	 * @return bool True if a duplicate was found
 	 *
 	 * @throws \Throwable When the store cannot be searched.
 	 */
-	private function searchDuplicateRelation(
-		string $register,
-		string $schema,
-		string $ioUrl,
-		string $objectUrl,
-		?string $ioUuid,
-		?string $objectUuid,
-		string $objectField,
-	): bool {
-		// Search by full URL.
+	private function anyFound(array $scope, array $requestParams): bool {
 		$query = $this->lookups->objectService()->buildSearchQuery(
-			requestParams: ['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1],
-			register: $register,
-			schema: $schema
+			requestParams: $requestParams,
+			register: $scope[0],
+			schema: $scope[1]
 		);
 		$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-		if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-			return true;
-		}
 
-		// Fallback: search by UUID (stored data may use UUID instead of URL).
-		if ($ioUuid !== null && $objectUuid !== null) {
-			$query = $this->lookups->objectService()->buildSearchQuery(
-				requestParams: ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-			if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-				return true;
-			}
-
-			// Full-text search using both UUIDs (field-specific LIKE
-			// with % is not supported by MagicMapper).
-			$query = $this->lookups->objectService()->buildSearchQuery(
-				requestParams: ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->lookups->objectService()->searchObjectsPaginated(query: $query);
-			if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-				return true;
-			}
-		}//end if
-
-		return false;
-	}//end searchDuplicateRelation()
+		return ($result['total'] ?? count($result['results'] ?? [])) > 0;
+	}//end anyFound()
 }//end class

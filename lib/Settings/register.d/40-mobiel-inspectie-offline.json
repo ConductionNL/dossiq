@@ -412,7 +412,7 @@
       "conflictRecord": {
         "slug": "conflictRecord",
         "icon": "AlertOctagonOutline",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Conflict Record",
@@ -468,6 +468,35 @@
             "format": "date-time",
             "title": "Resolved At",
             "description": "Timestamp at which the conflict was resolved"
+          },
+          "targetRegister": {
+            "type": "string",
+            "title": "Target register",
+            "description": "Register of the object the conflicting change was written to"
+          },
+          "targetSchema": {
+            "type": "string",
+            "title": "Target schema",
+            "description": "Schema of the object the conflicting change was written to"
+          },
+          "targetId": {
+            "type": "string",
+            "title": "Target ID",
+            "description": "Identifier of the object the conflicting change was written to. Choosing the device's version writes onto this object."
+          },
+          "conflictFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflicting fields",
+            "description": "Dot paths of the fields both sides changed (e.g. responses.3.comment). The sync frame shows these, and choosing the device's version writes only these."
+          },
+          "detectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected at",
+            "description": "When the replay met the conflict"
           }
         }
       }

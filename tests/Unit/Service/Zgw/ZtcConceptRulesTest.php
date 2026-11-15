@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcChange
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */

@@ -47,7 +47,7 @@ describe('a marker names the panel where the work is', () => {
 	it('reads the markers off the case, under a label per panel', () => {
 		expect(attention.type).toBe('attention-flag')
 		expect(attention.content.markersPath).toBe('attentionMarkers')
-		expect(attention.content.panelLabels['case-work-panel']).toBe('Work')
+		expect(attention.content.panelLabels['case-work-panel']).toBe('Tasks')
 	})
 
 	it('labels every panel the schema lets a marker name', () => {

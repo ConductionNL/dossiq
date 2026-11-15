@@ -103,9 +103,9 @@ does not own it.
 #### Scenario: The page says what is still missing
 @e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js, test "reports one of two when one of two is translated".
 
-- **GIVEN** a case type with two of its four labels translated into English
+- **GIVEN** a case type with eight of its ten labels translated into English
 - **WHEN** an admin opens the page
-- **THEN** the English chip SHALL report two of four
+- **THEN** the English chip SHALL report "8 van 10 velden" and "2 ontbreken", as on board DqZaaktypeOverzicht
 
 #### Scenario: The page offers only the labels the engine holds
 @e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js, test "offers only the labels OpenRegister holds as translatable".

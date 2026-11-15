@@ -30,6 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ProcessMiningController;
+use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
+use OCA\Dossiq\Service\ProcessMining\ReportRequest;
 use OCA\Dossiq\Service\ProcessMining\ReportViews;
 use OCA\Dossiq\Service\ProcessMiningService;
 use OCA\Dossiq\Service\Reporting\ReportPeriod;
@@ -45,6 +47,11 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\ProcessMiningController
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportAnswer
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportRequest
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportViews
+ * @uses \OCA\Dossiq\Service\Reporting\ReportPeriod
  */
 class ProcessMiningControllerTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -74,10 +81,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $this->createMock(IGroupManager::class),
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -106,10 +111,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -145,10 +148,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -182,10 +183,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -232,10 +231,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -275,10 +272,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 
 		$response = $controller->report();
@@ -317,10 +312,8 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
-			views: $this->views(),
-			periods: new ReportPeriod(),
-			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
-			l10n: $this->createMock(IL10N::class),
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00')),
+			answers: new ReportAnswer(views: $this->views(), l10n: $this->createMock(IL10N::class)),
 		);
 	}//end adminController()
 

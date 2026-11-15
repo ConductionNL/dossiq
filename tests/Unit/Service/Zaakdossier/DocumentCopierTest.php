@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Zaakdossier\DocumentCopier
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCopy
  */
 class DocumentCopierTest extends TestCase {
 

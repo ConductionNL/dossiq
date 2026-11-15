@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
@@ -71,7 +71,7 @@ final class PackageExamples {
 			return [];
 		}
 
-		$decided = $this->appConfig->getValueString(Application::APP_ID, DemoDataService::DECIDED_KEY, '');
+		$decided = $this->appConfig->getValueString(AppIdentity::APP_ID, DemoDataService::DECIDED_KEY, '');
 		if ($decided !== DemoDataService::DECIDED_INSTALLED) {
 			$this->logger->info(
 				'Package {id}: example rows skipped, this instance has not opted into example data',
@@ -89,6 +89,32 @@ final class PackageExamples {
 
 		return $examples;
 	}//end toWrite()
+
+	/**
+	 * The seed groups of a package's example files, their date tokens filled
+	 * relative to today; none without an `examples` part, and none on an
+	 * instance that has not opted into example data.
+	 *
+	 * @param PackageInstallRun       $run        The install.
+	 * @param PackageDirectory        $packages   Reads the package's files.
+	 * @param PackageSchemaReferences $references Resolves the schema each file names.
+	 *
+	 * @return array<int, array<string, mixed>> The groups, as PackageSchemaReferences::seedGroup() returns them.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function groups(PackageInstallRun $run, PackageDirectory $packages, PackageSchemaReferences $references): array {
+		if (in_array('examples', $run->parts, true) === false) {
+			return [];
+		}
+
+		$groups = [];
+		foreach ($this->toWrite(package: $run->id, examples: $packages->rowsUnder(files: $run->files, dir: 'examples/')) as $example) {
+			$groups[] = $references->seedGroup(seed: $example);
+		}
+
+		return $groups;
+	}//end groups()
 
 	/**
 	 * The rows with every property the register declares as a JSON-encoded

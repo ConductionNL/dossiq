@@ -20,12 +20,14 @@ prevents incomplete case types from reaching production.
 - THEN the server MUST return HTTP 422 with:
   `{ "errors": ["At least one status type must be defined before publishing"] }`
 - AND the case type MUST remain in draft state
+- AND the case type page MUST show the refusal in the reader's language, as the board `DqZaaktypeStatussen` draws it: "Publiceren geweigerd, versie 5 blijft concept. Minstens één status is nodig voor het publiceren."
 
 #### Scenario: Publish blocked — no final status type
 - GIVEN a draft case type with 2 linked status types, neither has `isFinal = true`
 - WHEN the API attempts to publish
 - THEN the server MUST return HTTP 422 with:
   `{ "errors": ["At least one status type must be marked as final"] }`
+- AND the case type page MUST show the refusal in the reader's language, starting "Publiceren geweigerd", each missing condition on its own line
 
 #### Scenario: Publish blocked — validFrom not set
 - GIVEN a draft case type with valid status types but `validFrom` is null/empty

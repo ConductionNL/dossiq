@@ -1,0 +1,27 @@
+{
+    "zgwResource": "gebruiksrechten",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "informatieobject": "{{ document }}",
+        "startdatum": "{{ startDate }}",
+        "endDate": "{{ endDate }}",
+        "omschrijvingVoorwaarden": "{{ conditionsDescription }}"
+    },
+    "reverseMapping": {
+        "document": "{{ informatieobject }}",
+        "startDate": "{{ startdatum }}",
+        "endDate": "{{ einddatum }}",
+        "conditionsDescription": "{{ omschrijvingVoorwaarden }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "informatieobject": {
+            "field": "document"
+        }
+    }
+}

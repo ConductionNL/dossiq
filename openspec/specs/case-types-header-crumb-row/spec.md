@@ -12,4 +12,4 @@ The simple profile's `CaseTypes` page SHALL NOT set `countSubtitle`, and its `he
 #### Scenario: Case types header
 
 - **GIVEN** the Case types list in the simple profile
-- **THEN** "Instellingen / Zaaktypen · 54 zaaktypen" stands straight under the title, as on board DqZaaktypen
+- **THEN** "Instellingen / Zaaktypen · 39 zaaktypen · 32 meegeleverd, 7 eigen" stands straight under the title, as on board DqZaaktypen

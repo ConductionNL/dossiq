@@ -52,7 +52,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
 
 declare(strict_types=1);
@@ -60,15 +60,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
 
 /**
  * What a case type says must be answered, and when.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
-class IntakeRequirements {
+class IntakeRequirements implements IntakeRequirementsInterface {
 
 	/**
 	 * The case-type property holding the declaration.
@@ -99,7 +100,7 @@ class IntakeRequirements {
 	 *
 	 * @return array{requiredBeforeCreation: array<int, string>, requiredBeforeComplete: array<int, string>}
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -135,7 +136,7 @@ class IntakeRequirements {
 	 *
 	 * @return array<int, string> The unanswered field names, in declared order.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function missingBeforeCreation(array $case, array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -151,7 +152,7 @@ class IntakeRequirements {
 	 *
 	 * @return array<int, string> The unanswered field names, in declared order.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function missingBeforeComplete(array $case, array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -171,7 +172,7 @@ class IntakeRequirements {
 	 *
 	 * @return boolean True when nothing on the before-complete list is missing.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function isComplete(array $case, array $caseType): bool {
 		return ($this->missingBeforeComplete(case: $case, caseType: $caseType) === []);
@@ -191,7 +192,7 @@ class IntakeRequirements {
 	 *
 	 * @throws RefusedException When a before-creation field is unanswered.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function assertCreatable(array $case, array $caseType): void {
 		$missing = $this->missingBeforeCreation(case: $case, caseType: $caseType);
@@ -213,7 +214,7 @@ class IntakeRequirements {
 	 *
 	 * @return string One sentence naming the fields.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 */
 	public function sentenceFor(array $missing): string {
 		if ($missing === []) {

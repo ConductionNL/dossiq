@@ -28,8 +28,12 @@ All three widgets query OpenRegister against the `dossiq` register, schema
 `case`, except My work which reads the current user's tasks through
 OpenRegister's task engine (`useEngineTaskStore`):
 - **My work**: the current user's open tasks, soonest due first.
-- **Deadlines**: open cases (`isFinalStatus: false`) whose deadline is today,
-  overdue, or within the next 3 days, ordered by deadline.
+- **Deadlines** ("Termijnen deze week"): open cases (`isFinalStatus: false`)
+  whose deadline falls in the current working week, drawn as board DqMijnWerk
+  draws it: one column per day, Monday to Friday, today highlighted, each case
+  on the day its deadline falls with its number, type and the days in the card
+  meta ("2 dagen te laat", "vandaag"), a late case in red, "Geen termijnen" on
+  an empty day and "Alle termijnen" leading to the deadline list.
 - **Open cases**: the most recently started open cases across the team.
 
 ## Requirements
@@ -76,7 +80,7 @@ definition.
 @e2e exclude A manifest property, asserted in dashboardWorkTables.spec.js and landingViews.spec.js.
 - **WHEN** a handler views the My work view of My Work in the full structure
 - **THEN** the view shows a "My work" widget of the current user's open tasks
-- **AND** a "Deadlines" widget of cases due today, overdue, or within 3 days
+- **AND** a "Termijnen deze week" widget of the open cases whose deadline falls this working week, one column per day, with a late case in red
 - **AND** an "Open Cases" widget of the most recently started open cases
 
 #### Scenario: The Dashboard no longer carries the personal-workload widgets

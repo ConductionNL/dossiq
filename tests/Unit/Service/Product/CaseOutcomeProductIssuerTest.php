@@ -236,6 +236,37 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 	}//end testAnApprovedChangeCaseSetsTheNewPlate()
 
 	/**
+	 * A change case without a holder changes no product, not even one without a holder.
+	 *
+	 * @return void
+	 */
+	public function testAChangeCaseWithoutAHolderChangesNothing(): void {
+		foreach (['', '  '] as $blank) {
+			$this->objects->store['case'][self::CHANGE_CASE_ID]['portalSubject'] = $blank;
+			$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => $blank, 'status' => 'active', 'kenteken' => 'GZ482K'];
+
+			$this->assertNull($this->issuer->issueFor(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+			$this->assertSame('GZ482K', $this->objects->store['permit']['permit-1']['kenteken']);
+		}
+
+		unset($this->objects->store['case'][self::CHANGE_CASE_ID]['portalSubject'], $this->objects->store['permit']['permit-1']['portalSubject']);
+		$this->assertNull($this->issuer->issueFor(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertSame('GZ482K', $this->objects->store['permit']['permit-1']['kenteken']);
+	}//end testAChangeCaseWithoutAHolderChangesNothing()
+
+	/**
+	 * A product without a status is not in force, so a change case leaves it alone.
+	 *
+	 * @return void
+	 */
+	public function testAProductWithoutAStatusIsNotChanged(): void {
+		$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => 'subj-sanne', 'kenteken' => 'GZ482K'];
+
+		$this->assertNull($this->issuer->issueFor(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertSame('GZ482K', $this->objects->store['permit']['permit-1']['kenteken']);
+	}//end testAProductWithoutAStatusIsNotChanged()
+
+	/**
 	 * An outcome the case type does not declare issues nothing, and a
 	 * declared one does: the trigger is configuration.
 	 *

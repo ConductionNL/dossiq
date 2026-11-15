@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeTermsInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\IL10N;
 
@@ -38,7 +39,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeTerms {
+class CaseTypeTerms implements CaseTypeTermsInterface {
 
 	private const DURATION = '/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/';
 
@@ -61,10 +62,11 @@ class CaseTypeTerms {
 	 *
 	 * @param string $caseTypeId The case type id.
 	 *
-	 * @return array{decisionTerm: string, suspension: string, serviceTarget: string, penalty: string}|null
-	 *         The sentences, or null when the case type cannot be read.
+	 * @return array{decisionTerm: string, suspension: string, serviceTarget: string, penalty: string, penaltyApplies: bool}|null
+	 *         The sentences, whether a late decision costs a penalty, or null when the case type cannot be read.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function termsFor(string $caseTypeId): ?array {
 		$caseType = $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId);
@@ -77,6 +79,7 @@ class CaseTypeTerms {
 			'suspension'    => $this->suspension(caseType: $caseType),
 			'serviceTarget' => $this->durationOrText(value: $caseType['serviceTarget'] ?? null),
 			'penalty'       => $this->penalty(caseType: $caseType),
+			'penaltyApplies' => (($caseType['penaltyOnLateDecision'] ?? null) === true),
 		];
 	}//end termsFor()
 

@@ -224,13 +224,13 @@ and from a notice link.
 #### Scenario: The resident menu
 - **GIVEN** a resident signed in on the site
 - **WHEN** the site builds the menu from dossiq's contribution
-- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Voortgang van uw zaken", "Een bericht beantwoorden" and "Mijn verzoeken"
+- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Mijn verzoeken" and "Mijn afspraken", beside the site's "Mijn taken", as the menu board `MijnMenu` draws it
 - **AND** "Mijn zaken" and "Berichten" MUST appear once, as the site's own sections
 
 #### Scenario: A case opens from the site's case list
 - **GIVEN** a resident with a dossiq case in the site's "Mijn zaken"
 - **WHEN** they open it
-- **THEN** the page "Voortgang van uw zaken" MUST open with that case selected
+- **THEN** the case MUST open on its own case page, as the board `Zaak` draws it
 
 ### Requirement: The decision notice says what happened
 When the decision on a Woo request case is published for the first time and a resident follows the case
@@ -254,24 +254,33 @@ republish MUST NOT write a second message. A message that cannot be written MUST
 
 ### Requirement: The case page offers bezwaar and klacht for the case on screen
 
-The resident's case page SHALL declare "Bezwaar maken" and "Klacht indienen"
-as calls to action with `withRecord: true`, and each action SHALL name
-`againstCaseId` as its `recordField`, guarded against the citizen's own cases.
-The overview SHALL NOT declare them. A klacht's case reference SHALL NOT be
-required.
+The citizen actions `createBezwaar` and `createKlacht` SHALL declare `onCase`
+on their `contestedCase` cross reference, so portaliq lists them on the page of
+the resident's own case and fills in that case. The bezwaar SHALL come first.
+The bezwaar's placement SHALL carry a window of 42 days from the case field
+`decisionSentOn` and a closing sentence. Each action SHALL carry a
+`successMessage`. Neither the overview nor the case page SHALL declare them as
+calls to action. A klacht's case reference SHALL NOT be required.
 
 #### Scenario: A resident objects from their case page
 
-- **GIVEN** a resident on the page of one of their cases
-- **WHEN** they press "Bezwaar maken"
-- **THEN** the bezwaar SHALL carry that case in `againstCaseId`
-- @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalCasePageTest.php::testTheCasePageCarriesTheResidentsOwnCase and PortalContributionProviderTest::testTheReplyActionNamesTheFieldARecordLandsIn}
+- **GIVEN** a resident on the page of one of their cases, whose decision was sent less than six weeks ago
+- **WHEN** portaliq lists the actions placed on that case
+- **THEN** "Bezwaar maken" SHALL be listed, placed on `contestedCase`, before "Klacht indienen"
+- @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalCasePageTest.php::testBezwaarAndKlachtArePlacedOnTheCase}
+
+#### Scenario: The bezwaar closes after its term
+
+- **GIVEN** a case whose decision was sent more than 42 days ago
+- **WHEN** the resident opens its page
+- **THEN** portaliq SHALL show the bezwaar's closing sentence instead of a button
+- @e2e exclude {the window is computed by portaliq; dossiq's declaration is asserted in tests/Unit/Portal/PortalCasePageTest.php::testBezwaarAndKlachtArePlacedOnTheCase}
 
 #### Scenario: A klacht without a case is still accepted
 
 - **GIVEN** the "Klacht indienen" page, which opens no case
 - **WHEN** the resident files a klacht
-- **THEN** the klacht SHALL be accepted without `againstCaseId`
+- **THEN** the klacht SHALL be accepted without `contestedCase`
 - @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalContributionProviderTest.php::testEveryCitizenCreateNamingACaseGuardsIt}
 
 ### Requirement: The case page orders its blocks as the Zaak board
@@ -371,14 +380,15 @@ not reachable from each of its open statuses.
 - **WHEN** they save a withdrawal onto Ingetrokken while Ontvangen
 - **THEN** the save MUST be refused with a sentence naming Ingetrokken
 
-### Requirement: The Woo request action declares its four steps (REQ-SWS-001)
-The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw vraag"
-(`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
-`documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
-`verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
-field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
-`description` and `fields`; the review step MUST carry `review: true` and no fields. The
-labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+### Requirement: The Woo request action declares its three steps (REQ-SWS-001)
+The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw verzoek"
+(`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`, `documentSoorten`, `toelichting`),
+"Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`, `verzoekerType`) and "Controleren en
+versturen" as a review of every answer. Every whitelisted field MUST belong to exactly one
+step. Each step MUST use the keys `id`, `title`, `description` and `fields`; the review step
+MUST carry `review: true` and no fields. The step titles MUST be the ones of the portal boards
+`WooVerzoek`, `WooVerzoekGegevens` and `WooVerzoekControleren`. The period and the kinds of
+document MUST keep their input, their options and the checks the route makes on them. No field MUST be declared `required`: portaliq
 drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
 confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
 `fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
@@ -387,8 +397,13 @@ and assertion.
 #### Scenario: A resident moves through the steps
 - **GIVEN** a resident signed in with DigiD on a site that renders declared steps
 - **WHEN** they start "Informatie opvragen (Woo-verzoek)"
-- **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
-- **AND** step 4 MUST list every answer with a link to change the step it came from
+- **THEN** the form MUST show step 1 of 3, "Uw verzoek", with the question, the period and the kinds of document
+- **AND** step 3 MUST list every answer with a link to change the step it came from
+
+#### Scenario: The period and the kinds of document keep their checks
+- **GIVEN** the declared action
+- **WHEN** a resident sends an end date before the start date, a date that does not exist, or a kind of document that is not on the list
+- **THEN** the route MUST refuse the request and name that field
 
 #### Scenario: No form-only required field
 - **GIVEN** the declared action
@@ -539,13 +554,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -555,7 +570,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded
@@ -676,3 +691,16 @@ Both Woo request actions MUST declare `prefill: name` on `verzoekerNaam` and `pr
 - WHEN he reaches "Uw gegevens" in the Woo request
 - THEN his name and e-mail address are already filled in
 - @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestPrefillsTheRequesterFromTheProfile`; the filling itself is portaliq's and pinned there
+
+### Requirement: A case records the day its decision was sent (REQ-CAP-001)
+
+Sending a decision SHALL write the day it went out on its case, in the
+server-set date field `decisionSentOn`. A later decision on the same case SHALL
+overwrite it. A decision without a case SHALL write nothing.
+
+#### Scenario: Sending a decision stamps its case
+
+- **GIVEN** a case with a signed decision
+- **WHEN** the decision is sent on 2026-09-01
+- **THEN** the case SHALL carry `decisionSentOn` 2026-09-01
+- @e2e exclude {a server-side stamp; asserted in tests/Unit/Service/RemedyTermBindingTest.php::testSendingStampsTheDaySentOnTheCase}

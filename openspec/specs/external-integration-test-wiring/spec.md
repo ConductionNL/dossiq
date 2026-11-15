@@ -41,7 +41,7 @@ mock; DSO against recorded pre-productie fixtures; the e-Depot pipeline's MDTO
 output against the Nationaal Archief MDTO XSD offline in CI. Fixture datasets SHALL be shared with
 the `brp-kvk-register-sets` seed data so demo data and contract fixtures are the same objects.
 
-#### Scenario: BRP contract lane runs offline
+#### Scenario: Dossiq carries no BRP contract lane
 
 - **WHEN** PR CI runs the BRP contract suite
 - **THEN** it MUST run against the personen-mock service container without internet access

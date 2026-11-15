@@ -6,11 +6,12 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.1",
+          "version": "1.1.2",
           "slug": "evenementenvergunning-v1"
         },
         "id": "c4e7e000-0000-4000-a000-000000000101",
         "uuid": "c4e7e000-0000-4000-a000-000000000101",
+        "initialStatus": "c4e7e000-0000-4000-a000-000000000111",
         "title": "Evenementenvergunning",
         "colour": "blue",
         "icon": "Calendar",
@@ -31,11 +32,12 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.1",
+          "version": "1.1.2",
           "slug": "evenementenvergunning-v2"
         },
         "id": "c4e7e000-0000-4000-a000-000000000102",
         "uuid": "c4e7e000-0000-4000-a000-000000000102",
+        "initialStatus": "c4e7e000-0000-4000-a000-000000000121",
         "title": "Evenementenvergunning",
         "colour": "blue",
         "icon": "Calendar",

@@ -4,7 +4,7 @@
 -->
 <template>
 	<div class="deadline-definitions-tab">
-		<div class="deadline-definitions-tab__header">
+		<div v-if="!summary" class="deadline-definitions-tab__header">
 			<p
 				v-if="timezone"
 				class="deadline-definitions-tab__calendar"
@@ -57,7 +57,7 @@
 			data-testid="deadline-definitions-table">
 			<thead>
 				<tr>
-					<th v-if="showCaseType" scope="col">
+					<th v-if="showCaseType && !summary" scope="col">
 						{{ t('dossiq', 'Case type') }}
 					</th>
 					<th scope="col">
@@ -70,29 +70,44 @@
 						{{ t('dossiq', 'Version') }}
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'Counting') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'Counts in') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'Counting') }}
+						</template>
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'Closed day') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'On a closed day') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'Closed day') }}
+						</template>
 					</th>
 					<th scope="col">
 						{{ t('dossiq', 'Valid') }}
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'State') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'Status') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'State') }}
+						</template>
 					</th>
-					<th scope="col">
+					<th v-if="!summary" scope="col">
 						{{ t('dossiq', 'Actions') }}
 					</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr
-					v-for="def in definitions"
+					v-for="def in shownDefinitions"
 					:key="def.id"
 					class="deadline-definitions-tab__row"
 					:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
-					<td v-if="showCaseType" class="deadline-definitions-tab__row-name">
+					<td v-if="showCaseType && !summary" class="deadline-definitions-tab__row-name">
 						{{ caseTypeOf(def) }}
 					</td>
 					<td>{{ basisOf(def) || t('dossiq', '(no grondslag)') }}</td>
@@ -121,7 +136,7 @@
 							}}
 						</span>
 					</td>
-					<td class="deadline-definitions-tab__row-actions">
+					<td v-if="!summary" class="deadline-definitions-tab__row-actions">
 						<NcButton variant="secondary" @click="openEdit(def)">
 							{{ t('dossiq', 'New version') }}
 						</NcButton>
@@ -147,6 +162,49 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import DeadlineDefinitionEditor from '../../../modals/DeadlineDefinitionEditor.vue'
+import { newestTermDefinitions } from '../../../utils/termDefinitions.js'
+
+/**
+ * Today and tomorrow as calendar dates, the two days a new version is dated by.
+ *
+ * @param {Date} now The moment of the save.
+ * @return {{today: string, tomorrow: string}} The dates, `YYYY-MM-DD`.
+ */
+function versionDays(now) {
+	const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+	return { today: now.toISOString().slice(0, 10), tomorrow: tomorrow.toISOString().slice(0, 10) }
+}
+
+/**
+ * The version a save writes: one past the edited definition's, else the first.
+ *
+ * @param {object|null} editing The definition being edited.
+ * @return {number} The version.
+ */
+function nextVersion(editing) {
+	return editing ? Number(editing.version || 1) + 1 : 1
+}
+
+/**
+ * Close the edited version: it is valid until today.
+ *
+ * @param {object} editing The definition being edited.
+ * @param {string} today Today, `YYYY-MM-DD`.
+ * @return {Promise<object>} The response.
+ */
+function closeVersion(editing, today) {
+	return axios.patch(generateUrl('/apps/dossiq/api/deadlines/definitions/' + encodeURIComponent(editing.id)), { validUntil: today })
+}
+
+/**
+ * The sentence for a save that failed: the server's, the error's, or a plain one.
+ *
+ * @param {Error} e The failure.
+ * @return {string} The sentence.
+ */
+function saveRefusal(e) {
+	return e?.response?.data?.message || e.message || t('dossiq', 'Failed to save')
+}
 
 export default {
 	name: 'DeadlineDefinitionsTab',
@@ -157,6 +215,18 @@ export default {
 		NcNoteCard,
 		TimerSand,
 		DeadlineDefinitionEditor,
+	},
+
+	props: {
+		/**
+		 * The newest terms without the case type, the calendar line and the
+		 * row actions: the Integrations tab's "Term definitions (Awb)". The
+		 * section header carries Add definition and calls `openNew()`.
+		 */
+		summary: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {
@@ -175,6 +245,16 @@ export default {
 
 	computed: {
 		/**
+		 * The rows of the table: the newest in the summary, else all of them.
+		 *
+		 * @return {Array<object>} The definitions to draw.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		shownDefinitions() {
+			return this.summary ? newestTermDefinitions(this.definitions) : this.definitions
+		},
+
+		/**
 		 * Whether any definition names its case type, so the column is worth drawing.
 		 *
 		 * @return {boolean} TRUE when one does.
@@ -184,7 +264,7 @@ export default {
 			return this.definitions.some((def) => Boolean(this.caseTypeOf(def)))
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		zaaktypeOptions() {
 			const seen = new Set()
 			const opts = []
@@ -208,7 +288,7 @@ export default {
 	 * they agreed.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 	 */
 	mounted() {
 		this.load()
@@ -217,7 +297,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async load() {
 			this.loading = true
 			this.error = null
@@ -247,7 +327,7 @@ export default {
 		 * failure warrants; an unanswered call simply leaves the line off.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		async loadCalendar() {
 			try {
@@ -267,7 +347,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {boolean} True when it does.
-		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		rollsToWorkingDay(def) {
 			return def?.rollToWorkingDay === true
@@ -283,7 +363,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {string} The label.
-		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		countingModeLabel(def) {
 			return def?.countingMode === 'workingDays'
@@ -293,7 +373,7 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		isActive(def) {
 			const today = new Date().toISOString().slice(0, 10)
@@ -304,7 +384,7 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		formatDuur(def) {
 			const weeks = Number(def.standardDurationWeeks || 0)
@@ -337,7 +417,7 @@ export default {
 			return String(def?.caseType || def?.case_type || '')
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openNew() {
 			this.editingDefinition = null
 			this.editorOpen = true
@@ -345,14 +425,14 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		openEdit(def) {
 			this.editingDefinition = def
 			this.editorOpen = true
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingDefinition = null
@@ -360,46 +440,22 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		async onSave(payload) {
 			// Versioning: new version's validFrom=tomorrow, prior validUntil=today.
-			const today = new Date()
-			const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-			const isoTomorrow = tomorrow.toISOString().slice(0, 10)
-			const isoToday = today.toISOString().slice(0, 10)
-
-			const next = {
-				...payload,
-				validFrom: isoTomorrow,
-				validUntil: null,
-				version: this.editingDefinition
-					? Number(this.editingDefinition.version || 1) + 1
-					: 1,
-			}
-
+			const days = versionDays(new Date())
+			const next = { ...payload, validFrom: days.tomorrow, validUntil: null, version: nextVersion(this.editingDefinition) }
 			try {
 				// Close the prior version if editing
 				if (this.editingDefinition) {
-					await axios.patch(
-						generateUrl(
-							'/apps/dossiq/api/deadlines/definitions/'
-								+ encodeURIComponent(this.editingDefinition.id),
-						),
-						{ validUntil: isoToday },
-					)
+					await closeVersion(this.editingDefinition, days.today)
 				}
-				await axios.post(
-					generateUrl('/apps/dossiq/api/deadlines/definitions'),
-					next,
-				)
+				await axios.post(generateUrl('/apps/dossiq/api/deadlines/definitions'), next)
 				this.closeEditor()
 				await this.load()
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Failed to save')
+				this.error = saveRefusal(e)
 			}
 		},
 	},

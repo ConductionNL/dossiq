@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  *
  * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
@@ -193,7 +194,7 @@ class ReIntegrationCaseTypeTest extends TestCase {
 
 		self::assertArrayHasKey(key: 'migratedTo', array: $schema['properties']);
 		self::assertArrayHasKey(key: 'migratedAt', array: $schema['properties']);
-		self::assertSame(expected: '1.2.0', actual: $schema['version']);
+		self::assertSame(expected: '1.2.1', actual: $schema['version']);
 	}//end testTheTrajectoryKeepsTheStamp()
 
 	/**

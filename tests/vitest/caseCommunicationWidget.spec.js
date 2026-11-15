@@ -116,7 +116,7 @@ describe('the Communication widget', () => {
 			where,
 			'case-communication is not reachable from the strip',
 		).toBeTruthy()
-		expect(where.tab).toBe('Communication')
+		expect(where.tab).toBe('Contact')
 		expect(where.label).toBe('Communication')
 		expect(panels.caseTabOf('case-parties').tab).toBe('People')
 

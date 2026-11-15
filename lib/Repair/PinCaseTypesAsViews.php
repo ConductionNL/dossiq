@@ -37,11 +37,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseTypeViews;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\MenuCaseTypesService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -78,17 +78,17 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 *
 	 * @param IConfig              $config        Per-user values.
 	 * @param IUserManager         $userManager   The users to walk.
-	 * @param MenuCaseTypesService $menuCaseTypes The case types a user pinned.
-	 * @param CaseTypeViews        $caseTypeViews The view and menu entry per case type.
-	 * @param SettingsService      $settings      OpenRegister, to read the case types as the system.
+	 * @param MenuCaseTypesServiceInterface $menuCaseTypes The case types a user pinned.
+	 * @param CaseTypeViewsInterface        $caseTypeViews The view and menu entry per case type.
+	 * @param SettingsServiceInterface      $settings      OpenRegister, to read the case types as the system.
 	 * @param LoggerInterface      $logger        Where a failure is written.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
 		private readonly IUserManager $userManager,
-		private readonly MenuCaseTypesService $menuCaseTypes,
-		private readonly CaseTypeViews $caseTypeViews,
-		private readonly SettingsService $settings,
+		private readonly MenuCaseTypesServiceInterface $menuCaseTypes,
+		private readonly CaseTypeViewsInterface $caseTypeViews,
+		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -115,6 +115,31 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$this->written = 0;
+		$caseTypes = $this->readCaseTypes(output: $output);
+		if ($caseTypes === null) {
+			return;
+		}
+
+		if ($caseTypes === []) {
+			$output->info('PinCaseTypesAsViews: no case types yet; nothing to carry over.');
+			return;
+		}
+
+		$this->carryOverForSeenUsers(caseTypes: $caseTypes);
+
+		$output->info("PinCaseTypesAsViews: added pinned case types to the menu views of {$this->written} user(s).");
+	}//end run()
+
+	/**
+	 * The case types the menu shows, read as the system, or null when they could not be read.
+	 *
+	 * @param IOutput $output Where progress is reported.
+	 *
+	 * @return array<int, array{id: string, title: string}>|null The case types.
+	 *
+	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
+	 */
+	private function readCaseTypes(IOutput $output): ?array {
 		$caseTypes = [];
 		try {
 			// A repair step has no user: the case types are read as the system,
@@ -126,25 +151,45 @@ class PinCaseTypesAsViews implements IRepairStep {
 				}
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: case types unreadable; pinned case types not yet added to menu views', ['exception' => $e->getMessage()]);
-			$output->warning('PinCaseTypesAsViews: case types unreadable; will try again on the next upgrade.');
-			return;
+			$this->reportUnreadable(output: $output, error: $e);
+			return null;
 		}
 
-		if ($caseTypes === []) {
-			$output->info('PinCaseTypesAsViews: no case types yet; nothing to carry over.');
-			return;
-		}
+		return $caseTypes;
+	}//end readCaseTypes()
 
+	/**
+	 * Log and print that the case types could not be read.
+	 *
+	 * @param IOutput   $output Where progress is reported.
+	 * @param Throwable $error  Why the read failed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
+	 */
+	private function reportUnreadable(IOutput $output, Throwable $error): void {
+		$this->logger->warning('Dossiq: case types unreadable; pinned case types not yet added to menu views', ['exception' => $error->getMessage()]);
+		$output->warning('PinCaseTypesAsViews: case types unreadable; will try again on the next upgrade.');
+	}//end reportUnreadable()
+
+	/**
+	 * Carry the pins over for every seen user.
+	 *
+	 * @param array<int, array{id: string, title: string}> $caseTypes The case types the menu shows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
+	 */
+	private function carryOverForSeenUsers(array $caseTypes): void {
 		$this->userManager->callForSeenUsers(
 			function (IUser $user) use ($caseTypes): ?bool {
 				$this->carryOver(userId: $user->getUID(), caseTypes: $caseTypes);
 				return null;
 			}
 		);
-
-		$output->info("PinCaseTypesAsViews: added pinned case types to the menu views of {$this->written} user(s).");
-	}//end run()
+	}//end carryOverForSeenUsers()
 
 	/**
 	 * Add one user's pins to their menu views, unless the step ran for them.
@@ -157,7 +202,7 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
 	 */
 	public function carryOver(string $userId, array $caseTypes): void {
-		if ($this->config->getUserValue($userId, Application::APP_ID, self::DONE_KEY, '') !== '') {
+		if ($this->config->getUserValue($userId, AppIdentity::APP_ID, self::DONE_KEY, '') !== '') {
 			return;
 		}
 
@@ -171,11 +216,11 @@ class PinCaseTypesAsViews implements IRepairStep {
 		}
 
 		if ($pinned !== []) {
-			$this->config->setUserValue($userId, Application::APP_ID, CaseTypeViews::MENU_PREFERENCE, (string)json_encode(array_values($entries)));
+			$this->config->setUserValue($userId, AppIdentity::APP_ID, CaseTypeViewsInterface::MENU_PREFERENCE, (string)json_encode(array_values($entries)));
 			$this->written++;
 		}
 
-		$this->config->setUserValue($userId, Application::APP_ID, self::DONE_KEY, '1');
+		$this->config->setUserValue($userId, AppIdentity::APP_ID, self::DONE_KEY, '1');
 	}//end carryOver()
 
 	/**
@@ -186,7 +231,7 @@ class PinCaseTypesAsViews implements IRepairStep {
 	 * @return array<int, array<string, mixed>> The entries.
 	 */
 	private function existingEntries(string $userId): array {
-		$stored = json_decode($this->config->getUserValue($userId, Application::APP_ID, CaseTypeViews::MENU_PREFERENCE, ''), true);
+		$stored = json_decode($this->config->getUserValue($userId, AppIdentity::APP_ID, CaseTypeViewsInterface::MENU_PREFERENCE, ''), true);
 		if (is_array($stored) === false) {
 			return [];
 		}

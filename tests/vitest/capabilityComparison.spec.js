@@ -36,7 +36,7 @@ import {
 	tally,
 } from '../../src/utils/capabilityComparison.js'
 
-// The corpus's own totals over the 240 ROWS. Hard-coded on purpose: if a row
+// The corpus's own totals over the 242 ROWS. Hard-coded on purpose: if a row
 // is edited, one of these fails and names the system whose score moved.
 //
 // These count `capabilities` and nothing else. `pending` is a second list with
@@ -101,16 +101,21 @@ import {
 // fifteen rows are dossiq capabilities that had a spec and no row, rated from
 // our own code: three yes, ten partial, two no. 142/60/23 became 145/70/25.
 // No rival was read against them, so each rival's `unknown` grew by fifteen.
+//
+// On 2026-11-12 two rows joined for two open changes that covered none:
+// 9.20 (case-page-and-list-as-a-place, partial) and 9.21
+// (unread-state-on-the-case, yes). 145/70/25 became 146/71/25, and each
+// rival's `unknown` grew by two.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 145, partial: 70, no: 25, unknown: 0 },
-	opencase: { yes: 62, partial: 37, no: 116, unknown: 25 },
-	gzac: { yes: 66, partial: 68, no: 91, unknown: 15 },
-	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 15 },
-	zac: { yes: 68, partial: 64, no: 93, unknown: 15 },
-	openzaak: { yes: 45, partial: 47, no: 133, unknown: 15 },
+	dossiq: { yes: 146, partial: 71, no: 25, unknown: 0 },
+	opencase: { yes: 62, partial: 37, no: 116, unknown: 27 },
+	gzac: { yes: 66, partial: 68, no: 91, unknown: 17 },
+	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 17 },
+	zac: { yes: 68, partial: 64, no: 93, unknown: 17 },
+	openzaak: { yes: 45, partial: 47, no: 133, unknown: 17 },
 }
 
-const ROW_COUNT = 240
+const ROW_COUNT = 242
 
 // The proposals. Not rows, not scored, not in any total on the page. 146 until
 // 2026-09-26, when 18 demand rows mined from tender requirements and competitor
@@ -305,17 +310,22 @@ const SPEC_ROUND_ADDED_IDS = [
 	'17.2',
 ]
 
+// Two rows added on 2026-11-12 for open changes that covered none, rated from
+// our own code, every rival `unknown`, reserved in corpus-reservations.json.
+const CHANGE_ROWS_ADDED_IDS = ['9.20', '9.21']
+
 // Round 4's 104 rows used to be pinned here too. They are not rows any more:
 // they were added to this file and to nothing else, and they are now 98 of the
 // 146 proposals in `pending`, which carry no `addedOn` because they were never
 // added to the scored list. The guards below therefore cover round 3's 19.
-const ADDED_IDS = [...ROUND3_ADDED_IDS, ...SPEC_ROUND_ADDED_IDS]
+const ADDED_IDS = [...ROUND3_ADDED_IDS, ...SPEC_ROUND_ADDED_IDS, ...CHANGE_ROWS_ADDED_IDS]
 
 // The date each batch above was added, so the guard can check a row against
 // its OWN round instead of against whichever round happened to be last.
 const ADDED_ON = {
 	...Object.fromEntries(ROUND3_ADDED_IDS.map((id) => [id, '2026-09-09'])),
 	...Object.fromEntries(SPEC_ROUND_ADDED_IDS.map((id) => [id, '2026-10-07'])),
+	...Object.fromEntries(CHANGE_ROWS_ADDED_IDS.map((id) => [id, '2026-11-12'])),
 }
 
 // The rows where every rival has the capability and we do not. Pinned
@@ -371,7 +381,7 @@ describe('capabilityComparison data', () => {
 		expect(data.pending.map((c) => c.id)).toEqual(corpusIds.pending)
 	})
 
-	it('carries the 240 rows, 164 proposals, 17 areas and 6 columns', () => {
+	it('carries the 242 rows, 164 proposals, 17 areas and 6 columns', () => {
 		expect(data.capabilities).toHaveLength(ROW_COUNT)
 		expect(data.pending).toHaveLength(PENDING_COUNT)
 		expect(data.areas).toHaveLength(AREA_COUNT)
@@ -827,6 +837,16 @@ describe('labelFor', () => {
 		expect(labelFor({ name: 'A', name_nl: '' }, 'nl')).toBe('A')
 		expect(labelFor({ name: 'A' }, 'nl')).toBe('A')
 	})
+
+	it('reads a missing entry, locale or name as empty or English', () => {
+		expect(labelFor(null, 'nl')).toBe('')
+		expect(labelFor(entry)).toBe('Case tags or labels')
+		expect(labelFor(entry, null)).toBe('Case tags or labels')
+		expect(labelFor(entry, 'NL-be')).toBe('Labels of tags op een zaak')
+		expect(labelFor({ name_nl: 'B' }, 'en')).toBe('')
+		expect(labelFor({ name: 'A', name_nl: '  ' }, 'nl')).toBe('A')
+		expect(labelFor({ name: 'A', name_nl: 7 }, 'nl')).toBe('A')
+	})
 })
 
 describe('tally', () => {
@@ -884,6 +904,15 @@ describe('formatComparedOn', () => {
 	it('returns the raw value when it is not a date', () => {
 		expect(formatComparedOn('not-a-date', 'en')).toBe('not-a-date')
 		expect(formatComparedOn('', 'en')).toBe('')
+	})
+
+	it('reads a missing value as empty and an unknown locale as the raw value', () => {
+		expect(formatComparedOn(null, 'en')).toBe('')
+		expect(formatComparedOn('   ', 'en')).toBe('')
+		expect(formatComparedOn('2026-09-07', '!!')).toBe('2026-09-07')
+		expect(formatComparedOn('2026-09-07', 'nl_NL')).toBe(formatComparedOn('2026-09-07', 'nl-NL'))
+		expect(formatComparedOn('2026-09-07')).toBe(formatComparedOn('2026-09-07', 'en'))
+		expect(formatComparedOn('2026-09-07')).not.toBe('2026-09-07')
 	})
 })
 

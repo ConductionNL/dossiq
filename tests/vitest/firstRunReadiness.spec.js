@@ -94,8 +94,8 @@ describe('nothing in the readiness list gates the app', () => {
 		// And that block reaches the status payload at the top level. Building
 		// it and never merging it is the silent half of this failure: the
 		// method reads correct and the endpoint reports nothing.
-		expect(controller).toContain(
-			'$response = array_merge($response, $this->firstRun())',
+		expect(controller).toMatch(
+			/array_merge\(\s*\$response,[^;]*\$this->firstRun\(\)/,
 		)
 		// Not folded into `steps`: an unreported step is UNKNOWN to CnAppRoot
 		// and a reported one it cannot prompt for is worse.

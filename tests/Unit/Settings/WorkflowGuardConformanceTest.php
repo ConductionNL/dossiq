@@ -24,6 +24,11 @@ use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\StatusEntryGuards;
+use OCA\Dossiq\Service\Transitions\ActorGuards;
+use OCA\Dossiq\Service\Transitions\CaseContentGuards;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Service\Transitions\DateReachedGuard;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -64,6 +69,9 @@ use Psr\Log\NullLogger;
  * so an empty query cannot read as clean.
  *
  * @covers \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\CaseContentGuards
+ * @uses \OCA\Dossiq\Service\Transitions\ActorGuards
+ * @uses \OCA\Dossiq\Service\Transitions\StatusEntryGuards
  * @covers \OCA\Dossiq\Service\Transitions\GuardRegistry
  * @covers \OCA\Dossiq\Service\Transitions\RequiredFieldGuard
  * @covers \OCA\Dossiq\Service\Transitions\RequiredDocumentGuard
@@ -80,6 +88,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\ZgwRulesBase
  * @uses   \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Service\Transitions\DocumentCounts
  */
 class WorkflowGuardConformanceTest extends TestCase {
 
@@ -266,29 +275,35 @@ class WorkflowGuardConformanceTest extends TestCase {
 		$engineTasks->method('lastError')->willReturn('');
 
 		return new GuardRegistry(
-			new ChecklistGuard(
-				$engineTasks,
-				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
-				new NullLogger(),
-				l10n: new SourceL10n()
+			caseContent: new CaseContentGuards(
+				checklist: new ChecklistGuard(
+					$engineTasks,
+					$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+					new NullLogger(),
+					l10n: new SourceL10n()
+				),
+				requiredField: new RequiredFieldGuard(l10n: new SourceL10n()),
+				requiredDocument: new RequiredDocumentGuard(l10n: new SourceL10n()),
+				statusChecklist: $this->createMock(StatusChecklistGuard::class),
+				dateReached: new DateReachedGuard(l10n: new SourceL10n(), dates: $this->dates()),
 			),
-			new RequiredFieldGuard(l10n: new SourceL10n()),
-			new RequiredDocumentGuard(l10n: new SourceL10n()),
-			new RoleGuard($groupManager, $userManager, new NullLogger(), l10n: new SourceL10n()),
-			new DelegatedAuthorityGuard(
-				$this->createMock(\Psr\Container\ContainerInterface::class),
-				$this->createMock(\Psr\Log\LoggerInterface::class),
-				l10n: new SourceL10n()
+			actor: new ActorGuards(
+				roleGuard: new RoleGuard($groupManager, $userManager, new NullLogger(), l10n: new SourceL10n()),
+				authority: new DelegatedAuthorityGuard(
+					$this->createMock(\Psr\Container\ContainerInterface::class),
+					$this->createMock(\Psr\Log\LoggerInterface::class),
+					l10n: new SourceL10n()
+				),
 			),
-			$this->createMock(StatusChecklistGuard::class),
-			$this->createMock(CapacityGuard::class),
-			new NullLogger(),
-			null,
-			new DocumentAssessmentGuard(
-				new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), new NullLogger()),
-				new NullLogger(),
-				l10n: new SourceL10n()
+			statusEntry: new StatusEntryGuards(
+				capacity: $this->createMock(CapacityGuard::class),
+				documentAssessment: new DocumentAssessmentGuard(
+					new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), new NullLogger()),
+					new NullLogger(),
+					l10n: new SourceL10n()
+				),
 			),
+			logger: new NullLogger(),
 		);
 	}
 
@@ -520,6 +535,41 @@ class WorkflowGuardConformanceTest extends TestCase {
 
 			$blank = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1', 'properties' => []]);
 			$this->assertFalse($blank['passed'], $entry['path'] . ' must fail when the case does not answer ' . $field);
+		}
+	}
+
+	/**
+	 * A date reader whose today is 14 November 2026.
+	 *
+	 * @return CaseDateNormaliserInterface
+	 */
+	private function dates(): CaseDateNormaliserInterface {
+		$dates = $this->createMock(CaseDateNormaliserInterface::class);
+		$dates->method('todayAsCalendarDate')->willReturn('2026-11-14');
+		$dates->method('toCalendarDateOrNull')->willReturnCallback(
+			static fn (mixed $value): ?string => (is_string($value) === true && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) ? $value : null
+		);
+
+		return $dates;
+	}
+
+	/**
+	 * Each shipped dateReached guard passes once its day lies behind, fails before it, and holds on the day when it waits for the day to pass.
+	 *
+	 * @return void
+	 */
+	public function testDateReachedGuardsPassAndFail(): void {
+		$guards = $this->guardsOfType(type: 'dateReached');
+
+		foreach ($guards as $entry) {
+			$field = (string)$entry['guard']['field'];
+			$after = (($entry['guard']['after'] ?? false) === true);
+			$case  = static fn (string $day): array => ['id' => 'case-1', 'properties' => [['name' => $field, 'value' => $day]]];
+
+			$this->assertTrue($this->evaluateShipped(guard: $entry['guard'], case: $case('2026-11-01'))['passed'], $entry['path'] . ' must pass once ' . $field . ' lies behind');
+			$this->assertFalse($this->evaluateShipped(guard: $entry['guard'], case: $case('2026-11-30'))['passed'], $entry['path'] . ' must fail while ' . $field . ' lies ahead');
+			$this->assertSame($after === false, $this->evaluateShipped(guard: $entry['guard'], case: $case('2026-11-14'))['passed'], $entry['path'] . ' on the day of ' . $field);
+			$this->assertFalse($this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1', 'properties' => []])['passed'], $entry['path'] . ' must fail when the case has no ' . $field);
 		}
 	}
 

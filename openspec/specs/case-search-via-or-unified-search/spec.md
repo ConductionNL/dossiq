@@ -1,7 +1,7 @@
 # case-search-via-or-unified-search Specification
 
 ## Purpose
-TBD - created by archiving change case-search-via-or-unified-search. Update Purpose after archive.
+Make cases findable in Nextcloud's unified search through OpenRegister. The schema opts in, a re-import is version-gated, and every hit links to a real page.
 
 ## Requirements
 

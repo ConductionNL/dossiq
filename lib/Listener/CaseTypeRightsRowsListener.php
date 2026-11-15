@@ -7,7 +7,9 @@
  * OpenRegister asks for the rows through `MatrixRowsRequestedEvent` while it
  * decides an access question, once per request; this listener answers with the
  * rights rows of the current case types, translated by
- * {@see CaseTypeRightsMatrixRows}.
+ * {@see \OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows}, and with the
+ * rows that let a case's assigned group read it
+ * ({@see \OCA\Dossiq\Service\Access\AssignedGroupReadRows}).
  *
  * 🔴 IT RUNS INSIDE AN AUTHORIZATION DECISION. Everything is read without RBAC
  * and without tenancy, and nothing asks the permission handler. Any failure
@@ -37,9 +39,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
-use OCA\Dossiq\Service\Access\OrganisationRoles;
-use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\OrganisationRolesInterface;
+use OCA\Dossiq\Service\Access\CaseRightsRowSources;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -66,15 +69,15 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStore            $store     Reads every case type.
-	 * @param OrganisationRoles        $roles     Reads the organisation roles.
-	 * @param CaseTypeRightsMatrixRows $translate Turns rights rows into matrix rows.
+	 * @param CaseTypeStoreInterface            $store     Reads every case type.
+	 * @param OrganisationRolesInterface        $roles     Reads the organisation roles.
+	 * @param CaseRightsRowSources     $sources   The case type rights rows and the assigned group's read rows.
 	 * @param LoggerInterface          $logger    The logger.
 	 */
 	public function __construct(
-		private readonly CaseTypeStore $store,
-		private readonly OrganisationRoles $roles,
-		private readonly CaseTypeRightsMatrixRows $translate,
+		private readonly CaseTypeStoreInterface $store,
+		private readonly OrganisationRolesInterface $roles,
+		private readonly CaseRightsRowSources $sources,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -96,8 +99,13 @@ class CaseTypeRightsRowsListener implements IEventListener {
 			return;
 		}
 
+		$event->addRows(rows: $this->sources->assignedGroup->rows(), appId: AppIdentity::APP_ID);
+
 		try {
-			$event->addRows($this->translate->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped()));
+			$event->addRows(
+				rows: $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped()),
+				appId: AppIdentity::APP_ID,
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case type rights could not be read; they grant nothing this request',
