@@ -39,8 +39,8 @@
  * and required for the jsdom-environment component smoke tests.
  */
 
-import events from 'node:events'
 import { config } from '@vue/test-utils'
+import events from 'node:events'
 import { translate, translatePlural } from './stubs/nextcloud-l10n.js'
 
 // p-queue 10 (pulled in by @nextcloud/vue 9.13) raises Node's listener cap on
