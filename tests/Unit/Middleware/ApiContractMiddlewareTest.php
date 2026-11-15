@@ -208,6 +208,27 @@ class ApiContractMiddlewareTest extends TestCase {
 	}//end testStandardProtocolPathIsUntouched()
 
 	/**
+	 * When the request URI does not contain the path info (a rewritten URL), the
+	 * successor link carries no front-controller prefix.
+	 *
+	 * @return void
+	 */
+	public function testSuccessorLinkWithoutAFrontControllerPrefix(): void {
+		$request = $this->createMock(originalClassName: IRequest::class);
+		$request->method('getPathInfo')->willReturn('/apps/dossiq/api/things/7/parts');
+		$request->method('getRequestUri')->willReturn('/rewritten/elsewhere');
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('getAppVersion')->willReturn('1.2.3');
+
+		$response = (new ApiContractMiddleware(request: $request, appManager: $appManager))
+			->afterController(controller: null, methodName: 'any', response: new JSONResponse(data: ['id' => 7]));
+		$headers  = $this->headersOf(response: $response);
+
+		$this->assertSame(expected: '</apps/dossiq/api/v1/things/7/parts>; rel="successor-version"', actual: $headers['Link']);
+		$this->assertSame(expected: '@1794441600', actual: $headers['Deprecation']);
+	}//end testSuccessorLinkWithoutAFrontControllerPrefix()
+
+	/**
 	 * The headers a response set, read without the server container that
 	 * Response::getHeaders() needs.
 	 *
