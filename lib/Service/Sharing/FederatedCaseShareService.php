@@ -146,10 +146,8 @@ class FederatedCaseShareService {
 		}
 
 		return $this->publishShareSnapshot(
-			federationService: $federationService,
-			store: $store,
+			target: new FederatedShareTarget(federationService: $federationService, store: $store),
 			shareData: $shareData,
-			request: $request,
 		);
 	}//end share()
 
@@ -244,26 +242,19 @@ class FederatedCaseShareService {
 	/**
 	 * Persist the snapshot, mint the OCM share for it and activate it.
 	 *
-	 * @param object $federationService The OR FederationShareService
-	 * @param FederatedShareStore $store Where the snapshot is saved
-	 * @param array<string, mixed> $shareData The snapshot record
-	 * @param FederatedShareRequest $request What the share was asked to carry
+	 * @param FederatedShareTarget $target The federation leaf and where the snapshot is saved
+	 * @param array<string, mixed> $shareData The snapshot record, carrying the case, target and creator
 	 *
 	 * @return array The created federated share data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
 	 */
-	private function publishShareSnapshot(
-		object $federationService,
-		FederatedShareStore $store,
-		array $shareData,
-		FederatedShareRequest $request,
-	): array {
-		$objectService = $store->objectService;
-		$register = $store->register;
-		$shareSchema = $store->shareSchema;
-		$caseId = $request->caseId;
-		$remoteCloudId = $request->remoteCloudId;
+	private function publishShareSnapshot(FederatedShareTarget $target, array $shareData): array {
+		$objectService = $target->store->objectService;
+		$register = $target->store->register;
+		$shareSchema = $target->store->shareSchema;
+		$caseId = $shareData['caseId'];
+		$remoteCloudId = $shareData['remoteCloudId'];
 
 		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
 		$resultData = $this->gateway->toArray(value: $result);
@@ -271,10 +262,8 @@ class FederatedCaseShareService {
 		$shareUuid = (string)($resultData['id'] ?? $resultData['uuid'] ?? '');
 
 		$federatedShare = $this->mintOutgoingShare(
-			federationService: $federationService,
-			request: $request,
-			shareUuid: $shareUuid,
-			store: $store,
+			target: $target,
+			grant: ['objectUri' => $shareUuid, 'sharedWith' => $remoteCloudId, 'caseId' => $caseId],
 		);
 		if ($federatedShare === null) {
 			return ['error' => 'Could not mint the federated share token'];
@@ -288,7 +277,7 @@ class FederatedCaseShareService {
 		$this->auditTrailService->emit(
 			[
 				'action' => 'federated_case_share_created',
-				'actor' => $request->createdBy,
+				'actor' => $shareData['createdBy'],
 				'resource' => $caseId,
 				'tenantId' => $remoteCloudId,
 			]
@@ -613,27 +602,20 @@ class FederatedCaseShareService {
 	 * remote org write access to the case. Returns null (and logs) when the
 	 * leaf refuses, so the caller can fail closed.
 	 *
-	 * @param object $federationService The OR FederationShareService
-	 * @param FederatedShareRequest $request The share request (target, and the case id for logging)
-	 * @param string $shareUuid The UUID of the persisted snapshot object
-	 * @param FederatedShareStore $store The register and schema the snapshot lives in
+	 * @param FederatedShareTarget $target The federation leaf and the register and schema the snapshot lives in
+	 * @param array{objectUri: string, sharedWith: string, caseId: string} $grant The snapshot UUID, the remote org and the case (for logging)
 	 *
 	 * @return object|null The minted OR federated share, or null on failure
 	 */
-	private function mintOutgoingShare(
-		object $federationService,
-		FederatedShareRequest $request,
-		string $shareUuid,
-		FederatedShareStore $store,
-	): ?object {
+	private function mintOutgoingShare(FederatedShareTarget $target, array $grant): ?object {
 		try {
-			return $federationService->createOutgoingShare(
+			return $target->federationService->createOutgoingShare(
 				params: [
 					'scope' => 'object',
-					'register' => $store->register,
-					'schema' => $store->shareSchema,
-					'objectUri' => $shareUuid,
-					'sharedWith' => $request->remoteCloudId,
+					'register' => $target->store->register,
+					'schema' => $target->store->shareSchema,
+					'objectUri' => $grant['objectUri'],
+					'sharedWith' => $grant['sharedWith'],
 					// Always 'read' — the case-summary share never grants
 					// the remote org write access to the case.
 					'permissions' => 'read',
@@ -642,7 +624,7 @@ class FederatedCaseShareService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseSharingService: OR createOutgoingShare failed',
-				['caseId' => $request->caseId, 'exception' => $e->getMessage()]
+				['caseId' => $grant['caseId'], 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
