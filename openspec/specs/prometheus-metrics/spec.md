@@ -20,7 +20,7 @@ Expose application metrics in Prometheus text exposition format for monitoring, 
 
 ---
 
-### REQ-PROM-001: Metrics Endpoint
+### Requirement: REQ-PROM-001: Metrics Endpoint
 
 The system MUST expose a Prometheus-compatible metrics endpoint that can be scraped by Prometheus for monitoring and alerting.
 

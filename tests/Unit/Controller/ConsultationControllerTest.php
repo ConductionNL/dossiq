@@ -119,6 +119,8 @@ class ConsultationControllerTest extends TestCase {
 			consultationService: $this->consultationService,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
+			caseAccess: $this->createMock(\OCA\Dossiq\Service\CaseAccessGuard::class),
+			serviceAccount: $this->createMock(\OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount::class),
 		);
 
 		$this->controller = new ConsultationController(

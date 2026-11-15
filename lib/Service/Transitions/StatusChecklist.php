@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\Task\TaskDeclarationReader;
@@ -99,22 +100,10 @@ class StatusChecklist {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function itemsFor(string $statusTypeId): array {
-		$raw = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['checklist'] ?? []);
-
 		// The property is declared as an array, but a store that round-trips it
 		// through a text column hands back the JSON. Reading only the array
 		// shape is how a checklist silently becomes an empty list.
-		if (is_string($raw) === true) {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['checklist'] ?? []));
 
 		$items = [];
 		foreach ($raw as $item) {
@@ -165,6 +154,20 @@ class StatusChecklist {
 		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case, actor: $actor);
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 
+		return $this->newActions(items: $items, entering: ['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'existing' => $existing]);
+	}//end actionsFor()
+
+	/**
+	 * One action per checklist item that has no task standing for it on this status yet.
+	 *
+	 * @param array<int, array<string, mixed>> $items    The status's checklist items.
+	 * @param array<string, mixed>             $entering The case, the status being entered and the titles of the
+	 *                                                   tasks already standing for it (`existing`).
+	 *
+	 * @return array<int, array<string, mixed>> The actions.
+	 */
+	private function newActions(array $items, array $entering): array {
+		['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'existing' => $existing] = $entering;
 		$actions = [];
 		foreach ($items as $item) {
 			// D3: open or completed, a task already standing for this item on
@@ -174,35 +177,49 @@ class StatusChecklist {
 				continue;
 			}
 
-			$declaration = $this->declarationFor(
-				caseId: $caseId,
-				statusTypeId: $statusTypeId,
-				title: $item['title']
-			);
-
-			// A task this case type switched off is not created at all. Two
-			// case types can share a process and differ on one step, which is
-			// exactly what the per-task block exists for.
-			if ($declaration['enabled'] === false) {
-				continue;
+			$action = $this->actionFor(task: ['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'title' => $item['title']]);
+			if ($action !== null) {
+				$actions[] = $action;
 			}
-
-			$actions[] = [
-				'type' => 'createTask',
-				'title' => $item['title'],
-				'workflowStepId' => $statusTypeId,
-				'assignee' => self::CHECKLIST_ASSIGNEE,
-				// The declaration travels WITH the action rather than being
-				// read again by the handler. The handler would have to know
-				// the case type, the status and the title to find it, which is
-				// three lookups to answer a question this method has already
-				// answered.
-				'declaration' => $declaration,
-			];
 		}
 
 		return $actions;
-	}//end actionsFor()
+	}//end newActions()
+
+	/**
+	 * The createTask action for one checklist item, or null when this case type switched the task off.
+	 *
+	 * @param array{caseId: string, statusTypeId: string, title: string} $task The case entering the status, the
+	 *                                                                        statusType UUID being entered and the
+	 *                                                                        checklist item's title.
+	 *
+	 * @return array{type: string, title: string, workflowStepId: string, assignee: string, declaration: array<string, mixed>}|null The action.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function actionFor(array $task): ?array {
+		$declaration = $this->declarationFor(task: $task);
+
+		// A task this case type switched off is not created at all. Two
+		// case types can share a process and differ on one step, which is
+		// exactly what the per-task block exists for.
+		if ($declaration['enabled'] === false) {
+			return null;
+		}
+
+		return [
+			'type' => 'createTask',
+			'title' => $task['title'],
+			'workflowStepId' => $task['statusTypeId'],
+			'assignee' => self::CHECKLIST_ASSIGNEE,
+			// The declaration travels WITH the action rather than being
+			// read again by the handler. The handler would have to know
+			// the case type, the status and the title to find it, which is
+			// three lookups to answer a question this method has already
+			// answered.
+			'declaration' => $declaration,
+		];
+	}//end actionFor()
 
 	/**
 	 * The per-task declaration this case type holds for one checklist item.
@@ -211,23 +228,22 @@ class StatusChecklist {
 	 * every caller written before this block existed gets: the task runs, with
 	 * no form, no candidates, no lead time of its own and no effects.
 	 *
-	 * @param string $caseId       The case uuid.
-	 * @param string $statusTypeId The statusType being entered.
-	 * @param string $title        The checklist item's title.
+	 * @param array{caseId: string, statusTypeId: string, title: string} $task The case uuid, the statusType being
+	 *                                                                        entered and the checklist item's title.
 	 *
 	 * @return array<string, mixed> The declaration.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
-	private function declarationFor(string $caseId, string $statusTypeId, string $title): array {
-		if ($this->declarations === null || $caseId === '') {
+	private function declarationFor(array $task): array {
+		if ($this->declarations === null || $task['caseId'] === '') {
 			return TaskDeclaration::NONE;
 		}
 
 		return $this->declarations->forTask(
-			caseId: $caseId,
-			statusTypeId: $statusTypeId,
-			title: $title
+			caseId: $task['caseId'],
+			statusTypeId: $task['statusTypeId'],
+			title: $task['title']
 		);
 	}//end declarationFor()
 
@@ -285,10 +301,24 @@ class StatusChecklist {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function tasksFor(string $statusTypeId, array $case, string $actor): array {
-		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		if ($caseId === '' || $statusTypeId === '') {
+		$read = self::readOf(statusTypeId: $statusTypeId, case: $case);
+		if ($read === null) {
 			return [];
 		}
+
+		return $this->tasksAs(read: $read, asked: ['statusTypeId' => $statusTypeId, 'actor' => $actor]);
+	}//end tasksFor()
+
+	/**
+	 * The case's tasks on the status, read as the acting identity; a read that cannot be made reads as none.
+	 *
+	 * @param array<string, mixed>                   $read  The case to read, and what the log names.
+	 * @param array{statusTypeId: string, actor: string} $asked The statusType UUID and the acting identity.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks.
+	 */
+	private function tasksAs(array $read, array $asked): array {
+		['statusTypeId' => $statusTypeId, 'actor' => $actor] = $asked;
 
 		// 🔑 AN EMPTY IDENTITY IS NOT A WIDE READ, IT IS AN EMPTY ONE.
 		// `TaskInboxService::inbox()` answers an empty page for a blank uid and
@@ -298,19 +328,10 @@ class StatusChecklist {
 		// cannot tell the two apart and the consequence is a duplicated
 		// checklist or a case that will not move.
 		if (trim($actor) === '') {
-			$this->logger->error(
-				'StatusChecklist: no acting identity, so the status tasks cannot be read',
-				['case' => $caseId, 'statusType' => $statusTypeId],
-			);
-			return [];
+			return $this->unread(message: 'StatusChecklist: no acting identity, so the status tasks cannot be read', context: $read);
 		}
 
-		$tasks = $this->engineTasks->forCase(
-			caseId: $caseId,
-			actor: $actor,
-			limit: self::CASE_TASK_LIMIT,
-		);
-
+		$tasks = $this->engineTasks->forCase(caseId: $read['case'], actor: $actor, limit: self::CASE_TASK_LIMIT);
 		// A read that cannot answer reads as "no tasks yet", which on a
 		// re-entry means a second copy of the list and, for the guard, an
 		// item that counts as not done. Both are the safe direction of the
@@ -321,18 +342,56 @@ class StatusChecklist {
 		// duplicate is otherwise unattributable.
 		$failure = $this->engineTasks->lastError();
 		if ($failure !== '') {
-			$this->logger->error(
-				'StatusChecklist: reading the status tasks failed',
-				['exception' => $failure, 'case' => $caseId, 'statusType' => $statusTypeId],
-			);
-			return [];
+			return $this->unread(message: 'StatusChecklist: reading the status tasks failed', context: ['exception' => $failure] + $read);
 		}
 
+		return self::onStatus(tasks: $tasks, statusTypeId: $statusTypeId);
+	}//end tasksAs()
+
+	/**
+	 * The case and status a task read is about, null when either is missing.
+	 *
+	 * @param string               $statusTypeId The statusType UUID.
+	 * @param array<string, mixed> $case         The case.
+	 *
+	 * @return array{case: string, statusType: string}|null The read, as it is logged.
+	 */
+	private static function readOf(string $statusTypeId, array $case): ?array {
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+		if ($caseId === '' || $statusTypeId === '') {
+			return null;
+		}
+
+		return ['case' => $caseId, 'statusType' => $statusTypeId];
+	}//end readOf()
+
+	/**
+	 * Log why the status tasks were not read, and answer none.
+	 *
+	 * @param string               $message The log line.
+	 * @param array<string, mixed> $context The read and, when there is one, the failure.
+	 *
+	 * @return array<int, array<string, mixed>> No tasks.
+	 */
+	private function unread(string $message, array $context): array {
+		$this->logger->error($message, $context);
+		return [];
+	}//end unread()
+
+	/**
+	 * The tasks the given status asked for.
+	 *
+	 * @param array<int, array<string, mixed>> $tasks        The case's tasks.
+	 * @param string                           $statusTypeId The statusType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks whose step is that status.
+	 */
+	private static function onStatus(array $tasks, string $statusTypeId): array {
 		return array_values(
 			array_filter(
 				$tasks,
 				static fn (array $task): bool => trim((string)($task['workflowStepId'] ?? '')) === $statusTypeId
 			)
 		);
-	}//end tasksFor()
+	}//end onStatus()
 }//end class

@@ -32,6 +32,9 @@ use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
+use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -45,6 +48,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRelationServiceTest extends TestCase {
 
@@ -100,6 +109,26 @@ class CaseRelationServiceTest extends TestCase {
 				private array &$store,
 			) {
 			}//end __construct()
+
+			/**
+			 * Mimic OR setRegister(); the fake keeps one table.
+			 *
+			 * @param mixed $register Register (ignored).
+			 *
+			 * @return void
+			 */
+			public function setRegister($register): void {
+			}//end setRegister()
+
+			/**
+			 * Mimic OR setSchema(); the fake keeps one table.
+			 *
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return void
+			 */
+			public function setSchema($schema): void {
+			}//end setSchema()
 
 			/**
 			 * Mimic OR find() — null when the id is unknown (RBAC fail-closed).
@@ -251,6 +280,7 @@ class CaseRelationServiceTest extends TestCase {
 			codec: $codec,
 			hierarchyGuard: new CaseHierarchyOverlapGuard(),
 			labels: new CaseRelationLabels(store: $relationStore, codec: $codec),
+			subjectRule: new SubjectLinkRule(store: $relationStore, codec: $codec, notices: new CaseActNotices(l10n: self::untranslated())),
 		);
 	}//end makeService()
 
@@ -656,7 +686,7 @@ class CaseRelationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function testALegacyRelationCarriesTheFarCaseTitle(): void {
 		$store = [
@@ -677,4 +707,109 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertSame('Bezwaar Dakkapel', $rows['b']['title']);
 		$this->assertSame('', $rows['gone']['title']);
 	}//end testALegacyRelationCarriesTheFarCaseTitle()
+
+	/**
+	 * A case already hanging as the subject of another case cannot hang under a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectHangsUnderOneCaseOnly(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'b', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame('subject_taken', $result['reason']);
+		$this->assertSame('ZAAK-B', $result['target']);
+		$this->assertSame('ZAAK-C', $result['other']);
+		$this->assertSame(['variant' => 'error', 'role' => 'alert', 'title' => 'Not linked:', 'text' => 'ZAAK-B already hangs as the subject under ZAAK-C. A case can hang as the subject under one case only.'], $result['notice']);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'samenhang')['ok']);
+	}//end testASubjectHangsUnderOneCaseOnly()
+
+	/**
+	 * A subject chain may not loop back to the case that would hold it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectChainMayNotLoop(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'a', natureRelationship: 'subject')['ok']);
+		$this->assertTrue($service->addRelation(caseId: 'b', targetId: 'c', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame('subject_cycle', $result['reason']);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+	}//end testASubjectChainMayNotLoop()
+
+	/**
+	 * An IL10N that fills the placeholders and translates nothing.
+	 *
+	 * @return IL10N
+	 */
+	private static function untranslated(): IL10N {
+		return new class implements IL10N {
+			/**
+			 * @param string                $text       The text.
+			 * @param array<int, mixed>|mixed $parameters The values.
+			 *
+			 * @return string
+			 */
+			public function t(string $text, $parameters = []): string {
+				return vsprintf($text, (array)$parameters);
+			}
+
+			/**
+			 * @param string            $textSingular The singular.
+			 * @param string            $textPlural   The plural.
+			 * @param int               $count        The count.
+			 * @param array<int, mixed> $parameters   The values.
+			 *
+			 * @return string
+			 */
+			public function n(string $textSingular, string $textPlural, int $count, array $parameters = []): string {
+				return $textPlural;
+			}
+
+			/**
+			 * @param string       $type    The type.
+			 * @param mixed        $data    The data.
+			 * @param array<mixed> $options The options.
+			 *
+			 * @return string|int|array<mixed>
+			 */
+			public function l(string $type, $data, array $options = []) {
+				return '';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLanguageCode(): string {
+				return 'en';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLocaleCode(): string {
+				return 'en';
+			}
+		};
+	}//end untranslated()
 }//end class

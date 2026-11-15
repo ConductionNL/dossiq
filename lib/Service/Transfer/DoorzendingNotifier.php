@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Announces a doorzending to the applicant, and says nothing about an internal move.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class DoorzendingNotifier {
 
@@ -68,7 +68,7 @@ class DoorzendingNotifier {
 	 * @param CaseContactDirectory       $contacts      The addresses registered on a case.
 	 * @param LoggerInterface            $logger        Says why an announcement could not be made.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnNotificationService $notifications,
@@ -86,51 +86,76 @@ class DoorzendingNotifier {
 	 * @return array{announced: bool, reason?: string, payload?: array<string, mixed>}
 	 *         Whether a message went out, and why not when it did not.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
 	 */
 	public function announce(array $case, array $transfer): array {
 		if ($this->isDoorzending(transfer: $transfer) === false) {
 			return ['announced' => false, 'reason' => 'internal-move'];
 		}
 
-		$recipient = $this->addressOf(case: $case);
+		$recipient = $this->addressOf(caseRow: $case);
 		if ($recipient === '') {
-			$this->logger->warning(
-				'Dossiq doorzending: the case carries no address, so the applicant was not told',
-				['caseId' => trim((string)($case['id'] ?? ''))],
-			);
-
-			return ['announced' => false, 'reason' => 'no-address'];
+			return $this->unaddressed(caseRow: $case);
 		}
 
-		$destination = $this->destinationOf(transfer: $transfer);
+		$variables = $this->variablesFor(caseRow: $case, transfer: $transfer) + ['addressee' => ['address' => $recipient]];
+		return $this->send(caseRow: $case, variables: $variables);
+	}//end announce()
 
+	/**
+	 * The answer, and the warning, when the case carries no address.
+	 *
+	 * @param array<string, mixed> $caseRow The case that moved.
+	 *
+	 * @return array{announced: bool, reason: string} Not announced.
+	 */
+	private function unaddressed(array $caseRow): array {
+		$this->logger->warning(
+			'Dossiq doorzending: the case carries no address, so the applicant was not told',
+			['caseId' => trim((string)($caseRow['id'] ?? ''))],
+		);
+
+		return ['announced' => false, 'reason' => 'no-address'];
+	}//end unaddressed()
+
+	/**
+	 * The template variables naming the case, where it went and the language to say it in.
+	 *
+	 * @param array<string, mixed> $caseRow     The case that moved.
+	 * @param array<string, mixed> $transfer The completed transfer record.
+	 *
+	 * @return array<string, string> The variables, the addressee still to be added.
+	 */
+	private function variablesFor(array $caseRow, array $transfer): array {
+		return [
+			'case' => trim((string)($caseRow['identifier'] ?? ($caseRow['id'] ?? ''))),
+			'destination' => $this->destinationOf(transfer: $transfer),
+			'locale' => $this->localeOf(caseRow: $caseRow),
+		];
+	}//end variablesFor()
+
+	/**
+	 * Send the notice to the addressee, or answer why it did not go.
+	 *
+	 * @param array<string, mixed> $caseRow      The case that moved.
+	 * @param array<string, mixed> $variables The template variables, with the addressee.
+	 *
+	 * @return array{announced: bool, reason?: string, payload?: array<string, mixed>} The outcome.
+	 */
+	private function send(array $caseRow, array $variables): array {
 		try {
-			$payload = $this->notifications->sendTermijnNotification(
-				self::TEMPLATE,
-				'',
-				$recipient,
-				[
-					'case' => trim((string)($case['identifier'] ?? ($case['id'] ?? ''))),
-					'destination' => $destination,
-					'locale' => $this->localeOf(case: $case),
-					'addressee' => ['address' => $recipient],
-				],
-				// The case row, so a portal requester gets it in the portal
-				// inbox and the case records the result (REQ-WRN-002).
-				$case,
-			);
+			// The case row, so a portal requester gets it in the portal
+			// inbox and the case records the result (REQ-WRN-002).
+			$payload = $this->notifications->sendTermijnNotification(self::TEMPLATE, '', $variables['addressee']['address'], $variables, $caseRow);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq doorzending: the applicant could not be told the case moved',
-				['exception' => $e->getMessage(), 'caseId' => trim((string)($case['id'] ?? ''))],
-			);
+			$context = ['exception' => $e->getMessage(), 'caseId' => trim((string)($caseRow['id'] ?? ''))];
+			$this->logger->error('Dossiq doorzending: the applicant could not be told the case moved', $context);
 
 			return ['announced' => false, 'reason' => 'dispatch-failed'];
 		}
 
 		return ['announced' => true, 'payload' => $payload];
-	}//end announce()
+	}//end send()
 
 	/**
 	 * Whether this transfer declared itself a doorzending.
@@ -162,17 +187,17 @@ class DoorzendingNotifier {
 	/**
 	 * The first address registered on the case, or ''.
 	 *
-	 * @param array<string, mixed> $case The case row.
+	 * @param array<string, mixed> $caseRow The case row.
 	 *
 	 * @return string The address.
 	 */
-	private function addressOf(array $case): string {
-		$addresses = $this->contacts->collectAddresses(caseData: $case);
+	private function addressOf(array $caseRow): string {
+		$addresses = $this->contacts->collectAddresses(caseData: $caseRow);
 		if ($addresses !== []) {
 			return (string)reset($addresses);
 		}
 
-		return trim((string)($case['portalSubject'] ?? ''));
+		return trim((string)($caseRow['portalSubject'] ?? ''));
 	}//end addressOf()
 
 	/**
@@ -182,12 +207,12 @@ class DoorzendingNotifier {
 	 * acknowledgement records: IL10N serves the signed-in handler's interface
 	 * language, and the reader here has no session at all.
 	 *
-	 * @param array<string, mixed> $case The case row.
+	 * @param array<string, mixed> $caseRow The case row.
 	 *
 	 * @return string The locale, `nl` when the case declares none.
 	 */
-	private function localeOf(array $case): string {
-		$locale = trim((string)($case['language'] ?? ''));
+	private function localeOf(array $caseRow): string {
+		$locale = trim((string)($caseRow['language'] ?? ''));
 		if ($locale === '') {
 			return 'nl';
 		}

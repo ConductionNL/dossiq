@@ -1,0 +1,28 @@
+{
+  "_note": "A case type's field has a name a rule and the API use (bouwkosten) and a title a person reads (Bouwkosten, Building costs), and a choice list can give each option a short code (Woning WON). DqZaaktypeVelden lists the fields by title and draws the choice list's codes. The Fields tab falls back to the name where a field has no title. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "propertyDefinition": {
+        "version": "1.9.0",
+        "properties": {
+          "title": {
+            "type": "string",
+            "translatable": true,
+            "sourceLanguage": "nl",
+            "title": "Title",
+            "description": "What a person reads for the field, in their language. Without one the field's name is shown."
+          },
+          "enumCodes": {
+            "type": "object",
+            "title": "Option codes",
+            "description": "A short code per choice list option, by the option's value (Woning: WON). An option without one shows none.",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 12
+            }
+          }
+        }
+      }
+    }
+  }
+}

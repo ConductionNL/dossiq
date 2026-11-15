@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\CasePriorityService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Termijn\TermHandlerNotice;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
@@ -258,4 +259,66 @@ class DeadlineEscalationServiceTest extends TestCase {
 		self::assertSame(expected: 0, actual: $service->bucketFor(daysToDeadline: -3));
 		self::assertNull(actual: $service->bucketFor(daysToDeadline: 30));
 	}//end testTheThresholdBucketsAreUnchanged()
+
+	/**
+	 * The whole payload, the dedup write and the handler notice, in that order.
+	 *
+	 * @return void
+	 */
+	public function testANotificationLogsRecordsAndTellsInOrder(): void {
+		$order = [];
+		$logger = $this->recordingLogger();
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
+		$raiser->method('raiseForThreshold')->willReturn('urgent');
+		$terms = $this->createMock(originalClassName: TermijnService::class);
+		$terms->expects($this->once())->method('updateTermijnInstance')
+			->with('ti-1', ['notificatiesVerstuurd' => [14, 7]])
+			->willReturnCallback(static function () use (&$order) {
+				$order[] = 'recorded';
+				return [];
+			});
+		$notice = $this->createMock(originalClassName: TermHandlerNotice::class);
+		$instance = ['id' => 'ti-1', 'case' => 'case-1', 'endDateCurrent' => '2026-10-01', 'notificatiesVerstuurd' => ['14']];
+		$notice->expects($this->once())->method('tell')->with($instance, 7)
+			->willReturnCallback(static function () use (&$order): bool {
+				$order[] = 'told';
+				return true;
+			});
+
+		$service = new DeadlineEscalationService(termService: $terms, priorityRaiseService: $raiser, logger: $logger, handlerNotice: $notice);
+
+		self::assertTrue($service->notifyThreshold($instance, 7));
+		self::assertSame(
+			expected: [[
+				'threshold' => 7,
+				'template' => 'termijn-7d',
+				'notificationUrgency' => 'medium',
+				'casePriority' => 'urgent',
+				'recipients' => ['handler', 'teamleader'],
+				'instanceId' => 'ti-1',
+				'caseId' => 'case-1',
+				'deadline' => '2026-10-01',
+			]],
+			actual: $logger->records
+		);
+		self::assertSame(expected: ['recorded', 'told'], actual: $order);
+	}//end testANotificationLogsRecordsAndTellsInOrder()
+
+	/**
+	 * A threshold outside the matrix sends nothing, records nothing and raises nothing.
+	 *
+	 * @return void
+	 */
+	public function testAThresholdOutsideTheMatrixSendsNothing(): void {
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
+		$raiser->expects($this->never())->method('raiseForThreshold');
+		$terms = $this->createMock(originalClassName: TermijnService::class);
+		$terms->expects($this->never())->method('updateTermijnInstance');
+		$logger = $this->recordingLogger();
+
+		$service = new DeadlineEscalationService(termService: $terms, priorityRaiseService: $raiser, logger: $logger);
+
+		self::assertFalse($service->notifyThreshold(['id' => 'ti-1', 'case' => 'case-1'], 5));
+		self::assertSame(expected: [], actual: $logger->records);
+	}//end testAThresholdOutsideTheMatrixSendsNothing()
 }//end class

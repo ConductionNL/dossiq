@@ -15,7 +15,7 @@ label>}` per such page. The rule SHALL read the declaration only; no code names 
 - **GIVEN** the citizen or client contribution
 - **WHEN** portaliq gathers its start tiles (the first page with an `action` block on the action)
 - **THEN** `startWooVerzoekAlgemeen` SHALL have the page `startWooVerzoekAlgemeen`, holding only that action
-- **AND** the overview SHALL show a tile "Informatie opvragen (Woo-verzoek)" to that page after "Wat u nog moet doen"
+- **AND** the overview SHALL show a tile "Woo-verzoek indienen" to that page under "Wat kan ik regelen", after "Wat u nog moet doen", as board MijnOverzicht draws it
 
 #### Scenario: What is about one case stays on the case page
 @e2e exclude A declaration rule over the manifest, asserted in tests/Unit/Portal/ResidentStartPointsTest.php.

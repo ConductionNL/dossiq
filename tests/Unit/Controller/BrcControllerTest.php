@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\BrcController;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http\JSONResponse;
@@ -70,6 +71,13 @@ final class BrcStore {
 	public array $failOn = [];
 
 	/**
+	 * Methods that OpenRegister refuses to the caller (NotAuthorizedException).
+	 *
+	 * @var array<int, string>
+	 */
+	public array $refuseOn = [];
+
+	/**
 	 * What saveObject() answers.
 	 *
 	 * @var mixed
@@ -81,12 +89,16 @@ final class BrcStore {
 		if (in_array($method, $this->failOn, true) === true) {
 			throw new \RuntimeException($method . ' is down');
 		}
+
+		if (in_array($method, $this->refuseOn, true) === true) {
+			throw new \OCA\OpenRegister\Exception\NotAuthorizedException('may not ' . $method);
+		}
 	}//end record()
 
 	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
-			throw new \RuntimeException('not found');
+			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');
 		}
 
 		return $this->objects[$id];
@@ -130,6 +142,7 @@ final class BrcStore {
  * @covers \OCA\Dossiq\Controller\ZgwController
  * @covers \OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync
  * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
+ * @uses \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  *
@@ -330,6 +343,16 @@ final class BrcControllerTest extends TestCase {
 		$zgw->method('publishNotification')->willReturnCallback(
 			function (string $zgwApi, string $resource, string $resourceUrl, string $action): void {
 				$this->notifications[] = [$zgwApi, $resource, $resourceUrl, $action];
+			}
+		);
+		$answers = new StoreFailureAnswer(logger: $logger);
+		$zgw->method('storeFailureResponse')->willReturnCallback(
+			static fn (\Throwable $error, string $operation, string $object): JSONResponse => $answers->respond(error: $error, operation: $operation, object: $object)
+		);
+		$zgw->method('notFoundResponse')->willReturnCallback(static fn (): JSONResponse => $answers->notFound());
+		$zgw->method('notifyDeleted')->willReturnCallback(
+			function (IRequest $request, string $zgwApi, string $resource, string $uuid): void {
+				$this->notifications[] = [$zgwApi, $resource, self::BASE . $resource . '/' . $uuid, 'destroy'];
 			}
 		);
 		// The arguments the controller passes; the handlers' own defaults behind them are cut off.
@@ -563,7 +586,7 @@ final class BrcControllerTest extends TestCase {
 		$this->assertSame(
 			[
 				'debug: brc-006: case_decision_schema not configured, skipping zaakbesluit sync',
-				'warning: brc-006: Failed to create zaakbesluit: saveObject is down',
+				'error: brc-006: the besluit was stored, but its zaakbesluit was not: saveObject is down',
 			],
 			$this->log
 		);
@@ -798,7 +821,7 @@ final class BrcControllerTest extends TestCase {
 		$this->assertSame(
 			[
 				'error: brc-005b: objectinformatieobject mapping has no searchable register/schema, so the OIO for ' . self::DOCUMENT_URL . ' is being left behind as an orphan',
-				'warning: brc-005b: Failed to delete OIO: search is down',
+				'error: brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: search is down',
 			],
 			$this->log
 		);
@@ -818,13 +841,20 @@ final class BrcControllerTest extends TestCase {
 		$this->assertSame(['detail' => 'Not found'], $bio->getData());
 		$this->assertSame(404, $besluit->getStatus());
 		$this->assertSame(['detail' => 'Not found'], $besluit->getData());
-		$this->assertSame(['error: BRC delete BIO error: not found', 'error: BRC delete besluit error: not found'], $this->log);
+		$this->assertSame(['info: {operation}: {object} not found', 'info: {operation}: {object} not found'], $this->log);
 		$this->assertSame([], $this->store->callsOf('deleteObject'));
 		$this->assertSame([], $this->notifications);
 
+		// A besluit that is there but could not be deleted is not "not found" (Q-dossiq-L11-2).
 		$this->store->objects[self::BESLUIT] = ['id' => self::BESLUIT];
 		$this->store->failOn = ['deleteObject'];
-		$this->assertSame(404, $this->controller()->destroy('besluiten', self::BESLUIT)->getStatus());
+		$down = $this->controller()->destroy('besluiten', self::BESLUIT);
+		$this->assertSame(503, $down->getStatus());
+		$this->assertSame('store-not-reached', $down->getData()['code']);
+
+		$this->store->failOn   = [];
+		$this->store->refuseOn = ['deleteObject'];
+		$this->assertSame(403, $this->controller()->destroy('besluiten', self::BESLUIT)->getStatus());
 		$this->assertSame([], $this->notifications);
 	}//end testAMissingResourceCannotBeDeleted()
 
@@ -892,7 +922,7 @@ final class BrcControllerTest extends TestCase {
 		$this->assertSame(
 			[
 				'error: brc-005b: objectinformatieobject mapping has no searchable register/schema, so the OIOs of ' . $url . ' are being left behind as orphans',
-				'warning: BRC: Failed to delete OIOs for besluit: search is down',
+				'error: brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: search is down',
 			],
 			$this->log
 		);

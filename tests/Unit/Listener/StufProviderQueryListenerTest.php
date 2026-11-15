@@ -41,6 +41,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\StufProviderQueryListener
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class StufProviderQueryListenerTest extends TestCase {
 

@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -87,8 +87,8 @@ class TermDefinitions {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function activeFor(string $caseType): ?array {
 		if (isset($this->cache[$caseType]) === true) {
@@ -128,7 +128,7 @@ class TermDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The active definitions.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function allActiveFor(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -139,20 +139,25 @@ class TermDefinitions {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseType]
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseType' => $caseType]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermDefinitions.allActiveFor lookup failed',
-				['caseType' => $caseType, 'error' => $e->getMessage()]
-			);
+			$this->logger->warning('TermDefinitions.allActiveFor lookup failed', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->activeNewestFirst(rows: $rows);
+	}//end allActiveFor()
+
+	/**
+	 * The definitions valid today, newest validFrom first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Candidate definitions.
+	 *
+	 * @return array<int, array<string, mixed>> The active definitions.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function activeNewestFirst(array $rows): array {
 		$today = (new DateTimeImmutable())->format('Y-m-d');
 		$active = $this->filterActiveDefinities(rows: $rows, today: $today);
 
@@ -163,7 +168,7 @@ class TermDefinitions {
 		);
 
 		return $active;
-	}//end allActiveFor()
+	}//end activeNewestFirst()
 
 	/**
 	 * Keep the TermijnDefinitie rows whose validity window covers today.
@@ -199,7 +204,7 @@ class TermDefinitions {
 	 *
 	 * @return string One of the two modes.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public static function countingModeOf(array $definitie): string {
 		$declared = trim((string)($definitie['countingMode'] ?? ''));
@@ -222,7 +227,7 @@ class TermDefinitions {
 	 *
 	 * @return bool True when it sets the statutory term.
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isStatutory(array $definitie): bool {
 		$declared = trim((string)($definitie['kind'] ?? ''));
@@ -250,7 +255,7 @@ class TermDefinitions {
 	 * @return array{days: int, mode: string, extra: array<string, string>} The clock, with the
 	 *         fields to write on its instance. Zero days means no planned clock.
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function plannedClock(int $declaredDays, ?array $definition): array {
 		if ($declaredDays > 0 || $definition === null) {
@@ -289,7 +294,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The end date, after the Awt roll.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		return $this->rolled(date: $this->countedEndDateFor(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
@@ -355,7 +360,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The counted date.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	private static function plusDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		return $start->add(new DateInterval('P' . abs($days) . 'D'));

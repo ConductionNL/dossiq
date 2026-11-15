@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -68,6 +69,20 @@ class ReceiptMoment {
 	 * @var string
 	 */
 	public const ACTIVATED_EVENT = 'OCA\\OpenRegister\\Event\\ObjectActivatedEvent';
+
+	/**
+	 * How many receipts one request remembers before the oldest half is dropped.
+	 *
+	 * @var int
+	 */
+	private const REMEMBERED = 2000;
+
+	/**
+	 * The receipts already handed out, as `listener|object id`.
+	 *
+	 * @var array<string, true>
+	 */
+	private array $handled = [];
 
 	/**
 	 * Whether an object is a draft.
@@ -166,18 +181,29 @@ class ReceiptMoment {
 	}//end sendsDraft()
 
 	/**
-	 * The received object, when this event is a receipt.
+	 * The received object, when this event is a receipt this listener has not handled yet.
 	 *
 	 * A create of a non-draft object, or OpenRegister's activation of a draft.
 	 * A draft's own create answers null.
 	 *
-	 * @param Event $event The event.
+	 * OpenRegister announces a sent draft in one of two ways. Today a draft's
+	 * create is an `ObjectCreatedEvent` for a draft, and sending it is an
+	 * `ObjectActivatedEvent` alone. With decision 227 a draft's create is a
+	 * draft event no listener here receives, and sending it is an
+	 * `ObjectCreatedEvent` followed by an `ObjectActivatedEvent` for the same
+	 * object. A listener on both events would do its creation work twice
+	 * there, so the first receipt of an object is remembered per listener and
+	 * the second answers null. Whichever OpenRegister is installed, the work
+	 * runs once.
 	 *
-	 * @return array<string, mixed>|null The serialised object, or null when this is no receipt.
+	 * @param Event  $event The event.
+	 * @param string $for   The listener asking, by class name; each listener has its own first time.
 	 *
-	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 * @return array<string, mixed>|null The serialised object, or null when this is no receipt or a repeated one.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-draft-case-must-not-be-treated-as-received
 	 */
-	public function receivedObject(Event $event): ?array {
+	public function receivedObject(Event $event, string $for): ?array {
 		$isCreate = ($event instanceof ObjectCreatedEvent);
 		if ($isCreate === false && $this->isActivation(event: $event) === false) {
 			return null;
@@ -192,8 +218,48 @@ class ReceiptMoment {
 			return null;
 		}
 
-		return $this->serialised(object: $object);
+		$payload = $this->serialised(object: $object);
+		if ($payload === null || $this->firstReceipt(payload: $payload, for: $for) === false) {
+			return null;
+		}
+
+		return $payload;
 	}//end receivedObject()
+
+	/**
+	 * Whether this listener sees this object's receipt for the first time, and remember it.
+	 *
+	 * An object without an id cannot be told from another, so it is never
+	 * held back. The memory lasts as long as this service does, which is one
+	 * request or one job run: both events of a sent draft are dispatched
+	 * inside the same save.
+	 *
+	 * @param array<string, mixed> $payload The serialised object.
+	 * @param string               $for     The listener asking.
+	 *
+	 * @return bool False when this listener already had this object's receipt.
+	 */
+	private function firstReceipt(array $payload, string $for): bool {
+		$id = trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
+		if ($id === '') {
+			return true;
+		}
+
+		$key = $for . '|' . $id;
+		if (isset($this->handled[$key]) === true) {
+			return false;
+		}
+
+		// A long import run receives many objects; the pair of events this
+		// guards against is always back to back, so old entries can go.
+		if (count($this->handled) >= self::REMEMBERED) {
+			$this->handled = array_slice($this->handled, (int)(self::REMEMBERED / 2), null, true);
+		}
+
+		$this->handled[$key] = true;
+
+		return true;
+	}//end firstReceipt()
 
 	/**
 	 * An object as an array, however the event carries it.
@@ -203,20 +269,7 @@ class ReceiptMoment {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function serialised(mixed $object): ?array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
-			return null;
-		}
-
-		$serialized = $object->jsonSerialize();
-		if (is_array($serialized) === true) {
-			return $serialized;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $object);
 	}//end serialised()
 
 	/**

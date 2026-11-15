@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\CaseTypeLookup;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -34,10 +35,17 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @covers \OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget
+ * @covers \OCA\Dossiq\Listener\CaseTypeLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Listener\CaseTypeSchema
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
@@ -62,10 +70,11 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $transitions The active template's moves.
 	 * @param bool                             $asString    Store the moves as the authoring page does, as JSON.
 	 * @param array<int, array<string, mixed>> $statuses    The stored statuses.
+	 * @param array<string, array<string, mixed>> $named    Templates readable by id, as a payload names them.
 	 *
 	 * @return CaseTypePortalWithdrawalListener The listener.
 	 */
-	private function listener(array $transitions, bool $asString = false, array $statuses = self::STATUSES): CaseTypePortalWithdrawalListener {
+	private function listener(array $transitions, bool $asString = false, array $statuses = self::STATUSES, array $named = []): CaseTypePortalWithdrawalListener {
 		$template = ['id' => 'tpl', 'caseType' => 'melding', 'isActive' => true];
 		$template['transitions'] = $transitions;
 		if ($asString === true) {
@@ -77,11 +86,12 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 			'workflow-template-schema-id' => ($transitions === [] ? [] : [$template]),
 		];
 
-		$objectService = new class($rows) {
+		$objectService = new class($rows, $named) {
 			/**
-			 * @param array<string, array<int, array<string, mixed>>> $rows Rows by schema.
+			 * @param array<string, array<int, array<string, mixed>>> $rows  Rows by schema.
+			 * @param array<string, array<string, mixed>>             $named Templates by id.
 			 */
-			public function __construct(private array $rows) {
+			public function __construct(private array $rows, private array $named) {
 			}
 
 			/**
@@ -94,6 +104,14 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 			 * @return array<string, mixed> The row.
 			 */
 			public function find(string $id, string $register, string $schema): array {
+				if ($schema === 'workflow-template-schema-id') {
+					if (isset($this->named[$id]) === false) {
+						throw new \RuntimeException('not found');
+					}
+
+					return $this->named[$id];
+				}
+
 				return ($id === 'melding' ? ['id' => 'melding', 'title' => 'Melding'] : []);
 			}
 
@@ -136,9 +154,11 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
 		return new CaseTypePortalWithdrawalListener(
 			$settings,
-			new CaseTypeResolver($store),
-			$store,
-			new PortalWithdrawalTarget(),
+			new CaseTypeLookup(
+				resolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				target: new PortalWithdrawalTarget(),
+			),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 		);
@@ -167,12 +187,13 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 *
 	 * @param CaseTypePortalWithdrawalListener $listener   The listener.
 	 * @param array<string, mixed>             $withdrawal The block.
+	 * @param array<string, mixed>             $extra      More fields of the saved payload.
 	 *
 	 * @return ObjectUpdatingEvent The event, after the listener ran.
 	 */
-	private function save(CaseTypePortalWithdrawalListener $listener, array $withdrawal): ObjectUpdatingEvent {
+	private function save(CaseTypePortalWithdrawalListener $listener, array $withdrawal, array $extra = []): ObjectUpdatingEvent {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['title' => 'Melding', 'portalWithdrawal' => $withdrawal]),
+			$this->entity(array_merge(['title' => 'Melding', 'portalWithdrawal' => $withdrawal], $extra)),
 			$this->entity(['title' => 'Melding'])
 		);
 		$listener->handle($event);
@@ -266,6 +287,50 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	}//end testAReachableWithdrawalStatusSaves()
 
 	/**
+	 * 🔴 Zuiddrecht, 14 Oct: the save is judged by the flow the payload names, not the stored active one.
+	 *
+	 * The upgraded instance held an older active basis flow without the move
+	 * from Ontvangen to Ingetrokken. The shipped case type names its own flow,
+	 * which has that move, and was refused on every upgrade.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function testTheFlowThePayloadNamesIsJudgedNotTheStoredActiveOne(): void {
+		$basis = [['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]];
+		$shipped = [
+			'id' => 'shipped-flow',
+			'caseType' => 'melding',
+			'isActive' => true,
+			'transitions' => json_encode([['id' => 'withdraw', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::INGETROKKEN]]),
+		];
+		$listener = $this->listener($basis, named: ['shipped-flow' => $shipped]);
+
+		$this->assertTrue(
+			$this->save($listener, $this->withdrawal())->isPropagationStopped(),
+			'control: judged by the stored active basis flow, the save is refused'
+		);
+		$this->assertFalse(
+			$this->save($listener, $this->withdrawal(), ['workflowDefinition' => 'shipped-flow'])->isPropagationStopped(),
+			'the flow the payload names has the move, so the save goes through'
+		);
+	}//end testTheFlowThePayloadNamesIsJudgedNotTheStoredActiveOne()
+
+	/**
+	 * A payload naming a flow the store does not hold is judged by the active one, as before.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function testADanglingFlowNameFallsBackToTheActiveFlow(): void {
+		$listener = $this->listener([['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]]);
+
+		$this->assertTrue($this->save($listener, $this->withdrawal(), ['workflowDefinition' => 'not-written-yet'])->isPropagationStopped());
+	}//end testADanglingFlowNameFallsBackToTheActiveFlow()
+
+	/**
 	 * Moves stored as a JSON string are still read, and still refuse.
 	 *
 	 * @return void
@@ -329,4 +394,28 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 		$listener->handle($create);
 		$this->assertTrue($create->isPropagationStopped());
 	}//end testOnlyCaseTypesAreInspected()
+
+	/**
+	 * A type without a portal withdrawal, or with an empty one, or a new type
+	 * without an id yet, is not judged.
+	 *
+	 * @return void
+	 */
+	public function testATypeWithoutAWithdrawalOrWithoutAnIdIsNotJudged(): void {
+		$listener = $this->listener([]);
+
+		$this->assertFalse($this->save($listener, [])->isPropagationStopped());
+
+		$none = new ObjectCreatingEvent($this->entity(['title' => 'Melding']));
+		$listener->handle($none);
+		$this->assertFalse($none->isPropagationStopped());
+
+		$notAList = new ObjectCreatingEvent($this->entity(['portalWithdrawal' => 'ingetrokken']));
+		$listener->handle($notAList);
+		$this->assertFalse($notAList->isPropagationStopped());
+
+		$new = new ObjectCreatingEvent($this->entity(['portalWithdrawal' => $this->withdrawal('anything')], 'case-type-schema-id', ''));
+		$listener->handle($new);
+		$this->assertFalse($new->isPropagationStopped());
+	}//end testATypeWithoutAWithdrawalOrWithoutAnIdIsNotJudged()
 }//end class

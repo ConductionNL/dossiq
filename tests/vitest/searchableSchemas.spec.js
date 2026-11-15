@@ -47,19 +47,16 @@ const FRAGMENT_DIR = path.resolve(__dirname, '../../lib/Settings/register.d')
  */
 const PENDING_CASE_LINK = [
 	'caseBerichtenboxMessage',
-	'caseCustody',
 	'caseFederatedActivity',
 	'caseFederatedShare',
 	'caseShare',
 	'caseTakeover',
 	'dispatch',
-	'fieldInspection',
 	'mailIntakeEntry',
 	'mandateEscalation',
 	'milestoneRecord',
 	'permit',
 	'portaalBericht',
-	'toestemming',
 ]
 
 /**

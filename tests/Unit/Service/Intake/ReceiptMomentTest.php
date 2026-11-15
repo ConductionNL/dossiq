@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Intake\ReceiptMoment
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class ReceiptMomentTest extends TestCase {
 
@@ -104,9 +106,9 @@ class ReceiptMomentTest extends TestCase {
 	public function testACreateIsAReceiptUnlessItIsADraft(): void {
 		$receipt = new ReceiptMoment();
 
-		$received = $receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: null)));
+		$received = $receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: null)), for: 'a-listener');
 		$this->assertSame('case-1', $received['id'] ?? null);
-		$this->assertNull($receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: 'draft'))));
+		$this->assertNull($receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: 'draft')), for: 'a-listener'));
 	}//end testACreateIsAReceiptUnlessItIsADraft()
 
 	/**
@@ -119,7 +121,7 @@ class ReceiptMomentTest extends TestCase {
 		$moment = new DateTimeImmutable('2026-10-11T21:40:00+02:00');
 		$event = new ObjectActivatedEvent($this->entity(status: 'active'), $moment);
 
-		$this->assertSame('case-1', $receipt->receivedObject(event: $event)['id'] ?? null);
+		$this->assertSame('case-1', $receipt->receivedObject(event: $event, for: 'a-listener')['id'] ?? null);
 		$this->assertSame($moment, $receipt->activatedAt(event: $event));
 	}//end testAnActivationIsAReceipt()
 
@@ -133,9 +135,90 @@ class ReceiptMomentTest extends TestCase {
 		$entity = $this->entity(status: 'active');
 		$event = new ObjectUpdatedEvent($entity, $entity);
 
-		$this->assertNull($receipt->receivedObject(event: $event));
+		$this->assertNull($receipt->receivedObject(event: $event, for: 'a-listener'));
 		$this->assertNull($receipt->activatedAt(event: $event));
 	}//end testAnUpdateIsNoReceipt()
+
+	/**
+	 * With decision 227 a sent draft is announced as created and then as activated: one receipt.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-draft-case-must-not-be-treated-as-received
+	 */
+	public function testCreatedThenActivatedIsOneReceiptPerListener(): void {
+		$receipt = new ReceiptMoment();
+		$sent = $this->entity(status: 'active');
+		$created = new ObjectCreatedEvent($sent);
+		$activated = new ObjectActivatedEvent($sent, new DateTimeImmutable('2026-10-11T21:40:00+02:00'));
+
+		$this->assertSame('case-1', $receipt->receivedObject(event: $created, for: 'numbering')['id'] ?? null);
+		$this->assertNull($receipt->receivedObject(event: $activated, for: 'numbering'));
+
+		// Another listener has its own first time, on the same shared service.
+		$this->assertSame('case-1', $receipt->receivedObject(event: $created, for: 'grouping')['id'] ?? null);
+		$this->assertNull($receipt->receivedObject(event: $activated, for: 'grouping'));
+	}//end testCreatedThenActivatedIsOneReceiptPerListener()
+
+	/**
+	 * Today a draft's create is skipped and its activation is the one receipt.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-draft-case-must-not-be-treated-as-received
+	 */
+	public function testADraftCreateThenActivationIsOneReceipt(): void {
+		$receipt = new ReceiptMoment();
+
+		$this->assertNull($receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: 'draft')), for: 'numbering'));
+
+		$activated = new ObjectActivatedEvent($this->entity(status: 'active'), new DateTimeImmutable('2026-10-11T21:40:00+02:00'));
+		$this->assertSame('case-1', $receipt->receivedObject(event: $activated, for: 'numbering')['id'] ?? null);
+		$this->assertNull($receipt->receivedObject(event: $activated, for: 'numbering'));
+	}//end testADraftCreateThenActivationIsOneReceipt()
+
+	/**
+	 * An object without an id is never held back, and another object is not mistaken for the first.
+	 *
+	 * @return void
+	 */
+	public function testOnlyTheSameObjectIsARepeat(): void {
+		$receipt = new ReceiptMoment();
+
+		$nameless = new ObjectEntity();
+		$nameless->setObject(['title' => 'Aanvraag']);
+		$this->assertNotNull($receipt->receivedObject(event: new ObjectCreatedEvent($nameless), for: 'numbering'));
+		$this->assertNotNull($receipt->receivedObject(event: new ObjectCreatedEvent($nameless), for: 'numbering'));
+
+		$other = new ObjectEntity();
+		$other->setUuid('case-2');
+		$other->setObject(['title' => 'Melding']);
+		$this->assertNotNull($receipt->receivedObject(event: new ObjectCreatedEvent($this->entity(status: null)), for: 'numbering'));
+		$this->assertSame('case-2', $receipt->receivedObject(event: new ObjectCreatedEvent($other), for: 'numbering')['id'] ?? null);
+	}//end testOnlyTheSameObjectIsARepeat()
+
+	/**
+	 * A long run forgets its oldest receipts and keeps the newest.
+	 *
+	 * @return void
+	 */
+	public function testALongRunKeepsTheNewestReceipts(): void {
+		$receipt = new ReceiptMoment();
+		$event = static function (int $number): ObjectCreatedEvent {
+			$entity = new ObjectEntity();
+			$entity->setUuid('case-' . $number);
+			$entity->setObject(['title' => 'Aanvraag']);
+
+			return new ObjectCreatedEvent($entity);
+		};
+
+		for ($number = 1; $number <= 2001; $number++) {
+			$this->assertNotNull($receipt->receivedObject(event: $event($number), for: 'numbering'));
+		}
+
+		$this->assertNull($receipt->receivedObject(event: $event(2001), for: 'numbering'), 'The newest receipt was forgotten.');
+		$this->assertNotNull($receipt->receivedObject(event: $event(1), for: 'numbering'), 'The oldest receipt is still held.');
+	}//end testALongRunKeepsTheNewestReceipts()
 
 	/**
 	 * The save that receives an object: a create that is no draft, or the update that sends one.
@@ -174,4 +257,25 @@ class ReceiptMomentTest extends TestCase {
 
 		$this->assertNull($receipt->objectBeingReceived(event: new ObjectCreatedEvent($active)), 'Already stored: nothing is being received any more.');
 	}//end testAnyOtherSaveReceivesNothing()
+
+	/**
+	 * An object with no isDraft() of its own is read through what it serialises to.
+	 *
+	 * @return void
+	 */
+	public function testIsDraftReadsAnObjectThroughItsSerialisation(): void {
+		$receipt = new ReceiptMoment();
+		$serialisable = static fn (?string $status): \JsonSerializable => new class($status) implements \JsonSerializable {
+			public function __construct(private readonly ?string $status) {
+			}
+
+			public function jsonSerialize(): array {
+				return ['@self' => ['status' => $this->status]];
+			}
+		};
+
+		$this->assertTrue($receipt->isDraft(object: $serialisable('draft')));
+		$this->assertFalse($receipt->isDraft(object: $serialisable('active')));
+		$this->assertFalse($receipt->isDraft(object: new \stdClass()));
+	}//end testIsDraftReadsAnObjectThroughItsSerialisation()
 }//end class

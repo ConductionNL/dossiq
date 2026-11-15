@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -48,6 +49,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Termijn\TermNotice
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeRun
  */
 class RequesterNoticeSenderTest extends TestCase {
 	use MakesRealTermNoticeSender;
@@ -238,6 +241,23 @@ class RequesterNoticeSenderTest extends TestCase {
 	}//end testAPortalRequesterGetsAPortalMessageAndNoDigitalPost()
 
 	/**
+	 * REQ-ACK-COPY-001: a caller may name the channels to try; e-mail only
+	 * mails a portal requester, and records the message.
+	 *
+	 * @return void
+	 */
+	public function testACallerMayAskForEmailOnly(): void {
+		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc', 'email' => 'verzoeker@example.nl']);
+
+		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['channels' => ['email']]);
+
+		self::assertSame('email', $result['channel']);
+		self::assertCount(1, $this->mailed);
+		self::assertSame([], $this->store->findObjects('dossiq', 'portaalBericht'));
+		self::assertSame(['email'], array_column($this->store->get('case', 'case-1')['outboundCommunications'], 'channel'));
+	}//end testACallerMayAskForEmailOnly()
+
+	/**
 	 * Without portaliq the inbox is not offered, and the notice goes on to the next channel.
 	 *
 	 * @return void
@@ -334,4 +354,22 @@ class RequesterNoticeSenderTest extends TestCase {
 		self::assertSame('transfer', $sender->momentFor('doorzending'));
 		self::assertSame('stage', $sender->momentFor('status-beoordelen'));
 	}//end testEveryTemplateHasAMoment()
+	/**
+	 * A stored notice list that is no list is started afresh, and a case without id records nothing.
+	 *
+	 * @return void
+	 */
+	public function testABrokenNoticeListStartsAfreshAndACaseWithoutIdRecordsNothing(): void {
+		$case = $this->seedCase(fields: ['outboundCommunications' => 'not a list']);
+
+		$result = $this->sender()->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement');
+
+		$stored = $this->store->get('case', 'case-1')['outboundCommunications'];
+		self::assertCount(1, $stored);
+		self::assertSame($result['status'], $stored[0]['status']);
+		self::assertSame('acknowledgement', $stored[0]['moment']);
+
+		$this->sender()->send(['identifier' => 'WOO-2026-8'], 'ontvangstbevestiging', $this->rendered(), 'acknowledgement');
+		self::assertCount(1, $this->store->get('case', 'case-1')['outboundCommunications']);
+	}//end testABrokenNoticeListStartsAfreshAndACaseWithoutIdRecordsNothing()
 }//end class

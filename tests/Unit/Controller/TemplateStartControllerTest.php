@@ -117,7 +117,6 @@ class TemplateStartControllerTest extends TestCase {
 		);
 
 		$this->controller = new TemplateStartController(
-			appName: 'dossiq',
 			request: $request,
 			cases: $this->cases,
 			content: $this->content,
@@ -241,7 +240,6 @@ class TemplateStartControllerTest extends TestCase {
 		$session->method('getUser')->willReturn(null);
 
 		$controller = new TemplateStartController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			cases: $this->cases,
 			content: $this->content,

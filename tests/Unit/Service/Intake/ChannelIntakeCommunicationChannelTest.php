@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\Intake\MessageFacts;
+use OCA\Dossiq\Service\Intake\RoutedMessage;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -53,7 +54,14 @@ class ChannelIntakeCommunicationChannelTest extends TestCase {
 		);
 
 		$method = new ReflectionMethod(ChannelIntake::class, 'caseObjectFor');
-		return $method->invoke($intake, 'type-1', ['channelId' => 'c1'], ['communicationChannel' => $channel]);
+		$routed = new RoutedMessage(
+			message: ['channelId' => 'c1'],
+			payload: ['communicationChannel' => $channel],
+			ruleName: '',
+			channel: 'c1',
+			externalId: ''
+		);
+		return $method->invoke($intake, 'type-1', $routed);
 	}//end caseFor()
 
 	/**

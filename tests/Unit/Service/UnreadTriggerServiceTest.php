@@ -31,6 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\UnreadTriggerService;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -54,7 +56,7 @@ class UnreadTriggerServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->service = new UnreadTriggerService();
+		$this->service = new UnreadTriggerService(l10n: new SourceL10n());
 	}//end setUp()
 
 	/**
@@ -233,4 +235,39 @@ class UnreadTriggerServiceTest extends TestCase {
 			haystack: \OCA\Dossiq\Service\Settings\SchemaSlugMap::SCHEMA_ANNOTATION_KEYS
 		);
 	}//end testTheAnnotationKeyIsReconciledOntoTheLiveSchema()
+
+	/**
+	 * The warnings come translated, and the unknown names are counted with n().
+	 *
+	 * @return void
+	 */
+	public function testTheWarningsAreTranslatedAndCountTheUnknownNames(): void {
+		$service  = new UnreadTriggerService(l10n: $this->markingL10n());
+		$warnings = $service->publicationWarnings(caseType: ['unreadTriggers' => ['statsu', 'documnets']]);
+
+		$this->assertCount(expectedCount: 1, haystack: $warnings);
+		$this->assertStringStartsWith(prefix: 'NL: This case type names 2 changes nobody recognises', string: $warnings[0]);
+		$this->assertStringContainsString(needle: 'statsu, documnets', haystack: $warnings[0]);
+
+		$quiet = $service->publicationWarnings(caseType: ['unreadTriggers' => ['documents']]);
+		$this->assertStringStartsWith(prefix: 'NL: A case of this type does not read unread', string: $quiet[0]);
+	}//end testTheWarningsAreTranslatedAndCountTheUnknownNames()
+
+	/**
+	 * A translator that marks what it translated, so a test can tell a
+	 * translated warning from a hard-coded one.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function markingL10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => 'NL: ' . vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static fn (string $singular, string $plural, int $count, array $parameters = []): string => 'NL: ' . vsprintf(str_replace('%n', (string)$count, $count === 1 ? $singular : $plural), $parameters)
+		);
+
+		return $l10n;
+	}//end markingL10n()
 }//end class

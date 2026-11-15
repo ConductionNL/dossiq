@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * Thrown when a rule references an unregistered routing strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class RoutingStrategyMissingException extends RuntimeException {
 }//end class

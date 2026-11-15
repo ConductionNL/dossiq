@@ -1,0 +1,9 @@
+{
+    "skipFor": [
+        "supervisor"
+    ],
+    "skipPurpose": "quality-check",
+    "assign": {
+        "quality-check": "supervisor"
+    }
+}

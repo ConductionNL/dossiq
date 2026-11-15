@@ -64,13 +64,17 @@ describe('taskStateLabel', () => {
 		expect(taskStateLabel(' ')).toBe('')
 	})
 
-	it('is the one wording: the case plan and the task page both use it', () => {
-		for (const file of [
-			'src/components/case/CasePlanPanel.vue',
-			'src/views/tasks/TaskDetailView.vue',
-		]) {
-			expect(readFileSync(file, 'utf8'), file).toContain('taskStateLabel(')
+	it('is the one wording the task page uses', () => {
+		// The task page is a manifest detail page: its state pill maps each
+		// engine state to the same words, translated through the same catalogue.
+		const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+		const pill = manifest.pages.find((entry) => entry.id === 'TaskDetail').config.typePill
+		expect(pill.field).toBe('state')
+		for (const state of ['available', 'enabled', 'active', 'completed', 'terminated', 'disabled']) {
+			expect(pill.labels[state], state).toBe(taskStateLabel(state))
 		}
+		expect(pill.colorMap.active).toBe(taskStateTone('active'))
+		expect(pill.colorMap.completed).toBe(taskStateTone('completed'))
 	})
 })
 

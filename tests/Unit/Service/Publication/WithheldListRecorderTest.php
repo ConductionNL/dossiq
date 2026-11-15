@@ -110,6 +110,26 @@ class WithheldListRecorderTest extends TestCase {
 
 		self::assertSame(['status' => 'not-recorded', 'reason' => 'record-failed'], $recorder->record('pub-1', []));
 	}//end testAnUnresolvableDoorIsReportedAsAFailure()
+
+	/**
+	 * A resolved door without a record() method is an old opencatalogi, not a failure.
+	 *
+	 * @return void
+	 */
+	public function testADoorWithoutRecordIsReportedAsTooOld(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects(self::once())->method('get')->with(\stdClass::class)->willReturn(new \stdClass());
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::never())->method('error');
+		$recorder = new WithheldListRecorder(
+			container: $container,
+			logger: $logger,
+			l10n: $this->english(),
+			recordClass: \stdClass::class,
+		);
+
+		self::assertSame(['status' => 'not-recorded', 'reason' => 'opencatalogi-too-old'], $recorder->record('pub-1', []));
+	}//end testADoorWithoutRecordIsReportedAsTooOld()
 	/**
 	 * A refused entry is named in one sentence with its number, code and reason.
 	 *

@@ -1,0 +1,39 @@
+{
+    "calls": [
+        {
+            "currentCaseType": {
+                "register": "dossiq",
+                "caseTypeId": "3c0f5a00-0000-4000-a000-00000000a001"
+            }
+        },
+        {
+            "write": {
+                "register": "dossiq",
+                "case": {
+                    "title": "Parkeren",
+                    "description": "Alle stukken",
+                    "caseType": "type-1",
+                    "portalSubject": "subject-anna",
+                    "portalParty": "subject:subject-anna",
+                    "intakeChannel": "other",
+                    "wooRequest": {
+                        "onderwerp": "Parkeren",
+                        "omschrijving": "Alle stukken",
+                        "origin": "pipelinq",
+                        "originReference": "",
+                        "collectionId": ""
+                    },
+                    "status": "status-ontvangst"
+                },
+                "caseType": {
+                    "id": "type-1",
+                    "initialStatus": "status-ontvangst"
+                }
+            }
+        }
+    ],
+    "answer": {
+        "caseId": "case-2",
+        "caseUrl": "https://gemeente.test/index.php/apps/dossiq/cases/case-2"
+    }
+}

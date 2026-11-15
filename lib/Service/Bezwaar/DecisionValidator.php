@@ -97,6 +97,17 @@ class DecisionValidator {
 	];
 
 	/**
+	 * Conditional appealNotice sub-fields (REQ-BD-6), in the order they are
+	 * checked, each with the filing methods that require it.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const APPEAL_NOTICE_FILING_FIELDS = [
+		'filingUrl' => ['digitaal', 'both'],
+		'filingAddress' => ['schriftelijk', 'both'],
+	];
+
+	/**
 	 * Assert the draft-time Awb guards on a bezwaarDecision payload.
 	 *
 	 * @param array<string, mixed> $payload Decision properties.
@@ -108,6 +119,39 @@ class DecisionValidator {
 	 * @spec openspec/specs/bezwaar-decision/spec.md
 	 */
 	public function assertDraftable(array $payload): void {
+		$disposition = $this->draftableDisposition(payload: $payload);
+		$this->assertReasoned(payload: $payload);
+
+		$replacement = (string)($payload['replacementDecision'] ?? '');
+		if ($replacement !== '' && $this->allowsReplacement(disposition: $disposition) === false) {
+			throw new RuntimeException(
+				'replacementDecision MUST NOT be set when disposition is not '
+				. 'gegrond_herroepen or gegrond_wijzigen'
+			);
+		}
+	}//end assertDraftable()
+
+	/**
+	 * Whether a disposition allows a replacementDecision.
+	 *
+	 * @param string $disposition The disposition.
+	 *
+	 * @return bool
+	 */
+	private function allowsReplacement(string $disposition): bool {
+		return in_array($disposition, self::REPLACEMENT_ALLOWED, true);
+	}//end allowsReplacement()
+
+	/**
+	 * The disposition of a draft, refused when not one of the canonical values.
+	 *
+	 * @param array<string, mixed> $payload Decision properties.
+	 *
+	 * @return string The disposition.
+	 *
+	 * @throws RuntimeException When the disposition is invalid.
+	 */
+	private function draftableDisposition(array $payload): string {
 		$disposition = (string)($payload['dispositionType'] ?? '');
 		if (in_array($disposition, self::VALID_DISPOSITIONS, true) === false) {
 			throw new RuntimeException(
@@ -116,6 +160,19 @@ class DecisionValidator {
 			);
 		}
 
+		return $disposition;
+	}//end draftableDisposition()
+
+	/**
+	 * Assert a draft carries both its reasoning and its legal basis (Awb art. 7:12).
+	 *
+	 * @param array<string, mixed> $payload Decision properties.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When either is missing.
+	 */
+	private function assertReasoned(array $payload): void {
 		$reasoning = (string)($payload['reasoning'] ?? '');
 		$legalBasis = (string)($payload['legalBasis'] ?? '');
 		if ($reasoning === '' || $legalBasis === '') {
@@ -123,17 +180,7 @@ class DecisionValidator {
 				'reasoning and legalBasis are required (Awb art. 7:12)'
 			);
 		}
-
-		$replacement = (string)($payload['replacementDecision'] ?? '');
-		if ($replacement !== ''
-			&& in_array($disposition, self::REPLACEMENT_ALLOWED, true) === false
-		) {
-			throw new RuntimeException(
-				'replacementDecision MUST NOT be set when disposition is not '
-				. 'gegrond_herroepen or gegrond_wijzigen'
-			);
-		}
-	}//end assertDraftable()
+	}//end assertReasoned()
 
 	/**
 	 * Run every publication-time guard against a draft decision.
@@ -147,6 +194,32 @@ class DecisionValidator {
 	 * @spec openspec/specs/bezwaar-decision/spec.md
 	 */
 	public function assertPublishable(array $decision): void {
+		$disposition = $this->publishableDisposition(decision: $decision);
+
+		// REQ-BD-3: the replacementDecision matches the disposition.
+		$this->assertReplacementFits(decision: $decision, disposition: $disposition);
+
+		// REQ-BD-5: deviationRationale required when advisoryOpinion is
+		// set and the decision deviates.
+		$this->assertDeviationReasoned(decision: $decision);
+
+		// REQ-BD-6: appealNotice completeness.
+		$this->assertAppealNoticeComplete(decision: $decision);
+
+		// REQ-BD-7: proceskostenvergoeding rules.
+		$this->assertProceskostenRules(decision: $decision);
+	}//end assertPublishable()
+
+	/**
+	 * The disposition of a decision about to be published, refused when not canonical.
+	 *
+	 * @param array<string, mixed> $decision The decision payload.
+	 *
+	 * @return string The disposition.
+	 *
+	 * @throws RuntimeException When the disposition is invalid.
+	 */
+	private function publishableDisposition(array $decision): string {
 		$disposition = (string)($decision['dispositionType'] ?? '');
 		if (in_array($disposition, self::VALID_DISPOSITIONS, true) === false) {
 			throw new RuntimeException(
@@ -154,7 +227,22 @@ class DecisionValidator {
 			);
 		}
 
-		// REQ-BD-3: gegrond_wijzigen requires replacementDecision.
+		return $disposition;
+	}//end publishableDisposition()
+
+	/**
+	 * Validate the replacementDecision against the disposition (REQ-BD-3).
+	 *
+	 * Gegrond_wijzigen requires one; ongegrond and gegrond_handhaven MUST NOT carry one.
+	 *
+	 * @param array<string, mixed> $decision    The decision payload.
+	 * @param string               $disposition Its disposition.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the replacementDecision does not fit.
+	 */
+	private function assertReplacementFits(array $decision, string $disposition): void {
 		$replacement = (string)($decision['replacementDecision'] ?? '');
 		if ($disposition === 'upheld_amend' && $replacement === '') {
 			throw new RuntimeException(
@@ -163,36 +251,38 @@ class DecisionValidator {
 			);
 		}
 
-		// REQ-BD-3: ongegrond and gegrond_handhaven MUST NOT carry one.
-		if ($replacement !== ''
-			&& in_array($disposition, self::REPLACEMENT_ALLOWED, true) === false
-		) {
+		if ($replacement !== '' && $this->allowsReplacement(disposition: $disposition) === false) {
 			throw new RuntimeException(
 				'replacementDecision MUST NOT be set when disposition is '
 				. $disposition
 			);
 		}
+	}//end assertReplacementFits()
 
-		// REQ-BD-5: deviationRationale required when advisoryOpinion is
-		// set and the decision deviates.
+	/**
+	 * Validate that a decision deviating from the advisory opinion says why (REQ-BD-5).
+	 *
+	 * @param array<string, mixed> $decision The decision payload.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the deviationRationale is missing.
+	 */
+	private function assertDeviationReasoned(array $decision): void {
 		$advisory = (string)($decision['advisoryOpinion'] ?? '');
-		if ($advisory !== '') {
-			$follows = (bool)($decision['followsAdvice'] ?? true);
-			$reason = (string)($decision['deviationRationale'] ?? '');
-			if ($follows === false && $reason === '') {
-				throw new RuntimeException(
-					'deviationRationale is required when followsAdvice is '
-					. 'false (Awb art. 7:13 lid 7)'
-				);
-			}
+		if ($advisory === '') {
+			return;
 		}
 
-		// REQ-BD-6: appealNotice completeness.
-		$this->assertAppealNoticeComplete(decision: $decision);
-
-		// REQ-BD-7: proceskostenvergoeding rules.
-		$this->assertProceskostenRules(decision: $decision);
-	}//end assertPublishable()
+		$follows = (bool)($decision['followsAdvice'] ?? true);
+		$reason = (string)($decision['deviationRationale'] ?? '');
+		if ($follows === false && $reason === '') {
+			throw new RuntimeException(
+				'deviationRationale is required when followsAdvice is '
+				. 'false (Awb art. 7:13 lid 7)'
+			);
+		}
+	}//end assertDeviationReasoned()
 
 	/**
 	 * Validate the rechtsmiddelenclausule (REQ-BD-6).
@@ -207,6 +297,20 @@ class DecisionValidator {
 	 */
 	private function assertAppealNoticeComplete(array $decision): void {
 		$appealNotice = (array)($decision['appealNotice'] ?? []);
+		$this->assertAppealNoticeBaseFields(appealNotice: $appealNotice);
+		$this->assertAppealNoticeFilingFields(appealNotice: $appealNotice);
+	}//end assertAppealNoticeComplete()
+
+	/**
+	 * Validate the appealNotice sub-fields every filing method requires.
+	 *
+	 * @param array<string, mixed> $appealNotice The appealNotice.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException Naming the first missing field.
+	 */
+	private function assertAppealNoticeBaseFields(array $appealNotice): void {
 		foreach (self::APPEAL_NOTICE_BASE_REQUIRED as $field) {
 			$value = (string)($appealNotice[$field] ?? '');
 			if ($value === '') {
@@ -215,26 +319,29 @@ class DecisionValidator {
 				);
 			}
 		}
+	}//end assertAppealNoticeBaseFields()
 
+	/**
+	 * Validate the filingUrl and filingAddress the filing method requires.
+	 *
+	 * @param array<string, mixed> $appealNotice The appealNotice, its base fields present.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException Naming the first missing field and the filing method.
+	 */
+	private function assertAppealNoticeFilingFields(array $appealNotice): void {
 		$method = (string)$appealNotice['filingMethod'];
-		if (in_array($method, ['digitaal', 'both'], true) === true) {
-			$url = (string)($appealNotice['filingUrl'] ?? '');
-			if ($url === '') {
+		foreach (self::APPEAL_NOTICE_FILING_FIELDS as $field => $methods) {
+			if (in_array($method, $methods, true) === true
+				&& (string)($appealNotice[$field] ?? '') === ''
+			) {
 				throw new RuntimeException(
-					'filingUrl is required when filingMethod is ' . $method
+					$field . ' is required when filingMethod is ' . $method
 				);
 			}
 		}
-
-		if (in_array($method, ['schriftelijk', 'both'], true) === true) {
-			$address = (string)($appealNotice['filingAddress'] ?? '');
-			if ($address === '') {
-				throw new RuntimeException(
-					'filingAddress is required when filingMethod is ' . $method
-				);
-			}
-		}
-	}//end assertAppealNoticeComplete()
+	}//end assertAppealNoticeFilingFields()
 
 	/**
 	 * Validate the proceskostenvergoeding decision (REQ-BD-7).
@@ -250,15 +357,8 @@ class DecisionValidator {
 	private function assertProceskostenRules(array $decision): void {
 		$disposition = (string)($decision['dispositionType'] ?? '');
 		$proceskosten = (array)($decision['legalCostsCompensation'] ?? []);
-		$requested = (bool)($proceskosten['requested'] ?? false);
-		$awardedSet = array_key_exists('awarded', $proceskosten);
 		$awarded = (bool)($proceskosten['awarded'] ?? false);
-
-		$eligible = in_array(
-			$disposition,
-			self::PROCESKOSTEN_ELIGIBLE,
-			true
-		);
+		$eligible = $this->allowsCostsCompensation(disposition: $disposition);
 
 		if ($awarded === true && $eligible === false) {
 			throw new RuntimeException(
@@ -267,14 +367,45 @@ class DecisionValidator {
 			);
 		}
 
-		if ($requested === true && $eligible === true && $awardedSet === false) {
+		if ($eligible === true) {
+			$this->assertAwardDecided(proceskosten: $proceskosten);
+		}
+	}//end assertProceskostenRules()
+
+	/**
+	 * Whether a disposition allows a proceskostenvergoeding (Awb art. 7:15 lid 2).
+	 *
+	 * @param string $disposition The disposition.
+	 *
+	 * @return bool
+	 */
+	private function allowsCostsCompensation(string $disposition): bool {
+		return in_array(
+			$disposition,
+			self::PROCESKOSTEN_ELIGIBLE,
+			true
+		);
+	}//end allowsCostsCompensation()
+
+	/**
+	 * Assert an eligible, requested legalCostsCompensation states whether it is awarded.
+	 *
+	 * @param array<string, mixed> $proceskosten The legalCostsCompensation.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When it was requested and `awarded` is not set.
+	 */
+	private function assertAwardDecided(array $proceskosten): void {
+		$requested = (bool)($proceskosten['requested'] ?? false);
+		if ($requested === true && array_key_exists('awarded', $proceskosten) === false) {
 			throw new RuntimeException(
 				'proceskosten.awarded MUST be explicitly set (true or false '
 				. 'with reasoning) when the bezwaarmaker requested '
 				. 'legalCostsCompensation'
 			);
 		}
-	}//end assertProceskostenRules()
+	}//end assertAwardDecided()
 
 	/**
 	 * Compute proceskosten.totalAmount = awardedPoints * pointValue.

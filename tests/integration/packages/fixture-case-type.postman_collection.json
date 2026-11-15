@@ -240,7 +240,7 @@
               "pm.test('a ledger row names the package and its version', () => {",
               "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
               "    pm.expect(row.set).to.eql('fixture-case-type');",
-              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "    pm.expect(row.setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }
@@ -269,10 +269,10 @@
               "const body = pm.response.json();",
               "const rows = Array.isArray(body) ? body : (body.results || []);",
               "const records = rows.filter(r => r.targetSchema === 'package' && r.targetObject === 'fixture-case-type');",
-              "pm.test('one version record names the package at 1.0.0', () => {",
+              "pm.test('one version record names the package at the version it declares', () => {",
               "    pm.expect(records).to.have.lengthOf(1);",
               "    pm.expect(records[0].set).to.eql('fixture-case-type');",
-              "    pm.expect(records[0].setVersion).to.eql('1.0.0');",
+              "    pm.expect(records[0].setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }

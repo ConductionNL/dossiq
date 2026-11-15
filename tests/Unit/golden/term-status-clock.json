@@ -1,0 +1,22 @@
+{
+    "an event without an object": [],
+    "a created case": [
+        "reconcile [\"case-1\",\"st-2\",\"type-1\"]"
+    ],
+    "an updated case, read from the new object": [
+        "reconcile [\"case-1\",\"st-2\",\"type-1\"]"
+    ],
+    "the new object unreadable, the old one read": [
+        "reconcile [\"case-1\",\"st-2\",\"type-1\"]"
+    ],
+    "a serialisable entity under a schema path": [
+        "reconcile [\"case-3\",\"st-3\",\"\"]"
+    ],
+    "another schema": [],
+    "no case schema configured": [],
+    "a case without an id": [],
+    "the clock fails": [
+        "reconcile [\"case-1\",\"st-2\",\"type-1\"]",
+        "warning: Dossiq: a term clock could not be reconciled with the case status: register offline"
+    ]
+}

@@ -24,9 +24,10 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,13 +42,11 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class DocumentRelevance {
+class DocumentRelevance implements DocumentRelevanceInterface {
 
 	use SearchesObjects;
 
 	public const UNMARKED = 'unmarked';
-
-	public const IN_SCOPE = 'in-scope';
 
 	public const OUT_OF_SCOPE = 'out-of-scope';
 
@@ -61,13 +60,13 @@ class DocumentRelevance {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -86,20 +85,31 @@ class DocumentRelevance {
 	}//end isAvailable()
 
 	/**
-	 * Every review of a case, keyed by document.
+	 * Every review of a case, keyed by document, whoever asks.
+	 *
+	 * A review is private to the people on the case, so one person reads only
+	 * a slice of them: a batch reviewer the reviews of their batch. Every
+	 * caller of this method is a rule or a count of the case (what is still
+	 * outstanding, which pages are unseen, which documents a rule may mark,
+	 * whether a document already has a review), and such a rule holds for the
+	 * whole case. So this reads regardless of the caller's own grants, the
+	 * read CaseReviewerAccess::recordsOf() makes. The routes that reach it
+	 * check access to the case first, and none of them hands out a review's
+	 * row: a person lists reviews through OpenRegister, under their own access.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, array<string, mixed>> The reviews by documentRef.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
 	 */
 	public function forCase(string $caseId): array {
 		if ($this->isAvailable() === false || $caseId === '') {
 			return [];
 		}
 
-		$rows = $this->searchObjectsAsArrays(
+		$rows = $this->searchObjectsAsArraysUnscoped(
 			objectService: $this->settingsService->getObjectService(),
 			register: $this->settingsService->getConfigValue('register'),
 			schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
@@ -108,13 +118,30 @@ class DocumentRelevance {
 		$reviews = [];
 		foreach ($rows as $row) {
 			$ref = (string)($row['documentRef'] ?? '');
-			if ($ref !== '') {
+			if ($ref !== '' && $this->isOfCase(row: $row, caseId: $caseId) === true) {
 				$reviews[$ref] = $row;
 			}
 		}
 
 		return $reviews;
 	}//end forCase()
+
+	/**
+	 * Whether a review names this case: an unscoped read never trusts the search filter alone.
+	 *
+	 * @param array<string, mixed> $row    The review row.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return bool
+	 */
+	private function isOfCase(array $row, string $caseId): bool {
+		$case = ($row['case'] ?? '');
+		if (is_array($case) === true) {
+			$case = ($case['id'] ?? ($case['uuid'] ?? ''));
+		}
+
+		return trim((string)$case) === $caseId;
+	}//end isOfCase()
 
 	/**
 	 * The relevance of a document as its review holds it, `unmarked` without one.
@@ -178,22 +205,35 @@ class DocumentRelevance {
 			$reviews = $this->forCase(caseId: $caseId);
 		}
 
+		return $this->outstandingIn(documentIds: $documentIds, known: ['available' => $available, 'reviews' => $reviews, 'assessed' => $assessed]);
+	}//end outstanding()
+
+	/**
+	 * The documents still unmarked, or in scope without a verdict.
+	 *
+	 * @param array<int, int|string> $documentIds The case's documents.
+	 * @param array<string, mixed>   $known       Whether reviews can be read (`available`), the case's reviews
+	 *                                            (`reviews`) and the assessed documents as keys (`assessed`).
+	 *
+	 * @return list<string> The outstanding document ids.
+	 */
+	private function outstandingIn(array $documentIds, array $known): array {
 		$outstanding = [];
 		foreach ($documentIds as $docId) {
 			$docId = (string)$docId;
 			$relevance = self::IN_SCOPE;
-			if ($available === true) {
-				$relevance = self::relevanceOf(reviews: $reviews, documentRef: $docId);
+			if ($known['available'] === true) {
+				$relevance = self::relevanceOf(reviews: $known['reviews'], documentRef: $docId);
 			}
 
-			$needsVerdict = ($relevance === self::IN_SCOPE && isset($assessed[$docId]) === false);
+			$needsVerdict = ($relevance === self::IN_SCOPE && isset($known['assessed'][$docId]) === false);
 			if ($relevance === self::UNMARKED || $needsVerdict === true) {
 				$outstanding[] = $docId;
 			}
 		}
 
 		return $outstanding;
-	}//end outstanding()
+	}//end outstandingIn()
 
 	/**
 	 * A reviewer marks a document's relevance. Changing a rule's marking records the rule as overturned.
@@ -224,13 +264,62 @@ class DocumentRelevance {
 			$review['overturnedRule'] = (string)$review['rule'];
 		}
 
-		$review['relevance'] = $relevance;
+		return $this->save(review: $this->stamped(review: $review, mark: ['relevance' => $relevance, 'userId' => $userId]));
+	}//end mark()
+
+	/**
+	 * The review carrying a reviewer's mark: the relevance, who marked it and when.
+	 *
+	 * @param array<string, mixed>                    $review The review row.
+	 * @param array{relevance: string, userId: string} $mark   The relevance and the reviewer.
+	 *
+	 * @return array<string, mixed> The review, marked.
+	 */
+	private function stamped(array $review, array $mark): array {
+		$review['relevance'] = $mark['relevance'];
 		$review['relevanceSource'] = 'reviewer';
-		$review['markedBy'] = $userId;
+		$review['markedBy'] = $mark['userId'];
 		$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
-		return $this->save(review: $review);
-	}//end mark()
+		return $review;
+	}//end stamped()
+
+	/**
+	 * A verdict says a document is about the request: mark the unmarked ones among these in scope.
+	 *
+	 * A document already marked, in scope or out of scope, keeps its marking.
+	 * Without the review schema nothing is recorded.
+	 *
+	 * @param string       $caseId       The case UUID.
+	 * @param list<string> $documentRefs The documents that just received a verdict.
+	 * @param string       $userId       Who gave the verdict.
+	 *
+	 * @return int How many documents were marked in scope.
+	 *
+	 * @throws RefusedException When a review cannot be written.
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	public function markInScopeWhereUnmarked(string $caseId, array $documentRefs, string $userId): int {
+		if ($this->isAvailable() === false || $caseId === '' || $documentRefs === []) {
+			return 0;
+		}
+
+		$reviews = $this->forCase(caseId: $caseId);
+		$marked  = 0;
+		foreach (array_unique($documentRefs) as $documentRef) {
+			$documentRef = (string)$documentRef;
+			if ($documentRef === '' || self::relevanceOf(reviews: $reviews, documentRef: $documentRef) !== self::UNMARKED) {
+				continue;
+			}
+
+			$review = ($reviews[$documentRef] ?? ['case' => $caseId, 'documentRef' => $documentRef]);
+			$this->save(review: $this->stamped(review: $review, mark: ['relevance' => self::IN_SCOPE, 'userId' => $userId]));
+			$marked++;
+		}
+
+		return $marked;
+	}//end markInScopeWhereUnmarked()
 
 	/**
 	 * The pages seen on these reviews, and the required pages still unseen.
@@ -259,26 +348,10 @@ class DocumentRelevance {
 			throw $this->unstored(previous: null);
 		}
 
-		$uuid = ($review['id'] ?? ($review['uuid'] ?? null));
-		if ($uuid !== null) {
-			$uuid = (string)$uuid;
-		}
+		$uuid = $this->reviewUuid(review: $review);
 
 		unset($review['@self'], $review['id'], $review['uuid']);
-		try {
-			$saved = $this->settingsService->getObjectService()->saveObject(
-				object: $review,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a Document review could not be written',
-				['app' => Application::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			throw $this->unstored(previous: $e);
-		}
+		$saved = $this->storeReview(review: $review, uuid: $uuid);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			return (array)$saved->jsonSerialize();
@@ -286,6 +359,67 @@ class DocumentRelevance {
 
 		return (array)$saved;
 	}//end save()
+
+	/**
+	 * The review's id, or null for a new review.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 *
+	 * @return string|null The id.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function reviewUuid(array $review): ?string {
+		$uuid = ($review['id'] ?? ($review['uuid'] ?? null));
+		if ($uuid !== null) {
+			$uuid = (string)$uuid;
+		}
+
+		return $uuid;
+	}//end reviewUuid()
+
+	/**
+	 * Write the review, logging a failure and refusing it.
+	 *
+	 * @param array<string, mixed> $review The review, without its ids.
+	 * @param string|null          $uuid   The id, or null for a new review.
+	 *
+	 * @return mixed The saved object.
+	 *
+	 * @throws RefusedException When the review cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function storeReview(array $review, ?string $uuid): mixed {
+		try {
+			return $this->settingsService->getObjectService()->saveObject(
+				object: $review,
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				uuid: $uuid,
+			);
+		} catch (Throwable $e) {
+			throw $this->failedWrite(review: $review, error: $e);
+		}
+	}//end storeReview()
+
+	/**
+	 * Log a review that could not be written, and the refusal for it.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 * @param Throwable            $error  The failure.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function failedWrite(array $review, Throwable $error): RefusedException {
+		$this->logger->error(
+			'Dossiq: a Document review could not be written',
+			['app' => AppIdentity::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $error->getMessage()]
+		);
+		return $this->unstored(previous: $error);
+	}//end failedWrite()
 
 	/**
 	 * The refusal when a review cannot be stored.

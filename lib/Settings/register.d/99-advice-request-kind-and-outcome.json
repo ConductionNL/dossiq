@@ -1,0 +1,17 @@
+{
+  "_note": "An advice request keeps who asked, its decidiq decision and, once received, its outcome (DqZaakBesluiten Advies vragen, DqZaak Advies uitbrengen). AdviceService::requestAdvice writes these requests to adviesAanvraag, the schema AdviceRepository reads; `type` (intern/extern) is the request's kind and `subject` its subject. A fragment per ADR-037.",
+  "components": {
+    "schemas": {
+      "adviesAanvraag": {
+        "version": "1.3.0",
+        "properties": {
+          "requestedBy": { "type": "string", "title": "Requested by", "description": "The user who asked for the advice." },
+          "decisionRef": { "type": "string", "title": "Decision reference", "description": "The decidiq advice decision this request is made in." },
+          "conclusion": { "type": "string", "enum": ["positive", "positive-with-conditions", "negative", "clarification"], "title": "Conclusion", "description": "What the advice concludes." },
+          "adviceText": { "type": "string", "title": "Advice", "description": "The advice as given." },
+          "conditionsChecked": { "type": "array", "items": { "type": "string" }, "title": "Conditions checked", "description": "The conditions the advisor ticked." }
+        }
+      }
+    }
+  }
+}

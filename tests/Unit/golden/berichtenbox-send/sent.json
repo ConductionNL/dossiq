@@ -1,0 +1,81 @@
+{
+    "calls": [
+        {
+            "adapter": [
+                "111222333",
+                "Uw aanvraag",
+                "Wij hebben uw aanvraag ontvangen.",
+                "T1",
+                null,
+                "case-update",
+                "case-1"
+            ]
+        },
+        {
+            "getConfigValue": "register"
+        },
+        {
+            "getConfigValue": "berichtenbox_message_schema"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "caseId": "case-1",
+                    "bsn": "111222333",
+                    "subject": "Uw aanvraag",
+                    "body": "Wij hebben uw aanvraag ontvangen.",
+                    "berichtTypeCode": "T1",
+                    "attachmentFileId": null,
+                    "externalMessageId": "msg-9",
+                    "status": "delivered",
+                    "sentAt": "2026-11-02T10:00:00+01:00"
+                },
+                "named": [
+                    [],
+                    7,
+                    9,
+                    null,
+                    true,
+                    true,
+                    false,
+                    true,
+                    null,
+                    null,
+                    false
+                ]
+            }
+        },
+        {
+            "timeline": {
+                "caseId": "case-1",
+                "kind": "portaalbericht",
+                "message": "Uw aanvraag",
+                "fields": {
+                    "subject": "Uw aanvraag",
+                    "messageId": "msg-9",
+                    "status": "delivered"
+                },
+                "visibility": "public"
+            }
+        },
+        {
+            "info": "Dossiq: Berichtenbox message sent",
+            "context": {
+                "caseId": "case-1",
+                "messageId": "msg-9"
+            }
+        }
+    ],
+    "answer": {
+        "caseId": "case-1",
+        "bsn": "111222333",
+        "subject": "Uw aanvraag",
+        "body": "Wij hebben uw aanvraag ontvangen.",
+        "berichtTypeCode": "T1",
+        "attachmentFileId": null,
+        "externalMessageId": "msg-9",
+        "status": "delivered",
+        "sentAt": "2026-11-02T10:00:00+01:00",
+        "id": "message-1"
+    }
+}
