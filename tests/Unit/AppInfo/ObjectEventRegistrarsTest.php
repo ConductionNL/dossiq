@@ -57,13 +57,13 @@ class ObjectEventRegistrarsTest extends TestCase {
 		(new CaseLinkListenerRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame(
-			[
+			expected: [
 				[ObjectCreatedEvent::class, LinkMarkerListener::class, 0],
 				[ObjectUpdatedEvent::class, LinkMarkerListener::class, 0],
 			],
-			$this->listeners
+			actual: $this->listeners
 		);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testTheLinkMarkerFollowsCreatesAndUpdates()
 
 	/**
@@ -74,15 +74,15 @@ class ObjectEventRegistrarsTest extends TestCase {
 	public function testMarkerDerivationRunsBeforeSaveAtItsPriority(): void {
 		(new CaseMarkerListenerRegistrar())->register(context: $this->recordingContext());
 
-		self::assertSame(-300, CaseMarkerListenerRegistrar::DERIVATION_PRIORITY);
+		self::assertSame(expected: -300, actual: CaseMarkerListenerRegistrar::DERIVATION_PRIORITY);
 		self::assertSame(
-			[
+			expected: [
 				[ObjectCreatingEvent::class, CaseMarkerDerivationListener::class, -300],
 				[ObjectUpdatingEvent::class, CaseMarkerDerivationListener::class, -300],
 			],
-			$this->listeners
+			actual: $this->listeners
 		);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testMarkerDerivationRunsBeforeSaveAtItsPriority()
 
 	/**
@@ -93,15 +93,15 @@ class ObjectEventRegistrarsTest extends TestCase {
 	public function testTheRequesterProjectionRunsBeforeSave(): void {
 		(new CaseRequesterListenerRegistrar())->register(context: $this->recordingContext());
 
-		self::assertSame(0, CaseRequesterListenerRegistrar::PROJECTION_PRIORITY);
+		self::assertSame(expected: 0, actual: CaseRequesterListenerRegistrar::PROJECTION_PRIORITY);
 		self::assertSame(
-			[
+			expected: [
 				[ObjectCreatingEvent::class, CaseRequesterProjectionListener::class, 0],
 				[ObjectUpdatingEvent::class, CaseRequesterProjectionListener::class, 0],
 			],
-			$this->listeners
+			actual: $this->listeners
 		);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testTheRequesterProjectionRunsBeforeSave()
 
 	/**
@@ -112,8 +112,8 @@ class ObjectEventRegistrarsTest extends TestCase {
 	public function testTheForfeitInvoiceListensToUpdatesOnly(): void {
 		(new ForfeitInvoiceListenerRegistrar())->register(context: $this->recordingContext());
 
-		self::assertSame([[ObjectUpdatedEvent::class, ForfeitInvoiceListener::class, 0]], $this->listeners);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [[ObjectUpdatedEvent::class, ForfeitInvoiceListener::class, 0]], actual: $this->listeners);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testTheForfeitInvoiceListensToUpdatesOnly()
 
 	/**
@@ -125,16 +125,16 @@ class ObjectEventRegistrarsTest extends TestCase {
 		(new ReviewListenerRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame(
-			[
+			expected: [
 				[ObjectCreatingEvent::class, PagesSeenGuard::class, 0],
 				[ObjectUpdatingEvent::class, PagesSeenGuard::class, 0],
 				[ObjectUpdatingEvent::class, StoppingRuleGuard::class, 0],
 				[ObjectDeletingEvent::class, StoppingRuleGuard::class, 0],
 				[ObjectLeavingEvent::class, StoppingRuleGuard::class, 0],
 			],
-			$this->listeners
+			actual: $this->listeners
 		);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testBothReviewGuardsAttachToTheirEvents()
 
 	/**
@@ -146,9 +146,9 @@ class ObjectEventRegistrarsTest extends TestCase {
 		(new WooListenerRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame(
-			[[BeforeTemplateRenderedEvent::class, WooReportsInitialStateListener::class, 0]],
-			$this->listeners
+			expected: [[BeforeTemplateRenderedEvent::class, WooReportsInitialStateListener::class, 0]],
+			actual: $this->listeners
 		);
-		self::assertSame([], $this->services);
+		self::assertSame(expected: [], actual: $this->services);
 	}//end testWooReportsStateIsProvidedOnTemplateRender()
 }//end class
