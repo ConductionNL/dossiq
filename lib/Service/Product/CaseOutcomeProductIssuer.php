@@ -131,18 +131,34 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
+		return $this->issueOrChange(
+			outcome: new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared),
+			decision: ['status' => $status, 'id' => $decisionId, 'decidedAt' => $decidedAt]
+		);
+	}//end issueFor()
+
+	/**
+	 * Issue the product, or change the one a change case names, when the decision's status is one the case type
+	 * issues on.
+	 *
+	 * @param ProductOutcome       $outcome  The case, its declaration, the object service and the register.
+	 * @param array<string, mixed> $decision The outcome status, the decision id and when it concluded, or null.
+	 *
+	 * @return array<string, mixed>|null The product written, or null when none is.
+	 */
+	private function issueOrChange(ProductOutcome $outcome, array $decision): ?array {
+		$declared = $outcome->declared;
 		$issueOn = (array)($declared['issueOn'] ?? self::DEFAULT_ISSUE_ON);
-		if (in_array(strtolower(trim($status)), array_map('strtolower', $issueOn), true) === false) {
+		if (in_array(strtolower(trim($decision['status'])), array_map('strtolower', $issueOn), true) === false) {
 			return null;
 		}
 
-		$outcome = new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared);
 		if (is_array($declared['changesProduct'] ?? null) === true) {
 			return $this->change(outcome: $outcome);
 		}
 
-		return $this->issue(outcome: $outcome, decision: new ProductDecision(id: $decisionId, decidedAt: $decidedAt));
-	}//end onConcludedDecision()
+		return $this->issue(outcome: $outcome, decision: new ProductDecision(id: $decision['id'], decidedAt: $decision['decidedAt']));
+	}//end issueOrChange()
 
 	/**
 	 * The product declaration of the case's type, or null when it declares none.
