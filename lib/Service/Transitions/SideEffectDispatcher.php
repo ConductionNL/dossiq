@@ -81,7 +81,7 @@ class SideEffectDispatcher {
 				continue;
 			}
 
-			$results[] = $this->dispatchOne(nodes: $nodes, action: $action, transitioned: $transitioned);
+			$results[] = $this->dispatchOne(action: $action, route: ['nodes' => $nodes, 'transitioned' => $transitioned]);
 		}//end foreach
 
 		return $results;
@@ -90,15 +90,17 @@ class SideEffectDispatcher {
 	/**
 	 * Run one action: as its replacing node when retired, else as an OpenRegister node, else locally.
 	 *
-	 * @param FlowNodeRegistry|null $nodes        OpenRegister's node catalogue, or null.
-	 * @param array<string, mixed>  $action       Action config, with a non-empty type.
-	 * @param TransitionedCase      $transitioned The case and the transition context.
+	 * @param array<string, mixed>                                                $action Action config, with a non-empty type.
+	 * @param array{nodes: FlowNodeRegistry|null, transitioned: TransitionedCase} $route  OpenRegister's node
+	 *                                                                                    catalogue (or null), and the
+	 *                                                                                    case and the transition context.
 	 *
 	 * @return array<string, mixed> The result row.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function dispatchOne(?FlowNodeRegistry $nodes, array $action, TransitionedCase $transitioned): array {
+	private function dispatchOne(array $action, array $route): array {
+		['nodes' => $nodes, 'transitioned' => $transitioned] = $route;
 		$type = (string)($action['type'] ?? '');
 
 		// A type dossiq no longer answers itself (mail, notification,
@@ -120,7 +122,7 @@ class SideEffectDispatcher {
 		// else that replaced it. Guard-and-return satisfies both without
 		// pretending either rule is wrong.
 		if ($nodes !== null) {
-			return $this->viaNode(nodes: $nodes, action: $action, transitioned: $transitioned);
+			return $this->viaNode(action: $action, route: $route);
 		}
 
 		return $this->viaHandler(action: $action, transitioned: $transitioned);
@@ -167,15 +169,16 @@ class SideEffectDispatcher {
 	 * ones or roll back the status change. So the throw is caught here and
 	 * turned back into a result row.
 	 *
-	 * @param FlowNodeRegistry     $nodes        The node catalogue.
-	 * @param array<string, mixed> $action       The action config, with its type.
-	 * @param TransitionedCase     $transitioned The case and the transition context.
+	 * @param array<string, mixed>                                           $action The action config, with its type.
+	 * @param array{nodes: FlowNodeRegistry, transitioned: TransitionedCase} $route  The node catalogue, and the case
+	 *                                                                               and the transition context.
 	 *
 	 * @return array<string, mixed> The result row.
 	 *
 	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
 	 */
-	private function viaNode(FlowNodeRegistry $nodes, array $action, TransitionedCase $transitioned): array {
+	private function viaNode(array $action, array $route): array {
+		['nodes' => $nodes, 'transitioned' => $transitioned] = $route;
 		$type = (string)($action['type'] ?? '');
 		try {
 			$node = $nodes->get(type: 'dossiq.' . $type);
