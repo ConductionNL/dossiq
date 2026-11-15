@@ -38,6 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -272,15 +273,13 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	 * @return array<int, array<string, mixed>>|null The rows.
 	 */
 	private function openInstances(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_instance_schema');
+		if ($target === null) {
 			return null;
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
+			return $this->searchObjectsAsArrays(objectService: $target->objectService, register: $target->register, schema: $target->schema, filters: []);
 		} catch (\Throwable $e) {
 			$this->logger->error('Dossiq termijn timer migration: listing failed', ['error' => $e->getMessage()]);
 			return null;
