@@ -44,6 +44,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -58,6 +59,9 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 	use SearchesObjects;
 	use RequiresObjectService {
 		requireObjectService as private objectService;
+	}
+	use ReadsLooseValues {
+		looseText as private text;
 	}
 
 	/**
@@ -460,19 +464,4 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 
 		return $schema;
 	}//end schema()
-
-	/**
-	 * A trimmed string, or '' for anything else.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The string.
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class
