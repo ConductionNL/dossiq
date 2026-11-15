@@ -58,21 +58,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesStatussenCreate(array $body): array {
 		// Zrc-016: Validate statustype belongs to zaak's zaaktype.
-		$statustypeUrl = $body['statustype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($statustypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $statustypeUrl,
-				fieldName: 'statustype',
-				typeSchemaKey: 'status_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->typedSubResource(body: $body, fieldName: 'statustype', typeSchemaKey: 'status_type_schema');
 	}//end rulesStatussenCreate()
 
 	/**
@@ -91,21 +77,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesResultatenCreate(array $body): array {
 		// Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
-		$resultaattypeUrl = $body['resultaattype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($resultaattypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $resultaattypeUrl,
-				fieldName: 'resultaattype',
-				typeSchemaKey: 'result_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->typedSubResource(body: $body, fieldName: 'resultaattype', typeSchemaKey: 'result_type_schema');
 	}//end rulesResultatenCreate()
 
 	/**
@@ -124,21 +96,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesRollenCreate(array $body): array {
 		// Zrc-019: Validate roltype belongs to zaak's zaaktype.
-		$roltypeUrl = $body['roltype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($roltypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $roltypeUrl,
-				fieldName: 'roltype',
-				typeSchemaKey: 'role_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->typedSubResource(body: $body, fieldName: 'roltype', typeSchemaKey: 'role_type_schema');
 	}//end rulesRollenCreate()
 
 	/**
@@ -157,14 +115,27 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesZaakeigenschappenCreate(array $body): array {
 		// Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
-		$attributeUrl = $body['eigenschap'] ?? '';
+		return $this->typedSubResource(body: $body, fieldName: 'eigenschap', typeSchemaKey: 'property_definition_schema');
+	}//end rulesZaakeigenschappenCreate()
+
+	/**
+	 * Validate that the sub-resource's type belongs to the zaak's zaaktype, then the body.
+	 *
+	 * @param array<string, mixed> $body          The request body.
+	 * @param string               $fieldName     The field holding the type URL.
+	 * @param string               $typeSchemaKey The settings key of the type's schema.
+	 *
+	 * @return array The rule result.
+	 */
+	private function typedSubResource(array $body, string $fieldName, string $typeSchemaKey): array {
+		$typeUrl = $body[$fieldName] ?? '';
 		$caseUrl = $body['case'] ?? '';
-		if ($attributeUrl !== '' && $caseUrl !== '') {
+		if ($typeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
 				caseUrl: $caseUrl,
-				typeUrl: $attributeUrl,
-				fieldName: 'eigenschap',
-				typeSchemaKey: 'property_definition_schema'
+				typeUrl: $typeUrl,
+				fieldName: $fieldName,
+				typeSchemaKey: $typeSchemaKey
 			);
 			if ($error !== null) {
 				return $error;
@@ -172,7 +143,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 		}
 
 		return $this->isValid(body: $body);
-	}//end rulesZaakeigenschappenCreate()
+	}//end typedSubResource()
 
 	/**
 	 * Validate a sub-resource type belongs to the zaak's zaaktype (zrc-016..020).
