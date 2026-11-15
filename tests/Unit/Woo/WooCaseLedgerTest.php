@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for WooCaseLedger: it finds the one Woo decision of a case,
+ * Unit tests for CasePublicationState: it finds the one Woo decision of a case,
  * mirrors the publication state onto the case with the requester's link, and
  * degrades when its optional collaborators are not wired.
  *
@@ -15,7 +15,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -25,10 +25,10 @@ use RuntimeException;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  */
 class WooCaseLedgerTest extends TestCase {
 
@@ -79,9 +79,9 @@ class WooCaseLedgerTest extends TestCase {
 		};
 	}//end objectService()
 
-	private function ledger(?object $objectService, ?IURLGenerator $urls = null, ?WooDeliveredSetWriter $sets = null): WooCaseLedger {
+	private function ledger(?object $objectService, ?IURLGenerator $urls = null, ?WooDeliveredSetWriter $sets = null): CasePublicationState {
 		$this->settings->method('getObjectService')->willReturn($objectService);
-		return new WooCaseLedger($this->settings, $this->logger, $urls, $sets);
+		return new CasePublicationState($this->settings, $this->logger, $urls, $sets);
 	}//end ledger()
 
 	public function testTheOneWooDecisionOfTheCaseIsFound(): void {
@@ -94,20 +94,20 @@ class WooCaseLedgerTest extends TestCase {
 			]
 		);
 
-		$this->assertSame(['decisionId' => 'dec-1', 'refusal' => []], $this->ledger($service)->resolveWooDecision('case-1'));
+		$this->assertSame(['decisionId' => 'dec-1', 'refusal' => []], $this->ledger($service)->resolveDecision('case-1'));
 		$this->assertSame([['search', 'dossiq', 'decision', ['case' => 'case-1', '_limit' => 50]]], $service->calls);
 	}//end testTheOneWooDecisionOfTheCaseIsFound()
 
 	public function testNoWooDecisionIsARefusal(): void {
 		$expected = ['decisionId' => '', 'refusal' => ['available' => false, 'reason' => 'no_woo_decision']];
 
-		$this->assertSame($expected, $this->ledger($this->objectService([['id' => 'dec-2', 'case' => 'case-1']]))->resolveWooDecision('case-1'));
+		$this->assertSame($expected, $this->ledger($this->objectService([['id' => 'dec-2', 'case' => 'case-1']]))->resolveDecision('case-1'));
 	}//end testNoWooDecisionIsARefusal()
 
 	public function testWithoutAnObjectServiceThereIsNoWooDecision(): void {
 		$this->assertSame(
 			['decisionId' => '', 'refusal' => ['available' => false, 'reason' => 'no_woo_decision']],
-			$this->ledger(null)->resolveWooDecision('case-1')
+			$this->ledger(null)->resolveDecision('case-1')
 		);
 	}//end testWithoutAnObjectServiceThereIsNoWooDecision()
 
@@ -121,7 +121,7 @@ class WooCaseLedgerTest extends TestCase {
 
 		$this->assertSame(
 			['decisionId' => '', 'refusal' => ['available' => false, 'reason' => 'several_woo_decisions', 'decisionIds' => ['dec-1', 'dec-2']]],
-			$this->ledger($service)->resolveWooDecision('case-1')
+			$this->ledger($service)->resolveDecision('case-1')
 		);
 	}//end testSeveralWooDecisionsAreARefusalNamingThem()
 
@@ -164,7 +164,7 @@ class WooCaseLedgerTest extends TestCase {
 		$this->ledger($service)->writeCaseState('', ['wooPublicationStatus' => 'published']);
 		$this->assertSame([], $service->calls);
 
-		(new WooCaseLedger($this->createMock(SettingsService::class), $this->logger))->writeCaseState('case-1', ['x' => 1]);
+		(new CasePublicationState($this->createMock(SettingsService::class), $this->logger))->writeCaseState('case-1', ['x' => 1]);
 	}//end testNoCaseOrNoObjectServiceWritesNothing()
 
 	public function testWithoutAUrlGeneratorThePathStaysRelative(): void {

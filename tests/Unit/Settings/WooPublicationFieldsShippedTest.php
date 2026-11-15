@@ -59,8 +59,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
