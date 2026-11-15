@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\RefusesUnreadableCases;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\Money\SettlementOverview;
 use OCP\AppFramework\Controller;
@@ -42,6 +43,8 @@ use Throwable;
  * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
  */
 class SettlementController extends Controller {
+
+	use RefusesUnreadableCases;
 
 	/**
 	 * Constructor.
@@ -76,9 +79,9 @@ class SettlementController extends Controller {
 	#[NoAdminRequired]
 	public function forCase(string $caseId): JSONResponse {
 		$caseId = trim($caseId);
-		$user   = $this->userSession->getUser();
-		if ($user === null || $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'You may not read this case.'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->unreadableCaseRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
