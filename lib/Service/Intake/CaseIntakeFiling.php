@@ -214,18 +214,30 @@ class CaseIntakeFiling {
 			'intakeChannel' => self::CHANNEL,
 		];
 
-		$transcript = $this->transcript(messages: $messages);
+		return $this->withConversation(payload: $payload, conversation: ['messages' => $messages, 'person' => $person]);
+	}//end payload()
+
+	/**
+	 * The payload with the transcript as its description and who asked as its initiator, when there are.
+	 *
+	 * @param array<string, string> $payload      The case payload so far.
+	 * @param array<string, mixed>  $conversation The transcript (`messages`), oldest first, and who asked (`person`).
+	 *
+	 * @return array<string, string> The payload.
+	 */
+	private function withConversation(array $payload, array $conversation): array {
+		$transcript = $this->transcript(messages: $conversation['messages']);
 		if ($transcript !== '') {
 			$payload['description'] = $transcript;
 		}
 
-		$person = trim($person);
+		$person = trim($conversation['person']);
 		if ($person !== '') {
 			$payload['initiatorDisplayName'] = $person;
 		}
 
 		return $payload;
-	}//end payload()
+	}//end withConversation()
 
 	/**
 	 * The case type the classification names, when it is published.

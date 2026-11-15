@@ -102,6 +102,18 @@ class ProgrammeConsumer implements ProgrammeConsumerInterface {
 			]
 		);
 
+		return $this->linkOutcome(answer: $answer, where: ['case' => $caseId, 'programme' => $programmeId]);
+	}//end linkCase()
+
+	/**
+	 * What pipelinq's answer to the link means: linked, unanswered, or refused.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 * @param array{case: string, programme: string}             $where  The case and the programme, for a refusal.
+	 *
+	 * @return array{linked: bool, reason: string} The outcome.
+	 */
+	private function linkOutcome(array $answer, array $where): array {
 		if ($answer['answered'] === false || is_array($answer['value']) === false) {
 			return ['linked' => false, 'reason' => $answer['reason']];
 		}
@@ -110,8 +122,8 @@ class ProgrammeConsumer implements ProgrammeConsumerInterface {
 			return ['linked' => true, 'reason' => ''];
 		}
 
-		return $this->refuseLink(result: $answer['value'], where: ['case' => $caseId, 'programme' => $programmeId]);
-	}//end linkCase()
+		return $this->refuseLink(result: $answer['value'], where: $where);
+	}//end linkOutcome()
 
 	/**
 	 * Ask pipelinq to put a piece of work under a programme.
