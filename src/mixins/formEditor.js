@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+import { savingEmitter } from './savingEmitter.js'
+
 /**
  * An editor dialog that checks its `form` and hands a copy to its parent as
  * `save`. The dialog supplies `formErrors()`, the refusals per field, and an
@@ -40,7 +42,7 @@ export const formEditor = {
  * @spec exclude shared editor plumbing, no behaviour of its own
  */
 export const savingFormEditor = {
-	mixins: [formEditor],
+	mixins: [formEditor, savingEmitter],
 
 	methods: {
 		/**
@@ -50,12 +52,7 @@ export const savingFormEditor = {
 		 */
 		async save() {
 			if (!this.validate()) return
-			this.saving = true
-			try {
-				this.$emit('save', { ...this.form })
-			} finally {
-				this.saving = false
-			}
+			this.emitWhileSaving('save', { ...this.form })
 		},
 	},
 }

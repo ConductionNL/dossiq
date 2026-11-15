@@ -266,6 +266,7 @@
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import AiSuggestionDecision from './AiSuggestionDecision.vue'
+import { caseTab } from '../../mixins/caseTab.js'
 import { createSuggestionTracker } from '../../services/aiSuggestionTracker.js'
 import { converse } from '../../services/assistantApi.js'
 import {
@@ -374,13 +375,7 @@ export default {
 		NcNoteCard,
 	},
 
-	props: {
-		/** The case uuid, injected by CnObjectSidebar. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

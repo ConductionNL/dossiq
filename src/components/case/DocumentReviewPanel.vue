@@ -493,6 +493,7 @@ import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue
 import RecallSampleDialog from '../../dialogs/RecallSampleDialog.vue'
 import ReviewBatchDialog from '../../dialogs/ReviewBatchDialog.vue'
 import TriageRuleDialog from '../../dialogs/TriageRuleDialog.vue'
+import { caseTab } from '../../mixins/caseTab.js'
 
 /**
  * A share as a percentage with one decimal, Dutch style.
@@ -582,15 +583,7 @@ export default {
 		TriageRuleDialog,
 	},
 
-	props: {
-		/**
-		 * The case uuid, bound by CnDetailWidgetHost.
-		 */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

@@ -262,6 +262,7 @@
 
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
+import { caseTab } from '../../../mixins/caseTab.js'
 import {
 	asOfRows,
 	fetchAccessHistory,
@@ -338,13 +339,7 @@ export default {
 		NcLoadingIcon,
 	},
 
-	props: {
-		/** The case uuid, injected by CnObjectSidebar. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

@@ -128,6 +128,7 @@ import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import { caseDialog } from '../mixins/caseDialog.js'
+import { openable } from '../mixins/openable.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 import { templateFillRows } from '../utils/templateFills.js'
@@ -165,14 +166,7 @@ export default {
 		NcNoteCard,
 	},
 
-	mixins: [caseDialog],
-
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-	},
+	mixins: [caseDialog, openable],
 
 	emits: ['close', 'generated'],
 	data() {

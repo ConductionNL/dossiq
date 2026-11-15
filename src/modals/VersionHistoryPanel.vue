@@ -84,6 +84,7 @@ import { emit } from '@nextcloud/event-bus'
 import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
+import { openable } from '../mixins/openable.js'
 
 /**
  * Version-history modal for one dossier document, over the Nextcloud Files
@@ -182,12 +183,9 @@ export default {
 		History,
 	},
 
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
+	mixins: [openable],
 
+	props: {
 		/** The clicked zaakinformatieobject row, with informatieobject extended in. */
 		row: {
 			type: Object,
