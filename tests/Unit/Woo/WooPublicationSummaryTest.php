@@ -39,7 +39,7 @@ class WooPublicationSummaryTest extends TestCase {
 	 * @return void
 	 */
 	public function testNamesTheRequestByTheCaseTitle(): void {
-		$this->assertSame('Besluit op het Woo-verzoek "Raadsstukken"', WooPublicationSummary::of(caseTitle: '  Raadsstukken '));
+		$this->assertSame('Besluit op het Woo-verzoek "Raadsstukken"', WooPublicationSummary::forTitle(caseTitle: '  Raadsstukken '));
 	}//end testNamesTheRequestByTheCaseTitle()
 
 	/**
@@ -48,8 +48,8 @@ class WooPublicationSummaryTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutATitleGetsTheGenericLine(): void {
-		$this->assertSame('Besluit op een Woo-verzoek', WooPublicationSummary::of(caseTitle: ''));
-		$this->assertSame('Besluit op een Woo-verzoek', WooPublicationSummary::of(caseTitle: "\t "));
+		$this->assertSame('Besluit op een Woo-verzoek', WooPublicationSummary::forTitle(caseTitle: ''));
+		$this->assertSame('Besluit op een Woo-verzoek', WooPublicationSummary::forTitle(caseTitle: "\t "));
 	}//end testACaseWithoutATitleGetsTheGenericLine()
 
 	/**
@@ -58,6 +58,6 @@ class WooPublicationSummaryTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheDecisionServiceAnswersTheSameLine(): void {
-		$this->assertSame(WooPublicationSummary::of(caseTitle: 'Brug'), WOODecisionService::publicationSummary(caseTitle: 'Brug'));
+		$this->assertSame(WooPublicationSummary::forTitle(caseTitle: 'Brug'), WOODecisionService::publicationSummary(caseTitle: 'Brug'));
 	}//end testTheDecisionServiceAnswersTheSameLine()
 }//end class

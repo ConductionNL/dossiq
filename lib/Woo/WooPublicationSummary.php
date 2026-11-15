@@ -40,12 +40,12 @@ final class WooPublicationSummary {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	public static function of(string $caseTitle): string {
+	public static function forTitle(string $caseTitle): string {
 		$title = trim($caseTitle);
 		if ($title === '') {
 			return 'Besluit op een Woo-verzoek';
 		}
 
 		return 'Besluit op het Woo-verzoek "' . $title . '"';
-	}//end of()
+	}//end forTitle()
 }//end class

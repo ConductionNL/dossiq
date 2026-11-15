@@ -8,7 +8,7 @@
  * (and into its `description` when the decision had no explanation). The
  * public site shows the summary under the publication's title, so a resident
  * read a code. New decisions name the request by the case's title
- * ({@see WooPublicationSummary::of()}); this step gives the rows
+ * ({@see WooPublicationSummary::forTitle()}); this step gives the rows
  * written before that fix the same words.
  *
  * Two kinds of row, one rule:
@@ -193,7 +193,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	 *
 	 * @return array<string, string> The changes.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::of()
+	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::forTitle()
 	 * is the one place the wording lives, so a repaired row and a new one cannot
 	 * come to read differently.
 	 *
@@ -205,7 +205,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return [];
 		}
 
-		$summary = WooPublicationSummary::of(caseTitle: $this->titleOf(caseId: strtolower($match[1])));
+		$summary = WooPublicationSummary::forTitle(caseTitle: $this->titleOf(caseId: strtolower($match[1])));
 
 		$changes = [];
 		foreach ($fields as $field) {

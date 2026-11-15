@@ -33,6 +33,8 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link     https://github.com/ConductionNL/dossiq
  *
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag) $isPrivileged is the cross-agent/own-record scoping flag of the implementation.
+ *
  * @spec exclude Structural contract, no functional requirement.
  */
 interface KccContactMomentServiceInterface {

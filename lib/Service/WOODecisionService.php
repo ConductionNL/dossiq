@@ -300,12 +300,12 @@ class WOODecisionService implements WOODecisionServiceInterface {
 	 *
 	 * @return string The summary.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::of() is where the wording lives.
+	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::forTitle() is where the wording lives.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public static function publicationSummary(string $caseTitle): string {
-		return WooPublicationSummary::of(caseTitle: $caseTitle);
+		return WooPublicationSummary::forTitle(caseTitle: $caseTitle);
 	}//end publicationSummary()
 
 	/**
