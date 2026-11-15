@@ -230,15 +230,7 @@ class StarterContentController extends Controller {
 	 * @return int
 	 */
 	private function adoptStatus(array $result): int {
-		if ($result['adopted'] !== false) {
-			return Http::STATUS_OK;
-		}
-
-		if ($result['reason'] === 'not_found') {
-			return Http::STATUS_NOT_FOUND;
-		}
-
-		return Http::STATUS_CONFLICT;
+		return $this->foundOrConflict(result: ['ok' => $result['adopted'] !== false, 'reason' => ($result['reason'] ?? '')]);
 	}//end adoptStatus()
 
 	/**
