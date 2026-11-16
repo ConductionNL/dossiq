@@ -91,6 +91,7 @@ interface ComplaintObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintDeadlineAlerts
  */
 class ComplaintServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

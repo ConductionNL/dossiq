@@ -633,3 +633,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `WOOAssessmentController` and `Review/ReviewBatches`. Docblocks only; no code moved.
         `ReviewBatches` keeps its CouplingBetweenObjects finding (14), which development already
         reports with or without this change.
+  - [x] 8r `ComplaintService` (1: ExcessiveClassComplexity 50 against 50). Sorting the active
+        complaints by their handling deadline (overdue, within the window) and the redacted overdue
+        list an assistant sees (REQ-MCP-203, the allowlist and the acknowledgement flag) moved to the
+        new `Complaint/ComplaintDeadlineAlerts` (`grouped()`, `overdueRows()`; bodies moved
+        unchanged). It replaced the `DayCount` constructor parameter, which only it used, so the
+        service's CouplingBetweenObjects stays at 14 (development already reports it); the service
+        builds it over its own date path when the container does not pass one. Public methods and
+        the `#[McpTool]` attribute are unchanged.
+        Characterisation, green on the single class first (own commit): 2 tests added to
+        `ComplaintServiceTest` (25 in all) for the acknowledgement flag of every non-late row and an
+        unreadable deadline. Own test: `tests/Unit/Service/Complaint/ComplaintDeadlineAlertsTest`
+        (3); narrowing the window to `<` turns 2 tests red (checked).
