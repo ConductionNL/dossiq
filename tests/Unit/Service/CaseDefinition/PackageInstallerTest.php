@@ -41,6 +41,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An in-memory register that speaks OpenRegister's deleteObject signature
@@ -91,18 +93,19 @@ final class PackageTestRegister extends InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if (in_array(($object['name'] ?? $object['title'] ?? ''), $this->refuse, true) === true) {
 			throw new RuntimeException('the store refused the write');
 		}
 
 		$object += ($this->fills[(string)$schema] ?? []);
-		$stored = parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
+		$stored = parent::saveObject($object, $options, $_rbac, $_multitenancy);
 		$this->savedIn[(string)$stored['id']] = (string)$register;
 
 		return $stored;
@@ -132,7 +135,10 @@ final class PackageTestRegister extends InMemoryRegister {
 	 *
 	 * @return boolean True when a row went.
 	 */
-	public function deleteObject(int|string $uuid = '', int|string $register = '', int|string $schema = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid ?? '';
+		$register = $deletion->target->register ?? '';
+		$schema = $deletion->target->schema ?? '';
 		$this->deletedFrom[(string)$uuid] = (string)$register;
 		foreach (array_keys($this->rows) as $slug) {
 			if (($schema === '' || $schema === $slug) && isset($this->rows[$slug][(string)$uuid]) === true) {

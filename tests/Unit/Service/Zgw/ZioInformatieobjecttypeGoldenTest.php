@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 class ZioInformatieobjecttypeGoldenTest extends TestCase {
 
@@ -48,7 +49,9 @@ class ZioInformatieobjecttypeGoldenTest extends TestCase {
 			public function __construct(private array $objects, private mixed $found, private array &$asked) {
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->asked[] = ['find', $id, $schema];
 				return ($this->objects[$id] ?? null);
 			}

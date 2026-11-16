@@ -37,6 +37,8 @@ use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -312,9 +314,10 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	private function saveAssessment(array $assessment, AssessmentBatchTarget $target, ?string $uuid): array {
 		$saved = $target->objectService->saveObject(
 			object: $assessment,
-			register: $target->register,
-			schema: $target->schema,
-			uuid: $uuid,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $target->register, schema: $target->schema),
+				uuid: $uuid
+			)
 		);
 
 		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];

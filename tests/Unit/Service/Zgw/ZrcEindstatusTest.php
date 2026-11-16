@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\Zgw\ZrcEindstatus;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The eindstatus answer: own flag first, else the highest volgnummer.
@@ -40,6 +41,7 @@ class ZrcEindstatusTest extends TestCase {
 			}
 
 			public function find(mixed $id, mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return $this->types[(string)$id] ?? null;
 			}
 
@@ -99,6 +101,7 @@ class ZrcEindstatusTest extends TestCase {
 			}
 
 			public function find(mixed $id, mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return $this->types[(string)$id] ?? null;
 			}
 

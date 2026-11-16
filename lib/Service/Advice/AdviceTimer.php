@@ -125,7 +125,7 @@ class AdviceTimer implements AdviceTimerInterface {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $advice): string {
-		$adviceId = (string) ($advice['id'] ?? ($advice['uuid'] ?? ($advice['@self']['id'] ?? '')));
+		$adviceId = self::idOf(advice: $advice);
 		$status   = (string) ($advice['status'] ?? '');
 		if ($adviceId === '') {
 			return self::SKIPPED;
@@ -135,41 +135,51 @@ class AdviceTimer implements AdviceTimerInterface {
 			return $this->cancel(adviceId: $adviceId, reason: 'Advice request '.$status) ?? self::CANCELLED;
 		}
 
-		return $this->syncOpen(advice: $advice, adviceId: $adviceId, status: $status);
+		return $this->syncOpen(advice: $advice, status: $status);
 	}//end sync()
+
+	/**
+	 * The request's id: its `id`, else its `uuid`, else its `@self` id.
+	 *
+	 * @param array<string, mixed> $advice The adviesAanvraag object.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function idOf(array $advice): string {
+		return (string) ($advice['id'] ?? ($advice['uuid'] ?? ($advice['@self']['id'] ?? '')));
+	}//end idOf()
 
 	/**
 	 * Re-arm the timer of a request that is still open and has a deadline.
 	 *
 	 * @param array<string, mixed> $advice   The adviesAanvraag object.
-	 * @param string               $adviceId Its id.
 	 * @param string               $status   Its status.
 	 *
 	 * @return string One of the outcome constants.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
-	private function syncOpen(array $advice, string $adviceId, string $status): string {
+	private function syncOpen(array $advice, string $status): string {
 		$deadline = $this->dates->tryParse($advice['deadline'] ?? null);
 		if ($status !== self::OPEN_STATUS || $deadline === null) {
 			return self::SKIPPED;
 		}
 
-		return $this->rearm(advice: $advice, adviceId: $adviceId, deadline: $deadline);
+		return $this->rearm(advice: $advice, deadline: $deadline);
 	}//end syncOpen()
 
 	/**
 	 * Cancel the running timer and arm one for the current deadline.
 	 *
 	 * @param array<string, mixed> $advice   The adviesAanvraag object.
-	 * @param string               $adviceId Its id.
 	 * @param DateTimeImmutable    $deadline Its deadline.
 	 *
 	 * @return string One of the outcome constants.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
-	private function rearm(array $advice, string $adviceId, DateTimeImmutable $deadline): string {
+	private function rearm(array $advice, DateTimeImmutable $deadline): string {
+		$adviceId = self::idOf(advice: $advice);
 		$today    = $this->dates->today();
 		$deadline = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0);
 		$daysLeft = $this->days->signed(from: $today, to: $deadline);
@@ -183,22 +193,21 @@ class AdviceTimer implements AdviceTimerInterface {
 			return self::OVERDUE;
 		}
 
-		return $this->arm(advice: $advice, adviceId: $adviceId, window: new TimerWindow(anchor: $today, slaDays: ($daysLeft + 1)));
+		return $this->arm(advice: $advice, window: new TimerWindow(anchor: $today, slaDays: ($daysLeft + 1)));
 	}//end rearm()
 
 	/**
 	 * Arm the timer.
 	 *
 	 * @param array<string, mixed> $advice   The request.
-	 * @param string               $adviceId Its id.
 	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $advice, string $adviceId, TimerWindow $window): string {
+	private function arm(array $advice, TimerWindow $window): string {
 		return $this->timers()->arm(
-			config: fn (): array => $this->timerConfig(advice: $advice, adviceId: $adviceId, window: $window),
-			logContext: ['advice' => $adviceId]
+			config: fn (): array => $this->timerConfig(advice: $advice, window: $window),
+			logContext: ['advice' => self::idOf(advice: $advice)]
 		);
 	}//end arm()
 
@@ -206,12 +215,12 @@ class AdviceTimer implements AdviceTimerInterface {
 	 * The engine config of the request's timer.
 	 *
 	 * @param array<string, mixed> $advice   The request.
-	 * @param string               $adviceId Its id.
 	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
 	 *
 	 * @return array<string, mixed> The config.
 	 */
-	private function timerConfig(array $advice, string $adviceId, TimerWindow $window): array {
+	private function timerConfig(array $advice, TimerWindow $window): array {
+		$adviceId = self::idOf(advice: $advice);
 		$anchor = $window->anchor;
 		$slaDays = $window->slaDays;
 		$rules = $this->escalationRules(slaDays: $slaDays);
@@ -227,7 +236,7 @@ class AdviceTimer implements AdviceTimerInterface {
 			'escalationRules' => $rules,
 			'anchorEvent'     => 'advice_requested',
 			'anchorEventAt'   => $anchor,
-			'metadata'        => $this->timerMetadata(advice: $advice, adviceId: $adviceId),
+			'metadata'        => $this->timerMetadata(advice: $advice),
 		];
 
 		return $config;
@@ -296,15 +305,14 @@ class AdviceTimer implements AdviceTimerInterface {
 	/**
 	 * The metadata that ties a timer back to its request and case.
 	 *
-	 * @param array<string, mixed> $advice   The request.
-	 * @param string               $adviceId Its id.
+	 * @param array<string, mixed> $advice The request.
 	 *
 	 * @return array<string, string> The metadata.
 	 */
-	private function timerMetadata(array $advice, string $adviceId): array {
+	private function timerMetadata(array $advice): array {
 		return [
 			'source'   => self::METADATA_SOURCE,
-			'adviceId' => $adviceId,
+			'adviceId' => self::idOf(advice: $advice),
 			'caseId'   => (string) ($advice['case'] ?? ''),
 		];
 	}//end timerMetadata()

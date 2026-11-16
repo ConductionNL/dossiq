@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Definitions, case types, cases and status types are read from their own
@@ -251,7 +252,9 @@ class WorkflowDefinitionRepositoryReadsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, ?string $register = null, ?string $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = [$id, (string)$schema];
 				foreach (($this->rows[$schema] ?? []) as $row) {
 					if (($row['id'] ?? null) === $id) {

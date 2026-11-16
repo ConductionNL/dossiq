@@ -41,6 +41,9 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -379,11 +382,17 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		$register = $store->register;
 		$infoSchema = $store->infoSchema;
 		if ($infoId !== '') {
-			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
+			$objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $infoSchema), uuid: $infoId)
+			);
 		}
 
 		if ($infoId === '') {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
+			$saved = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $infoSchema))
+			);
 			$infoId = $this->resolveSavedUuid(saved: $saved);
 		}
 
@@ -506,7 +515,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $joinId, target: new ObjectFindTarget(register: $register, schema: $joinSchema)));
 			$removed = true;
 		}
 
@@ -862,7 +871,10 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 		];
 
-		$saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
+		$saved = $objectService->saveObject(
+			object: $join,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $joinSchema))
+		);
 		$joinId = $this->resolveSavedUuid(saved: $saved);
 
 		return [

@@ -333,6 +333,14 @@ class AcController extends ZgwController {
 				return $escalation;
 			}
 
+			// Run the same AC business rules as create (ac-001/002/003). The
+			// applicatie being updated is excluded from the clientId uniqueness
+			// check, so keeping its own clientIds is not a conflict.
+			$validationError = $this->rules()->validateApplicatieBody(body: $body, excludeUuid: $uuid);
+			if ($validationError !== null) {
+				return $validationError;
+			}
+
 			$consumerData = $this->representation()->toConsumer(body: $body);
 			$this->applyConsumerFields(consumer: $consumer, consumerData: $consumerData);
 

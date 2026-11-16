@@ -178,6 +178,21 @@ class WooSearchPlans implements WooSearchPlansInterface {
 		$plan['recordedBy'] = $userId;
 		$plan['recordedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
+		$saved = $this->savePlan(plan: $plan);
+		$this->keepConfigurationInStep(plan: $plan, template: $template);
+
+		return $saved;
+	}//end record()
+
+	/**
+	 * Store the case's plan, over the case's existing plan when it has one.
+	 *
+	 * @param array<string, mixed> $plan The validated plan, with its `case`.
+	 *
+	 * @return array<string, mixed> The plan as stored.
+	 */
+	private function savePlan(array $plan): array {
+		$caseId = $plan['case'];
 		// Looked up whoever asks, so a caller who cannot read the case's plan never makes a second one;
 		// the save still runs under the caller's own access.
 		$existing = $this->planOfCase(caseId: $caseId);
@@ -186,6 +201,19 @@ class WooSearchPlans implements WooSearchPlansInterface {
 			$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
 		}
 
+		return $saved;
+	}//end savePlan()
+
+	/**
+	 * Store the case's configuration with the plan's custodians, systems and terms, after the template's keys.
+	 *
+	 * @param array<string, mixed>      $plan     The stored plan, with its `case`.
+	 * @param array<string, mixed>|null $template The template the plan was filled from, or null.
+	 *
+	 * @return void
+	 */
+	private function keepConfigurationInStep(array $plan, ?array $template): void {
+		$caseId = $plan['case'];
 		$configuration = ($this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $caseId) ?? []);
 		if ($template !== null) {
 			$configuration = array_merge($configuration, array_diff_key($template['values'], array_flip(self::NOT_COPIED)));
@@ -197,9 +225,7 @@ class WooSearchPlans implements WooSearchPlansInterface {
 		$configuration['systems'] = $plan['systems'];
 		$configuration['terms'] = $plan['terms'];
 		$this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: $this->idOf(row: $configuration));
-
-		return $saved;
-	}//end record()
+	}//end keepConfigurationInStep()
 
 	/**
 	 * Start a case from an earlier case's configuration, or from a named template of the

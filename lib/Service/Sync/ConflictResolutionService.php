@@ -45,6 +45,7 @@ use OCA\Dossiq\Kernel\Contracts\ConflictResolutionServiceInterface;
 use OCA\Dossiq\Service\Access\ObjectUpdateRight;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
@@ -464,7 +465,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * @throws RuntimeException When the object is absent or not readable by the user.
 	 */
 	private function read(object $objectService, string $register, string $schema, string $id): object {
-		$object = $objectService->find($id, register: $register, schema: $schema);
+		$object = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		if (is_object($object) === false) {
 			throw new RuntimeException('object_not_readable');
 		}

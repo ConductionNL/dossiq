@@ -105,7 +105,7 @@ class CaseCreationAnnouncer {
 
 		$caseId = $this->caseIdOf(saved: $saved);
 
-		return $this->dispatchAsSystem(objectService: $objectService, event: $event, caseId: $caseId);
+		return $this->dispatchAsSystem(event: $event, written: ['objectService' => $objectService, 'caseId' => $caseId]);
 	}//end announce()
 
 	/**
@@ -129,15 +129,16 @@ class CaseCreationAnnouncer {
 	/**
 	 * Dispatch the event, under the system identity when OpenRegister offers one, logging a failing listener.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService the case was written through.
-	 * @param Event  $event         The created event.
-	 * @param string $caseId        The case uuid, for the log.
+	 * @param Event                                        $event   The created event.
+	 * @param array{objectService: object, caseId: string} $written The OpenRegister ObjectService the case was written
+	 *                                                              through, and the case uuid, for the log.
 	 *
 	 * @return bool True when the event went out.
 	 *
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
-	private function dispatchAsSystem(object $objectService, Event $event, string $caseId): bool {
+	private function dispatchAsSystem(Event $event, array $written): bool {
+		[$objectService, $caseId] = [$written['objectService'], $written['caseId']];
 		$dispatch = $this->dispatcherOf(event: $event);
 
 		try {

@@ -31,6 +31,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the store answers for each read and write, and when OpenRegister refuses one.
@@ -186,7 +188,9 @@ class RecordImportStoreBehaviourTest extends TestCase {
 			 *
 			 * @return object|array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, bool $_rbac, bool $_multitenancy): object|array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object|array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->writes[] = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				if ($schema !== 'case') {
 					return $object;
@@ -251,6 +255,7 @@ class RecordImportStoreBehaviourTest extends TestCase {
 			 * @return array|null
 			 */
 			public function find(...$args): ?array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('down');
 			}//end find()
 		};

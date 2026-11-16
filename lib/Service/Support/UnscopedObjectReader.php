@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -74,10 +75,9 @@ final class UnscopedObjectReader {
 		try {
 			$object = $objectService->find(
 				id: $where['id'],
-				register: $where['register'],
-				schema: $where['schema'],
+				options: new ObjectFindOptions(register: $where['register'], schema: $where['schema']),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		} catch (DoesNotExistException $e) {
 			return null;

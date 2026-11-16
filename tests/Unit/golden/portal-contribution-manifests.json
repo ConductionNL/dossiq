@@ -988,8 +988,25 @@
                     "citizen",
                     "client"
                 ],
-                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
-                "method": "POST",
+                "type": "create",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "defaults": {
+                    "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+                    "intakeChannel": "website"
+                },
+                "fieldMap": {
+                    "onderwerp": "title",
+                    "omschrijving": "description",
+                    "periodeVan": "wooRequest.periodeVan",
+                    "periodeTot": "wooRequest.periodeTot",
+                    "documentSoorten": "wooRequest.documentSoorten",
+                    "toelichting": "wooRequest.toelichting",
+                    "verzoekerNaam": "wooRequest.verzoekerNaam",
+                    "verzoekerEmail": "wooRequest.verzoekerEmail",
+                    "verzoekerType": "wooRequest.verzoekerType"
+                },
                 "minTrust": "low",
                 "fields": [
                     "onderwerp",
@@ -1983,8 +2000,25 @@
                     "citizen",
                     "client"
                 ],
-                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
-                "method": "POST",
+                "type": "create",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "defaults": {
+                    "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+                    "intakeChannel": "website"
+                },
+                "fieldMap": {
+                    "onderwerp": "title",
+                    "omschrijving": "description",
+                    "periodeVan": "wooRequest.periodeVan",
+                    "periodeTot": "wooRequest.periodeTot",
+                    "documentSoorten": "wooRequest.documentSoorten",
+                    "toelichting": "wooRequest.toelichting",
+                    "verzoekerNaam": "wooRequest.verzoekerNaam",
+                    "verzoekerEmail": "wooRequest.verzoekerEmail",
+                    "verzoekerType": "wooRequest.verzoekerType"
+                },
                 "minTrust": "low",
                 "fields": [
                     "onderwerp",
@@ -2978,8 +3012,25 @@
                     "citizen",
                     "client"
                 ],
-                "endpoint": "/index.php/apps/dossiq/api/portal/woo-verzoek",
-                "method": "POST",
+                "type": "create",
+                "register": "dossiq",
+                "schema": "case",
+                "scopeField": "portalSubject",
+                "defaults": {
+                    "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+                    "intakeChannel": "website"
+                },
+                "fieldMap": {
+                    "onderwerp": "title",
+                    "omschrijving": "description",
+                    "periodeVan": "wooRequest.periodeVan",
+                    "periodeTot": "wooRequest.periodeTot",
+                    "documentSoorten": "wooRequest.documentSoorten",
+                    "toelichting": "wooRequest.toelichting",
+                    "verzoekerNaam": "wooRequest.verzoekerNaam",
+                    "verzoekerEmail": "wooRequest.verzoekerEmail",
+                    "verzoekerType": "wooRequest.verzoekerType"
+                },
                 "minTrust": "low",
                 "fields": [
                     "onderwerp",

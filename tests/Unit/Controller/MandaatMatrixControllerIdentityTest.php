@@ -47,6 +47,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService (named-argument safe).
@@ -61,7 +62,7 @@ interface MandaatCaseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**

@@ -27,6 +27,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Every use of a mandate is logged as a row, the rows of a case or a mandate
@@ -99,7 +100,10 @@ class MandaatGebruikServiceTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['saveObject', $object, $register, $schema, $uuid];
 				if ($this->saved instanceof \Throwable) {
 					throw $this->saved;

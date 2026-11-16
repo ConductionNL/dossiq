@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use ReflectionMethod;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Golden test for AcknowledgementService::acknowledge().
@@ -138,7 +139,9 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->test->note(call: ['ObjectService::find', ['id' => $id, 'register' => $register, 'schema' => $schema]]);
 				$found = ($this->world['find'] ?? 'missing');
 				if ($found === 'missing') {

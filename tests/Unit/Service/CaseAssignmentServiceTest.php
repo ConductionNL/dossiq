@@ -29,6 +29,8 @@ use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * One case handed from one handler to another.
@@ -58,11 +60,17 @@ class CaseAssignmentServiceTest extends TestCase {
 			/** @var array<int, array<string, mixed>> */
 			public array $patches = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->cases[$id] ?? null);
 			}
 
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patches[] = $data;
 				$this->cases[$objectId] = array_merge($this->cases[$objectId], $data);
 

@@ -81,16 +81,34 @@ class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function stampIfSubstituted(string $caseId, string $actorId, string $action): ?array {
+		$stamp = new CapacityStamp();
+		$stamp->caseId = $caseId;
+		$stamp->actorId = $actorId;
+		$stamp->action = $action;
+
+		return $this->stamp(stamp: $stamp);
+	}//end stampIfSubstituted()
+
+	/**
+	 * Append the capacity entry of an action to its case when it was taken in a covered absentee's name.
+	 *
+	 * @param CapacityStamp $stamp The case, the acting user and the action label.
+	 *
+	 * @return array<string, mixed>|null The stamped entry, or null when own work, unconfigured or not written.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function stamp(CapacityStamp $stamp): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$hasBlank = in_array('', [$register, $caseSchema, $caseId, $actorId], true);
+		$hasBlank = in_array('', [$register, $caseSchema, $stamp->caseId, $stamp->actorId], true);
 		if ($objectService === null || $hasBlank === true) {
 			return null;
 		}
 
-		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-		$entry = $this->entryFor(caseId: $caseId, actorId: $actorId, action: $action, case: $case);
+		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $stamp->caseId);
+		$entry = $this->entryFor(stamp: $stamp, case: $case);
 		if ($entry === null) {
 			return null;
 		}
@@ -98,36 +116,30 @@ class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 		$case['activity'] = $this->appendedActivity(case: $case, entry: $entry);
 
 		try {
-			$objectService->updateObject(objectId: $caseId, data: $case);
+			$objectService->updateObject(objectId: $stamp->caseId, data: $case);
 		} catch (\Throwable $e) {
-			$this->logger->error('Substitution capacity stamp failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+			$this->logger->error('Substitution capacity stamp failed', ['caseId' => $stamp->caseId, 'error' => $e->getMessage()]);
 			return null;
 		}
 
 		return $entry;
-	}//end stampIfSubstituted()
+	}//end stamp()
 
 	/**
 	 * The capacity entry of an action on a stored case, or null for a missing case or own work.
 	 *
-	 * @param string                    $caseId  The case being mutated.
-	 * @param string                    $actorId The acting user id.
-	 * @param string                    $action  A short action label.
-	 * @param array<string, mixed>|null $case    The stored case, or null.
+	 * @param CapacityStamp             $stamp The case, the acting user and the action label.
+	 * @param array<string, mixed>|null $case  The stored case, or null.
 	 *
 	 * @return array<string, string>|null
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function entryFor(string $caseId, string $actorId, string $action, ?array $case): ?array {
+	private function entryFor(CapacityStamp $stamp, ?array $case): ?array {
 		if ($case === null) {
 			return null;
 		}
 
-		$stamp = new CapacityStamp();
-		$stamp->caseId = $caseId;
-		$stamp->actorId = $actorId;
-		$stamp->action = $action;
 		$stamp->absentee = (string)($case['assignee'] ?? '');
 
 		return $this->capacityEntry(stamp: $stamp, case: $case);

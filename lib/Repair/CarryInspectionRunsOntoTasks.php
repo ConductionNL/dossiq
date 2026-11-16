@@ -135,7 +135,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 			operation: function () use ($objects, $tasks, $register, &$counts, $output): void {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
-					foreach ($this->read(objects: $objects, register: $register, schema: $schema) as $object) {
+					foreach ($this->read(objects: $objects, place: [$register, $schema]) as $object) {
 						$outcome = $this->carryOne(sink: ['tasks' => $tasks, 'output' => $output], source: ['schema' => $schema, 'object' => $object]);
 						$counts[$outcome]++;
 					}
@@ -241,7 +241,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 * @return void
 	 */
 	private function loadTemplates(object $objects, string $register): void {
-		foreach ($this->read(objects: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA) as $template) {
+		foreach ($this->read(objects: $objects, place: [$register, InspectionTemplateMapper::SCHEMA]) as $template) {
 			$id = (string)($template['@self']['id'] ?? $template['id'] ?? '');
 			if ($id !== '') {
 				$this->templates[$id] = $template;
@@ -257,13 +257,13 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	/**
 	 * Every object of one schema, or none when the schema is not there.
 	 *
-	 * @param object $objects  The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema   The schema slug.
+	 * @param object                     $objects The ObjectService.
+	 * @param array{0: string, 1: string} $place   The register id and the schema slug.
 	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 */
-	private function read(object $objects, string $register, string $schema): array {
+	private function read(object $objects, array $place): array {
+		[$register, $schema] = $place;
 		try {
 			return $this->searchObjectsAsArraysUnscoped(objectService: $objects, register: $register, schema: $schema, filters: ['_limit' => self::LIMIT]);
 		} catch (Throwable $e) {

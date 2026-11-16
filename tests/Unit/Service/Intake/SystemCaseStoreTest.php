@@ -27,6 +27,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\SystemCaseStore
@@ -84,7 +86,9 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedReadIsLoggedAndReadsAsAbsent(): void {
 		$broken = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new RuntimeException('down');
 			}
 		};
@@ -128,7 +132,9 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedWriteIsLoggedAndAnswersNull(): void {
 		$broken = new class {
-			public function saveObject(array $object, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('down');
 			}
 		};

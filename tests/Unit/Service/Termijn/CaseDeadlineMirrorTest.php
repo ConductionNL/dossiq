@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
@@ -255,6 +256,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 			 * @return mixed
 			 */
 			public function find(mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new \RuntimeException('database gone');
 			}
 		};
@@ -307,6 +309,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 			 * @return never
 			 */
 			public function patchObject(mixed ...$args): never {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new \RuntimeException('validation failed');
 			}
 		};

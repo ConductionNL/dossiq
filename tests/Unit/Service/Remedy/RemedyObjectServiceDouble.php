@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Remedy;
 
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * An object service double: search answers decisions, save opens a case, delete is recorded.
  */
@@ -67,6 +71,7 @@ class RemedyObjectServiceDouble {
 	 * @return array<string, mixed>
 	 */
 	public function find(mixed ...$arguments): array {
+		$arguments = LegacyObjectArgs::flatten(args: $arguments);
 		return ['id' => 'woo-1', 'title' => 'Verlichting fietspad Lindelaan'];
 	}//end find()
 
@@ -80,7 +85,10 @@ class RemedyObjectServiceDouble {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, mixed $register = null, mixed $schema = null, mixed $uuid = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->saved[] = [(string)$schema, $object];
 		return $object + ['id' => 'bezwaar-1', 'plannedEndDate' => '2027-01-26'];
 	}//end saveObject()
@@ -94,7 +102,10 @@ class RemedyObjectServiceDouble {
 	 *
 	 * @return bool
 	 */
-	public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
+		$schema = $deletion->target->schema;
 		$this->deleted[] = $uuid;
 		return true;
 	}//end deleteObject()

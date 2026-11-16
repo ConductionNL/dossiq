@@ -121,21 +121,35 @@ final class FlowTimerEngine {
 			return self::UNAVAILABLE;
 		}
 
+		return $this->cancelOn(engine: $engine, cancel: ['subject' => $subjectUuid, 'reason' => $reason, 'logContext' => $logContext]);
+	}//end cancel()
+
+	/**
+	 * Cancel every timer of a subject on the engine; a refusal is logged.
+	 *
+	 * @param object                                                              $engine The engine timer service.
+	 * @param array{subject: string, reason: string, logContext: array<string, string>} $cancel The object uuid whose timers
+	 *                                                                                    end, why, and what the log names
+	 *                                                                                    the subject by.
+	 *
+	 * @return string|null UNAVAILABLE when the engine refused, null when done.
+	 */
+	private function cancelOn(object $engine, array $cancel): ?string {
 		try {
 			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $subjectUuid),
-				change: new TimerChange(reason: $reason, actor: null)
+				subject: new TimerSubjectRef(type: 'object', uuid: $cancel['subject']),
+				change: new TimerChange(reason: $cancel['reason'], actor: null)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				$this->owner.': the engine refused to cancel the '.$this->timer,
-				$logContext + ['error' => $e->getMessage()]
+				$cancel['logContext'] + ['error' => $e->getMessage()]
 			);
 			return self::UNAVAILABLE;
 		}
 
 		return null;
-	}//end cancel()
+	}//end cancelOn()
 
 	/**
 	 * One escalation rule of normal priority that notifies no role and opens no incident.

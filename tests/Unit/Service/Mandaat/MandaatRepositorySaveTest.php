@@ -22,6 +22,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * MandaatRepository::save() over the configured schema writer.
@@ -51,7 +52,10 @@ class MandaatRepositorySaveTest extends TestCase {
 			public function __construct(private array $failing) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if (in_array($schema, $this->failing, true) === true) {
 					throw new RuntimeException('store down');
 				}

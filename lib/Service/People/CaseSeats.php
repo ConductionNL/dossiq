@@ -47,6 +47,9 @@ use OCA\Dossiq\Kernel\Contracts\CaseSeatsInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -242,7 +245,14 @@ class CaseSeats implements CaseSeatsInterface {
 		$schema = $this->schema(key: 'role_schema');
 
 		if ($uuid === '') {
-			return $this->idOf(row: $this->asArray(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)));
+			return $this->idOf(
+				row: $this->asArray(
+					saved: $objectService->saveObject(
+						object: $record,
+						options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+					)
+				)
+			);
 		}
 
 		// 🔴 A PATCH, NOT A SAVE. Handing OpenRegister a partial object WITH a
@@ -275,9 +285,10 @@ class CaseSeats implements CaseSeatsInterface {
 		try {
 			[$objectService, $register] = $this->context();
 			$objectService->deleteObject(
-				register: $register,
-				schema: $this->schema(key: 'role_schema'),
-				uuid: $uuid,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'role_schema'))
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

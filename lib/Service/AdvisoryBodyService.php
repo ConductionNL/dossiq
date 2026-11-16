@@ -31,6 +31,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdvisoryBodyServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -201,7 +203,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 			throw new RuntimeException('Advisory body schema not configured');
 		}
 
-		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+		$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 
 		$this->logger->info(
 			'Advisory body deleted: ' . $id,

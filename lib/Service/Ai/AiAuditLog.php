@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Ai;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -94,9 +96,8 @@ class AiAuditLog {
 			}
 
 			$this->container->get('OCA\OpenRegister\Service\ObjectService')->saveObject(
-				register: $storage['register'],
-				schema: $storage['schema'],
 				object: $entry,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $storage['register'], schema: $storage['schema']))
 			);
 		} catch (\Exception $e) {
 			$this->logger->error(

@@ -210,9 +210,9 @@ class ComplaintPatternFigures {
 
 		return [
 			'handled' => $total['handled'],
-			'withinAwbPercent' => $this->share(part: $total['within'], whole: $total['handled'], scale: 100),
-			'upheldPercent' => $this->share(part: $total['upheld'], whole: $total['handled'], scale: 100),
-			'averageDays' => $this->share(part: $total['days'], whole: $total['handled'], scale: 1),
+			'withinAwbPercent' => $this->share(part: $total['within'], ratio: ['whole' => $total['handled'], 'scale' => 100]),
+			'upheldPercent' => $this->share(part: $total['upheld'], ratio: ['whole' => $total['handled'], 'scale' => 100]),
+			'averageDays' => $this->share(part: $total['days'], ratio: ['whole' => $total['handled'], 'scale' => 1]),
 			'resolutionByCategory' => $rows,
 		];
 	}//end handling()
@@ -253,8 +253,8 @@ class ComplaintPatternFigures {
 				$rows[] = [
 					'category' => $category,
 					'count' => $sum['count'],
-					'averageDays' => $this->share(part: $sum['days'], whole: $sum['handled'], scale: 1),
-					'upheldPercent' => $this->share(part: $sum['upheld'], whole: $sum['handled'], scale: 100),
+					'averageDays' => $this->share(part: $sum['days'], ratio: ['whole' => $sum['handled'], 'scale' => 1]),
+					'upheldPercent' => $this->share(part: $sum['upheld'], ratio: ['whole' => $sum['handled'], 'scale' => 100]),
 				];
 			}
 		}
@@ -329,13 +329,13 @@ class ComplaintPatternFigures {
 	/**
 	 * A rounded share, or null when there is nothing to divide by.
 	 *
-	 * @param int $part  The part.
-	 * @param int $whole The whole.
-	 * @param int $scale 100 for a percentage, 1 for an average.
+	 * @param int                           $part  The part.
+	 * @param array{whole: int, scale: int} $ratio `whole` the whole; `scale` 100 for a percentage, 1 for an average.
 	 *
 	 * @return int|null
 	 */
-	private function share(int $part, int $whole, int $scale): ?int {
+	private function share(int $part, array $ratio): ?int {
+		[$whole, $scale] = [$ratio['whole'], $ratio['scale']];
 		if ($whole === 0) {
 			return null;
 		}

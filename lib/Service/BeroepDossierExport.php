@@ -121,7 +121,7 @@ class BeroepDossierExport implements BeroepDossierExportInterface {
 
 		return [
 			'sequence' => $sequence,
-			'filename' => $this->buildFilename(sequence: $sequence, title: $title, source: $source),
+			'filename' => $this->buildFilename(sequence: $sequence, named: ['title' => $title, 'source' => $source]),
 			'title' => $displayTitle,
 			'source' => $source,
 			'sourceCase' => (string)($document['_sourceCase'] ?? ''),
@@ -135,13 +135,13 @@ class BeroepDossierExport implements BeroepDossierExportInterface {
 	 * and the original file extension (when present on the source URI) is
 	 * preserved, defaulting to `.pdf` for court submission.
 	 *
-	 * @param int $sequence The 1-based export sequence.
-	 * @param string $title The document title.
-	 * @param string $source The source document URI.
+	 * @param int                                  $sequence The 1-based export sequence.
+	 * @param array{title: string, source: string} $named    `title` the document title; `source` the source document URI.
 	 *
 	 * @return string The export filename, e.g. `01-primair-besluit.pdf`.
 	 */
-	private function buildFilename(int $sequence, string $title, string $source): string {
+	private function buildFilename(int $sequence, array $named): string {
+		[$title, $source] = [$named['title'], $named['source']];
 		$slug = strtolower($title);
 		$slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
 		$slug = trim($slug, '-');

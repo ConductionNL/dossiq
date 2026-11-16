@@ -100,7 +100,9 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
+import { loadOnMount } from '../mixins/loadOnMount.js'
+import { caseActionRefusalOf } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -109,17 +111,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
-	props: {
-		/**
-		 * The case to start a flow for. Absent when the manifest opened the
-		 * dialog: an `open-modal` action carries no object context, so the
-		 * route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogFromRoute, loadOnMount],
 
 	emits: ['close'],
 
@@ -135,30 +127,12 @@ export default {
 
 	computed: {
 		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/workflow-definition-engine/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
-		/**
 		 * @return {boolean} Whether a flow may be run.
 		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		canRun() {
 			return this.busy === false && this.chosen !== ''
 		},
-	},
-
-	/**
-	 * Read the flows this case's type allows.
-	 *
-	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/specs/workflow-definition-engine/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
@@ -186,9 +160,7 @@ export default {
 					this.chosen = this.flows[0].id
 				}
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.loading = false
 			}
@@ -225,9 +197,7 @@ export default {
 				emit(PAGE_REFRESH)
 				this.$emit('close')
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}

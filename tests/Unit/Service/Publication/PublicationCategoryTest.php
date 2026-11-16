@@ -142,13 +142,12 @@ class PublicationCategoryTest extends TestCase {
 			/**
 			 * A store that refuses every read.
 			 *
-			 * @param string     $id       The object.
-			 * @param int|string $register The register.
-			 * @param int|string $schema   The schema.
+			 * @param string $id      The object.
+			 * @param mixed  $options The find options.
 			 *
 			 * @return never
 			 */
-			public function find(string $id, int|string $register, int|string $schema): never {
+			public function find(string $id, mixed $options = null): never {
 				throw new \RuntimeException(message: 'store refused');
 			}//end find()
 		};

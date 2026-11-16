@@ -48,6 +48,9 @@ use DateTime;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -251,7 +254,10 @@ class FederatedCaseShareService {
 		$caseId = $request->caseId;
 		$remoteCloudId = $request->remoteCloudId;
 
-		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
+		$result = $objectService->saveObject(
+			object: $shareData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema))
+		);
 		$resultData = $this->gateway->toArray(value: $result);
 
 		$shareUuid = (string)($resultData['id'] ?? $resultData['uuid'] ?? '');
@@ -268,7 +274,10 @@ class FederatedCaseShareService {
 
 		$resultData['federationShareId'] = $federatedShare->getId();
 		$resultData['status'] = 'active';
-		$activated = $objectService->saveObject(object: $resultData, register: (int)$register, schema: (int)$shareSchema);
+		$activated = $objectService->saveObject(
+			object: $resultData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema))
+		);
 		$resultData = $this->gateway->toArray(value: $activated);
 
 		$this->auditTrailService->emit(
@@ -364,7 +373,7 @@ class FederatedCaseShareService {
 
 		[$register, $shareSchema] = $target;
 
-		$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
+		$shareObj = $objectService->find($shareId, new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema));
 		if ($shareObj === null) {
 			return ['error' => 'Federated share not found'];
 		}
@@ -440,7 +449,10 @@ class FederatedCaseShareService {
 		$shareData['revokedBy'] = $userId;
 		$shareData['revokedAt'] = (new DateTime())->format('c');
 
-		$result = $store->objectService->saveObject(object: $shareData, register: (int)$store->register, schema: (int)$store->shareSchema);
+		$result = $store->objectService->saveObject(
+			object: $shareData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$store->register, schema: (int)$store->shareSchema))
+		);
 
 		$this->auditTrailService->emit(
 			[
@@ -508,7 +520,7 @@ class FederatedCaseShareService {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
 	 */
 	private function readShareCaseId(FederatedShareStore $store, string $shareId): ?string {
-		$shareObj = $store->objectService->find($shareId, register: (int)$store->register, schema: (int)$store->shareSchema);
+		$shareObj = $store->objectService->find($shareId, new ObjectFindOptions(register: (int)$store->register, schema: (int)$store->shareSchema));
 		if ($shareObj === null) {
 			return null;
 		}
@@ -553,7 +565,7 @@ class FederatedCaseShareService {
 	 */
 	private function loadCaseForFederatedShare(FederatedShareStore $store, string $caseId, int $caseSchema): ?array {
 		try {
-			$caseObj = $store->objectService->find($caseId, register: (int)$store->register, schema: $caseSchema);
+			$caseObj = $store->objectService->find($caseId, new ObjectFindOptions(register: (int)$store->register, schema: $caseSchema));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'CaseSharingService: createFederatedShare case load failed',

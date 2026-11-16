@@ -249,14 +249,43 @@ class CaseTypeThroughputCalculator {
 	 */
 	public function computeMonthlyByCaseType(array $cases, array $caseTypes, int $months, ?DateTimeImmutable $today=null): array {
 		$titles = $this->titlesById(caseTypes: $caseTypes);
+		$inPeriod = $this->monthsInPeriod(months: $months, today: $today);
+		$rows = $this->monthlyRows(buckets: $this->bucketByCaseTypeAndMonth(cases: $cases, inPeriod: $inPeriod), titles: $titles);
+
+		usort($rows, static fn (array $left, array $right): int => [$left['caseType'], $left['month']] <=> [$right['caseType'], $right['month']]);
+
+		return $rows;
+	}//end computeMonthlyByCaseType()
+
+	/**
+	 * The months of the period, `Y-m`, ending with the month of the day the figures are read on.
+	 *
+	 * @param int                    $months How many months back from this one.
+	 * @param DateTimeImmutable|null $today  The day the figures are read on; now when absent.
+	 *
+	 * @return array<string, true> The months, as keys.
+	 */
+	private function monthsInPeriod(int $months, ?DateTimeImmutable $today): array {
 		$first = ($today ?? new DateTimeImmutable())->modify('first day of this month');
 		$inPeriod = [];
 		for ($i = ($months - 1); $i >= 0; $i--) {
 			$inPeriod[$first->modify('-' . $i . ' month')->format('Y-m')] = true;
 		}
 
+		return $inPeriod;
+	}//end monthsInPeriod()
+
+	/**
+	 * One row per case type and month that closed a case, months in order within a case type.
+	 *
+	 * @param array<string, array<string, array{days: list<int>, met: int, judged: int}>> $buckets The closed cases by case type and month.
+	 * @param array<string, string>                                                        $titles  Case type titles by id.
+	 *
+	 * @return list<array{caseType: string, month: string, closed: int, avgDays: int|null, withinNormPercent: int|null}>
+	 */
+	private function monthlyRows(array $buckets, array $titles): array {
 		$rows = [];
-		foreach ($this->bucketByCaseTypeAndMonth(cases: $cases, inPeriod: $inPeriod) as $caseTypeId => $byMonth) {
+		foreach ($buckets as $caseTypeId => $byMonth) {
 			ksort($byMonth);
 			foreach ($byMonth as $month => $bucket) {
 				$rows[] = [
@@ -269,10 +298,8 @@ class CaseTypeThroughputCalculator {
 			}
 		}
 
-		usort($rows, static fn (array $left, array $right): int => [$left['caseType'], $left['month']] <=> [$right['caseType'], $right['month']]);
-
 		return $rows;
-	}//end computeMonthlyByCaseType()
+	}//end monthlyRows()
 
 	/**
 	 * The closed cases inside the period, grouped by case type and month: the

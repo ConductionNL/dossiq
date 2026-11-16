@@ -235,6 +235,7 @@ import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import GenerateDocumentDialog from './GenerateDocumentDialog.vue'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { nextStepOf } from '../utils/caseNextStep.js'
 
@@ -333,16 +334,9 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialogTokenAware],
 
+	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
 		title: {
 			type: String,
@@ -530,16 +524,6 @@ export default {
 			const today = new Date()
 			today.setHours(0, 0, 0, 0)
 			return Number.isNaN(end.getTime()) ? null : Math.round((end - today) / 86400000)
-		},
-
-		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */

@@ -41,6 +41,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -293,7 +294,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	 */
 	private function findCase(object $objectService, string $caseId, string $register, string $schema): mixed {
 		try {
-			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
+			$case = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'CaseAssistantService: case load failed',

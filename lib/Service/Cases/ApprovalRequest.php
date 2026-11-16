@@ -88,6 +88,24 @@ class ApprovalRequest implements ApprovalRequestInterface {
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function raise(string $caseId, string $act, string $userId): array {
+		$case = $this->foundCase(caseId: $caseId);
+		$gate = $this->gateOf(case: $case, act: $act);
+
+		$decisionRef = $this->raiseDecision(case: $case, request: $gate + ['caseId' => $caseId, 'userId' => $userId]);
+
+		return $this->recordReference(case: $case, link: ['act' => $gate['act'], 'decisionRef' => $decisionRef]);
+	}//end raise()
+
+	/**
+	 * The stored case, refused when it cannot be found.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RefusedException When the case is not found.
+	 */
+	private function foundCase(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);
 		if ($case === null) {
 			throw new RefusedException(
@@ -97,12 +115,8 @@ class ApprovalRequest implements ApprovalRequestInterface {
 			);
 		}
 
-		$gate = $this->gateOf(case: $case, act: $act);
-
-		$decisionRef = $this->raiseDecision(case: $case, request: $gate + ['caseId' => $caseId, 'userId' => $userId]);
-
-		return $this->recordReference(case: $case, link: ['act' => $gate['act'], 'decisionRef' => $decisionRef]);
-	}//end raise()
+		return $case;
+	}//end foundCase()
 
 	/**
 	 * The approval gate the case type declares for the act.

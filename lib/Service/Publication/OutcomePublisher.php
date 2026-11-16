@@ -47,6 +47,8 @@ use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -432,9 +434,10 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 
 		$source['objectService']->saveObject(
 			object: $decision,
-			register: $source['register'],
-			schema: $source['decisionSchema'],
-			uuid: $source['decisionId']
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $source['register'], schema: $source['decisionSchema']),
+				uuid: $source['decisionId']
+			)
 		);
 	}//end saveDecisionPublication()
 
@@ -628,7 +631,10 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 		// The set stays frozen and records the withdraw (REQ-WDS-002).
 		$this->caseLedger->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
 
-		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
+		$objectService->saveObject(
+			object: $decision,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $decisionSchema), uuid: $decisionId)
+		);
 
 		return $this->clearWithheld(publicationId: $publicationId, caseId: (string)($decision['case'] ?? $caseId));
 	}//end withdrawDecision()

@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for the case e-mail repository.
@@ -87,7 +89,9 @@ class CaseEmailRepositoryTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = compact('id', 'register', 'schema');
 				if (array_key_exists($id, $this->found) === false) {
 					throw new DoesNotExistException('gone');
@@ -103,7 +107,9 @@ class CaseEmailRepositoryTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = compact('object', 'register', 'schema');
 				return $object;
 			}

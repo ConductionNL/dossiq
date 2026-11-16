@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseTypeReader
@@ -43,7 +44,9 @@ class CaseTypeReaderTest extends TestCase {
 			/** @var array<int, array<int, string>> */
 			public array $reads = [];
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->reads[] = [$id, $register, $schema];
 				$row = ($this->rows[$schema . ':' . $id] ?? null);
 				if ($row === 'throw') {

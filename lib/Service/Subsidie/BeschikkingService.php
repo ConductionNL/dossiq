@@ -140,13 +140,26 @@ class BeschikkingService {
 	public function createDraft(string $requestId, array $payload, int $sequence): array {
 		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$this->assertDraftValid(payload: $payload);
-		[$objectService, $register, $schema] = $this->resolve();
+		$store = $this->resolve();
+		$record = $this->draftRecord(payload: $payload, numbering: ['requestId' => $requestId, 'sequence' => $sequence]);
 
+		return $this->savedDraft(store: $store, record: $record);
+	}//end createDraft()
+
+	/**
+	 * The draft beschikking record: the properties with its application, number, type, status and state-aid category.
+	 *
+	 * @param array<string, mixed>                    $payload   The validated beschikking properties.
+	 * @param array{requestId: string, sequence: int} $numbering The application id and the running beschikking sequence.
+	 *
+	 * @return array<string, mixed> The record, without signature or publication fields.
+	 */
+	private function draftRecord(array $payload, array $numbering): array {
 		$record = array_merge(
 			$payload,
 			[
-				'subsidieaanvraag' => $requestId,
-				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $sequence),
+				'subsidieaanvraag' => $numbering['requestId'],
+				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $numbering['sequence']),
 				'beschikkingtype' => (string)($payload['beschikkingtype'] ?? 'verleningsbeschikking'),
 				'status' => 'draft',
 				'stateAidCategory' => $this->stateAidCategoryFor(payload: $payload),
@@ -154,13 +167,29 @@ class BeschikkingService {
 		);
 		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
 
+		return $record;
+	}//end draftRecord()
+
+	/**
+	 * Save the draft beschikking.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store  ObjectService, register, schema.
+	 * @param array<string, mixed>                   $record The draft record.
+	 *
+	 * @return array<string, mixed> The created beschikking record.
+	 *
+	 * @throws OCSBadRequestException When persistence fails.
+	 */
+	private function savedDraft(array $store, array $record): array {
+		[$objectService, $register, $schema] = $store;
+
 		try {
 			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createDraft beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet aanmaken');
 		}
-	}//end createDraft()
+	}//end savedDraft()
 
 	/**
 	 * Which state-aid ground this grant sits on.

@@ -86,12 +86,28 @@ class TermCalendarGuard {
 			return;
 		}
 
+		$this->assertResolves(calendars: $calendars, named: ['slug' => $slug, 'organisation' => $organisation]);
+	}//end requireNamedCalendarResolves()
+
+	/**
+	 * Refuse a named calendar the engine is absent for, cannot read, or does not know.
+	 *
+	 * @param object|null                                $calendars The engine's calendar resolver, when it is available.
+	 * @param array{slug: string, organisation: ?string} $named     The calendar named on the term, and the subject's
+	 *                                                              organisation, when any.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the calendar does not resolve.
+	 */
+	private function assertResolves(?object $calendars, array $named): void {
+		$slug = $named['slug'];
 		if ($calendars === null) {
 			throw $this->refuse(slug: $slug, because: 'OpenRegister is not installed');
 		}
 
 		try {
-			$calendar = $calendars->resolve(calendarSlug: $slug, organisation: $organisation);
+			$calendar = $calendars->resolve(calendarSlug: $slug, organisation: $named['organisation']);
 		} catch (Throwable $e) {
 			// Re-thrown, never swallowed: an unreadable calendar and a calendar
 			// that says "this is a working day" are opposite answers.
@@ -101,7 +117,7 @@ class TermCalendarGuard {
 		if ($calendar === null) {
 			throw $this->refuse(slug: $slug, because: 'the engine knows no calendar by that name');
 		}
-	}//end requireNamedCalendarResolves()
+	}//end assertResolves()
 
 	/**
 	 * The refusal, logged and built.

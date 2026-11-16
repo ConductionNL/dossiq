@@ -35,6 +35,8 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class SetStatusHandlerTest extends TestCase {
 
@@ -69,13 +71,19 @@ class SetStatusHandlerTest extends TestCase {
 			public function __construct(private ?array &$sink) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->sink = $object;
 
 				return $this->entity();
 			}
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): ObjectEntity {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->sink = array_merge(($this->sink ?? []), $data);
 
 				return $this->entity();
@@ -193,7 +201,9 @@ class SetStatusHandlerTest extends TestCase {
 
 	public function testFailsWhenTheCaseSchemaIsNotConfigured(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return $object;
 			}
 		};

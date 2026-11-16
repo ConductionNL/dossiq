@@ -31,6 +31,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The newest decision, the first date it was made known on, a disabled remedy, and the answer's fallbacks.
@@ -189,6 +191,7 @@ class RemedyLodgingDecisionAndAnswerTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function find(mixed ...$arguments): array {
+				$arguments = LegacyObjectArgs::flatten(args: $arguments);
 				throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
 			}//end find()
 
@@ -202,7 +205,10 @@ class RemedyLodgingDecisionAndAnswerTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, mixed $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = [(string)$schema, $object];
 				return $object + ['uuid' => 'bezwaar-uuid', 'deadline' => '2027-02-01'];
 			}//end saveObject()

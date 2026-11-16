@@ -13,6 +13,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\Zgw\FindsMappedObjects;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The trait, through a minimal host class.
@@ -37,7 +38,9 @@ final class FindsMappedObjectsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $uuid, mixed $register = null, mixed $schema = null): array {
+			public function find(string $uuid, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['uuid' => $uuid, 'register' => $register, 'schema' => $schema];
 			}//end find()
 		};

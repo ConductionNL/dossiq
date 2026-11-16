@@ -84,21 +84,32 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function ingest(string $decisionId, string $fileId, array $tmloMetadata): array {
-		$retentionPeriod = (string)($tmloMetadata['bewaartermijn'] ?? self::DEFAULT_BEWAARTERMIJN);
-		if ($this->isValidDuration(duration: $retentionPeriod) === false) {
-			$retentionPeriod = self::DEFAULT_BEWAARTERMIJN;
-		}
-
-		$destructionDate = $this->computeDestructionDate(
-			metadata: $tmloMetadata,
-			retentionPeriod: $retentionPeriod
-		);
+		$destructionDate = $this->destructionDateOf(tmloMetadata: $tmloMetadata);
 
 		return [
 			'archiveId' => 'openregister-' . substr(hash('sha256', $decisionId . $fileId), 0, 12),
 			'destructionDate' => $destructionDate,
 		];
 	}//end ingest()
+
+	/**
+	 * The destruction date the TMLO metadata sets, over its retention period or the default one.
+	 *
+	 * @param array<string, mixed> $tmloMetadata The TMLO metadata.
+	 *
+	 * @return string The destruction date.
+	 */
+	private function destructionDateOf(array $tmloMetadata): string {
+		$retentionPeriod = (string)($tmloMetadata['bewaartermijn'] ?? self::DEFAULT_BEWAARTERMIJN);
+		if ($this->isValidDuration(duration: $retentionPeriod) === false) {
+			$retentionPeriod = self::DEFAULT_BEWAARTERMIJN;
+		}
+
+		return $this->computeDestructionDate(
+			metadata: $tmloMetadata,
+			retentionPeriod: $retentionPeriod
+		);
+	}//end destructionDateOf()
 
 	/**
 	 * Compute the Archiefwet vernietigingsdatum: creatie/bekendmaking date plus

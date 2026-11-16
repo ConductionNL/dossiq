@@ -83,19 +83,14 @@ import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcCheckboxRadioSwitch, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import { caseTab } from '../../../mixins/caseTab.js'
 import { caseGrantsEndpoint, grantPermissions, personalGrants } from '../../../utils/caseAccessGrants.js'
 
 export default {
 	name: 'CaseAccessGrants',
 	components: { NcButton, NcCheckboxRadioSwitch, NcNoteCard, NcSelect, NcTextField },
 
-	props: {
-		/** Case UUID. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

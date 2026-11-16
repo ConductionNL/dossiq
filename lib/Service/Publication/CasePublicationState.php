@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Service\Publication;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
-use OCA\Dossiq\Service\Publication\WithheldEntries;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\IURLGenerator;

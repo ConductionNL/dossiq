@@ -113,14 +113,30 @@ class TermCarryOver {
 			return $this->closed(instance: $instance, term: $term);
 		}
 
-		$carried = $this->carriedOf(term: $term, extensionDays: $extensionDays);
+		return $this->carryRunning(
+			instance: $instance,
+			carry: ['term' => $term, 'definitionSlug' => $definitionSlug, 'extensionDays' => $extensionDays]
+		);
+	}//end carry()
+
+	/**
+	 * Carry a running or suspended term onto the instance, unless the instance already says the same.
+	 *
+	 * @param array<string, mixed>                                                          $instance The case's statutory instance.
+	 * @param array{term: array<string, mixed>, definitionSlug: string, extensionDays: int} $carry    The imported term, its definition
+	 *                                                                                              and what one extension is worth.
+	 *
+	 * @return array{outcome: string, instance: string, timer: string} What happened to the clock.
+	 */
+	private function carryRunning(array $instance, array $carry): array {
+		$carried = $this->carriedOf(term: $carry['term'], extensionDays: $carry['extensionDays']);
 		if ($this->unchanged(instance: $instance, carried: $carried) === true) {
 			return ['outcome' => self::KEPT, 'instance' => (string)($instance['id'] ?? ''), 'timer' => (string)($instance['engineTimerId'] ?? '')];
 		}
 
-		$definitie = ($this->terms->getTermijnDefinitie(caseType: $definitionSlug) ?? []);
+		$definitie = ($this->terms->getTermijnDefinitie(caseType: $carry['definitionSlug']) ?? []);
 		return $this->carryOnto(instance: $instance, carried: $carried->withDefinitie(definitie: $definitie));
-	}//end carry()
+	}//end carryRunning()
 
 	/**
 	 * Complete the case's term: the source closed it. Completing it cancels every open timer of the instance in

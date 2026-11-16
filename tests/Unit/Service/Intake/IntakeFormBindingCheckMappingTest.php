@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Form\FormDestination;
+use OCA\Dossiq\Tests\Support\SchemaRow;
 
 /**
  * Unbound mappings and unreadable schemas.
@@ -89,7 +91,9 @@ class IntakeFormBindingCheckMappingTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function validate(array $mapping, object $schema, array $options = []): mixed {
+			public function validate(array $mapping, FormDestination $destination): mixed {
+				$schema = $destination->schema;
+				$options = ($destination->audience === null) ? [] : ['audience' => $destination->audience];
 				$this->asked[] = ['mapping' => $mapping, 'schema' => $schema, 'options' => $options];
 				return $this->answer;
 			}
@@ -142,7 +146,7 @@ class IntakeFormBindingCheckMappingTest extends TestCase {
 					throw new RuntimeException('schema gone');
 				}
 
-				return (object)['id' => $id, 'rbac' => $_rbac, 'tenancy' => $_multitenancy];
+				return SchemaRow::of(['id' => $id, 'rbac' => $_rbac, 'tenancy' => $_multitenancy]);
 			}
 		};
 	}//end mapper()
@@ -181,7 +185,7 @@ class IntakeFormBindingCheckMappingTest extends TestCase {
 			actual: $this->asked[0]['mapping']
 		);
 		$this->assertSame(expected: ['audience' => 'public'], actual: $this->asked[0]['options']);
-		$this->assertSame(expected: ['id' => '42', 'rbac' => false, 'tenancy' => false], actual: (array)$this->asked[0]['schema']);
+		$this->assertSame(expected: ['id' => '42', 'rbac' => false, 'tenancy' => false], actual: ['id' => $this->asked[0]['schema']->id, 'rbac' => $this->asked[0]['schema']->rbac, 'tenancy' => $this->asked[0]['schema']->tenancy]);
 		$this->assertSame(expected: $finding, actual: $findings[0]);
 		$this->assertSame(expected: 'title', actual: $findings[1]['property']);
 		$this->assertSame(expected: IntakeFormBindingCheck::REQUIRED_UNMAPPED, actual: $findings[1]['code']);

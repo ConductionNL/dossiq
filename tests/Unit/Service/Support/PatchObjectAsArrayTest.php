@@ -16,6 +16,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Exposes the trait's protected seam to the test.
@@ -60,13 +64,18 @@ class PatchObjectAsArrayTest extends TestCase {
 			/** @var array<string, mixed> */
 			public array $call = [];
 
-			public function patchObject(string $objectId, array $data, string|int|null $register = null, string|int|null $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->call = ['id' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema];
 
 				return ['id' => $objectId, 'status' => 'closed', 'title' => 'kept'];
 			}
 
 			public function saveObject(array $object, mixed ...$rest): array {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				throw new RuntimeException('saveObject must not be used while patchObject exists');
 			}
 		};
@@ -94,7 +103,9 @@ class PatchObjectAsArrayTest extends TestCase {
 			/** @var string|null */
 			public ?string $savedUuid = null;
 
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return [
 					'id' => $id,
 					'title' => 'Advies brandweer',
@@ -103,7 +114,10 @@ class PatchObjectAsArrayTest extends TestCase {
 				];
 			}
 
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->savedUuid = $uuid;
 
@@ -125,11 +139,14 @@ class PatchObjectAsArrayTest extends TestCase {
 	 */
 	public function testAnUnreadableObjectIsRefused(): void {
 		$objectService = new class {
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}
 
 			public function saveObject(array $object, mixed ...$rest): array {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				throw new RuntimeException('nothing may be saved when the read found nothing');
 			}
 		};
@@ -149,6 +166,7 @@ class PatchObjectAsArrayTest extends TestCase {
 	public function testAServiceWithNoSeamIsRefused(): void {
 		$objectService = new class {
 			public function saveObject(array $object, mixed ...$rest): array {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				return $object;
 			}
 		};
