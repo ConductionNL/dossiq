@@ -29,11 +29,13 @@ use OCA\Dossiq\Service\Cases\ConnectedSystemDocumentFiler;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Refusals, metadata and upload handling of the document filer.
  *
  * @covers \OCA\Dossiq\Service\Cases\ConnectedSystemDocumentFiler
+ * @uses \OCA\Dossiq\Service\Cases\ConnectedDocumentUpload
  */
 class ConnectedSystemDocumentFilerTest extends TestCase {
 
@@ -183,6 +185,49 @@ class ConnectedSystemDocumentFilerTest extends TestCase {
 
 		self::assertSame(['identifier' => ''], $this->filer()->file(operation: self::operation(), documentTypes: self::types(), case: self::kase(), system: 'sys'));
 	}//end testSuccessWithoutIdAnswersEmptyIdentifier()
+
+	/**
+	 * When no temporary file can be written the filing fails loudly, before the upload path is asked.
+	 *
+	 * The temporary directory is pointed at one that does not exist, so
+	 * `tempnam()` answers false exactly as an unwritable directory would. The
+	 * process caches its temporary directory on first use, hence a fresh
+	 * process in which nothing has asked for it yet.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 *
+	 * @return void
+	 */
+	public function testNoTemporaryFileFailsBeforeTheUpload(): void {
+		$uploads = $this->createMock(DossierUploadHandler::class);
+		$uploads->expects($this->never())->method('uploadOne');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+		$filer = new ConnectedSystemDocumentFiler($uploads, $logger);
+
+		$warnings = [];
+		set_error_handler(
+			static function (int $severity, string $message) use (&$warnings): bool {
+				$warnings[] = $message;
+
+				return true;
+			}
+		);
+		putenv('TMPDIR=' . __DIR__ . '/no-such-directory');
+
+		try {
+			$filer->file(operation: self::operation(), documentTypes: self::types(), case: self::kase(), system: 'sys');
+			self::fail('A document without a temporary file must not be reported as filed or refused.');
+		} catch (RuntimeException $e) {
+			self::assertSame('No temporary file for the document.', $e->getMessage());
+		} finally {
+			restore_error_handler();
+		}
+
+		self::assertCount(1, $warnings);
+		self::assertStringStartsWith('tempnam():', $warnings[0], 'The one notice is tempnam() giving up on the directory.');
+	}//end testNoTemporaryFileFailsBeforeTheUpload()
 
 	/**
 	 * A complete document operation.
