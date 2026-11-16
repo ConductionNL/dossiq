@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\OrganisationQuotaLimits;
+use OCA\Dossiq\Service\QuotaGate;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
 use RuntimeException;
@@ -54,16 +56,23 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	private const BLOCKED_EXTENSIONS = ['exe', 'bat', 'cmd', 'com', 'msi', 'scr', 'sh', 'php', 'phar', 'dll'];
 
 	/**
+	 * The tenant quota an upload consumes.
+	 */
+	private const STORAGE_QUOTA = 'storage_mb';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param QuotaGate $quotaGate Refuses an upload past the tenant's storage quota and counts the stored ones.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ZaakdossierService $fileService,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly QuotaGate $quotaGate,
 	) {
 	}//end __construct()
 
@@ -93,6 +102,10 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	/**
 	 * Upload a single multipart file into a case dossier.
 	 *
+	 * A file that would take the tenant past a blocking storage limit is
+	 * refused before it is stored; a stored file adds its size, rounded up to
+	 * whole megabytes, to the tenant's storage count.
+	 *
 	 * @param string $caseId The case (zaak) UUID.
 	 * @param array<string, mixed> $file One normalised uploaded-file entry.
 	 * @param array<string, mixed> $metadata The shared document metadata.
@@ -100,6 +113,7 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	 * @return array<string, mixed> The per-file result entry.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
@@ -131,12 +145,33 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 		}
 
 		$content = $this->uploadedContent(tmpName: $tmpName);
+		$megabytes = $this->megabytesOf(content: $content);
+		$refusal = $this->quotaGate->refusal(quotaType: self::STORAGE_QUOTA, amount: $megabytes);
+		if ($refusal !== null) {
+			throw new RuntimeException($refusal['message']);
+		}
+
 		$meta = $this->uploadMetadata(file: $file, metadata: $metadata);
 
 		$created = $this->fileService->uploadDocument(caseId: $caseId, fileName: $name, content: $content, metadata: $meta);
 
+		$this->quotaGate->record(quotaType: self::STORAGE_QUOTA, amount: $megabytes);
+
 		return ['name' => $name, 'success' => true, 'informatieobject' => $created];
 	}//end uploadFile()
+
+	/**
+	 * The size of an upload in whole megabytes, rounded up.
+	 *
+	 * @param string $content The file content.
+	 *
+	 * @return int Megabytes; 0 for an empty file.
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
+	 */
+	private function megabytesOf(string $content): int {
+		return (int)ceil(strlen($content) / OrganisationQuotaLimits::BYTES_PER_MB);
+	}//end megabytesOf()
 
 	/**
 	 * The uploaded bytes, '' when there is no temporary file.

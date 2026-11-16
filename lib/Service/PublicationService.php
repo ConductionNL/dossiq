@@ -34,6 +34,9 @@ use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
 use OCA\Dossiq\Service\Publication\PublicationDateRule;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -131,7 +134,10 @@ class PublicationService implements PublicationServiceInterface {
 		$case['publications'] = $this->publicationsWith(case: $case, entry: $entry);
 		$case['publishedAt'] = $entry['publishedAt'];
 
-		$objectService->saveObject(object: $case, register: $entry['register'], schema: $entry['schema']);
+		$objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $entry['register'], schema: $entry['schema']))
+		);
 
 		return [
 			'caseId' => $caseId,
@@ -332,7 +338,7 @@ class PublicationService implements PublicationServiceInterface {
 	private function loadCase(object $objectService, array $entry): array {
 		$caseId = $entry['caseId'];
 		try {
-			$obj = $objectService->find(id: $caseId, register: $entry['register'], schema: $entry['schema']);
+			$obj = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $entry['register'], schema: $entry['schema']));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',

@@ -25,7 +25,7 @@ namespace OCA\Dossiq\BulkAction;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -52,7 +52,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class TransitionCasesAction implements BulkActionInterface {
+class TransitionCasesAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 

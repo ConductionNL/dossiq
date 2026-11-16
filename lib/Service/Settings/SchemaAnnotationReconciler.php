@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Settings;
 
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
+use OCA\Dossiq\Service\Support\ReadsMergedRegisterConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class SchemaAnnotationReconciler {
+	use ReadsMergedRegisterConfig;
+
 	/**
 	 * Constructor.
 	 *
@@ -125,17 +128,12 @@ class SchemaAnnotationReconciler {
 	 *                                      the register JSON is missing or invalid.
 	 */
 	private function loadDeclarativeRegisterSchemas(): ?array {
-		$configData = self::readRegisterJson();
+		// Modular register fragments are folded on top, so a schema's
+		// annotation blocks declared in a register.d fragment are reconciled too.
+		$configData = $this->mergedRegisterConfig();
 		if ($configData === null) {
 			return null;
 		}
-
-		// Fold modular register fragments on top so a schema's annotation
-		// blocks declared in a register.d fragment are reconciled too.
-		[$configData] = $this->fragments->merge(
-			base: $configData,
-			fragmentDir: __DIR__ . '/../../Settings/register.d'
-		);
 
 		$schemas = ($configData['components']['schemas'] ?? []);
 		if (is_array($schemas) === false) {
@@ -144,25 +142,6 @@ class SchemaAnnotationReconciler {
 
 		return $schemas;
 	}//end loadDeclarativeRegisterSchemas()
-
-	/**
-	 * Read and decode the shipped register JSON.
-	 *
-	 * @return array<array-key, mixed>|null The register JSON, or null when missing or invalid.
-	 */
-	private static function readRegisterJson(): ?array {
-		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			return null;
-		}
-
-		$configData = json_decode((string)file_get_contents($configPath), true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-			return null;
-		}
-
-		return $configData;
-	}//end readRegisterJson()
 
 	/**
 	 * Reconcile the declarative annotation blocks of one schema definition.

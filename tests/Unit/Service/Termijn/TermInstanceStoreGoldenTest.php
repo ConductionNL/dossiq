@@ -18,6 +18,8 @@ use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class TermInstanceStoreGoldenTest extends TestCase {
 
@@ -38,7 +40,9 @@ class TermInstanceStoreGoldenTest extends TestCase {
 
 			public array $rows = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				if ($this->fail === true) {
 					throw new RuntimeException('find down');
@@ -56,7 +60,10 @@ class TermInstanceStoreGoldenTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['save', $register, $schema, $object];
 				if ($this->fail === true) {
 					throw new RuntimeException('save down');

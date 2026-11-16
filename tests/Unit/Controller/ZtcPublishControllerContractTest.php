@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal OpenRegister ObjectService stub for the ZTC publish tests.
@@ -78,7 +79,7 @@ interface ZtcContractObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -263,12 +264,10 @@ class ZtcPublishControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (
-					string $register,
-					string $schema,
-					array $object,
-					?string $uuid = null,
-				) use (&$saved): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$saved = [
 						'register' => $register,
 						'schema' => $schema,
@@ -320,12 +319,10 @@ class ZtcPublishControllerContractTest extends TestCase {
 			]
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (
-				string $register,
-				string $schema,
-				array $object,
-				?string $uuid = null,
-			) use (&$saved): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saved = $object;
 				return $object;
 			}

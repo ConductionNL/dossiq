@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -55,6 +56,7 @@ use Throwable;
 class IntakeCaseTypes implements IntakeCaseTypesInterface {
 
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * The setting mapping each case-opening path to its case type.
@@ -181,29 +183,13 @@ class IntakeCaseTypes implements IntakeCaseTypesInterface {
 			return $reference;
 		}
 
-		$source = $this->caseTypeSource();
+		$source = $this->configuredSource(schemaKey: 'case_type_schema');
 		if ($source === null) {
 			return '';
 		}
 
 		return $this->searchIdentifier(source: $source, reference: $reference);
 	}//end lookup()
-
-	/**
-	 * The object service, register and case type schema, when all are configured.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null Null when one is missing.
-	 */
-	private function caseTypeSource(): array|null {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
-	}//end caseTypeSource()
 
 	/**
 	 * Find a case type uuid by its identifier.

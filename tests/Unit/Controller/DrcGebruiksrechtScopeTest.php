@@ -37,6 +37,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * OpenRegister's search path, with the int cast that loses a slug.
@@ -143,6 +145,7 @@ final class FakeOpenRegisterStore {
 	 * @return array<string, mixed>|null The stored row.
 	 */
 	public function find(int|string $id, mixed ...$args): ?array {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		return ($this->objects[(string)$id] ?? null);
 	}//end find()
 
@@ -158,10 +161,13 @@ final class FakeOpenRegisterStore {
 	 */
 	public function saveObject(
 		array $object,
-		mixed $register = null,
-		mixed $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->saves[] = ['uuid' => $uuid, 'object' => $object];
 
 		return $object;

@@ -37,6 +37,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * A case store with the PATCH seam.
@@ -66,7 +68,9 @@ class TakeBackCaseStore {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return ($this->cases[$id] ?? null);
 	}//end find()
 
@@ -80,7 +84,11 @@ class TakeBackCaseStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register = '', string $schema = ''): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register ?? '';
+		$schema = $patch->target->schema ?? '';
 		$this->patches[]        = $data;
 		$this->cases[$objectId] = array_merge(($this->cases[$objectId] ?? []), $data);
 

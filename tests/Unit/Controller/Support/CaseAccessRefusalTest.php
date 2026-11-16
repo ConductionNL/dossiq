@@ -14,6 +14,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller\Support;
 use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -56,4 +57,22 @@ final class CaseAccessRefusalTest extends TestCase {
 		self::assertNull($this->refusal(signedIn: true, access: true)->requireReadAccess(caseId: 'c1'));
 		self::assertNull($this->refusal(signedIn: true, access: true)->requireChangeAccess(caseId: 'c1'));
 	}//end testRefusals()
+
+	/**
+	 * The caller is handed back when access holds, else the same refusals.
+	 *
+	 * @return void
+	 */
+	public function testCallerLookups(): void {
+		self::assertInstanceOf(IUser::class, $this->refusal(signedIn: true, access: true)->reader(caseId: 'c1'));
+		self::assertInstanceOf(IUser::class, $this->refusal(signedIn: true, access: true)->writer(caseId: 'c1'));
+
+		$noSession = $this->refusal(signedIn: false, access: true)->reader(caseId: 'c1');
+		self::assertInstanceOf(JSONResponse::class, $noSession);
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $noSession->getStatus());
+
+		$noAccess = $this->refusal(signedIn: true, access: false)->writer(caseId: 'c1');
+		self::assertInstanceOf(JSONResponse::class, $noAccess);
+		self::assertSame(['error' => 'Not authorized'], $noAccess->getData());
+	}//end testCallerLookups()
 }//end class

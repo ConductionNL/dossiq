@@ -151,15 +151,15 @@ final class RoleLinkDefinition {
 		$record = self::validRecord(config: $config, role: $role);
 
 		$this->role               = $role;
-		$this->label              = self::textOr(config: $config, key: 'label', default: $role);
+		$this->label              = self::textOr(config: $config, lookup: ['key' => 'label', 'default' => $role]);
 		$this->target             = $target;
 		$this->targetSchema       = $targetSchema;
-		$this->targetCaseField    = self::textOr(config: $config, key: 'targetCaseField', default: 'case');
+		$this->targetCaseField    = self::textOr(config: $config, lookup: ['key' => 'targetCaseField', 'default' => 'case']);
 		$this->natureRelationship = $nature;
 		$this->requiredAtIntake   = (($config['requiredAtIntake'] ?? false) === true);
 		$this->recordSchema       = self::text(config: $record, key: 'schema');
-		$this->recordCaseField    = self::textOr(config: $record, key: 'caseField', default: 'case');
-		$this->recordTargetField  = self::textOr(config: $record, key: 'targetField', default: 'target');
+		$this->recordCaseField    = self::textOr(config: $record, lookup: ['key' => 'caseField', 'default' => 'case']);
+		$this->recordTargetField  = self::textOr(config: $record, lookup: ['key' => 'targetField', 'default' => 'target']);
 		$this->recordActorField   = self::textOrNull(config: $record, key: 'actorField');
 	}//end __construct()
 
@@ -196,7 +196,7 @@ final class RoleLinkDefinition {
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
 	 */
 	private static function validTarget(array $config, string $role): array {
-		$target = self::textOr(config: $config, key: 'target', default: self::TARGET_CASE);
+		$target = self::textOr(config: $config, lookup: ['key' => 'target', 'default' => self::TARGET_CASE]);
 		if (in_array($target, [self::TARGET_CASE, self::TARGET_OBJECT], true) === false) {
 			throw new InvalidArgumentException("Relation role '$role' points at '$target'; use case or object.");
 		}
@@ -222,7 +222,7 @@ final class RoleLinkDefinition {
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
 	 */
 	private static function validNature(array $config, string $role): string {
-		$nature = self::textOr(config: $config, key: 'natureRelationship', default: 'vervolg');
+		$nature = self::textOr(config: $config, lookup: ['key' => 'natureRelationship', 'default' => 'vervolg']);
 		if (in_array($nature, CaseRelationService::RELATION_TYPES, true) === false) {
 			throw new InvalidArgumentException("Relation role '$role' writes `natureRelationship` '$nature', which is not a relation type.");
 		}
@@ -299,13 +299,13 @@ final class RoleLinkDefinition {
 	/**
 	 * A trimmed string value, or a default when it is absent or empty.
 	 *
-	 * @param array<array-key, mixed> $config  The entry.
-	 * @param string                  $key     The key.
-	 * @param string                  $default The value when none is given.
+	 * @param array<array-key, mixed>             $config The entry.
+	 * @param array{key: string, default: string} $lookup `key` the key; `default` the value when none is given.
 	 *
 	 * @return string The value.
 	 */
-	private static function textOr(array $config, string $key, string $default): string {
+	private static function textOr(array $config, array $lookup): string {
+		[$key, $default] = [$lookup['key'], $lookup['default']];
 		$value = self::text(config: $config, key: $key);
 		if ($value === '') {
 			return $default;

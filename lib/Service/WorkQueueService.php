@@ -171,13 +171,26 @@ class WorkQueueService implements WorkQueueServiceInterface {
 			return [];
 		}
 
-		$run = new QueueScoringRun(source: $source, now: $now, profile: $this->urgencySettings->profile());
+		return $this->rankedItems(
+			run: new QueueScoringRun(source: $source, now: $now, profile: $this->urgencySettings->profile()),
+			queue: ['userId' => $userId, 'covered' => $covered]
+		);
+	}//end computeQueue()
 
-		$caseItems = $this->queueCaseItems(run: $run, userId: $userId);
+	/**
+	 * The user's case and task items and the covered cases, scored and sorted most urgent first.
+	 *
+	 * @param QueueScoringRun                                                  $run   The case source, the moment and the urgency profile.
+	 * @param array{userId: string, covered: array<int, array<string, mixed>>} $queue The user, and the open cases they cover.
+	 *
+	 * @return array<int, array<string, mixed>> Scored, sorted queue items.
+	 */
+	private function rankedItems(QueueScoringRun $run, array $queue): array {
+		$caseItems = $this->queueCaseItems(run: $run, userId: $queue['userId']);
 		$items = array_merge(
 			$caseItems,
-			$this->scoreCases(run: $run, cases: $this->notYetQueued(covered: $covered, caseItems: $caseItems)),
-			$this->queueTaskItems(run: $run, userId: $userId)
+			$this->scoreCases(run: $run, cases: $this->notYetQueued(covered: $queue['covered'], caseItems: $caseItems)),
+			$this->queueTaskItems(run: $run, userId: $queue['userId'])
 		);
 
 		usort(
@@ -188,7 +201,7 @@ class WorkQueueService implements WorkQueueServiceInterface {
 		);
 
 		return $items;
-	}//end computeQueue()
+	}//end rankedItems()
 
 	/**
 	 * Count the open cases in a queue by who the queue is waiting on.

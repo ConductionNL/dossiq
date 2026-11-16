@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -162,7 +164,10 @@ class ConsultationService implements ConsultationServiceInterface {
 		$data['status'] = 'open';
 		$data['createdAt'] = $this->dates->nowAsMoment();
 
-		$consultation = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$consultation = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$consultationId = $this->idOf(consultation: $consultation, data: $data);
 

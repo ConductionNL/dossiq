@@ -39,6 +39,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Allowed and refused answers to a clarification request.
@@ -184,8 +185,10 @@ class PortalWooAnswerOutcomesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
-				return $this->test->find(id: $id, schema: $schema);
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				return $this->test->find(id: $id, options: new ObjectFindOptions(schema: $schema));
 			}
 		};
 
@@ -226,7 +229,8 @@ class PortalWooAnswerOutcomesTest extends TestCase {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, mixed $schema): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$schema = $options?->schema;
 		$this->assertTrue($this->asSystem);
 		if ($this->findFailure !== null) {
 			throw $this->findFailure;

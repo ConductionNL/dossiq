@@ -14,6 +14,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseTransfer;
 
 use OCA\Dossiq\Service\CaseTransfer\TransferStore;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseTransfer\TransferStore
@@ -35,12 +37,16 @@ class TransferStoreTest extends TestCase {
 			public function __construct(private mixed $found) {
 			}
 
-			public function find(string $id, int $register, int $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				return $this->found;
 			}
 
-			public function saveObject(array $object, int $register, int $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				return 'saved-object';
 			}

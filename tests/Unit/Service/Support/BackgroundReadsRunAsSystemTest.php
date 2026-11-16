@@ -29,6 +29,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * An object service that refuses an anonymous read, as OpenRegister does.
@@ -74,7 +75,9 @@ class AnonymousRefusingObjectService {
 	 *
 	 * @return array<string, mixed> The row.
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if ($this->inSystem === false && $this->signedIn === false) {
 			throw new RuntimeException("User 'Anonymous' does not have permission to 'read' objects in schema 'Case Type'");
 		}
@@ -197,9 +200,11 @@ class BackgroundReadsRunAsSystemTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->seen[] = $this->inSystem;
-				return parent::find($id, $register, $schema);
+				return parent::find($id, $options);
 			}
 		};
 		$this->objects = $objects;

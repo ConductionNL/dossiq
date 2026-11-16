@@ -84,6 +84,8 @@ import { emit } from '@nextcloud/event-bus'
 import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
+import { fileNodeDialog } from '../mixins/fileNodeDialog.js'
+import { openable } from '../mixins/openable.js'
 
 /**
  * Version-history modal for one dossier document, over the Nextcloud Files
@@ -182,37 +184,13 @@ export default {
 		History,
 	},
 
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
+	mixins: [openable, fileNodeDialog],
 
+	props: {
 		/** The clicked zaakinformatieobject row, with informatieobject extended in. */
 		row: {
 			type: Object,
 			default: () => ({}),
-		},
-
-		/**
-		 * The Nextcloud file id of the clicked node, merged onto an
-		 * `open-modal` row action's props by CnFilesBrowser.
-		 *
-		 * This is the path the `case-files` leaf uses and the only one that
-		 * still has a caller: the Documents tab that handed `row` down was
-		 * retired on 2026-09-13. `row` is kept because a widget row action on
-		 * an object-list still passes it, and losing that would swap one dark
-		 * caller for another.
-		 */
-		fileId: {
-			type: [String, Number],
-			default: '',
-		},
-
-		/** The clicked node's name, for the refusal sentence. */
-		fileName: {
-			type: String,
-			default: '',
 		},
 	},
 

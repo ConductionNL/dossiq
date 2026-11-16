@@ -77,13 +77,27 @@ class MentionNotificationService implements MentionNotificationServiceInterface 
 		MentionedNote $note,
 		array $mentionedUserIds,
 	): int {
-		$mention = new NoteMention(actorUserId: $actorUserId, actorDisplayName: $actorDisplayName, note: $note);
+		return $this->notifyAll(
+			mention: new NoteMention(actorUserId: $actorUserId, actorDisplayName: $actorDisplayName, note: $note),
+			userIds: $mentionedUserIds
+		);
+	}//end notifyMention()
+
+	/**
+	 * Notify each mentioned user once, never the note's own author.
+	 *
+	 * @param NoteMention   $mention The author and the note.
+	 * @param array<string> $userIds The mentioned users' NC user ids
+	 *
+	 * @return int Number of notifications actually dispatched
+	 */
+	private function notifyAll(NoteMention $mention, array $userIds): int {
 		$notified = 0;
 
-		foreach (array_unique($mentionedUserIds) as $mentionedUserId) {
+		foreach (array_unique($userIds) as $mentionedUserId) {
 			// Never notify authors about their own mentions (e.g. self-mention,
 			// or a duplicate @mention of the same user typed twice).
-			if ($mentionedUserId === '' || $mentionedUserId === $actorUserId) {
+			if ($mentionedUserId === '' || $mentionedUserId === $mention->actorUserId) {
 				continue;
 			}
 
@@ -93,7 +107,7 @@ class MentionNotificationService implements MentionNotificationServiceInterface 
 		}
 
 		return $notified;
-	}//end notifyMention()
+	}//end notifyAll()
 
 	/**
 	 * Ring one mentioned user's bell and put the mention in their queue.

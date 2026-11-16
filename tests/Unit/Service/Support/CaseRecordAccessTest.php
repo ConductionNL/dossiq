@@ -16,6 +16,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseRecordAccess;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The refusals name what was not done to the case.
@@ -75,7 +76,9 @@ final class CaseRecordAccessTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): never {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new \RuntimeException('down');
 			}//end find()
 
@@ -108,7 +111,9 @@ final class CaseRecordAccessTest extends TestCase {
 			 *
 			 * @return null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};

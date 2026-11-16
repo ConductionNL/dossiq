@@ -29,6 +29,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the step writes into a fresh and into an older instance, and how it degrades.
@@ -517,7 +518,9 @@ class LoadDefaultZgwMappingsRunTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if (in_array($object['name'], $this->refused, true) === true) {
 					throw new RuntimeException('refused');
 				}

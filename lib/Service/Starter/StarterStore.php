@@ -26,6 +26,10 @@ namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -228,10 +232,11 @@ class StarterStore {
 			return $this->asArray(
 				object: $context['service']->saveObject(
 					object: $payload,
-					register: $context['register'],
-					schema: $context['schema'],
-					uuid: $id,
-					_rbac: false,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+						uuid: $id
+					),
+					_rbac: false
 				)
 			);
 		}
@@ -263,9 +268,10 @@ class StarterStore {
 
 		try {
 			return ($context['service']->deleteObject(
-				uuid: $id,
-				register: $context['register'],
-				schema: $context['schema'],
+				new ObjectDeletion(
+					uuid: $id,
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+				)
 			) === true);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -328,9 +334,8 @@ class StarterStore {
 		try {
 			$object = $context['service']->find(
 				id: $id,
-				register: $context['register'],
-				schema: $context['schema'],
-				_rbac: false,
+				options: new ObjectFindOptions(register: $context['register'], schema: $context['schema']),
+				_rbac: false
 			);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;

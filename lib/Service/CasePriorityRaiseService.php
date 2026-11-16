@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -54,6 +55,7 @@ use Throwable;
 class CasePriorityRaiseService {
 
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * Constructor.
@@ -160,15 +162,7 @@ class CasePriorityRaiseService {
 	 * @return array{0: object, 1: string, 2: string}|null The case store, or null.
 	 */
 	private function caseStore(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
+		return $this->configuredSource(schemaKey: 'case_schema');
 	}//end caseStore()
 
 	/**
@@ -263,13 +257,12 @@ class CasePriorityRaiseService {
 			return null;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->configuredSource(schemaKey: 'case_schema');
+		if ($store === null) {
 			return null;
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,

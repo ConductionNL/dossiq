@@ -37,6 +37,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests for FederatedCaseShareService.
@@ -141,7 +143,9 @@ final class FederatedCaseShareServiceTest extends TestCase {
 			public function __construct(private array $found, private bool $serialise, private \ArrayObject $calls) {
 			}
 
-			public function find(string $id, int $register, int $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->found[$id] ?? null);
 				if ($found instanceof \Throwable) {
@@ -151,7 +155,9 @@ final class FederatedCaseShareServiceTest extends TestCase {
 				return $found;
 			}
 
-			public function saveObject(array $object, int $register, int $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				$this->saves++;
 				$saved = $object + ['id' => 'fshare-1', 'save' => $this->saves];

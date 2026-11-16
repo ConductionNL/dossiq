@@ -32,6 +32,7 @@ use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The resident's documents of a case, allowed and refused, as exact entries.
@@ -167,7 +168,11 @@ class PortalCaseDocumentsGoldenTest extends TestCase {
 			}
 		);
 		$objects->method('find')->willReturnCallback(
-			function ($id, $_extend = [], $files = false, $register = null, $schema = null) {
+			function ($id, ?ObjectFindOptions $options = null) {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = [$id, $schema];
 				if (isset($this->documents[$id]) === false) {
 					return null;

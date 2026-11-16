@@ -40,6 +40,9 @@ use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -365,8 +368,7 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 		try {
 			$created = $target->objectService->saveObject(
 				object: $payload,
-				register: $target->register,
-				schema: $target->schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schema))
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -478,8 +480,7 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 
 		return $copy->target->objectService->saveObject(
 			object: $payload,
-			register: $copy->target->register,
-			schema: $copy->target->schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $copy->target->register, schema: $copy->target->schema))
 		);
 	}//end saveChild()
 
@@ -592,7 +593,7 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 		}
 
 		try {
-			$obj = $target->objectService->find($id, register: $target->register, schema: $target->schema);
+			$obj = $target->objectService->find($id, new ObjectFindOptions(register: $target->register, schema: $target->schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseTypeCopyService: object lookup failed',

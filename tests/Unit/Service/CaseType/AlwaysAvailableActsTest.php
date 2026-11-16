@@ -23,6 +23,7 @@ use OCA\Dossiq\Service\Transitions\RoleGuard;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseType\AlwaysAvailableActs
@@ -113,7 +114,9 @@ class AlwaysAvailableActsTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register=null, mixed $schema=null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->test->answer(id: $id, register: (string)$register, schema: (string)$schema);
 			}
 		};

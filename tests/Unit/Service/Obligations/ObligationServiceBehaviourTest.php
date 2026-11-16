@@ -33,6 +33,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The in-memory register, updating the row an object's own id names, as
@@ -54,15 +57,16 @@ class ObligationRegister extends InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		$id = (string)($object['id'] ?? '');
 
-		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: ($uuid ?? ($id !== '' ? $id : null)));
+		return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid ?? ($id !== '' ? $id : null)));
 	}//end saveObject()
 }//end class
 
@@ -158,7 +162,9 @@ class ObligationServiceBehaviourTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $id, int|string $register = '', int|string $schema = ''): never {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('read failed');
 			}
 
@@ -184,7 +190,9 @@ class ObligationServiceBehaviourTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function saveObject(array $object = [], int|string $register = '', int|string $schema = ''): never {
+			public function saveObject(array $object = [], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				throw new RuntimeException('write failed');
 			}
 		};

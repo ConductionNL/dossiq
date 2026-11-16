@@ -29,12 +29,13 @@ use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
 use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
 use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the ZTC classes call.
  */
 interface ZtcCrossRefObjectServiceStub {
-	public function find(mixed $id, string $register, string $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -96,7 +97,9 @@ class ZtcCrossReferenceTest extends TestCase {
 	private function objects(array $finds, array $searches=[]): ZtcCrossRefObjectServiceStub {
 		$service = $this->createMock(ZtcCrossRefObjectServiceStub::class);
 		$service->method('find')->willReturnCallback(
-			static function (mixed $id, string $register, string $schema) use ($finds): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($finds): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$found = $finds[$schema.':'.$id] ?? null;
 				if ($found instanceof \Throwable) {
 					throw $found;

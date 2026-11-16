@@ -59,9 +59,9 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
 use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
+use OCA\Dossiq\Listener\Support\AnswersAsServiceAccount;
 use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -75,6 +75,7 @@ use Throwable;
  * @spec openspec/specs/case-email-integration/spec.md
  */
 class MessageReceivedListener implements IEventListener {
+	use AnswersAsServiceAccount;
 
 	/**
 	 * The integriq event this listener is registered for.
@@ -140,17 +141,13 @@ class MessageReceivedListener implements IEventListener {
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function handle(Event $event): void {
-		try {
-			// Integriq raises this from its own background work, with nobody
-			// signed in, and OpenRegister refuses a write from nobody. A
-			// signed-in caller keeps writing as themselves.
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// written; the offer stays unanswered, so integriq files the
-			// message under `unassigned`.
-			return;
-		}
+		// Integriq raises this from its own background work, with nobody
+		// signed in, and OpenRegister refuses a write from nobody. A
+		// signed-in caller keeps writing as themselves.
+		// Without the service account nothing is
+		// written; the offer stays unanswered, so integriq files the
+		// message under `unassigned`.
+		$this->answerAsServiceAccount(answer: fn () => $this->answer(event: $event));
 	}//end handle()
 
 	/**

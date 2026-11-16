@@ -31,6 +31,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A store that answers every find with one ZIO row.
@@ -52,7 +53,9 @@ class ZrcShowDestroyStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function find(string $uuid, string $register='', string $schema=''): array {
+	public function find(string $uuid, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		$this->found[] = $uuid . '@' . $schema;
 		return ['case' => 'case-9', 'document' => 'https://drc/io/1'];
 	}//end find()

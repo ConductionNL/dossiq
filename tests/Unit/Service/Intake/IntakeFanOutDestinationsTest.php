@@ -27,6 +27,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\IntakeFanOut
@@ -105,7 +107,10 @@ class IntakeFanOutDestinationsTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($object['caseType'] === 'ct-unwritten') {
 					return 'accepted';
 				}
@@ -124,7 +129,11 @@ class IntakeFanOutDestinationsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($objectId === 'case-1') {
 					throw new RuntimeException('locked');
 				}

@@ -41,6 +41,8 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 
 /**
  * Escalating an unanswered request to the holding unit.
@@ -306,7 +308,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 			'zero' => $this->store->rows['caseType']['ct-vergunning']['takeoverAnswerPeriodDays'] = 0,
 			'untyped' => $this->store->rows['case']['case-1']['caseType'] = '',
 			'unreadable' => $this->store->refusedToCaller = ['caseType'],
-			'gone' => $this->store->deleteObject(schema: 'case', uuid: 'case-1'),
+			'gone' => $this->store->deleteObject(new ObjectDeletion(uuid: 'case-1', target: new ObjectFindTarget(schema: 'case'))),
 		};
 
 		self::assertSame(CaseTakeoverRequest::DEFAULT_ANSWER_DAYS, 3);

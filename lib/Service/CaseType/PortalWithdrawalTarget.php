@@ -67,42 +67,59 @@ final class PortalWithdrawalTarget implements PortalWithdrawalTargetInterface {
 			return null;
 		}
 
-		if (isset($statuses[$target]) === false) {
+		return $this->targetRefusal(withdrawal: $withdrawal, graph: ['statuses' => $statuses, 'moves' => $moves, 'target' => $target]);
+	}//end refusal()
+
+	/**
+	 * The refusal for a target status the type does not own, or that an open status cannot reach.
+	 *
+	 * @param array<string, mixed> $withdrawal The `portalWithdrawal` block being saved.
+	 * @param array<string, mixed> $graph      The type's statuses (`statuses`, id to title), the active template's
+	 *                                         transitions (`moves`) and the target status id (`target`).
+	 *
+	 * @return array{reason: string, parameters: array<int, string>}|null The refusal, or null.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function targetRefusal(array $withdrawal, array $graph): ?array {
+		$target = $graph['target'];
+		if (isset($graph['statuses'][$target]) === false) {
 			return [
 				'reason' => self::NOT_OWN,
 				'parameters' => [$target],
 			];
 		}
 
-		if ($moves === []) {
+		if ($graph['moves'] === []) {
 			return null;
 		}
 
-		return $this->unreachableRefusal(withdrawal: $withdrawal, statuses: $statuses, moves: $moves, target: $target);
-	}//end refusal()
+		return $this->unreachableRefusal(open: $this->openStatuses(withdrawal: $withdrawal), graph: $graph);
+	}//end targetRefusal()
 
 	/**
 	 * The refusal for the first open status no move leads from to the target.
 	 *
-	 * @param array<string, mixed>             $withdrawal The `portalWithdrawal` block being saved.
-	 * @param array<string, string>            $statuses   The type's statuses: id to title.
-	 * @param array<int, array<string, mixed>> $moves      The active template's transitions.
-	 * @param string                           $target     The target status id.
+	 * @param array<int, string>   $open  The statuses the withdrawal is open in.
+	 * @param array<string, mixed> $graph The type's statuses (`statuses`, id to title), the active template's
+	 *                                    transitions (`moves`) and the target status id (`target`).
 	 *
 	 * @return array{reason: string, parameters: array<int, string>}|null The refusal, or null when every open status reaches the target.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
-	private function unreachableRefusal(array $withdrawal, array $statuses, array $moves, string $target): ?array {
-		foreach ($this->openStatuses(withdrawal: $withdrawal) as $open) {
-			if ($open === $target || isset($statuses[$open]) === false) {
+	private function unreachableRefusal(array $open, array $graph): ?array {
+		$statuses = $graph['statuses'];
+		$target = $graph['target'];
+		foreach ($open as $from) {
+			if ($from === $target || isset($statuses[$from]) === false) {
 				continue;
 			}
 
-			if ($this->leadsStraightTo(from: $open, target: $target, moves: $moves) === false) {
+			if ($this->leadsStraightTo(step: ['from' => $from, 'to' => $target], moves: $graph['moves']) === false) {
 				return [
 					'reason' => self::UNREACHABLE,
-					'parameters' => [$statuses[$open], $statuses[$target]],
+					'parameters' => [$statuses[$from], $statuses[$target]],
 				];
 			}
 		}
@@ -137,20 +154,19 @@ final class PortalWithdrawalTarget implements PortalWithdrawalTargetInterface {
 	/**
 	 * Whether one move goes from this status straight to the target.
 	 *
-	 * @param string                           $from   The status the case is in.
-	 * @param string                           $target The status the withdrawal lands on.
-	 * @param array<int, array<string, mixed>> $moves  The transitions.
+	 * @param array{from: string, to: string}   $step  The status the case is in, and the status the withdrawal lands on.
+	 * @param array<int, array<string, mixed>> $moves The transitions.
 	 *
 	 * @return boolean True when a move connects them.
 	 */
-	private function leadsStraightTo(string $from, string $target, array $moves): bool {
+	private function leadsStraightTo(array $step, array $moves): bool {
 		foreach ($moves as $move) {
 			if (is_array($move) === false) {
 				continue;
 			}
 
-			if ($this->text(value: ($move['fromStatus'] ?? null)) === $from
-				&& $this->text(value: ($move['toStatus'] ?? null)) === $target
+			if ($this->text(value: ($move['fromStatus'] ?? null)) === $step['from']
+				&& $this->text(value: ($move['toStatus'] ?? null)) === $step['to']
 			) {
 				return true;
 			}

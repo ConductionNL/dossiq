@@ -39,6 +39,7 @@ use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsInConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -51,6 +52,7 @@ use Throwable;
  */
 class TermHandlerNotice {
 	use SearchesObjects;
+	use FindsInConfiguredSchema;
 
 	/**
 	 * Build the service.
@@ -195,13 +197,6 @@ class TermHandlerNotice {
 	 * @return array<string, mixed>|null The object, or null when absent or unreadable.
 	 */
 	private function read(string $configKey, string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register      = (string) $this->settingsService->getConfigValue('register');
-		$schema        = (string) $this->settingsService->getConfigValue($configKey);
-		if ($objectService === null || $register === '' || $schema === '' || $id === '') {
-			return null;
-		}
-
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		return $this->findInConfiguredSchema(schemaKey: $configKey, id: $id);
 	}//end read()
 }//end class

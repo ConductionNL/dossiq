@@ -65,8 +65,19 @@ class QmaticBackend extends RestAppointmentBackend {
 			options: ['headers' => $this->authHeaders()]
 		);
 
+		return self::slotsOf(times: ($data['times'] ?? []));
+	}//end getTimeslots()
+
+	/**
+	 * The thirty-minute available slots of Qmatic's times.
+	 *
+	 * @param mixed $times Qmatic's times.
+	 *
+	 * @return array<int, array{time: mixed, duration: int, available: bool}> The slots.
+	 */
+	private static function slotsOf(mixed $times): array {
 		$slots = [];
-		foreach (($data['times'] ?? []) as $time) {
+		foreach ($times as $time) {
 			$slots[] = [
 				'time' => $time['time'] ?? '',
 				'duration' => 30,
@@ -75,7 +86,7 @@ class QmaticBackend extends RestAppointmentBackend {
 		}
 
 		return $slots;
-	}//end getTimeslots()
+	}//end slotsOf()
 
 	/**
 	 * The Qmatic API takes an auth token.

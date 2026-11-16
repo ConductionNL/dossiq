@@ -31,6 +31,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for BezwaarCreationHook.
@@ -122,7 +124,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($id === 'decision-1') {
 					return new FakeStoredObject(['case' => 'primair-1']);
 				}
@@ -141,7 +147,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ((string)$schema === '10') {
 					$this->savedCase = $object;
 				}
@@ -193,7 +203,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject(['case' => 'primair-1']);
 			}
 
@@ -202,7 +216,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->savedSchemas[] = (string)$schema;
 				return new FakeStoredObject($object);
 			}//end saveObject()
@@ -239,7 +257,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject(['case' => '']);
 			}
 
@@ -254,7 +276,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ((string)$schema === '10') {
 					$this->caseWrites++;
 				}
@@ -285,7 +311,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException Always.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new DoesNotExistException('Object ' . $id . ' does not exist');
 			}
 
@@ -300,7 +330,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				return new FakeStoredObject($object);
 			}//end saveObject()
 		};

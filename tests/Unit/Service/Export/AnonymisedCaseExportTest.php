@@ -29,6 +29,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * No BSN and no name leave, an address leaves as its postcode area and a date as its year,
@@ -68,7 +69,9 @@ class AnonymisedCaseExportTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, int|string $register='', int|string $schema=''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				return ($this->objects[$schema . '/' . $id] ?? throw new DoesNotExistException('not found'));
 			}
 		};

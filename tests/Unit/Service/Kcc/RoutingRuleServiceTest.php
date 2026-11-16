@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for RoutingRuleService, over the real routing engine and
@@ -103,7 +105,10 @@ class RoutingRuleServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['saveObject', [$object, $register, $schema, $uuid]];
 				return new class (array_merge(['id' => ($uuid ?? 'new-uuid')], $object)) implements \JsonSerializable {
 					/**
@@ -130,7 +135,10 @@ class RoutingRuleServiceTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema): void {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->calls[] = ['deleteObject', [$uuid, $register, $schema]];
 			}
 		};

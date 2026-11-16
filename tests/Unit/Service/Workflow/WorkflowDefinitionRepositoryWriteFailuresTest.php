@@ -21,6 +21,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A write that cannot land answers null (or nothing) and is logged; it never
@@ -68,7 +70,9 @@ class WorkflowDefinitionRepositoryWriteFailuresTest extends TestCase {
 			 *
 			 * @return mixed The stored row.
 			 */
-			public function find(string $id, ?string $register = null, ?string $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->stored;
 			}
 
@@ -82,10 +86,13 @@ class WorkflowDefinitionRepositoryWriteFailuresTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?string $register = null,
-				?string $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->saveThrows === true) {
 					throw new \RuntimeException('The required properties (title) are missing');
 				}

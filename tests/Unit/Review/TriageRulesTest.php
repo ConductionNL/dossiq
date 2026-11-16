@@ -36,6 +36,7 @@ use OCP\Files\IRootFolder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * @covers \OCA\Dossiq\Review\TriageRules
@@ -547,7 +548,10 @@ class TriageRulesTest extends TestCase {
 			 *
 			 * @return bool Never.
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$register = $deletion->target->register ?? '';
+				$schema = $deletion->target->schema ?? '';
+				$uuid = $deletion->uuid ?? '';
 				throw new \RuntimeException('Delete refused');
 			}//end deleteObject()
 		};

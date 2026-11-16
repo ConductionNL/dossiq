@@ -32,6 +32,7 @@ use OCA\Dossiq\Portal\PortalConversation;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -480,7 +481,17 @@ class PortalContributionProviderTest extends TestCase {
 		$dossier = $this->citizenAction(id: 'startWooVerzoek');
 		$open = $this->citizenAction(id: 'startWooVerzoekAlgemeen');
 
-		$this->assertSame($dossier['endpoint'], $open['endpoint'], 'one route');
+		// The open door is a plain create of the case, so its half-filled
+		// request is a draft (case-intake-per-case-type); the case type's own
+		// intake does what the dossier door's route does on top of the write.
+		$this->assertSame('/index.php/apps/dossiq/api/portal/woo-verzoek', $dossier['endpoint'], 'the dossier door keeps its route');
+		$this->assertSame('create', $open['type']);
+		$this->assertSame('case', $open['schema']);
+		$this->assertSame('portalSubject', $open['scopeField']);
+		$this->assertSame(WooRequestIntake::CASE_TYPE_ID, $open['defaults']['caseType']);
+		$this->assertSame('title', $open['fieldMap']['onderwerp']);
+		$this->assertSame('wooRequest.verzoekerNaam', $open['fieldMap']['verzoekerNaam']);
+		$this->assertSame(['retentionDays' => 30], $open['draft']);
 		$this->assertSame(
 			array_column($dossier['steps'], 'title'),
 			array_column($open['steps'], 'title'),
@@ -1188,8 +1199,10 @@ class PortalContributionProviderTest extends TestCase {
 			);
 
 			foreach (($entry['fields'] ?? []) as $field) {
+				// A mapped answer lands at its path; the path's first name is the schema's field.
+				$landsOn = explode('.', (string)($entry['fieldMap'][$field] ?? $field))[0];
 				$this->assertArrayHasKey(
-					$field,
+					$landsOn,
 					$props,
 					"projected field '{$field}' must exist on schema '{$schemaSlug}' ({$audience}/{$entry['id']})"
 				);

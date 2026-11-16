@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Finds an object of a mapped schema, and reads the uuid in a reference.
  *
@@ -45,8 +47,7 @@ trait FindsMappedObjects {
 	private function find(string $uuid, array $config): mixed {
 		return $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
+			new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
 		);
 	}//end find()
 

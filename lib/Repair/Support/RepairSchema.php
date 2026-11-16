@@ -70,6 +70,25 @@ final class RepairSchema {
 	}//end __construct()
 
 	/**
+	 * The rows of the schema that match the filters, one search.
+	 *
+	 * @param array<string, mixed> $filters Object-field filters and pagination keys.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec exclude Shared upgrade plumbing; each repair step that walks a schema names its
+	 *  own spec.
+	 */
+	public function search(array $filters): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $this->objectService,
+			register: $this->register,
+			schema: $this->schema,
+			filters: $filters,
+		);
+	}//end search()
+
+	/**
 	 * Every row of the schema, a page at a time: the next page is read once the last row of this one is handled.
 	 *
 	 * @param int $pageSize How many rows one page holds.

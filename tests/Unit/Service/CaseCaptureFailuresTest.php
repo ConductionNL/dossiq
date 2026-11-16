@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Conversation\CaseCaptureService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Conversation\CaseCaptureService
@@ -65,7 +66,10 @@ class CaseCaptureFailuresTest extends TestCase {
 				 *
 				 * @return mixed
 				 */
-				public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null): mixed {
+				public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$this->saved[] = ['schema' => $schema, 'object' => $object];
 					return array_shift($this->answers);
 				}

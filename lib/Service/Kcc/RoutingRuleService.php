@@ -34,6 +34,9 @@ namespace OCA\Dossiq\Service\Kcc;
 use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**
@@ -88,7 +91,12 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	public function createRule(array $data): array {
 		$payload = $this->validateRule(data: $data);
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			)
+		);
 	}//end createRule()
 
 	/**
@@ -106,7 +114,12 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	public function updateRule(string $id, array $data): array {
 		$payload = $this->validateRule(data: $data);
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema, uuid: (string)$id));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+			)
+		);
 	}//end updateRule()
 
 	/**
@@ -120,7 +133,7 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+		$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end deleteRule()
 
 	/**

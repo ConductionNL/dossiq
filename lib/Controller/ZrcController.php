@@ -42,6 +42,10 @@ use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Support\MapsZgwRows;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -306,9 +310,11 @@ class ZrcController extends ZgwController {
 	private function saveCreatedObject(array $englishData, array $mappingConfig): array {
 		$objectData = $this->objectToArray(
 			row: $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
+				object: $englishData,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $mappingConfig['sourceRegister'],
+						schema: $mappingConfig['sourceSchema']
+					))
 			)
 		);
 		$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
@@ -1192,8 +1198,10 @@ class ZrcController extends ZgwController {
 		$caseData = $this->objectToArray(
 			row: $this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			)
 		);
 		$caseVa = $caseData['confidentiality'] ?? ($caseData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
@@ -1510,8 +1518,10 @@ class ZrcController extends ZgwController {
 		try {
 			$ztObj = $this->zgwService->getObjectService()->find(
 				$matches[1],
-				register: $ztConfig['sourceRegister'],
-				schema: $ztConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $ztConfig['sourceRegister'],
+					schema: $ztConfig['sourceSchema']
+				)
 			);
 			$ztData = $this->objectToArray(row: $ztObj);
 		} catch (\Throwable $e) {
@@ -1756,8 +1766,10 @@ class ZrcController extends ZgwController {
 		try {
 			$caseObj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
 		} catch (\Throwable $e) {
 			$caseObj = null;
@@ -1897,7 +1909,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function deleteCaseObject(object $objectService, string $uuid): ?JSONResponse {
 		try {
-			$objectService->deleteObject(uuid: $uuid);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $uuid));
 			return null;
 		} catch (HookStoppedException $stopped) {
 			$held = CaseHeldException::fromHookErrors(errors: $stopped->getErrors());
@@ -1977,8 +1989,10 @@ class ZrcController extends ZgwController {
 	private function closedStateOf(string $resource, string $uuid, array $mappingConfig): array {
 		$existingObj = $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 		$existingData = $this->objectToArray(row: $existingObj);
 
@@ -2306,9 +2320,11 @@ class ZrcController extends ZgwController {
 		$englishData = $this->oioEnglishData(oioConfig: $oioConfig, caseUrl: $caseUrl, ioUrl: $ioUrl);
 
 		$this->zgwService->getObjectService()->saveObject(
-			register: $oioConfig['sourceRegister'],
-			schema: $oioConfig['sourceSchema'],
-			object: $englishData
+			object: $englishData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $oioConfig['sourceRegister'],
+					schema: $oioConfig['sourceSchema']
+				))
 		);
 
 		$this->zgwService->getLogger()->info(
@@ -2382,8 +2398,7 @@ class ZrcController extends ZgwController {
 
 		$zioObj = $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $zioConfig['sourceRegister'],
-			schema: $zioConfig['sourceSchema']
+			new ObjectFindOptions(register: $zioConfig['sourceRegister'], schema: $zioConfig['sourceSchema'])
 		);
 		$zioData = $this->objectToArray(row: $zioObj);
 
@@ -2516,7 +2531,7 @@ class ZrcController extends ZgwController {
 
 			$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
 			if ($oioUuid !== '') {
-				$this->zgwService->getObjectService()->deleteObject(uuid: $oioUuid);
+				$this->zgwService->getObjectService()->deleteObject(new ObjectDeletion(uuid: $oioUuid));
 				$this->zgwService->getLogger()->info(
 					'zrc-005b: Deleted ObjectInformatieObject ' . $oioUuid
 				);

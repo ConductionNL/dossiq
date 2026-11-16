@@ -26,6 +26,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -252,7 +254,10 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		$row['workflowVersion'] = (int)($target['version'] ?? 1);
 
 		try {
-			$run->objectService->saveObject(object: $row, register: $run->register, schema: $run->schemas['case'], uuid: $caseId);
+			$run->objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $run->register, schema: $run->schemas['case']), uuid: $caseId)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not move a case',

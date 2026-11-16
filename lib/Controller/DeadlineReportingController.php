@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsStringParams;
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
 use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
@@ -49,6 +50,7 @@ use Throwable;
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingController extends Controller {
+	use ReadsStringParams;
 	use ReportingAudienceGuard;
 
 	/**
@@ -179,22 +181,6 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end dashboard()
-
-	/**
-	 * A request parameter as a string, or null when it is absent or not a string.
-	 *
-	 * @param string $name The parameter.
-	 *
-	 * @return string|null
-	 */
-	private function stringParam(string $name): ?string {
-		$value = $this->request->getParam($name);
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		return $value;
-	}//end stringParam()
 
 	/**
 	 * Quarterly KPI report.

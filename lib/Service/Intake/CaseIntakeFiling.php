@@ -50,6 +50,8 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -180,7 +182,10 @@ class CaseIntakeFiling {
 	private function save(array $storage, array $payload): mixed {
 		[$objectService, $register, $schema] = $storage;
 		try {
-			$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+			$saved = $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->info('dossiq: the intake filing was refused by the create path', ['exception' => $e->getMessage()]);
 

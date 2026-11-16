@@ -73,7 +73,21 @@ class OfferedTransitions {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function from(array $transitions, array $case, string $currentId, string $userId): array {
-		$asked = ['case' => $case, 'caseTypeId' => (string)($case['caseType'] ?? ''), 'currentId' => $currentId, 'userId' => $userId];
+		return $this->sorted(
+			transitions: $transitions,
+			asked: ['case' => $case, 'caseTypeId' => (string)($case['caseType'] ?? ''), 'currentId' => $currentId, 'userId' => $userId]
+		);
+	}//end from()
+
+	/**
+	 * The transitions leading from the current status, sorted into offered and withheld.
+	 *
+	 * @param array<int, array<string, mixed>> $transitions The case type's transitions.
+	 * @param array<string, mixed>             $asked       The `case`, its `caseTypeId`, the `currentId` status and the `userId` asking.
+	 *
+	 * @return array{transitions: array<int, mixed>, withheld: array<int, mixed>} The two lists.
+	 */
+	private function sorted(array $transitions, array $asked): array {
 		$lists = ['transitions' => [], 'withheld' => []];
 
 		foreach ($transitions as $transition) {
@@ -88,7 +102,7 @@ class OfferedTransitions {
 		}
 
 		return $lists;
-	}//end from()
+	}//end sorted()
 
 	/**
 	 * Which list one transition out of the current status belongs on, with its entry; null when it is hidden.

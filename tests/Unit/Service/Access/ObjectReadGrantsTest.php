@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Access\ObjectReadGrants
@@ -144,7 +145,11 @@ class ObjectReadGrantsTest extends TestCase {
 			 */
 			public array $reads = [];
 
-			public function find(string $id, mixed $_extend = null, bool $files = false, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->reads[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				if ($_rbac === true) {
 					// The caller manages the grants and may not read the record (decision 234).

@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\SetCaseAnswerHandler
@@ -111,7 +112,9 @@ class SetCaseAnswerHandlerFailureTest extends TestCase {
 			 * @param array<string, mixed> $object The case.
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = [$object, $register, $schema];
 				return $object;
 			}

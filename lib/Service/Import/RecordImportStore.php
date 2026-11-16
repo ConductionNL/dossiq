@@ -30,6 +30,8 @@ namespace OCA\Dossiq\Service\Import;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -106,10 +108,12 @@ class RecordImportStore {
 		try {
 			$saved = $objectService->saveObject(
 				object: $mapped['case'],
-				register: $register,
-				schema: $this->settingsService->getConfigValue('case_schema'),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $register,
+						schema: $this->settingsService->getConfigValue('case_schema')
+					)),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('RecordImportStore: the case could not be written', ['error' => $e->getMessage()]);
@@ -158,10 +162,12 @@ class RecordImportStore {
 		try {
 			$objectService->saveObject(
 				object: ['case' => $caseId, 'resultType' => $result['resultType']],
-				register: $result['register'],
-				schema: $this->settingsService->getConfigValue('result_schema'),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $result['register'],
+						schema: $this->settingsService->getConfigValue('result_schema')
+					)),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the result of a closed record could not be written', ['case' => $caseId, 'error' => $e->getMessage()]);

@@ -32,6 +32,7 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A status from integriq lands on the stored letter and, when it names a case, on its timeline.
@@ -179,6 +180,7 @@ class BerichtenboxDeliveryStatusTest extends TestCase {
 		);
 		$objects->method('saveObject')->willReturnCallback(
 			function (array $object, ...$rest): object {
+				$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 				$this->saved[] = $object;
 				return $this->createMock(originalClassName: 'OCA\\OpenRegister\\Contract\\ObjectEntityInterface');
 			}

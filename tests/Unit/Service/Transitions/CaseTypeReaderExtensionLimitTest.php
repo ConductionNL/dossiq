@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * `maxExtensions` is read as a whole number above zero, or as no limit.
@@ -69,7 +70,9 @@ class CaseTypeReaderExtensionLimitTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, ?string $register = null, ?string $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['title' => 'Woo-verzoek', 'extensionAllowed' => true, 'extensionPeriod' => 'P14D', 'maxExtensions' => $this->stored];
 			}//end find()
 		};
