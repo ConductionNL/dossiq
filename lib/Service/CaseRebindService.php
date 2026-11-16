@@ -201,13 +201,32 @@ class CaseRebindService implements CaseRebindServiceInterface {
 		$case = $this->readCase(caseId: $caseId);
 		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
 
+		$target = ['caseTypeId' => $targetCaseTypeId, 'statusId' => $targetStatusId, 'remap' => $remap, 'answers' => $properties];
+
+		return $this->previewOf(case: $case, target: $target);
+	}//end preview()
+
+	/**
+	 * The preview of rebinding a read case onto a target.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param array<string, mixed> $target The caseTypeId, statusId, remap and answers asked about.
+	 *
+	 * @return array<string, mixed> The statuses to choose from, the impact, and whether it can be done.
+	 *
+	 * @throws RefusedException When the target cannot be read, or a remap cannot be made.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function previewOf(array $case, array $target): array {
+		$targetCaseTypeId = $target['caseTypeId'];
 		$statuses = $this->statusChoices(caseTypeId: $targetCaseTypeId);
 		$impact = $this->impact->compute(
 			case: $case,
 			targetCaseTypeId: $targetCaseTypeId,
-			targetStatusId: $targetStatusId,
-			remap: $remap,
-			answers: $properties
+			targetStatusId: $target['statusId'],
+			remap: $target['remap'],
+			answers: $target['answers']
 		);
 
 		return [
@@ -221,9 +240,9 @@ class CaseRebindService implements CaseRebindServiceInterface {
 			// a coordinator deciding whether to rebind should read what happens
 			// to the run before pressing the button, not afterwards.
 			'run' => ['moved' => false, 'reason' => EngineRunMigration::RUN_NOT_MOVED],
-			'canRebind' => $this->canRebind(targetStatusId: $targetStatusId, impact: $impact),
+			'canRebind' => $this->canRebind(targetStatusId: $target['statusId'], impact: $impact),
 		];
-	}//end preview()
+	}//end previewOf()
 
 	/**
 	 * Rebind this case, in the order D-2 sets out.
@@ -261,27 +280,61 @@ class CaseRebindService implements CaseRebindServiceInterface {
 			reason: $this->gate->assertMayRebind(actorUid: $actorUid, reason: $reason),
 		);
 
-		$case = $this->readCase(caseId: $caseId);
+		$asked = ['actorUid' => $actorUid, 'remap' => $remap, 'answers' => $properties, 'confirmDropped' => $confirmDropped];
+		$applied = $this->applyRebind(move: $move, applied: $this->assessRebind(move: $move, asked: $asked));
+
+		return $move->outcome(applied: $applied);
+	}//end rebind()
+
+	/**
+	 * Read the case, check the impact and move the engine run, before any write.
+	 *
+	 * @param RebindMove           $move  The rebind.
+	 * @param array<string, mixed> $asked The actorUid, remap, answers and confirmDropped the coordinator sent.
+	 *
+	 * @return array<string, mixed> The case, sourceId, actorUid, impact and run.
+	 *
+	 * @throws RefusedException When the rebind is refused.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function assessRebind(RebindMove $move, array $asked): array {
+		$case = $this->readCase(caseId: $move->caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
 		$impact = $this->checkedImpact(
 			move: $move,
-			asked: ['case' => $case, 'remap' => $remap, 'answers' => $properties, 'confirmDropped' => $confirmDropped]
+			asked: ['case' => $case, 'remap' => $asked['remap'], 'answers' => $asked['answers'], 'confirmDropped' => $asked['confirmDropped']]
 		);
 
 		// D-2 step 2, BEFORE any write: a run that refuses to move leaves a
 		// case whose blueprint and whose process disagree.
-		$run = $this->engine->migrate(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, actorUid: $actorUid);
+		$run = $this->engine->migrate(caseId: $move->caseId, targetCaseTypeId: $move->targetCaseTypeId, actorUid: $asked['actorUid']);
 
-		$applied = ['case' => $case, 'sourceId' => $sourceId, 'actorUid' => $actorUid, 'impact' => $impact, 'run' => $run];
-		$this->write(caseId: $caseId, case: $this->reboundCase(move: $move, applied: $applied));
+		return ['case' => $case, 'sourceId' => $sourceId, 'actorUid' => $asked['actorUid'], 'impact' => $impact, 'run' => $run];
+	}//end assessRebind()
+
+	/**
+	 * Write the rebound case, re-arm its terms and log the rebind.
+	 *
+	 * @param RebindMove           $move    The rebind.
+	 * @param array<string, mixed> $applied The case, sourceId, actorUid, impact and run.
+	 *
+	 * @return array<string, mixed> The applied rebind, with the re-armed terms.
+	 *
+	 * @throws RefusedException When a write fails.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function applyRebind(RebindMove $move, array $applied): array {
+		$this->write(caseId: $move->caseId, case: $this->reboundCase(move: $move, applied: $applied));
 
 		// THE SLUG, NOT THE UUID: {@see CaseRebindTerms::rearm()} keys the
 		// re-arm by the target's slug, because a uuid matches no definition.
-		$applied['terms'] = $this->terms->rearm(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, reason: $move->reason);
+		$applied['terms'] = $this->terms->rearm(caseId: $move->caseId, targetCaseTypeId: $move->targetCaseTypeId, reason: $move->reason);
 		$this->logRebound(move: $move, applied: $applied);
 
-		return $move->outcome(applied: $applied);
-	}//end rebind()
+		return $applied;
+	}//end applyRebind()
 
 	/**
 	 * The required fields the impact still has no valid answer for.

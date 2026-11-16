@@ -164,14 +164,26 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 		$stamp->shipped = $shipped;
 		$this->stampAsStored(stamp: $stamp, objectsKey: $objectsKey);
 
-		$stamp->targetSchema = $this->targets()->slugFor(targetSchema: $targetSchema);
-		$stamp->version = ($version ?? $this->sets->versionOf(set: $set));
+		return $this->writeNamedStamp(stamp: $stamp, named: ['targetSchema' => $targetSchema, 'version' => $version]);
+	}//end stamp()
+
+	/**
+	 * Name the stamp's schema and set version, and write it when it names its set.
+	 *
+	 * @param LedgerStamp          $stamp The stamp.
+	 * @param array<string, mixed> $named The targetSchema slug, and the set version or null to look it up in ShippedSets.
+	 *
+	 * @return boolean True when the stamp was written.
+	 */
+	private function writeNamedStamp(LedgerStamp $stamp, array $named): bool {
+		$stamp->targetSchema = $this->targets()->slugFor(targetSchema: $named['targetSchema']);
+		$stamp->version = ($named['version'] ?? $this->sets->versionOf(set: $stamp->set));
 		if ($this->namesItsSet(stamp: $stamp) === false) {
 			return false;
 		}
 
 		return $this->writeStamp(stamp: $stamp);
-	}//end stamp()
+	}//end writeNamedStamp()
 
 	/**
 	 * Stamp the row as this instance stores it, when the schema's config key is given and the row is there.

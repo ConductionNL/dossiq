@@ -50,6 +50,9 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 class CallbackService implements CallbackServiceInterface {
+
+	use ResolvesKccStore;
+
 	/**
 	 * Maximum number of callback attempts before the request fails.
 	 */
@@ -299,19 +302,7 @@ class CallbackService implements CallbackServiceInterface {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('callback_request_schema');
-
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('KCC callback schema is not configured');
-		}
-
-		return [$objectService, $register, $schema];
+		return $this->kccStore(schemaKey: 'callback_request_schema', unconfigured: 'KCC callback schema is not configured');
 	}//end resolve()
 
 	/**

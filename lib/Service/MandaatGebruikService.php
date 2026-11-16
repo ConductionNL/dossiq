@@ -129,18 +129,7 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionAuditTrail(string $caseId): array {
-		$target = $this->target();
-		if ($target === null) {
-			return [];
-		}
-
-		[$objectService, $register, $schema] = $target;
-
-		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseId' => $caseId]);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		return $this->usageRows(filters: ['caseId' => $caseId]);
 	}//end getDecisionAuditTrail()
 
 	/**
@@ -171,6 +160,17 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function mandateRows(string $mandateId): array {
+		return $this->usageRows(filters: ['mandateId' => $mandateId]);
+	}//end mandateRows()
+
+	/**
+	 * The mandate-usage rows matching the filters; empty when nothing is configured or the search fails.
+	 *
+	 * @param array<string, mixed> $filters The object-field filters.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function usageRows(array $filters): array {
 		$target = $this->target();
 		if ($target === null) {
 			return [];
@@ -183,12 +183,12 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['mandateId' => $mandateId]
+				filters: $filters
 			);
 		} catch (\Throwable $e) {
 			return [];
 		}
-	}//end mandateRows()
+	}//end usageRows()
 
 	/**
 	 * Keep only the rows whose `tijdstip` day falls inside the supplied (inclusive) bounds.
