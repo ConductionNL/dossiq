@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Sharing;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
+use OCA\OpenRegister\Service\Sharing\AccessLinkTerms;
+use OCA\OpenRegister\Service\Sharing\LinkMintRequest;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -402,13 +404,17 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 
 		try {
 			return (array)$service->mint(
-				$request->userId,
-				$subjectType,
-				$request->subjectId,
-				$declared,
-				$this->expiry(expiresAt: $request->expiresAt),
-				$this->trimmedOrNull(value: $request->password),
-				$this->trimmedOrNull(value: $request->label)
+				new LinkMintRequest(
+					minter: $request->userId,
+					subjectType: $subjectType,
+					subjectId: $request->subjectId,
+					terms: new AccessLinkTerms(
+						capabilities: $declared,
+						expiresAt: $this->expiry(expiresAt: $request->expiresAt),
+						password: $this->trimmedOrNull(value: $request->password),
+						label: $this->trimmedOrNull(value: $request->label)
+					)
+				)
 			);
 		} catch (\Throwable $failure) {
 			return $this->mintFailed(subjectType: $subjectType, failure: $failure);

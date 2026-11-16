@@ -95,7 +95,12 @@ final class CasePlanModelLookupTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+			public function createPlanAsSystem(object $write): array {
+				$objectUuid = $write->anchor->objectUuid;
+				$registerId = $write->anchor->registerId;
+				$schemaId = $write->anchor->schemaId;
+				$definition = $write->definition;
+				$app = $write->app;
 				unset($objectUuid, $registerId, $schemaId, $definition, $app);
 				return [];
 			}

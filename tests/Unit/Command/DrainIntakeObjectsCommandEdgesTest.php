@@ -159,7 +159,12 @@ class DrainIntakeObjectsCommandEdgesTest extends TestCase {
 			 *
 			 * @return array<string, string>
 			 */
-			public function submit(array $destination, ?array $mapping, array $payload, ?IUser $subject = null): array {
+			public function submit(object $submission, ?string $idempotencyKey = null): array {
+				$destination = $submission->writes[0];
+				$mapping = ($destination['mapping'] ?? null);
+				unset($destination['mapping']);
+				$payload = $submission->payload;
+				$subject = $submission->subject;
 				$this->submits[] = ['payload' => $payload, 'subject' => $subject];
 				if ($this->fails !== null) {
 					throw $this->fails;
