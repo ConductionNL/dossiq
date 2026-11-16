@@ -303,4 +303,27 @@ class AanbestedingTenderChainTest extends TestCase {
 			}
 		}
 	}//end testTheTenderNamesItsScoringFormulaAndItsWeights()
+
+	/**
+	 * Proposing the award runs the flow's award transition from evaluation, which starts the standstill.
+	 *
+	 * @return void
+	 */
+	public function testProposingTheAwardRunsTheTransitionThatStartsTheStandstill(): void {
+		$actions = array_column((array)self::caseDetail(path: 'manifest.json')['config']['headerActions'], null, 'id');
+		$action = $actions['award-propose'];
+		$flow = (array)self::json(path: 'lib/Settings/packages/aanbesteding/flows/aanbesteding.json');
+		$transitions = array_column(json_decode((string)$flow['transitions'], true, 512, JSON_THROW_ON_ERROR), null, 'id');
+		$transition = $transitions[$action['payload']['transitionId']];
+
+		$this->assertSame('api-call', $action['type']);
+		$this->assertSame('/apps/dossiq/api/case/@objectId/transition', $action['url']);
+		$this->assertSame('Gunningsbeslissing versturen', $transition['label']);
+		$this->assertSame(
+			['all' => [self::GATE, ['field' => '@self.archived', 'op' => 'empty'], ['field' => 'status', 'op' => 'eq', 'value' => $transition['fromStatus']]]],
+			$action['visibleWhen']
+		);
+		$this->assertSame('setTermEnd', $transition['automaticActions'][0]['type']);
+		$this->assertSame('opschortendeTermijnEinde', $transition['automaticActions'][0]['end']);
+	}//end testProposingTheAwardRunsTheTransitionThatStartsTheStandstill()
 }//end class

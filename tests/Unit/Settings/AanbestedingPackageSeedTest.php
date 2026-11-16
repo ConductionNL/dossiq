@@ -137,6 +137,10 @@ class AanbestedingPackageSeedTest extends TestCase {
 		}
 
 		$this->assertSame([['type' => 'raiseDecision', 'decisionType' => 'tender-award']], $actions['Definitief gunnen']);
-		$this->assertSame([], $actions['Gunningsbeslissing versturen'], 'the award is handed on only once it is final');
+		$this->assertSame(
+			[['type' => 'setTermEnd', 'start' => 'gunningsdatum', 'end' => 'opschortendeTermijnEinde', 'legalBasis' => 'Aw 2012 art. 2.127']],
+			$actions['Gunningsbeslissing versturen'],
+			'sending the award decision starts the standstill and hands nothing on: the award is handed on only once it is final'
+		);
 	}//end testTheFinalAwardRaisesTheAwardDecision()
 }//end class

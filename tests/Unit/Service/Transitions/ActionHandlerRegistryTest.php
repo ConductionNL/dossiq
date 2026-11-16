@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\Transitions\BesluitvormingPublishHandler;
 use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCA\Dossiq\Service\Transitions\RaiseDecisionHandler;
+use OCA\Dossiq\Service\Transitions\TermEndDateHandler;
 use OCA\Dossiq\Service\Transitions\ResumeTermHandler;
 use PHPUnit\Framework\TestCase;
 
@@ -37,6 +38,8 @@ class ActionHandlerRegistryTest extends TestCase {
 
 	private RaiseDecisionHandler $raise;
 
+	private TermEndDateHandler $termEnd;
+
 	private ActionHandlerRegistry $registry;
 
 	protected function setUp(): void {
@@ -46,7 +49,8 @@ class ActionHandlerRegistryTest extends TestCase {
 		$this->publish = $this->createMock(BesluitvormingPublishHandler::class);
 		$this->resume = $this->createMock(ResumeTermHandler::class);
 		$this->raise = $this->createMock(RaiseDecisionHandler::class);
-		$this->registry = new ActionHandlerRegistry($this->createTask, $this->createSubCase, $this->publish, $this->resume, $this->raise);
+		$this->termEnd = $this->createMock(TermEndDateHandler::class);
+		$this->registry = new ActionHandlerRegistry($this->createTask, $this->createSubCase, $this->publish, $this->resume, $this->raise, $this->termEnd);
 	}//end setUp()
 
 	public function testTheBuiltInTypesResolveToTheirHandlers(): void {
@@ -55,7 +59,8 @@ class ActionHandlerRegistryTest extends TestCase {
 		$this->assertSame($this->publish, $this->registry->getHandler('besluitvormingPublish'));
 		$this->assertSame($this->resume, $this->registry->getHandler('resumeTerm'));
 		$this->assertSame($this->raise, $this->registry->getHandler('raiseDecision'));
-		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision'], $this->registry->getRegisteredTypes());
+		$this->assertSame($this->termEnd, $this->registry->getHandler('setTermEnd'));
+		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision', 'setTermEnd'], $this->registry->getRegisteredTypes());
 	}//end testTheBuiltInTypesResolveToTheirHandlers()
 
 	public function testAnUnknownTypeHasNoHandler(): void {
@@ -69,7 +74,7 @@ class ActionHandlerRegistryTest extends TestCase {
 		$this->registry->registerHandler('sendLetter', $extra);
 
 		$this->assertSame($extra, $this->registry->getHandler('sendLetter'));
-		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision', 'sendLetter'], $this->registry->getRegisteredTypes());
+		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision', 'setTermEnd', 'sendLetter'], $this->registry->getRegisteredTypes());
 	}//end testARegisteredHandlerIsAddedAfterTheBuiltIns()
 
 	public function testRegisteringABuiltInTypeReplacesItInPlace(): void {
@@ -78,6 +83,6 @@ class ActionHandlerRegistryTest extends TestCase {
 		$this->registry->registerHandler('createTask', $replacement);
 
 		$this->assertSame($replacement, $this->registry->getHandler('createTask'));
-		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision'], $this->registry->getRegisteredTypes());
+		$this->assertSame(['createTask', 'createSubCase', 'besluitvormingPublish', 'resumeTerm', 'raiseDecision', 'setTermEnd'], $this->registry->getRegisteredTypes());
 	}//end testRegisteringABuiltInTypeReplacesItInPlace()
 }//end class

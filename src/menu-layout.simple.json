@@ -2148,6 +2148,9 @@
 					"bid-score": {
 						"group": "Case"
 					},
+					"award-propose": {
+						"group": "Case"
+					},
 					"case-acknowledgement-met": {
 						"group": "Case"
 					},
@@ -7164,6 +7167,7 @@
 					"bid-register",
 					"tender-answer-publish",
 					"bid-score",
+					"award-propose",
 					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",

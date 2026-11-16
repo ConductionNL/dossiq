@@ -55,6 +55,7 @@ class ActionHandlerRegistry {
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
 	 * @param RaiseDecisionHandler $raiseDecision Hands the case to the decision app as a decision of a configured type
+	 * @param TermEndDateHandler   $termEnd       Writes the end of a declared term, counted from a case date, onto the case
 	 *
 	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
@@ -64,6 +65,7 @@ class ActionHandlerRegistry {
 		BesluitvormingPublishHandler $decisionPublish,
 		ResumeTermHandler $resumeTerm,
 		RaiseDecisionHandler $raiseDecision,
+		TermEndDateHandler $termEnd,
 	) {
 		$this->handlers = [
 			'createTask' => $createTask,
@@ -74,6 +76,7 @@ class ActionHandlerRegistry {
 			// aanvulling request put on the term.
 			'resumeTerm' => $resumeTerm,
 			'raiseDecision' => $raiseDecision,
+			'setTermEnd' => $termEnd,
 		];
 	}//end __construct()
 
