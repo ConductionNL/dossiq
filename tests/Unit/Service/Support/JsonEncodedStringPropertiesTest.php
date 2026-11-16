@@ -160,4 +160,22 @@ class JsonEncodedStringPropertiesTest extends TestCase {
 		self::assertSame(1, $payload['x']);
 	}//end testAnUnknownSchemaIsAPassThrough()
 
+	/**
+	 * A decoded value json_encode cannot write stays as it was rather than becoming `false`.
+	 *
+	 * @return void
+	 */
+	public function testAValueThatCannotBeEncodedIsLeftAsItIs(): void {
+		$unencodable = ['note' => "\xB1\x31"];
+
+		$payload = (new JsonEncodedStringProperties())->mergeForWrite(
+			stored: ['statusHistory' => $unencodable, 'skippedPhases' => ['intake']],
+			updates: [],
+			schemaSlug: 'case',
+		);
+
+		self::assertSame($unencodable, $payload['statusHistory'], 'An unencodable value must not be replaced by false or an empty string.');
+		self::assertSame('["intake"]', $payload['skippedPhases'], 'The other properties are still re-encoded.');
+	}//end testAValueThatCannotBeEncodedIsLeftAsItIs()
+
 }//end class

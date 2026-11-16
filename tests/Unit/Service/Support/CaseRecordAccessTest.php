@@ -22,6 +22,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * The refusals name what was not done to the case.
  *
  * @covers \OCA\Dossiq\Service\Support\CaseRecordAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
+ * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
  */
 final class CaseRecordAccessTest extends TestCase {
 
@@ -121,4 +123,63 @@ final class CaseRecordAccessTest extends TestCase {
 		self::assertSame('case-not-found', $missing->getRule());
 		self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $missing->getStatus());
 	}//end testEachFailureRefuses()
+
+	/**
+	 * A found case is read from the configured register and schema, and written back by its id.
+	 *
+	 * @return void
+	 */
+	public function testAFoundCaseIsReadAndWrittenBack(): void {
+		$store = new class {
+			/**
+			 * The finds asked, as [id, register, schema].
+			 *
+			 * @var array<int, array<int, mixed>>
+			 */
+			public array $finds = [];
+
+			/**
+			 * The writes asked, as [id, data].
+			 *
+			 * @var array<int, array<int, mixed>>
+			 */
+			public array $writes = [];
+
+			/**
+			 * Find the case.
+			 *
+			 * @param string                 $id            The id.
+			 * @param ObjectFindOptions|null $options       The options.
+			 * @param bool                   $_rbac         Unused.
+			 * @param bool                   $_multitenancy Unused.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->finds[] = [$id, $options?->register, $options?->schema];
+				return ['id' => $id, 'title' => 'Bouwvergunning', 'status' => 'intake'];
+			}//end find()
+
+			/**
+			 * Write the case.
+			 *
+			 * @param string               $objectId The id.
+			 * @param array<string, mixed> $data     The data.
+			 *
+			 * @return void
+			 */
+			public function updateObject(string $objectId, array $data): void {
+				$this->writes[] = [$objectId, $data];
+			}//end updateObject()
+		};
+		$records = $this->records(objectService: $store);
+
+		$case = $records->read(caseId: 'c1');
+		self::assertSame(['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'intake'], $case);
+		self::assertSame([['c1', 'reg', 'case']], $store->finds);
+
+		$case['status'] = 'behandeling';
+		$records->write(caseId: 'c1', case: $case, rule: 'move-not-written');
+		self::assertSame([['c1', ['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'behandeling']]], $store->writes);
+	}//end testAFoundCaseIsReadAndWrittenBack()
 }//end class
