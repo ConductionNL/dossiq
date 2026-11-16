@@ -225,4 +225,21 @@ class CaseActsMenuTest extends TestCase {
 		self::assertTrue(condition: $ended['archive']['allowed']);
 		self::assertSame(expected: '', actual: $ended['archive']['reason']);
 	}//end testArchivingWaitsUntilTheCaseIsEnded()
+
+	/**
+	 * Without a translator the menu's own refusal reads in English.
+	 *
+	 * @return void
+	 */
+	public function testWithoutATranslatorTheRefusalReadsInEnglish(): void {
+		$gate = $this->createMock(originalClassName: LifecycleActorGate::class);
+		$gate->method('may')->willReturn(true);
+		$gate->method('roleFor')->willReturn('');
+		$menu = new CaseActsMenu(gate: $gate);
+
+		$acts = array_column(array: $menu->forCase(caseId: 'case-1', case: self::CASE)['acts'], column_key: null, index_key: 'act');
+
+		self::assertFalse(condition: $acts['archive']['allowed']);
+		self::assertSame(expected: 'Only once the case is finished.', actual: $acts['archive']['reason']);
+	}//end testWithoutATranslatorTheRefusalReadsInEnglish()
 }//end class
