@@ -664,3 +664,13 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `TemplateLibraryDirectoryTest` (4 in all) for trimmed notes, dropped blanks and non-strings,
         and fills that are not a list. Own test: `tests/Unit/Service/TemplateLibrary/TemplateMetadataTest`
         (2); keeping notes untrimmed turns 2 tests red (checked).
+  - [x] 8u `LhsMatrixDecisionTableMigrator` (1: ExcessiveClassComplexity 50 against 50). Turning the
+        cells of a matrix into decision rules (one per cell, none when a cell is off its axes) moved
+        to the new `Vth/LhsMatrixCells` (`rules()`, with `isOnAxes()` and `ruleFor()`; bodies moved
+        unchanged). The migrator builds it in its constructor, so its constructor, interface and
+        container binding are unchanged.
+        Characterisation: the existing `LhsMatrixDecisionTableMigratorTest` (each cell a rule, the
+        cell off its axis, the whole projected table) and `...FailuresTest`, green before and
+        unchanged after but for one `@uses` line each. Own test:
+        `tests/Unit/Service/Vth/LhsMatrixCellsTest` (2); a loose axis comparison turns it red
+        (checked).
