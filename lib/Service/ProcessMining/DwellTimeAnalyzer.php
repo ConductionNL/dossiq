@@ -251,7 +251,7 @@ class DwellTimeAnalyzer {
 	 * @param CaseDwell   $dwell The case, its close moment and the window.
 	 * @param StatusVisit $visit The visit.
 	 *
-	 * @return array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}|null
+	 * @return array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool, enteredAt: string}|null
 	 */
 	private function visitInterval(CaseDwell $dwell, StatusVisit $visit): ?array {
 		$statusId = $visit->statusId();
@@ -273,6 +273,8 @@ class DwellTimeAnalyzer {
 			'hours' => $measured['wallHours'],
 			'workingHours' => $measured['workingHours'],
 			'open' => $dwell->isOpenAt(visit: $visit),
+			// The week the visit counts in on the dwell heatmap (REQ-CRS-36).
+			'enteredAt' => $enteredAt->format(DATE_ATOM),
 		];
 	}//end visitInterval()
 

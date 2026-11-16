@@ -111,6 +111,27 @@
                         "score": 48.0
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W23"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                48.0
+                            ]
+                        },
+                        {
+                            "statusId": "st-rev",
+                            "label": "Review",
+                            "values": [
+                                178.0
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [
                     {
                         "from": "st-in",
