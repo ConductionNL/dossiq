@@ -97,25 +97,34 @@ class DocumentSigningRequester {
 	}//end __construct()
 
 	/**
-	 * Ask filinq to have a document signed.
+	 * Ask filinq to have a document signed, at the level this instance asks for (see level()).
 	 *
 	 * @param string $subjectId The id of the object the signature is for; filinq hands it back on the conclusion.
 	 * @param string $subjectLabel A name for the document, shown to the signer.
 	 * @param string $fileId The Nextcloud file id of the document.
 	 * @param list<string> $signerUserIds The Nextcloud users who sign, in order.
-	 * @param string $signatureLevel SES, AdES or QES (see level()).
 	 *
-	 * @return array{requested:bool,requestId:string,reason:string}
+	 * @return array{requested:bool,requestId:string,reason:string,level:string} The answer, with the level asked for.
 	 *
 	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
 	 */
-	public function request(
-		string $subjectId,
-		string $subjectLabel,
-		string $fileId,
-		array $signerUserIds,
-		string $signatureLevel,
-	): array {
+	public function request(string $subjectId, string $subjectLabel, string $fileId, array $signerUserIds): array {
+		$level = $this->level();
+		$answer = $this->raise(
+			request: ['subjectId' => $subjectId, 'subjectLabel' => $subjectLabel, 'fileId' => $fileId, 'signerUserIds' => $signerUserIds, 'level' => $level]
+		);
+
+		return $answer + ['level' => $level];
+	}//end request()
+
+	/**
+	 * Raise the signing request event and read filinq's answer from it.
+	 *
+	 * @param array{subjectId:string,subjectLabel:string,fileId:string,signerUserIds:list<string>,level:string} $request The request.
+	 *
+	 * @return array{requested:bool,requestId:string,reason:string}
+	 */
+	private function raise(array $request): array {
 		$eventClass = self::REQUESTED_EVENT;
 		$provenanceClass = self::PROVENANCE;
 		if (class_exists($eventClass) === false || class_exists($provenanceClass) === false) {
@@ -123,7 +132,7 @@ class DocumentSigningRequester {
 		}
 
 		$signers = [];
-		foreach ($signerUserIds as $userId) {
+		foreach ($request['signerUserIds'] as $userId) {
 			$signers[] = ['userId' => $userId];
 		}
 
@@ -131,14 +140,14 @@ class DocumentSigningRequester {
 			$event = new $eventClass(
 				provenance: new $provenanceClass(
 					sourceApp: Application::APP_ID,
-					subjectId: $subjectId,
-					externalReference: $subjectId,
+					subjectId: $request['subjectId'],
+					externalReference: $request['subjectId'],
 					correlationId: bin2hex(random_bytes(16)),
 				),
-				subjectLabel: $subjectLabel,
-				documentReference: $fileId,
+				subjectLabel: $request['subjectLabel'],
+				documentReference: $request['fileId'],
 				signers: $signers,
-				signatureLevel: $signatureLevel,
+				signatureLevel: $request['level'],
 			);
 			$this->dispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
@@ -149,13 +158,13 @@ class DocumentSigningRequester {
 
 		$requestId = (string)($event->getSigningRequestId() ?? '');
 		if ($event->isHandled() === false || $requestId === '') {
-			$this->logger->warning('Dossiq: filinq did not take the signing request', ['subjectId' => $subjectId, 'level' => $signatureLevel]);
+			$this->logger->warning('Dossiq: filinq did not take the signing request', ['subjectId' => $request['subjectId'], 'level' => $request['level']]);
 
 			return self::notRequested(reason: self::REASON_NOT_TAKEN);
 		}
 
 		return ['requested' => true, 'requestId' => $requestId, 'reason' => ''];
-	}//end request()
+	}//end raise()
 
 	/**
 	 * The signature level this instance asks for: `signing.level` when it holds SES, AdES or QES, else SES.

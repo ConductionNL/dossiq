@@ -406,13 +406,11 @@ class BeschikkingService implements BeschikkingServiceInterface {
 		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
-		$level = $this->signingRequester->level();
 		$answer = $this->signingRequester->request(
 			subjectId: $decisionId,
 			subjectLabel: (string)($decision['reference'] ?? $decisionId),
 			fileId: $fileId,
 			signerUserIds: [$signatory],
-			signatureLevel: $level,
 		);
 		if ($answer['requested'] === false) {
 			throw new RuntimeException('signing_unavailable');
@@ -422,7 +420,7 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			'state' => self::SIGNING_REQUESTED,
 			'requestId' => $answer['requestId'],
 			'requestedAt' => (new DateTimeImmutable())->format('c'),
-			'level' => $level,
+			'level' => $answer['level'],
 			'tspProvider' => $tspProvider,
 			'signatory' => $signatory,
 		];
