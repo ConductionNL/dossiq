@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Timeline;
 
-use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use Throwable;
 
 /**
@@ -38,10 +38,10 @@ final class StatusDisplayName {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTypeLookup $statuses Resolves a statusType id to its name.
+	 * @param StatusTypeLookupInterface $statuses Resolves a statusType id to its name.
 	 */
 	public function __construct(
-		private readonly StatusTypeLookup $statuses,
+		private readonly StatusTypeLookupInterface $statuses,
 	) {
 	}//end __construct()
 

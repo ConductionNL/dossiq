@@ -70,6 +70,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseFieldRoleProjectorInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\ReadsMergedRegisterConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -83,6 +84,9 @@ use Throwable;
 class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 
 	use ReadsMergedRegisterConfig;
+	use ReadsLooseValues {
+		looseList as private arrayOf;
+	}
 
 	/**
 	 * The schema the rules are published onto.
@@ -381,21 +385,4 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 
 		return $configuration;
 	}//end configurationWith()
-
-	/**
-	 * One schema column as an array, whatever it answered.
-	 *
-	 * @param mixed $value The column value.
-	 *
-	 * @return array<string, mixed> The value.
-	 *
-	 * @spec openspec/specs/security-hardening/spec.md
-	 */
-	private function arrayOf(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end arrayOf()
 }//end class

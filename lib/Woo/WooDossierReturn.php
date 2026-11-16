@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
  */
-class WooDossierReturn {
+class WooDossierReturn implements WooDossierReturnInterface {
 
 	use SearchesObjects;
 

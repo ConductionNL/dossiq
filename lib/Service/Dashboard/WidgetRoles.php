@@ -51,12 +51,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dashboard;
 
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
+
 /**
  * Reads the widget role declarations, and says what one reader may receive.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
 class WidgetRoles {
+
+	use ReadsLooseValues {
+		looseList as private listAt;
+	}
+
 	/**
 	 * The key a widget declares its audience under.
 	 *
@@ -131,23 +138,6 @@ class WidgetRoles {
 
 		return $definitions;
 	}//end definitionsOn()
-
-	/**
-	 * A manifest value as a list, or an empty one when it is not a list.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array<int|string, mixed> The list.
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	private function listAt(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end listAt()
 
 	/**
 	 * The roles one widget declares.

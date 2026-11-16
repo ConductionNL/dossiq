@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -50,6 +51,9 @@ use Psr\Log\LoggerInterface;
  */
 class BeschikkingGenerationService implements BeschikkingGenerationServiceInterface {
 	use NormalisesObjectRows;
+	use NamesTheSessionUser {
+		sessionUid as private currentUserId;
+	}
 
 	private const STUB_NOT_SAVED = 'could not create stub bijlage';
 	private const ATTACH_NOT_SAVED = 'could not attach bijlage';
@@ -302,23 +306,6 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 
 		return $service;
 	}//end resolveDocumentService()
-
-	/**
-	 * The uid of the user this generation runs for, or '' when there is none.
-	 *
-	 * Filinq stores the generated PDF in Files and requires an owner for it;
-	 * a background caller without a session cannot generate one.
-	 *
-	 * @return string The uid, or '' when no user is signed in.
-	 */
-	private function currentUserId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
-	}//end currentUserId()
 
 	/**
 	 * Create a stub bijlage record when PDF generation is not available.

@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -45,6 +46,9 @@ use Throwable;
 class CaseRoleHolder {
 
 	use SearchesObjects;
+	use RequiresObjectService {
+		requireObjectService as private objectService;
+	}
 
 	/**
 	 * The generic role whose seat is also the case's assignee.
@@ -361,22 +365,6 @@ class CaseRoleHolder {
 
 		return $this->searchObjectsAsArrays(objectService: $this->objectService(), register: $register, schema: $schema, filters: $filters);
 	}//end rows()
-
-	/**
-	 * OpenRegister's object service.
-	 *
-	 * @return object The service.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
 
 	/**
 	 * The uuid of a row, wherever the reader put it.

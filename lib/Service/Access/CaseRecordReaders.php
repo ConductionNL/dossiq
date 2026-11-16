@@ -169,21 +169,35 @@ class CaseRecordReaders {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
 	 */
 	public function toGrant(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
-		$grants = [];
 		$reading = $this->cleaned(users: $this->reviewersReading(
 			ruled: ['rule' => $rule, 'record' => $record],
 			reviewing: ['reviewers' => $reviewers, 'hideOthers' => $hideOthers]
 		));
-		foreach ($this->cleaned(users: [$assignee]) as $user) {
+
+		return $this->grantsOf(rule: $rule, readers: ['assignee' => $assignee, 'reading' => $reading]);
+	}//end toGrant()
+
+	/**
+	 * Core's permission bits per user id for the assignee and the reviewers who read one record.
+	 *
+	 * @param array<string, string> $rule    The record's rule, as ruleOf() answers it.
+	 * @param array<string, mixed>  $readers The case assignee ('' when none) as `assignee`, the cleaned
+	 *                                       reviewers who read the record as `reading`.
+	 *
+	 * @return array<string, int> Permission bits by user id.
+	 */
+	private function grantsOf(array $rule, array $readers): array {
+		$grants = [];
+		foreach ($this->cleaned(users: [$readers['assignee']]) as $user) {
 			$grants[$user] = $this->bitsOf(may: ($rule['assigneeMay'] ?? self::MAY_READ));
 		}
 
-		foreach ($reading as $user) {
+		foreach ($readers['reading'] as $user) {
 			$grants[$user] = (($grants[$user] ?? 0) | $this->bitsOf(may: ($rule['reviewersMay'] ?? self::MAY_READ)));
 		}
 
 		return $grants;
-	}//end toGrant()
+	}//end grantsOf()
 
 	/**
 	 * The permission bits of `read` or `update`.
