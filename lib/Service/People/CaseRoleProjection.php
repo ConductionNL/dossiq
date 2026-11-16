@@ -16,12 +16,12 @@ namespace OCA\Dossiq\Service\People;
 use OCA\Dossiq\Kernel\Contracts\CaseRoleProjectionInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\DelegatesToDossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -37,6 +37,9 @@ use Throwable;
 class CaseRoleProjection implements CaseRoleProjectionInterface {
 
 	use SearchesObjects;
+	use DelegatesToDossierRegister {
+		context as private requireRegister;
+	}
 
 	/**
 	 * The generic role that makes a link the case's initiator.
@@ -394,28 +397,4 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
 	}//end uuidOf()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		return $this->dossierRegister->context();
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 }//end class

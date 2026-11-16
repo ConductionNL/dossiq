@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Relation;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 
 /**
  * A validated relation role of a case type.
@@ -39,6 +40,10 @@ use OCA\Dossiq\Service\CaseRelationService;
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
  */
 final class RoleLinkDefinition {
+
+	use ReadsLooseValues {
+		looseConfigText as private text;
+	}
 
 	/**
 	 * The role points at another case.
@@ -313,21 +318,4 @@ final class RoleLinkDefinition {
 
 		return $value;
 	}//end textOr()
-
-	/**
-	 * A trimmed string value, or '' when absent or not a string.
-	 *
-	 * @param array<array-key, mixed> $config The entry.
-	 * @param string                  $key    The key.
-	 *
-	 * @return string The value.
-	 */
-	private static function text(array $config, string $key): string {
-		$value = ($config[$key] ?? '');
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class

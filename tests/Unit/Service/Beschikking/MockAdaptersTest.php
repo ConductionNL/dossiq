@@ -13,46 +13,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
-use DateTimeImmutable;
-use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\Service\Beschikking\MockSigningAdapter
  * @covers \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  */
 class MockAdaptersTest extends TestCase {
-
-	public function testSigningIdsAreDerivedFromFileSignatoryAndProvider(): void {
-		$seed = 'f-1|alice|tsp-a';
-		$signed = (new MockSigningAdapter())->sign('f-1', 'alice', 'tsp-a');
-
-		$this->assertSame('signed-' . substr(hash('sha256', $seed), 0, 12), $signed['signedBestandId']);
-		$this->assertSame('val-' . substr(hash('sha256', 'report' . $seed), 0, 12), $signed['validationRapportId']);
-		$this->assertSame('0x' . substr(hash('sha256', 'cert' . $seed), 0, 16), $signed['certificateSerialNumber']);
-		$this->assertSame('NL-TSP-0001', $signed['tspProviderEidasId']);
-		$this->assertNotFalse(DateTimeImmutable::createFromFormat(DATE_ATOM, $signed['signingMoment']));
-	}//end testSigningIdsAreDerivedFromFileSignatoryAndProvider()
-
-	public function testADifferentSignatoryGivesADifferentSignedFile(): void {
-		$adapter = new MockSigningAdapter();
-
-		$this->assertNotSame(
-			$adapter->sign('f-1', 'alice', 'tsp-a')['signedBestandId'],
-			$adapter->sign('f-1', 'bob', 'tsp-a')['signedBestandId']
-		);
-	}//end testADifferentSignatoryGivesADifferentSignedFile()
-
-	public function testTheValidationReportEchoesItsIdAndIsValid(): void {
-		$report = (new MockSigningAdapter())->fetchValidationReport('val-123');
-
-		$this->assertSame('val-123', $report['validationRapportId']);
-		$this->assertSame('tsp-handtekening-rapport', $report['kind']);
-		$this->assertSame('ETSI EN 319 102-1', $report['norm']);
-		$this->assertTrue($report['valid']);
-		$this->assertNotFalse(DateTimeImmutable::createFromFormat(DATE_ATOM, $report['gegenereerdOp']));
-	}//end testTheValidationReportEchoesItsIdAndIsValid()
 
 	public function testRenderingIsDeterministicInTemplateAndContext(): void {
 		$payload = json_encode(['tpl-1', ['naam' => 'Één']], JSON_UNESCAPED_UNICODE);

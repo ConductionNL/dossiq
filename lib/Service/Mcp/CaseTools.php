@@ -34,6 +34,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseToolsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseAssignmentService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
@@ -50,6 +51,9 @@ use RuntimeException;
 class CaseTools implements CaseToolsInterface {
 
 	use ToolEnvelopes;
+	use ReadsLooseValues {
+		blankAsNull as private orNull;
+	}
 
 	/**
 	 * Constructor.
@@ -281,21 +285,6 @@ class CaseTools implements CaseToolsInterface {
 			return $this->refusal(e: $e);
 		}
 	}//end completeAsMutator()
-
-	/**
-	 * An optional tool argument as the service expects it: null when empty.
-	 *
-	 * @param string $value The argument.
-	 *
-	 * @return string|null
-	 */
-	private function orNull(string $value): ?string {
-		if (trim($value) === '') {
-			return null;
-		}
-
-		return $value;
-	}//end orNull()
 
 	/**
 	 * The signed-in user when they may change the case, otherwise the refusal.

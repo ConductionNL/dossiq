@@ -109,22 +109,16 @@ class BezwaarSubscriptionRegistrar {
 		// invoked on every object write on the instance — a larpingapp character
 		// create reached `handle()` and bailed at the
 		// `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
-		$this->subscribeFiltered(
-			dispatcher: $dispatcher,
-			subscription: new FilteredSubscription(
-				event: ObjectCreatedEvent::class,
-				listener: BezwaarLifecycleListener::class,
-				schemas: self::LIFECYCLE_SCHEMAS
-			)
-		);
-		$this->subscribeFiltered(
-			dispatcher: $dispatcher,
-			subscription: new FilteredSubscription(
-				event: ObjectUpdatedEvent::class,
-				listener: BezwaarLifecycleListener::class,
-				schemas: self::LIFECYCLE_SCHEMAS
-			)
-		);
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
+			$this->subscribeFiltered(
+				dispatcher: $dispatcher,
+				subscription: new FilteredSubscription(
+					event: $event,
+					listener: BezwaarLifecycleListener::class,
+					schemas: self::LIFECYCLE_SCHEMAS
+				)
+			);
+		}
 
 		// Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
 		// registered the linked case gets an OpenRegister legal hold; when the

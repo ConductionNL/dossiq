@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -134,6 +135,8 @@ class BezwaarLifecycleListener implements IEventListener {
 	 * @param Event $event Event instance
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) EventObjectPayload is a stateless reader.
 	 */
 	private function extractObject(Event $event): ?array {
 		$object = null;
@@ -144,20 +147,7 @@ class BezwaarLifecycleListener implements IEventListener {
 			$object = $event->getObject();
 		}
 
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-
-			return null;
-		}
-
-		return null;
+		return EventObjectPayload::fromValue(object: $object);
 	}//end extractObject()
 
 	/**

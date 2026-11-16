@@ -120,10 +120,7 @@ class CaseRelationController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['ok' => false, 'reason' => 'access_denied'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->accessDenied();
 		}
 
 		$rows = $this->caseRelationDetails->describe(
@@ -206,10 +203,7 @@ class CaseRelationController extends Controller {
 		}
 
 		if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
-			return new JSONResponse(
-				['ok' => false, 'reason' => 'access_denied'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->accessDenied();
 		}
 
 		return null;
@@ -291,10 +285,7 @@ class CaseRelationController extends Controller {
 	private function removeReadable(IUser $user, array $relation): JSONResponse {
 		['caseId' => $caseId, 'targetId' => $targetId] = $relation;
 		if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
-			return new JSONResponse(
-				['ok' => false, 'reason' => 'access_denied'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->accessDenied();
 		}
 
 		$result = $this->caseRelationService->removeRelation(
@@ -333,4 +324,16 @@ class CaseRelationController extends Controller {
 
 		return $this->caseAccessGuard->hasCaseReadAccess(caseId: $targetId, user: $user);
 	}//end bothCasesReadable()
+
+	/**
+	 * The 403 for a caller who may not read a case of the relation.
+	 *
+	 * @return JSONResponse
+	 */
+	private function accessDenied(): JSONResponse {
+		return new JSONResponse(
+			['ok' => false, 'reason' => 'access_denied'],
+			Http::STATUS_FORBIDDEN
+		);
+	}//end accessDenied()
 }//end class

@@ -40,6 +40,8 @@ use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
+use OCA\OpenRegister\Kernel\Contracts\ListQuery;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectNotesQuery;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -378,7 +380,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	 */
 	private function commentRows(object $notes, string $caseId): mixed {
 		try {
-			$rows = $notes->getNotesForObject($caseId, self::NOTE_WINDOW);
+			$rows = $notes->listNotes(new ObjectNotesQuery(objectUuid: $caseId, page: new ListQuery(limit: self::NOTE_WINDOW, offset: 0)));
 		} catch (\Throwable $failure) {
 			$this->logger->error(
 				'ExternalConsultationLinkService: could not read the case comments',

@@ -134,6 +134,25 @@ class BrkApiAdapter implements BrkAdapterInterface {
 		?string $sequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
+		$query = $this->parcelQuery(parcel: [$municipalityCode, $section, $perceelnummer], sequenceNumber: $sequenceNumber);
+		$invalid = $this->invalidReason(query: $query);
+		if ($invalid !== null) {
+			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => $invalid]);
+		}
+
+		return $this->search(query: $query, context: $context);
+	}//end lookupByKadastraleAanduiding()
+
+	/**
+	 * The search query for a kadastrale aanduiding, with section and volgnummer in upper case.
+	 *
+	 * @param array{0: string, 1: string, 2: string} $parcel         Kadastrale gemeentecode, sectie and perceelnummer.
+	 * @param string|null                            $sequenceNumber Optional appartementsrecht volgnummer.
+	 *
+	 * @return array<string, string> The query.
+	 */
+	private function parcelQuery(array $parcel, ?string $sequenceNumber): array {
+		[$municipalityCode, $section, $perceelnummer] = $parcel;
 		$query = [
 			'kadastraleGemeenteCode' => $municipalityCode,
 			'sectie' => strtoupper($section),
@@ -143,13 +162,8 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			$query['appartementsrechtVolgnummer'] = strtoupper($sequenceNumber);
 		}
 
-		$invalid = $this->invalidReason(query: $query);
-		if ($invalid !== null) {
-			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => $invalid]);
-		}
-
-		return $this->search(query: $query, context: $context);
-	}//end lookupByKadastraleAanduiding()
+		return $query;
+	}//end parcelQuery()
 
 	/**
 	 * Why a kadastrale-aanduiding search query is malformed, checked in field order.

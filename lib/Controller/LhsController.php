@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\LhsLookupServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -64,6 +65,7 @@ class LhsController extends Controller {
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
+	 * @param OwningCaseResolver $owningCaseResolver Resolves a recommendation's stored case
 	 */
 	public function __construct(
 		string $appName,
@@ -74,6 +76,7 @@ class LhsController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly OwningCaseResolver $owningCaseResolver,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -329,6 +332,24 @@ class LhsController extends Controller {
 		$hasBlank = in_array('', [$recommendationId, $intervention, $justification], true);
 		if ($hasBlank === true) {
 			return $this->badRequest(error: 'recommendationId, intervention en justification zijn verplicht');
+		}
+
+		// Per-case guard. The case is read from the STORED recommendation
+		// (`case` is required on lhsRecommendation), never from the request,
+		// and an unresolvable recommendation or case denies. Without this any
+		// signed-in account could de-escalate any enforcement recommendation.
+		$caseId = $this->owningCaseResolver->resolve(
+			objectId: trim($recommendationId),
+			schemaKey: 'lhs_recommendation_schema',
+			caseField: 'case'
+		);
+		if ($caseId === null
+			|| $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
+		) {
+			return new JSONResponse(
+				['error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN,
+			);
 		}
 
 		return $this->applyOverride(

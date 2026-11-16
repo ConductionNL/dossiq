@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\Contracts\SettlementOverviewInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 
@@ -36,7 +37,7 @@ use OCA\Dossiq\Service\Support\ReadsRegisterRows;
  *
  * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
  */
-class SettlementOverview {
+class SettlementOverview implements SettlementOverviewInterface {
 
 	use ReadsRegisterRows;
 

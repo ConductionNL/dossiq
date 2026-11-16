@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
@@ -58,6 +59,7 @@ use Throwable;
  */
 class RemedyLodging implements RemedyLodgingInterface {
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * The channels the objection schema accepts for `receivedChannel`.
@@ -124,24 +126,6 @@ class RemedyLodging implements RemedyLodgingInterface {
 
 		return self::lodged(record: $record, opened: $opened, isTimely: $isTimely);
 	}//end lodge()
-
-	/**
-	 * OpenRegister's object service, or an exception when it is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is unavailable.
-	 *
-	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * The configured register and case schema.

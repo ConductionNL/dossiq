@@ -41,7 +41,7 @@ class FileRestrictionMirrorTest extends TestCase {
 	 */
 	private function defineService(): void {
 		if (class_exists(FileRestrictionMirror::SERVICE) === false) {
-			eval('namespace OCA\OpenRegister\Service\File; class FileRestrictionService {}');
+			eval('namespace OCA\OpenRegister\Files\Service\File; class FileRestrictionService {}');
 		}
 	}//end defineService()
 
@@ -55,7 +55,11 @@ class FileRestrictionMirrorTest extends TestCase {
 			/** @var list<array<int, mixed>> */
 			public array $calls = [];
 
-			public function restrict(int $fileId, array $users, array $groups, string $reason): void {
+			public function restrict(object $request): void {
+				$fileId = $request->fileId;
+				$users = $request->users;
+				$groups = $request->groups;
+				$reason = $request->reason;
 				$this->calls[] = ['restrict', $fileId, $users, $groups, $reason];
 			}
 

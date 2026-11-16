@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\WorkingClock;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -103,7 +104,7 @@ class WorkingClockTest extends TestCase {
 			class_alias(FakeEngineCalendars::class, WorkingClock::ENGINE_CALENDARS);
 		}
 
-		$calendar = new \stdClass();
+		$calendar = WorkingCalendar::fromArray(['slug' => 'test']);
 		$calculator = new FakeEngineCalculator();
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
@@ -167,7 +168,7 @@ class WorkingClockTest extends TestCase {
 				}
 
 				if ($id === WorkingClock::ENGINE_CALENDARS) {
-					return new FakeEngineCalendars(calendar: new \stdClass());
+					return new FakeEngineCalendars(calendar: WorkingCalendar::fromArray(['slug' => 'test']));
 				}
 
 				throw new RuntimeException('not registered');
@@ -257,7 +258,7 @@ class WorkingClockTest extends TestCase {
 					return $calculator;
 				}
 
-				return new FakeEngineCalendars(calendar: new \stdClass());
+				return new FakeEngineCalendars(calendar: WorkingCalendar::fromArray(['slug' => 'test']));
 			}
 		);
 
@@ -303,7 +304,10 @@ class FakeEngineCalculator {
 	 *
 	 * @return float The working hours.
 	 */
-	public function elapsedBusinessHours(\DateTimeInterface $from, \DateTimeInterface $to, object $calendar): float {
+	public function elapsedBusinessHours(object $span): float {
+		$from = $span->from;
+		$to = $span->to;
+		$calendar = $span->calendar;
 		if ($this->refuse === true) {
 			throw new RuntimeException('no calendar for that year');
 		}

@@ -56,7 +56,10 @@ class InMemorySequences {
 	 *
 	 * @return int The reserved value.
 	 */
-	public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+	public function reserveNext(object $sequence): int {
+		$registerId = $sequence->registerId;
+		$schemaId = $sequence->schemaId;
+		$scopeKey = $sequence->scopeKey;
 		$key = $registerId.'/'.$schemaId.'/'.$scopeKey;
 		$value = ($this->next[$key] ?? 1);
 		$this->next[$key] = ($value + 1);
@@ -264,7 +267,10 @@ class DocumentSeriesNumbererTest extends TestCase {
 			 *
 			 * @return int Zero.
 			 */
-			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+			public function reserveNext(object $sequence): int {
+				$registerId = $sequence->registerId;
+				$schemaId = $sequence->schemaId;
+				$scopeKey = $sequence->scopeKey;
 				return 0;
 			}//end reserveNext()
 		};

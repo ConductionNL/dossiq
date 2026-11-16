@@ -166,14 +166,20 @@ class TransitionCasesAction implements StepBulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->moveCase(step: $step, caseId: $caseId));
+	}//end apply()
+
+	/**
+	 * Move a case that has an id, or say what moving it would do.
+	 *
+	 * @param BulkStep $step   The member object, the parameters, whether to commit and who started the job.
+	 * @param string   $caseId The case.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function moveCase(BulkStep $step, string $caseId): BulkActionResult {
 		$parameters = $step->parameters;
 		$commit = $step->commit;
-		$caseId = $this->caseId(object: $object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
-
 		$transitionId = trim((string)($parameters['transitionId'] ?? ''));
 
 		if ($commit === false) {
@@ -181,7 +187,7 @@ class TransitionCasesAction implements StepBulkActionInterface {
 		}
 
 		return $this->commitMove(caseId: $caseId, transitionId: $transitionId, comment: $this->commentOf(parameters: $parameters));
-	}//end apply()
+	}//end moveCase()
 
 	/**
 	 * The comment the job carries, or null when it carries none.

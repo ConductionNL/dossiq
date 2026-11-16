@@ -39,7 +39,7 @@ namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
-use OCA\Dossiq\Repair\SeedStaffGroup;
+use OCA\Dossiq\Kernel\Contracts\SeedStaffGroupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -486,7 +486,7 @@ class CaseReviewerAccess implements CaseReviewerAccessInterface {
 		}
 
 		return $this->groupManager->isAdmin($userId) === true
-			|| $this->groupManager->isInGroup($userId, SeedStaffGroup::STAFF_GROUP) === true;
+			|| $this->groupManager->isInGroup($userId, SeedStaffGroupInterface::STAFF_GROUP) === true;
 	}//end isAdmittedReader()
 
 	/**

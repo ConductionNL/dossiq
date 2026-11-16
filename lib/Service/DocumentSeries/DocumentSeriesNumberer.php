@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\OpenRegister\Service\SequenceScope;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -151,7 +152,7 @@ class DocumentSeriesNumberer {
 	private function reserveNumber(string $scopeKey, array $asked): int {
 		try {
 			$sequences = $this->container->get(self::SEQUENCE_SERVICE);
-			$next = (int)$sequences->reserveNext(0, 0, $scopeKey);
+			$next = (int)$sequences->reserveNext(new SequenceScope(registerId: 0, schemaId: 0, scopeKey: $scopeKey));
 		} catch (Throwable $failure) {
 			$this->logger->error(
 				'Dossiq document series: no number could be reserved',

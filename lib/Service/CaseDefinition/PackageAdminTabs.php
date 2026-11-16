@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Kernel\Contracts\PackageAdminTabsInterface;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Service\Starter\StarterStore;
@@ -41,7 +42,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @spec openspec/changes/vth-cases-run-end-to-end
  */
-class PackageAdminTabs {
+class PackageAdminTabs implements PackageAdminTabsInterface {
 
 	/**
 	 * Constructor.

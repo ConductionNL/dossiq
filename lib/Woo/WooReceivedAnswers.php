@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Woo\Support\ReadsScalarText;
 
 /**
  * Maps opencatalogi's Woo answer keys onto the request a Woo case keeps.
@@ -40,6 +41,8 @@ use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
  */
 class WooReceivedAnswers implements WooReceivedAnswersInterface {
+
+	use ReadsScalarText;
 
 	/**
 	 * Constructor.
@@ -188,19 +191,4 @@ class WooReceivedAnswers implements WooReceivedAnswersInterface {
 
 		return rtrim(mb_substr($cut, 0, $space));
 	}//end subject()
-
-	/**
-	 * A scalar as trimmed text, anything else as ''.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_scalar($value) === false) {
-			return '';
-		}
-
-		return trim((string)$value);
-	}//end text()
 }//end class
