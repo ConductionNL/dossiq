@@ -28,6 +28,7 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * REQ-WDS-001 and the supersede and withdraw halves of REQ-WDS-002 on the writer.
@@ -286,4 +287,70 @@ class WooDeliveredSetWriterTest extends TestCase {
 
 		$this->assertSame('frozen', $this->store->row(schema: 'wooDeliveredSet', uuid: $result['setId'])['status']);
 	}//end testWithoutThePlatformFreezeTheSetIsStillRecorded()
+	/**
+	 * A delivered file without a name is kept under its position; a file that cannot be kept is logged and the delivery still goes out frozen.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedFileGetsItsPositionAndAFailedKeepIsOnlyLogged(): void {
+		$files = new class {
+			/** @var list<string> */
+			public array $names = [];
+
+			public function addFile(string $objectEntity, string $fileName, mixed $content, bool $share = false, array $tags = [], mixed ...$rest): object {
+				$this->names[] = $fileName;
+				if ($fileName === '002-broken.pdf') {
+					throw new \RuntimeException('disk full');
+				}
+
+				return new \stdClass();
+			}//end addFile()
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getFileService')->willReturn($files);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq'][$key] ?? $default)
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with(
+			'Dossiq: could not keep a delivered file in the set folder',
+			['error' => 'disk full']
+		);
+		$writer = new WooDeliveredSetWriter(settings: $settings, logger: $logger);
+
+		$result = $writer->deliver(caseId: 'case-1', decisionId: 'dec-1', delivered: [
+			['assessment' => 'as-1', 'classification' => 'openbaar', 'deliveredRef' => 'doc-1', 'originalRef' => 'doc-1', 'fileName' => '  ', 'content' => base64_encode('a')],
+			['assessment' => 'as-2', 'classification' => 'openbaar', 'deliveredRef' => 'doc-2', 'originalRef' => 'doc-2', 'fileName' => 'broken.pdf', 'content' => base64_encode('b')],
+		], send: static fn (): string => 'pub-1');
+
+		$this->assertSame(['001-document-1', '002-broken.pdf'], $files->names);
+		$this->assertSame('frozen', $this->store->row(schema: 'wooDeliveredSet', uuid: $result['setId'])['status']);
+	}//end testAnUnnamedFileGetsItsPositionAndAFailedKeepIsOnlyLogged()
+
+	/**
+	 * A withdraw stamps only the sets of that publication, and a set already stamped keeps its first stamp.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawStampsOnlyItsOwnPublicationAndOnlyOnce(): void {
+		$writer = $this->writer();
+		$first = $writer->open(caseId: 'case-1', decisionId: 'dec-1', delivered: []);
+		$firstId = $writer->idOf(row: $first);
+		$writer->freeze(setId: $firstId, publicationId: 'pub-1');
+		$second = $writer->open(caseId: 'case-1', decisionId: 'dec-1', delivered: []);
+		$secondId = $writer->idOf(row: $second);
+		$writer->freeze(setId: $secondId, publicationId: 'pub-2');
+
+		$writer->markWithdrawn(caseId: 'case-1', publicationId: 'pub-2');
+
+		$this->assertEmpty($this->store->row(schema: 'wooDeliveredSet', uuid: $firstId)['withdrawnAt'] ?? null);
+		$stamp = $this->store->row(schema: 'wooDeliveredSet', uuid: $secondId)['withdrawnAt'];
+		$this->assertNotEmpty($stamp);
+
+		$writes = $this->store->writes;
+		$writer->markWithdrawn(caseId: 'case-1', publicationId: 'pub-2');
+		$this->assertSame($writes, $this->store->writes);
+		$this->assertSame($stamp, $this->store->row(schema: 'wooDeliveredSet', uuid: $secondId)['withdrawnAt']);
+	}//end testAWithdrawStampsOnlyItsOwnPublicationAndOnlyOnce()
 }//end class
