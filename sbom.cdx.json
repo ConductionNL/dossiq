@@ -3214,8 +3214,8 @@
       "type": "library",
       "name": "router",
       "group": "@nextcloud",
-      "version": "3.1.0",
-      "bom-ref": "dossiq@0.1.0|@nextcloud/router@3.1.0",
+      "version": "3.2.0",
+      "bom-ref": "dossiq@0.1.0|@nextcloud/router@3.2.0",
       "licenses": [
         {
           "license": {
@@ -3223,15 +3223,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40nextcloud/router@3.1.0",
+      "purl": "pkg:npm/%40nextcloud/router@3.2.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@nextcloud/router/-/router-3.1.0.tgz",
+          "url": "https://registry.npmjs.org/@nextcloud/router/-/router-3.2.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "7b876421ac514b0759265645a67f71d37420067fd26b684dd61a7f040efe01bcf292648094ab967dd997f23ffc7b0acba50c18999476dc864ef57c29257ab653"
+              "content": "6a7e2027b9a50d91ad62af334f1a784a0fa22e528a1af43d647dc3a7a81afc89433403fb55e3151a986c63bf7c3918e7700a7dfac11fdfbd0be73a6c9eec609e"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -16395,8 +16395,8 @@
     {
       "type": "library",
       "name": "marked",
-      "version": "18.0.11",
-      "bom-ref": "dossiq@0.1.0|marked@18.0.11",
+      "version": "18.1.1",
+      "bom-ref": "dossiq@0.1.0|marked@18.1.1",
       "licenses": [
         {
           "license": {
@@ -16404,15 +16404,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/marked@18.0.11",
+      "purl": "pkg:npm/marked@18.1.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/marked/-/marked-18.0.11.tgz",
+          "url": "https://registry.npmjs.org/marked/-/marked-18.1.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "1e7b2525fb199113c10c9447bd5b406969591c4a52bbbbbc2e042e24210b8d12ae591fa1a6ae00eec2eade9f07688f72a55a170d7c55df80ac40911ed7e27903"
+              "content": "cc41a0aed506f1cae4f93acc69c252540054e036030e44bcbaa814de886b9ffd9f5bd0b60047d4acede6e8886922942997b61c5698975c2f5c48c58300d4f776"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
