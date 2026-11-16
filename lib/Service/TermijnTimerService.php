@@ -44,6 +44,10 @@ use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\OpenRegister\Kernel\Contracts\TimerChange;
 use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
+use OCA\OpenRegister\Service\Flow\Timer\FlowTimerAct;
+use OCA\OpenRegister\Service\Flow\Timer\TimerDecision;
+use OCA\OpenRegister\Service\Flow\Timer\TimerExtensionRequest;
+use OCA\OpenRegister\Service\Flow\Timer\TimerSuspension;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -457,7 +461,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 		}
 
 		try {
-			$engine->suspend(uuid: $timerId, reason: $reason, until: $until, actor: null, basis: 'Awb 4:5');
+			$engine->suspend(new TimerSuspension(uuid: $timerId, reason: $reason, until: $until, basis: 'Awb 4:5'), FlowTimerAct::of(actor: null));
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'suspend', timerId: $timerId, error: $e);
@@ -483,7 +487,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 		}
 
 		try {
-			$engine->resume(uuid: $timerId, reason: $reason, actor: null);
+			$engine->resume(new TimerDecision(uuid: $timerId, reason: $reason), FlowTimerAct::of(actor: null));
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'resume', timerId: $timerId, error: $e);
@@ -541,16 +545,13 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 		try {
 			if ($extension['supervisor'] === true) {
 				$engine->extendWithOverride(
-					uuid: $timerId,
-					amount: $extension['days'],
-					unit: 'calendarDays',
-					rationale: $extension['rationale'],
-					actor: 'supervisor'
+					new TimerExtensionRequest(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale']),
+					FlowTimerAct::of(actor: 'supervisor')
 				);
 				return true;
 			}
 
-			$engine->extend(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale'], actor: null);
+			$engine->extend(new TimerExtensionRequest(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale']), FlowTimerAct::of(actor: null));
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'extend', timerId: $timerId, error: $e);

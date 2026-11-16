@@ -57,6 +57,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\OpenRegister\Search\Service\Quality\DedupRun;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -246,8 +247,7 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 		return $this->askDetection(
 			what: 'the duplicate check',
 			call: static fn (object $detection): mixed => $detection->checkCandidate(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				request: new DedupRun(register: self::REGISTER, schema: self::SCHEMA),
 				candidate: $candidate
 			)
 		);
