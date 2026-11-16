@@ -51,6 +51,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @covers \OCA\Dossiq\Service\Import\RecordImportReferences

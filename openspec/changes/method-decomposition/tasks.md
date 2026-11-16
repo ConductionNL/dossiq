@@ -628,3 +628,72 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `@uses` line. Own test: `tests/Unit/Service/CaseType/CaseTypeMenuEntryTest` (3);
         dropping the integer-id branch turns it red (checked).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8q Three more stale ExcessiveClassComplexity suppressions (PHPMD reports nothing for the
+        rule without them, measured one at a time against `phpmd.xml`): `CaseCopyService`,
+        `WOOAssessmentController` and `Review/ReviewBatches`. Docblocks only; no code moved.
+        `ReviewBatches` keeps its CouplingBetweenObjects finding (14), which development already
+        reports with or without this change.
+  - [x] 8r `ComplaintService` (1: ExcessiveClassComplexity 50 against 50). Sorting the active
+        complaints by their handling deadline (overdue, within the window) and the redacted overdue
+        list an assistant sees (REQ-MCP-203, the allowlist and the acknowledgement flag) moved to the
+        new `Complaint/ComplaintDeadlineAlerts` (`grouped()`, `overdueRows()`; bodies moved
+        unchanged). It replaced the `DayCount` constructor parameter, which only it used, so the
+        service's CouplingBetweenObjects stays at 14 (development already reports it); the service
+        builds it over its own date path when the container does not pass one. Public methods and
+        the `#[McpTool]` attribute are unchanged.
+        Characterisation, green on the single class first (own commit): 2 tests added to
+        `ComplaintServiceTest` (25 in all) for the acknowledgement flag of every non-late row and an
+        unreadable deadline. Own test: `tests/Unit/Service/Complaint/ComplaintDeadlineAlertsTest`
+        (3); narrowing the window to `<` turns 2 tests red (checked).
+  - [x] 8s `ProcessMiningService` (1: ExcessiveClassComplexity 50 against 50). Grouping the status
+        records by case, the fallback to a case's own status history (with its holder) and the time
+        order moved to the new `ProcessMining/CaseStatusRecords` (`byCase()`; bodies moved
+        unchanged). The service builds it in its constructor over its own date path, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation: the existing `ProcessMiningServiceTest` (history fallback, holder, full
+        payload) and `ProcessMiningServiceGoldenTest`, green before and unchanged after but for one
+        `@uses` line each. Own test: `tests/Unit/Service/ProcessMining/CaseStatusRecordsTest` (3);
+        reversing the time order turns 4 tests red (checked).
+  - [x] 8t `TemplateLibraryService` (1: ExcessiveClassComplexity 50 against 50). What the library
+        lists for one template (id, title, description, category, version, file, fills and notes)
+        moved to the new `TemplateLibrary/TemplateMetadata` (`entry()`, with `fills()` and
+        `notes()`; bodies moved unchanged). It reads no file; the service still reads and decodes
+        the files, warns about invalid ones and builds the entry reader in its constructor, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `TemplateLibraryDirectoryTest` (4 in all) for trimmed notes, dropped blanks and non-strings,
+        and fills that are not a list. Own test: `tests/Unit/Service/TemplateLibrary/TemplateMetadataTest`
+        (2); keeping notes untrimmed turns 2 tests red (checked).
+  - [x] 8u `LhsMatrixDecisionTableMigrator` (1: ExcessiveClassComplexity 50 against 50). Turning the
+        cells of a matrix into decision rules (one per cell, none when a cell is off its axes) moved
+        to the new `Vth/LhsMatrixCells` (`rules()`, with `isOnAxes()` and `ruleFor()`; bodies moved
+        unchanged). The migrator builds it in its constructor, so its constructor, interface and
+        container binding are unchanged.
+        Characterisation: the existing `LhsMatrixDecisionTableMigratorTest` (each cell a rule, the
+        cell off its axis, the whole projected table) and `...FailuresTest`, green before and
+        unchanged after but for one `@uses` line each. Own test:
+        `tests/Unit/Service/Vth/LhsMatrixCellsTest` (2); a loose axis comparison turns it red
+        (checked).
+  - [x] 8v `Scoring/FormulaScorer` (1: ExcessiveClassComplexity 51 against 50). Splitting an
+        expression into its tokens moved to the new `Scoring/FormulaTokens` (`split()`; was the
+        private static `tokenise()`). Its `elseif`/`else` became early `continue`s, which also clears
+        the ElseExpression finding development reports on the old method; same tokens in the same
+        order. The scorer builds the tokeniser in a new argument-free constructor, so every
+        `new FormulaScorer()` keeps working and the grammar, limits and refusal messages are
+        unchanged.
+        Characterisation: the existing `FormulaScorerTest` (8 tests, 17 cases including every
+        refusal of the grammar), green before and unchanged after but for one `@uses` line. Own
+        test: `tests/Unit/Service/Scoring/FormulaTokensTest` (3); giving a name the `num` kind turns
+        12 tests red (checked).
+  - [x] 8w `Import/RecordCaseMapping` (1: ExcessiveClassComplexity 51 against 50). Putting a raw source
+        value in the shape its field declares (JSON, boolean, date, moment, integer, number, a listed
+        value with its default and refusal, collapsed text cut at a word) moved to the new
+        `Import/RecordFieldShape` (`shaped()`, with `textOf()`, `typed()`, `listed()`, `cut()` and
+        `TRUE_WORDS`; bodies moved unchanged). The mapping keeps reading, the required check, the
+        statuses, terms and the payload paths, and builds the shaper over its own date path and
+        values in its constructor, so its constructor and every caller are unchanged.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `RecordCaseMappingShapesTest` (6 in all) for the cut at a word and the hard cut, the listed
+        value, its default and its refusal message, and dates, moments (written in the tenant's
+        zone) and integers. Own test: `tests/Unit/Service/Import/RecordFieldShapeTest` (3);
+        cutting one character short of the space turns 3 tests red (checked).

@@ -33,6 +33,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * Pins what activating a template saves, in what order, and what it answers.
  *
  * @covers \OCA\Dossiq\Service\TemplateLibraryService
+ * @uses \OCA\Dossiq\Service\TemplateLibrary\TemplateMetadata
  * @covers \OCA\Dossiq\Service\TemplateLibrary\TemplateActivation
  * @covers \OCA\Dossiq\Service\TemplateLibrary\TemplateRows
  */
