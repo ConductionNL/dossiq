@@ -142,7 +142,9 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 
 		[$handler, $schema] = $target;
 		try {
-			$provenance = $handler->provenanceFor(new ProvenanceRequest(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId)));
+			$provenance = $handler->provenanceFor(
+				new ProvenanceRequest(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId))
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
 				['exception' => $e->getMessage(), 'caseId' => $caseId]);

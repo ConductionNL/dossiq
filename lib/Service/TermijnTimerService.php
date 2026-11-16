@@ -551,7 +551,10 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 				return true;
 			}
 
-			$engine->extend(new TimerExtensionRequest(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale']), FlowTimerAct::of(actor: null));
+			$engine->extend(
+				new TimerExtensionRequest(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale']),
+				FlowTimerAct::of(actor: null)
+			);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'extend', timerId: $timerId, error: $e);

@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Access;
 
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\Schema;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -179,7 +180,7 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 			 * @return object The schema stand-in.
 			 */
 			public function find(string $slug): object {
-				return new \stdClass();
+				return new Schema();
 			}
 		};
 
@@ -251,7 +252,7 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 			 * @return object The schema stand-in.
 			 */
 			public function find(string $slug): object {
-				return new \stdClass();
+				return new Schema();
 			}
 		};
 
@@ -299,7 +300,7 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 			 * @return object The schema stand-in.
 			 */
 			public function find(string $slug): object {
-				return new \stdClass();
+				return new Schema();
 			}
 		};
 
