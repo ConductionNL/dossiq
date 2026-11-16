@@ -628,3 +628,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `@uses` line. Own test: `tests/Unit/Service/CaseType/CaseTypeMenuEntryTest` (3);
         dropping the integer-id branch turns it red (checked).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8q Three more stale ExcessiveClassComplexity suppressions (PHPMD reports nothing for the
+        rule without them, measured one at a time against `phpmd.xml`): `CaseCopyService`,
+        `WOOAssessmentController` and `Review/ReviewBatches`. Docblocks only; no code moved.
+        `ReviewBatches` keeps its CouplingBetweenObjects finding (14), which development already
+        reports with or without this change.
