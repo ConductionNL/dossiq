@@ -654,3 +654,13 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         payload) and `ProcessMiningServiceGoldenTest`, green before and unchanged after but for one
         `@uses` line each. Own test: `tests/Unit/Service/ProcessMining/CaseStatusRecordsTest` (3);
         reversing the time order turns 4 tests red (checked).
+  - [x] 8t `TemplateLibraryService` (1: ExcessiveClassComplexity 50 against 50). What the library
+        lists for one template (id, title, description, category, version, file, fills and notes)
+        moved to the new `TemplateLibrary/TemplateMetadata` (`entry()`, with `fills()` and
+        `notes()`; bodies moved unchanged). It reads no file; the service still reads and decodes
+        the files, warns about invalid ones and builds the entry reader in its constructor, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `TemplateLibraryDirectoryTest` (4 in all) for trimmed notes, dropped blanks and non-strings,
+        and fills that are not a list. Own test: `tests/Unit/Service/TemplateLibrary/TemplateMetadataTest`
+        (2); keeping notes untrimmed turns 2 tests red (checked).

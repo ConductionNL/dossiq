@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * Lists and loads templates from a temporary directory.
  *
  * @covers \OCA\Dossiq\Service\TemplateLibraryService
+ * @uses \OCA\Dossiq\Service\TemplateLibrary\TemplateMetadata
  */
 class TemplateLibraryDirectoryTest extends TestCase {
 
