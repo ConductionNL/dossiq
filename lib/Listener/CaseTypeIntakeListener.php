@@ -29,12 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\CaseTypeIntake;
 use OCA\Dossiq\Service\Intake\CaseTypeProperties;
 use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -52,16 +52,16 @@ class CaseTypeIntakeListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService          $settingsService  The case schema, the register and the object service.
-	 * @param CaseTypeResolver         $caseTypeResolver The effective case type.
-	 * @param LoggerInterface          $logger           Says when a case could not be read.
-	 * @param CollectionLinkQueue|null $linkQueue        Links the case to the dossier once it exists.
-	 * @param CaseTypeIntake           $intake           What the intake changes.
-	 * @param ReceiptMoment            $receipt          Tells a received case from a draft.
+	 * @param SettingsServiceInterface  $settingsService  The case schema, the register and the object service.
+	 * @param CaseTypeResolverInterface $caseTypeResolver The effective case type.
+	 * @param LoggerInterface           $logger           Says when a case could not be read.
+	 * @param CollectionLinkQueue|null  $linkQueue        Links the case to the dossier once it exists.
+	 * @param CaseTypeIntake            $intake           What the intake changes.
+	 * @param ReceiptMoment             $receipt          Tells a received case from a draft.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTypeResolverInterface $caseTypeResolver,
 		private readonly LoggerInterface $logger,
 		private readonly ?CollectionLinkQueue $linkQueue = null,
 		private readonly CaseTypeIntake $intake = new CaseTypeIntake(),
