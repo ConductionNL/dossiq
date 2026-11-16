@@ -32,6 +32,8 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The payment projection runs as the configured account, or not at all.
@@ -182,23 +184,25 @@ class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 			 * @return array<string, mixed> The stored row.
 			 */
 			public function patchObject(
-				string $objectId,
-				array $data,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				ObjectPatch $patch,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->system === 0 && array_intersect(array_keys($data), ['paymentState', 'paymentStateCheckedAt']) !== []) {
 					$this->refusals[] = 'Cannot modify readOnly property: paymentState';
 					throw new \RuntimeException('Cannot modify readOnly property: paymentState');
 				}
 
 				return parent::patchObject(
-					objectId: $objectId,
-					data: $data,
-					register: $register,
-					schema: $schema,
+					new ObjectPatch(
+						objectId: $objectId,
+						data: $data,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
 					_rbac: $_rbac,
 					_multitenancy: $_multitenancy
 				);

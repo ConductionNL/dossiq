@@ -129,8 +129,22 @@ class EngineRunMigration {
 			return ['asked' => false, 'migrated' => false, 'reason' => self::RUN_NOT_MOVED];
 		}
 
+		return $this->migratedOn(service: $service, move: ['caseId' => $caseId, 'target' => $targetCaseTypeId, 'actor' => $actorUid]);
+	}//end migrate()
+
+	/**
+	 * Ask the engine to move the case's run onto the target version, carrying the engine's refusal as it is.
+	 *
+	 * @param object                                            $service The engine's run migration service.
+	 * @param array{caseId: string, target: string, actor: string} $move    The case, the version it moves onto, and who moves it.
+	 *
+	 * @return array<string, mixed> The answer.
+	 *
+	 * @throws RefusedException When the engine refuses the migration.
+	 */
+	private function migratedOn(object $service, array $move): array {
 		try {
-			$outcome = $service->{self::MIGRATION_METHOD}($caseId, $targetCaseTypeId, $actorUid);
+			$outcome = $service->{self::MIGRATION_METHOD}($move['caseId'], $move['target'], $move['actor']);
 		} catch (Throwable $e) {
 			// THE ENGINE'S OWN SENTENCE TRAVELS. A rebind refused by the run is
 			// refused for a reason the coordinator can act on, and replacing it
@@ -145,7 +159,7 @@ class EngineRunMigration {
 		}
 
 		return $this->migratedAnswer(outcome: $outcome);
-	}//end migrate()
+	}//end migratedOn()
 
 	/**
 	 * The answer for a run the engine was asked to move, or its refusal.

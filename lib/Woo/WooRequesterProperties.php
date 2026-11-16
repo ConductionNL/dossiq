@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Intake\CaseTypeProperties;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -43,13 +43,11 @@ use Throwable;
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
  */
 class WooRequesterProperties {
-	use SearchesObjects;
-
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService Names the propertyDefinition schema.
-	 * @param LoggerInterface $logger          Says when the definitions cannot be read.
+	 * @param LoggerInterface          $logger          Says when the definitions cannot be read.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
@@ -74,88 +72,14 @@ class WooRequesterProperties {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	public function forCaseType(object $objectService, string $register, string $caseTypeId, array $wooRequest): array {
-		$answers = $this->answers(wooRequest: $wooRequest);
-		if ($answers === []) {
-			return [];
-		}
-
-		$definitions = $this->definitions(store: ['objectService' => $objectService, 'register' => $register], caseTypeId: $caseTypeId);
-
-		return $this->entriesFor(answers: $answers, definitions: $definitions);
-	}//end forCaseType()
-
-	/**
-	 * One property entry per answer the case type defines a property for.
-	 *
-	 * @param array<string, mixed>  $answers     The requester's answers, by field.
-	 * @param array<string, string> $definitions The property definition ids, by name.
-	 *
-	 * @return array<int, array{propertyDefinition: string, name: string, value: mixed}> The entries.
-	 */
-	private function entriesFor(array $answers, array $definitions): array {
-		$entries = [];
-		foreach ($answers as $field => $value) {
-			if (isset($definitions[$field]) === false) {
-				continue;
-			}
-
-			$entries[] = ['propertyDefinition' => $definitions[$field], 'name' => $field, 'value' => $value];
-		}
-
-		return $entries;
-	}//end entriesFor()
-
-	/**
-	 * The requester answers that were given, by field name.
-	 *
-	 * @param array<string, mixed> $wooRequest The normalised request.
-	 *
-	 * @return array<string, string> The answers.
-	 */
-	private function answers(array $wooRequest): array {
 		$answers = [];
 		foreach (WooRequestForm::REQUESTER_FIELDS as $field) {
-			$value = trim((string)($wooRequest[$field] ?? ''));
-			if ($value !== '') {
-				$answers[$field] = $value;
-			}
+			$answers[$field] = ($wooRequest[$field] ?? '');
 		}
 
-		return $answers;
-	}//end answers()
-
-	/**
-	 * The case type's property definitions, as id by name.
-	 *
-	 * @param array{objectService: object, register: string} $store      The OpenRegister ObjectService and the dossiq register.
-	 * @param string                                         $caseTypeId The case type.
-	 *
-	 * @return array<string, string> The definition id per name.
-	 */
-	private function definitions(array $store, string $caseTypeId): array {
-		$schema = (string)$this->settingsService->getConfigValue('property_definition_schema');
-		if ($schema === '') {
-			return [];
-		}
-
-		$rows = $this->readDefinitionRows(where: $store + ['schema' => $schema], caseTypeId: $caseTypeId);
-
-		return $this->idsByName(rows: $rows);
-	}//end definitions()
-
-	/**
-	 * Read the case type's property definition rows, or none when they cannot be read.
-	 *
-	 * @param array{objectService: object, register: string, schema: string} $where      The OpenRegister ObjectService,
-	 *                                                                        the dossiq register and the property
-	 *                                                                        definition schema.
-	 * @param string                                                          $caseTypeId The case type.
-	 *
-	 * @return array<int, array<string, mixed>> The rows, or [] when unreadable.
-	 */
-	private function readDefinitionRows(array $where, string $caseTypeId): array {
 		try {
-			return $this->definitionRows(where: $where, caseTypeId: $caseTypeId);
+			return (new CaseTypeProperties(settingsService: $this->settingsService))
+				->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WooRequestIntake: the case type property definitions could not be read, so the requester details are kept on the request only',
@@ -163,62 +87,5 @@ class WooRequesterProperties {
 			);
 			return [];
 		}
-	}//end readDefinitionRows()
-
-	/**
-	 * Read the case type's property definition rows.
-	 *
-	 * @param array{objectService: object, register: string, schema: string} $where      The OpenRegister ObjectService,
-	 *                                                                        the dossiq register and the property
-	 *                                                                        definition schema.
-	 * @param string                                                          $caseTypeId The case type.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function definitionRows(array $where, string $caseTypeId): array {
-		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $where['objectService'],
-			register: $where['register'],
-			schema: $where['schema'],
-			filters: ['caseType' => $caseTypeId],
-		);
-	}//end definitionRows()
-
-	/**
-	 * The definition id per name, for the rows that have both.
-	 *
-	 * @param array<int, array<string, mixed>> $rows The definition rows.
-	 *
-	 * @return array<string, string> The definition id per name.
-	 */
-	private function idsByName(array $rows): array {
-		$definitions = [];
-		foreach ($rows as $row) {
-			$name = trim((string)($row['name'] ?? ''));
-			$id = $this->idOfRow(row: $row);
-			if ($name !== '' && $id !== '') {
-				$definitions[$name] = $id;
-			}
-		}
-
-		return $definitions;
-	}//end idsByName()
-
-	/**
-	 * One row's id, wherever the store put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function idOfRow(array $row): string {
-		foreach ([($row['@self']['id'] ?? null), ($row['id'] ?? null), ($row['uuid'] ?? null)] as $candidate) {
-			$id = trim((string)($candidate ?? ''));
-			if ($id !== '') {
-				return $id;
-			}
-		}
-
-		return '';
-	}//end idOfRow()
+	}//end forCaseType()
 }//end class

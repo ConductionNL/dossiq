@@ -35,6 +35,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A stored row as an entity answers it.
@@ -118,13 +121,14 @@ final class GoldenPackageObjects {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?array {
+		$_extend = $options?->extend;
+		$files = $options?->files ?? false;
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		$this->log[] = ['find' => compact('id', 'register', 'schema', '_rbac', '_multitenancy')];
 		if (in_array((string)$id, ($this->behaviour['findThrows'] ?? []), true) === true) {
 			throw new RuntimeException('find failed for ' . $id);
@@ -183,12 +187,13 @@ final class GoldenPackageObjects {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): mixed {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		$this->log[] = ['saveObject' => compact('object', 'register', 'schema', 'uuid', '_rbac', '_multitenancy')];
 		$this->saves += 1;
 		$id = ($uuid ?? ('new-' . $this->saves));
@@ -216,7 +221,9 @@ final class GoldenPackageObjects {
 	 *
 	 * @return bool
 	 */
-	public function deleteObject(string $uuid, int|string $register = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register ?? '';
 		$this->log[] = ['deleteObject' => compact('uuid', 'register')];
 		if (in_array($uuid, ($this->behaviour['deleteThrows'] ?? []), true) === true) {
 			throw new RuntimeException('delete refused for ' . $uuid);

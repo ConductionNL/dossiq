@@ -112,7 +112,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import { caseTypeRefusalMessages } from '../utils/caseTypeDialogs.js'
+import { caseTypeDialog } from '../mixins/caseTypeDialog.js'
 import { publishRefusalMessage } from '../utils/caseTypePublish.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -122,18 +122,7 @@ export default {
 
 	components: { NcButton, NcDialog, NcLoadingIcon, NcTextArea },
 
-	props: {
-		/**
-		 * The case type to publish. Falls back to the route, because an
-		 * `open-modal` header action forwards its props VERBATIM: a
-		 * `@objectId` token in the manifest would arrive as that literal
-		 * string, and the dialog would publish a case type called "@objectId".
-		 */
-		caseTypeId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTypeDialog],
 
 	emits: ['close'],
 
@@ -148,28 +137,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The sentences a refusal can carry, already translated.
-		 *
-		 * @return {object} The messages.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		refusalMessages() {
-			return caseTypeRefusalMessages()
-		},
-
-		/**
-		 * The case type this dialog acts on.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		id() {
-			return this.caseTypeId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * Whether the Publish button does anything yet.
 		 *

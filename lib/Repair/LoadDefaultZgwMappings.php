@@ -34,6 +34,8 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\Support\DefaultMappingTables;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -637,9 +639,8 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 			}
 
 			$objectService->saveObject(
-				register: $register,
-				schema: $schema,
-				object: $channel
+				object: $channel,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 			);
 			return 'created';
 		} catch (\Throwable $e) {

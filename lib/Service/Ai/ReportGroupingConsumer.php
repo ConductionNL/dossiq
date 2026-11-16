@@ -43,6 +43,9 @@ use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -357,8 +360,10 @@ class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 
 		$objectService->saveObject(
 			object: $case,
-			register: $this->settingsService->getConfigValue(key: 'register'),
-			schema: $this->settingsService->getConfigValue(key: 'case_schema')
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $this->settingsService->getConfigValue(key: 'register'),
+					schema: $this->settingsService->getConfigValue(key: 'case_schema')
+				))
 		);
 	}//end saveCase()
 
@@ -378,7 +383,7 @@ class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 		}
 
 		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
+			$found = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'ReportGroupingConsumer: case not readable',

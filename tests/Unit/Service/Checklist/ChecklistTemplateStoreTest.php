@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for ChecklistTemplateStore.
@@ -182,7 +184,10 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = [$object, $schema, $uuid];
 
 				return $object;
@@ -262,7 +267,10 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return null
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = [$object, $register, $schema, $uuid];
 
 				return null;
@@ -308,7 +316,10 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, int|string $register, int|string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->deleted[] = [$uuid, $register, $schema];
 				return true;
 			}
@@ -336,7 +347,10 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, int|string $register, int|string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				throw new RuntimeException('in use');
 			}
 		};

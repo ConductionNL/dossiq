@@ -87,8 +87,19 @@ class PoolMembership {
 			return [];
 		}
 
+		return $this->uniqueMembers(roles: $roles, target: ['roleType' => $roleType, 'team' => $team]);
+	}//end membersOf()
+
+	/**
+	 * The members the roles name for the target, each participant once, in role order.
+	 *
+	 * @param array<int, mixed>                      $roles  The case's role rows.
+	 * @param array{roleType: string, team: string} $target The role type, and the team when one is named.
+	 *
+	 * @return array<int, array<string, mixed>> The members.
+	 */
+	private function uniqueMembers(array $roles, array $target): array {
 		$members = [];
-		$target = ['roleType' => $roleType, 'team' => $team];
 		foreach ($roles as $role) {
 			$member = $this->member(role: $role, target: $target);
 			if ($member === null || isset($members[$member['participant']]) === true) {
@@ -99,7 +110,7 @@ class PoolMembership {
 		}
 
 		return array_values($members);
-	}//end membersOf()
+	}//end uniqueMembers()
 
 	/**
 	 * One role row as a pool member, or null when it does not hold the roleType or the team.

@@ -34,6 +34,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CreateTaskHandler
@@ -237,7 +238,9 @@ class CreateTaskHandlerTest extends TestCase {
 				$this->recorded = &$recorded;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				return ['id' => 'task-uuid'];
 			}

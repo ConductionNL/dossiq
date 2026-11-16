@@ -22,6 +22,7 @@ use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
+use OCA\Dossiq\Service\Support\ResolvesSchemaStore;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -54,6 +55,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 
 	use SearchesObjects;
 	use ProjectsOntoFlows;
+	use ResolvesSchemaStore;
 
 	/**
 	 * Provenance marker prefix written into the flow's notes.
@@ -421,7 +423,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusNames(): array {
-		$store = $this->storeFor(schemaKey: 'status_type_schema');
+		$store = $this->schemaStore(schemaKey: 'status_type_schema');
 		if ($store === null) {
 			return [];
 		}
@@ -464,7 +466,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 	 * @return array<int, array<string, mixed>> The templates.
 	 */
 	private function fetchTemplates(): array {
-		$store = $this->storeFor(schemaKey: 'workflow_template_schema');
+		$store = $this->schemaStore(schemaKey: 'workflow_template_schema');
 		if ($store === null) {
 			return [];
 		}
@@ -478,28 +480,6 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 			return [];
 		}
 	}//end fetchTemplates()
-
-	/**
-	 * The object service, register and schema for one schema key, null when any is missing.
-	 *
-	 * @param string $schemaKey The settings key of the schema.
-	 *
-	 * @return array{objectService: object, register: string, schema: string}|null The store.
-	 */
-	private function storeFor(string $schemaKey): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema   = $this->settingsService->getConfigValue(key: $schemaKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
-	}//end storeFor()
 
 	/**
 	 * One batch of the objects of a store.

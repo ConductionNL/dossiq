@@ -100,6 +100,7 @@ import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import { blueprintSections, blueprintSummary, parentTitleOf } from '../../utils/caseTypeBlueprint.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -108,6 +109,8 @@ export default {
 	name: 'CaseTypeBlueprintWidget',
 
 	components: { NcLoadingIcon },
+
+	mixins: [caseTypeWidget],
 
 	data() {
 		return {
@@ -118,17 +121,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 *
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * The three lists, each row carrying its origin badge.
 		 *

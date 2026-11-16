@@ -36,6 +36,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -401,9 +403,8 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 			);
 
 			$bijlage = $objectService->saveObject(
-				register: $register,
-				schema: 'beschikking_bijlage',
-				object: $object
+				object: $object,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: 'beschikking_bijlage'))
 			);
 
 			return $this->savedId(saved: $bijlage, fallback: $fallback);

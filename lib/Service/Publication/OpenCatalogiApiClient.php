@@ -63,6 +63,9 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -438,8 +441,7 @@ class OpenCatalogiApiClient {
 		try {
 			$stored = $objectService->findSilent(
 				id: $id,
-				register: $target->register,
-				schema: $target->schema,
+				options: new ObjectFindOptions(register: $target->register, schema: $target->schema)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -494,7 +496,10 @@ class OpenCatalogiApiClient {
 		$schema = $target->schema;
 
 		try {
-			$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			$saved = $objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'OpenCatalogiApiClient: object write failed',

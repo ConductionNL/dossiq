@@ -26,6 +26,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A warm transfer is created open, answered once, only by the employee it was
@@ -97,7 +100,9 @@ class DoorverbindingServiceTest extends TestCase {
 			 *
 			 * @return array<string,mixed>
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				if ($this->stored === null) {
 					throw new RuntimeException('no such object');
@@ -115,7 +120,9 @@ class DoorverbindingServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, string $register, string $schema): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				if ($this->fail !== null) {
 					throw $this->fail;
@@ -134,7 +141,11 @@ class DoorverbindingServiceTest extends TestCase {
 			 *
 			 * @return array<string,mixed>
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->calls[] = ['patchObject', $objectId, $data, $register, $schema];
 				if ($this->fail !== null) {
 					throw $this->fail;

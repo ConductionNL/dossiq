@@ -31,6 +31,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Sharing is read through the same consents as a hand-off, but only for a
@@ -67,7 +68,9 @@ class ConsentForSharingTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(int|string $id, int|string $register='', int|string $schema=''): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ($schema === 'case') {
 					return ['id' => $id, 'caseType' => 'ct-1'];
 				}

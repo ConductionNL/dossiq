@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -53,6 +54,7 @@ use Throwable;
  */
 class TenantAuthenticationService implements TenantAuthenticationServiceInterface {
 	use RefusesWhenIndeterminate;
+	use ResolvesInstalledObjectService;
 
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
@@ -103,8 +105,22 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
+		return $this->failClosedDecision(tenantId: $tenantId, request: ['userId' => $userId, 'action' => $action]);
+	}//end validateMandateMatrix()
+
+	/**
+	 * The mandate matrix decision; a failure other than a refusal is logged and answered as not allowed.
+	 *
+	 * @param string                               $tenantId The tenant.
+	 * @param array{userId: string, action: string} $request  The user, and the action asked for.
+	 *
+	 * @return array<string, mixed> The decision.
+	 *
+	 * @throws RefusedException When the matrix refuses.
+	 */
+	private function failClosedDecision(string $tenantId, array $request): array {
 		try {
-			return $this->matrixDecision(tenantId: $tenantId, request: ['userId' => $userId, 'action' => $action]);
+			return $this->matrixDecision(tenantId: $tenantId, request: $request);
 		} catch (RefusedException $e) {
 			// A refusal already says what happened and with which status.
 			// Folding it into the fail-closed branch below is what made an
@@ -113,11 +129,11 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: mandate matrix validation failed (fail-closed)',
-				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
+				['tenantId' => $tenantId, 'userId' => $request['userId'], 'exception' => $e->getMessage()]
 			);
 			return ['allowed' => false, 'reason' => 'Mandate validation error'];
 		}//end try
-	}//end validateMandateMatrix()
+	}//end failClosedDecision()
 
 	/**
 	 * Decide one action from the active matrix and the user's role inside the tenant.
@@ -585,24 +601,4 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 
 		return array_values(array_filter($arrays, static fn (array $data): bool => $data !== []));
 	}//end rowsAsArrays()
-
-	/**
-	 * Resolve OR's ObjectService when installed.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

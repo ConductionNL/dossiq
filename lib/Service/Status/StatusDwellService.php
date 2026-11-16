@@ -86,7 +86,20 @@ class StatusDwellService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function applyStatusChange(array $case, string $toStatus, ?DateTimeImmutable $now = null): array {
-		$moment = ($now ?? new DateTimeImmutable());
+		return $this->entered(case: $case, move: ['toStatus' => $toStatus, 'moment' => ($now ?? new DateTimeImmutable())]);
+	}//end applyStatusChange()
+
+	/**
+	 * The case with the dwell of the status it leaves added, and the dwell clock restarted for the one it enters.
+	 *
+	 * @param array<string, mixed>                                 $case The case payload about to be saved.
+	 * @param array{toStatus: string, moment: DateTimeImmutable} $move The status entered and the moment of the move.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function entered(array $case, array $move): array {
+		$moment = $move['moment'];
+		$toStatus = $move['toStatus'];
 		$leaving = (string)($case['status'] ?? '');
 		$spent = $this->elapsedWorkingDays(case: $case, now: $moment);
 
@@ -102,7 +115,7 @@ class StatusDwellService {
 		$case['statusDwellBreached'] = false;
 
 		return $case;
-	}//end applyStatusChange()
+	}//end entered()
 
 	/**
 	 * The working days the case has spent in the status it is in now.

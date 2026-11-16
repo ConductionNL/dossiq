@@ -48,6 +48,7 @@ use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Demo caseload seeding.
@@ -608,10 +609,13 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = [],
-				mixed $register = null,
-				mixed $schema = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): object {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = ['schema' => (string)$schema, 'data' => $object, 'system' => ($this->depth > 0)];
 				$this->sequence++;
 

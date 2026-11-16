@@ -17,6 +17,9 @@ use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class TaskAttachmentPublishGoldenTest extends TestCase {
 
@@ -36,13 +39,20 @@ class TaskAttachmentPublishGoldenTest extends TestCase {
 
 			public array $failing = [];
 
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patches[] = [$objectId, $data];
 				$this->case      = array_merge($this->case, $data);
 				return $this->case;
 			}
 
-			public function saveObject(array $object, mixed $register, mixed $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if (in_array($object['document'], $this->failing, true) === true) {
 					throw new RuntimeException('disk full');
 				}
@@ -52,7 +62,9 @@ class TaskAttachmentPublishGoldenTest extends TestCase {
 				return $object;
 			}
 
-			public function find(string $id, mixed $register, mixed $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->case;
 			}
 		};

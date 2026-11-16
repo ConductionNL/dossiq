@@ -34,6 +34,8 @@ use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -397,7 +399,7 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 */
 	public function discard(string $setId): void {
 		[$objectService, $register, $schema] = $this->store();
-		$objectService->deleteObject(register: $register, schema: $schema, uuid: $setId);
+		$objectService->deleteObject(new ObjectDeletion(uuid: $setId, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end discard()
 
 	/**

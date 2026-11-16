@@ -156,6 +156,8 @@
 
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
+import { caseTab } from '../../../mixins/caseTab.js'
+import { loadOnMount } from '../../../mixins/loadOnMount.js'
 import { fetchCaseTerms } from '../../../services/caseTermsApi.js'
 import { needsAttention, termRows } from '../../../utils/caseTerms.js'
 
@@ -165,13 +167,7 @@ export default {
 		NcLoadingIcon,
 	},
 
-	props: {
-		/** The case uuid, injected by CnObjectSidebar. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab, loadOnMount],
 
 	data() {
 		return {
@@ -212,10 +208,6 @@ export default {
 		progressId() {
 			return `case-terms-progress-${this.objectId || 'unknown'}`
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

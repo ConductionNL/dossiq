@@ -33,6 +33,9 @@ use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -160,7 +163,10 @@ class CallbackService implements CallbackServiceInterface {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);
 
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info('Dossiq KCC: callback scheduled', ['agent' => $agentId]);
 
@@ -232,7 +238,10 @@ class CallbackService implements CallbackServiceInterface {
 		$existing['status'] = 'cancelled';
 		$existing['nextAttemptAt'] = null;
 
-		$saved = $objectService->saveObject(object: $existing, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $existing,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 		return $this->toArray(value: $saved);
 	}//end cancel()
 
@@ -275,7 +284,10 @@ class CallbackService implements CallbackServiceInterface {
 	 */
 	public function persist(string $id, array $callback): array {
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $callback, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $callback,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 		return $this->toArray(value: $saved);
 	}//end persist()
 
@@ -314,7 +326,7 @@ class CallbackService implements CallbackServiceInterface {
 	 */
 	private function found(CallbackStore $store, string $id): array {
 		try {
-			$found = $store->objectService->find($id, register: $store->register, schema: $store->schema);
+			$found = $store->objectService->find($id, new ObjectFindOptions(register: $store->register, schema: $store->schema));
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Callback request not found');
 		}

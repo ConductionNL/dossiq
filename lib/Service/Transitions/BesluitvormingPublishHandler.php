@@ -68,6 +68,18 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface, Besluitvor
 	 * @spec openspec/specs/besluitvorming-workflow/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		return $this->published(case: $case, transitionContext: $transitionContext);
+	}//end handle()
+
+	/**
+	 * Publish the case's decision on the website; any failure is logged and answered as not published.
+	 *
+	 * @param array<string, mixed> $case              Case object.
+	 * @param array<string, mixed> $transitionContext Transition context.
+	 *
+	 * @return ActionResult
+	 */
+	private function published(array $case, array $transitionContext): ActionResult {
 		try {
 			$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
 			if ($caseId === '') {
@@ -94,5 +106,5 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface, Besluitvor
 			);
 			return new ActionResult(succeeded: false, error: 'publication_failed');
 		}//end try
-	}//end handle()
+	}//end published()
 }//end class

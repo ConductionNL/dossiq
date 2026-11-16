@@ -25,6 +25,9 @@ use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The PATCH path and the failed write.
@@ -66,7 +69,9 @@ class WooDossierReturnPatchTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, int|string $register, int|string $schema, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return [
 					'@self' => ['id' => $id],
 					'id' => $id,
@@ -86,7 +91,11 @@ class WooDossierReturnPatchTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->failure !== null) {
 					throw $this->failure;
 				}
@@ -101,6 +110,7 @@ class WooDossierReturnPatchTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->saves[] = $args;
 				return [];
 			}

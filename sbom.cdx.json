@@ -7,7 +7,7 @@
     "tools": [
       {
         "name": "composer",
-        "version": "2.10.2"
+        "version": "2.8.12"
       },
       {
         "vendor": "cyclonedx",
@@ -1866,6 +1866,40 @@
     },
     {
       "type": "library",
+      "name": "nonrecursive-glob-match",
+      "group": "@isaacs",
+      "version": "1.1.0",
+      "bom-ref": "dossiq@0.1.0|@isaacs/nonrecursive-glob-match@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "BlueOak-1.0.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40isaacs/nonrecursive-glob-match@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@isaacs/nonrecursive-glob-match/-/nonrecursive-glob-match-1.1.0.tgz",
+          "type": "distribution",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "18f9bf0dbbe4e512e68519f15c86bb9d3a4ad31b65e04d308f432c96cb8d889d45211394fb6fbd960502fdd805ec4cb84025a17c4b20c6294c44c09d1cf7c37f"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@isaacs/nonrecursive-glob-match"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "gen-mapping",
       "group": "@jridgewell",
       "version": "0.3.13",
@@ -3180,8 +3214,8 @@
       "type": "library",
       "name": "router",
       "group": "@nextcloud",
-      "version": "3.1.0",
-      "bom-ref": "dossiq@0.1.0|@nextcloud/router@3.1.0",
+      "version": "3.2.0",
+      "bom-ref": "dossiq@0.1.0|@nextcloud/router@3.2.0",
       "licenses": [
         {
           "license": {
@@ -3189,15 +3223,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40nextcloud/router@3.1.0",
+      "purl": "pkg:npm/%40nextcloud/router@3.2.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@nextcloud/router/-/router-3.1.0.tgz",
+          "url": "https://registry.npmjs.org/@nextcloud/router/-/router-3.2.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "7b876421ac514b0759265645a67f71d37420067fd26b684dd61a7f040efe01bcf292648094ab967dd997f23ffc7b0acba50c18999476dc864ef57c29257ab653"
+              "content": "6a7e2027b9a50d91ad62af334f1a784a0fa22e528a1af43d647dc3a7a81afc89433403fb55e3151a986c63bf7c3918e7700a7dfac11fdfbd0be73a6c9eec609e"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5849,8 +5883,8 @@
       "type": "library",
       "name": "parser",
       "group": "@typescript-eslint",
-      "version": "8.69.0",
-      "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0",
+      "version": "8.70.1",
+      "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1",
       "licenses": [
         {
           "license": {
@@ -5858,15 +5892,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40typescript-eslint/parser@8.69.0",
+      "purl": "pkg:npm/%40typescript-eslint/parser@8.70.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.69.0.tgz",
+          "url": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.70.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "9786f40e15a2a0683a1add9e6c696f7e414c3a346c6aec6db270d1c144915f5a87ab71dd4df40757cc16f7311779c89a8ba1df79a28e79d427d99a287f1dd607"
+              "content": "9cef7be162e59708521564179cc2e3ea70c66bc7f4921284cf5273a4f275bbb566ff85f55fa6476a3a689275386dbe35bc9c8c0741c75724b61aa76159f21767"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5887,8 +5921,8 @@
           "type": "library",
           "name": "scope-manager",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/scope-manager@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/scope-manager@8.70.1",
           "licenses": [
             {
               "license": {
@@ -5896,15 +5930,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/scope-manager@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/scope-manager@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "7b07eca6a5af4b129239aa65a8050d6da4853b4781eb0d44b50f9eb1f605466dfad784f2e2e36d13191c6e077a9d6b17a616ea2b27fd65875b65dbf6c44a1611"
+                  "content": "3dad04792780bac41cd566e340c69cf987de9dec184c1bb42a3818be450ac215da1d429b168836dc39bfae9d035ffeadc98390dd79756bedc4705359ca71870b"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5925,8 +5959,8 @@
           "type": "library",
           "name": "types",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/types@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/types@8.70.1",
           "licenses": [
             {
               "license": {
@@ -5934,15 +5968,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/types@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/types@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "2b756bb9b50f865a3d543052e90748f180798fb0a5a6a2d175e7dccfa3c5ae19f089c7a10707aa43d12f865e25f85633d0774398ca888925f46a5746458b4308"
+                  "content": "0e6d72a5d861ac6093cb27a1c44961809ea4824f0c542bf9a97768395a8faf5baa938da35fc2a3ad9aa144ebdd4a173303caab0e86223969f5ca45a5c7693cd5"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5963,8 +5997,8 @@
           "type": "library",
           "name": "typescript-estree",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/typescript-estree@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/typescript-estree@8.70.1",
           "licenses": [
             {
               "license": {
@@ -5972,15 +6006,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/typescript-estree@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/typescript-estree@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "01d16482a724dd5b9d6ff9169f197269f53fe1a0611eb6d0f65a1c3f6378a6c5d3cb998e060d121c9ba69cbbf1eebea0d605780cabd41705769c9641a2a383f3"
+                  "content": "4d4f0fc3218dd0f40951c13dea6c3c782438e129b119d4252669566a41da1d0d79788baebf27b9c8db6687f8baa12f3c8f35d5401ef5c5d3646e407f7ccc0bd2"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6001,8 +6035,8 @@
           "type": "library",
           "name": "visitor-keys",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/visitor-keys@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/visitor-keys@8.70.1",
           "licenses": [
             {
               "license": {
@@ -6010,15 +6044,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/visitor-keys@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/visitor-keys@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "fab99d80f03e11790d80a62f1ef15f86bb37e6eb576f0682e4f1a90eab925dca174032940395235742e64ee706ff825790cdf5053bb84e2947b6b37c21505ef3"
+                  "content": "5708fd954216e57ab7c10f70ea0bf747cea0d6130af1fdb334e7464c081e5d430c5c52bbf06f6bb828e3aaeb4730d25cd3e087ecb6119c779407d213f3016673"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6039,8 +6073,8 @@
           "type": "library",
           "name": "project-service",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/project-service@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/project-service@8.70.1",
           "licenses": [
             {
               "license": {
@@ -6048,15 +6082,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/project-service@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/project-service@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "ca2e286c5ac73269ec7ac59e8476e483dccc03b26df1c5d3fa628cd3c1bdf7da47d724fa9ea82c1f1ecc626d2e635c008fc0aa8815d8449ed6013d107501d05e"
+                  "content": "eb6c4e81ba0f7f0737fc880f497fd6ea8411dd96c5d38d7de053c65061fc1cbf222c51dbb7fe39ebff0f875c0b35481517eb3de05947a22a41b33fafefe2cc9c"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6077,8 +6111,8 @@
           "type": "library",
           "name": "tsconfig-utils",
           "group": "@typescript-eslint",
-          "version": "8.69.0",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|@typescript-eslint/tsconfig-utils@8.69.0",
+          "version": "8.70.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|@typescript-eslint/tsconfig-utils@8.70.1",
           "licenses": [
             {
               "license": {
@@ -6086,15 +6120,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40typescript-eslint/tsconfig-utils@8.69.0",
+          "purl": "pkg:npm/%40typescript-eslint/tsconfig-utils@8.70.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.69.0.tgz",
+              "url": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.70.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "c4da8aed84c366c2e7890315ff8ae9151f19e4996a791bd58ee1b562017f99d3d51fce07483d7d2fc09cccc034aa0d917f0115db7d461c7dd59d3a090e8e0c7d"
+                  "content": "8ee9b37b57cf23eb0339a3364d6190767dfd3c3c53afb4d919ebb22e401b372c76bed313dee46754a0a137485f86de55d93ba0a6127317a6d85ef05c134f6aaa"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6115,7 +6149,7 @@
           "type": "library",
           "name": "semver",
           "version": "7.8.5",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|semver@7.8.5",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|semver@7.8.5",
           "licenses": [
             {
               "license": {
@@ -6152,7 +6186,7 @@
           "type": "library",
           "name": "eslint-visitor-keys",
           "version": "5.0.1",
-          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.69.0|eslint-visitor-keys@5.0.1",
+          "bom-ref": "dossiq@0.1.0|@typescript-eslint/parser@8.70.1|eslint-visitor-keys@5.0.1",
           "licenses": [
             {
               "license": {
@@ -8715,10 +8749,6 @@
       ],
       "properties": [
         {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        },
-        {
           "name": "cdx:npm:package:path",
           "value": "node_modules/balanced-match"
         }
@@ -8924,10 +8954,6 @@
         }
       ],
       "properties": [
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/brace-expansion"
@@ -16369,8 +16395,8 @@
     {
       "type": "library",
       "name": "marked",
-      "version": "18.0.11",
-      "bom-ref": "dossiq@0.1.0|marked@18.0.11",
+      "version": "18.1.1",
+      "bom-ref": "dossiq@0.1.0|marked@18.1.1",
       "licenses": [
         {
           "license": {
@@ -16378,15 +16404,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/marked@18.0.11",
+      "purl": "pkg:npm/marked@18.1.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/marked/-/marked-18.0.11.tgz",
+          "url": "https://registry.npmjs.org/marked/-/marked-18.1.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "1e7b2525fb199113c10c9447bd5b406969591c4a52bbbbbc2e042e24210b8d12ae591fa1a6ae00eec2eade9f07688f72a55a170d7c55df80ac40911ed7e27903"
+              "content": "cc41a0aed506f1cae4f93acc69c252540054e036030e44bcbaa814de886b9ffd9f5bd0b60047d4acede6e8886922942997b61c5698975c2f5c48c58300d4f776"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -24230,24 +24256,24 @@
         {
           "type": "library",
           "name": "minimatch",
-          "version": "9.0.9",
-          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|minimatch@9.0.9",
+          "version": "11.0.8",
+          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|minimatch@11.0.8",
           "licenses": [
             {
               "license": {
-                "id": "ISC"
+                "id": "BlueOak-1.0.0"
               }
             }
           ],
-          "purl": "pkg:npm/minimatch@9.0.9",
+          "purl": "pkg:npm/minimatch@11.0.8",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/minimatch/-/minimatch-9.0.9.tgz",
+              "url": "https://registry.npmjs.org/minimatch/-/minimatch-11.0.8.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "381c0137d00be1daa61139694b6cdab31faf4de59c956ce46e57d993b2930398f78de38e373fed4429d9a26532bcd83cdf02f966ff52b3a1cc2570202fc47662"
+                  "content": "9c542e6124d5ac6bf2b15069b39221fb405d9d814dfc28f70bcd7aafafa9ef22be147ad52c61383b837d005c3292b94d96f3361d8b7e45a775522ae8ea1f3c22"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -24257,72 +24283,6 @@
             {
               "name": "cdx:npm:package:path",
               "value": "node_modules/webdav/node_modules/minimatch"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "brace-expansion",
-          "version": "2.1.7",
-          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|brace-expansion@2.1.7",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/brace-expansion@2.1.7",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.1.7.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "b996dec3536a7663c34cc27c6a1d72f9bfbd40426b7e45c593745c4d0c375f48d6ff1454bc52ac83509f41d49819d4db5d9584c6d53727771cc6d9dfc35162d2"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/webdav/node_modules/brace-expansion"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "balanced-match",
-          "version": "1.0.2",
-          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|balanced-match@1.0.2",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/balanced-match@1.0.2",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "de849e50ed13315ebb84dd4099b5ec2b8c9aa94eed8e21e56f144364ea47d0a5bdf82797e1b440697d009f1b74b71d8cae94695b041a3f02252121098585393f"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/webdav/node_modules/balanced-match"
             }
           ]
         }

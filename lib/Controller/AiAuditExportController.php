@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AllowsGroupMembers;
 use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,6 +49,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  */
 class AiAuditExportController extends Controller {
+	use AllowsGroupMembers;
+
 	/**
 	 * Groups that may export the AI audit trail (same gate as the
 	 * parafering audit export).
@@ -194,24 +197,6 @@ class AiAuditExportController extends Controller {
 			contentType: 'text/csv',
 		);
 	}//end exportedEntries()
-
-	/**
-	 * Check whether the given user id belongs to an allowed group (or is an
-	 * NC admin, defensive default).
-	 *
-	 * @param string $uid The Nextcloud user id.
-	 *
-	 * @return bool
-	 */
-	private function isAllowed(string $uid): bool {
-		foreach (self::ALLOWED_GROUPS as $group) {
-			if ($this->groupManager->isInGroup($uid, $group) === true) {
-				return true;
-			}
-		}
-
-		return $this->groupManager->isAdmin($uid) === true;
-	}//end isAllowed()
 
 	/**
 	 * Collect audit entries across pages up to {@see self::MAX_EXPORT_ROWS}.

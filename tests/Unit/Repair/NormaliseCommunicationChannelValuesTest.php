@@ -29,6 +29,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md
@@ -81,7 +82,11 @@ class NormaliseCommunicationChannelValuesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');
 				}

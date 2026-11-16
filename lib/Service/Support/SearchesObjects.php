@@ -40,6 +40,10 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use RuntimeException;
 
@@ -182,7 +186,7 @@ trait SearchesObjects {
 		string $id,
 	): ?array {
 		try {
-			$object = $objectService->find(id: $id, register: $register, schema: $schema);
+			$object = $objectService->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
 		}
@@ -220,9 +224,10 @@ trait SearchesObjects {
 		return $this->objectToArrayOrNull(
 			value: $objectService->saveObject(
 				object: $object,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $uuid
+				)
 			)
 		);
 	}//end saveObjectAsArray()
@@ -268,10 +273,11 @@ trait SearchesObjects {
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $this->objectToArrayOrNull(
 				value: $objectService->patchObject(
-					objectId: $id,
-					data: $changes,
-					register: $register,
-					schema: $schema
+					new ObjectPatch(
+						objectId: $id,
+						data: $changes,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					)
 				)
 			);
 		}

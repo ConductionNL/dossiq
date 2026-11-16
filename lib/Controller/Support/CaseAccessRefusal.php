@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller\Support;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -64,16 +65,7 @@ final class CaseAccessRefusal {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireReadAccess(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notAuthenticated();
-		}
-
-		if ($this->guard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notAuthorized();
-		}
-
-		return null;
+		return $this->refusalOf(caller: $this->reader(caseId: $caseId));
 	}//end requireReadAccess()
 
 	/**
@@ -86,6 +78,41 @@ final class CaseAccessRefusal {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireChangeAccess(string $caseId): ?JSONResponse {
+		return $this->refusalOf(caller: $this->writer(caseId: $caseId));
+	}//end requireChangeAccess()
+
+	/**
+	 * The signed-in caller when they may read the case, else the 401 or 403.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function reader(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notAuthenticated();
+		}
+
+		if ($this->guard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->notAuthorized();
+		}
+
+		return $user;
+	}//end reader()
+
+	/**
+	 * The signed-in caller when they may change the case, else the 401 or 403.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function writer(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return $this->notAuthenticated();
@@ -95,8 +122,23 @@ final class CaseAccessRefusal {
 			return $this->notAuthorized();
 		}
 
+		return $user;
+	}//end writer()
+
+	/**
+	 * The refusal a caller lookup ended in, or null for a caller.
+	 *
+	 * @param IUser|JSONResponse $caller The caller or the refusal.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function refusalOf(IUser|JSONResponse $caller): ?JSONResponse {
+		if ($caller instanceof JSONResponse) {
+			return $caller;
+		}
+
 		return null;
-	}//end requireChangeAccess()
+	}//end refusalOf()
 
 	/**
 	 * The 401.

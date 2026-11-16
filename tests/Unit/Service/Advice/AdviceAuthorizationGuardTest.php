@@ -30,6 +30,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard
@@ -93,7 +94,9 @@ class AdviceAuthorizationGuardTest extends TestCase {
 				 *
 				 * @throws DoesNotExistException When the case is not there.
 				 */
-				public function find(string $id, int|string $register, int|string $schema): array {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					$this->lookups[] = [$id, $register, $schema];
 					if ($this->case === null) {
 						throw new DoesNotExistException('gone');

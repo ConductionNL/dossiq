@@ -49,6 +49,7 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * One saved share, in the shape OpenRegister hands back.
@@ -109,7 +110,10 @@ final class PssShareStore {
 	 *
 	 * @return PssSavedShare The saved share.
 	 */
-	public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): PssSavedShare {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): PssSavedShare {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		$this->shares[] = $object;
 
 		return new PssSavedShare(uuid: ('share-' . count($this->shares)), data: $object);

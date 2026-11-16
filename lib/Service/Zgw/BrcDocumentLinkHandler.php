@@ -34,6 +34,10 @@ use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\MapsZgwRows;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -210,9 +214,11 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 */
 	private function saveCreated(BioRequest $bio, array $englishData): array {
 		$object = $bio->objectService->saveObject(
-			register: $bio->mappingConfig['sourceRegister'],
-			schema: $bio->mappingConfig['sourceSchema'],
-			object: $englishData
+			object: $englishData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $bio->mappingConfig['sourceRegister'],
+					schema: $bio->mappingConfig['sourceSchema']
+				))
 		);
 
 		return $this->objectToArray(row: $object);
@@ -310,8 +316,10 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 			// Read the BIO to get besluit URL before deletion.
 			$bioObj = $bio->objectService->find(
 				$uuid,
-				register: $bio->mappingConfig['sourceRegister'],
-				schema: $bio->mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $bio->mappingConfig['sourceRegister'],
+					schema: $bio->mappingConfig['sourceSchema']
+				)
 			);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
@@ -352,7 +360,7 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 		$ioUrl = $bioData['document'] ?? '';
 
 		// Delete the BIO.
-		$bio->objectService->deleteObject(uuid: $uuid);
+		$bio->objectService->deleteObject(new ObjectDeletion(uuid: $uuid));
 
 		return [$decisionUrl, $ioUrl];
 	}//end deleteBio()

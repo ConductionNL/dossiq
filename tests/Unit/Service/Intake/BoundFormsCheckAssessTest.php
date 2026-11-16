@@ -29,6 +29,7 @@ use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Service\Form\PublishedForm;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\BoundFormsCheck
@@ -148,12 +149,9 @@ class BoundFormsCheckAssessTest extends TestCase {
 		}
 
 		return new FormDependent(
-			id: $id,
-			app: $app,
-			title: 'Form ' . $id,
+			form: new PublishedForm(id: $id, app: $app, title: 'Form ' . $id, audience: $audience),
 			author: 'jan',
-			mapping: $mapping,
-			audience: $audience
+			mapping: $mapping
 		);
 	}//end form()
 

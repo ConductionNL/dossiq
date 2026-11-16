@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for PublicationChecks.
@@ -109,7 +110,9 @@ class PublicationChecksTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, $register=null, $schema=null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->rows[(string)$schema][$id] ?? null);
 			}//end find()
 

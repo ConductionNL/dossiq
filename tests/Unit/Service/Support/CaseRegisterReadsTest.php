@@ -16,6 +16,7 @@ use OCA\Dossiq\Service\Support\CaseRegisterReads;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Support\CaseRegisterReads
@@ -71,7 +72,9 @@ class CaseRegisterReadsTest extends TestCase {
 			 *
 			 * @return mixed The row.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = $register . '/' . $schema . '/' . $id;
 				if (array_key_exists($schema . '/' . $id, $this->rows) === false) {
 					throw new DoesNotExistException('missing');

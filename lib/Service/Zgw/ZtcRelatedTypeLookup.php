@@ -32,6 +32,7 @@ use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Looks up the types a ZTC zaaktype relates to.
  *
@@ -237,7 +238,7 @@ class ZtcRelatedTypeLookup {
 	 */
 	public function findIn(?object $objectService, array $mapping, mixed $id): array {
 		return $this->objectToArray(
-			row: $objectService->find(id: $id, register: $mapping['sourceRegister'], schema: $mapping['sourceSchema'])
+			row: $objectService->find(id: $id, options: new ObjectFindOptions(register: $mapping['sourceRegister'], schema: $mapping['sourceSchema']))
 		);
 	}//end findIn()
 

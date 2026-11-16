@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\Custody\ReadsDossierRows;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use RuntimeException;
 use Throwable;
 
@@ -220,10 +222,14 @@ class CaseSplitStore {
 				filters: ['case' => $caseId],
 			);
 			foreach ($records as $record) {
-				$objectService->deleteObject(uuid: $this->uuidOf(row: $record), register: $register, schema: $recordSchema);
+				$objectService->deleteObject(
+					new ObjectDeletion(uuid: $this->uuidOf(row: $record), target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+				);
 			}
 
-			return ($objectService->deleteObject(uuid: $caseId, register: $register, schema: $this->schema(key: 'case_schema')) !== false);
+			return ($objectService->deleteObject(
+				new ObjectDeletion(uuid: $caseId, target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')))
+			) !== false);
 		} catch (Throwable) {
 			return false;
 		}

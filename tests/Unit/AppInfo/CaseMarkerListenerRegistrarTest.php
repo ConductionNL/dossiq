@@ -16,7 +16,8 @@ use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The marker derivation runs before both kinds of save, at its own priority.
+ * The marker derivation runs before a case is created and before it is
+ * updated, at its own priority.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
@@ -26,7 +27,7 @@ use PHPUnit\Framework\TestCase;
 class CaseMarkerListenerRegistrarTest extends TestCase {
 	use RecordsRegistrations;
 
-	public function testTheDerivationRunsBeforeCreatesAndUpdates(): void {
+	public function testTheMarkerDerivationListensToBothPreSaveEvents(): void {
 		(new CaseMarkerListenerRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame(
@@ -37,5 +38,5 @@ class CaseMarkerListenerRegistrarTest extends TestCase {
 			$this->listeners
 		);
 		self::assertSame([], $this->services);
-	}//end testTheDerivationRunsBeforeCreatesAndUpdates()
+	}//end testTheMarkerDerivationListensToBothPreSaveEvents()
 }//end class

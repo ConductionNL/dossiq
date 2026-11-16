@@ -144,8 +144,20 @@ class ResidentQuestionTask implements ResidentQuestionTaskInterface {
 			return false;
 		}
 
+		return $this->terminated(taskUuid: $taskUuid, settled: ['reason' => $reason, 'source' => $source]);
+	}//end close()
+
+	/**
+	 * End the portal task as moot on the engine; a refusal is logged.
+	 *
+	 * @param string                               $taskUuid The engine task's uuid.
+	 * @param array{reason: string, source: string} $settled  Why the question is settled, and what settled it.
+	 *
+	 * @return bool True when the engine closed it.
+	 */
+	private function terminated(string $taskUuid, array $settled): bool {
 		try {
-			$this->container->get(self::TASK_SERVICE)->terminateAsMoot(uuid: $taskUuid, reason: $reason, source: $source);
+			$this->container->get(self::TASK_SERVICE)->terminateAsMoot(uuid: $taskUuid, reason: $settled['reason'], source: $settled['source']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the question is settled, but its portal task could not be closed',
@@ -155,7 +167,7 @@ class ResidentQuestionTask implements ResidentQuestionTaskInterface {
 		}
 
 		return true;
-	}//end close()
+	}//end terminated()
 
 	/**
 	 * The external task OpenRegister writes for a question.

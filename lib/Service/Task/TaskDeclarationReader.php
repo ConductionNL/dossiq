@@ -148,20 +148,31 @@ class TaskDeclarationReader {
 	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function matching(array $steps, string $statusTypeId, string $title): ?array {
-		$wanted = trim($title);
+		return $this->firstMatching(steps: $steps, wanted: ['title' => trim($title), 'statusTypeId' => trim($statusTypeId)]);
+	}//end matching()
+
+	/**
+	 * The first step with the title, declared on the status or on none.
+	 *
+	 * @param array<int, mixed>                          $steps  The declared steps.
+	 * @param array{title: string, statusTypeId: string} $wanted The trimmed title, and the trimmed status type id.
+	 *
+	 * @return array<string, mixed>|null The step, or null.
+	 */
+	private function firstMatching(array $steps, array $wanted): ?array {
 		foreach ($steps as $step) {
-			if (is_array($step) === false || $this->declaration->titleOf(step: $step) !== $wanted) {
+			if (is_array($step) === false || $this->declaration->titleOf(step: $step) !== $wanted['title']) {
 				continue;
 			}
 
 			$status = $this->declaration->statusOf(step: $step);
-			if ($status === '' || $status === trim($statusTypeId)) {
+			if ($status === '' || $status === $wanted['statusTypeId']) {
 				return $step;
 			}
 		}
 
 		return null;
-	}//end matching()
+	}//end firstMatching()
 
 	/**
 	 * A definition's steps, decoded.

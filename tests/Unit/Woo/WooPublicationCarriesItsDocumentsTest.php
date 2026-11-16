@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCP\App\IAppManager;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -51,9 +51,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Service\Support\FindsFilesById
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses   \OCA\Dossiq\Woo\WooResultLink
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses   \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses   \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
@@ -261,7 +261,7 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 			$apps,
 			$logger,
 			null,
-			new WooCaseLedger(settingsService: $settings, logger: $logger, urlGenerator: $urls),
+			new CasePublicationState(settingsService: $settings, logger: $logger, urlGenerator: $urls),
 			new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
 		);
 	}//end service()

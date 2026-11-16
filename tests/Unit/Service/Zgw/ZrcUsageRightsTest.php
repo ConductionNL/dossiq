@@ -22,6 +22,8 @@ use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Settling and checking indicatieGebruiksrecht on a zaak's documents.
@@ -62,7 +64,9 @@ class ZrcUsageRightsTest extends TestCase {
 			public function __construct(private ZrcUsageRightsTest $test) {
 			}
 
-			public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed {
+			public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->test->rowsOf((string)$schema)[(string)$id] ?? null;
 			}
 
@@ -77,7 +81,10 @@ class ZrcUsageRightsTest extends TestCase {
 				return ['results' => array_values(array_filter($this->test->rowsOf($query['schema']), static fn (array $r): bool => ($r[$key] ?? null) === $value))];
 			}
 
-			public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+			public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->record($object);
 				return $object;
 			}

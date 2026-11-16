@@ -22,6 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * Records every read, write and delete, and fails the methods it is told to.
  */
@@ -79,7 +83,9 @@ final class RecordsBrcStoreCalls {
 		}
 	}//end record()
 
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
 			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');
@@ -88,12 +94,15 @@ final class RecordsBrcStoreCalls {
 		return $this->objects[$id];
 	}//end find()
 
-	public function saveObject(mixed $register, mixed $schema, array $object): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->record('saveObject', [$register, $schema, $object]);
 		return $this->saved;
 	}//end saveObject()
 
-	public function deleteObject(string $uuid, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid;
 		$this->record('deleteObject', [$uuid, $_rbac, $_multitenancy]);
 		return true;
 	}//end deleteObject()

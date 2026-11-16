@@ -38,6 +38,9 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * The zaak-level effects of creating a status or a resultaat.
  *
@@ -411,10 +414,14 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		$caseData['id'] = $caseUuid;
 		$this->zgwService->getObjectService()->saveObject(
-			register: $caseConfig['sourceRegister'],
-			schema: $caseConfig['sourceSchema'],
 			object: $caseData,
-			uuid: $caseUuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $caseConfig['sourceRegister'],
+						schema: $caseConfig['sourceSchema']
+					),
+				uuid: $caseUuid
+			)
 		);
 	}//end saveCase()
 
@@ -429,8 +436,7 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	private function find(string $uuid, array $config): mixed {
 		return $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
+			new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
 		);
 	}//end find()
 

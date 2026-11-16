@@ -116,11 +116,10 @@ class StatusDwellTimer {
 			return null;
 		}
 
-		$config = $this->dwellTimerConfig(
+		return $this->armOnEngine(
+			engine: $engine,
 			dwell: new StatusDwell(caseId: $caseId, statusTypeId: $statusTypeId, maximumDwell: $maximumDwell, statusName: $statusName)
 		);
-
-		return $this->armOnEngine(engine: $engine, config: $config, caseId: $caseId);
 	}//end arm()
 
 	/**
@@ -224,17 +223,18 @@ class StatusDwellTimer {
 	}//end dwellMetadata()
 
 	/**
-	 * Arm the configured timer on the engine.
+	 * Arm the dwell's timer on the engine.
 	 *
-	 * @param object               $engine The FlowTimerService.
-	 * @param array<string, mixed> $config The engine configuration.
-	 * @param string               $caseId The case.
+	 * @param object      $engine The FlowTimerService.
+	 * @param StatusDwell $dwell  The case, the status entered, the maximum in working days and the status's name.
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine refused.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function armOnEngine(object $engine, array $config, string $caseId): ?string {
+	private function armOnEngine(object $engine, StatusDwell $dwell): ?string {
+		$config = $this->dwellTimerConfig(dwell: $dwell);
+
 		// The catch LOGS and falls through; the degraded answer is the last
 		// statement of the method rather than a `return null` hidden in an
 		// exception handler. `ServiceCatchReturnsNullTest` is the guard, and
@@ -245,7 +245,7 @@ class StatusDwellTimer {
 		try {
 			$timer = $engine->arm(config: $config, actor: null);
 		} catch (Throwable $e) {
-			$this->degraded(operation: 'arm', caseId: $caseId, error: $e);
+			$this->degraded(operation: 'arm', caseId: $dwell->caseId, error: $e);
 		}
 
 		if ($timer === null) {

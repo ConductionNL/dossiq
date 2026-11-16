@@ -32,22 +32,26 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\LockRequest;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\UnlockRequest;
 
 /**
  * The OpenRegister ObjectService surface these paths call, without a lock system.
  */
 interface DrcFallbackObjectServiceStub {
-	public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array;
 
 	public function searchObjectsPaginated(array $query): array;
 
-	public function saveObject(mixed $register, mixed $schema, array $object, ?string $uuid=null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 
-	public function lockObject(string $identifier): mixed;
+	public function lockObject(LockRequest $request, bool $advisory = false): mixed;
 
-	public function unlockObject(string $identifier): mixed;
+	public function unlockObject(UnlockRequest $request): mixed;
 }//end interface
 
 /**
@@ -98,7 +102,10 @@ class DrcFlatListAuditAndLockFallbackTest extends TestCase {
 		parent::setUp();
 		$this->objects = $this->createMock(DrcFallbackObjectServiceStub::class);
 		$this->objects->method('saveObject')->willReturnCallback(
-			function (mixed $register, mixed $schema, array $object, ?string $uuid=null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = [$object, $uuid];
 				return $object;
 			}

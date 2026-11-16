@@ -42,6 +42,7 @@ use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for CaseVersionMove.
@@ -206,7 +207,9 @@ class CaseVersionMoveTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null || ($schema !== null && $entry['__schema'] !== $schema)) {
 					return null;
@@ -624,7 +627,9 @@ class CaseVersionMoveTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, $register = null, $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw $this->cause;
 			}//end find()
 		};
@@ -665,8 +670,10 @@ class CaseVersionMoveTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
-				return $this->inner->find($id, $register, $schema);
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				return $this->inner->find($id, $options);
 			}//end find()
 
 			/**

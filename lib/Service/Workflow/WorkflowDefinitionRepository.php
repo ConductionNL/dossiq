@@ -41,6 +41,9 @@ namespace OCA\Dossiq\Service\Workflow;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -202,8 +205,7 @@ class WorkflowDefinitionRepository {
 		try {
 			$obj = $context['objectService']->find(
 				$uuid,
-				register: $context['register'],
-				schema: $context['schema']
+				new ObjectFindOptions(register: $context['register'], schema: $context['schema'])
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -421,9 +423,10 @@ class WorkflowDefinitionRepository {
 
 		return $context['objectService']->saveObject(
 			object: $merged,
-			register: $context['register'],
-			schema: $context['schema'],
-			uuid: $uuid,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+				uuid: $uuid
+			)
 		);
 	}//end updateDefinition()
 
@@ -441,8 +444,7 @@ class WorkflowDefinitionRepository {
 		return $this->normalize(
 			row: $context['objectService']->saveObject(
 				object: $payload,
-				register: $context['register'],
-				schema: $context['schema'],
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']))
 			)
 		);
 	}//end createDefinition()
@@ -497,8 +499,7 @@ class WorkflowDefinitionRepository {
 			$current = $this->normalize(
 				row: $context['objectService']->find(
 					$uuid,
-					register: $context['register'],
-					schema: $context['schema']
+					new ObjectFindOptions(register: $context['register'], schema: $context['schema'])
 				)
 			);
 		} catch (\Throwable $e) {
@@ -573,9 +574,10 @@ class WorkflowDefinitionRepository {
 		try {
 			$context['objectService']->saveObject(
 				object: $merged,
-				register: $context['register'],
-				schema: $context['schema'],
-				uuid: $caseTypeId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+					uuid: $caseTypeId
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

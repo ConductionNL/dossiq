@@ -196,7 +196,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	private function renameAll(array $renames, array $schemaIds): int {
 		$renamed = 0;
 		foreach ($renames as $old => $new) {
-			if ($this->renameSlug(old: $old, new: $new, schemaIds: $schemaIds) === true) {
+			if ($this->renameSlug(rename: ['old' => $old, 'new' => $new], schemaIds: $schemaIds) === true) {
 				$renamed++;
 			}
 		}
@@ -257,13 +257,14 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	/**
 	 * Rename one slug, scoped to this app's schemas.
 	 *
-	 * @param string $old Current slug.
-	 * @param string $new Replacement slug.
-	 * @param array<int, int> $schemaIds Schema ids in scope.
+	 * @param array{old: string, new: string} $rename    The current slug and its replacement.
+	 * @param array<int, int>                 $schemaIds Schema ids in scope.
 	 *
 	 * @return bool True when the row was updated.
 	 */
-	private function renameSlug(string $old, string $new, array $schemaIds): bool {
+	private function renameSlug(array $rename, array $schemaIds): bool {
+		$old = $rename['old'];
+		$new = $rename['new'];
 		$placeholders = $this->decisions->placeholders(count: count($schemaIds));
 
 		try {

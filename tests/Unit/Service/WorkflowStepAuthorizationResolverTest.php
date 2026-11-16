@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\WorkflowStepAuthorizationResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Minimal OpenRegister ObjectService shape used by the resolver.
@@ -47,7 +48,7 @@ interface AuthResolverObjectServiceStub {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array;
 }//end interface
 
 /**
@@ -89,7 +90,7 @@ final class WorkflowStepAuthorizationResolverTest extends TestCase {
 
 		$objectService = $this->createMock(AuthResolverObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
-			fn (string $id, string $register, string $schema): ?array => ($this->roleTypes[$id] ?? null)
+			fn (string $id, ?ObjectFindOptions $options = null): ?array => ($this->roleTypes[$id] ?? null)
 		);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);

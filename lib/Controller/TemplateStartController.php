@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersRegisterUnavailable;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
@@ -54,6 +55,7 @@ use Throwable;
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 class TemplateStartController extends Controller {
+	use AnswersRegisterUnavailable;
 
 	/**
 	 * Constructor.
@@ -100,10 +102,7 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($templates === null) {
-			return new JSONResponse(
-				['error' => 'The register is not available'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return $this->registerUnavailable();
 		}
 
 		return new JSONResponse(['items' => $templates, 'total' => count($templates)]);

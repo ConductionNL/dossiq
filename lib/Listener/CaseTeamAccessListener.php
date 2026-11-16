@@ -37,9 +37,8 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsSavedEntity;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -51,6 +50,8 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessListener implements IEventListener {
+	use ReadsSavedEntity;
+
 	/**
 	 * Constructor.
 	 *
@@ -73,15 +74,7 @@ class CaseTeamAccessListener implements IEventListener {
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function handle(Event $event): void {
-		$entity = null;
-		if ($event instanceof ObjectCreatedEvent === true) {
-			$entity = $event->getObject();
-		}
-
-		if ($event instanceof ObjectUpdatedEvent === true) {
-			$entity = $event->getNewObject();
-		}
-
+		$entity = $this->savedEntity(event: $event);
 		if ($entity === null || $this->isCaseType(entity: $entity) === false) {
 			return;
 		}

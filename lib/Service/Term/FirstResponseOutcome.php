@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Term;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
@@ -54,6 +55,7 @@ use Throwable;
  */
 class FirstResponseOutcome implements FirstResponseOutcomeInterface {
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * The three values the case can carry.
@@ -178,12 +180,12 @@ class FirstResponseOutcome implements FirstResponseOutcomeInterface {
 	 * @return array<int, array<string, mixed>> The cases.
 	 */
 	private function casesWithAnOutcome(array $filters): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'case_schema');
+		if ($source === null) {
 			return [];
 		}
+
+		[$objectService, $register, $schema] = $source;
 
 		try {
 			return $this->searchObjectsAsArrays(
@@ -208,12 +210,12 @@ class FirstResponseOutcome implements FirstResponseOutcomeInterface {
 	 * @return void
 	 */
 	private function write(string $caseId, array $changes): void {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'case_schema');
+		if ($source === null) {
 			return;
 		}
+
+		[$objectService, $register, $schema] = $source;
 
 		try {
 			$this->patchObjectAsArray(

@@ -57,6 +57,7 @@ use OCA\Dossiq\Service\Hearing\SessionStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Support\ReadsObjectionCase;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -73,6 +74,7 @@ class HearingService implements HearingServiceInterface {
 
 	use SearchesObjects;
 	use OpensInTheInitialState;
+	use ReadsObjectionCase;
 
 	/**
 	 * What creating a session does, by its audit event, for the log line
@@ -813,25 +815,8 @@ class HearingService implements HearingServiceInterface {
 	 * @return string The case UUID, or '' when it is unconfigured, missing or unreadable.
 	 */
 	private function caseOfObjection(string $objectionId): string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return '';
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-		if ($register === '' || $objectionSchema === '') {
-			return '';
-		}
-
 		try {
-			$objection = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $objectionSchema,
-				id: $objectionId
-			);
-			return (string)($objection['case'] ?? '');
+			return $this->storedObjectionCase(objectionId: $objectionId);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Dossiq hearing: bezwaar lookup failed: ' . $e->getMessage()

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for WooResultLink: a published Woo decision gives the requester a
+ * Unit tests for PublicationResultLink: a published Woo decision gives the requester a
  * link to what was made public, a withdrawal clears it, and any other state
  * leaves the case alone.
  *
@@ -13,30 +13,30 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
-use OCA\Dossiq\Woo\WooResultLink;
+use OCA\Dossiq\Service\Publication\PublicationResultLink;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\PublicationResultLink
  */
 class WooResultLinkTest extends TestCase {
 
 	public function testAPublishedDecisionWithAUrlLinksTheRequester(): void {
 		$this->assertSame(
 			['resultLink' => ['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://open.example/woo/42']],
-			(new WooResultLink())->changesFor(['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 'https://open.example/woo/42'])
+			(new PublicationResultLink())->changesFor(['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 'https://open.example/woo/42'])
 		);
 	}//end testAPublishedDecisionWithAUrlLinksTheRequester()
 
 	public function testAWithdrawalClearsTheLinkEvenWithAUrl(): void {
 		$this->assertSame(
 			['resultLink' => null],
-			(new WooResultLink())->changesFor(['wooPublicationStatus' => 'withdrawn', 'wooPublicationUrl' => 'https://open.example/woo/42'])
+			(new PublicationResultLink())->changesFor(['wooPublicationStatus' => 'withdrawn', 'wooPublicationUrl' => 'https://open.example/woo/42'])
 		);
 	}//end testAWithdrawalClearsTheLinkEvenWithAUrl()
 
 	public function testAnyOtherStateChangesNothing(): void {
-		$link = new WooResultLink();
+		$link = new PublicationResultLink();
 
 		$this->assertSame([], $link->changesFor(['wooPublicationStatus' => 'published', 'wooPublicationUrl' => '']));
 		$this->assertSame([], $link->changesFor(['wooPublicationStatus' => 'published']));

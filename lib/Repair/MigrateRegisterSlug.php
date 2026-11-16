@@ -225,7 +225,7 @@ class MigrateRegisterSlug implements IRepairStep {
 			return false;
 		}
 
-		return $this->writeSlug(key: $key, current: $current, new: $new);
+		return $this->writeSlug(key: $key, rename: ['old' => $current, 'new' => $new]);
 	}//end repointStoredSlug()
 
 	/**
@@ -250,20 +250,20 @@ class MigrateRegisterSlug implements IRepairStep {
 	/**
 	 * Write the new slug into an app-config key.
 	 *
-	 * @param string $key     The app-config key.
-	 * @param string $current The old slug.
-	 * @param string $new     The new slug.
+	 * @param string                          $key    The app-config key.
+	 * @param array{old: string, new: string} $rename The old slug and the new slug.
 	 *
 	 * @return bool Whether the value was written.
 	 */
-	private function writeSlug(string $key, string $current, string $new): bool {
+	private function writeSlug(string $key, array $rename): bool {
+		$new = $rename['new'];
 		try {
 			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $new);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'MigrateRegisterSlug: could not re-point app config.',
-				['key' => $key, 'old' => $current, 'new' => $new, 'exception' => $e->getMessage()]
+				['key' => $key, 'old' => $rename['old'], 'new' => $new, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}

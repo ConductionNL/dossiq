@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
@@ -68,7 +69,9 @@ class BezwaarTermijnSchedulerTermAndTriggerTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($this->failure !== null) {
 					throw $this->failure;
 				}

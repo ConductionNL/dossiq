@@ -35,6 +35,8 @@ use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\BrcHelperFactory;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -448,8 +450,10 @@ class BrcController extends ZgwController {
 		try {
 			$existingObj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
@@ -508,7 +512,7 @@ class BrcController extends ZgwController {
 		$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
 
 		// Delete the besluit itself.
-		$objectService->deleteObject(uuid: $uuid);
+		$objectService->deleteObject(new ObjectDeletion(uuid: $uuid));
 
 		return null;
 	}//end validateAndDeleteDecision()

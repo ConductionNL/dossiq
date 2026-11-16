@@ -48,6 +48,8 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\OpenRegister\Db\AuditTrailMapper;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -460,10 +462,14 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 		}
 
 		$objectService->deleteObject(
-			uuid: $caseId,
-			register: $this->settingsService->getConfigValue('register'),
-			schema: $this->settingsService->getConfigValue('case_schema'),
-			permanent: true
+			new ObjectDeletion(
+				uuid: $caseId,
+				target: new ObjectFindTarget(
+						register: $this->settingsService->getConfigValue('register'),
+						schema: $this->settingsService->getConfigValue('case_schema')
+					),
+				permanent: true
+			)
 		);
 	}//end purge()
 

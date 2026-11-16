@@ -28,6 +28,8 @@ use Psr\Log\AbstractLogger;
 use ReflectionMethod;
 use RuntimeException;
 use Stringable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class CaseReadAndPatchCopiesTest extends TestCase {
 
@@ -73,7 +75,9 @@ class CaseReadAndPatchCopiesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->mode === 'boom') {
 					throw new RuntimeException('store down');
 				}
@@ -95,7 +99,11 @@ class CaseReadAndPatchCopiesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The patched object.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->mode === 'boom') {
 					throw new RuntimeException('write refused');
 				}

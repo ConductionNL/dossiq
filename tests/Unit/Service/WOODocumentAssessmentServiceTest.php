@@ -32,6 +32,8 @@ use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for redaction-proposal tests — matches the
@@ -61,7 +63,7 @@ interface RedactionProposalObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Write some fields of a stored object (OpenRegister's PATCH seam).
@@ -73,7 +75,7 @@ interface RedactionProposalObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array;
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -514,7 +516,9 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$capturedObject = null;
 		$objectServiceMock->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data) use (&$capturedObject, $existing) {
+			function (ObjectPatch $patch) use (&$capturedObject, $existing) {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$capturedObject = array_merge($existing, $data);
 				return $capturedObject;
 			}

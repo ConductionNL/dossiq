@@ -75,7 +75,8 @@ import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openable } from '../mixins/openable.js'
 
 /**
  * Read-only view of the Awb-ordered dossier export plan for one case.
@@ -92,18 +93,7 @@ export default {
 		FileDocumentOutline,
 	},
 
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
-		/** May arrive as the unresolved `@objectId` token; see resolvedCaseId. */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogResolved, openable],
 
 	emits: ['close'],
 	data() {
@@ -112,18 +102,6 @@ export default {
 			loading: false,
 			error: '',
 		}
-	},
-
-	computed: {
-		/**
-		 * The case whose plan is being read.
-		 *
-		 * @return {string} The case id, or an empty string.
-		 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
 	},
 
 	watch: {
