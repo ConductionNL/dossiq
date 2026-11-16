@@ -329,6 +329,7 @@ class CrossAppListenerRegistrarTest extends TestCase {
 			'portal withdrawal' => ['OCA\Dossiq\Listener\PortalClientWithdrawalListener', 'OCA\Portaliq\Event\PortalClientWithdrawalEvent'],
 			'portal contact channel' => ['OCA\Dossiq\Listener\PortalContactDetailsChangedListener', 'OCA\Portaliq\Event\PortalContactDetailsChangedEvent'],
 			'document generated' => ['OCA\Dossiq\Listener\DocumentGeneratedListener', 'OCA\Filinq\Event\DocumentGeneratedEvent'],
+			'signing concluded' => ['OCA\Dossiq\Listener\SigningConcludedListener', 'OCA\Filinq\Event\SigningConcludedEvent'],
 			'form submitted' => ['OCA\Dossiq\Listener\FormSubmittedListener', 'OCA\Forms\Events\FormSubmittedEvent'],
 		];
 	}//end crossAppEvents()

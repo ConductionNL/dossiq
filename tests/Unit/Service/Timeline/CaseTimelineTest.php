@@ -212,12 +212,10 @@ class FakeTimelineReader {
 	 *
 	 * @return array<int, mixed> The entries.
 	 */
-	public function listForObject(
-		mixed $object,
-		?string $visibility = null,
-		int $limit = 50,
-		int $offset = 0,
-	): array {
+	public function listForObject(mixed $object, ?object $query = null): array {
+		$visibility = ($query?->filters['visibility'] ?? null);
+		$limit = ($query?->limit ?? 50);
+		$offset = ($query?->offset ?? 0);
 		if ($this->throws === true) {
 			throw new RuntimeException('the reader is a release behind');
 		}

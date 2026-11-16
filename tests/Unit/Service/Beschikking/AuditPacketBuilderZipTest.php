@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
-use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
@@ -60,20 +59,19 @@ class AuditPacketBuilderZipTest extends TestCase {
 	/**
 	 * The builder over the register, with the given log schema.
 	 *
-	 * @param SigningAdapterInterface $signing   The signing adapter.
-	 * @param string                  $logSchema The state machine log schema.
-	 * @param LoggerInterface|null    $logger    The logger.
+	 * @param string               $logSchema The state machine log schema.
+	 * @param LoggerInterface|null $logger    The logger.
 	 *
 	 * @return AuditPacketBuilder
 	 */
-	private function builder(SigningAdapterInterface $signing, string $logSchema = 'stateMachineLog', ?LoggerInterface $logger = null): AuditPacketBuilder {
+	private function builder(string $logSchema = 'stateMachineLog', ?LoggerInterface $logger = null): AuditPacketBuilder {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->register);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ['register' => 'dossiq', 'state_machine_log_schema' => $logSchema][$key] ?? ''
 		);
 
-		return new AuditPacketBuilder($settings, $signing, ($logger ?? new NullLogger()));
+		return new AuditPacketBuilder($settings, ($logger ?? new NullLogger()));
 	}//end builder()
 
 	/**
@@ -105,11 +103,8 @@ class AuditPacketBuilderZipTest extends TestCase {
 	 * @return void
 	 */
 	public function testThePacketHoldsTheMaskedDecisionItsLogAndTheReport(): void {
-		$signing = $this->createMock(SigningAdapterInterface::class);
-		$signing->expects($this->once())->method('fetchValidationReport')->with('rap-7')->willReturn(['valid' => true]);
-
 		$decision = ['reference' => 'B-2026-1', 'addressee' => ['bsn' => '999993653', 'name' => 'J. Jansen'], 'signature' => ['validationRapportId' => 'rap-7']];
-		$entries = $this->entries($this->builder($signing)->build('dec-1', $decision));
+		$entries = $this->entries($this->builder()->build('dec-1', $decision));
 
 		$this->assertSame(
 			['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json', 'signature.p7s.txt'],
@@ -121,7 +116,10 @@ class AuditPacketBuilderZipTest extends TestCase {
 		);
 		$this->assertStringNotContainsString('999993653', implode('', $entries));
 		$this->assertSame(['concept', 'ondertekend'], array_column(json_decode($entries['state-machine-log.json'], true), 'to'));
-		$this->assertSame(['valid' => true], json_decode($entries['validatierapport.json'], true));
+		// Filinq publishes no validation report, so the packet says so (signing-through-filinq).
+		$report = json_decode($entries['validatierapport.json'], true);
+		$this->assertFalse($report['available']);
+		$this->assertSame('rap-7', $report['validationRapportId']);
 
 		$manifest = json_decode($entries['manifest.json'], true);
 		$this->assertSame('dec-1', $manifest['decisionId']);
@@ -132,15 +130,12 @@ class AuditPacketBuilderZipTest extends TestCase {
 	}//end testThePacketHoldsTheMaskedDecisionItsLogAndTheReport()
 
 	/**
-	 * Without a report id no report is fetched; a short BSN is fully masked.
+	 * Without a signature there is no report; a short BSN is fully masked.
 	 *
 	 * @return void
 	 */
 	public function testNoReportIdFetchesNoReportAndAShortBsnIsHidden(): void {
-		$signing = $this->createMock(SigningAdapterInterface::class);
-		$signing->expects($this->never())->method('fetchValidationReport');
-
-		$entries = $this->entries($this->builder($signing)->build('dec-1', ['addressee' => ['bsn' => '123']]));
+		$entries = $this->entries($this->builder()->build('dec-1', ['addressee' => ['bsn' => '123']]));
 
 		$this->assertSame([], json_decode($entries['validatierapport.json'], true));
 		$this->assertSame(['addressee' => ['bsn' => '***']], json_decode($entries['beschikking.json'], true));
@@ -152,15 +147,14 @@ class AuditPacketBuilderZipTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableLogIsAnEmptyLog(): void {
-		$signing = $this->createMock(SigningAdapterInterface::class);
 		$this->register->missingSchemas = ['stateMachineLog'];
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('error')->with('BeschikkingService: findStateMachineLogs failed');
 
-		$entries = $this->entries($this->builder($signing, 'stateMachineLog', $logger)->build('dec-1', []));
+		$entries = $this->entries($this->builder('stateMachineLog', $logger)->build('dec-1', []));
 		$this->assertSame([], json_decode($entries['state-machine-log.json'], true));
 
-		$entries = $this->entries($this->builder($signing, '')->build('dec-1', []));
+		$entries = $this->entries($this->builder('')->build('dec-1', []));
 		$this->assertSame([], json_decode($entries['state-machine-log.json'], true));
 	}//end testAnUnreadableLogIsAnEmptyLog()
 }//end class

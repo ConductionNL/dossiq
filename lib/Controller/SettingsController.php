@@ -74,7 +74,7 @@ class SettingsController extends Controller {
 	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IGroupManager $groupManager The group manager
 	 * @param IUserSession $userSession The user session
-	 * @param IL10N $l10n The translation service (libresign-besluit-signing hint).
+	 * @param IL10N $l10n The translation service (signing hint, refusal sentences).
 	 *
 	 * @return void
 	 */
@@ -139,16 +139,16 @@ class SettingsController extends Controller {
 
 		$config = $this->settingsFor(isAdmin: $isAdmin);
 
-		$libresignAvailable = $this->appManager->isEnabledForUser('libresign');
-		$libresignHint = $this->libresignHint(libresignAvailable: $libresignAvailable);
+		$signingAvailable = $this->appManager->isEnabledForUser('filinq');
+		$signingHint = $this->signingHint(signingAvailable: $signingAvailable);
 
 		return new JSONResponse([
 			'success' => true,
 			'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
 			'isAdmin' => $isAdmin,
 			'config' => $config,
-			'libresignAvailable' => $libresignAvailable,
-			'libresignHint' => $libresignHint,
+			'signingAvailable' => $signingAvailable,
+			'signingHint' => $signingHint,
 		]);
 	}//end index()
 
@@ -169,26 +169,25 @@ class SettingsController extends Controller {
 	}//end settingsFor()
 
 	/**
-	 * The hint shown when LibreSign is not available, or null when it is.
+	 * The hint shown when filinq is not available, or null when it is.
 	 *
-	 * @param bool $libresignAvailable Whether LibreSign is enabled for the user.
+	 * Filinq signs decisions (signing-through-filinq); without it a decision
+	 * cannot be signed at all, and the settings say so.
+	 *
+	 * @param bool $signingAvailable Whether filinq is enabled for the user.
 	 *
 	 * @return string|null The hint.
 	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/signing-through-filinq/tasks.md
 	 */
-	private function libresignHint(bool $libresignAvailable): ?string {
-		$libresignHint = null;
-		if ($libresignAvailable === false) {
-			$libresignHint = $this->l10n->t(
-				'LibreSign is not installed or enabled. Digital signing falls back to '
-				. 'the built-in stub adapter — install and enable the LibreSign app to '
-				. 'sign beschikkingen with a real eIDAS-aligned signature.'
-			);
+	private function signingHint(bool $signingAvailable): ?string {
+		$signingHint = null;
+		if ($signingAvailable === false) {
+			$signingHint = $this->l10n->t('Filinq is not installed or enabled, so decisions cannot be signed. Install and enable filinq to sign them.');
 		}
 
-		return $libresignHint;
-	}//end libresignHint()
+		return $signingHint;
+	}//end signingHint()
 
 	/**
 	 * Update settings with provided data.
