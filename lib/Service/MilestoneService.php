@@ -31,6 +31,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\MilestoneServiceInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -50,6 +51,7 @@ use RuntimeException;
 class MilestoneService implements MilestoneServiceInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * Constructor.
@@ -365,22 +367,6 @@ class MilestoneService implements MilestoneServiceInterface {
 
 		return true;
 	}//end reverseMilestone()
-
-	/**
-	 * Resolve the OpenRegister ObjectService.
-	 *
-	 * @return object The OpenRegister ObjectService
-	 *
-	 * @throws \RuntimeException If OpenRegister unavailable
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * Delete the given milestone records.

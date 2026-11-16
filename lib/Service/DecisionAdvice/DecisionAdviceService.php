@@ -22,6 +22,7 @@ use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\DecisionAdviceServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Throwable;
@@ -37,6 +38,10 @@ use Throwable;
  * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
  */
 class DecisionAdviceService implements DecisionAdviceServiceInterface {
+
+	use ReadsLooseValues {
+		looseList as private listOf;
+	}
 
 	/**
 	 * The refusal of a deviation without a reason, as the handler reads it.
@@ -209,21 +214,6 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 
 		return $values;
 	}//end entries()
-
-	/**
-	 * A value as an array, or empty when it is none.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array
-	 */
-	private function listOf(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end listOf()
 
 	/**
 	 * Record the handler's choice: the recommendation accepted, or another

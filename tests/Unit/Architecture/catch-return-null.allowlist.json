@@ -1,8 +1,9 @@
 {
-  "ceiling": 236,
+  "ceiling": 232,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-16, shared object service lookup: the tenant billing, configuration, onboarding and quota services drop their identical `getObjectService` copies for the `ResolvesInstalledObjectService` trait, whose site is already listed. Four sites left. The ceiling went 236 to 232.",
     "2026-11-15, method decomposition: catches moved with their code into private steps (intakeMessages, mandateRows, switched, stamp, createShare) and shared Support traits (ReadsFinalStatusIds::finalStatusIds, ResolvesInstalledObjectService::getObjectService, SearchesConfiguredSchema::configuredRows). Eleven sites became eight. The ceiling went 239 to 236.",
     "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan, the tenant resolver and the quota limits now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Nine sites became two. The ceiling went 246 to 239.",
     "2026-11-11, the ApprovalService accessors left with the class in OpenRegister (723174caa), taking `OpenRegisterBridge::approvalService` with them. The ceiling went 247 to 246.",
@@ -1153,25 +1154,11 @@
       "reason": "`fetchEventsForMonth()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/TenantBillingService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
       "file": "lib/Service/TenantConfigurationService.php",
       "method": "getConfig",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`getConfig()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantConfigurationService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantMigrationService.php",
@@ -1189,13 +1176,6 @@
     },
     {
       "file": "lib/Service/TenantOnboardingService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantOnboardingService.php",
       "method": "legacyRows",
       "occurrence": 1,
       "class": "degradation",
@@ -1207,13 +1187,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`readActiveOrganisation()` answers `return null` when OpenRegister's OrganisationService cannot be resolved or throws; the catch logs at error (\"Dossiq: could not read the active organisation from OpenRegister; no tenant\"), and the request then has no tenant."
-    },
-    {
-      "file": "lib/Service/TenantQuotaService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantQuotaService.php",

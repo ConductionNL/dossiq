@@ -35,6 +35,7 @@ use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -49,6 +50,9 @@ use RuntimeException;
 class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 
 	use SearchesObjects;
+	use ReadsLooseValues {
+		looseScalarText as private text;
+	}
 
 	/**
 	 * The connection, or this instance, does not let the system write.
@@ -434,21 +438,6 @@ class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 	private static function refusal(string $kind, string $reason): array {
 		return ['refusal' => $reason, 'kind' => $kind];
 	}//end refusal()
-
-	/**
-	 * A scalar as trimmed text.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The text, '' for anything that is not a scalar.
-	 */
-	private static function text(mixed $value): string {
-		if (is_scalar($value) === false) {
-			return '';
-		}
-
-		return trim((string)$value);
-	}//end text()
 
 	/**
 	 * The uuid of a stored row.

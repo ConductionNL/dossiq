@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FrozenRecord;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 
 /**
  * One `freeze[]` entry, validated.
@@ -40,6 +41,10 @@ use InvalidArgumentException;
  * @spec openspec/specs/frozen-record/spec.md
  */
 final class FreezeDefinition {
+
+	use ReadsLooseValues {
+		looseTextOr as private name;
+	}
 
 	/**
 	 * The refusal rule a frozen record answers with, unless the entry names another.
@@ -266,22 +271,6 @@ final class FreezeDefinition {
 			'supersededByField' => self::name(value: ($value['supersededByField'] ?? null), default: 'supersededBy'),
 		];
 	}//end successorOf()
-
-	/**
-	 * A trimmed name, or the default when none is given.
-	 *
-	 * @param mixed $value The configured value.
-	 * @param string $default The default.
-	 *
-	 * @return string The name.
-	 */
-	private static function name(mixed $value, string $default): string {
-		if (is_string($value) === true && trim($value) !== '') {
-			return trim($value);
-		}
-
-		return $default;
-	}//end name()
 
 	/**
 	 * A list of non-empty trimmed names.

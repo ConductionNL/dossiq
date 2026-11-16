@@ -112,13 +112,7 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 	 *
 	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
 	 */
-	private const SUPPLIER_ATTACHMENTS_FIELD = [
-		'label' => 'Bijlagen',
-		'type' => 'file',
-		'multiple' => true,
-		'accept' => ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.odt'],
-		'maxSizeMb' => 20,
-	];
+	private const SUPPLIER_ATTACHMENTS_FIELD = PortalConversation::ATTACHMENTS_FIELD;
 
 	/**
 	 * What the citizen inbox projects, and where it keeps what portaliq's

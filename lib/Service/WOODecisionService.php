@@ -34,6 +34,8 @@ use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Woo\WooPublicationSummary;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -50,6 +52,11 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 class WOODecisionService implements WOODecisionServiceInterface {
+
+	use RequiresObjectService;
+	use NamesTheSessionUser {
+		sessionActor as private resolveDecidedBy;
+	}
 
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
@@ -188,24 +195,6 @@ class WOODecisionService implements WOODecisionServiceInterface {
 			['app' => AppIdentity::APP_ID, 'decisionRef' => $assembled->decisionRef],
 		);
 	}//end logAssembled()
-
-	/**
-	 * The OpenRegister object service, required to assemble a decision.
-	 *
-	 * @return object The object service
-	 *
-	 * @throws \RuntimeException If OpenRegister unavailable
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * The configured register and decision schema.
@@ -428,18 +417,4 @@ class WOODecisionService implements WOODecisionServiceInterface {
 		);
 		return new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
 	}//end notRaised()
-
-	/**
-	 * Resolve the user id credited with the besluit.
-	 *
-	 * @return string The current user id, or `system` when there is no session user
-	 */
-	private function resolveDecidedBy(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end resolveDecidedBy()
 }//end class

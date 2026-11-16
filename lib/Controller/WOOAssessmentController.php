@@ -473,23 +473,38 @@ class WOOAssessmentController extends Controller {
 	private function proposalFor(array $document, IUser $user): JSONResponse {
 		$text = (string)$this->request->getParam('text', '');
 
-		try {
-			$result = $this->anonymisationAssist->proposeSpans(
+		return $this->assistAnswer(
+			call: fn (): array => $this->anonymisationAssist->proposeSpans(
 				caseId: $document['caseId'],
 				documentRef: $document['documentRef'],
 				text: $text,
 				userId: $user->getUID()
-			);
-			return new JSONResponse($result);
+			),
+			onFailure: fn (\RuntimeException $e): JSONResponse => $this->proposalFailed(document: $document, error: $e->getMessage())
+		);
+	}//end proposalFor()
+
+	/**
+	 * Answer an anonymisation assist call: its result, a refusal with its rule and status,
+	 * a 400 for bad input, or what the failure handler makes of any other failure.
+	 *
+	 * @param callable(): array                         $call      The assist call.
+	 * @param callable(\RuntimeException): JSONResponse $onFailure The answer to a failed call.
+	 *
+	 * @return JSONResponse
+	 */
+	private function assistAnswer(callable $call, callable $onFailure): JSONResponse {
+		try {
+			return new JSONResponse($call());
 		} catch (RefusedException $e) {
 			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
-			return $this->proposalFailed(document: $document, error: $e->getMessage());
+			return $onFailure($e);
 		}
-	}//end proposalFor()
+	}//end assistAnswer()
 
 	/**
 	 * Log a failed redaction proposal and answer it as a bad request.
@@ -534,23 +549,16 @@ class WOOAssessmentController extends Controller {
 		$decision = (string)$this->request->getParam('decision', '');
 		$editedSpans = $this->editedSpans();
 
-		try {
-			$result = $this->anonymisationAssist->reviewProposal(
+		return $this->assistAnswer(
+			call: fn (): array => $this->anonymisationAssist->reviewProposal(
 				caseId: $id,
 				documentRef: $documentRef,
 				decision: $decision,
 				reviewerId: $user->getUID(),
 				editedSpans: $editedSpans,
-			);
-			return new JSONResponse($result);
-		} catch (RefusedException $e) {
-			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
-		} catch (\InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+			),
+			onFailure: fn (\RuntimeException $e): JSONResponse => new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST)
+		);
 	}//end reviewRedactionProposal()
 
 	/**

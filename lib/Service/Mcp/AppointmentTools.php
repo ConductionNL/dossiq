@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Mcp;
 use OCA\Dossiq\Kernel\Contracts\AppointmentToolsInterface;
 use OCA\Dossiq\Service\AppointmentService;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use OCP\IUserSession;
 
@@ -42,6 +43,9 @@ use OCP\IUserSession;
 class AppointmentTools implements AppointmentToolsInterface {
 
 	use ToolEnvelopes;
+	use ReadsLooseValues {
+		blankAsNull as private orNull;
+	}
 
 	/**
 	 * Constructor.
@@ -204,19 +208,4 @@ class AppointmentTools implements AppointmentToolsInterface {
 
 		return ['success' => true, 'appointment' => $result];
 	}//end answer()
-
-	/**
-	 * An optional argument as the controller passes it: null when empty.
-	 *
-	 * @param string $value The argument.
-	 *
-	 * @return string|null
-	 */
-	private function orNull(string $value): ?string {
-		if (trim($value) === '') {
-			return null;
-		}
-
-		return $value;
-	}//end orNull()
 }//end class

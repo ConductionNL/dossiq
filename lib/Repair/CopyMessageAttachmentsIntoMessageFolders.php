@@ -17,6 +17,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RunsOnceWithObjectService;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -47,6 +48,7 @@ use Throwable;
  */
 class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	use RunsUnderSystemIdentity;
+	use RunsOnceWithObjectService;
 	use SearchesObjects;
 
 	/**
@@ -58,6 +60,13 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	 * The value the key holds once the step ran; bump it to run the step again.
 	 */
 	public const DONE_VERSION = '1';
+
+	/**
+	 * What the upgrade output says when OpenRegister is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq portal messages: OpenRegister unavailable; attachments stay where they are.';
 
 	/**
 	 * How many messages one page holds.
@@ -103,19 +112,9 @@ class CopyMessageAttachmentsIntoMessageFolders implements IRepairStep {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('Dossiq portal messages: OpenRegister unavailable; attachments stay where they are.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $output): void {
+		$this->onceWithObjectService(
+			output: $output,
+			work: function (object $objectService) use ($output): void {
 				$this->copyAll(objectService: $objectService, output: $output);
 			}
 		);
