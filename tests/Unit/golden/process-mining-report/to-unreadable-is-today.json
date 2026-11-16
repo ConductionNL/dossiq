@@ -101,6 +101,30 @@
                         "score": 344.0
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W18",
+                        "2026-W23"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-rev",
+                            "label": "Review",
+                            "values": [
+                                344.0,
+                                null
+                            ]
+                        },
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                null,
+                                344.0
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [],
                 "reworkPercent": 0.0,
                 "transitionCount": 0
@@ -236,6 +260,42 @@
                         "score": 96.0
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W10",
+                        "2026-W11",
+                        "2026-W12"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                72.0,
+                                168.0,
+                                null
+                            ]
+                        },
+                        {
+                            "statusId": "st-rev",
+                            "label": "Review",
+                            "values": [
+                                96.0,
+                                null,
+                                null
+                            ]
+                        },
+                        {
+                            "statusId": "st-out",
+                            "label": "Besluit",
+                            "values": [
+                                null,
+                                null,
+                                104.0
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [
                     {
                         "from": "st-in",
@@ -358,6 +418,30 @@
                         "score": 224.0
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W10",
+                        "2026-W14"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                720.0,
+                                null
+                            ]
+                        },
+                        {
+                            "statusId": "st-out",
+                            "label": "Besluit",
+                            "values": [
+                                null,
+                                224.0
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [
                     {
                         "from": "st-in",
