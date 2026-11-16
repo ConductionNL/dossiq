@@ -61,10 +61,10 @@ class QueueFiguresTeamFoldTest extends TestCase {
 			typeTitles: ['bezwaar' => 'Bezwaar']
 		);
 
-		$this->assertSame(1, $figures['queueCount']);
-		$this->assertSame(4, $figures['queueOldestDays']);
-		$this->assertSame('Bezwaar', $figures['queueOldestType']);
-		$this->assertSame([['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 1, 'waiting' => 1]], $figures['queueByType']);
+		$this->assertSame(expected: 1, actual: $figures['queueCount']);
+		$this->assertSame(expected: 4, actual: $figures['queueOldestDays']);
+		$this->assertSame(expected: 'Bezwaar', actual: $figures['queueOldestType']);
+		$this->assertSame(expected: [['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 1, 'waiting' => 1]], actual: $figures['queueByType']);
 	}//end testFoldForCountsOnlyTheReadersTeamCases()
 
 	/**
@@ -83,9 +83,9 @@ class QueueFiguresTeamFoldTest extends TestCase {
 			typeTitles: []
 		);
 
-		$this->assertSame(2, $figures['queueCount']);
-		$this->assertSame(1, $figures['queueNewToday']);
-		$this->assertSame(6, $figures['queueOldestDays']);
+		$this->assertSame(expected: 2, actual: $figures['queueCount']);
+		$this->assertSame(expected: 1, actual: $figures['queueNewToday']);
+		$this->assertSame(expected: 6, actual: $figures['queueOldestDays']);
 	}//end testFoldForWithoutTeamsFoldsEveryCase()
 
 	/**
@@ -100,8 +100,8 @@ class QueueFiguresTeamFoldTest extends TestCase {
 			typeTitles: []
 		);
 
-		$this->assertSame(1, $figures['queueCount']);
-		$this->assertSame(0, $figures['queueOldestDays']);
-		$this->assertSame(1, $figures['queueDueSoon']);
+		$this->assertSame(expected: 1, actual: $figures['queueCount']);
+		$this->assertSame(expected: 0, actual: $figures['queueOldestDays']);
+		$this->assertSame(expected: 1, actual: $figures['queueDueSoon']);
 	}//end testAWaitingCaseWithoutAStartDateHasWaitedNoDays()
 }//end class

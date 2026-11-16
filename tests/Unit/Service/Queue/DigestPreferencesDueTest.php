@@ -75,7 +75,7 @@ class DigestPreferencesDueTest extends TestCase {
 	public function testDueAtTheOwnHourWhenNotYetSentToday(): void {
 		$preferences = $this->build(enabled: true, hour: 9, lastSent: '2026-11-15');
 
-		$this->assertTrue($preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
+		$this->assertTrue(condition: $preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
 	}//end testDueAtTheOwnHourWhenNotYetSentToday()
 
 	/**
@@ -86,7 +86,7 @@ class DigestPreferencesDueTest extends TestCase {
 	public function testNotDueTwiceOnTheSameDay(): void {
 		$preferences = $this->build(enabled: true, hour: 9, lastSent: '2026-11-16');
 
-		$this->assertFalse($preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
+		$this->assertFalse(condition: $preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
 	}//end testNotDueTwiceOnTheSameDay()
 
 	/**
@@ -97,7 +97,7 @@ class DigestPreferencesDueTest extends TestCase {
 	public function testNotDueAtAnotherHour(): void {
 		$preferences = $this->build(enabled: true, hour: 9, lastSent: '');
 
-		$this->assertFalse($preferences->isDue(userId: 'anna', hour: 10, today: '2026-11-16'));
+		$this->assertFalse(condition: $preferences->isDue(userId: 'anna', hour: 10, today: '2026-11-16'));
 	}//end testNotDueAtAnotherHour()
 
 	/**
@@ -108,7 +108,7 @@ class DigestPreferencesDueTest extends TestCase {
 	public function testNeverDueWhenSwitchedOff(): void {
 		$preferences = $this->build(enabled: false, hour: 9, lastSent: '');
 
-		$this->assertFalse($preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
+		$this->assertFalse(condition: $preferences->isDue(userId: 'anna', hour: 9, today: '2026-11-16'));
 	}//end testNeverDueWhenSwitchedOff()
 
 	/**
