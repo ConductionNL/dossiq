@@ -51,5 +51,5 @@ Tier: V1. Kind: code. Row: opencatalogi `wr-search-sources`.
     design-system#180.
 - [ ] 3.2 `tests/e2e/woo-gather-documents.spec.ts`: a handler searches files,
   adds two, and finds them outstanding for assessment; citing the scenarios.
-  - Live pass 2026-11-16: the spec now opens the action from the header menu and records a search plan first; the dialog opens but the Files search returns nothing for the uploaded files, still open.
+  - Live pass 2026-11-16: the spec now opens the action from the header menu and records a search plan first; the search now lists both uploaded files (the plan's period must hold them, since it prefills the search). Still open: picking the two rows by their name text leaves one unchecked, so Add does not close the dialog; the next step is to pick through `gather-pick-files-<fileId>`.
   - spec written; the run is owed (live pass, decision 139).

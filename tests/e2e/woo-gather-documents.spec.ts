@@ -74,8 +74,9 @@ test.describe('Gather documents on a Woo case', () => {
 				data: {
 					custodians: [{ name: 'Wethouder Ruimte' }],
 					systems: ['files'],
-					periodFrom: '2025-01-01',
-					periodTo: '2025-12-31',
+					// The plan's period prefills the search, so it must hold the files just uploaded.
+					periodFrom: '2020-01-01',
+					periodTo: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10),
 					terms: TERM,
 				},
 			},
@@ -109,10 +110,10 @@ test.describe('Gather documents on a Woo case', () => {
 		await dialog.getByTestId('gather-search').click()
 
 		const files = dialog.getByTestId('gather-results-files')
-		await expect(files.getByText(`${TERM}-notulen.txt`)).toBeVisible(PAGE_LOAD)
-		await expect(files.getByText(`${TERM}-memo.txt`)).toBeVisible()
-		await files.getByText(`${TERM}-notulen.txt`).click()
-		await files.getByText(`${TERM}-memo.txt`).click()
+		await expect(files.getByText(`${TERM}-notulen.txt`, { exact: true })).toBeVisible(PAGE_LOAD)
+		await expect(files.getByText(`${TERM}-memo.txt`, { exact: true })).toBeVisible()
+		await files.getByText(`${TERM}-notulen.txt`, { exact: true }).click()
+		await files.getByText(`${TERM}-memo.txt`, { exact: true }).click()
 		await dialog.getByTestId('gather-add').click()
 		await expect(dialog).toBeHidden(PAGE_LOAD)
 
