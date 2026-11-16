@@ -570,6 +570,51 @@ class ComplaintServiceTest extends TestCase {
 	}//end testListOverdueComplaintsNeverCarriesTheComplainant()
 
 	/**
+	 * The acknowledgement flag is set only for a received complaint past its date.
+	 *
+	 * A complaint that moved on from `received`, one whose acknowledgement date
+	 * is today or later, and one without that date all read false; a missing
+	 * projection field stays absent rather than arriving as null.
+	 *
+	 * @return void
+	 */
+	public function testListOverdueComplaintsFlagsTheAcknowledgementOnlyWhenItIsLate(): void {
+		$today = $this->dates->today();
+		$past = $today->modify('-1 day')->format('Y-m-d');
+		$this->withComplaints(
+			rows: [
+				['id' => 'moved-on', 'status' => 'in_handling', 'acknowledgementOfReceiptDeadline' => $past, 'afhandelDeadline' => $past],
+				['id' => 'ack-today', 'status' => 'received', 'acknowledgementOfReceiptDeadline' => $today->format('Y-m-d'), 'afhandelDeadline' => $past],
+				['id' => 'no-ack-date', 'status' => 'received', 'afhandelDeadline' => $past],
+				['id' => 'no-status', 'acknowledgementOfReceiptDeadline' => $past, 'afhandelDeadline' => $past],
+			]
+		);
+
+		$result = $this->service->listOverdueComplaints();
+
+		$this->assertSame(4, $result['count']);
+		$this->assertSame(
+			[
+				['id' => 'moved-on', 'status' => 'in_handling', 'acknowledgementOfReceiptDeadline' => $past, 'afhandelDeadline' => $past, 'handlingOverdue' => true, 'acknowledgementOverdue' => false],
+				['id' => 'ack-today', 'status' => 'received', 'acknowledgementOfReceiptDeadline' => $today->format('Y-m-d'), 'afhandelDeadline' => $past, 'handlingOverdue' => true, 'acknowledgementOverdue' => false],
+				['id' => 'no-ack-date', 'status' => 'received', 'afhandelDeadline' => $past, 'handlingOverdue' => true, 'acknowledgementOverdue' => false],
+				['id' => 'no-status', 'acknowledgementOfReceiptDeadline' => $past, 'afhandelDeadline' => $past, 'handlingOverdue' => true, 'acknowledgementOverdue' => false],
+			],
+			$result['complaints']
+		);
+	}//end testListOverdueComplaintsFlagsTheAcknowledgementOnlyWhenItIsLate()
+
+	/**
+	 * A deadline that cannot be read is skipped, and an empty store alerts nothing.
+	 *
+	 * @return void
+	 */
+	public function testGetDeadlineAlertsSkipsAnUnreadableDeadline(): void {
+		$this->withComplaints(rows: [['id' => 'garbled', 'afhandelDeadline' => 'not a date']]);
+		$this->assertSame(['overdue' => [], 'warning' => []], $this->service->getDeadlineAlerts());
+	}//end testGetDeadlineAlertsSkipsAnUnreadableDeadline()
+
+	/**
 	 * createComplaint sends no klachtnummer, and reports the one it got back.
 	 *
 	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
