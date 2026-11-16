@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ContactMomentPayload on create with an end time: the duration is measured, never negative.
+ * ContactMomentPayload with an end time, on create and on update: the duration is measured, never negative.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
@@ -25,7 +25,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests for ContactMomentPayload's create-time duration.
+ * Tests for ContactMomentPayload's duration on create and on update.
  *
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentPayload
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -82,4 +82,60 @@ class ContactMomentPayloadDurationTest extends TestCase {
 		self::assertArrayNotHasKey('endedAt', $payload);
 		self::assertArrayNotHasKey('durationSeconds', $payload);
 	}//end testACreateWithoutAnEndHasNoDuration()
+	/**
+	 * An update with an end measures from the stored start.
+	 *
+	 * @return void
+	 */
+	public function testAnUpdateMeasuresFromTheStoredStart(): void {
+		$update = $this->payload()->merged(
+			['outcome' => 'open', 'startedAt' => '2026-10-12T08:00:00Z'],
+			['endedAt' => '2026-10-12T08:05:00Z']
+		);
+
+		self::assertSame('2026-10-12T08:05:00Z', $update['endedAt']);
+		self::assertSame(300, $update['durationSeconds']);
+	}//end testAnUpdateMeasuresFromTheStoredStart()
+
+	/**
+	 * An end that cannot be read is stored as sent, with a zero duration
+	 * rather than a failed update.
+	 *
+	 * @return void
+	 */
+	public function testAnUpdateWithAnUnreadableEndKeepsItWithAZeroDuration(): void {
+		$update = $this->payload()->merged(
+			['outcome' => 'open', 'startedAt' => '2026-10-12T08:00:00Z'],
+			['endedAt' => 'half past eight']
+		);
+
+		self::assertSame('half past eight', $update['endedAt']);
+		self::assertSame(0, $update['durationSeconds']);
+	}//end testAnUpdateWithAnUnreadableEndKeepsItWithAZeroDuration()
+
+	/**
+	 * A stored start that cannot be read gives a zero duration too.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableStoredStartGivesAZeroDuration(): void {
+		$update = $this->payload()->merged(
+			['outcome' => 'open', 'startedAt' => 'yesterday-ish'],
+			['endedAt' => '2026-10-12T08:05:00Z']
+		);
+
+		self::assertSame(0, $update['durationSeconds']);
+	}//end testAnUnreadableStoredStartGivesAZeroDuration()
+
+	/**
+	 * Without a stored start, an update takes no end and no duration.
+	 *
+	 * @return void
+	 */
+	public function testAnUpdateWithoutAStoredStartTakesNoEnd(): void {
+		$update = $this->payload()->merged(['outcome' => 'open'], ['endedAt' => '2026-10-12T08:05:00Z']);
+
+		self::assertArrayNotHasKey('endedAt', $update);
+		self::assertArrayNotHasKey('durationSeconds', $update);
+	}//end testAnUpdateWithoutAStoredStartTakesNoEnd()
 }//end class
