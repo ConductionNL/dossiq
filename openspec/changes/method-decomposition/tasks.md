@@ -645,3 +645,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `ComplaintServiceTest` (25 in all) for the acknowledgement flag of every non-late row and an
         unreadable deadline. Own test: `tests/Unit/Service/Complaint/ComplaintDeadlineAlertsTest`
         (3); narrowing the window to `<` turns 2 tests red (checked).
+  - [x] 8s `ProcessMiningService` (1: ExcessiveClassComplexity 50 against 50). Grouping the status
+        records by case, the fallback to a case's own status history (with its holder) and the time
+        order moved to the new `ProcessMining/CaseStatusRecords` (`byCase()`; bodies moved
+        unchanged). The service builds it in its constructor over its own date path, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation: the existing `ProcessMiningServiceTest` (history fallback, holder, full
+        payload) and `ProcessMiningServiceGoldenTest`, green before and unchanged after but for one
+        `@uses` line each. Own test: `tests/Unit/Service/ProcessMining/CaseStatusRecordsTest` (3);
+        reversing the time order turns 4 tests red (checked).
