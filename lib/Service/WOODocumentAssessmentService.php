@@ -668,6 +668,32 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		$existing = $this->requireChangeableAssessment(caseId: $caseId, documentRef: $documentRef);
+
+		$saved = $this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('woo_assessment_schema'),
+			id: (string)($existing['id'] ?? $existing['uuid'] ?? ''),
+			changes: $fields,
+		);
+
+		return ($saved ?? array_merge($existing, $fields));
+	}//end updateAssessment()
+
+	/**
+	 * The stored assessment of a document, once the current user may change it.
+	 *
+	 * @param string $caseId      The case UUID.
+	 * @param string $documentRef The document reference.
+	 *
+	 * @return array<string, mixed> The stored assessment.
+	 *
+	 * @throws RuntimeException When the document has not been assessed yet, or the user may not change it.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	private function requireChangeableAssessment(string $caseId, string $documentRef): array {
 		$existing = $this->findAssessment(caseId: $caseId, documentRef: $documentRef);
 		if ($existing === null) {
 			throw new RuntimeException(
@@ -684,14 +710,6 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			userId: (string)$this->userSession->getUser()?->getUID()
 		);
 
-		$saved = $this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $this->settingsService->getConfigValue('register'),
-			schema: $this->settingsService->getConfigValue('woo_assessment_schema'),
-			id: (string)($existing['id'] ?? $existing['uuid'] ?? ''),
-			changes: $fields,
-		);
-
-		return ($saved ?? array_merge($existing, $fields));
-	}//end updateAssessment()
+		return $existing;
+	}//end requireChangeableAssessment()
 }//end class
