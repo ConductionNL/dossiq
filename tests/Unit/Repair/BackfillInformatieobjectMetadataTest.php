@@ -31,6 +31,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Every file in a case folder under dossiq/documenten without an
@@ -87,7 +88,9 @@ final class BackfillInformatieobjectMetadataTest extends TestCase {
 				return array_map(static fn (string $name): array => ['fileName' => $name], $this->registered);
 			}
 
-			public function saveObject(array $object, int|string $register, int|string $schema): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if (in_array(($object['fileName'] ?? ''), $this->refuse, true) === true) {
 					throw new RuntimeException('store refused');
 				}

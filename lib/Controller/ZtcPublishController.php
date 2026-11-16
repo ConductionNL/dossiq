@@ -31,6 +31,9 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\MapsZgwRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -129,16 +132,22 @@ class ZtcPublishController extends ZgwController {
 	private function published(string $resource, string $uuid, array $mappingConfig): array {
 		$existing = $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 		$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
 
 		$object = $this->zgwService->getObjectService()->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
 			object: $existingData,
-			uuid: $uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $mappingConfig['sourceRegister'],
+						schema: $mappingConfig['sourceSchema']
+					),
+				uuid: $uuid
+			)
 		);
 		return $this->mapPublished(resource: $resource, mappingConfig: $mappingConfig, objectData: $this->objectToArray(row: $object));
 	}//end published()

@@ -37,6 +37,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * An authorised caller on case-1, and what each verb answers.
@@ -177,7 +178,9 @@ class AccruingAmountControllerVerbsTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $id, mixed $register, mixed $schema): never {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new RuntimeException('gone');
 			}
 		});
@@ -229,7 +232,9 @@ class AccruingAmountControllerVerbsTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register, mixed $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->rows[$id];
 			}
 		});

@@ -2139,6 +2139,9 @@
 					"link-object": {
 						"group": "Case"
 					},
+					"bid-register": {
+						"group": "Case"
+					},
 					"case-acknowledgement-met": {
 						"group": "Case"
 					},
@@ -2316,6 +2319,8 @@
 										"case-household-cases-card",
 										"goal-plan",
 										"case-consents-card",
+										"case-tender-ranking",
+										"case-tender-award",
 										"case-overview-sections",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
@@ -2468,20 +2473,50 @@
 									}
 								},
 								{
-									"widgetId": "case-tender-bids",
-									"label": "Bids",
+									"widgetId": "case-tender-lots",
+									"label": "Lots",
 									"visibleWhen": {
-										"field": "@context.caseType.category",
-										"op": "in",
-										"value": [
-											"Inkoop en leveranciers"
-										]
+										"field": "@context.caseType.tenderChain",
+										"op": "eq",
+										"value": true
 									},
 									"countFrom": {
 										"register": "dossiq",
-										"schema": "supplierTender",
+										"schema": "case",
 										"filter": {
-											"caseRef": "@objectId"
+											"parentCase": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-tender-questions",
+									"label": "Questions",
+									"visibleWhen": {
+										"field": "@context.caseType.tenderChain",
+										"op": "eq",
+										"value": true
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "tenderQuestion",
+										"filter": {
+											"tender": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-tender-bids",
+									"label": "Bids",
+									"visibleWhen": {
+										"field": "@context.caseType.tenderChain",
+										"op": "eq",
+										"value": true
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "bid",
+										"filter": {
+											"tender": "@objectId"
 										}
 									}
 								},
@@ -4683,20 +4718,23 @@
 						"id": "case-tender-bids",
 						"type": "object-list",
 						"title": "Bids",
+						"subtitle": "The bids received on this tender and on its lots",
+						"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-007: the bid records of this tender (bid.tender), in the order they came in, with the bidder, the price and where the bid stands in its lifecycle. A late bid reads inadmissible: its lifecycle goes from received straight there. Registering a bid is a header action (task 3.2), so the list offers no create. It replaced the supplier portal's supplierTender list here: the portal keeps its own records, and the tender case reads the bids registered on it.",
 						"content": {
 							"register": "dossiq",
-							"schema": "supplierTender",
+							"schema": "bid",
+							"allowCreate": false,
 							"filter": {
-								"caseRef": "@objectId"
+								"tender": "@objectId"
 							},
 							"sort": {
-								"field": "rank",
+								"field": "submittedAt",
 								"dir": "asc"
 							},
-							"limit": 25,
+							"limit": 50,
 							"columns": [
 								{
-									"key": "supplierRef",
+									"key": "supplier",
 									"label": "Bidder",
 									"widget": "fkResolve",
 									"widgetProps": {
@@ -4706,33 +4744,232 @@
 									}
 								},
 								{
-									"key": "value",
+									"key": "lot",
+									"label": "Lot",
+									"widget": "fkResolve",
+									"widgetProps": {
+										"register": "dossiq",
+										"schema": "case",
+										"labelField": "title"
+									}
+								},
+								{
+									"key": "submittedAt",
+									"label": "Received",
+									"format": "date-time"
+								},
+								{
+									"key": "priceAmount",
 									"label": "Price",
 									"formatter": "currency"
 								},
 								{
-									"key": "priceScore",
-									"label": "Price score"
-								},
-								{
-									"key": "qualityScore",
-									"label": "Quality score"
-								},
-								{
-									"key": "totalScore",
-									"label": "Total score"
-								},
-								{
-									"key": "rank",
-									"label": "Rank"
-								},
-								{
-									"key": "status",
+									"key": "state",
 									"label": "Status",
 									"widget": "badge"
 								}
 							],
-							"emptyText": "No bids yet"
+							"emptyText": "No bids received yet"
+						}
+					},
+					{
+						"id": "case-tender-lots",
+						"type": "object-list",
+						"title": "Lots",
+						"subtitle": "Each lot is a sub-case with bids and an award of its own",
+						"visibleWhen": {
+							"field": "@context.caseType.tenderChain",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-005 and board DqAanbesteding: the lots of a tender are its sub-cases (case.parentCase), so the list reads the cases that hang under this one and every row opens that lot's own case page. Shown on a case type that sets tenderChain.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"parentCase": "@objectId"
+							},
+							"sort": {
+								"field": "title",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Lot"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName",
+									"widget": "badge",
+									"widgetProps": {
+										"resolve": {
+											"register": "dossiq",
+											"schema": "statusType",
+											"colorField": "colour"
+										}
+									}
+								},
+								{
+									"key": "assignee",
+									"label": "Handler",
+									"widget": "avatar",
+									"widgetProps": {
+										"user": true
+									}
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"emptyText": "This tender has no lots"
+						}
+					},
+					{
+						"id": "case-tender-questions",
+						"type": "object-list",
+						"title": "Questions and answers",
+						"subtitle": "The questions bidders asked and the answers in the memorandum of information",
+						"visibleWhen": {
+							"field": "@context.caseType.tenderChain",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-006: the tenderQuestion records of this tender (tenderQuestion.tender), oldest first, with the answer and when it was published. A question reaches the list through the tender's question round; publishing an answer is a header action (task 3.2).",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenderQuestion",
+							"allowCreate": false,
+							"filter": {
+								"tender": "@objectId"
+							},
+							"sort": {
+								"field": "submittedAt",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "submittedAt",
+									"label": "Asked",
+									"format": "date"
+								},
+								{
+									"key": "question",
+									"label": "Question",
+									"sortable": false
+								},
+								{
+									"key": "answer",
+									"label": "Answer",
+									"sortable": false
+								},
+								{
+									"key": "publishedAt",
+									"label": "Published",
+									"format": "date"
+								},
+								{
+									"key": "state",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No questions asked yet"
+						}
+					},
+					{
+						"id": "case-tender-ranking",
+						"type": "object-list",
+						"title": "Evaluation",
+						"subtitle": "Every bid with the total its scoring formula gives, highest first",
+						"visibleWhen": {
+							"field": "@context.caseType.tenderChain",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-EVA-001 and REQ-EVA-003, board DqAanbesteding Beoordeling: the evaluation records of this tender (evaluation.tender) ranked by weightedTotal, the total the configured scoring formula gives, highest first, so the first row is the bid the award goes to. A domain card on its own condition; the case type lists it in its overviewCards so the generic Overview cards step aside.",
+						"content": {
+							"register": "dossiq",
+							"schema": "evaluation",
+							"allowCreate": false,
+							"filter": {
+								"tender": "@objectId"
+							},
+							"sort": {
+								"field": "weightedTotal",
+								"dir": "desc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "bid",
+									"label": "Bid",
+									"widget": "fkResolve",
+									"widgetProps": {
+										"register": "dossiq",
+										"schema": "bid",
+										"labelField": "submissionRef"
+									}
+								},
+								{
+									"key": "evaluator",
+									"label": "Evaluated by"
+								},
+								{
+									"key": "weightedTotal",
+									"label": "Total"
+								},
+								{
+									"key": "state",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"footnote": "The total is what the tender's scoring formula gives for the criterion scores.",
+							"emptyText": "No bid has been evaluated yet"
+						}
+					},
+					{
+						"id": "case-tender-award",
+						"type": "facts",
+						"title": "Award",
+						"subtitle": "The award decision and the standstill period after it",
+						"visibleWhen": {
+							"field": "@context.caseType.tenderChain",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-EVA-002 and REQ-EVA-005: the dates the award hangs on, read off the case: the closing date, the day the award decision went to all bidders (gunningsdatum) and the end of the standstill period (opschortendeTermijnEinde). The flow refuses Definitief gunnen before that day and then raises the award decision with decidiq (raiseDecision, task 3.3), which shows under Decisions.",
+						"content": {
+							"columns": 2,
+							"fields": [
+								{
+									"label": "Questions until",
+									"path": "vragenTermijnEinde",
+									"format": "date-long",
+									"emptyValue": "Not set"
+								},
+								{
+									"label": "Bids closed",
+									"path": "sluiting",
+									"format": "date-long",
+									"emptyValue": "Not set"
+								},
+								{
+									"label": "Award decision sent",
+									"path": "gunningsdatum",
+									"format": "date-long",
+									"emptyValue": "Not sent yet"
+								},
+								{
+									"label": "Standstill period ends",
+									"path": "opschortendeTermijnEinde",
+									"format": "date-long",
+									"emptyValue": "Starts with the award decision"
+								}
+							],
+							"footnote": "The award becomes final only once the standstill period has ended."
 						}
 					},
 					{
@@ -6918,6 +7155,7 @@
 					"share-with-organisation",
 					"add-party",
 					"link-object",
+					"bid-register",
 					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",

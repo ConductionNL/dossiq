@@ -51,14 +51,16 @@ use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The decision schema declares the Woo fields, and a publication survives a save.
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -142,7 +144,11 @@ class WooPublicationFieldsShippedTest extends TestCase {
 
 		$store = $this->createMock(ObjectServiceInterface::class);
 		$store->method('find')->willReturnCallback(
-			function (int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): ?ObjectEntityInterface {
+			function (int|string $id, ?ObjectFindOptions $options = null): ?ObjectEntityInterface {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$row = ($this->rows[(string)$schema][(string)$id] ?? null);
 				if ($row === null) {
 					return null;
@@ -155,7 +161,11 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		);
 		$store->method('searchObjectsBySlug')->willReturn([['documentRef' => 'doc-001', 'classification' => 'openbaar']]);
 		$store->method('saveObject')->willReturnCallback(
-			function (array|ObjectEntityInterface $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null) use ($declared): ObjectEntityInterface {
+			function (array|ObjectEntityInterface $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($declared): ObjectEntityInterface {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				// The magic table's rule: a key the schema does not declare has no
 				// column, and is gone.
 				$kept = array_intersect_key((array)$object, array_flip(array_merge($declared, ['id'])));

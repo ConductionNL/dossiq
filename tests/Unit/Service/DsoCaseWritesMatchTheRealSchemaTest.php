@@ -48,6 +48,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * DsoCaseService writes the shape the case schema accepts.
@@ -164,7 +165,9 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			}
 		);
 		$this->objectService->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data): ObjectEntityInterface {
+			function (ObjectPatch $patch): ObjectEntityInterface {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->writes[] = ['method' => 'patchObject', 'data' => $data];
 				return $this->entity(row: (['id' => $objectId] + $data));
 			}

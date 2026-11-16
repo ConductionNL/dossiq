@@ -24,6 +24,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Custody\TakeoverStore
@@ -181,7 +182,10 @@ class TakeoverStoreTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, mixed $register='', mixed $schema='', ?string $uuid=null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				return 'stored somewhere';
 			}
 		};

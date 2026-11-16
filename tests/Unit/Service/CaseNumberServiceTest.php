@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub for case-number tests.
@@ -67,7 +68,7 @@ interface CaseNumberObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -233,7 +234,10 @@ class CaseNumberServiceTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $object, int|string $register, int|string $schema, ?string $uuid = null) use (&$saved): array {
+				function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$saved = ['object' => $object, 'uuid' => $uuid];
 
 					return $object;

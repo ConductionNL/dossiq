@@ -146,22 +146,23 @@ class ContentTemplateService implements ContentTemplateServiceInterface {
 			return null;
 		}
 
-		return $this->offeredRows(rows: $rows, kind: $kind, caseTypeId: $caseTypeId, search: $search);
+		return $this->offeredRows(rows: $rows, filter: ['kind' => $kind, 'caseTypeId' => $caseTypeId, 'search' => $search]);
 	}//end offered()
 
 	/**
 	 * The stored templates in scope for the case type and matching the search.
 	 *
-	 * @param array<int, array<string, mixed>> $rows       The stored templates of the kind.
-	 * @param string                           $kind       The kind.
-	 * @param string                           $caseTypeId The case type the handler is working on.
-	 * @param string                           $search     Part of the name, or '' for all of them.
+	 * @param array<int, array<string, mixed>> $rows   The stored templates of the kind.
+	 * @param array<string, string>            $filter The `kind`, the `caseTypeId` the handler is working on, and
+	 *                                                 the `search` (part of the name, or '' for all of them).
 	 *
 	 * @return array<int, array<string, mixed>> The templates.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
-	private function offeredRows(array $rows, string $kind, string $caseTypeId, string $search): array {
+	private function offeredRows(array $rows, array $filter): array {
+		$caseTypeId = $filter['caseTypeId'];
+		$search = $filter['search'];
 		$offered = [];
 		foreach ($rows as $row) {
 			if ($this->inScope(row: $row, caseTypeId: $caseTypeId) === false) {
@@ -175,7 +176,7 @@ class ContentTemplateService implements ContentTemplateServiceInterface {
 
 			$offered[] = [
 				'id' => $this->store->idOf(row: $row),
-				'kind' => $kind,
+				'kind' => $filter['kind'],
 				'name' => $name,
 				'body' => $this->text->forReader(value: ($row['body'] ?? '')),
 				'presets' => $this->presets(row: $row),

@@ -31,3 +31,16 @@ describe('forms that keep a draft', () => {
 		expect(register.components.schemas.case.properties[field]).toMatchObject({ type: 'boolean' })
 	})
 })
+
+describe('the case forms offer Save draft', () => {
+	it.each(['Cases', 'CaseDetail'])('%s offers Save draft on the case draft marker, under dossiq\'s key', (id) => {
+		const config = page(id).config
+		expect(config.draftAppId).toBe('dossiq')
+		expect(config.allowDraft).toBe(true)
+		expect(config.draftField).toBe('isDraft')
+	})
+
+	it('the task page offers no Save draft: an engine task has no draft marker', () => {
+		expect(page('TaskDetail').config.allowDraft).toBeUndefined()
+	})
+})

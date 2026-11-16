@@ -44,6 +44,7 @@ use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -62,6 +63,8 @@ use Throwable;
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
 class LocationBagValidationListener implements IEventListener {
+
+	use SavedObjectPayload;
 
 	/**
 	 * The refusal code a location dialog shows its own title and text for:
@@ -219,17 +222,7 @@ class LocationBagValidationListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isLocationSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('location_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return $this->inSchema(object: $object, configured: $this->settingsService->getConfigValue('location_schema'));
 	}//end isLocationSchema()
 
 	/**

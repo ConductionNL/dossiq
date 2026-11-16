@@ -84,8 +84,9 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openable } from '../mixins/openable.js'
 import { askPayload, askRefusal, emptyAsk, sendAsk } from '../services/partnerAsk.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The handler asks a partner for something from the case: portaliq's
@@ -105,28 +106,12 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/** The case; may arrive as the unresolved `@objectId` token, then the route answers. */
-		caseId: { type: String, default: '' },
-		/** Whether the dialog is showing. */
-		open: { type: Boolean, default: false },
-	},
+	mixins: [caseDialogResolved, openable],
 
 	emits: ['close', 'sent'],
 
 	data() {
 		return { form: emptyAsk(), sending: false, error: '' }
-	},
-
-	computed: {
-		/**
-		 * The case id, from the prop or else from the route.
-		 *
-		 * @return {string}
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
 	},
 
 	methods: {

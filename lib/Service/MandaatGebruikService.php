@@ -76,23 +76,34 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 		array $roleSnapshot = [],
 		array $conditionsApplied = [],
 	): array {
+		return $this->storeUse(
+			row: [
+				'caseId' => $caseId,
+				'decisionId' => $decisionId,
+				'mandateId' => $mandateId,
+				'userId' => $userId,
+				'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+				'roleOnMomentFromDecision' => $roleSnapshot,
+				'usedTerms' => $conditionsApplied,
+				'mandateVersionId' => $mandateId,
+			]
+		);
+	}//end logMandaatGebruik()
+
+	/**
+	 * Store one mandate-use row; the row itself is the answer when nothing is configured or the save fails.
+	 *
+	 * @param array<string, mixed> $row The mandate-use row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function storeUse(array $row): array {
 		$target = $this->target();
 		if ($target === null) {
 			return [];
 		}
 
 		[$objectService, $register, $schema] = $target;
-
-		$row = [
-			'caseId' => $caseId,
-			'decisionId' => $decisionId,
-			'mandateId' => $mandateId,
-			'userId' => $userId,
-			'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-			'roleOnMomentFromDecision' => $roleSnapshot,
-			'usedTerms' => $conditionsApplied,
-			'mandateVersionId' => $mandateId,
-		];
 
 		try {
 			$saved = $this->saveObjectAsArray(
@@ -103,10 +114,10 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 			);
 			return ($saved ?? $row);
 		} catch (\Throwable $e) {
-			$this->logger->error('MandaatGebruik log failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+			$this->logger->error('MandaatGebruik log failed', ['caseId' => $row['caseId'], 'error' => $e->getMessage()]);
 			return $row;
 		}
-	}//end logMandaatGebruik()
+	}//end storeUse()
 
 	/**
 	 * Retrieve the decision audit trail for a case.
@@ -144,6 +155,22 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
+		$rows = $this->mandateRows(mandateId: $mandateId);
+		if ($from === null && $until === null) {
+			return $rows;
+		}
+
+		return $this->filterByDateRange(rows: $rows, range: [$from, $until]);
+	}//end getDecisionByMandaat()
+
+	/**
+	 * The mandate-usage rows recorded under a mandate; empty when nothing is configured or the search fails.
+	 *
+	 * @param string $mandateId Mandate id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function mandateRows(string $mandateId): array {
 		$target = $this->target();
 		if ($target === null) {
 			return [];
@@ -152,7 +179,7 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 		[$objectService, $register, $schema] = $target;
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
@@ -161,26 +188,20 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 		} catch (\Throwable $e) {
 			return [];
 		}
-
-		if ($from === null && $until === null) {
-			return $rows;
-		}
-
-		return $this->filterByDateRange(rows: $rows, from: $from, until: $until);
-	}//end getDecisionByMandaat()
+	}//end mandateRows()
 
 	/**
 	 * Keep only the rows whose `tijdstip` day falls inside the supplied (inclusive) bounds.
 	 *
 	 * A null bound is not applied, so a row is dropped only by a bound that is actually set.
 	 *
-	 * @param array<int, array<string, mixed>> $rows The mandate-usage rows.
-	 * @param DateTimeImmutable|null $from From (inclusive).
-	 * @param DateTimeImmutable|null $until Until (inclusive).
+	 * @param array<int, array<string, mixed>>                          $rows  The mandate-usage rows.
+	 * @param array{0: DateTimeImmutable|null, 1: DateTimeImmutable|null} $range From and until (both inclusive).
 	 *
 	 * @return array<int, array<string, mixed>> The rows within the range.
 	 */
-	private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array {
+	private function filterByDateRange(array $rows, array $range): array {
+		[$from, $until] = $range;
 		$out = [];
 		foreach ($rows as $row) {
 			$when = substr((string)($row['moment'] ?? ''), 0, 10);

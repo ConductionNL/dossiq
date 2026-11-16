@@ -26,6 +26,8 @@ use OCA\Dossiq\Service\DispositionService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for disposition tests (OpenRegister object-first signature).
@@ -42,7 +44,7 @@ interface DispositionObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Find objects matching a filter.
@@ -65,7 +67,7 @@ interface DispositionObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true);
 }//end interface
 
 /**
@@ -176,7 +178,11 @@ class DispositionServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
+				function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) {
+					$extend = $options->extend ?? [];
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$this->assertSame('awaiting_approval', $object['approvalStatus']);
 					return $object;
 				}
@@ -209,7 +215,9 @@ class DispositionServiceTest extends TestCase {
 			->expects($this->once())
 			->method('patchObject')
 			->willReturnCallback(
-				function (string $objectId, array $data) {
+				function (ObjectPatch $patch) {
+					$objectId = $patch->objectId;
+					$data = $patch->data;
 					$this->assertSame('disposition-uuid', $objectId);
 					$this->assertSame(['approvalStatus' => 'approved', 'goedkeurder' => 'coordinator-uid'], $data);
 					return array_merge(['complaint' => 'complaint-uuid', 'opinion' => 'dismissed'], $data);

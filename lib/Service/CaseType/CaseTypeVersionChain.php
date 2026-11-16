@@ -99,7 +99,7 @@ class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 			}
 
 			$seen[$id] = true;
-			$versions[] = $this->entry(row: $row, id: $id, currentId: $caseTypeId);
+			$versions[] = $this->entry(row: $row, id: $id) + ['isSelf' => ($id === $caseTypeId)];
 		}
 
 		usort(
@@ -164,13 +164,12 @@ class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 	/**
 	 * One version, as the page and the dialog read it.
 	 *
-	 * @param array<string, mixed> $row       The case type row.
-	 * @param string               $id        Its id.
-	 * @param string               $currentId The version the reader started from.
+	 * @param array<string, mixed> $row The case type row.
+	 * @param string               $id  Its id.
 	 *
-	 * @return array<string, mixed> The entry.
+	 * @return array<string, mixed> The entry, without whether it is the version the reader started from.
 	 */
-	private function entry(array $row, string $id, string $currentId): array {
+	private function entry(array $row, string $id): array {
 		return [
 			'id' => $id,
 			'title' => $this->text->forReader(value: ($row['title'] ?? null)),
@@ -181,7 +180,6 @@ class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 			'validUntil' => (string)($row['validUntil'] ?? ''),
 			'previousVersion' => $this->store->referenceId(value: ($row['previousVersion'] ?? '')),
 			'supersededBy' => $this->store->referenceId(value: ($row['supersededBy'] ?? '')),
-			'isSelf' => ($id === $currentId),
 		];
 	}//end entry()
 }//end class

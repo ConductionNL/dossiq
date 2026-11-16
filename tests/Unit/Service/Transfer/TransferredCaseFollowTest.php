@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Which transfer an act lands on, what the entry says, and when nothing is written.
@@ -61,7 +62,9 @@ class TransferredCaseFollowTest extends TestCase {
 				return $this->transfers;
 			}
 
-			public function saveObject(array $object, int $register, int $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				return $object;
 			}

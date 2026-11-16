@@ -33,6 +33,9 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ContactMomentServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -102,7 +105,10 @@ class ContactMomentService implements ContactMomentServiceInterface {
 		$record = $this->withOptionalFields(record: $record, data: $data);
 
 		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			$created = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create contactmoment: ' . $e->getMessage(),
@@ -429,7 +435,7 @@ class ContactMomentService implements ContactMomentServiceInterface {
 			return false;
 		}
 
-		$case = $this->normalize(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
+		$case = $this->normalize(result: $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $caseSchema)));
 
 		$activity = $this->activityWith(case: $case, entry: $entry);
 

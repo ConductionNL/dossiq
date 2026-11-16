@@ -34,6 +34,8 @@ use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -156,7 +158,10 @@ class WOODecisionService {
 
 		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $decisionData);
 
-		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
+		$decision = $objectService->saveObject(
+			object: $besluitData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $decisionSchema))
+		);
 
 		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId, decisionId: (string)$decision->getUuid());
 

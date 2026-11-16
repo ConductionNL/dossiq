@@ -35,6 +35,7 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for the per-case read predicate.
@@ -108,7 +109,9 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->case;
 			}
 		};
@@ -239,7 +242,9 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 *
 			 * @throws \RuntimeException Always.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new \RuntimeException('backend down');
 			}
 		};
@@ -318,7 +323,9 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 * @param mixed $schema The schema.
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'case') {
 					return ['id' => $id, 'assignee' => null, 'assignedGroup' => 'elsewhere', 'caseType' => 'type-1'];
 				}

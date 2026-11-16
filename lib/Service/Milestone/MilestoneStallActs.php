@@ -34,6 +34,7 @@ use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsConfiguredCase;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Notification\INotification;
@@ -47,6 +48,9 @@ use Throwable;
  */
 class MilestoneStallActs implements MilestoneStallActsInterface {
 	use SearchesObjects;
+	use FindsConfiguredCase {
+		find as public;
+	}
 
 	/**
 	 * Build the service.
@@ -63,26 +67,6 @@ class MilestoneStallActs implements MilestoneStallActsInterface {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
-	/**
-	 * Read the case fresh.
-	 *
-	 * @param string $caseId The case id.
-	 *
-	 * @return array<string, mixed>|null The case, or null when it does not exist or nothing is configured.
-	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
-	 */
-	public function find(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register      = (string) $this->settingsService->getConfigValue('register');
-		$schema        = (string) $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return null;
-		}
-
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
-	}//end find()
 
 	/**
 	 * Tell the assignee, when the case still waits late on that milestone.

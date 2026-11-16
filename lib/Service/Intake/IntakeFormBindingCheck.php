@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingCheckInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Form\FormDestination;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -164,7 +165,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	private function findingsAgainst(array $judge, array $caseType): array {
 		[$validator, $schema] = $judge;
 		$mapping = $this->binding->mappingFor(caseType: $caseType);
-		$found = $validator->validate(mapping: $mapping, schema: $schema);
+		$found = $validator->validate(mapping: $mapping, destination: new FormDestination(schema: $schema));
 		if (is_array($found) === false) {
 			$found = [];
 		}
@@ -234,12 +235,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	 * @return array<int, array<string, mixed>> The findings.
 	 */
 	private function validatorFindings(object $validator, object $schema, array $mapping, string|null $audience): array {
-		$options = [];
-		if ($audience !== null) {
-			$options['audience'] = $audience;
-		}
-
-		$found = $validator->validate(mapping: $mapping, schema: $schema, options: $options);
+		$found = $validator->validate(mapping: $mapping, destination: new FormDestination(schema: $schema, audience: $audience));
 		if (is_array($found) === false) {
 			$found = [];
 		}

@@ -33,6 +33,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The public survivor lookup against doubles of the token service and the object store.
@@ -165,6 +166,7 @@ class PublicCaseSurvivorControllerTest extends TestCase {
 			 * @return mixed
 			 */
 			public function find(mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = ['find' => $args];
 				if ($this->entity instanceof \Throwable) {
 					throw $this->entity;
@@ -218,7 +220,7 @@ class PublicCaseSurvivorControllerTest extends TestCase {
 		);
 		$this->assertSame(
 			[
-				['find' => ['id' => 'new-1', '_extend' => [], 'files' => false, 'register' => '5', 'schema' => '12', '_rbac' => true, '_multitenancy' => true]],
+				['find' => ['id' => 'new-1', 'register' => '5', 'schema' => '12']],
 				['renderEntity' => ['entity' => $entity, '_rbac' => true, '_multitenancy' => true]],
 			],
 			$store->calls

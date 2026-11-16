@@ -154,17 +154,13 @@ class EmailTemplateController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function createTemplate(string $caseTypeId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// An email template is instance-wide configuration whose body is sent
 		// to citizens, so it is a config write, not case data: admin only.
 		// There is no per-case relationship to authorise against — a caseType
 		// belongs to the municipality, not to a handler.
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->refuseUnlessAdmin();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$data = [
@@ -195,15 +191,11 @@ class EmailTemplateController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function updateTemplate(string $templateId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Same posture as createTemplate(): rewriting the body of a template
 		// that is mailed to citizens is a config write.
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->refuseUnlessAdmin();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$data = $this->updateData();
@@ -431,5 +423,23 @@ class EmailTemplateController extends Controller {
 
 		return new JSONResponse($this->templateService->getAvailableVariables(caseTypeId: $caseTypeId));
 	}//end variables()
+
+	/**
+	 * The 401 for a caller without a session, the 403 for one who is not an admin, else null.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function refuseUnlessAdmin(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->groupManager->isAdmin($user->getUID()) === false) {
+			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end refuseUnlessAdmin()
 
 }//end class

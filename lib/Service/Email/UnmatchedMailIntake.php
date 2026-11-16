@@ -43,6 +43,9 @@ use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -210,8 +213,7 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 		try {
 			$created = $store['objectService']->saveObject(
 				object: $payload,
-				register: $store['register'],
-				schema: $store['schema'],
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -323,7 +325,7 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 
 		[$objectService, $register, $schema] = $source;
 		try {
-			$caseType = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$caseType = $objectService->find($caseTypeId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'UnmatchedMailIntake: could not read the fallback case type',

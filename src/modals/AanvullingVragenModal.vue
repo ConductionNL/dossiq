@@ -84,8 +84,9 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openableDialog } from '../mixins/openable.js'
 import { requestInformation } from '../services/caseTermsApi.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /** The term the applicant gets when nothing else is said, the endpoint's own default. */
 const DEFAULT_DAYS = 14
@@ -151,15 +152,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case. May arrive as the unresolved `@objectId` token, since
-		 * `open-modal` forwards props verbatim; the route is read then.
-		 */
-		caseId: { type: String, default: '' },
-		/** Whether the dialog is showing. */
-		open: { type: Boolean, default: false },
-	},
+	mixins: [caseDialogResolved, openableDialog],
 
 	emits: ['close', 'sent'],
 
@@ -182,25 +175,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case id, from the prop or else from the route.
-		 *
-		 * @return {string} The case id, or ''.
-		 * @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
-		/**
-		 * Whether the dialog is on screen.
-		 *
-		 * @return {boolean}
-		 */
-		isOpen() {
-			return this.open === true
-		},
-
 		/**
 		 * The term field's label, naming the case type's limit when it has one.
 		 *

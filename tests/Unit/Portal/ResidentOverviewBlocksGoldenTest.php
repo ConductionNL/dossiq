@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalPages;
+use OCA\Dossiq\Portal\ResidentPortal;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -52,7 +53,8 @@ class ResidentOverviewBlocksGoldenTest extends TestCase {
 		$blocks->setAccessible(true);
 		$record = [];
 		foreach ($worlds as $name => [$collections, $labels, $startPages]) {
-			$record[$name] = $blocks->invoke(new PortalPages(), $collections, $labels, $startPages);
+			$portal = new ResidentPortal(collections: $collections, actions: [], group: '', labels: $labels);
+			$record[$name] = $blocks->invoke(new PortalPages(), $portal, $startPages);
 		}
 
 		$this->assertMatchesGolden(name: 'resident-overview-blocks', value: $record);

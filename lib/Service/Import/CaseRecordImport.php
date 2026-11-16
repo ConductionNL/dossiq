@@ -272,7 +272,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 
 		$state = ['cases' => null, 'byKey' => null];
 		foreach ($sources as $source) {
-			$outcome = $this->moveRecord(run: $run, source: $source, state: $state);
+			$outcome = $this->moveRecord(run: $run + ['source' => $source], state: $state);
 			if ($outcome['kind'] === 'stop') {
 				$answer['failed'][] = $outcome['row'];
 				return $answer;
@@ -308,13 +308,14 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move one source record onto a case, or say why it was not.
 	 *
-	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
-	 * @param array<string, mixed> $source The source record.
-	 * @param array<string, mixed> $state  The cases read so far, by source and by number; read once, on first need.
+	 * @param array<string, mixed> $run   The run: objectService, caseType, import, dryRun, and the source record as `source`.
+	 * @param array<string, mixed> $state The cases read so far, by source and by number; read once, on first need.
 	 *
 	 * @return array{kind: string, row: array<string, mixed>} `kind` is alreadyImported, unmigrated, failed, duplicate, migrated or stop.
 	 */
-	private function moveRecord(array $run, array $source, array &$state): array {
+	private function moveRecord(array $run, array &$state): array {
+		$source = $run['source'];
+		unset($run['source']);
 		$skipped = $this->skippedAs(source: $source, run: $run);
 		if ($skipped !== '') {
 			return ['kind' => $skipped, 'row' => []];
@@ -433,7 +434,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$moved = $this->moveAndStamp(run: $run, source: $source, caseId: $placed['caseId']);
+		$moved = $this->moveAndStamp(run: $run + ['caseId' => $placed['caseId']], source: $source);
 		if (isset($moved['reason']) === true) {
 			return $failed($moved['reason']);
 		}
@@ -445,13 +446,13 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move the records pointing at the source onto the case, then stamp the source as moved.
 	 *
-	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing, and the case written for the source as `caseId`.
 	 * @param array<string, mixed> $source The source record.
-	 * @param string               $caseId The case written for it.
 	 *
 	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
 	 */
-	private function moveAndStamp(array $run, array $source, string $caseId): array {
+	private function moveAndStamp(array $run, array $source): array {
+		$caseId = (string)$run['caseId'];
 		$sourceId = $this->steps->store->idOf(row: $source);
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
@@ -492,7 +493,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return ['reason' => 'The case could not be written.'];
 		}
 
-		return $this->withTerm(run: $run, caseId: $caseId, mapped: $mapped);
+		return $this->withTerm(run: $run, written: ['caseId' => $caseId, 'mapped' => $mapped]);
 	}//end placeCase()
 
 	/**
@@ -515,18 +516,19 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Carry the record's term onto its case, unless the import carries no term.
 	 *
-	 * @param array<string, mixed> $run    The run: caseType, import.
-	 * @param string               $caseId The case.
-	 * @param array<string, mixed> $mapped The mapped record, with its `term`.
+	 * @param array<string, mixed>                                $run     The run: caseType, import.
+	 * @param array{caseId: string, mapped: array<string, mixed>} $written The case, and the mapped record with its `term`.
 	 *
 	 * @return array{caseId: string}|array{reason: string} The case, or why its term could not be armed.
 	 */
-	private function withTerm(array $run, string $caseId, array $mapped): array {
+	private function withTerm(array $run, array $written): array {
+		$caseId = $written['caseId'];
+		$mapped = $written['mapped'];
 		if (($run['import']['carriesTerm'] ?? true) === false) {
 			return ['caseId' => $caseId];
 		}
 
-		$carried = $this->carryTerm(caseType: $run['caseType'], caseId: $caseId, mapped: $mapped);
+		$carried = $this->carryTerm(caseType: $run['caseType'], onto: ['caseId' => $caseId, 'term' => $mapped['term']]);
 		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
 			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
 		}
@@ -537,16 +539,15 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Carry the mapped term onto the case.
 	 *
-	 * @param array<string, mixed> $caseType The case type.
-	 * @param string               $caseId   The case.
-	 * @param array<string, mixed> $mapped   The mapped record, with its `term`.
+	 * @param array<string, mixed>              $caseType The case type.
+	 * @param array{caseId: string, term: mixed} $onto     The case, and the mapped record's `term`.
 	 *
 	 * @return array<string, mixed> The carry result, with its `outcome`.
 	 */
-	private function carryTerm(array $caseType, string $caseId, array $mapped): array {
+	private function carryTerm(array $caseType, array $onto): array {
 		return $this->steps->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
+			caseId: $onto['caseId'],
+			term: $onto['term'],
 			definitionSlug: (string)($caseType['identifier'] ?? ''),
 			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
 		);

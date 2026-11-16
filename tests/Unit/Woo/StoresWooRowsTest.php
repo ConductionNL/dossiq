@@ -13,6 +13,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Woo\StoresWooRows;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The trait, through a minimal host class.
@@ -45,7 +46,10 @@ final class StoresWooRowsTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid];
 				return new class($object) implements \JsonSerializable {
 					/**

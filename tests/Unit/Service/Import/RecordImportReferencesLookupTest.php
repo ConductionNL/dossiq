@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\Import\RecordImportStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @covers \OCA\Dossiq\Service\Import\RecordImportReferences
@@ -82,7 +83,11 @@ class RecordImportReferencesLookupTest extends TestCase {
 			public function __construct(private array $stored) {
 			}
 
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patches[] = [$objectId, $data];
 				return ($this->stored[$objectId] ?? []) + $data;
 			}

@@ -30,6 +30,8 @@ use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -280,9 +282,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		try {
 			return $objectService->saveObject(
 				object: $event,
-				register: AppIdentity::REGISTER_SLUG,
-				schema: 'tenantBillingEvent',
-				uuid: null,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: 'tenantBillingEvent'))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
@@ -407,9 +407,10 @@ class TenantBillingService implements TenantBillingServiceInterface {
 
 			$objectService->saveObject(
 				object: $event,
-				register: AppIdentity::REGISTER_SLUG,
-				schema: 'tenantBillingEvent',
-				uuid: $uuidArg,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: 'tenantBillingEvent'),
+					uuid: $uuidArg
+				)
 			);
 			return 1;
 		} catch (Throwable $e) {

@@ -107,18 +107,33 @@ class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutio
 	): array {
 		$moment = ($when ?? new DateTimeImmutable());
 		$run = new AanvullingAnswerRun(caseId: $caseId, request: $this->openRequestFor(caseId: $caseId));
-		$run->moment = $moment;
-		$run->received = $received;
-		$run->userId = $userId;
-		$run->items = $this->markReceived(
-			items: (array)($run->request['missingItems'] ?? []),
-			received: $received,
-			moment: $moment
-		);
-		$run->outstanding = $this->outstanding(items: $run->items);
+
+		$run = $this->answered(run: $run, answer: ['moment' => $moment, 'received' => $received, 'userId' => $userId]);
 
 		return $this->recordAs(run: $run, complete: $complete);
 	}//end recordAnswer()
+
+	/**
+	 * The run with what arrived marked on its missing items, and what is still outstanding.
+	 *
+	 * @param AanvullingAnswerRun  $run    The open request of the case.
+	 * @param array<string, mixed> $answer The `moment` it arrived, the `received` items and the `userId` who recorded it.
+	 *
+	 * @return AanvullingAnswerRun The run.
+	 */
+	private function answered(AanvullingAnswerRun $run, array $answer): AanvullingAnswerRun {
+		$run->moment = $answer['moment'];
+		$run->received = $answer['received'];
+		$run->userId = $answer['userId'];
+		$run->items = $this->markReceived(
+			items: (array)($run->request['missingItems'] ?? []),
+			received: $answer['received'],
+			moment: $answer['moment']
+		);
+		$run->outstanding = $this->outstanding(items: $run->items);
+
+		return $run;
+	}//end answered()
 
 	/**
 	 * Record the answer as partial or as complete; complete is refused while items are outstanding.

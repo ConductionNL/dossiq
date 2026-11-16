@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * Saves a Woo row into its schema and reads a row's uuid.
  *
@@ -51,7 +54,10 @@ trait StoresWooRows {
 			$existing = $uuid;
 		}
 
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
+		$saved = $objectService->saveObject(
+			object: $row,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $existing)
+		);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			$saved = $saved->jsonSerialize();

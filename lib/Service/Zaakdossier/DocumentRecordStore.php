@@ -18,6 +18,9 @@ use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 use Throwable;
 
@@ -112,10 +115,18 @@ class DocumentRecordStore implements DocumentRecordStoreInterface {
 		$schema = $this->schema(key: 'dossier_informatieobject_schema');
 		$object = $this->withoutSelf(row: $record);
 		if ($uuid === '') {
-			return $this->resolveSavedUuid(saved: $objectService->saveObject(object: $object, register: $register, schema: $schema));
+			return $this->resolveSavedUuid(
+				saved: $objectService->saveObject(
+					object: $object,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+				)
+			);
 		}
 
-		$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$saved = $objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+		);
 
 		return $this->resolveSavedUuid(saved: $saved);
 	}//end saveRecord()
@@ -131,7 +142,12 @@ class DocumentRecordStore implements DocumentRecordStoreInterface {
 	 */
 	public function deleteRecord(string $recordId): void {
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $recordId, register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'));
+		$objectService->deleteObject(
+			new ObjectDeletion(
+				uuid: $recordId,
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'))
+			)
+		);
 	}//end deleteRecord()
 
 	/**
@@ -191,8 +207,10 @@ class DocumentRecordStore implements DocumentRecordStoreInterface {
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				]
 			),
-			register: $register,
-			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $register,
+					schema: $this->schema(key: 'dossier_zaakinformatieobject_schema')
+				))
 		);
 
 		return true;
@@ -218,7 +236,7 @@ class DocumentRecordStore implements DocumentRecordStoreInterface {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $joinId, target: new ObjectFindTarget(register: $register, schema: $joinSchema)));
 			$deleted++;
 		}
 

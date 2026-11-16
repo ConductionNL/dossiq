@@ -35,6 +35,8 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -179,7 +181,10 @@ class BelplanController extends Controller {
 		[$objectService, $register, $schema] = $store;
 
 		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			$created = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
 			// The same shape TaskChecklistController carries: a payload
 			// OpenRegister's schema refuses came back as a 500, so an admin who

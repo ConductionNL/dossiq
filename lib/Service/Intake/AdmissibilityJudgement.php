@@ -261,14 +261,30 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 		$reason = trim($reason);
 		$this->assertJudgeable(verdict: $verdict, reason: $reason);
 
+		return $this->judgeCase(caseId: $caseId, judgement: ['verdict' => $verdict, 'reason' => $reason, 'judgedBy' => $judgedBy]);
+	}//end judge()
+
+	/**
+	 * Record the checked verdict on the case, and close it when it is inadmissible.
+	 *
+	 * @param string                                                  $caseId    The case UUID.
+	 * @param array{verdict: string, reason: string, judgedBy: string} $judgement The trimmed verdict and reason, and the intake worker.
+	 *
+	 * @return array<string, mixed> What was recorded, and what the close did.
+	 *
+	 * @throws RefusedException When the case type asks for no verdict, or names no result for an inadmissible aanvraag.
+	 */
+	private function judgeCase(string $caseId, array $judgement): array {
+		$verdict = $judgement['verdict'];
+
 		$case = $this->caseOf(caseId: $caseId);
 		$declaration = $this->declaredOn(case: $case);
 
 		$record = [
 			'verdict' => $verdict,
-			'judgedBy' => $judgedBy,
+			'judgedBy' => $judgement['judgedBy'],
 			'judgedOn' => (new DateTimeImmutable())->format('c'),
-			'reason' => $reason,
+			'reason' => $judgement['reason'],
 		];
 
 		// 🔴 THE VERDICT IS WRITTEN BEFORE THE CLOSE, AND THAT ORDER MATTERS.
@@ -286,7 +302,7 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 		return $this->closeInadmissible(
 			judgement: ['caseId' => $caseId, 'case' => $case, 'declaration' => $declaration, 'record' => $record]
 		);
-	}//end judge()
+	}//end judgeCase()
 
 	/**
 	 * Refuse a verdict that is not one of the two, or that gives no reason.

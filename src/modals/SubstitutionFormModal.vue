@@ -124,8 +124,8 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { modalForm } from '../mixins/modalForm.js'
 import { createSubstitution } from '../services/substitutionApi.js'
-import { useObjectStore } from '../store/modules/object.js'
 
 /**
  * Why a registration failed: the server's reason, the error's own message, or
@@ -149,6 +149,8 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
+	mixins: [modalForm],
 
 	props: {
 		/** When true the absentee field is shown (coordinator acts for others). */
@@ -180,11 +182,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
-
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
@@ -285,47 +282,22 @@ export default {
 						: [],
 			}
 		},
-
-		/**
-		 * @param {boolean} open Whether the open is set.
-		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-		 */
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
-			}
-		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use './_modalForm.scss' as form;
+
 .substitution-form {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 8px 4px;
+	@include form.form-stack;
 }
 
-.form-row {
-	display: flex;
-	gap: 12px;
-}
+@include form.form-rows;
 
-.form-row .form-group {
-	flex: 1;
-}
+@include form.form-group;
 
-.form-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.form-group label {
-	font-weight: 500;
-	color: var(--color-main-text);
-}
+@include form.form-group-label;
 
 .substitution-form__date {
 	padding: 8px;
@@ -336,25 +308,8 @@ export default {
 }
 
 .substitution-form__textarea {
-	width: 100%;
-	resize: vertical;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-	font-family: inherit;
+	@include form.form-textarea;
 }
 
-.form-error {
-	color: var(--color-error);
-	font-size: 0.85rem;
-	margin: 0;
-}
-
-.form-error--server {
-	padding: 8px;
-	background: var(--color-error-hover);
-	border-radius: var(--border-radius);
-}
+@include form.form-errors;
 </style>

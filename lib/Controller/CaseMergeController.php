@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCP\AppFramework\Controller;
@@ -53,6 +54,8 @@ use OCP\IUserSession;
  * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
 class CaseMergeController extends Controller {
+	use AnswersSignedOutCallers;
+
 	/**
 	 * The status each refusal answers with.
 	 *
@@ -105,10 +108,7 @@ class CaseMergeController extends Controller {
 	public function merge(string $caseId, string $into = '', string $reason = ''): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->mayChangeBoth(user: $user, cases: [$caseId, $into]) === false) {

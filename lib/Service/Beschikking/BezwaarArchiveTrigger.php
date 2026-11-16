@@ -39,6 +39,8 @@ use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -166,7 +168,10 @@ class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 		$trigger['archiveTriggerActive'] = false;
 
 		try {
-			$objectService->saveObject(register: $register, schema: $schema, object: $trigger);
+			$objectService->saveObject(
+				object: $trigger,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq bezwaar: switching the trigger off failed', ['error' => $e->getMessage()]);
 		}

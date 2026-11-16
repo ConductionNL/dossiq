@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\WalkthroughCompletionInterface;
-use OCA\Dossiq\Listener\Support\OwnPageRender;
+use OCA\Dossiq\Listener\Support\ProvidesOnOwnPage;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -42,6 +42,8 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/first-load-onboarding/spec.md
  */
 class WalkthroughSeenInitialStateListener implements IEventListener {
+
+	use ProvidesOnOwnPage;
 
 	/**
 	 * Constructor.
@@ -67,10 +69,9 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 	 * @spec openspec/specs/first-load-onboarding/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ((new OwnPageRender())->matches(event: $event) === false) {
-			return;
-		}
-
-		$this->initialState->provideInitialState(WalkthroughCompletionInterface::STATE_KEY, $this->completion->seen());
+		$this->provideOnOwnPage(
+			event: $event,
+			provide: fn () => $this->initialState->provideInitialState(WalkthroughCompletionInterface::STATE_KEY, $this->completion->seen())
+		);
 	}//end handle()
 }//end class

@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SensitiveAnswerCheck;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\SensitiveAnswerCheck
@@ -39,7 +40,9 @@ class SensitiveAnswerCheckTest extends TestCase {
 			public function __construct(private ?array $case) {
 			}
 
-			public function find(string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = ['id' => $id, 'register' => $register, 'schema' => $schema, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				if ($this->case === null) {
 					throw new DoesNotExistException('missing');

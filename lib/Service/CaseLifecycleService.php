@@ -155,38 +155,49 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$key = trim($pauseReason);
-		$rationale = $this->suspendRationale(caseId: $caseId, reason: $reason, key: $key);
+		$rationale = $this->suspendRationale(caseId: $caseId, given: ['reason' => $reason, 'key' => $key]);
 
 		$this->requireSuspendable(case: $case);
 
-		$duration = $this->pauseDays(days: $days);
+		return $this->pause(
+			caseId: $caseId,
+			pause: ['reason' => $rationale, 'days' => $this->pauseDays(days: $days), 'pauseReason' => $key]
+		);
+	}//end suspend()
 
+	/**
+	 * Pause the case's term, journal the suspension and answer the case's state.
+	 *
+	 * @param string                                                $caseId Case UUID
+	 * @param array{reason: string, days: int, pauseReason: string} $pause  The rationale, the pause in days and the pause reason key.
+	 *
+	 * @return array<string, mixed> The case's state after the suspension
+	 */
+	private function pause(string $caseId, array $pause): array {
 		$this->onTermInstance(
 			caseId: $caseId,
-			gesture: 'suspend',
-			apply: fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
-				termInstanceId: $instanceId,
-				durationDays: $duration,
-				rationale: $rationale,
-				pauseReason: $key,
-			),
+			act: [
+				'gesture' => 'suspend',
+				'apply' => fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
+					termInstanceId: $instanceId,
+					durationDays: $pause['days'],
+					rationale: $pause['reason'],
+					pauseReason: $pause['pauseReason'],
+				),
+			]
 		);
 
-		$this->journal(
-			caseId: $caseId,
-			changes: [],
-			entry: ['type' => 'suspend', 'reason' => $rationale, 'days' => $duration, 'pauseReason' => $key],
-		);
+		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'suspend'] + $pause);
 
 		return $this->state(caseId: $caseId);
-	}//end suspend()
+	}//end pause()
 
 	/**
 	 * The rationale of a suspension: the handler's words, or the declared pause reason's.
 	 *
-	 * @param string $caseId Case UUID
-	 * @param string $reason Why the case is suspended, in the handler's words
-	 * @param string $key    The key of one of the case type's pause reasons, or ''
+	 * @param string                             $caseId Case UUID
+	 * @param array{reason: string, key: string} $given  `reason` why the case is suspended, in the handler's words; `key` the key of one of the
+	 *                                                   case type's pause reasons, or ''.
 	 *
 	 * @return string The rationale
 	 *
@@ -194,7 +205,8 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 *
 	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
-	private function suspendRationale(string $caseId, string $reason, string $key): string {
+	private function suspendRationale(string $caseId, array $given): string {
+		[$reason, $key] = [$given['reason'], $given['key']];
 		$rationale = $reason;
 		if ($key === '') {
 			$this->requireReason(reason: $reason);
@@ -269,10 +281,12 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		$this->onTermInstance(
 			caseId: $caseId,
-			gesture: 'resume',
-			apply: fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
-				termInstanceId: $instanceId,
-			),
+			act: [
+				'gesture' => 'resume',
+				'apply' => fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
+					termInstanceId: $instanceId,
+				),
+			]
 		);
 
 		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'resume', 'reason' => $reason]);
@@ -315,17 +329,30 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
 		$newEnd = $this->resolveNewEndDate(
 			current: $current,
-			named: $newEndDate,
-			period: (string)$caseType['extensionPeriod'],
+			asked: [
+				'named' => $newEndDate,
+				'period' => (string)$caseType['extensionPeriod'],
+			]
 		);
 
-		$extension = new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		return $this->applyExtension(extension: new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd), case: $case);
+	}//end extend()
+
+	/**
+	 * Ask for the extension, journal it on the case and answer the case's state with the notice.
+	 *
+	 * @param TermExtension        $extension The case, the reason and the new end date.
+	 * @param array<string, mixed> $case      The case as read before the extension.
+	 *
+	 * @return array<string, mixed> The case's state, with the extension notice.
+	 */
+	private function applyExtension(TermExtension $extension, array $case): array {
 		$extended = $this->requestExtension(extension: $extension);
 
 		$this->journalExtension(extension: $extension, case: $case);
 
-		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
-	}//end extend()
+		return $this->state(caseId: $extension->caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
+	}//end applyExtension()
 
 	/**
 	 * The case's type, refused when it does not allow another extension.
@@ -363,12 +390,14 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	private function requestExtension(TermExtension $extension): ?array {
 		return $this->onTermInstance(
 			caseId: $extension->caseId,
-			gesture: 'extend',
-			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
-				termInstanceId: $instanceId,
-				rationale: $extension->reason,
-				newEndDate: $extension->newEnd,
-			),
+			act: [
+				'gesture' => 'extend',
+				'apply' => fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
+					termInstanceId: $instanceId,
+					rationale: $extension->reason,
+					newEndDate: $extension->newEnd,
+				),
+			]
 		);
 	}//end requestExtension()
 
@@ -611,15 +640,16 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 * the case; only the statutory bookkeeping is skipped, and it is logged
 	 * rather than swallowed silently.
 	 *
-	 * @param string $caseId Case UUID
-	 * @param string $gesture The gesture name, for the log line
-	 * @param callable(string): array<string, mixed> $apply What to do with the instance id
+	 * @param string                                                                $caseId Case UUID
+	 * @param array{gesture: string, apply: callable(string): array<string, mixed>} $act    `gesture` the gesture name, for the log line; `apply`
+	 *                                                                                      what to do with the instance id.
 	 *
 	 * @return array<string, mixed>|null What the gesture answered, or null when the case has no instance.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function onTermInstance(string $caseId, string $gesture, callable $apply): ?array {
+	private function onTermInstance(string $caseId, array $act): ?array {
+		[$gesture, $apply] = [$act['gesture'], $act['apply']];
 		$instance = $this->deadlines->termService->getTermijnInstanceForZaak(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? ($instance['@self']['id'] ?? ''));
 		if ($instanceId === '') {
@@ -637,9 +667,9 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 * The new end date an extension lands on: the one the caller named, or
 	 * the current one plus the case type's statutory period.
 	 *
-	 * @param string $current The current end date (Y-m-d), possibly empty
-	 * @param string $named An explicit new end date, or '' for the period
-	 * @param string $period The case type's ISO 8601 extension period
+	 * @param string                               $current The current end date (Y-m-d), possibly empty
+	 * @param array{named: string, period: string} $asked   `named` an explicit new end date, or '' for the period; `period` the case type's ISO
+	 *                                                      8601 extension period.
 	 *
 	 * @return string The new end date as Y-m-d
 	 *
@@ -648,7 +678,8 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 *
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
-	private function resolveNewEndDate(string $current, string $named, string $period): string {
+	private function resolveNewEndDate(string $current, array $asked): string {
+		[$named, $period] = [$asked['named'], $asked['period']];
 		if ($named !== '') {
 			return $this->requireLaterDate(current: $current, candidate: $named);
 		}

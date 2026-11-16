@@ -185,14 +185,14 @@ class BewijsstukService implements BewijsstukServiceInterface {
 		$type = (string)($payload['evidenceType'] ?? '');
 		$this->requireAllowedType(linkedIn: $linkedIn, type: $type);
 
-		[$objectService, $register, $schema] = $this->resolve();
+		$store = $this->resolve();
 
-		$record = $this->recordOf(payload: $payload, linkedIn: $linkedIn, regelingRetention: $regelingRetention);
+		$record = $this->recordOf(payload: $payload, retention: ['linkedIn' => $linkedIn, 'regelingRetention' => $regelingRetention]);
 		if ($contents !== null) {
 			$record['fileHashSha256'] = $this->computeHash(contents: $contents);
 		}
 
-		return $this->saveRecord(objectService: $objectService, register: $register, schema: $schema, record: $record);
+		return $this->saveRecord(store: $store, record: $record);
 	}//end create()
 
 	/**
@@ -214,13 +214,14 @@ class BewijsstukService implements BewijsstukServiceInterface {
 	/**
 	 * The record: the payload with its bewaartermijn and archive status.
 	 *
-	 * @param array<string, mixed> $payload           The bewijsstuk metadata.
-	 * @param string               $linkedIn          The phase the bewijsstuk is linked in.
-	 * @param int|null             $regelingRetention Regeling-configured retention override.
+	 * @param array<string, mixed>                                 $payload   The bewijsstuk metadata.
+	 * @param array{linkedIn: string, regelingRetention: int|null} $retention `linkedIn` the phase the bewijsstuk is linked in; `regelingRetention`
+	 *                                                                        regeling-configured retention override.
 	 *
 	 * @return array<string, mixed> The record to store.
 	 */
-	private function recordOf(array $payload, string $linkedIn, ?int $regelingRetention): array {
+	private function recordOf(array $payload, array $retention): array {
+		[$linkedIn, $regelingRetention] = [$retention['linkedIn'], $retention['regelingRetention']];
 		$now = new DateTimeImmutable();
 		$jaren = $this->bewaartermijnJaren(linkedIn: $linkedIn, override: $regelingRetention);
 		return array_merge(
@@ -237,16 +238,15 @@ class BewijsstukService implements BewijsstukServiceInterface {
 	/**
 	 * Store the record, refusing with a domain error when the write fails.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The bewijsstuk schema.
-	 * @param array<string, mixed> $record        The record to store.
+	 * @param array{0: object, 1: string, 2: string} $store  OpenRegister's object service, the register and the bewijsstuk schema.
+	 * @param array<string, mixed>                   $record The record to store.
 	 *
 	 * @return array<string, mixed> The stored record.
 	 *
 	 * @throws OCSBadRequestException When the write fails.
 	 */
-	private function saveRecord(object $objectService, string $register, string $schema, array $record): array {
+	private function saveRecord(array $store, array $record): array {
+		[$objectService, $register, $schema] = $store;
 		try {
 			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {

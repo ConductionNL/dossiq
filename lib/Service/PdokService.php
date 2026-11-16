@@ -134,6 +134,17 @@ class PdokService {
 			return $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
 		}
 
+		return $this->docsOf(response: $response);
+	}//end searchAddress()
+
+	/**
+	 * The result documents of a Locatieserver answer, leaving out anything that is not a row.
+	 *
+	 * @param array<string, mixed> $response The decoded answer.
+	 *
+	 * @return array<int, array<string, mixed>> The documents.
+	 */
+	private function docsOf(array $response): array {
 		$docs = (array)($response['response']['docs'] ?? []);
 		return array_values(
 			array_filter(
@@ -141,7 +152,7 @@ class PdokService {
 				static fn ($doc): bool => is_array($doc),
 			)
 		);
-	}//end searchAddress()
+	}//end docsOf()
 
 	/**
 	 * Look up a single Locatieserver result by id.

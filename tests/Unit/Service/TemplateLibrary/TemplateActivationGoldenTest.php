@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\TemplateLibraryService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins what activating a template saves, in what order, and what it answers.
@@ -76,7 +77,9 @@ class TemplateActivationGoldenTest extends TestCase {
 			 *
 			 * @return object The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saves[] = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				$uuid = 'uuid-' . count($this->saves);
 

@@ -33,6 +33,8 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object service stand-in that records what is saved and finds by id.
@@ -55,7 +57,9 @@ class RecordingAdviceStore {
 
 	public bool $refuseSave = false;
 
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		if ($this->refuseSave === true) {
 			throw new RuntimeException('refused');
 		}
@@ -66,7 +70,9 @@ class RecordingAdviceStore {
 		return $object;
 	}
 
-	public function find(string $id, string $register, string $schema): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if (isset($this->rows[$id]) === false) {
 			throw new RuntimeException('not found');
 		}

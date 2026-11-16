@@ -42,10 +42,15 @@ class QuotaLimitLabel {
 	 * @return string
 	 *
 	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-a-tenant-past-its-hard-quota-cannot-create-more-req-tq-enf-01
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
 	 */
 	public function label(IL10N $l, string $quotaType, int $limit): string {
 		if ($quotaType === 'active_users') {
 			return $l->t('%s users', [(string)$limit]);
+		}
+
+		if ($quotaType === 'storage_mb') {
+			return $l->t('%s MB of storage', [(string)$limit]);
 		}
 
 		return $l->t('%s cases per month', [(string)$limit]);
