@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -101,17 +102,10 @@ class WooStartFromListener implements IEventListener {
 	 * @param ObjectCreatedEvent $event The event.
 	 *
 	 * @return array<string, mixed>|null The object.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) EventObjectPayload is a stateless reader.
 	 */
 	private function payload(ObjectCreatedEvent $event): ?array {
-		$object = $event->getObject();
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === false) {
-			return null;
-		}
-
-		return $object;
+		return EventObjectPayload::fromValue(object: $event->getObject());
 	}//end payload()
 }//end class

@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Support\ResolvesLoggedObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -55,6 +56,9 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentService implements AppointmentServiceInterface {
+
+	use ResolvesLoggedObjectService;
+
 	/**
 	 * Constructor.
 	 *
@@ -353,22 +357,4 @@ class AppointmentService implements AppointmentServiceInterface {
 				);
 		}//end switch
 	}//end getBackend()
-
-	/**
-	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.
-	 *
-	 * @return \OCA\OpenRegister\Contract\ObjectServiceInterface|null The object service or null.
-	 */
-	private function getObjectService(): ?\OCA\OpenRegister\Contract\ObjectServiceInterface {
-		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error('Dossiq: Could not get ObjectService', ['exception' => $e->getMessage()]);
-			return null;
-		}
-	}//end getObjectService()
 }//end class

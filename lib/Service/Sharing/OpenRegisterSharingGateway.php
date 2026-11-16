@@ -125,7 +125,7 @@ class OpenRegisterSharingGateway {
 	 */
 	public function accessLinkReader(): ?object {
 		return $this->resolve(
-			className: 'OCA\OpenRegister\Service\Sharing\AccessLinkReader',
+			className: 'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader',
 			methods: ['read']
 		);
 	}//end accessLinkReader()
@@ -143,8 +143,8 @@ class OpenRegisterSharingGateway {
 	 */
 	public function noteService(): ?object {
 		return $this->resolve(
-			className: 'OCA\OpenRegister\Service\NoteService',
-			methods: ['getNotesForObject']
+			className: 'OCA\OpenRegister\Files\Service\NoteService',
+			methods: ['listNotes']
 		);
 	}//end noteService()
 

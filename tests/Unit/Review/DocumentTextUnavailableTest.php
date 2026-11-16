@@ -31,7 +31,7 @@ use RuntimeException;
  */
 class DocumentTextUnavailableTest extends TestCase {
 
-	private const EXTRACTION = 'OCA\OpenRegister\Service\TextExtractionService';
+	private const EXTRACTION = 'OCA\OpenRegister\Files\Service\TextExtractionService';
 
 	/**
 	 * A container that throws while resolving the extraction is logged at info, and no text is read.

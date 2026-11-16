@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Export\AnonymisedCaseExport;
+use OCA\Dossiq\Kernel\Contracts\AnonymisedCaseExportInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,18 +50,18 @@ class CaseAnonymisedExportController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string               $appName     The app name.
-	 * @param IRequest             $request     The request.
-	 * @param AnonymisedCaseExport $export      The anonymised export.
-	 * @param IUserSession         $userSession The session.
-	 * @param LoggerInterface      $logger      The logger.
+	 * @param string                        $appName     The app name.
+	 * @param IRequest                      $request     The request.
+	 * @param AnonymisedCaseExportInterface $export      The anonymised export.
+	 * @param IUserSession                  $userSession The session.
+	 * @param LoggerInterface               $logger      The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AnonymisedCaseExport $export,
+		private readonly AnonymisedCaseExportInterface $export,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

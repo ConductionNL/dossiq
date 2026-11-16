@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -36,6 +37,10 @@ use RuntimeException;
  * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-document-from-a-connected-system-takes-the-upload-path
  */
 class ConnectedSystemDocumentFiler {
+
+	use ReadsLooseValues {
+		looseScalarText as private text;
+	}
 
 	/**
 	 * Constructor.
@@ -213,19 +218,4 @@ class ConnectedSystemDocumentFiler {
 	private static function refused(string $reason): array {
 		return ['refusal' => $reason, 'kind' => ConnectedSystemCaseWriter::REFUSED];
 	}//end refused()
-
-	/**
-	 * A scalar as trimmed text.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The text, '' for anything that is not a scalar.
-	 */
-	private static function text(mixed $value): string {
-		if (is_scalar($value) === false) {
-			return '';
-		}
-
-		return trim((string)$value);
-	}//end text()
 }//end class

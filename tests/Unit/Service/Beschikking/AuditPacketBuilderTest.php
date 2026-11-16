@@ -16,7 +16,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
 use JsonSerializable;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
-use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -33,8 +32,6 @@ class AuditPacketBuilderTest extends TestCase {
 
 	private SettingsService&MockObject $settings;
 
-	private SigningAdapterInterface&MockObject $signing;
-
 	private LoggerInterface&MockObject $logger;
 
 	/**
@@ -50,12 +47,11 @@ class AuditPacketBuilderTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			fn (string $key, string $default = ''): string => ($this->config[$key] ?? $default)
 		);
-		$this->signing = $this->createMock(SigningAdapterInterface::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 	}//end setUp()
 
 	private function builder(): AuditPacketBuilder {
-		return new AuditPacketBuilder($this->settings, $this->signing, $this->logger);
+		return new AuditPacketBuilder($this->settings, $this->logger);
 	}//end builder()
 
 	/**
@@ -110,8 +106,6 @@ class AuditPacketBuilderTest extends TestCase {
 	public function testThePacketCarriesFiveEntriesWithTheReportLogsAndManifest(): void {
 		$objects = $this->objectService([['decisionId' => 'b-1', 'to' => 'verzonden']]);
 		$this->settings->method('getObjectService')->willReturn($objects);
-		$this->signing->expects($this->once())->method('fetchValidationReport')->with('val-9')
-			->willReturn(['validationRapportId' => 'val-9', 'valid' => true]);
 
 		$entries = $this->entries($this->builder()->build('b-1', [
 			'reference' => 'BES-2026-1',
@@ -124,7 +118,10 @@ class AuditPacketBuilderTest extends TestCase {
 		);
 		$this->assertSame([['dossiq', 'state-machine-log', ['decisionId' => 'b-1']]], $objects->slugCalls);
 		$this->assertSame([['decisionId' => 'b-1', 'to' => 'verzonden']], json_decode($entries['state-machine-log.json'], true));
-		$this->assertSame(['validationRapportId' => 'val-9', 'valid' => true], json_decode($entries['validatierapport.json'], true));
+		// Filinq publishes no validation report, so the packet says none is available (signing-through-filinq).
+		$report = json_decode($entries['validatierapport.json'], true);
+		$this->assertFalse($report['available']);
+		$this->assertSame('val-9', $report['validationRapportId']);
 
 		$manifest = json_decode($entries['manifest.json'], true);
 		$this->assertSame('b-1', $manifest['decisionId']);
@@ -134,15 +131,14 @@ class AuditPacketBuilderTest extends TestCase {
 		$this->assertMatchesRegularExpression('/^sha256:[0-9a-f]{64}$/', $entries['signature.p7s.txt']);
 	}//end testThePacketCarriesFiveEntriesWithTheReportLogsAndManifest()
 
-	public function testWithoutARapportIdNoReportIsFetchedAndTheReportIsEmpty(): void {
+	public function testWithoutASignatureTheReportIsEmpty(): void {
 		$this->settings->method('getObjectService')->willReturn($this->objectService());
-		$this->signing->expects($this->never())->method('fetchValidationReport');
 
-		$entries = $this->entries($this->builder()->build('b-2', ['signature' => ['validationRapportId' => '']]));
+		$entries = $this->entries($this->builder()->build('b-2', []));
 
 		$this->assertSame([], json_decode($entries['validatierapport.json'], true));
 		$this->assertSame('', json_decode($entries['manifest.json'], true)['reference']);
-	}//end testWithoutARapportIdNoReportIsFetchedAndTheReportIsEmpty()
+	}//end testWithoutASignatureTheReportIsEmpty()
 
 	public function testTheBsnIsMaskedToItsLastThreeDigits(): void {
 		$this->settings->method('getObjectService')->willReturn(null);

@@ -54,10 +54,10 @@ final class EclFakeNoteService {
 	/**
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function getNotesForObject(string $objectUuid, int $limit = 50, int $offset = 0, ?string $visibility = null): array {
-		unset($objectUuid, $limit, $offset, $visibility);
+	public function listNotes(object $query): array {
+		unset($query);
 		return $this->notes;
-	}//end getNotesForObject()
+	}//end listNotes()
 }//end class
 
 /**
@@ -537,7 +537,7 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 			/**
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function getNotesForObject(string $objectUuid, int $limit = 50): array {
+			public function listNotes(object $query): array {
 				throw new \RuntimeException('database gone');
 			}
 		};

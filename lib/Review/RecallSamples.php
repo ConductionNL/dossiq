@@ -98,36 +98,61 @@ class RecallSamples implements RecallSamplesInterface {
 	 */
 	public function draw(string $caseId, int $size, string $assignee, string $userId, ?int $seed = null): array {
 		$this->assertAssigneeChosen(assignee: $assignee);
-		[$nullSet, $found] = $this->nullSetOf(caseId: $caseId);
-		$this->assertSampleSizeFits(size: $size, nullSetSize: count($nullSet));
-
-		$seed = ($seed ?? random_int(1, PHP_INT_MAX));
-		$documents = $this->depth->drawSample(items: $nullSet, size: $size, seed: $seed);
-		$sample = $this->save(
-			sample: [
-				'case' => $caseId,
-				'seed' => $seed,
-				'drawnBy' => $userId,
-				'drawnAt' => date(DATE_ATOM),
-				'nullSetSize' => count($nullSet),
-				'found' => $found,
-				'documents' => $documents,
-				'judgements' => [],
-			]
-		);
-
-		$sampleId = self::idOf(row: $sample);
-		$batch = $this->batches->createSampleBatch(
-			caseId: $caseId,
-			sampleId: $sampleId,
-			assignee: $assignee,
-			documents: $documents,
-			userId: $userId
-		);
-		$sample['batch'] = self::idOf(row: $batch);
+		$row = $this->drawnSample(caseId: $caseId, request: ['size' => $size, 'seed' => $seed, 'userId' => $userId]);
+		$sample = $this->save(sample: $row);
+		$sample['batch'] = $this->sampleBatchId(sampleId: self::idOf(row: $sample), row: $row + ['assignee' => $assignee]);
 
 		return $this->save(sample: $sample);
 	}//end draw()
+
+	/**
+	 * Draw the sample from the case's null set, as the row to store.
+	 *
+	 * @param string               $caseId  The case UUID.
+	 * @param array<string, mixed> $request The sample size as `size`, the seed (or null) as `seed`, who draws it as `userId`.
+	 *
+	 * @return array<string, mixed> The unsaved sample.
+	 *
+	 * @throws RefusedException When the size does not fit the null set.
+	 */
+	private function drawnSample(string $caseId, array $request): array {
+		[$nullSet, $found] = $this->nullSetOf(caseId: $caseId);
+		$this->assertSampleSizeFits(size: $request['size'], nullSetSize: count($nullSet));
+
+		$seed = ($request['seed'] ?? random_int(1, PHP_INT_MAX));
+		$documents = $this->depth->drawSample(items: $nullSet, size: $request['size'], seed: $seed);
+
+		return [
+			'case' => $caseId,
+			'seed' => $seed,
+			'drawnBy' => $request['userId'],
+			'drawnAt' => date(DATE_ATOM),
+			'nullSetSize' => count($nullSet),
+			'found' => $found,
+			'documents' => $documents,
+			'judgements' => [],
+		];
+	}//end drawnSample()
+
+	/**
+	 * Hand a stored sample to its reviewer as a sample batch.
+	 *
+	 * @param string               $sampleId The stored sample's id.
+	 * @param array<string, mixed> $row      The drawn sample, with the reviewer as `assignee`.
+	 *
+	 * @return string The batch id.
+	 */
+	private function sampleBatchId(string $sampleId, array $row): string {
+		$batch = $this->batches->createSampleBatch(
+			caseId: $row['case'],
+			sampleId: $sampleId,
+			assignee: $row['assignee'],
+			documents: $row['documents'],
+			userId: $row['drawnBy']
+		);
+
+		return self::idOf(row: $batch);
+	}//end sampleBatchId()
 
 	/**
 	 * Refuse a sample without a reviewer, or with one not admitted to review.
@@ -210,18 +235,35 @@ class RecallSamples implements RecallSamplesInterface {
 	 */
 	public function judge(string $caseId, string $sampleId, string $documentRef, bool $inScope, string $userId): array {
 		$sample = $this->find(caseId: $caseId, sampleId: $sampleId);
+		$judgement = ['documentRef' => $documentRef, 'inScope' => $inScope, 'caseId' => $caseId, 'userId' => $userId];
+
+		return $this->withProgress(sample: $this->save(sample: $this->withJudgement(sample: $sample, judgement: $judgement)));
+	}//end judge()
+
+	/**
+	 * The sample with one sampled document judged, completed with its estimate when it was the last.
+	 *
+	 * @param array<string, mixed> $sample    The open sample.
+	 * @param array<string, mixed> $judgement The sampled document as `documentRef`, whether it is in scope as `inScope`,
+	 *                                        the case UUID as `caseId` and who judges as `userId`.
+	 *
+	 * @return array<string, mixed> The sample with its judgements.
+	 *
+	 * @throws RefusedException When the document is not sampled or the sample is closed.
+	 */
+	private function withJudgement(array $sample, array $judgement): array {
 		$documents = array_map('strval', (array)($sample['documents'] ?? []));
-		$this->assertSampled(documents: $documents, documentRef: $documentRef);
+		$this->assertSampled(documents: $documents, documentRef: $judgement['documentRef']);
 		$this->assertOpen(sample: $sample);
 
-		$judgements = $this->judgementsWith(sample: $sample, documentRef: $documentRef, inScope: $inScope);
+		$judgements = $this->judgementsWith(sample: $sample, documentRef: $judgement['documentRef'], inScope: $judgement['inScope']);
 		$sample['judgements'] = $judgements;
 		if (count(array_intersect($documents, array_map('strval', array_keys($judgements)))) === count($documents)) {
-			$sample = $this->complete(caseId: $caseId, sample: $sample, userId: $userId);
+			$sample = $this->complete(caseId: $judgement['caseId'], sample: $sample, userId: $judgement['userId']);
 		}
 
-		return $this->withProgress(sample: $this->save(sample: $sample));
-	}//end judge()
+		return $sample;
+	}//end withJudgement()
 
 	/**
 	 * Refuse a judgement of a document outside the sample.

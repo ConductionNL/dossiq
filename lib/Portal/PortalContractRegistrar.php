@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Portal;
 use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
 use OCA\Dossiq\Kernel\Contracts\CitizenManifestInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
 use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
@@ -53,6 +54,7 @@ class PortalContractRegistrar {
 		$context->registerServiceAlias(ApplicantPortalActsInterface::class, ApplicantPortalActs::class);
 		$context->registerServiceAlias(CitizenManifestInterface::class, CitizenManifest::class);
 		$context->registerServiceAlias(PortalAssertionVerifierInterface::class, PortalAssertionVerifier::class);
+		$context->registerServiceAlias(PortalContributionProviderInterface::class, PortalContributionProvider::class);
 		$context->registerServiceAlias(PortalSubmissionLedgerInterface::class, PortalSubmissionLedger::class);
 		$context->registerServiceAlias(PortalWooAnswerInterface::class, PortalWooAnswer::class);
 		$context->registerServiceAlias(ResidentQuestionTaskInterface::class, ResidentQuestionTask::class);

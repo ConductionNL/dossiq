@@ -192,12 +192,7 @@ class MoveCaseTypeVersionAction implements StepBulkActionInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$caseId = $this->caseId(object: $step->object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
-
-		return $this->attempt(step: $step, caseId: $caseId);
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->attempt(step: $step, caseId: $caseId));
 	}//end apply()
 
 	/**

@@ -6,9 +6,7 @@
  * The single thin HTTP boundary for every outbound call this app makes to
  * Hermiq's case-assistant surface (`POST /api/assistant/converse`). Hermiq is
  * called as a local peer app on the same Nextcloud instance via
- * OCP\Http\Client\IClientService — the same way LibresignApiClient calls
- * LibreSign and KvkApiAdapter/HaalCentraalBrpAdapter call third-party HTTP
- * APIs elsewhere in this app.
+ * OCP\Http\Client\IClientService.
  *
  * FLEET RULE: AI functionality lives in Hermiq. This client carries NO
  * prompt-building, model selection, or LLM-calling logic of its own — it only
