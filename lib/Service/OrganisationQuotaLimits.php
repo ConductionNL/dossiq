@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\OrganisationQuotaLimitsInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
  */
-class OrganisationQuotaLimits {
+class OrganisationQuotaLimits implements OrganisationQuotaLimitsInterface {
 	/**
 	 * Quota type to the Organisation column that carries its limit.
 	 *

@@ -39,8 +39,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -221,7 +221,7 @@ class WooDecisionNotice {
 				. "\n\n" . $l10n->t('Read the decision and the documents made public here: %1$s', [$link]),
 			'read' => false,
 			'receivedAt' => gmdate('c'),
-			'ruleKey' => PortalContributionProvider::RULE_WOO_REQUEST_PUBLISHED,
+			'ruleKey' => PortalContributionProviderInterface::RULE_WOO_REQUEST_PUBLISHED,
 			'recordLink' => ['app' => AppIdentity::APP_ID, 'collection' => self::CASE_COLLECTION, 'id' => $caseId],
 		];
 	}//end noticeMessage()

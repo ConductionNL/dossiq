@@ -35,8 +35,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
 use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintHearingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
-use OCA\Dossiq\Service\HearingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -56,7 +56,7 @@ class ComplaintHearingController extends Controller {
 	 * @param string $appName App name
 	 * @param IRequest $request Request
 	 * @param ComplaintServiceInterface $complaintService Complaint service
-	 * @param HearingService $hearingService Hearing service
+	 * @param ComplaintHearingServiceInterface $hearingService Hearing service
 	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
@@ -65,7 +65,7 @@ class ComplaintHearingController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly ComplaintServiceInterface $complaintService,
-		private readonly HearingService $hearingService,
+		private readonly ComplaintHearingServiceInterface $hearingService,
 		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
