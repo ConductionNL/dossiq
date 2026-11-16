@@ -255,4 +255,35 @@ final class ShippedPackageRecordTest extends TestCase {
 		self::assertSame(expected: $row['fingerprint'], actual: $row['shippedFingerprint']);
 		self::assertSame(expected: (new ShippedFingerprint())->hashOf(object: $object), actual: $row['fingerprint']);
 	}//end testAStampWithAnObjectsKeyButNoStoredRowHashesTheGivenObject()
+
+	/**
+	 * An object without an id was never shipped: it reads as local without a ledger lookup.
+	 *
+	 * @return void
+	 */
+	public function testAnObjectWithoutAnIdReadsAsLocal(): void {
+		$this->shipped->stamp(set: 'pkg-woo', targetSchema: 'caseType', targetObject: 'ct-1', object: ['title' => 'Woo']);
+
+		self::assertSame(
+			expected: ['state' => ShippedConfigurationService::STATE_LOCAL, 'set' => '', 'setVersion' => ''],
+			actual: $this->shipped->stateOf(targetSchema: 'caseType', targetObject: '', object: ['title' => 'Woo'])
+		);
+	}//end testAnObjectWithoutAnIdReadsAsLocal()
+
+	/**
+	 * With no ledger schema configured the overview cannot be read, and says so with null.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableLedgerGivesNoOverview(): void {
+		$blind = new StarterStoreHarness(test: $this, unconfigured: [ShippedConfigurationService::LEDGER]);
+		$shipped = new ShippedConfigurationService(
+			store: $blind->store,
+			sets: new ShippedSets(),
+			fingerprint: new ShippedFingerprint(),
+			logger: new NullLogger(),
+		);
+
+		self::assertNull(actual: $shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema'));
+	}//end testAnUnreachableLedgerGivesNoOverview()
 }//end class
