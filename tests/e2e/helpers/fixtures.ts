@@ -525,7 +525,7 @@ async function httpPurge(
 				headers: writeHeaders(token),
 			})
 			.catch(() => null)
-	let deleted = await remove()
+	const deleted = await remove()
 	if (deleted !== null && deleted.status() === 403) return false
 
 	// CaseTypeDeleteGuard refuses a published case type on every delete path,
@@ -538,7 +538,7 @@ async function httpPurge(
 				data: { isDraft: true },
 			})
 			.catch(() => undefined)
-		deleted = await remove()
+		await remove()
 	}
 
 	await api
