@@ -55,7 +55,11 @@ class FileRestrictionMirrorTest extends TestCase {
 			/** @var list<array<int, mixed>> */
 			public array $calls = [];
 
-			public function restrict(int $fileId, array $users, array $groups, string $reason): void {
+			public function restrict(object $request): void {
+				$fileId = $request->fileId;
+				$users = $request->users;
+				$groups = $request->groups;
+				$reason = $request->reason;
 				$this->calls[] = ['restrict', $fileId, $users, $groups, $reason];
 			}
 

@@ -303,7 +303,10 @@ class FakeEngineCalculator {
 	 *
 	 * @return float The working hours.
 	 */
-	public function elapsedBusinessHours(\DateTimeInterface $from, \DateTimeInterface $to, object $calendar): float {
+	public function elapsedBusinessHours(object $span): float {
+		$from = $span->from;
+		$to = $span->to;
+		$calendar = $span->calendar;
 		if ($this->refuse === true) {
 			throw new RuntimeException('no calendar for that year');
 		}

@@ -311,7 +311,7 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 * @throws Throwable When the read fails.
 	 */
 	private function readCase(object $objectService, string $caseId): mixed {
-		$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
+		$case = $objectService->find(id: $caseId, _rbac: false, _multitenancy: false);
 		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
 			$case = $case->jsonSerialize();
 		}
