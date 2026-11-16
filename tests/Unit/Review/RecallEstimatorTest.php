@@ -95,6 +95,20 @@ class RecallEstimatorTest extends TestCase {
 	}//end testTheBoundRisesWithConfidence()
 
 	/**
+	 * Nothing found and nothing seen in the sample reads as full recall, while the bound still allows misses.
+	 *
+	 * @return void
+	 */
+	public function testNothingFoundAndNothingSampledReadsAsFullRecall(): void {
+		$estimate = (new RecallEstimator())->estimate(found: 0, nullSetSize: 100, k: 0, n: 50, confidence: 0.95);
+
+		$this->assertSame(0, $estimate['elusion'], 'no hit in the sample is an elusion of zero');
+		$this->assertSame(1.0, $estimate['estimate']);
+		$this->assertSame(0.0, $estimate['lowerBound']);
+		$this->assertGreaterThan(0.0, $estimate['elusionUpper']);
+	}//end testNothingFoundAndNothingSampledReadsAsFullRecall()
+
+	/**
 	 * Impossible inputs are refused, not estimated.
 	 *
 	 * @return void
