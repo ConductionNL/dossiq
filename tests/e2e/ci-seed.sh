@@ -389,6 +389,20 @@ if ! printf '%s' "$e2e_user_json" \
 fi
 echo "[ci-seed] ${E2E_USER_NAME:-e2euser} holds no admin group membership."
 
+# Queued dossiq jobs (the acknowledgement of receipt among them) run as the
+# background service account and requeue themselves, writing nothing, while
+# none is set. woo-requester-notices.spec.ts waits on such a job.
+BG_USER="${DOSSIQ_BG_USER:-dossiq-bg}"
+OC_PASS="${DOSSIQ_BG_PASS:-dossiq-bg-pass-e2e}" php occ user:add --password-from-env \
+	--display-name="Dossiq background" "${BG_USER}" >/dev/null 2>&1 || true
+php occ group:add dossiq-background-service >/dev/null 2>&1 || true
+if ! php occ group:adduser dossiq-background-service "${BG_USER}" \
+	|| ! php occ config:app:set dossiq background_service_account --value="${BG_USER}" >/dev/null; then
+	echo "::error::could not set ${BG_USER} as dossiq's background service account. Every queued dossiq job would requeue without running."
+	exit 1
+fi
+echo "[ci-seed] ${BG_USER} is dossiq's background service account."
+
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the
