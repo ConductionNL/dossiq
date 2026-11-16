@@ -31,10 +31,10 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\RequiresSignedInUid;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Kernel\Contracts\SubsidieBeschikkingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\VaststellingServiceInterface;
+use OCA\Dossiq\Service\Subsidie\BeschikkingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,7 +57,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param SubsidieServiceInterface $subsidyService Core subsidy service.
-	 * @param SubsidieBeschikkingServiceInterface $decisionService Grant-decision service.
+	 * @param BeschikkingService $decisionService Grant-decision service.
 	 * @param TussenrapportageServiceInterface $tussenrapportage Interim-report service.
 	 * @param VaststellingServiceInterface $determinationService Settlement service.
 	 * @param IUserSession $userSession The user session.
@@ -65,7 +65,7 @@ class SubsidieController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly SubsidieServiceInterface $subsidyService,
-		private readonly SubsidieBeschikkingServiceInterface $decisionService,
+		private readonly BeschikkingService $decisionService,
 		private readonly TussenrapportageServiceInterface $tussenrapportage,
 		private readonly VaststellingServiceInterface $determinationService,
 		private readonly IUserSession $userSession,

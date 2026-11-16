@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\Kernel\Contracts\SubsidieBeschikkingServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -47,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class BeschikkingService implements SubsidieBeschikkingServiceInterface {
+class BeschikkingService {
 
 	use SearchesObjects;
 
