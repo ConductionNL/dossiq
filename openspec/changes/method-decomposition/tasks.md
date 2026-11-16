@@ -685,3 +685,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         refusal of the grammar), green before and unchanged after but for one `@uses` line. Own
         test: `tests/Unit/Service/Scoring/FormulaTokensTest` (3); giving a name the `num` kind turns
         12 tests red (checked).
+  - [x] 8w `Import/RecordCaseMapping` (1: ExcessiveClassComplexity 51 against 50). Putting a raw source
+        value in the shape its field declares (JSON, boolean, date, moment, integer, number, a listed
+        value with its default and refusal, collapsed text cut at a word) moved to the new
+        `Import/RecordFieldShape` (`shaped()`, with `textOf()`, `typed()`, `listed()`, `cut()` and
+        `TRUE_WORDS`; bodies moved unchanged). The mapping keeps reading, the required check, the
+        statuses, terms and the payload paths, and builds the shaper over its own date path and
+        values in its constructor, so its constructor and every caller are unchanged.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `RecordCaseMappingShapesTest` (6 in all) for the cut at a word and the hard cut, the listed
+        value, its default and its refusal message, and dates, moments (written in the tenant's
+        zone) and integers. Own test: `tests/Unit/Service/Import/RecordFieldShapeTest` (3);
+        cutting one character short of the space turns 3 tests red (checked).
