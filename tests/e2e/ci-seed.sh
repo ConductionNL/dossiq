@@ -392,12 +392,15 @@ echo "[ci-seed] ${E2E_USER_NAME:-e2euser} holds no admin group membership."
 # Queued dossiq jobs (the acknowledgement of receipt among them) run as the
 # background service account and requeue themselves, writing nothing, while
 # none is set. woo-requester-notices.spec.ts waits on such a job.
+# The group comes with the register import; a missing group fails the adduser
+# below, loudly.
 BG_USER="${DOSSIQ_BG_USER:-dossiq-bg}"
-OC_PASS="${DOSSIQ_BG_PASS:-dossiq-bg-pass-e2e}" php occ user:add --password-from-env \
-	--display-name="Dossiq background" "${BG_USER}" >/dev/null 2>&1 || true
-php occ group:add dossiq-background-service >/dev/null 2>&1 || true
+if ! php occ user:info "${BG_USER}"; then
+	OC_PASS="${DOSSIQ_BG_PASS:-dossiq-bg-pass-e2e}" php occ user:add --password-from-env \
+		--display-name="Dossiq background" "${BG_USER}"
+fi
 if ! php occ group:adduser dossiq-background-service "${BG_USER}" \
-	|| ! php occ config:app:set dossiq background_service_account --value="${BG_USER}" >/dev/null; then
+	|| ! php occ config:app:set dossiq background_service_account --value="${BG_USER}"; then
 	echo "::error::could not set ${BG_USER} as dossiq's background service account. Every queued dossiq job would requeue without running."
 	exit 1
 fi
