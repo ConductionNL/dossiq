@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transfer;
 
+use OCA\Dossiq\Kernel\Contracts\TransferredCaseFollowInterface;
 use OCA\Dossiq\Service\CaseTransfer\TransferStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,7 +38,7 @@ use Throwable;
  *
  * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/federated-case-collaboration/spec.md
  */
-class TransferredCaseFollow {
+class TransferredCaseFollow implements TransferredCaseFollowInterface {
 
 	/**
 	 * The acts a sender follows, as the transfer schema names them.

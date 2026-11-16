@@ -104,17 +104,9 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		?string $password = null,
 		?string $label = null,
 	): array {
-		return $this->mint(
-			request: new AccessLinkRequest(
-				userId: $userId,
-				subjectType: 'object',
-				subjectId: $caseId,
-				capabilities: $capabilities,
-				expiresAt: $expiresAt,
-				password: $password,
-				label: $label
-			)
-		);
+		$terms = ['capabilities' => $capabilities, 'expiresAt' => $expiresAt, 'password' => $password, 'label' => $label];
+
+		return $this->mint(request: $this->linkRequest(subject: ['userId' => $userId, 'type' => 'object', 'id' => $caseId], terms: $terms));
 	}//end mintCaseLink()
 
 	/**
@@ -148,18 +140,30 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 			return ['error' => 'A file link must name both the case and the file'];
 		}
 
-		return $this->mint(
-			request: new AccessLinkRequest(
-				userId: $userId,
-				subjectType: 'file',
-				subjectId: $subjectId,
-				capabilities: ['read'],
-				expiresAt: $expiresAt,
-				password: $password,
-				label: $label
-			)
-		);
+		$terms = ['capabilities' => ['read'], 'expiresAt' => $expiresAt, 'password' => $password, 'label' => $label];
+
+		return $this->mint(request: $this->linkRequest(subject: ['userId' => $userId, 'type' => 'file', 'id' => $subjectId], terms: $terms));
 	}//end mintFileLink()
+
+	/**
+	 * The access link request for a subject on the given terms.
+	 *
+	 * @param array<string, string> $subject The minting userId, the subject type and the subject id.
+	 * @param array<string, mixed>  $terms   The capabilities, expiresAt, password and label.
+	 *
+	 * @return AccessLinkRequest The request.
+	 */
+	private function linkRequest(array $subject, array $terms): AccessLinkRequest {
+		return new AccessLinkRequest(
+			userId: $subject['userId'],
+			subjectType: $subject['type'],
+			subjectId: $subject['id'],
+			capabilities: $terms['capabilities'],
+			expiresAt: $terms['expiresAt'],
+			password: $terms['password'],
+			label: $terms['label']
+		);
+	}//end linkRequest()
 
 	/**
 	 * The `<objectUuid>/<fileId>` subject of a file link, '' when either part is blank.

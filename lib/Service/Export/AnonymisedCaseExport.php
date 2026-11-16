@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Export;
 
+use OCA\Dossiq\Kernel\Contracts\AnonymisedCaseExportInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
@@ -40,7 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-case-list-can-be-exported-anonymised-req-sdc-anon-01
  */
-class AnonymisedCaseExport {
+class AnonymisedCaseExport implements AnonymisedCaseExportInterface {
 
 	use SearchesObjects;
 

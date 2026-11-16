@@ -18,9 +18,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DecisionAdviceServiceInterface;
 use OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal;
-use OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -45,16 +45,16 @@ class DecisionAdviceController extends Controller {
 	 *
 	 * @param string $appName App name.
 	 * @param IRequest $request Request.
-	 * @param DecisionAdviceService $advice Asks the table and records the choice.
+	 * @param DecisionAdviceServiceInterface $advice Asks the table and records the choice.
 	 * @param IUserSession $userSession The session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DecisionAdviceService $advice,
+		private readonly DecisionAdviceServiceInterface $advice,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

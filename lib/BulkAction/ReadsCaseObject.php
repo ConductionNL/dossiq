@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BulkAction;
 
+use OCA\OpenRegister\BulkAction\BulkActionResult;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCA\OpenRegister\Db\ObjectEntity;
 
 /**
@@ -30,6 +32,9 @@ use OCA\OpenRegister\Db\ObjectEntity;
  * The job walks OpenRegister objects; dossiq's engines address a case by its
  * uuid. This is the whole of the translation between them, kept in one place
  * so four actions cannot disagree about where a case id lives.
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
+ * built through its named constructors.
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -70,4 +75,23 @@ trait ReadsCaseObject {
 	private function caseData(ObjectEntity $object): array {
 		return $object->getObject();
 	}//end caseData()
+
+	/**
+	 * Run the work on the step's case, or skip a step whose object has no case id.
+	 *
+	 * @param BulkStep                         $step The member object, the parameters, whether to commit and who started the job.
+	 * @param callable(string): BulkActionResult $work The work on the case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function forCase(BulkStep $step, callable $work): BulkActionResult {
+		$caseId = $this->caseId(object: $step->object);
+		if ($caseId === '') {
+			return BulkActionResult::skipped(reason: 'no_case_id');
+		}
+
+		return $work($caseId);
+	}//end forCase()
 }//end trait

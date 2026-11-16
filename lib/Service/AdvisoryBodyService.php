@@ -191,17 +191,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function delete(string $id): bool {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Advisory body schema not configured');
-		}
+		[$objectService, $register, $schema] = $this->requireSaveTarget();
 
 		$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 

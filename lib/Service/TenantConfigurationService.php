@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -45,6 +46,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 class TenantConfigurationService {
+
+	use ResolvesInstalledObjectService;
 	/**
 	 * Allowed locale identifiers (ISO + Dutch defaults).
 	 *
@@ -344,24 +347,4 @@ class TenantConfigurationService {
 			return $next;
 		}
 	}//end mergeConfig()
-
-	/**
-	 * Resolve the OpenRegister ObjectService when available.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

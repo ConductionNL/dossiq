@@ -138,19 +138,33 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 		}
 
 		$write = new ApplicantWrite(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt, mandate: $mandate);
+		$this->announceWrite(write: $write, case: $case);
+
+		return true;
+	}//end recordWrite()
+
+	/**
+	 * Put a recorded write on the timeline, tell the represented party and notify the assignee.
+	 *
+	 * @param ApplicantWrite       $write The write the applicant made.
+	 * @param array<string, mixed> $case  The case it landed on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function announceWrite(ApplicantWrite $write, array $case): void {
 		$this->recordOnTimeline(write: $write);
 
 		$this->tellTheRepresented(write: $write);
 
 		$this->notifyAssignee(
 			case: $case,
-			caseId: $caseId,
+			caseId: $write->caseId,
 			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
-			parameters: ['act' => $act],
+			parameters: ['act' => $write->act],
 		);
-
-		return true;
-	}//end recordWrite()
+	}//end announceWrite()
 
 	/**
 	 * Whether the act is one this app records, warning when it is not.

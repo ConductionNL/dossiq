@@ -76,6 +76,7 @@ class DecisionService implements DecisionServiceInterface {
 
 	use SearchesObjects;
 	use ReadsObjectionCase;
+	use SavesIntoStore;
 
 	/**
 	 * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
@@ -186,12 +187,7 @@ class DecisionService implements DecisionServiceInterface {
 		unset($record['publishedAt'], $record['notifiedRecipients']);
 
 		try {
-			return ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq bezwaar-decision: failed to draft: ' . $e->getMessage()
