@@ -41,7 +41,7 @@ class FileRestrictionMirrorTest extends TestCase {
 	 */
 	private function defineService(): void {
 		if (class_exists(FileRestrictionMirror::SERVICE) === false) {
-			eval('namespace OCA\OpenRegister\Service\File; class FileRestrictionService {}');
+			eval('namespace OCA\OpenRegister\Files\Service\File; class FileRestrictionService {}');
 		}
 	}//end defineService()
 
