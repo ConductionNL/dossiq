@@ -137,7 +137,7 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 			return $report;
 		}
 
-		$report = $this->scanAll(objectService: $objectService, mapper: $mapper, report: $report);
+		$report = $this->scanAll(objectService: $objectService, mapper: $mapper);
 
 		$this->logScan(report: $report);
 
@@ -166,9 +166,8 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 	/**
 	 * Scan every satellite schema into the report.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param object               $mapper        The organisation mapper.
-	 * @param array<string, mixed> $report        The report so far.
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param object $mapper        The organisation mapper.
 	 *
 	 * @return array{scanned:int, orphans:int, templates:int,
 	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
@@ -176,7 +175,9 @@ class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 	 *
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
-	private function scanAll(object $objectService, object $mapper, array $report): array {
+	private function scanAll(object $objectService, object $mapper): array {
+		$report = $this->emptyReport();
+
 		// Resolution is cached per tenantRef: a register with thousands of
 		// satellite rows holds only a handful of distinct tenants, and the
 		// uncached form is one mapper read per row.

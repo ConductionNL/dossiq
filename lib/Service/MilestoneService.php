@@ -32,6 +32,9 @@ use OCA\Dossiq\Kernel\Contracts\MilestoneServiceInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -268,7 +271,10 @@ class MilestoneService implements MilestoneServiceInterface {
 
 		$recordData = $this->milestoneRecord(caseId: $caseId, definitionId: $definitionId, userId: $userId, trigger: $trigger);
 
-		$record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
+		$record = $objectService->saveObject(
+			object: $recordData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info(
 			'Milestone marked: ' . $definitionId . ' on case ' . $caseId,
@@ -390,7 +396,7 @@ class MilestoneService implements MilestoneServiceInterface {
 		foreach ($records as $record) {
 			$recordId = $record['id'] ?? $record['uuid'] ?? '';
 			if ($recordId !== '') {
-				$objectService->deleteObject(uuid: $recordId, register: $register, schema: $schema);
+				$objectService->deleteObject(new ObjectDeletion(uuid: $recordId, target: new ObjectFindTarget(register: $register, schema: $schema)));
 			}
 		}
 	}//end deleteRecords()

@@ -76,6 +76,19 @@ class CaseDecisionLink {
 		}
 
 		$schema = $this->settingsService->getConfigValue('case_schema');
+		$this->listOnCase(target: [$objectService, $register, $schema, $caseId], decisionId: $decisionId);
+	}//end link()
+
+	/**
+	 * Add the decision to the case's `decisions` unless it is listed, logging a case that cannot be updated.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $target     The object service, the register, the case schema and the case UUID.
+	 * @param string                                            $decisionId The recorded decision's UUID.
+	 *
+	 * @return void
+	 */
+	private function listOnCase(array $target, string $decisionId): void {
+		[$objectService, $register, $schema, $caseId] = $target;
 		try {
 			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
 			if ($case === null) {
@@ -101,5 +114,5 @@ class CaseDecisionLink {
 				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}//end try
-	}//end link()
+	}//end listOnCase()
 }//end class

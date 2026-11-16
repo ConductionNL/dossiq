@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CollectsUniqueNames;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserManager;
@@ -46,6 +47,7 @@ use OCP\IUserManager;
 class ResponderResolver {
 
 	use SearchesObjects;
+	use CollectsUniqueNames;
 
 	/**
 	 * Constructor.
@@ -193,15 +195,7 @@ class ResponderResolver {
 			return [];
 		}
 
-		$names = [];
-		foreach ($responders as $responder) {
-			$name = trim((string)$responder);
-			if ($name !== '' && in_array($name, $names, true) === false) {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
+		return $this->uniqueNames(entries: $responders);
 	}//end names()
 
 	/**

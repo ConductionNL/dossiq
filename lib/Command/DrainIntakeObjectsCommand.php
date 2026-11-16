@@ -45,6 +45,8 @@ namespace OCA\Dossiq\Command;
 use OCA\Dossiq\Kernel\Contracts\IntakeObjectDrainInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -374,7 +376,10 @@ class DrainIntakeObjectsCommand extends Command {
 		$payload = array_merge($source, [(string)self::PLAN['deliveredField'] => $caseId]);
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
-		$setup->objectService->saveObject(object: $payload, register: $setup->register, schema: $setup->sourceSchema, uuid: $sourceId);
+		$setup->objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $setup->register, schema: $setup->sourceSchema), uuid: $sourceId)
+		);
 	}//end markSource()
 
 	/**

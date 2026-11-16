@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Flow\ICallFlowNode;
 
 /**
  * @covers \OCA\Dossiq\Service\Flow\RetiredActionRunner
@@ -127,7 +128,7 @@ class RetiredActionRunnerTest extends TestCase {
 	 * @return void
 	 */
 	private function catalogueWith(string $type, ?\Throwable $throws = null): void {
-		$node = $this->createMock(IFlowNode::class);
+		$node = $this->createMock(ICallFlowNode::class);
 		$node->method('getId')->willReturn($type);
 		$node->method('execute')->willReturnCallback(
 			function (FlowNodeCall $call) use ($throws): array {

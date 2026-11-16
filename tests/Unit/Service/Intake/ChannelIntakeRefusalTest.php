@@ -38,6 +38,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The refusal paths of ChannelIntake::caseFor().
@@ -116,7 +118,9 @@ class ChannelIntakeRefusalTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, string|int $register, string|int $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $id === 'type-1' ? ['id' => 'type-1', 'initialStatus' => 'ontvangen'] : null;
 			}
 
@@ -127,7 +131,9 @@ class ChannelIntakeRefusalTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, string|int $register, string|int $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = $object;
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;

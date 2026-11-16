@@ -116,6 +116,19 @@ class CaseCaptureService implements CaseCaptureServiceInterface {
 		$capture->taskId = $taskId;
 		$capture->author = $author;
 
+		return $this->attach(capture: $capture);
+	}//end attachCapture()
+
+	/**
+	 * Store the capture as a document and file it on its case, unless it is refused.
+	 *
+	 * @param CaptureFiling $capture The capture.
+	 *
+	 * @return array<string, mixed> `['ok' => true, 'document' => [...]]`, or an error envelope.
+	 *
+	 * @throws RuntimeException When OpenRegister is not configured for documents.
+	 */
+	private function attach(CaptureFiling $capture): array {
 		$refusal = $this->refusalFor(capture: $capture);
 		if ($refusal !== null) {
 			return $refusal;
@@ -127,7 +140,7 @@ class CaseCaptureService implements CaseCaptureServiceInterface {
 		$document = $this->storeDocument(capture: $capture);
 
 		return ['ok' => true, 'document' => $this->fileOnCase(capture: $capture, document: $document)];
-	}//end attachCapture()
+	}//end attach()
 
 	/**
 	 * The refusal for an empty file or one a recorder did not produce; null when it is a capture.

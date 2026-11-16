@@ -33,6 +33,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Money\PayoutService
@@ -64,20 +66,30 @@ class PayoutServiceGoldenTest extends TestCase {
 			 */
 			public array $failing = [];
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (in_array('find', $this->failing, true) === true) {
 					throw new RuntimeException('read down');
 				}
 
-				return parent::find($id, $_extend, $files, $register, $schema);
+				return parent::find($id, $options);
 			}
 
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true, bool $silent = false, bool $_validation = true): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$silent = $options->policy->silent ?? false;
+				$_validation = $options->policy->validation ?? true;
 				if (in_array('save', $this->failing, true) === true) {
 					throw new RuntimeException('write down');
 				}
 
-				return parent::saveObject($object, $extend, $register, $schema, $uuid, $_rbac, $_multitenancy, $silent, $_validation);
+				return parent::saveObject($object, $options, $_rbac, $_multitenancy);
 			}
 
 			public function findObjects(string $register, string $schema, array $filters = [], ?string $uuid = null, ?array $slugs = null): array {

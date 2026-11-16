@@ -87,6 +87,18 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
+		return $this->verdictAt(targetId: $targetId, case: $case);
+	}//end evaluate()
+
+	/**
+	 * Passed when the target status has no capacity, else whether a place is left for the case.
+	 *
+	 * @param string               $targetId The target status type.
+	 * @param array<string, mixed> $case     The case being moved.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function verdictAt(string $targetId, array $case): GuardResult {
 		$capacity = $this->capacityOf(statusTypeId: $targetId);
 		if ($capacity <= 0) {
 			// Absent or zero is no limit, which is every status shipped today.
@@ -100,7 +112,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			capacity: new StatusCapacity(statusTypeId: $targetId, limit: $capacity),
 			caseId: $this->idOf(case: $case)
 		);
-	}//end evaluate()
+	}//end verdictAt()
 
 	/**
 	 * The verdict for a capped status: a final status is never capped, any

@@ -49,6 +49,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -434,9 +436,13 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema']),
-				uuid: $move['id'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $register,
+							schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema'])
+						),
+					uuid: $move['id']
+				)
 			);
 
 			return true;
@@ -470,8 +476,10 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema']),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $register,
+						schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema'])
+					))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -661,7 +669,13 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	private function saveOriginal(array $payload, string $caseId): void {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$objectService->saveObject(object: $payload, register: $register, schema: $this->store->schema(key: 'case_schema'), uuid: $caseId);
+			$objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->store->schema(key: 'case_schema')),
+					uuid: $caseId
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq split: the reference to what moved could not be written',

@@ -32,12 +32,14 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 final class ZrcReadAccessStore {
 	/** @var mixed The find() answer, or a Throwable to throw. */
 	public mixed $found = ['confidentiality' => 'openbaar'];
 
 	public function find(int|string $id, mixed ...$args): mixed {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		if ($this->found instanceof \Throwable) {
 			throw $this->found;
 		}

@@ -73,7 +73,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .end-assignment {
 	min-width: 360px;
 	padding: 8px 4px;
@@ -83,21 +85,9 @@ export default {
 	margin-top: 12px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 
 .end-assignment__date {
-	width: 100%;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
+	@include editor.bordered-input;
 }
 </style>

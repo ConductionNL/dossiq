@@ -32,6 +32,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SubsidieRegisterExporterInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -213,7 +214,7 @@ class SubsidieRegisterController extends Controller {
 	 */
 	private function safeFind(object $objectService, array $where): array {
 		try {
-			$found = $objectService->find($where['id'], register: $where['register'], schema: $where['schema']);
+			$found = $objectService->find($where['id'], new ObjectFindOptions(register: $where['register'], schema: $where['schema']));
 			return $this->toArray(value: $found);
 		} catch (Throwable $e) {
 			return [];

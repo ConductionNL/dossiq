@@ -42,6 +42,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The quiet paths of IntakeTermStartListener.
@@ -185,7 +186,11 @@ class IntakeTermStartListenerEdgesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->writes[] = $data;
 				return $data;
 			}//end patchObject()
@@ -215,7 +220,11 @@ class IntakeTermStartListenerEdgesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> Never.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				throw new RuntimeException('store refused');
 			}//end patchObject()
 		};

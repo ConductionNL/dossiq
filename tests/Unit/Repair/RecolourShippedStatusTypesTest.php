@@ -30,6 +30,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The recolour step over a double of the object service.
@@ -86,7 +87,11 @@ class RecolourShippedStatusTypesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');
 				}

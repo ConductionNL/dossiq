@@ -273,19 +273,39 @@ class CaseMergeService implements CaseMergeServiceInterface {
 			return ['refused' => 'platform-unavailable'];
 		}
 
+		return $this->merge(
+			merger: $merger,
+			instruction: ['from' => $mergedId, 'into' => $survivorId, 'reason' => $reason, 'mergedBy' => $actor]
+		);
+	}//end requestMerge()
+
+	/**
+	 * Hand the merge to OpenRegister; a refusal is logged and answered as `platform-refused`.
+	 *
+	 * @param ObjectMergerInterface $merger      OpenRegister's object merger.
+	 * @param array<string, string>  $instruction The merged case (`from`), the survivor (`into`), the reason and the actor (`mergedBy`).
+	 *
+	 * @return array<string, mixed> The operation, or the refusal.
+	 */
+	private function merge(ObjectMergerInterface $merger, array $instruction): array {
 		try {
 			$operation = $merger->merge(
-				instruction: new MergeInstruction(from: $mergedId, into: $survivorId, reason: $reason, mergedBy: $actor)
+				instruction: new MergeInstruction(
+					from: $instruction['from'],
+					into: $instruction['into'],
+					reason: $instruction['reason'],
+					mergedBy: $instruction['mergedBy']
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: OpenRegister refused the merge of "' . $mergedId . '": ' . $e->getMessage()
+				'Dossiq: OpenRegister refused the merge of "' . $instruction['from'] . '": ' . $e->getMessage()
 			);
 			return ['refused' => 'platform-refused'];
 		}
 
 		return ['operation' => (array)$operation];
-	}//end requestMerge()
+	}//end merge()
 
 	/**
 	 * The reason a merge is refused, or '' when it may go ahead.

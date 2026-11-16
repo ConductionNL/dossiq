@@ -90,13 +90,30 @@ class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplate
 			return new ActionResult(succeeded: false, error: 'no_recipient');
 		}
 
-		$claim = $this->claimOf(actionConfig: $actionConfig, subject: ['case' => $case, 'caseId' => $caseId]);
+		return $this->sendOnce(
+			recipients: $recipients,
+			message: ['actionConfig' => $actionConfig, 'case' => $case, 'caseId' => $caseId, 'template' => $template]
+		);
+	}//end handle()
+
+	/**
+	 * Send the message, unless its once-claim says it already went out.
+	 *
+	 * @param array<int, string>   $recipients The addresses.
+	 * @param array<string, mixed> $message    The `actionConfig`, the `case`, its `caseId` and the `template`.
+	 *
+	 * @return ActionResult The send, or the skip.
+	 */
+	private function sendOnce(array $recipients, array $message): ActionResult {
+		$caseId = $message['caseId'];
+		$template = $message['template'];
+		$claim = $this->claimOf(actionConfig: $message['actionConfig'], subject: ['case' => $message['case'], 'caseId' => $caseId]);
 		if ($claim !== '' && $this->ledger->claim(key: $claim, template: $template, instance: $caseId, now: time()) === false) {
 			return new ActionResult(succeeded: true, data: ['skipped' => 'already sent']);
 		}
 
 		return $this->send(recipients: $recipients, message: ['caseId' => $caseId, 'template' => $template, 'claim' => $claim]);
-	}//end handle()
+	}//end sendOnce()
 
 	/**
 	 * Send to every recipient, settling the claim, or giving it back on a failure.

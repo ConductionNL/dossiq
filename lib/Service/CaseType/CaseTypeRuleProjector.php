@@ -96,7 +96,7 @@ class CaseTypeRuleProjector {
 			}
 
 			foreach ((array)($rule['actions'] ?? []) as $action) {
-				if ($this->entryRequirementOf(rule: $rule, action: (array)$action, caseTypeId: $caseTypeId) !== null) {
+				if ($this->entryRequirementOf(rule: $rule, scoped: ['action' => (array)$action, 'caseTypeId' => $caseTypeId]) !== null) {
 					continue;
 				}
 
@@ -158,8 +158,7 @@ class CaseTypeRuleProjector {
 			foreach ((array)($rule['actions'] ?? []) as $action) {
 				$requirement = $this->entryRequirementOf(
 					rule: $rule,
-					action: (array)$action,
-					caseTypeId: (string)($caseType['id'] ?? '')
+					scoped: ['action' => (array)$action, 'caseTypeId' => (string)($caseType['id'] ?? '')]
 				);
 				if ($requirement !== null) {
 					$requirements[(string)$rule['when']['status']][] = $requirement;
@@ -173,13 +172,13 @@ class CaseTypeRuleProjector {
 	/**
 	 * The entry requirement one action is, or null when it is not one.
 	 *
-	 * @param array<string, mixed> $rule The rule.
-	 * @param array<string, mixed> $action The action.
-	 * @param string $caseTypeId The case type uuid.
+	 * @param array<string, mixed>                                     $rule   The rule.
+	 * @param array{action: array<string, mixed>, caseTypeId: string} $scoped The action, and the case type uuid.
 	 *
 	 * @return array{documentType: string, rule: string, condition?: array<string, mixed>}|null The requirement.
 	 */
-	private function entryRequirementOf(array $rule, array $action, string $caseTypeId): ?array {
+	private function entryRequirementOf(array $rule, array $scoped): ?array {
+		$action = $scoped['action'];
 		$documentType = trim((string)($action['documentType'] ?? ''));
 		$status = trim((string)($rule['when']['status'] ?? ''));
 		if (($action['action'] ?? null) !== 'requireDocument' || $documentType === '' || $status === ''
@@ -191,7 +190,7 @@ class CaseTypeRuleProjector {
 		$requirement = ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
 		$conditions = (array)($rule['conditions'] ?? []);
 		if ($conditions !== []) {
-			$requirement['condition'] = $this->sources->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions);
+			$requirement['condition'] = $this->sources->logic->forRule(caseTypeId: $scoped['caseTypeId'], conditions: $conditions);
 		}
 
 		return $requirement;

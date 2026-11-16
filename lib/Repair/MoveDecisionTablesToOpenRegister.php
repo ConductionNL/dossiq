@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\StoredDecisionTablesInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -226,18 +227,16 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
 	private function oldRows(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('decision_table_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'decision_table_schema');
+		if ($target === null) {
 			return [];
 		}
 
 		try {
 			return $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $target->objectService,
+				register: $target->register,
+				schema: $target->schema,
 				filters: ['_limit' => 500],
 			);
 		} catch (Throwable $e) {

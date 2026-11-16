@@ -34,6 +34,8 @@ use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -488,8 +490,7 @@ class DeelzaakService implements DeelzaakServiceInterface {
 				$payload['parentCase'] = null;
 				$target->objectService->saveObject(
 					object: $payload,
-					register: $target->register,
-					schema: $target->schema,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schema))
 				);
 				$unlinked++;
 			} catch (\Throwable $e) {

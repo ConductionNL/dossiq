@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 use OCA\Dossiq\BackgroundJob\OpenCaseSweep;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Tests for OpenCaseSweep.
@@ -193,7 +194,11 @@ class SweepObjectService {
 	 *
 	 * @return array<string, mixed> The patched object.
 	 */
-	public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->calls[] = ['patchObject', $objectId, $data, $register, $schema, $this->asSystem];
 
 		return ['id' => $objectId] + $data;

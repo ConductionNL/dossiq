@@ -36,6 +36,7 @@ use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for reading the intake policy off a case type.
@@ -118,7 +119,9 @@ class IntakePolicyCaseTypeTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = [$id, $register, $schema];
 				if (array_key_exists($id, $this->caseTypes) === false) {
 					throw new DoesNotExistException('gone');

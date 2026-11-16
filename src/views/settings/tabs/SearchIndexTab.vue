@@ -65,6 +65,7 @@
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import { loadOnMount } from '../../../mixins/loadOnMount.js'
 import {
 	SEARCH_INDEX_COMMAND,
 	searchIndexStatus,
@@ -77,6 +78,8 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -136,16 +139,6 @@ export default {
 				? t('dossiq', 'Yes')
 				: t('dossiq', 'No, a rebuild locks the table it is on')
 		},
-	},
-
-	/**
-	 * Read openregister's index status once the section is on the page.
-	 *
-	 * @return {Promise<void>}
-	 * @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

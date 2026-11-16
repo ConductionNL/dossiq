@@ -105,7 +105,13 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			return $this->rejected(logPrefix: 'Rejected checklist template create: ', e: $e);
 		} catch (Throwable $e) {
-			return $this->failed(logPrefix: 'Failed to create checklist template: ', message: 'Failed to create checklist: ', e: $e);
+			return $this->failed(
+				logPrefix: 'Failed to create checklist template: ',
+				failure: [
+					'message' => 'Failed to create checklist: ',
+					'e' => $e,
+				]
+			);
 		}
 	}//end create()
 
@@ -134,7 +140,13 @@ class ChecklistTemplateController extends Controller {
 			// server fault, and its message already names the property.
 			return $this->rejected(logPrefix: 'Rejected checklist template update for ' . $id . ': ', e: $e);
 		} catch (Throwable $e) {
-			return $this->failed(logPrefix: 'Failed to update checklist template ' . $id . ': ', message: 'Failed to update checklist: ', e: $e);
+			return $this->failed(
+				logPrefix: 'Failed to update checklist template ' . $id . ': ',
+				failure: [
+					'message' => 'Failed to update checklist: ',
+					'e' => $e,
+				]
+			);
 		}
 	}//end update()
 
@@ -252,13 +264,13 @@ class ChecklistTemplateController extends Controller {
 	/**
 	 * Log a failed checklist write and answer it as a 500.
 	 *
-	 * @param string    $logPrefix The log message, followed by the failure's message.
-	 * @param string    $message   The answer, followed by the failure's message.
-	 * @param Throwable $e         The failure.
+	 * @param string                               $logPrefix The log message, followed by the failure's message.
+	 * @param array{message: string, e: Throwable} $failure   `message` the answer, followed by the failure's message; `e` the failure.
 	 *
 	 * @return JSONResponse
 	 */
-	private function failed(string $logPrefix, string $message, Throwable $e): JSONResponse {
+	private function failed(string $logPrefix, array $failure): JSONResponse {
+		[$message, $e] = [$failure['message'], $failure['e']];
 		$this->logger->error(
 			$logPrefix . $e->getMessage(),
 			['app' => AppIdentity::APP_ID]

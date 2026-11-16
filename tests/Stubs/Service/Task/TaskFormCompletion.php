@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Service\Task;
 
 use LogicException;
+use OCA\OpenRegister\Db\Task;
 
 if (class_exists('\\OCA\\OpenRegister\\Service\\Task\\TaskFormCompletion', false) === false) {
 	/**
@@ -26,14 +27,12 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Task\\TaskFormCompletion', false
 		/**
 		 * Complete a task, writing its form payload to the subject first.
 		 *
-		 * @param string               $uuid   The task uuid.
-		 * @param TaskAnswer           $answer The completion outcome, result and comment.
-		 * @param array<string, mixed> $data   The declared field values.
-		 * @param string|null          $actor  The completing identity.
+		 * @param FormCompletionRequest $request The task uuid, the answer and the declared field values.
+		 * @param string|null           $actor   The completing identity.
 		 *
-		 * @return object The completed task.
+		 * @return Task The completed task.
 		 */
-		public function complete(string $uuid, TaskAnswer $answer, array $data, ?string $actor): object {
+		public function complete(FormCompletionRequest $request, ?string $actor): Task {
 			throw new LogicException('TaskFormCompletion stub: mock complete()');
 		}//end complete()
 	}//end class

@@ -83,10 +83,21 @@ class DateReachedGuard implements GuardEvaluatorInterface {
 			);
 		}
 
+		return $this->dayVerdict(details: ['field' => $field, 'day' => $day, 'after' => (($guardConfig['after'] ?? false) === true)]);
+	}//end evaluate()
+
+	/**
+	 * Whether today is on or past the day, or past it when the guard waits until after it.
+	 *
+	 * @param array{field: string, day: string, after: bool} $details The field, its calendar day and whether to wait until after it.
+	 *
+	 * @return GuardResult Passed once the day is reached.
+	 */
+	private function dayVerdict(array $details): GuardResult {
+		$day   = $details['day'];
+		$after = $details['after'];
 		// Calendar days as Y-m-d compare correctly as strings.
-		$after   = (($guardConfig['after'] ?? false) === true);
-		$details = ['field' => $field, 'day' => $day, 'after' => $after];
-		$order   = strcmp($this->dates->todayAsCalendarDate(), $day);
+		$order = strcmp($this->dates->todayAsCalendarDate(), $day);
 		if ($after === true && $order <= 0) {
 			return new GuardResult(
 				passed: false,
@@ -104,7 +115,7 @@ class DateReachedGuard implements GuardEvaluatorInterface {
 		}
 
 		return new GuardResult(passed: true, details: $details);
-	}//end evaluate()
+	}//end dayVerdict()
 
 	/**
 	 * The field's value on the case, or in its answered properties.

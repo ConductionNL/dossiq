@@ -38,6 +38,8 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -305,7 +307,10 @@ class WooCollection implements WooCollectionInterface {
 		$row['case'] = $caseId;
 		$row['excludedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $row,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			$saved = $saved->jsonSerialize();
 		}

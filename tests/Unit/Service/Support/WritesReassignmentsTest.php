@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReassignedItem;
 use OCA\Dossiq\Service\Support\ReassignmentBatch;
 use OCA\Dossiq\Service\Support\WritesReassignments;
 use PHPUnit\Framework\TestCase;
@@ -114,7 +115,7 @@ final class WritesReassignmentsTest extends TestCase {
 			 * @return bool
 			 */
 			public function write(object $objectService, string $schema, string $id, array $item): bool {
-				return $this->reassignItem($objectService, $schema, $id, $item, new ReassignmentBatch('alice', 'bob', 'carol', 'b-1', '2026-01-02T03:04:05+00:00'));
+				return $this->reassignItem(new ReassignedItem($objectService, $schema, $id, $item), new ReassignmentBatch('alice', 'bob', 'carol', 'b-1', '2026-01-02T03:04:05+00:00'));
 			}
 		};
 

@@ -78,15 +78,30 @@ class RaiseDecisionHandler implements RaiseDecisionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'decision_type_missing');
 		}
 
+		return $this->raise(
+			request: ['caseId' => $caseId, 'decisionType' => $decisionType, 'caseTitle' => ($case['title'] ?? '')],
+			transitionContext: $transitionContext
+		);
+	}//end handle()
+
+	/**
+	 * Raise the decision in decidiq and answer with its reference.
+	 *
+	 * @param array{caseId: string, decisionType: string, caseTitle: mixed}  $request           The case, the decision type and the case title.
+	 * @param array<string, mixed>                                          $transitionContext The transition context (`userId`, `transitionLabel`).
+	 *
+	 * @return ActionResult The decision reference, or the failure.
+	 */
+	private function raise(array $request, array $transitionContext): ActionResult {
 		try {
 			$decisionRef = $this->decisions->raiseDecision(
-				decisionType: $decisionType,
-				externalReference: $caseId,
+				decisionType: $request['decisionType'],
+				externalReference: $request['caseId'],
 				subject: [
 					'subjectRegister' => 'dossiq',
 					'subjectSchema' => 'case',
-					'subjectId' => $caseId,
-					'subjectLabel' => (string)($case['title'] ?? ''),
+					'subjectId' => $request['caseId'],
+					'subjectLabel' => (string)$request['caseTitle'],
 				],
 				context: [
 					'actorId' => (string)($transitionContext['userId'] ?? ''),
@@ -96,12 +111,12 @@ class RaiseDecisionHandler implements RaiseDecisionHandlerInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'RaiseDecisionHandler: the decision could not be raised',
-				['exception' => $e->getMessage(), 'case' => $caseId, 'decisionType' => $decisionType]
+				['exception' => $e->getMessage(), 'case' => $request['caseId'], 'decisionType' => $request['decisionType']]
 			);
 
 			return new ActionResult(succeeded: false, error: 'raise_decision_failed');
 		}//end try
 
-		return new ActionResult(succeeded: true, data: ['decisionRef' => $decisionRef, 'decisionType' => $decisionType]);
-	}//end handle()
+		return new ActionResult(succeeded: true, data: ['decisionRef' => $decisionRef, 'decisionType' => $request['decisionType']]);
+	}//end raise()
 }//end class

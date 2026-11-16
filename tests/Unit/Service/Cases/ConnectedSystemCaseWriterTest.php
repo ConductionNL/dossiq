@@ -36,6 +36,8 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Cases\ConnectedSystemCaseWriter
@@ -491,7 +493,10 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function saveObject(array $object, ?string $register=null, ?string $schema=null, ?string $uuid=null, mixed ...$scope): ?array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true, mixed ...$scope): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->record(method: 'saveObject', scope: $scope);
 				$uuid = 'case-uuid-' . (count($this->test->cases) + 1);
 				if ($this->test->saveMode === 'unreadable') {
@@ -518,7 +523,11 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register=null, ?string $schema=null, mixed ...$scope): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true, mixed ...$scope): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->test->record(method: 'patchObject', scope: $scope, changes: $data);
 				$this->test->cases[$objectId] = ($data + $this->test->cases[$objectId]);
 				return $this->test->cases[$objectId];

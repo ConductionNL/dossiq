@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
+use OCA\OpenRegister\Service\Flow\FlowNodeInvoker;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -191,7 +192,8 @@ class SideEffectDispatcher {
 		}
 
 		try {
-			$node->execute(
+			(new FlowNodeInvoker())->execute(
+				node: $node,
 				call: new FlowNodeCall(items: [['json' => $transitioned->case]], config: $action, context: $transitioned->transitionContext)
 			);
 		} catch (Throwable $e) {

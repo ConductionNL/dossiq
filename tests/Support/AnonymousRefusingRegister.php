@@ -33,6 +33,10 @@ namespace OCA\Dossiq\Tests\Support;
 
 use Closure;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object store that knows who is writing.
@@ -135,13 +139,14 @@ class AnonymousRefusingRegister {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?array {
+		$_extend = $options?->extend ?? [];
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if ($schema === null || $schema === '') {
 			foreach ($this->rows as $rows) {
 				if (isset($rows[(string)$id]) === true) {
@@ -222,13 +227,14 @@ class AnonymousRefusingRegister {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$id = (string)($uuid ?? ($object['id'] ?? ($object['uuid'] ?? '')));
 		$action = 'update';
@@ -263,13 +269,14 @@ class AnonymousRefusingRegister {
 	 * @return array<string, mixed> The stored row.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectPatch $patch,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$schema = (string)$schema;
 		$this->admit(action: 'update', schema: $schema, rbac: $_rbac);
 		if (isset($this->rows[$schema][$objectId]) === false) {
@@ -295,12 +302,14 @@ class AnonymousRefusingRegister {
 	 * @return bool True when it existed.
 	 */
 	public function deleteObject(
-		string $uuid,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectDeletion $deletion,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
+		bool $_retentionSweep = false
 	): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
+		$schema = $deletion->target->schema;
 		$schema = (string)$schema;
 		$this->admit(action: 'delete', schema: $schema, rbac: $_rbac);
 		$found = isset($this->rows[$schema][$uuid]);

@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Behaviour of CaseFlowActions with OpenRegister's flow services present.
@@ -173,7 +174,9 @@ class CaseFlowActionsBehaviourTest extends TestCase {
 			public function __construct(private array $objects) {
 			}
 
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (array_key_exists($id, $this->objects) === false) {
 					throw new RuntimeException('not found');
 				}

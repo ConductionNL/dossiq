@@ -34,6 +34,9 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\QuickActionServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Support\CastArray;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -152,7 +155,12 @@ class QuickActionService implements QuickActionServiceInterface {
 	private function createdCaseId(array $store, array $record): string {
 		[$objectService, $register, $caseSchema] = $store;
 		try {
-			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
+			$created = $this->toArray(
+				result: $objectService->saveObject(
+					object: $record,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseSchema))
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create case via quick-action: ' . $e->getMessage(),
@@ -186,7 +194,12 @@ class QuickActionService implements QuickActionServiceInterface {
 		$record = $this->klachtRecord(caseId: $caseId, summary: $summary, burgerId: $burgerId, deadline: $deadline);
 
 		try {
-			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
+			$created = $this->toArray(
+				result: $objectService->saveObject(
+					object: $record,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseSchema))
+				)
+			);
 		} catch (Throwable $e) {
 			throw $this->klachtNotRegistered(error: $e);
 		}
@@ -336,7 +349,7 @@ class QuickActionService implements QuickActionServiceInterface {
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
 		try {
-			return $this->toArray(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			return $this->toArray(result: $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $caseSchema)));
 		} catch (Throwable $e) {
 			throw new RuntimeException('Case not found');
 		}

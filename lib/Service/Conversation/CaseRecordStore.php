@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Conversation;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -64,23 +65,7 @@ class CaseRecordStore {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function read(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'case_schema', id: $caseId);
 	}//end read()
 
 	/**

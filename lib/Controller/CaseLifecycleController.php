@@ -54,6 +54,8 @@ use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -262,7 +264,7 @@ class CaseLifecycleController extends Controller {
 		}
 
 		try {
-			$objectService->deleteObject(uuid: $caseId, register: $register, schema: $schema);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $caseId, target: new ObjectFindTarget(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			$this->rethrowDeleteFailure(e: $e, caseId: $caseId);
 		}

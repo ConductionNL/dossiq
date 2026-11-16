@@ -32,6 +32,9 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for StarterStore.
@@ -80,17 +83,25 @@ class StarterStoreTest extends TestCase {
 				}
 			}
 
-			public function find(string $id, $register = null, $schema = null, bool $_rbac = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->record('find', ['id' => $id, 'register' => $register, 'schema' => $schema, '_rbac' => $_rbac]);
 				return ['id' => $id];
 			}
 
-			public function saveObject(array $object, $register = null, $schema = null, ?string $uuid = null, bool $_rbac = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->record('saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid, '_rbac' => $_rbac]);
 				return $object + ['id' => ($uuid ?? 'new')];
 			}
 
-			public function deleteObject(string $uuid, $register = null, $schema = null): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->record('deleteObject', ['uuid' => $uuid, 'register' => $register, 'schema' => $schema]);
 				return true;
 			}

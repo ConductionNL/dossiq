@@ -21,14 +21,14 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * WooCaseLedger::recordWithheld().
+ * CasePublicationState::recordWithheld().
  *
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses \OCA\Dossiq\Service\Publication\WithheldEntries
  */
 class WooCaseLedgerWithheldTest extends TestCase {
@@ -38,10 +38,10 @@ class WooCaseLedgerWithheldTest extends TestCase {
 	 *
 	 * @param WithheldListRecorder|null $recorder The recorder.
 	 *
-	 * @return WooCaseLedger
+	 * @return CasePublicationState
 	 */
-	private function ledger(?WithheldListRecorder $recorder): WooCaseLedger {
-		return new WooCaseLedger(
+	private function ledger(?WithheldListRecorder $recorder): CasePublicationState {
+		return new CasePublicationState(
 			settingsService: $this->createMock(SettingsService::class),
 			logger: $this->createMock(LoggerInterface::class),
 			withheldRecorder: $recorder

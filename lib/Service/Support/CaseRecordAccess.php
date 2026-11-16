@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Support;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -83,7 +84,7 @@ final class CaseRecordAccess {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
+			$found = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw new RefusedException(
 				rule: 'case-unreadable',

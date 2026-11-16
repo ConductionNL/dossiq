@@ -151,6 +151,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
+import { savingFormEditor } from '../mixins/formEditor.js'
 
 export default {
 	name: 'DeadlineDefinitionEditor',
@@ -163,6 +164,8 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
+
+	mixins: [savingFormEditor],
 
 	props: {
 		definition: {
@@ -266,7 +269,7 @@ export default {
 	methods: {
 		t,
 		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
-		validate() {
+		formErrors() {
 			const errs = {}
 			if (!this.form.case_type)
 				errs.case_type = t('dossiq', 'Zaaktype is required')
@@ -275,25 +278,15 @@ export default {
 			if (!this.form.duurDagen || this.form.duurDagen < 1) {
 				errs.duurDagen = t('dossiq', 'Duration must be at least 1 day')
 			}
-			this.errors = errs
-			return Object.keys(errs).length === 0
-		},
-
-		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
-		async save() {
-			if (!this.validate()) return
-			this.saving = true
-			try {
-				this.$emit('save', { ...this.form })
-			} finally {
-				this.saving = false
-			}
+			return errs
 		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .deadline-definition-editor {
 	padding: 24px;
 	max-width: 560px;
@@ -303,16 +296,7 @@ export default {
 	margin-bottom: 14px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 
 .field-hint {
 	display: block;
@@ -321,12 +305,7 @@ export default {
 	font-size: 0.85em;
 }
 
-.field-error {
-	display: block;
-	color: var(--color-error);
-	font-size: 12px;
-	margin-top: 4px;
-}
+@include editor.field-error;
 
 .deadline-definition-editor__note {
 	font-size: 12px;

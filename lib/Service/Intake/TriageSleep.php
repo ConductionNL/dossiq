@@ -136,6 +136,20 @@ class TriageSleep implements TriageSleepInterface {
 			'sleptAt' => $this->time->getDateTime()->format(DATE_ATOM),
 		];
 
+		return $this->recorded(entryId: $entryId, record: $record);
+	}//end sleep()
+
+	/**
+	 * Write the sleep onto the item, refusing when it could not be recorded.
+	 *
+	 * @param string                                                                           $entryId The intake log entry.
+	 * @param array{sleepUntil: string, sleepReason: string, sleptBy: string, sleptAt: string} $record  The sleep.
+	 *
+	 * @return array{sleepUntil: string, sleepReason: string, sleptBy: string, sleptAt: string} The sleep as written.
+	 *
+	 * @throws RefusedException When the item could not be amended.
+	 */
+	private function recorded(string $entryId, array $record): array {
 		if ($this->log->amend(entryId: $entryId, changes: $record) === false) {
 			throw RefusedException::indeterminate(
 				rule: self::RULE_NO_ITEM,
@@ -144,7 +158,7 @@ class TriageSleep implements TriageSleepInterface {
 		}
 
 		return $record;
-	}//end sleep()
+	}//end recorded()
 
 	/**
 	 * The trimmed reason; a sleep without one is refused.

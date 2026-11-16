@@ -38,6 +38,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\CaseCopyServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -193,8 +196,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			$created = $this->toArray(
 				value: $context['objectService']->saveObject(
 					object: $payload,
-					register: $context['register'],
-					schema: $context['caseSchema'],
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $context['register'], schema: $context['caseSchema']))
 				)
 			);
 		} catch (\Throwable $e) {
@@ -411,7 +413,10 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	private function saveLink(DocumentLinkStore $store, array $row): bool {
 		$row['registrationDate'] = date('Y-m-d');
 		try {
-			$store->objectService->saveObject(object: $row, register: $store->register, schema: $store->schema);
+			$store->objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store->register, schema: $store->schema))
+			);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->warning(
@@ -517,7 +522,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 		}
 
 		try {
-			$found = $context['objectService']->find($id, register: $context['register'], schema: $schema);
+			$found = $context['objectService']->find($id, new ObjectFindOptions(register: $context['register'], schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseCopyService: object lookup failed',

@@ -33,6 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -82,7 +85,7 @@ trait WritesPackageRows {
 	 */
 	private function holds(object $objectService, string $register, string $schema, string $id): bool {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema, _rbac: false);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema), _rbac: false);
 		} catch (\Throwable $e) {
 			return false;
 		}
@@ -155,7 +158,7 @@ trait WritesPackageRows {
 			}
 
 			try {
-				$objectService->deleteObject($id, register: $register);
+				$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register)));
 			} catch (\Throwable $e) {
 				$this->logger->error(
 					'Could not roll back imported object {id}: {error}',

@@ -136,7 +136,7 @@ class AssigneeResolver implements AssigneeResolverInterface {
 			return $resolved;
 		}
 
-		$resolved = $this->fallbackPrincipal(primary: $primary, fallback: $fallback, json: $json, case: $case);
+		$resolved = $this->fallbackPrincipal(primary: $primary, fallback: ['raw' => $fallback, 'json' => $json, 'case' => $case]);
 		if ($resolved !== '') {
 			return $resolved;
 		}
@@ -147,25 +147,24 @@ class AssigneeResolver implements AssigneeResolverInterface {
 	/**
 	 * The declared fallback, rendered, when it names anybody on this case.
 	 *
-	 * @param string               $primary  The authored assignee, for the log.
-	 * @param string               $fallback The declared second choice, or ''.
-	 * @param array<string, mixed> $json     The rendering context.
-	 * @param array<string, mixed> $case     The case to render against.
+	 * @param string                                                                     $primary  The authored assignee, for the log.
+	 * @param array{raw: string, json: array<string, mixed>, case: array<string, mixed>} $fallback The declared second choice or '',
+	 *                                                                                           the rendering context and the case.
 	 *
 	 * @return string The rendered principal, or ''.
 	 *
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function fallbackPrincipal(string $primary, string $fallback, array $json, array $case): string {
-		$fallback = trim($fallback);
-		if ($fallback !== '') {
-			$resolved = $this->renderPrincipal(raw: $fallback, json: $json);
+	private function fallbackPrincipal(string $primary, array $fallback): string {
+		$raw = trim($fallback['raw']);
+		if ($raw !== '') {
+			$resolved = $this->renderPrincipal(raw: $raw, json: $fallback['json']);
 			if ($resolved !== '') {
 				$this->logger->info(
 					'Dossiq assignee: "' . $primary . '" named nobody on this case, so the work goes to its '
 						. 'declared fallback "' . $resolved . '"',
-					['case' => $this->caseId(case: $case)]
+					['case' => $this->caseId(case: $fallback['case'])]
 				);
 
 				return $resolved;

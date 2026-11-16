@@ -43,6 +43,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -93,7 +94,7 @@ class AdviceRepository {
 		}
 
 		try {
-			$advice = $objectService->find($adviceId, register: $register, schema: $schema);
+			$advice = $objectService->find($adviceId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load advice: ' . $e->getMessage(),

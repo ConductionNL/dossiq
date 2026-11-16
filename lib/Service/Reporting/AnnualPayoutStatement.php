@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Service\Reporting;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -37,6 +38,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 class AnnualPayoutStatement {
 
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * The annual statement when the payouts cannot be read.
@@ -70,7 +72,7 @@ class AnnualPayoutStatement {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function forYear(int $year): array {
-		$source = $this->payoutSource();
+		$source = $this->configuredSource(schemaKey: MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($source === null) {
 			return self::EMPTY_STATEMENT;
 		}
@@ -85,22 +87,6 @@ class AnnualPayoutStatement {
 
 		return $this->statementOf(year: $year, paid: $paid);
 	}//end forYear()
-
-	/**
-	 * Where the payouts are stored, or null when OpenRegister or a setting is missing.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null The object service, register and payout schema.
-	 */
-	private function payoutSource(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $uSchema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $uSchema];
-	}//end payoutSource()
 
 	/**
 	 * The payouts paid in the year, in order.
