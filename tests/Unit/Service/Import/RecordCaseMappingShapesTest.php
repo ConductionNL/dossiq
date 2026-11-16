@@ -120,4 +120,67 @@ class RecordCaseMappingShapesTest extends TestCase {
 
 		self::assertSame(['caseType' => 'type-9', 'deep' => ['er' => ['still' => 'value']], 'status' => 's-any'], $case);
 	}//end testATargetPathThatNamesNothingWritesNothing()
+
+	/**
+	 * Text is collapsed and cut at the last whole word; a word longer than the limit is cut hard.
+	 *
+	 * @return void
+	 */
+	public function testTextIsCollapsedAndCutAtAWord(): void {
+		$case = $this->caseFor(
+			fields: [
+				['to' => 'title', 'from' => 'title', 'maxLength' => 12],
+				['to' => 'code', 'from' => 'code', 'maxLength' => 4],
+				['to' => 'short', 'from' => 'short', 'maxLength' => 40],
+				['to' => 'blank', 'from' => 'blank'],
+				['to' => 'listy', 'from' => 'listy'],
+			],
+			record: ['title' => "  Een   lange
+ titel hier ", 'code' => 'ABCDEFGH', 'short' => 'kort', 'blank' => '   ', 'listy' => ['x']]
+		);
+
+		self::assertSame(
+			['caseType' => 'type-9', 'title' => 'Een lange', 'code' => 'ABCD', 'short' => 'kort', 'status' => 's-any'],
+			$case
+		);
+	}//end testTextIsCollapsedAndCutAtAWord()
+
+	/**
+	 * A listed value maps through its list, an empty one takes the default, an unknown one is refused.
+	 *
+	 * @return void
+	 */
+	public function testAListedValueMapsOrIsRefused(): void {
+		$field = ['to' => 'kind', 'from' => 'kind', 'values' => ['a' => 'alpha', 'b' => 'beta'], 'default' => 'none'];
+
+		self::assertSame('beta', $this->caseFor(fields: [$field], record: ['kind' => ' b '])['kind']);
+		self::assertSame('none', $this->caseFor(fields: [$field], record: [])['kind']);
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('The kind must be one of: a, b.');
+		$this->caseFor(fields: [$field], record: ['kind' => 'c']);
+	}//end testAListedValueMapsOrIsRefused()
+
+	/**
+	 * Dates, moments and integers take their shape; an unreadable date writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testDatesMomentsAndIntegersTakeTheirShape(): void {
+		$case = $this->caseFor(
+			fields: [
+				['to' => 'on', 'from' => 'on', 'as' => 'date'],
+				['to' => 'at', 'from' => 'at', 'as' => 'dateTime'],
+				['to' => 'count', 'from' => 'count', 'as' => 'integer'],
+				['to' => 'bad', 'from' => 'bad', 'as' => 'date'],
+			],
+			record: ['on' => '2026-03-05', 'at' => '2026-03-05T10:15:00+00:00', 'count' => '42abc', 'bad' => 'someday']
+		);
+
+		self::assertSame('2026-03-05', $case['on']);
+		// The moment is written in the tenant's zone, Amsterdam here.
+		self::assertSame('2026-03-05T11:15:00+01:00', $case['at']);
+		self::assertSame(42, $case['count']);
+		self::assertArrayNotHasKey('bad', $case);
+	}//end testDatesMomentsAndIntegersTakeTheirShape()
 }//end class
