@@ -109,6 +109,46 @@
       "format": "date",
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
       "hideOnCreate": true
+    },
+    {
+      "id": "6e155cfc-03bf-5885-b90b-74108d598a40",
+      "name": "scoringFormula",
+      "definition": "Gunningsformule",
+      "description": "De sleutel van de scoringsformule waarmee elke beoordeling haar totaal krijgt (zoals lowest-price, relative-price of price-quality). Zonder formule is het totaal de som van de punten per criterium.",
+      "category": "Aanbesteding",
+      "propertyType": "string",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
+    },
+    {
+      "id": "a2a496fd-74f7-58b8-9d72-4076e1584bea",
+      "name": "maxPoints",
+      "definition": "Maximaal aantal punten",
+      "description": "Het aantal punten dat de laagste prijs krijgt in een prijsformule.",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
+    },
+    {
+      "id": "d80b2f17-20c1-5563-888a-efc59f70feee",
+      "name": "qualityWeight",
+      "definition": "Weging kwaliteit",
+      "description": "Het gewicht van de kwaliteitsscore in de formule voor de beste prijs-kwaliteitverhouding.",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
+    },
+    {
+      "id": "4ab98b4e-1b0d-50fe-a738-5e389e8d5d0b",
+      "name": "priceWeight",
+      "definition": "Weging prijs",
+      "description": "Het gewicht van de prijsscore in de formule voor de beste prijs-kwaliteitverhouding.",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
     }
   ],
   "statusTypes": [

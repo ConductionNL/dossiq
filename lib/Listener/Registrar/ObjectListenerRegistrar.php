@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Listener\Registrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\CaseTypeDeleteGuard;
 use OCA\Dossiq\Listener\EmailTemplateVersionListener;
+use OCA\Dossiq\Listener\FormulaTotalOnSave;
 use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
@@ -81,6 +82,7 @@ class ObjectListenerRegistrar {
 		$this->registerCaseTypeDeleteGuard(context: $context);
 		$this->registerEmailTemplateVersionListener(context: $context);
 		$this->registerSubmissionClosingDateGuard(context: $context);
+		$this->registerFormulaTotalOnSave(context: $context);
 		$this->registerMapLayerHostListener(context: $context);
 		$this->registerSubsystemRegistrars(context: $context);
 	}//end register()
@@ -103,6 +105,24 @@ class ObjectListenerRegistrar {
 			listener: SubmissionClosingDateGuard::class
 		);
 	}//end registerSubmissionClosingDateGuard()
+
+	/**
+	 * Register the listener that totals a scored record with its case's formula.
+	 *
+	 * On the create and the update, before the write: the total is stored
+	 * with the scores it was computed from.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	private function registerFormulaTotalOnSave(IRegistrationContext $context): void {
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener(event: $event, listener: FormulaTotalOnSave::class);
+		}
+	}//end registerFormulaTotalOnSave()
 
 	/**
 	 * Register the Woo refusal-ground delete guard.

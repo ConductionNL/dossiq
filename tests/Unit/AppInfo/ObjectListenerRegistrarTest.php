@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
+use OCA\Dossiq\Listener\FormulaTotalOnSave;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -73,6 +74,21 @@ class ObjectListenerRegistrarTest extends TestCase {
 			message: 'a submission that came in on time keeps moving through its lifecycle after the closing date',
 		);
 	}//end testTheSubmissionClosingDateGuardIsOnTheCreateOnly()
+
+	/**
+	 * The formula total is set on the create and on the update, before the write.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	public function testTheFormulaTotalIsSetOnTheCreateAndTheUpdate(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains(FormulaTotalOnSave::class, ($registered['OCA\OpenRegister\Event\ObjectCreatingEvent'] ?? []));
+		$this->assertContains(FormulaTotalOnSave::class, ($registered['OCA\OpenRegister\Event\ObjectUpdatingEvent'] ?? []));
+		$this->assertNotContains(FormulaTotalOnSave::class, ($registered['OCA\OpenRegister\Event\ObjectUpdatedEvent'] ?? []), 'a total written after the save would be a second write');
+	}//end testTheFormulaTotalIsSetOnTheCreateAndTheUpdate()
 
 	/**
 	 * The delete guard is registered on OpenRegister's pre-persist delete event.

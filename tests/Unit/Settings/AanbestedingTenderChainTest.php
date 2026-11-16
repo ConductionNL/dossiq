@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @uses \OCA\Dossiq\Listener\SubmissionClosingDateGuard
+ * @uses \OCA\Dossiq\Listener\FormulaTotalOnSave
  */
 class AanbestedingTenderChainTest extends TestCase {
 
@@ -115,7 +116,7 @@ class AanbestedingTenderChainTest extends TestCase {
 
 		$this->assertTrue($caseType['tenderChain']);
 		$this->assertSame(['case-tender-ranking', 'case-overview-sections'], $caseType['overviewCards']);
-		$this->assertSame('1.11.0', self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version']);
+		$this->assertSame('1.12.0', self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version']);
 	}//end testThePackageRunsItsCaseTypeOnTheTenderChain()
 
 	/**
@@ -248,4 +249,58 @@ class AanbestedingTenderChainTest extends TestCase {
 		$this->assertArrayHasKey($fields['receivedAt'], $bid['properties']);
 		$this->assertContains($fields['closesOn'], $names, 'the closing day is a date the tender case type declares');
 	}//end testTheClosingDateGuardReadsFieldsTheBidAndTheTenderHave()
+
+	/**
+	 * Publishing an answer writes a published question on this tender, and scoring a bid an evaluation of it, both behind the flag.
+	 *
+	 * @return void
+	 */
+	public function testPublishingAnAnswerAndScoringABidWriteTheirRecordsOnThisTender(): void {
+		$actions = array_column((array)self::caseDetail(path: 'manifest.json')['config']['headerActions'], null, 'id');
+		$schemas = (array)self::json(path: 'lib/Settings/register.d/88-tender-records.json')['components']['schemas'];
+		$expected = [
+			'tender-answer-publish' => ['tenderQuestion', ['tender' => '@objectId', 'state' => 'published']],
+			'bid-score' => ['evaluation', ['tender' => '@objectId', 'state' => 'submitted']],
+		];
+
+		foreach ($expected as $id => [$schema, $props]) {
+			$action = $actions[$id];
+			$this->assertSame('open-form', $action['type'], $id);
+			$this->assertSame($schema, $action['schema'], $id);
+			$this->assertSame($props, $action['props'], $id);
+			$this->assertSame(['all' => [self::GATE, ['field' => '@self.archived', 'op' => 'empty']]], $action['visibleWhen'], $id);
+
+			$written = array_merge($action['includeFields'], array_keys($action['props']));
+			foreach ($written as $field) {
+				$this->assertArrayHasKey($field, $schemas[$schema]['properties'], $id . ': ' . $field . ' is a field of ' . $schema);
+			}
+
+			foreach ($schemas[$schema]['required'] as $required) {
+				$this->assertContains($required, $written, $id . ': ' . $required . ' is required on ' . $schema);
+			}
+
+			$this->assertContains($props['state'], $schemas[$schema]['properties']['state']['enum'], $id);
+		}
+
+		$this->assertNotContains('weightedTotal', $actions['bid-score']['includeFields'], 'the server totals the scores');
+		$this->assertSame('bid', $actions['bid-score']['fieldOverrides']['bid']['resource']['schema']);
+	}//end testPublishingAnAnswerAndScoringABidWriteTheirRecordsOnThisTender()
+
+	/**
+	 * The case type lets a tender name its scoring formula and the values the seeded formulas read.
+	 *
+	 * @return void
+	 */
+	public function testTheTenderNamesItsScoringFormulaAndItsWeights(): void {
+		$names = array_column((array)self::json(path: 'lib/Settings/packages/aanbesteding/case-type.json')['propertyDefinitions'], 'name');
+		$this->assertContains(\OCA\Dossiq\Listener\FormulaTotalOnSave::SCORED['evaluation_schema']['formula'], $names);
+
+		$formulas = (array)self::json(path: 'lib/Settings/register.d/88-tender-records.json')['components']['objects'];
+		$scores = ['quality', \OCA\Dossiq\Listener\FormulaTotalOnSave::PRICE, \OCA\Dossiq\Listener\FormulaTotalOnSave::LOWEST_PRICE];
+		foreach ($formulas as $formula) {
+			foreach ($formula['variables'] as $variable) {
+				$this->assertTrue(in_array($variable, $names, true) || in_array($variable, $scores, true), $formula['key'] . ' reads ' . $variable);
+			}
+		}
+	}//end testTheTenderNamesItsScoringFormulaAndItsWeights()
 }//end class
