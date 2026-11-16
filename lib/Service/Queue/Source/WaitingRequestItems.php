@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue\Source;
 
+use OCA\Dossiq\Service\Queue\QueueItem;
+
 /**
  * For a register-backed source with `CLOSED_STATUSES` and a private `itemOf(row, id)`.
  *

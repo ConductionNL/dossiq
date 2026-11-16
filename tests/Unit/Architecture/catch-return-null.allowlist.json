@@ -1,8 +1,9 @@
 {
-  "ceiling": 232,
+  "ceiling": 231,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-16, mandate usage reads: `getDecisionAuditTrail()` and `mandateRows()` read their rows through one private `usageRows()`, so their two catches became one. The ceiling went 232 to 231.",
     "2026-11-16, shared object service lookup: the tenant billing, configuration, onboarding and quota services drop their identical `getObjectService` copies for the `ResolvesInstalledObjectService` trait, whose site is already listed. Four sites left. The ceiling went 236 to 232.",
     "2026-11-15, method decomposition: catches moved with their code into private steps (intakeMessages, mandateRows, switched, stamp, createShare) and shared Support traits (ReadsFinalStatusIds::finalStatusIds, ResolvesInstalledObjectService::getObjectService, SearchesConfiguredSchema::configuredRows). Eleven sites became eight. The ceiling went 239 to 236.",
     "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan, the tenant resolver and the quota limits now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Nine sites became two. The ceiling went 246 to 239.",
@@ -767,13 +768,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findEscalation()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/MandaatGebruikService.php",
-      "method": "getDecisionAuditTrail",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getDecisionAuditTrail()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Milestone/MilestoneRepository.php",
@@ -1652,10 +1646,10 @@
     },
     {
       "file": "lib/Service/MandaatGebruikService.php",
-      "method": "mandateRows",
+      "method": "usageRows",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`mandateRows()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`usageRows()`, behind `getDecisionAuditTrail()` and `mandateRows()`, answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Sharing/CaseAccessLinkService.php",
