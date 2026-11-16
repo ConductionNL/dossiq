@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Listener;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\NamesTheActor;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -62,6 +63,7 @@ use Psr\Log\LoggerInterface;
  */
 class CasePriorityDerivationListener implements IEventListener {
 	use ReadsCaseWrites;
+	use NamesTheActor;
 
 	/**
 	 * The check named in the log when a payload cannot be read.
@@ -179,18 +181,4 @@ class CasePriorityDerivationListener implements IEventListener {
 			'priorityOverrideAt' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end overrideStamp()
-
-	/**
-	 * Who is making this edit.
-	 *
-	 * @return string The user id, or `system` for a background write.
-	 */
-	private function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end actor()
 }//end class

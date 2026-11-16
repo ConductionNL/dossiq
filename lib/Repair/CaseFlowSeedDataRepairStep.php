@@ -41,9 +41,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
@@ -73,7 +73,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface  $settingsService Settings and ObjectService bridge.
-	 * @param StatusTypeLookup $statuses        Reads a case type's statuses. REUSED rather
+	 * @param StatusTypeLookupInterface $statuses        Reads a case type's statuses. REUSED rather
 	 *                                          than re-queried here: two readers of the
 	 *                                          same relationship drift, and this one is
 	 *                                          the same object the flow resolves through.
@@ -89,7 +89,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly StatusTypeLookup $statuses,
+		private readonly StatusTypeLookupInterface $statuses,
 		private readonly CaseFlowSeedIndex $index,
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),

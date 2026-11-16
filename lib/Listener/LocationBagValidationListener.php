@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
+use OCA\Dossiq\Kernel\Contracts\LocationBagValidationListenerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
@@ -62,7 +63,7 @@ use Throwable;
  *
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
-class LocationBagValidationListener implements IEventListener {
+class LocationBagValidationListener implements IEventListener, LocationBagValidationListenerInterface {
 
 	use SavedObjectPayload;
 
@@ -83,11 +84,6 @@ class LocationBagValidationListener implements IEventListener {
 	 * 16-digit BAG nummeraanduiding identificatie shape.
 	 */
 	private const NUMMERAANDUIDING_PATTERN = '/^\d{16}$/';
-
-	/**
-	 * The value of `integration.bag.check` that switches the check on.
-	 */
-	public const CHECK_ON = 'on';
 
 	/**
 	 * The field on the location that says whether the BAG confirmed it.

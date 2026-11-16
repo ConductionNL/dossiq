@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Kernel\Contracts\GemachtigdeRoleTypeSeederInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 use Throwable;
@@ -63,6 +64,7 @@ use Throwable;
 class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * The generic role key this row carries, and the only thing that identifies it.
@@ -304,10 +306,7 @@ class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 	 * @throws RuntimeException When OpenRegister or the configuration is absent.
 	 */
 	private function target(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		if ($register === '') {

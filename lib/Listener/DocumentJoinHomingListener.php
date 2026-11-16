@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -104,6 +105,8 @@ class DocumentJoinHomingListener implements IEventListener {
 	 * @param Event $event The dispatched event.
 	 *
 	 * @return array<string, mixed>|null The payload, or null when it cannot be read.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) EventObjectPayload is a stateless reader.
 	 */
 	private function payload(Event $event): ?array {
 		$object = null;
@@ -115,13 +118,6 @@ class DocumentJoinHomingListener implements IEventListener {
 			$object = $event->getObject();
 		}
 
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return EventObjectPayload::fromValue(object: $object);
 	}//end payload()
 }//end class

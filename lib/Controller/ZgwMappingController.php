@@ -161,12 +161,7 @@ class ZgwMappingController extends Controller {
 
 		$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $params);
 
-		return new JSONResponse(
-			[
-				'success' => true,
-				'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-			]
-		);
+		return $this->savedMapping(resourceKey: $resourceKey);
 	}//end update()
 
 	/**
@@ -219,11 +214,22 @@ class ZgwMappingController extends Controller {
 
 		$this->zgwMappingService->resetToDefault(resourceKey: $resourceKey, defaults: $defaults);
 
+		return $this->savedMapping(resourceKey: $resourceKey);
+	}//end reset()
+
+	/**
+	 * The mapping of a resource as it is stored now, as a success answer.
+	 *
+	 * @param string $resourceKey The resource key.
+	 *
+	 * @return JSONResponse
+	 */
+	private function savedMapping(string $resourceKey): JSONResponse {
 		return new JSONResponse(
 			[
 				'success' => true,
 				'mapping' => $this->zgwMappingService->getMapping($resourceKey),
 			]
 		);
-	}//end reset()
+	}//end savedMapping()
 }//end class

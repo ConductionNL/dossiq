@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 
 /**
@@ -36,13 +36,13 @@ final class AcknowledgementDelivery {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseContactDirectory       $contacts The addresses registered on a case.
-	 * @param PortalContributionProvider $portal   The one list of case fields a citizen may see.
-	 * @param CaseFieldWriter            $writer   Partial writes to the stored case.
+	 * @param CaseContactDirectory                $contacts The addresses registered on a case.
+	 * @param PortalContributionProviderInterface $portal   The one list of case fields a citizen may see.
+	 * @param CaseFieldWriter                     $writer   Partial writes to the stored case.
 	 */
 	public function __construct(
 		public readonly CaseContactDirectory $contacts,
-		public readonly PortalContributionProvider $portal,
+		public readonly PortalContributionProviderInterface $portal,
 		public readonly CaseFieldWriter $writer,
 	) {
 	}//end __construct()

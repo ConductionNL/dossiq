@@ -29,6 +29,7 @@ use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Review\Support\ReviewStoreSteps;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -54,6 +55,7 @@ use Throwable;
 class ReviewBatches implements ReviewBatchesInterface {
 
 	use SearchesObjects;
+	use ReviewStoreSteps;
 
 	/**
 	 * The app config key of the batch schema.
@@ -153,22 +155,48 @@ class ReviewBatches implements ReviewBatchesInterface {
 		$name = trim($name);
 		$this->validate(caseId: $caseId, name: $name, assignee: $assignee, documents: $documents);
 
-		$batch = $this->save(batch: ['case' => $caseId, 'name' => $name, 'documents' => $documents, 'filter' => $filter,
-			'assignee' => $assignee, 'status' => 'open']);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => $filter, 'assignee' => $assignee, 'status' => 'open'];
+		$batch = $this->save(batch: $fields);
+		$this->stampReviews(caseId: $caseId, batchId: $this->batchIdOf(batch: $batch), documents: $documents);
+		$assigned = $this->assign(batch: $batch, written: ['userId' => $userId] + $fields);
 
-		$this->stampReviews(caseId: $caseId, batchId: $batchId, documents: $documents);
+		$progress = ['assessed' => 0, 'total' => count($documents)];
+		return ['batch' => $assigned['batch'], 'taskCreated' => $assigned['taskId'] !== '', 'progress' => $progress, 'access' => $assigned['access']];
+	}//end create()
 
-		$taskId = $this->handTask(
-			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
-			userId: $userId,
-		);
+	/**
+	 * The id of a stored batch.
+	 *
+	 * @param array<string, mixed> $batch The stored batch.
+	 *
+	 * @return string The batch id.
+	 */
+	private function batchIdOf(array $batch): string {
+		return (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+	}//end batchIdOf()
+
+	/**
+	 * Give a stored batch's reviewer a task, write the task on the batch and reconcile the case's reviewer access.
+	 *
+	 * @param array<string, mixed> $batch   The stored batch.
+	 * @param array<string, mixed> $written The batch as written (case, name, documents, assignee) and the creating userId.
+	 *
+	 * @return array{batch: array<string, mixed>, taskId: string, access: array{status: string, granted: int, revoked: int, refused: int}}
+	 *
+	 * @throws RefusedException When the batch cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function assign(array $batch, array $written): array {
+		$batchId = $this->batchIdOf(batch: $batch);
+		$assignment = ['caseId' => $written['case'], 'batchId' => $batchId, 'name' => $written['name']];
+		$assignment += ['assignee' => $written['assignee'], 'count' => count($written['documents'])];
+		$taskId = $this->handTask(assignment: $assignment, userId: $written['userId']);
 		$batch = $this->withTask(batch: $batch, taskId: $taskId);
 
-		$access = $this->reconcile(caseId: $caseId, batchId: $batchId);
-
-		return ['batch' => $batch, 'taskCreated' => $taskId !== '', 'progress' => ['assessed' => 0, 'total' => count($documents)], 'access' => $access];
-	}//end create()
+		return ['batch' => $batch, 'taskId' => $taskId, 'access' => $this->reconcile(caseId: $written['case'], batchId: $batchId)];
+	}//end assign()
 
 	/**
 	 * Write a batch on each of its documents' reviews, with the depth that applies to the document.
@@ -261,29 +289,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 */
 	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
 		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
-		$batch = $this->save(
-			batch: [
-				'case' => $caseId,
-				'name' => $name,
-				'documents' => $documents,
-				'filter' => ['recallSample' => $sampleId],
-				'assignee' => $assignee,
-				'status' => 'open',
-			]
-		);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
-		$taskId = $this->handTask(
-			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
-			userId: $userId,
-		);
-		if ($taskId !== '') {
-			$batch['task'] = $taskId;
-			$batch = $this->save(batch: $batch);
-		}
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => ['recallSample' => $sampleId], 'assignee' => $assignee, 'status' => 'open'];
 
-		$this->reconcile(caseId: $caseId, batchId: $batchId);
-
-		return $batch;
+		return $this->assign(batch: $this->save(batch: $fields), written: ['userId' => $userId] + $fields)['batch'];
 	}//end createSampleBatch()
 
 	/**
@@ -462,16 +471,6 @@ class ReviewBatches implements ReviewBatchesInterface {
 	}//end assertDocumentsFree()
 
 	/**
-	 * Whether the batch schema can be written.
-	 *
-	 * @return bool True when OpenRegister, the batch schema and the review schema are configured.
-	 */
-	private function isAvailable(): bool {
-		return $this->reviews->isAvailable() === true
-			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
-	}//end isAvailable()
-
-	/**
 	 * The batches of a case the caller may read, as stored: what a listing shows.
 	 *
 	 * @param string $caseId The case UUID.
@@ -572,23 +571,4 @@ class ReviewBatches implements ReviewBatchesInterface {
 			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE, previous: $e);
 		}
 	}//end writeBatch()
-
-	/**
-	 * A refusal, 422 unless said otherwise.
-	 *
-	 * @param string $rule The rule.
-	 * @param string $sentence The static sentence.
-	 * @param int $status The status.
-	 * @param Throwable|null $previous The cause.
-	 *
-	 * @return RefusedException The refusal.
-	 */
-	private function refusal(
-		string $rule,
-		string $sentence,
-		int $status = RefusedException::STATUS_UNPROCESSABLE,
-		?Throwable $previous = null,
-	): RefusedException {
-		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
-	}//end refusal()
 }//end class

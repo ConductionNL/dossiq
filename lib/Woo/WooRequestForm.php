@@ -26,12 +26,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Woo\Support\ReadsScalarText;
+
 /**
  * Validates a Woo request and reduces it to what the case keeps.
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 class WooRequestForm {
+
+	use ReadsScalarText;
 
 	/**
 	 * The kinds of document a resident may ask for
@@ -329,21 +333,6 @@ class WooRequestForm {
 
 		return $request;
 	}//end withoutEmptyPeriods()
-
-	/**
-	 * A scalar as trimmed text, anything else as ''.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_scalar($value) === false) {
-			return '';
-		}
-
-		return trim((string)$value);
-	}//end text()
 
 	/**
 	 * A date as `Y-m-d`, or '' when none was given.
