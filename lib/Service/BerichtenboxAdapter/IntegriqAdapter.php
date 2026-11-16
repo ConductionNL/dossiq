@@ -135,13 +135,24 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 		$letter->category = $category;
 		$letter->caseRef = $caseRef;
 
+		return $this->sentThroughSeam(letter: $letter);
+	}//end sendMessage()
+
+	/**
+	 * Hand the letter to integriq's seam, or answer why it could not be bound.
+	 *
+	 * @param DigitalPostLetter $letter The letter.
+	 *
+	 * @return array<string, mixed> The dispatch result, or the refusal.
+	 */
+	private function sentThroughSeam(DigitalPostLetter $letter): array {
 		$refusal = $this->bindSeam(letter: $letter);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
 		return $this->dispatchLetter(letter: $letter);
-	}//end sendMessage()
+	}//end sentThroughSeam()
 
 	/**
 	 * Find the seam and the source the letter goes over; a refusal when either is missing.

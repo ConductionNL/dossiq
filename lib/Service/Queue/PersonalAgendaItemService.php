@@ -134,8 +134,23 @@ class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 			throw new RuntimeException($this->l10n->t('A planned item needs a title.'));
 		}
 
-		$start = $this->startOf(startsAt: $startsAt);
-		$minutes = $this->minutesFor(template: $template);
+		return $this->planned(userId: $userId, item: ['title' => $title, 'startsAt' => $startsAt, 'template' => $template]);
+	}//end plan()
+
+	/**
+	 * Write the planned item into the user's calendar and answer what was written.
+	 *
+	 * @param string                $userId The user whose calendar it goes in.
+	 * @param array<string, string> $item   The trimmed `title`, the `startsAt` moment and the `template` that sets its length.
+	 *
+	 * @return array{uid: string, startsAt: string, minutes: int} The written item.
+	 *
+	 * @throws RuntimeException When the item could not be written.
+	 */
+	private function planned(string $userId, array $item): array {
+		$title = $item['title'];
+		$start = $this->startOf(startsAt: $item['startsAt']);
+		$minutes = $this->minutesFor(template: $item['template']);
 		$ics = $this->eventIcs(title: $title, span: [$start, $start->setTimestamp($start->getTimestamp() + ($minutes * 60))]);
 		$uid = $this->uidOf(ics: $ics);
 		if ($uid === '') {
@@ -147,7 +162,7 @@ class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 		}
 
 		return ['uid' => $uid, 'startsAt' => $start->format('Y-m-d\TH:i:sP'), 'minutes' => $minutes];
-	}//end plan()
+	}//end planned()
 
 	/**
 	 * The moment a planned item starts.

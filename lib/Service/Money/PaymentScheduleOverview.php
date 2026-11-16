@@ -28,9 +28,9 @@ namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PaymentScheduleOverviewInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 
 /**
  * The instalments and totals of the payment schedules on one case.
@@ -43,6 +43,8 @@ use OCA\Dossiq\Service\SettingsService;
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-a-handler-runs-a-grant-from-its-case-page-req-sub-case-01
  */
 class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
+	use ReadsRegisterRows;
+
 	/**
 	 * Decisions read for one case.
 	 */
@@ -202,24 +204,13 @@ class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
 	 * @return list<array<string, mixed>>
 	 */
 	private function decisionsOf(string $caseId): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null || $caseId === '') {
-			return [];
-		}
-
-		$rows = $objectService->findAll(
-			[
-				'filters' => [
-					'register' => AppIdentity::REGISTER_SLUG,
-					'schema' => PaymentScheduleRaiser::DECISION_SCHEMA,
-					'caseId' => $caseId,
-				],
-				'limit' => self::LIMIT,
-			]
+		$rows = $this->registerRows(
+			id: $caseId,
+			filters: ['schema' => PaymentScheduleRaiser::DECISION_SCHEMA, 'caseId' => $caseId]
 		);
 
 		$decisions = [];
-		foreach ((array)$rows as $row) {
+		foreach ($rows as $row) {
 			$decisions[] = $this->rowNormaliser->normalise(row: $row)['data'];
 		}
 

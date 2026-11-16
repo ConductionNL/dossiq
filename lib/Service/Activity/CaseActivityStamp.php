@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Activity;
 use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,7 @@ use Throwable;
 class CaseActivityStamp implements CaseActivityStampInterface {
 
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * Constructor.
@@ -75,31 +77,13 @@ class CaseActivityStamp implements CaseActivityStampInterface {
 	 */
 	public function stamp(string $caseId): bool {
 		$caseId = trim($caseId);
-		$target = $this->stampTarget();
+		$target = $this->configuredSource(schemaKey: 'case_schema');
 		if ($caseId === '' || $target === null) {
 			return false;
 		}
 
 		return $this->writeStamp(target: $target, caseId: $caseId);
 	}//end stamp()
-
-	/**
-	 * The object service, register and case schema, or null when one is unavailable.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null The stamp target.
-	 *
-	 * @spec openspec/specs/case-last-activity-at/spec.md#requirement-work-on-a-case-stamps-its-last-activity
-	 */
-	private function stampTarget(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue(key: 'register');
-		$schema = (string)$this->settingsService->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
-	}//end stampTarget()
 
 	/**
 	 * Stamp the case, logging a failed write.

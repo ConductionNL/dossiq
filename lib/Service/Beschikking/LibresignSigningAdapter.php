@@ -146,6 +146,20 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	public function sign(string $fileId, string $signatory, string $tspProvider): array {
 		$this->assertAvailable();
 
+		return $this->signed(fileId: $fileId, signatory: $signatory);
+	}//end sign()
+
+	/**
+	 * Ask LibreSign to sign the file, wait for it, and assemble the result.
+	 *
+	 * @param string $fileId    The file to sign.
+	 * @param string $signatory Who signs it.
+	 *
+	 * @return array<string, string> The signed result.
+	 *
+	 * @throws RuntimeException When the signing is still pending, or LibreSign refuses.
+	 */
+	private function signed(string $fileId, string $signatory): array {
 		$uuid = $this->requestSignature(fileId: $fileId, signer: $this->resolveSigner(signatory: $signatory));
 
 		$status = $this->awaitSigned(uuid: $uuid);
@@ -159,7 +173,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 			uuid: $uuid,
 			status: $status,
 		);
-	}//end sign()
+	}//end signed()
 
 	/**
 	 * Poll the signature request until it is signed or the attempts run out.

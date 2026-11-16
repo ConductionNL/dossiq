@@ -37,8 +37,8 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -51,7 +51,6 @@ use Throwable;
  */
 class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The most term instances one run reads.
@@ -208,10 +207,8 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 * @return array<int, string>|null The case uuids.
 	 */
 	private function casesWithAStatutoryTerm(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_instance_schema');
+		if ($target === null) {
 			return null;
 		}
 
@@ -219,7 +216,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 			// A page as large as the step will meet, not the default page: a repair
 			// that silently stopped after the first twenty cases would report
 			// green over every case after them.
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => self::PAGE]);
+			$rows = $target->search(filters: ['_limit' => self::PAGE]);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq case deadline repair: listing the terms failed', ['error' => $e->getMessage()]);
 			return null;

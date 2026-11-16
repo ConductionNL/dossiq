@@ -90,9 +90,7 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = new MigrationConsole();
-		$console->userManager = $this->userManager;
-		$console->output = $output;
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:workflows:migrate-to-flows';
 
 		return $console->run(

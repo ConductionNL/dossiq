@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 
 /**
  * The settlements of one case, reached through its applications and their executions.
@@ -37,6 +37,8 @@ use OCA\Dossiq\Service\SettingsService;
  * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
  */
 class SettlementOverview {
+
+	use ReadsRegisterRows;
 
 	/**
 	 * The schema of an application; it names the case.
@@ -222,24 +224,10 @@ class SettlementOverview {
 	 * @return list<array<string, mixed>>
 	 */
 	private function rows(string $schema, string $value): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null || $value === '') {
-			return [];
-		}
-
-		$rows = $objectService->findAll(
-			[
-				'filters' => [
-					'register' => AppIdentity::REGISTER_SLUG,
-					'schema' => $schema,
-					self::REFERENCE_FIELD[$schema] => $value,
-				],
-				'limit' => self::LIMIT,
-			]
-		);
+		$rows = $this->registerRows(id: $value, filters: ['schema' => $schema, self::REFERENCE_FIELD[$schema] => $value]);
 
 		$found = [];
-		foreach ((array)$rows as $row) {
+		foreach ($rows as $row) {
 			$normalised = $this->rowNormaliser->normalise(row: $row);
 			$data       = $normalised['data'];
 			if ($this->idOf(row: $data) === '') {

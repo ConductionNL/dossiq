@@ -87,10 +87,7 @@ class CaseAccessPurposeController extends Controller {
 				note: (string)$this->request->getParam('note', ''),
 			);
 		} catch (RefusedException $e) {
-			return new JSONResponse(
-				['error' => $e->getRule(), 'message' => $this->l10n->t($e->getSentence())],
-				$e->getStatus()
-			);
+			return $this->refusal(e: $e);
 		}
 
 		$status = Http::STATUS_OK;
@@ -122,12 +119,23 @@ class CaseAccessPurposeController extends Controller {
 		try {
 			$result = $this->purposes->check(caseId: $id, readerId: $user->getUID());
 		} catch (RefusedException $e) {
-			return new JSONResponse(
-				['error' => $e->getRule(), 'message' => $this->l10n->t($e->getSentence())],
-				$e->getStatus()
-			);
+			return $this->refusal(e: $e);
 		}
 
 		return new JSONResponse($result);
 	}//end check()
+
+	/**
+	 * The refusal as a response, its sentence translated.
+	 *
+	 * @param RefusedException $e The refusal.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refusal(RefusedException $e): JSONResponse {
+		return new JSONResponse(
+			['error' => $e->getRule(), 'message' => $this->l10n->t($e->getSentence())],
+			$e->getStatus()
+		);
+	}//end refusal()
 }//end class

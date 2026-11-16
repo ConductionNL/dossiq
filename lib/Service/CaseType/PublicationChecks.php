@@ -245,6 +245,23 @@ class PublicationChecks {
 			return [];
 		}
 
+		return $this->reachability->findings(
+			statuses: $this->declaredStatuses(statuses: $statuses),
+			initial: $this->store->referenceId(value: ($caseType['initialStatus'] ?? '')),
+			moves: $this->moves(template: $template)
+		);
+	}//end reachabilityFindings()
+
+	/**
+	 * The resolved statuses by id, each with its title (its id when it has none) and whether it is final.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
+	 *
+	 * @return array<string, array{title: string, final: bool}> The declared statuses; a row without id is left out.
+	 *
+	 * @spec openspec/specs/case-type-publish-validation/spec.md
+	 */
+	private function declaredStatuses(array $statuses): array {
 		$declared = [];
 		foreach ($statuses as $status) {
 			$id = $this->store->rowId(row: $status);
@@ -263,12 +280,8 @@ class PublicationChecks {
 			];
 		}
 
-		return $this->reachability->findings(
-			statuses: $declared,
-			initial: $this->store->referenceId(value: ($caseType['initialStatus'] ?? '')),
-			moves: $this->moves(template: $template)
-		);
-	}//end reachabilityFindings()
+		return $declared;
+	}//end declaredStatuses()
 
 	/**
 	 * The transitions on a template row, whichever way OpenRegister stored them.

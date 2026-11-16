@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\VerifiesPortalAssertions;
 use OCA\Dossiq\Kernel\Contracts\CitizenManifestInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
@@ -47,7 +48,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Records the answer the resident portaliq vouches for.
@@ -55,6 +55,7 @@ use Throwable;
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
 class PortalWooAnswerController extends Controller {
+	use VerifiesPortalAssertions;
 
 	/**
 	 * The brute-force action a rejected assertion counts against.
@@ -99,14 +100,9 @@ class PortalWooAnswerController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function answer(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifierInterface::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$claims = $this->portalClaims();
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
 		$attachments = $this->attachments();
@@ -222,17 +218,4 @@ class PortalWooAnswerController extends Controller {
 
 		return $value;
 	}//end stringParam()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalWooAnswerController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

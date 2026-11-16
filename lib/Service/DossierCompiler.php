@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\ReferencedUuid;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -51,6 +52,7 @@ use RuntimeException;
 class DossierCompiler {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * AWB-conventional ordering of dossier document categories. Keys are
@@ -132,24 +134,6 @@ class DossierCompiler {
 
 		return $this->orderDocuments(documents: $documents);
 	}//end compile()
-
-	/**
-	 * OpenRegister's object service, or an exception when it is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 *
-	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * The case a dossier is compiled for, or an exception when it cannot be loaded.

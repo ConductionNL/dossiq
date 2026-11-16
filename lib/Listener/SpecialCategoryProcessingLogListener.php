@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Listener\Support\NamesTheActor;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Intake\SpecialCategoryClassification;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -50,6 +51,7 @@ use Throwable;
  * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class SpecialCategoryProcessingLogListener implements IEventListener {
+	use NamesTheActor;
 
 	use SavedObjectPayload;
 
@@ -157,18 +159,4 @@ class SpecialCategoryProcessingLogListener implements IEventListener {
 
 		return $categories;
 	}//end categories()
-
-	/**
-	 * The user who made the save, or `system`.
-	 *
-	 * @return string The uid.
-	 */
-	private function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end actor()
 }//end class

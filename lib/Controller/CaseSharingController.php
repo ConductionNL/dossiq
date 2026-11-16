@@ -95,11 +95,7 @@ class CaseSharingController extends Controller {
 		}
 
 		if ($this->request->getParam('shareType', 'token') === 'partner') {
-			return $this->partnerShare(
-				caseId: $caseId,
-				permissionLevel: (string)$this->request->getParam('permissionLevel', 'bekijken'),
-				createdBy: $user->getUID(),
-			);
+			return $this->partnerShare(caseId: $caseId, user: $user);
 		}
 
 		return $this->tokenShare(caseId: $caseId, user: $user);
@@ -166,15 +162,16 @@ class CaseSharingController extends Controller {
 	/**
 	 * Share a case with a partner organisation, or say why it did not leave.
 	 *
-	 * @param string $caseId          The case.
-	 * @param string $permissionLevel What the partner may do.
-	 * @param string $createdBy       Who is sharing it.
+	 * @param string $caseId The case.
+	 * @param IUser  $user   Who is sharing it.
 	 *
 	 * @return JSONResponse The share, or the refusal.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-partner-organisation-handover-is-out-of-scope-for-the-shares-leaf
 	 */
-	private function partnerShare(string $caseId, string $permissionLevel, string $createdBy): JSONResponse {
+	private function partnerShare(string $caseId, IUser $user): JSONResponse {
+		$permissionLevel = (string)$this->request->getParam('permissionLevel', 'bekijken');
+		$createdBy = $user->getUID();
 		$partnerId = $this->request->getParam('partnerId');
 		if (empty($partnerId) === true) {
 			return new JSONResponse(
