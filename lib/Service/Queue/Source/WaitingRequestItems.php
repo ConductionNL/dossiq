@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service\Queue\Source;
 use OCA\Dossiq\Service\Queue\QueueItem;
 
 /**
- * For a register-backed source with `CLOSED_STATUSES` and a private `itemOf(row, id)`.
+ * For a register-backed source with `CLOSED_STATUSES`; the source builds each item.
  *
  * @spec openspec/specs/my-work/spec.md
  */
@@ -36,18 +36,19 @@ trait WaitingRequestItems {
 	/**
 	 * One queue item per row of the schema that matches the filters and is still waiting.
 	 *
-	 * @param string               $schema  The schema of the requests.
-	 * @param array<string, mixed> $filters The filters naming the reader.
+	 * @param string                                           $schema  The schema of the requests.
+	 * @param array<string, mixed>                             $filters The filters naming the reader.
+	 * @param callable(array<string, mixed>, string):QueueItem $itemOf  Builds the item of a waiting row and its id.
 	 *
 	 * @return array<int, QueueItem> The items.
 	 */
-	private function waitingItems(string $schema, array $filters): array {
+	private function waitingItems(string $schema, array $filters, callable $itemOf): array {
 		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
 		$items = [];
 		foreach ($this->rows(schema: $schema, filters: $filters) as $row) {
 			$id = $this->idOf(row: $row);
 			if ($rows->isWaiting(id: $id, row: $row) === true) {
-				$items[] = $this->itemOf(row: $row, id: $id);
+				$items[] = $itemOf($row, $id);
 			}
 		}
 

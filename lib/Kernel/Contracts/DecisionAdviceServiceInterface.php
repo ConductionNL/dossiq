@@ -91,7 +91,7 @@ interface DecisionAdviceServiceInterface {
 	 *
 	 * @return array<string, mixed> The stored advice with the choice.
 	 *
-	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When the outcome is missing, a deviation has no reason, or the choice was already made.
+	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When the outcome is missing, a deviation has no reason or the choice was made.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
 	 */

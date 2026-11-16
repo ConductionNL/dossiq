@@ -74,20 +74,13 @@ final class WaitingRequestItemsTest extends TestCase {
 				return (string)($row['id'] ?? '');
 			}//end idOf()
 
-			/**
-			 * The item for a row.
-			 *
-			 * @param array<string, mixed> $row The row.
-			 * @param string               $id  The id.
-			 *
-			 * @return QueueItem
-			 */
-			private function itemOf(array $row, string $id): QueueItem {
-				return new QueueItem(source: 'test', subjectType: 'request', subjectId: $id, title: $id);
-			}//end itemOf()
 		};
 
-		$items = $subject->waitingItems(schema: 'consultation', filters: ['assignee' => 'alice']);
+		$items = $subject->waitingItems(
+			schema: 'consultation',
+			filters: ['assignee' => 'alice'],
+			itemOf: static fn (array $row, string $id): QueueItem => new QueueItem(source: 'test', subjectType: 'request', subjectId: $id, title: $id)
+		);
 
 		self::assertSame(expected: ['consultation', ['assignee' => 'alice']], actual: $subject->asked);
 		self::assertSame(expected: ['a', 'c'], actual: array_map(static fn (QueueItem $item): string => $item->subjectId, $items));

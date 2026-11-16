@@ -125,7 +125,11 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		return $this->waitingItems(schema: 'adviesAanvraag', filters: ['advisor' => $userId]);
+		return $this->waitingItems(
+			schema: 'adviesAanvraag',
+			filters: ['advisor' => $userId],
+			itemOf: fn (array $row, string $id): QueueItem => $this->itemOf(row: $row, id: $id)
+		);
 	}//end itemsFor()
 
 	/**
