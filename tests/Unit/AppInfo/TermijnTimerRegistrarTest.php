@@ -38,6 +38,7 @@ use OCA\Dossiq\Listener\DsoDeadlineTimerListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
+use OCA\Dossiq\Listener\TermStatusClockListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -80,4 +81,31 @@ class TermijnTimerRegistrarTest extends TestCase {
 			self::assertContains(needle: $pair, haystack: $registered, message: implode(' -> ', $pair));
 		}
 	}//end testTheTimerListenersAreAttached()
+
+	/**
+	 * The term clock is reconciled after an update only, and the term timer fires first.
+	 *
+	 * A create carries no status change to reconcile, and the term listener
+	 * leads so the statutory term is handled before the deadline clocks.
+	 *
+	 * @return void
+	 */
+	public function testTheTermStatusClockFollowsUpdatesOnly(): void {
+		$registered = [];
+		$context    = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener) use (&$registered): void {
+				$registered[] = [$event, $listener];
+			}
+		);
+
+		(new TermijnTimerRegistrar())->register(context: $context);
+
+		self::assertSame(expected: ['OCA\OpenRegister\Event\FlowTimerFiredEvent', TermijnTimerFiredListener::class], actual: $registered[0]);
+		$last = $registered[(count($registered) - 1)];
+		self::assertSame(expected: ['OCA\OpenRegister\Event\ObjectUpdatedEvent', TermStatusClockListener::class], actual: $last);
+		self::assertNotContains(needle: ['OCA\OpenRegister\Event\ObjectCreatedEvent', TermStatusClockListener::class], haystack: $registered);
+		// One term listener, the deadline registrar's seventeen, and the status clock.
+		self::assertCount(expectedCount: 19, haystack: $registered);
+	}//end testTheTermStatusClockFollowsUpdatesOnly()
 }//end class
