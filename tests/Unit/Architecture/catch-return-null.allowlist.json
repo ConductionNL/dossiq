@@ -1140,10 +1140,10 @@
     },
     {
       "file": "lib/Service/TenantBillingService.php",
-      "method": "emitEvent",
+      "method": "insertEvent",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`emitEvent()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: emitEvent failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`insertEvent()`, the write step of `emitEvent()`, answers `return null` when the read fails; the catch logs at error (\"Dossiq: emitEvent failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/TenantBillingService.php",

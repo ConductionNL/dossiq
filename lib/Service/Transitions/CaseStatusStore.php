@@ -164,39 +164,85 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
+		$move = ['caseId' => $caseId, 'toStatus' => $toStatus, 'fromStatus' => $fromStatus];
+		$move += ['label' => $label, 'comment' => $comment, 'actor' => $actor];
+		$record = $this->saveStatusRecord(move: $move, verdict: ['evaluatedGuards' => $evaluatedGuards, 'noWorkflowTemplate' => $noWorkflowTemplate]);
+		$this->recordMoveEntry(move: $move, record: $record);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * Save the statusRecord row of a move.
+	 *
+	 * @param array<string, mixed> $move    The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $verdict The evaluatedGuards snapshots and the noWorkflowTemplate flag.
+	 *
+	 * @return array<string, mixed> The written statusRecord.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function saveStatusRecord(array $move, array $verdict): array {
 		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
 
 		$payload = [
-			'case' => $caseId,
-			'statusType' => $toStatus,
-			'transitionLabel' => $label,
-			'evaluatedGuards' => $evaluatedGuards,
+			'case' => $move['caseId'],
+			'statusType' => $move['toStatus'],
+			'transitionLabel' => $move['label'],
+			'evaluatedGuards' => $verdict['evaluatedGuards'],
 			'dispatchedActions' => [],
-			'noWorkflowTemplate' => $noWorkflowTemplate,
+			'noWorkflowTemplate' => $verdict['noWorkflowTemplate'],
 		];
 
-		$payload = $this->withActor(payload: $payload, actor: $actor);
-		$payload = $this->withGiven(payload: $payload, fields: ['fromStatus' => $fromStatus, 'description' => $comment]);
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($move['actor']) !== '') {
+			$payload['actor'] = $move['actor'];
+		}
 
-		$record = $this->toArray(
+		// The prior statusType UUID and the comment, each only when neither null nor empty.
+		foreach (['fromStatus' => $move['fromStatus'], 'description' => $move['comment']] as $key => $value) {
+			if ((string)$value !== '') {
+				$payload[$key] = $value;
+			}
+		}
+
+		return $this->toArray(
 			value: $objectService->saveObject(
 				object: $payload,
 				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
 			)
 		);
+	}//end saveStatusRecord()
 
+	/**
+	 * Hand a written move to the timeline.
+	 *
+	 * @param array<string, mixed> $move   The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $record The written statusRecord.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordMoveEntry(array $move, array $record): void {
 		$this->moveEntry?->record(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $fromStatus,
-			label: $label,
-			comment: $comment,
+			caseId: $move['caseId'],
+			toStatus: $move['toStatus'],
+			fromStatus: $move['fromStatus'],
+			label: $move['label'],
+			comment: $move['comment'],
 			record: $record,
-			actor: $actor,
+			actor: $move['actor'],
 		);
-
-		return $record;
-	}//end writeStatusRecord()
+	}//end recordMoveEntry()
 
 	/**
 	 * The object service, register and statusRecord schema.
@@ -221,51 +267,6 @@ class CaseStatusStore {
 
 		return [$objectService, $register, $recordSchema];
 	}//end statusRecordStore()
-
-	/**
-	 * The statusRecord payload with the actor, when the caller names one.
-	 *
-	 * @param array<string, mixed> $payload The statusRecord payload.
-	 * @param string               $actor   Who made the move, or the empty string when the caller names nobody.
-	 *
-	 * @return array<string, mixed> The payload.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function withActor(array $payload, string $actor): array {
-		// WHO made this move. The four-eyes rule reads this chain to find who
-		// performed a named earlier act, and before this property the only
-		// answer was the row's OpenRegister owner, which is a fact about who
-		// wrote the record rather than about who took the step. They agree
-		// today and they are not the same claim. Written only when the caller
-		// names somebody: an empty string is not an actor, and a record
-		// stamped with one would read as a move nobody made.
-		if (trim($actor) !== '') {
-			$payload['actor'] = $actor;
-		}
-
-		return $payload;
-	}//end withActor()
-
-	/**
-	 * The statusRecord payload with each field that is neither null nor empty.
-	 *
-	 * @param array<string, mixed>       $payload The statusRecord payload.
-	 * @param array<string, string|null> $fields  The prior statusType UUID as `fromStatus`, the comment as `description`.
-	 *
-	 * @return array<string, mixed> The payload.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function withGiven(array $payload, array $fields): array {
-		foreach ($fields as $key => $value) {
-			if ((string)$value !== '') {
-				$payload[$key] = $value;
-			}
-		}
-
-		return $payload;
-	}//end withGiven()
 
 	/**
 	 * Where the move's timeline entry is built.

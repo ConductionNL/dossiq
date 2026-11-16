@@ -269,15 +269,23 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			return null;
 		}
 
-		$event = [
-			'tenantRef' => $tenantId,
-			'eventType' => $eventType,
-			'quantity' => $quantity,
-			'unitPrice' => $unitPrice,
-			'currency' => $currency,
-			'occurredAt' => (new DateTimeImmutable('now'))->format(DATE_ATOM),
-			'invoiceRef' => null,
-		];
+		$event = ['tenantRef' => $tenantId, 'eventType' => $eventType, 'quantity' => $quantity, 'unitPrice' => $unitPrice, 'currency' => $currency];
+
+		return $this->insertEvent(objectService: $objectService, event: $event);
+	}//end emitEvent()
+
+	/**
+	 * Insert one billing event row, stamped now and not yet invoiced.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $event         The tenantRef, eventType, quantity, unitPrice and currency.
+	 *
+	 * @return array<string,mixed>|null Persisted event row, or null when the save failed.
+	 */
+	private function insertEvent(object $objectService, array $event): ?array {
+		$event['occurredAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
+		$event['invoiceRef'] = null;
+		$eventType = $event['eventType'];
 
 		try {
 			return $objectService->saveObject(
@@ -288,7 +296,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			$this->logger->error('Dossiq: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
 			return null;
 		}
-	}//end emitEvent()
+	}//end insertEvent()
 
 	/**
 	 * Aggregate billing for a month.
