@@ -627,6 +627,25 @@
 								"prompt": "Cases waiting for your teams show here"
 							}
 						}
+					},
+					{
+						"id": "on-time-against-target",
+						"kind": "kpi-target-gauge",
+						"label": "Cases on time against target",
+						"_note": "REQ-CRS-35 (row 10.1): a KPI as a gauge. The share of this month's closed cases that met their deadline (the SLA Compliance tile's figure), drawn against a target of 90% and said in words: \"80% of target 90%\". The figure is null for a reader without the controller role, and the gauge then says it is not available rather than drawing 0.",
+						"widget": {
+							"type": "kpi-target-gauge",
+							"title": "Cases on time against target",
+							"icon": "Gauge",
+							"content": {
+								"label": "Cases on time against target",
+								"endpoint": "/apps/dossiq/api/dashboard/kpis",
+								"valueField": "slaCompliance",
+								"target": 90,
+								"max": 100,
+								"format": { "decimals": 0, "suffix": "%" }
+							}
+						}
 					}
 				],
 				"_userWidgetsNote": "REQ-DASH-031 (archived as REQ-DASH-024), my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
