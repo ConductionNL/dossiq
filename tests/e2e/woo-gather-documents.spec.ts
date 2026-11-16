@@ -18,7 +18,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { journeyBudget, PAGE_LOAD } from './helpers/nav.ts'
+import { clickHeaderAction, journeyBudget, PAGE_LOAD } from './helpers/nav.ts'
 
 /** The Woo request case type the app seeds (WooRequestIntake::CASE_TYPE_ID). */
 const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
@@ -66,6 +66,22 @@ test.describe('Gather documents on a Woo case', () => {
 		})
 		const caseId = objectId(created)
 
+		// Collecting waits for a recorded search plan (woo-request-corpus-collection).
+		const plan = await request.put(
+			`/index.php/apps/dossiq/api/cases/${caseId}/woo/plan`,
+			{
+				headers,
+				data: {
+					custodians: [{ name: 'Wethouder Ruimte' }],
+					systems: ['files'],
+					periodFrom: '2025-01-01',
+					periodTo: '2025-12-31',
+					terms: TERM,
+				},
+			},
+		)
+		expect(plan.ok(), `plan -> ${plan.status()}`).toBeTruthy()
+
 		const sources = await request.get(
 			`/index.php/apps/dossiq/api/cases/${caseId}/woo/sources`,
 			{ headers },
@@ -82,14 +98,14 @@ test.describe('Gather documents on a Woo case', () => {
 		expect(microsoft365.available || microsoft365.reason !== '').toBeTruthy()
 
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
-		await page.getByRole('button', { name: 'Gather documents' }).click()
+		await clickHeaderAction(page, 'cn-action-woo-gather-documents')
 		const dialog = page.getByTestId('gather-documents-dialog')
 		if (!microsoft365.available) {
 			await expect(
 				dialog.getByTestId('gather-source-reason-microsoft365'),
 			).toContainText('Not connected')
 		}
-		await dialog.getByTestId('gather-terms').locator('input').fill(TERM)
+		await dialog.getByRole('textbox', { name: 'Search terms' }).fill(TERM)
 		await dialog.getByTestId('gather-search').click()
 
 		const files = dialog.getByTestId('gather-results-files')
