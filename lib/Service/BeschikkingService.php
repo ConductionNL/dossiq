@@ -391,19 +391,7 @@ class BeschikkingService implements BeschikkingServiceInterface {
 	 */
 	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['currentStatus'] ?? '');
-
-		$this->requireTransition(current: $current, target: 'signed');
-
-		if ((string)($decision['signing']['state'] ?? '') === self::SIGNING_REQUESTED) {
-			throw new RuntimeException('signing_in_progress');
-		}
-
-		// BEFORE THE SIGNATURE IS ASKED FOR, not after. A signature is minted at
-		// a provider and countersigned onto the file; refusing afterwards would
-		// leave a signed document behind a refused act, which is worse than
-		// either outcome on its own.
-		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
+		$this->requireSignable(decision: $decision);
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$answer = $this->signingRequester->request(
@@ -427,6 +415,33 @@ class BeschikkingService implements BeschikkingServiceInterface {
 
 		return $this->repository->save(decision: $decision);
 	}//end onderteken()
+
+	/**
+	 * Refuse a signing request the beschikking cannot take yet.
+	 *
+	 * @param array<string, mixed> $decision The stored beschikking.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException invalid_transition, or signing_in_progress while a request is open.
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
+	 */
+	private function requireSignable(array $decision): void {
+		$current = (string)($decision['currentStatus'] ?? '');
+
+		$this->requireTransition(current: $current, target: 'signed');
+
+		if ((string)($decision['signing']['state'] ?? '') === self::SIGNING_REQUESTED) {
+			throw new RuntimeException('signing_in_progress');
+		}
+
+		// BEFORE THE SIGNATURE IS ASKED FOR, not after. A signature is minted at
+		// a provider and countersigned onto the file; refusing afterwards would
+		// leave a signed document behind a refused act, which is worse than
+		// either outcome on its own.
+		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
+	}//end requireSignable()
 
 	/**
 	 * Send the beschikking to the requester and, only when a transport took it, transition to sent. [T09]

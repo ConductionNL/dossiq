@@ -114,13 +114,7 @@ final class DossierRegister {
 	 */
 	public function requireCase(string $caseId, string $rule, string $sentence): array {
 		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
+			$case = $this->readCase(caseId: $caseId);
 		} catch (Throwable $e) {
 			throw new RefusedException(
 				rule: $rule,
@@ -140,6 +134,28 @@ final class DossierRegister {
 
 		return $case;
 	}//end requireCase()
+
+	/**
+	 * The stored case, or null when it is not there.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed>|null The stored case.
+	 *
+	 * @throws Throwable When the store cannot be reached or the read fails.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function readCase(string $caseId): ?array {
+		[$objectService, $register] = $this->context();
+
+		return $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_schema'),
+			id: $caseId,
+		);
+	}//end readCase()
 
 	/**
 	 * Save a case's payload over the stored case.
