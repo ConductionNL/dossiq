@@ -314,4 +314,24 @@ class TermCaseTypeResolverTest extends TestCase {
 		$this->expectException(exception: RuntimeException::class);
 		$this->resolver(store: $failing)->resolve(rows: [['id' => 'ti-1', 'case' => 'case-1']]);
 	}//end testAFailedReadThrows()
+
+	/**
+	 * A case type with no identifier, no slug and no string id is reported
+	 * under the unresolved key, though the term itself resolved through its
+	 * case and keeps the case type's title.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutAKeyIsReportedUnderTheUnresolvedKey(): void {
+		$this->objects->seed('caseType', ['id' => 7, 'identifier' => '  ', 'title' => 'Naamloos']);
+		$this->objects->seed('case', ['id' => 'case-7', 'caseType' => '7']);
+
+		$result = $this->resolver()->resolve(rows: [['id' => 'ti-7', 'case' => 'case-7']]);
+
+		self::assertSame(
+			expected: [0 => ['key' => TermCaseTypeResolver::UNRESOLVED, 'title' => 'Naamloos']],
+			actual: $result['byRow']
+		);
+		self::assertSame(expected: [], actual: $result['unresolved'], message: 'A term its case resolved is not listed as unresolved.');
+	}//end testACaseTypeWithoutAKeyIsReportedUnderTheUnresolvedKey()
 }//end class
