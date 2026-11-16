@@ -28,6 +28,7 @@ use OCA\Dossiq\Kernel\Contracts\ComplaintHearingServiceInterface;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -42,6 +43,7 @@ use RuntimeException;
 class HearingService implements ComplaintHearingServiceInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * Reads a configured schema, or answers an empty list when it cannot.
@@ -83,10 +85,7 @@ class HearingService implements ComplaintHearingServiceInterface {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->requireHearingFields(data: $data);
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('hearing_schema');
@@ -224,10 +223,7 @@ class HearingService implements ComplaintHearingServiceInterface {
 			throw new RuntimeException('Verslag is required to record a hearing outcome');
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('hearing_schema');

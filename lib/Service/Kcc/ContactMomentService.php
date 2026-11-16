@@ -50,6 +50,9 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 class ContactMomentService implements KccContactMomentServiceInterface {
+
+	use ResolvesKccStore;
+
 	/**
 	 * Allowed channels for a contact moment.
 	 *
@@ -272,19 +275,7 @@ class ContactMomentService implements KccContactMomentServiceInterface {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('customer_contact_schema');
-
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('KCC contact schema is not configured');
-		}
-
-		return [$objectService, $register, $schema];
+		return $this->kccStore(schemaKey: 'customer_contact_schema', unconfigured: 'KCC contact schema is not configured');
 	}//end resolve()
 
 	/**
