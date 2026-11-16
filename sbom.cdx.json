@@ -146,8 +146,8 @@
       "type": "library",
       "name": "helper-string-parser",
       "group": "@babel",
-      "version": "7.29.7",
-      "bom-ref": "dossiq@0.1.0|@babel/helper-string-parser@7.29.7",
+      "version": "7.29.14",
+      "bom-ref": "dossiq@0.1.0|@babel/helper-string-parser@7.29.14",
       "licenses": [
         {
           "license": {
@@ -155,15 +155,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40babel/helper-string-parser@7.29.7",
+      "purl": "pkg:npm/%40babel/helper-string-parser@7.29.14",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz",
+          "url": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.14.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "3dbe628cfad9f3d1831fcdb6dcbe143fc8ba400a56c6cd3845b3d02537960d5d3f91e476137e8c78a9f2afa2d899452fa91448f88bfced2b85d56e84ac837363"
+              "content": "097bca305bccf348a123b568c7d8dbfa44239f28c449034f33ebc1ed4d19cfa4d6b9903e67f14bd103cc1f7d34877dea26d231f9111e0615ea58e3d6e3c4dc01"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -214,8 +214,8 @@
       "type": "library",
       "name": "parser",
       "group": "@babel",
-      "version": "7.29.8",
-      "bom-ref": "dossiq@0.1.0|@babel/parser@7.29.8",
+      "version": "7.29.14",
+      "bom-ref": "dossiq@0.1.0|@babel/parser@7.29.14",
       "licenses": [
         {
           "license": {
@@ -223,15 +223,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40babel/parser@7.29.8",
+      "purl": "pkg:npm/%40babel/parser@7.29.14",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.8.tgz",
+          "url": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.14.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "13c953018341d4a5be147f95189b993358a8031d84ea8565bd0151adfe4ff19666b222576000fdbd3155ef2c84511373821d5d16a319b8eead53070045ba8508"
+              "content": "54bdb6d2f5eec8edb3deb34843063b7ed8fd530a6a3adfb7dec1feb015a439e91bb1247683b1043273b1db8665087d31380dc333fdf74a27d51466e7243f2bff"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -282,8 +282,8 @@
       "type": "library",
       "name": "types",
       "group": "@babel",
-      "version": "7.29.8",
-      "bom-ref": "dossiq@0.1.0|@babel/types@7.29.8",
+      "version": "7.29.14",
+      "bom-ref": "dossiq@0.1.0|@babel/types@7.29.14",
       "licenses": [
         {
           "license": {
@@ -291,15 +291,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40babel/types@7.29.8",
+      "purl": "pkg:npm/%40babel/types@7.29.14",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@babel/types/-/types-7.29.8.tgz",
+          "url": "https://registry.npmjs.org/@babel/types/-/types-7.29.14.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "563d6317770f7f183b3807e823b42754a2e820b966d8917da67547ad7f2ac7b0073226164fe343000ee30a194d8114b85932dcfdf0f59572e63e2c65ba3fb71a"
+              "content": "52323f74a9b02704fda4eb33262b6ad86e8439b64f9ec6547dd0abf76cf64e51771192bd27711d7ce294ac2cc797ac05b616f3c21ce5d52a1cfd4230c518aaeb"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -2871,8 +2871,8 @@
       "type": "library",
       "name": "files",
       "group": "@nextcloud",
-      "version": "4.0.0",
-      "bom-ref": "dossiq@0.1.0|@nextcloud/files@4.0.0",
+      "version": "4.1.1",
+      "bom-ref": "dossiq@0.1.0|@nextcloud/files@4.1.1",
       "licenses": [
         {
           "license": {
@@ -2880,15 +2880,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40nextcloud/files@4.0.0",
+      "purl": "pkg:npm/%40nextcloud/files@4.1.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@nextcloud/files/-/files-4.0.0.tgz",
+          "url": "https://registry.npmjs.org/@nextcloud/files/-/files-4.1.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "4e679c9d9212f8f1961ad461ed1a4611ba024f82ba8936c750b51c7d1ea1b37784ce30d5b027352dd7fca68a4663fef495ba5d95f6257bcc5b5e73c8a37a9a5c"
+              "content": "ddfbda04d39b5c58d58059b416f3d7afeaed621d8250601cd3ef7c76120fd000bb43e502558230c81dedb120463f6f479ea196a86458ee765a8fb808ecdcdbbd"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -2898,111 +2898,6 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@nextcloud/files"
-        }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "sharing",
-          "group": "@nextcloud",
-          "version": "0.3.0",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/files@4.0.0|@nextcloud/sharing@0.3.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "GPL-3.0-or-later"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40nextcloud/sharing@0.3.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@nextcloud/sharing/-/sharing-0.3.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "915eea79466f7757d329e1721fe5b942ae6b34ea86f6b2c04d933753d301c565c726cdcec4ca9841bf1443735838dcec5f7cc318999d4040881879b57a2dac08"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@nextcloud/files/node_modules/@nextcloud/sharing"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "files",
-          "group": "@nextcloud",
-          "version": "3.12.2",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/files@4.0.0|@nextcloud/files@3.12.2",
-          "scope": "optional",
-          "licenses": [
-            {
-              "license": {
-                "id": "AGPL-3.0-or-later"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40nextcloud/files@3.12.2",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@nextcloud/files/-/files-3.12.2.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "bc1a3cb5fdd787a79f885f02ac4a37a4a8fd02dbc017a45d0c63b55ca2fae48c55f3e51477d5319769541311e5ce80d145ccc2a9f19f6967d145a16162a71ee5"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@nextcloud/files/node_modules/@nextcloud/files"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "initial-state",
-          "group": "@nextcloud",
-          "version": "3.0.0",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/files@4.0.0|@nextcloud/initial-state@3.0.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "GPL-3.0-or-later"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40nextcloud/initial-state@3.0.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@nextcloud/initial-state/-/initial-state-3.0.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "715f8705d9102469bc171901239ac54ff15b30d58d06fa5b8fa38fae0e007b860e3ac435e422fc2273ce030d6de1790e9102b63447541902d5533ff5f705db75"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@nextcloud/files/node_modules/@nextcloud/initial-state"
-            }
-          ]
         }
       ]
     },
@@ -3424,8 +3319,8 @@
       "type": "library",
       "name": "vue",
       "group": "@nextcloud",
-      "version": "9.11.0",
-      "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0",
+      "version": "9.13.1",
+      "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1",
       "licenses": [
         {
           "license": {
@@ -3433,15 +3328,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40nextcloud/vue@9.11.0",
+      "purl": "pkg:npm/%40nextcloud/vue@9.13.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@nextcloud/vue/-/vue-9.11.0.tgz",
+          "url": "https://registry.npmjs.org/@nextcloud/vue/-/vue-9.13.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "2d1b3253d331b346f6c56a9bc72829b3c3bbfe2d73e1084d403f7f4039e2f95a8563757437de6602098a266eaf7e816ec5300c5c4469f5b8ea167dd4579e3683"
+              "content": "e997879be7281c9eb0b1abee965978095977b64e5e86387ba7aa56f465350607c390eb1bc793efe14f3fb9593bc8e4e7e28028ebde574c7845375ee9c88d6979"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -3459,7 +3354,7 @@
           "name": "initial-state",
           "group": "@nextcloud",
           "version": "3.0.0",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|@nextcloud/initial-state@3.0.0",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|@nextcloud/initial-state@3.0.0",
           "licenses": [
             {
               "license": {
@@ -3491,8 +3386,8 @@
         {
           "type": "library",
           "name": "vue-router",
-          "version": "5.3.0",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|vue-router@5.3.0",
+          "version": "5.5.1",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|vue-router@5.5.1",
           "licenses": [
             {
               "license": {
@@ -3500,15 +3395,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/vue-router@5.3.0",
+          "purl": "pkg:npm/vue-router@5.5.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/vue-router/-/vue-router-5.3.0.tgz",
+              "url": "https://registry.npmjs.org/vue-router/-/vue-router-5.5.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "6b63c15d7f727e44b9f09cd22402d47df8036b4f651332a609c1272da7a9a08afcf0bfbd8449ec80442471a7491880febed1dad20169568d3ae339b2940f5f72"
+                  "content": "95410d77f40884a7761d60029d7203deeb34196067b8e8b707091353371edbee277ccfdbdec795e6c68d51133dfb0b78f3fa94c6f8a8b69726ef21710b4538a8"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -3526,7 +3421,7 @@
           "name": "devtools-api",
           "group": "@vue",
           "version": "8.2.1",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|@vue/devtools-api@8.2.1",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|@vue/devtools-api@8.2.1",
           "licenses": [
             {
               "license": {
@@ -3557,10 +3452,76 @@
         },
         {
           "type": "library",
+          "name": "chokidar",
+          "version": "6.0.0",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|chokidar@6.0.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/chokidar@6.0.0",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/chokidar/-/chokidar-6.0.0.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "11cd99ef0a5c28188ca51ec3c6d7a8a92fecab91b97760387e9c733efebe7c3ef134d76b4e0867ecbd7563057910dd41de2ef612b7375d54f91645880f1f74f8"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@nextcloud/vue/node_modules/chokidar"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "magic-string",
+          "version": "1.4.5",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|magic-string@1.4.5",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/magic-string@1.4.5",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/magic-string/-/magic-string-1.4.5.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "a0b2c2dbe62f4147c06bebf1a2e7c4ff273589c6fceccf625c846a02847fd84844ffc71bdd217ff868b4736072d41fb9573d9edaf42d52f1e2bb5fbadd99e1fb"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@nextcloud/vue/node_modules/magic-string"
+            }
+          ]
+        },
+        {
+          "type": "library",
           "name": "devtools-kit",
           "group": "@vue",
           "version": "8.2.1",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|@vue/devtools-kit@8.2.1",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|@vue/devtools-kit@8.2.1",
           "licenses": [
             {
               "license": {
@@ -3594,7 +3555,7 @@
           "name": "devtools-shared",
           "group": "@vue",
           "version": "8.2.1",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|@vue/devtools-shared@8.2.1",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|@vue/devtools-shared@8.2.1",
           "licenses": [
             {
               "license": {
@@ -3627,7 +3588,7 @@
           "type": "library",
           "name": "perfect-debounce",
           "version": "2.1.0",
-          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.11.0|perfect-debounce@2.1.0",
+          "bom-ref": "dossiq@0.1.0|@nextcloud/vue@9.13.1|perfect-debounce@2.1.0",
           "licenses": [
             {
               "license": {
@@ -4964,10 +4925,6 @@
         }
       ],
       "properties": [
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@rolldown/pluginutils"
@@ -6667,6 +6624,74 @@
           "name": "cdx:npm:package:path",
           "value": "node_modules/@vue-macros/common"
         }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "local-pkg",
+          "version": "1.2.1",
+          "bom-ref": "dossiq@0.1.0|@vue-macros/common@3.1.4|local-pkg@1.2.1",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/local-pkg@1.2.1",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/local-pkg/-/local-pkg-1.2.1.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "fbe814a910c4bdc9cde9986aaebfb2fc2915107865ad1f7abd99f79d964f63331c054c81b532b307d35a74294522c2154acbbede2f6d7e4fdeaeacbd9009aded"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue-macros/common/node_modules/local-pkg"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "quansync",
+          "version": "0.2.11",
+          "bom-ref": "dossiq@0.1.0|@vue-macros/common@3.1.4|quansync@0.2.11",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/quansync@0.2.11",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/quansync/-/quansync-0.2.11.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "0227d3ed011b5bd36b8b8b40c11e4cfeece906ea9f65ffb3c1a10cfd09331238fb341b850f6ac1bb2d0addd13ef3096d6decc357b24c03459f9c23d845261b5c"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue-macros/common/node_modules/quansync"
+            }
+          ]
+        }
       ]
     },
     {
@@ -6707,8 +6732,8 @@
       "type": "library",
       "name": "compiler-core",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/compiler-core@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/compiler-core@3.5.45",
       "licenses": [
         {
           "license": {
@@ -6716,15 +6741,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/compiler-core@3.5.42",
+      "purl": "pkg:npm/%40vue/compiler-core@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/compiler-core/-/compiler-core-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/compiler-core/-/compiler-core-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "d987b58a532d297c65f2a654ad0e63d027607a7169fc71509ad6baadf4727c4b131baf4be9693eb56b8da07607331f44f2d1764a5bdd83516ec03bc05ddcb52d"
+              "content": "5c61c9acceae7d901101cff0fadc8eb304adc3db5d2a2a8228149c23880668dc43f9a686bbf1d05a0289f8922d8d12cfa9e9d0ee213b1bc0090bb4f97b0d69fa"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6741,8 +6766,8 @@
       "type": "library",
       "name": "compiler-dom",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/compiler-dom@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/compiler-dom@3.5.45",
       "licenses": [
         {
           "license": {
@@ -6750,15 +6775,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/compiler-dom@3.5.42",
+      "purl": "pkg:npm/%40vue/compiler-dom@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/compiler-dom/-/compiler-dom-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/compiler-dom/-/compiler-dom-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "a9b850644166c9cafe9e2feacae71c4b8b2e70d37b5406c37db92f37158e5f655f8059bdd0c36cdff52144d2a83cc108567d05f207656232cfbeac47c0779038"
+              "content": "2db3f6775f4648e6063e6bcc04109525596fed32ad8ccd427decaeddc6226bbdb4a649d93fed5c2d7ec7e4c55ab6faee4fa32e26188fb8d6d0056fcc0e7fc4c0"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6775,8 +6800,8 @@
       "type": "library",
       "name": "compiler-sfc",
       "group": "@vue",
-      "version": "3.5.43",
-      "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.43",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.45",
       "licenses": [
         {
           "license": {
@@ -6784,15 +6809,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/compiler-sfc@3.5.43",
+      "purl": "pkg:npm/%40vue/compiler-sfc@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.43.tgz",
+          "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "1426eb1b75cd09197e8ecde1bae2b1e0854704b4ef32426155ea636f148fbb5827e3258b698b4635076324665a332b5707aa9befaa900c398348bcbfbe49a579"
+              "content": "30a1636f6517d0cfe5fe385fcea30bac8f15338a5fbc5286de9a8566449914744bb4d95dfcee11b543d91564b086ba3fd78a8ff3c5101245b31f1019010d2db3"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6803,152 +6828,14 @@
           "name": "cdx:npm:package:path",
           "value": "node_modules/@vue/compiler-sfc"
         }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "compiler-core",
-          "group": "@vue",
-          "version": "3.5.43",
-          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.43|@vue/compiler-core@3.5.43",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40vue/compiler-core@3.5.43",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@vue/compiler-core/-/compiler-core-3.5.43.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "cdd88b8676ded5042a8034fcc59329366caa677aa523efd0fc51d0728e7b2b097f6f4e47842ccde9e54637d414f6b6e06b80ab4b41f949863c5461d90adff51e"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-core"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "compiler-dom",
-          "group": "@vue",
-          "version": "3.5.43",
-          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.43|@vue/compiler-dom@3.5.43",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40vue/compiler-dom@3.5.43",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@vue/compiler-dom/-/compiler-dom-3.5.43.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "3c4668024dcd426b27fde8cccd2382c9362ac06a9cceb5a6ef43ee8412a38efd7e4c2a1001a3bfccea8dc2357e8689e536cb53e482f1b5cfbcafc5147e3fa211"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-dom"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "compiler-ssr",
-          "group": "@vue",
-          "version": "3.5.43",
-          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.43|@vue/compiler-ssr@3.5.43",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40vue/compiler-ssr@3.5.43",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@vue/compiler-ssr/-/compiler-ssr-3.5.43.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "185eb6a2b7fb2a2257f51aab1cd1ab601b9db10183d0e849e670ecf743bc5220ee4b8d3e60c6289a25eeeb0e84bafb57b910dcdcc48d8acdc469a48a015496a6"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-ssr"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "shared",
-          "group": "@vue",
-          "version": "3.5.43",
-          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.43|@vue/shared@3.5.43",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40vue/shared@3.5.43",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@vue/shared/-/shared-3.5.43.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "ba4b12ed818c479359cabe0936ad11a7e4322e7b34b9e6b3db42b0cc83d6f51d0b1f5567b7813e5d4336f4f36c7846dfd70c30da03ae86e0e2e4028e2176a0f5"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/shared"
-            }
-          ]
-        }
       ]
     },
     {
       "type": "library",
       "name": "compiler-ssr",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/compiler-ssr@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/compiler-ssr@3.5.45",
       "licenses": [
         {
           "license": {
@@ -6956,15 +6843,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/compiler-ssr@3.5.42",
+      "purl": "pkg:npm/%40vue/compiler-ssr@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/compiler-ssr/-/compiler-ssr-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/compiler-ssr/-/compiler-ssr-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "c662e4df02e46e2ccf0222f2a268e0145a2c7f6cacf5be4685bfa887f936b67be2a4dcfc385ad03a24dc582cf22bb329069f4a9321ad7ef81f2d48af6e6b8660"
+              "content": "445e6c6d939f633e402b4d2d389527d8fc055d1d9f4b5bb61d5cc8f03f5517dac6005c6e181aa0d9b075909dd91cca6ba9296d5e74fd31913522caa348cf287b"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -7083,8 +6970,8 @@
       "type": "library",
       "name": "reactivity",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/reactivity@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/reactivity@3.5.45",
       "licenses": [
         {
           "license": {
@@ -7092,15 +6979,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/reactivity@3.5.42",
+      "purl": "pkg:npm/%40vue/reactivity@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/reactivity/-/reactivity-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/reactivity/-/reactivity-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "4f334d7caa5bee10f16d096dc00badf150d003960ff81b919719ed1d4b918f22b094cbe600f6ecdee9e10af89e8a389f63abc57d5070b12ef01bf0bbbaaf9b11"
+              "content": "5aa932b9b356a48e0e6013a2a52ae322cb0c7493bc2b58bd66db3f5a6f04af5d3fd26b0e1300b25965af667008ed65b7910b13a2783a0c9a7c09b6febdde1c3c"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -7117,8 +7004,8 @@
       "type": "library",
       "name": "runtime-core",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/runtime-core@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/runtime-core@3.5.45",
       "licenses": [
         {
           "license": {
@@ -7126,15 +7013,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/runtime-core@3.5.42",
+      "purl": "pkg:npm/%40vue/runtime-core@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/runtime-core/-/runtime-core-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/runtime-core/-/runtime-core-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "f6e002b6e1eceef246926e41a77c6ee314432c54c8632e43831a53a158ea1880210042b041fb1a2ef28836133a9c5569e9b64f44519d0ea775839d8ca8ab28b4"
+              "content": "6f320edfe140063a63f39b8829273e4278f7ebfb310cd237b5c1fd8bac3ac4a03593a7b47a3bf41b48cc09f78906f2b7c862f95db2770cc663f8296ac821c563"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -7151,8 +7038,8 @@
       "type": "library",
       "name": "runtime-dom",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/runtime-dom@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/runtime-dom@3.5.45",
       "licenses": [
         {
           "license": {
@@ -7160,15 +7047,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/runtime-dom@3.5.42",
+      "purl": "pkg:npm/%40vue/runtime-dom@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/runtime-dom/-/runtime-dom-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/runtime-dom/-/runtime-dom-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "aec0a686258b691c4696d2f0865096c989059fb5806ca461d2ad7b799d40e83aba7aa73600243ad4822bcb1cf42ebb2f0b31d28a52c0f491e8bd5c0cf02344da"
+              "content": "66f45314c0e07ea4c3616bc97e8569413271d5137933a97b3f277ac1f758d8d697cdb3d0561f5ecde41815b34f3fa6c8711567d92a92491db937f8d25baf4117"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -7185,8 +7072,8 @@
       "type": "library",
       "name": "server-renderer",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/server-renderer@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/server-renderer@3.5.45",
       "licenses": [
         {
           "license": {
@@ -7194,15 +7081,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/server-renderer@3.5.42",
+      "purl": "pkg:npm/%40vue/server-renderer@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/server-renderer/-/server-renderer-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/server-renderer/-/server-renderer-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "dbefb9754c984b882fa3bc505d2102503841ed34b468e97949e55f0b9a92ab52607e18ef7a0c35cea8704c84778a667e4183c9430f607dc16f5c6023199eda8d"
+              "content": "d5f357507861b167f81152f85e2c5b18153998a76221724007cd9f787453c8f3e8e99504616209b8479497799557a403069e741c9397e286cb87161796b8ebcc"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -7219,8 +7106,8 @@
       "type": "library",
       "name": "shared",
       "group": "@vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|@vue/shared@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|@vue/shared@3.5.45",
       "licenses": [
         {
           "license": {
@@ -7228,15 +7115,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/shared@3.5.42",
+      "purl": "pkg:npm/%40vue/shared@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/shared/-/shared-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/@vue/shared/-/shared-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "dab3f17b1d6341fe23be5f4c38797a61a5c23dcacdab3fc5b2d30e121dd0598fbf38c13d9d04ef97d598782c215bb0058da4744a79e0646969ff0911eab908ea"
+              "content": "b9ef5f80799534f94fee25b7f9cc68057fc29e5c39ddd1e5552c3424a198eb3d6539b83ca47a23f76f0cda7cc6e3fc95b0c67735a459dacdb3eb5b82d7a343c1"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -8518,8 +8405,8 @@
     {
       "type": "library",
       "name": "ast-walker-scope",
-      "version": "0.9.0",
-      "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.9.0",
+      "version": "0.10.0",
+      "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0",
       "licenses": [
         {
           "license": {
@@ -8527,15 +8414,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/ast-walker-scope@0.9.0",
+      "purl": "pkg:npm/ast-walker-scope@0.10.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/ast-walker-scope/-/ast-walker-scope-0.9.0.tgz",
+          "url": "https://registry.npmjs.org/ast-walker-scope/-/ast-walker-scope-0.10.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "209773a36bcb884941c4acf04b7e95b02b9effad9de887568e73c1dafde7b8f29e586ca7a7a145fc26282dae62ff78d71ffcfded90ddb17cfa69ba6033ac34ec"
+              "content": "2b3be8c437d7373d869bc2982e1e3b2b7a9c6376736b758a3ae876c68a9aecb06ee8c0ca58064ba2f26d53d0ee01dfc4afeae14070919fad7d9474b953eaa687"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -8545,6 +8432,210 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/ast-walker-scope"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "parser",
+          "group": "@babel",
+          "version": "8.1.2",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|@babel/parser@8.1.2",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40babel/parser@8.1.2",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@babel/parser/-/parser-8.1.2.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "643294eef697d1539177606168efb714aaffdf44ca8db532dd23197327623e782701bf8c7ac814a21e5225c139130132063d7833927a7cae7a1ae06abd898ea7"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/@babel/parser"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "types",
+          "group": "@babel",
+          "version": "8.1.2",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|@babel/types@8.1.2",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40babel/types@8.1.2",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@babel/types/-/types-8.1.2.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "b97b7aaadd9fe46eb58d9c0d2332b544abbb9795e3b75557b4f3ce1ae56f7a16bd7f16f1d1033de14d64338a4564a4d12e358af97f2f9b08f06c87a62638904c"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/@babel/types"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "ast-kit",
+          "version": "3.0.1",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|ast-kit@3.0.1",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/ast-kit@3.0.1",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/ast-kit/-/ast-kit-3.0.1.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "7c21a242f98782185ff39f1efd2546876694a3f16c6ed079a81f1b89fa3aca01cae4e31c1a76b9e8552f4b422b62fa3eba7630222d670a494487f29468e2959a"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/ast-kit"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "helper-string-parser",
+          "group": "@babel",
+          "version": "8.1.2",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|@babel/helper-string-parser@8.1.2",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40babel/helper-string-parser@8.1.2",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-8.1.2.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "4d1cf96743207c87d6ab0108abfa42a54a445d0c54b76220d996f11b749d9a149b1cc00515818e8b1d2423824b577ef5fd303ea969d0e315873d68e88e4c9114"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/@babel/helper-string-parser"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "helper-validator-identifier",
+          "group": "@babel",
+          "version": "8.0.6",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|@babel/helper-validator-identifier@8.0.6",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40babel/helper-validator-identifier@8.0.6",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-8.0.6.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "1d8c74626b9c851c514a99e3bdc35f7e73d2f0309ab8a3669ee988b871b78e740055ec1103b91f246c05d776b2129499b3bb3847fa011f87a9a6e5dc01077925"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/@babel/helper-validator-identifier"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "estree-walker",
+          "version": "3.0.3",
+          "bom-ref": "dossiq@0.1.0|ast-walker-scope@0.10.0|estree-walker@3.0.3",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/estree-walker@3.0.3",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/estree-walker/-/estree-walker-3.0.3.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "ed150a7d781230c933b7a66e5e6a9aa4ebab2c63cf7e08fa97db9167b9511a896f934cb6ca871cdf92dd731282e4f419767d8332a8a8010d8da1672b4ca9a6ea"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/ast-walker-scope/node_modules/estree-walker"
+            }
+          ]
         }
       ]
     },
@@ -8652,6 +8743,39 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/axe-core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "axios-retry",
+      "version": "4.5.0",
+      "bom-ref": "dossiq@0.1.0|axios-retry@4.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/axios-retry@4.5.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/axios-retry/-/axios-retry-4.5.0.tgz",
+          "type": "distribution",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "691f7da178691031a8d14b80958727da219176cdf4937eba65f6b4e57592711f506900f825888fdffd50b75bbb62579f50e2be727d02730a0bd6879f6af41495"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/axios-retry"
         }
       ]
     },
@@ -9213,40 +9337,6 @@
     },
     {
       "type": "library",
-      "name": "cancelable-promise",
-      "version": "4.3.1",
-      "bom-ref": "dossiq@0.1.0|cancelable-promise@4.3.1",
-      "scope": "optional",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "purl": "pkg:npm/cancelable-promise@4.3.1",
-      "externalReferences": [
-        {
-          "url": "https://registry.npmjs.org/cancelable-promise/-/cancelable-promise-4.3.1.tgz",
-          "type": "distribution",
-          "hashes": [
-            {
-              "alg": "SHA-512",
-              "content": "03ff0fc0b93f4fb2090df51d43af0d476e101daf2b2259cdfecb62244068e9d9955240f82b5e0bb301b4c3757075e2bfa3ba8ec11511d64d8c84ae51a72da6ec"
-            }
-          ],
-          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/cancelable-promise"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "name": "caniuse-lite",
       "version": "1.0.30001810",
       "bom-ref": "dossiq@0.1.0|caniuse-lite@1.0.30001810",
@@ -9507,6 +9597,10 @@
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/chokidar"
@@ -9796,8 +9890,8 @@
     {
       "type": "library",
       "name": "confbox",
-      "version": "0.2.4",
-      "bom-ref": "dossiq@0.1.0|confbox@0.2.4",
+      "version": "0.3.2",
+      "bom-ref": "dossiq@0.1.0|confbox@0.3.2",
       "licenses": [
         {
           "license": {
@@ -9805,15 +9899,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/confbox@0.2.4",
+      "purl": "pkg:npm/confbox@0.3.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/confbox/-/confbox-0.2.4.tgz",
+          "url": "https://registry.npmjs.org/confbox/-/confbox-0.3.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "cac3869604c56cddbf63a0a0dc8c9ef182ae947c3e4767cd5c7ae04a65c849074c9e8998e9e343a6b55d5bd479c4182e12a23de78f92ebbd3d53288eec1fba39"
+              "content": "65400a84a96408eac818a73c723ef37a4f6cf73d66bde1e27ffdb99d4b21236073091cc5eca1fb2876be2e7876b9babe7b5b4895a16e3fbeb79b35b8a95a1e86"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -12283,8 +12377,8 @@
     {
       "type": "library",
       "name": "exsolve",
-      "version": "1.1.1",
-      "bom-ref": "dossiq@0.1.0|exsolve@1.1.1",
+      "version": "1.2.0",
+      "bom-ref": "dossiq@0.1.0|exsolve@1.2.0",
       "licenses": [
         {
           "license": {
@@ -12292,15 +12386,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/exsolve@1.1.1",
+      "purl": "pkg:npm/exsolve@1.2.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/exsolve/-/exsolve-1.1.1.tgz",
+          "url": "https://registry.npmjs.org/exsolve/-/exsolve-1.2.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "f54fe36548239d21b29ed46beb2e4cbaed4c25cc0597a90fbbb93ca8b17420c35f2eabf0d0d6789e7543ab4455a19d11bc2cae9a26f8133dca62b55f8a5af0fa"
+              "content": "875a503d1f57a1e48c767b513428f24f39daba67b85297d7ad42c19e5919d8250cfc6e5e49afa9041c8695d3b9b91f1dc5b3c2f8eb895ec3cf35ff8967cd400e"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -13025,8 +13119,8 @@
     {
       "type": "library",
       "name": "focus-trap",
-      "version": "8.2.2",
-      "bom-ref": "dossiq@0.1.0|focus-trap@8.2.2",
+      "version": "8.2.5",
+      "bom-ref": "dossiq@0.1.0|focus-trap@8.2.5",
       "licenses": [
         {
           "license": {
@@ -13034,15 +13128,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/focus-trap@8.2.2",
+      "purl": "pkg:npm/focus-trap@8.2.5",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/focus-trap/-/focus-trap-8.2.2.tgz",
+          "url": "https://registry.npmjs.org/focus-trap/-/focus-trap-8.2.5.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "a95d20f2145806a80009c14e1f77fdc17738ccf2a1affd33f512366ba6628d9ef611e062e20f28072f33016b944754ec3293b3c2950c16f8dd6acac2e35268ba"
+              "content": "56ba9fc915da1d9d049215e57f26a5b339a19d237dca37585f09702d246826b0c9d3f7acc18e49e40be3fc771dfcface1c2327b0c870c7bfbbfacd649aff40b2"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -14990,6 +15084,39 @@
     },
     {
       "type": "library",
+      "name": "is-retry-allowed",
+      "version": "2.2.0",
+      "bom-ref": "dossiq@0.1.0|is-retry-allowed@2.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/is-retry-allowed@2.2.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/is-retry-allowed/-/is-retry-allowed-2.2.0.tgz",
+          "type": "distribution",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5d59bb2ce78ba535b88d5d7d4121f7f2f92cc31a0bb9df2c439ed8c095533d6762688f48f24784846169065b25c95b20750cb83a983c40e2dbf18460b3266242"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-retry-allowed"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "is-svg",
       "version": "6.1.0",
       "bom-ref": "dossiq@0.1.0|is-svg@6.1.0",
@@ -16090,8 +16217,8 @@
     {
       "type": "library",
       "name": "linkifyjs",
-      "version": "4.3.3",
-      "bom-ref": "dossiq@0.1.0|linkifyjs@4.3.3",
+      "version": "4.4.0",
+      "bom-ref": "dossiq@0.1.0|linkifyjs@4.4.0",
       "licenses": [
         {
           "license": {
@@ -16099,15 +16226,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/linkifyjs@4.3.3",
+      "purl": "pkg:npm/linkifyjs@4.4.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/linkifyjs/-/linkifyjs-4.3.3.tgz",
+          "url": "https://registry.npmjs.org/linkifyjs/-/linkifyjs-4.4.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "3fc6843f953f0f5fc895363639e62c12b77087d6c6b8b137d0d717b4a12381d1dc6a1bde428430336c9936c8a8407b16173d0feca2ae762b1baf30a0474b031e"
+              "content": "2274dec6fb5b6a2fb673e74454671ce8ee8fd83315222c03f5afe2e3316ba1acce2182ce4ba152566009ee415eba69c2331ebf810a8d0246d4be032e6d5e3e30"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -16123,8 +16250,8 @@
     {
       "type": "library",
       "name": "local-pkg",
-      "version": "1.2.1",
-      "bom-ref": "dossiq@0.1.0|local-pkg@1.2.1",
+      "version": "2.0.0",
+      "bom-ref": "dossiq@0.1.0|local-pkg@2.0.0",
       "licenses": [
         {
           "license": {
@@ -16132,15 +16259,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/local-pkg@1.2.1",
+      "purl": "pkg:npm/local-pkg@2.0.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/local-pkg/-/local-pkg-1.2.1.tgz",
+          "url": "https://registry.npmjs.org/local-pkg/-/local-pkg-2.0.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "fbe814a910c4bdc9cde9986aaebfb2fc2915107865ad1f7abd99f79d964f63331c054c81b532b307d35a74294522c2154acbbede2f6d7e4fdeaeacbd9009aded"
+              "content": "c6f4cdc0cdbb12953e7e42d2a68df73eafe79bc9b9ccd7f4694fe11785b864cf511d08d565ae4a4e699723313356c748d3d34e52a8f47631e14eff7ab14a3049"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -18570,8 +18697,8 @@
     {
       "type": "library",
       "name": "nostics",
-      "version": "1.2.0",
-      "bom-ref": "dossiq@0.1.0|nostics@1.2.0",
+      "version": "1.4.0",
+      "bom-ref": "dossiq@0.1.0|nostics@1.4.0",
       "licenses": [
         {
           "license": {
@@ -18579,15 +18706,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/nostics@1.2.0",
+      "purl": "pkg:npm/nostics@1.4.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/nostics/-/nostics-1.2.0.tgz",
+          "url": "https://registry.npmjs.org/nostics/-/nostics-1.4.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "146a847e1423aefa3594bf0a1627dd4d088dc304072710b58ed604d51739e2a17f8f138d50d2fe902f604b592b5fc43ae4f82b4397c2a87fc8e0d85606f752aa"
+              "content": "5a35c73ae36ecd8dcc3ca3a8093db32f549addc4b698e51ee28f05f7826f04e1f67067f2348b5b42609bda9347231a2875de4efafb66987abb3e84995468021c"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -19298,8 +19425,8 @@
     {
       "type": "library",
       "name": "pkg-types",
-      "version": "2.3.1",
-      "bom-ref": "dossiq@0.1.0|pkg-types@2.3.1",
+      "version": "2.4.0",
+      "bom-ref": "dossiq@0.1.0|pkg-types@2.4.0",
       "licenses": [
         {
           "license": {
@@ -19307,15 +19434,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/pkg-types@2.3.1",
+      "purl": "pkg:npm/pkg-types@2.4.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/pkg-types/-/pkg-types-2.3.1.tgz",
+          "url": "https://registry.npmjs.org/pkg-types/-/pkg-types-2.4.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "cbe89c85c81cd8bac00ee84b340c7c0c58d57e0cfdd694717d9748dd40e1c47bdc54466c7a72cefbb5da539bcea74bbfed5ff067ea65cae431b6b0e5649fb27a"
+              "content": "d3b172b3b895c745fa4dcbe230e82880cd4b937dd9caa39eccc9d4efd4be91f7d6ab0a251bfe56f55f0481049e60221f15361582cb116e71fadf439adbeb2804"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -20175,8 +20302,8 @@
     {
       "type": "library",
       "name": "quansync",
-      "version": "0.2.11",
-      "bom-ref": "dossiq@0.1.0|quansync@0.2.11",
+      "version": "1.0.0",
+      "bom-ref": "dossiq@0.1.0|quansync@1.0.0",
       "licenses": [
         {
           "license": {
@@ -20184,15 +20311,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/quansync@0.2.11",
+      "purl": "pkg:npm/quansync@1.0.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/quansync/-/quansync-0.2.11.tgz",
+          "url": "https://registry.npmjs.org/quansync/-/quansync-1.0.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "0227d3ed011b5bd36b8b8b40c11e4cfeece906ea9f65ffb3c1a10cfd09331238fb341b850f6ac1bb2d0addd13ef3096d6decc357b24c03459f9c23d845261b5c"
+              "content": "e7165a70412e7efdc74933d0b9c86bbd5eaca1a88008c167ab51fcc24562a1cb681f74d185af52cfaea53b14703cafea663ec73e24af7a287dc80ca1f7c82fa8"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -22243,8 +22370,8 @@
     {
       "type": "library",
       "name": "tabbable",
-      "version": "6.5.0",
-      "bom-ref": "dossiq@0.1.0|tabbable@6.5.0",
+      "version": "6.5.2",
+      "bom-ref": "dossiq@0.1.0|tabbable@6.5.2",
       "licenses": [
         {
           "license": {
@@ -22252,15 +22379,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/tabbable@6.5.0",
+      "purl": "pkg:npm/tabbable@6.5.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/tabbable/-/tabbable-6.5.0.tgz",
+          "url": "https://registry.npmjs.org/tabbable/-/tabbable-6.5.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "c227811d7ca0226ecec903aee61425924eb6fd6c821581a55a0ecbebf642519c31d28dfdf19927e295663327d885f306f241ab8ff2abb7c78893a50a0ba573c0"
+              "content": "5e07670759c653a294e1580c9d93da642c7b335841acbc8489961abb61b682af544f477b778154065357eefbcf966fc1d6f9353e3af3241c7d2dbbf87eca92f6"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -23190,8 +23317,8 @@
     {
       "type": "library",
       "name": "unist-util-visit-parents",
-      "version": "6.0.2",
-      "bom-ref": "dossiq@0.1.0|unist-util-visit-parents@6.0.2",
+      "version": "6.1.0",
+      "bom-ref": "dossiq@0.1.0|unist-util-visit-parents@6.1.0",
       "licenses": [
         {
           "license": {
@@ -23199,15 +23326,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/unist-util-visit-parents@6.0.2",
+      "purl": "pkg:npm/unist-util-visit-parents@6.1.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/unist-util-visit-parents/-/unist-util-visit-parents-6.0.2.tgz",
+          "url": "https://registry.npmjs.org/unist-util-visit-parents/-/unist-util-visit-parents-6.1.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "828875b354c1aea4aaba449cf30ae3c1684bd21889c6003c9b8905c46950fbc1584370bf9b5d45713b386187a6ed5ebae0084756f82840b93cf744ac76caf621"
+              "content": "bca5f1cfa3b7f2c2838f59adc7f936716be490506e606c7ab86ae5cc191579609117f17cb1d2348f759b933ff9ad535146e55cf14ae045d6c2c4d86661780fdf"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -23289,8 +23416,8 @@
     {
       "type": "library",
       "name": "unplugin",
-      "version": "3.3.0",
-      "bom-ref": "dossiq@0.1.0|unplugin@3.3.0",
+      "version": "3.7.0",
+      "bom-ref": "dossiq@0.1.0|unplugin@3.7.0",
       "licenses": [
         {
           "license": {
@@ -23298,15 +23425,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/unplugin@3.3.0",
+      "purl": "pkg:npm/unplugin@3.7.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/unplugin/-/unplugin-3.3.0.tgz",
+          "url": "https://registry.npmjs.org/unplugin/-/unplugin-3.7.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "a9aeba2be72b6dfc84e892b5d068ef6c9791aceb2e0bf2696e71dcb5fca9fe2e28053c563b325f459c8388e9353ed12b30546ef0986c53fc0fbce7413567b946"
+              "content": "1ab336baadc3428de1bcb536163798868a09f0163d37a8f515bce0c7b3ed6b755525ebec0f754fe1d3e366464e4b498bbcdf30f73cebf4e94ffb7d5b48ccae2f"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -23985,8 +24112,8 @@
     {
       "type": "library",
       "name": "vue",
-      "version": "3.5.42",
-      "bom-ref": "dossiq@0.1.0|vue@3.5.42",
+      "version": "3.5.45",
+      "bom-ref": "dossiq@0.1.0|vue@3.5.45",
       "licenses": [
         {
           "license": {
@@ -23994,15 +24121,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/vue@3.5.42",
+      "purl": "pkg:npm/vue@3.5.45",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/vue/-/vue-3.5.42.tgz",
+          "url": "https://registry.npmjs.org/vue/-/vue-3.5.45.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "e11c874136d0bce3ecdcc7ef50ed52834611aca36703498056dbe9775d938357ca0cdece1c1525d48a929fccc62632bd9c8dcd90da7c7204e956b4990b94d370"
+              "content": "ddcbec89bf26f5cd2f076e3e3032ac81c5b8f836b8c5a065f59ff94db9b6a66488b113f172297871d5e35e556c989da0eb85c9a3987e21177baec7464fda596b"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -24012,42 +24139,6 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/vue"
-        }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "compiler-sfc",
-          "group": "@vue",
-          "version": "3.5.42",
-          "bom-ref": "dossiq@0.1.0|vue@3.5.42|@vue/compiler-sfc@3.5.42",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40vue/compiler-sfc@3.5.42",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.42.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "7e4080141e2891c00034631385ba169d2729fe0cd68d4d194a45678d3222a6598c0eadaeab4b480778fec55bb8ae1bf9aef3a0072482cacb9d99b31deb1451ab"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/vue/node_modules/@vue/compiler-sfc"
-            }
-          ]
         }
       ]
     },
@@ -24190,8 +24281,8 @@
     {
       "type": "library",
       "name": "webdav",
-      "version": "5.10.0",
-      "bom-ref": "dossiq@0.1.0|webdav@5.10.0",
+      "version": "5.11.0",
+      "bom-ref": "dossiq@0.1.0|webdav@5.11.0",
       "licenses": [
         {
           "license": {
@@ -24199,15 +24290,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/webdav@5.10.0",
+      "purl": "pkg:npm/webdav@5.11.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/webdav/-/webdav-5.10.0.tgz",
+          "url": "https://registry.npmjs.org/webdav/-/webdav-5.11.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "7d53ee44bb5c76e546bd23bb4e7ffa4d00b322f23f83a04effec4f45cb42be2fc6cad6298e7e1ccf159b8781ec02bb1da26f6acfd048eb793dfefd87054ba2d4"
+              "content": "0db512f2b1ef5ac7b9e44887334ab9ab5cf77954422d65bb55aee652a036fc925d40721ec383a9d874e094790124338056b41e41fd08f9111426422b62ab4bfb"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -24224,7 +24315,7 @@
           "type": "library",
           "name": "entities",
           "version": "6.0.1",
-          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|entities@6.0.1",
+          "bom-ref": "dossiq@0.1.0|webdav@5.11.0|entities@6.0.1",
           "licenses": [
             {
               "license": {
@@ -24257,7 +24348,7 @@
           "type": "library",
           "name": "minimatch",
           "version": "11.0.8",
-          "bom-ref": "dossiq@0.1.0|webdav@5.10.0|minimatch@11.0.8",
+          "bom-ref": "dossiq@0.1.0|webdav@5.11.0|minimatch@11.0.8",
           "licenses": [
             {
               "license": {
