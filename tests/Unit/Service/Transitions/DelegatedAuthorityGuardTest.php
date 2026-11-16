@@ -160,6 +160,24 @@ class DelegatedAuthorityGuardTest extends TestCase {
 	}//end testTheCurrentUserActsWhenTheCaseNamesNobody()
 
 	/**
+	 * An actorField configured blank names no case field at all: the guard
+	 * does not read the case's signatory but asks for the current user.
+	 *
+	 * @return void
+	 */
+	public function testABlankActorFieldFallsBackToTheCurrentUser(): void {
+		$guard  = $this->guard(answer: ['authorised' => true, 'reason' => 'authorised', 'allocation' => 'a-1']);
+		$result = $guard->evaluate(
+			guardConfig: ['act' => 'sign-fixture-letter', 'actorField' => '   '],
+			case: $this->fixtureCase() + ['' => 'mallory'],
+			userId: 'bob'
+		);
+
+		self::assertTrue($result->passed);
+		self::assertSame([['actor' => 'bob', 'act' => 'sign-fixture-letter', 'amount' => null]], $this->asked);
+	}//end testABlankActorFieldFallsBackToTheCurrentUser()
+
+	/**
 	 * decidiq's refusal reasons each refuse with their own sentence.
 	 *
 	 * @return void

@@ -135,6 +135,60 @@ class CreateSubCaseHandlerTest extends TestCase {
 	}//end testLinksSubCaseToParentViaHoofdzaak()
 
 	/**
+	 * A recurring follow-up's series lands on the sub-case as its
+	 * provenance, trimmed, alongside the parent link.
+	 *
+	 * @return void
+	 */
+	public function testWritesTheHandoffSourceOntoTheSubCase(): void {
+		$recorded = null;
+		$objectService = new class($recorded) {
+			/** @var mixed */
+			public $recorded;
+
+			/** @var array<int, string> */
+			public array $targets = [];
+
+			public function __construct(&$recorded) {
+				$this->recorded = &$recorded;
+			}
+
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->targets = [$options->target->register, $options->target->schema];
+				$this->recorded = $object;
+				return ['id' => 'sub-7'];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return [
+					'register' => 'reg-1',
+					'case_schema' => 'case-schema',
+				][$key] ?? '';
+			}
+		);
+
+		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-3', 'title' => 'Controle', 'handoffSource' => '  series-12  '],
+			case: ['uuid' => 'parent-uuid'],
+			transitionContext: [],
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertSame(['subCaseId' => 'sub-7'], $result->data);
+		self::assertSame(['reg-1', 'case-schema'], $objectService->targets);
+		self::assertSame(
+			['title' => 'Controle', 'caseType' => 'ct-3', 'hoofdzaak' => 'parent-uuid', 'handoffSource' => 'series-12'],
+			$recorded
+		);
+	}//end testWritesTheHandoffSourceOntoTheSubCase()
+
+	/**
 	 * @return void
 	 */
 	public function testCatchesExceptionFromObjectService(): void {
