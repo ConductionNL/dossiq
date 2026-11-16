@@ -102,7 +102,6 @@ class ZtcPublishAndDeleteChecks {
 		}
 
 		$statusSchema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_type_schema');
 
 		try {
 			$statusTypes = $this->caseTypeRows(register: $register, query: new SchemaFilter(schema: $statusSchema, filters: ['caseType' => $caseTypeId]));
@@ -110,12 +109,7 @@ class ZtcPublishAndDeleteChecks {
 			return ['Could not load status types for case type'];
 		}
 
-		$caseType = $this->loadCaseTypeRow(
-			objectService: $this->lookups->objectService(),
-			register: $register,
-			schema: $caseSchema,
-			caseTypeId: $caseTypeId,
-		);
+		$caseType = $this->loadCaseTypeRow(register: $register, caseTypeId: $caseTypeId);
 
 		return array_merge(self::statusTypeErrors(statusTypes: $statusTypes), self::validFromErrors(caseType: $caseType));
 	}//end validatePublish()
@@ -212,20 +206,19 @@ class ZtcPublishAndDeleteChecks {
 	/**
 	 * Load the caseType row itself, returning an empty array when it cannot be read.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register Register slug.
-	 * @param string $schema Case type schema slug.
+	 * @param string $register   Register slug.
 	 * @param string $caseTypeId Case type id.
 	 *
 	 * @return array<string, mixed> The case type row, or an empty array.
 	 */
-	private function loadCaseTypeRow(object $objectService, string $register, string $schema, string $caseTypeId): array {
+	private function loadCaseTypeRow(string $register, string $caseTypeId): array {
+		$schema = (string)$this->settingsService->getConfigValue(key: 'case_type_schema');
 		// A top-level `['id' => $caseTypeId]` filter does not resolve in
 		// OpenRegister (ids are metadata, not schema properties) and silently
 		// matches nothing. The get-by-uuid path resolves the id directly.
 		try {
 			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
+				objectService: $this->lookups->objectService(),
 				register: $register,
 				schema: $schema,
 				id: $caseTypeId

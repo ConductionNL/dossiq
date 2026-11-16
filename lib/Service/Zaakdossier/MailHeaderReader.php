@@ -49,7 +49,7 @@ class MailHeaderReader {
 	/**
 	 * OpenRegister's text extraction service, which parses an `.eml`.
 	 */
-	private const EXTRACTION = 'OCA\OpenRegister\Service\TextExtractionService';
+	private const EXTRACTION = 'OCA\OpenRegister\Files\Service\TextExtractionService';
 
 	/**
 	 * File extensions that are a mail, lower-case.

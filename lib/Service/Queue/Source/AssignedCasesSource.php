@@ -28,6 +28,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
+use OCA\Dossiq\Service\Support\ReadsQueueCaseSchema;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCP\IL10N;
 use Throwable;
@@ -38,6 +39,8 @@ use Throwable;
  * @spec openspec/specs/my-work/spec.md
  */
 class AssignedCasesSource extends RegisterBackedSource {
+	use ReadsQueueCaseSchema;
+
 	/**
 	 * Constructor.
 	 *
@@ -133,22 +136,6 @@ class AssignedCasesSource extends RegisterBackedSource {
 
 		return $items;
 	}//end itemsFor()
-
-	/**
-	 * The configured case schema, `case` when none is set.
-	 *
-	 * @return string The schema.
-	 *
-	 * @spec openspec/specs/my-work/spec.md
-	 */
-	private function caseSchema(): string {
-		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		if ($schema === '') {
-			$schema = 'case';
-		}
-
-		return $schema;
-	}//end caseSchema()
 
 	/**
 	 * The queue item of one assigned case.

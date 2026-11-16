@@ -389,7 +389,7 @@ class RetiredNodeTranslator {
 		}
 
 		[$storedKey, $table] = $this->decisionTable(key: $key);
-		$fields = $this->decisionOutputFields(table: $table, config: $config, key: $key);
+		$fields = $this->decisionOutputFields(table: $table, step: ['config' => $config, 'key' => $key]);
 
 		$step = $this->decisionStep(storedKey: $storedKey, config: $config);
 
@@ -403,8 +403,7 @@ class RetiredNodeTranslator {
 	 * The case fields the decision table's outputs are written to.
 	 *
 	 * @param array<string, mixed> $table The stored table definition.
-	 * @param array<string, mixed> $config The retired configuration.
-	 * @param string $key The table's dossiq key.
+	 * @param array<string, mixed> $step  The retired configuration (`config`) and the table's dossiq key (`key`).
 	 *
 	 * @return array<int, string> The fields.
 	 *
@@ -412,8 +411,8 @@ class RetiredNodeTranslator {
 	 *
 	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
 	 */
-	private function decisionOutputFields(array $table, array $config, string $key): array {
-		$outputMapping = (array)($config['outputMapping'] ?? []);
+	private function decisionOutputFields(array $table, array $step): array {
+		$outputMapping = (array)($step['config']['outputMapping'] ?? []);
 		$fields = [];
 		foreach ((array)($table['outputs'] ?? []) as $output) {
 			$name = trim((string)(((array)$output)['name'] ?? ''));
@@ -423,7 +422,7 @@ class RetiredNodeTranslator {
 		}
 
 		if ($fields === []) {
-			throw new UnmappableStep(message: 'the decision table "' . $key . '" declares no outputs to write');
+			throw new UnmappableStep(message: 'the decision table "' . $step['key'] . '" declares no outputs to write');
 		}
 
 		return $fields;

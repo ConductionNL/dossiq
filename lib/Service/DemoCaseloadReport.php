@@ -83,7 +83,6 @@ class DemoCaseloadReport implements DemoCaseloadReportInterface {
 		$objectService = $this->gateway->objectService();
 		$ids = $this->gateway->schemaIds();
 
-		$today = $now->format('Y-m-d');
 		$horizon = $now->modify('+3 days')->format('Y-m-d');
 
 		$cases = $this->gateway->findMany(
@@ -93,7 +92,7 @@ class DemoCaseloadReport implements DemoCaseloadReportInterface {
 			filters: []
 		);
 
-		return ($this->caseBuckets(cases: $cases, today: $today, horizon: $horizon)
+		return ($this->caseBuckets(cases: $cases, now: $now)
 			+ $this->taskBuckets(horizon: $horizon));
 	}//end buckets()
 
@@ -101,12 +100,13 @@ class DemoCaseloadReport implements DemoCaseloadReportInterface {
 	 * Count the case buckets.
 	 *
 	 * @param array<int, mixed> $cases The case rows.
-	 * @param string $today Today, as Y-m-d.
-	 * @param string $horizon Three days out, as Y-m-d.
+	 * @param DateTimeImmutable $now The clock.
 	 *
 	 * @return array{open: integer, overdue: integer, dueSoon: integer, closed: integer} The counts.
 	 */
-	private function caseBuckets(array $cases, string $today, string $horizon): array {
+	private function caseBuckets(array $cases, DateTimeImmutable $now): array {
+		$today = $now->format('Y-m-d');
+		$horizon = $now->modify('+3 days')->format('Y-m-d');
 		$counts = ['open' => 0, 'overdue' => 0, 'dueSoon' => 0, 'closed' => 0];
 
 		foreach ($cases as $case) {

@@ -80,6 +80,7 @@
 
 <script>
 import { NcButton, NcDialog, NcLoadingIcon } from '@nextcloud/vue'
+import { openable } from '../mixins/openable.js'
 
 export default {
 	name: 'FederatedActivityPanel',
@@ -89,12 +90,9 @@ export default {
 		NcLoadingIcon,
 	},
 
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
+	mixins: [openable],
 
+	props: {
 		federatedShareId: {
 			type: String,
 			required: true,

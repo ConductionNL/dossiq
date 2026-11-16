@@ -50,6 +50,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersNotOnTheCase;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\ArchiveRequesterNoticeInterface;
@@ -86,6 +87,7 @@ use Throwable;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseActsController extends Controller {
+	use AnswersNotOnTheCase;
 
 	use TranslatesRefusals;
 
@@ -186,10 +188,7 @@ class CaseActsController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+			return $this->notOnTheCase();
 		}
 
 		return $user;
@@ -468,10 +467,7 @@ class CaseActsController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+			return $this->notOnTheCase();
 		}
 
 		return $this->answered(caseId: $caseId, run: $run);

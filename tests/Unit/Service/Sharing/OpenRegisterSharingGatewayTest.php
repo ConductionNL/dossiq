@@ -149,8 +149,8 @@ final class OpenRegisterSharingGatewayTest extends TestCase {
 			[
 				'OCA\OpenRegister\Service\ObjectService' => $objects,
 				'OCA\OpenRegister\Service\Sharing\AccessLinkService' => $links,
-				'OCA\OpenRegister\Service\Sharing\AccessLinkReader' => $reader,
-				'OCA\OpenRegister\Service\NoteService' => $notes,
+				'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader' => $reader,
+				'OCA\OpenRegister\Files\Service\NoteService' => $notes,
 				'OCA\OpenRegister\Service\FederationShareService' => $federation,
 			]
 		);
@@ -185,8 +185,8 @@ final class OpenRegisterSharingGatewayTest extends TestCase {
 		$this->logger->expects($this->once())->method('warning')->with(
 			'CaseSharingService: OpenRegister service unavailable',
 			[
-				'class' => 'OCA\OpenRegister\Service\Sharing\AccessLinkReader',
-				'exception' => 'not registered: OCA\OpenRegister\Service\Sharing\AccessLinkReader',
+				'class' => 'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader',
+				'exception' => 'not registered: OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader',
 			]
 		);
 

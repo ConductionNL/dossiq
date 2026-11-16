@@ -12,10 +12,13 @@
 
 <script>
 import RulesTab from '../../views/settings/tabs/RulesTab.vue'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 
 export default {
 	name: 'CaseTypeRulesWidget',
 	components: { RulesTab },
+
+	mixins: [caseTypeWidget],
 
 	props: {
 		/**
@@ -25,18 +28,6 @@ export default {
 		content: {
 			type: Object,
 			default: () => ({}),
-		},
-	},
-
-	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
 		},
 	},
 }

@@ -178,19 +178,42 @@ class FilinqRedactionClient {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
 		$options = $this->anonymizeOptions(userId: $userId, wooCase: $wooCase);
 
+		return $this->anonymized(
+			request: ['fileId' => $fileId, 'entities' => $entities],
+			call: ['service' => $service, 'options' => $options, 'userId' => $userId]
+		);
+	}//end anonymize()
+
+	/**
+	 * Run filinq's anonymiser on the file and answer what it completed, or its refusal.
+	 *
+	 * @param array{fileId: int, entities: array<int, array<string, mixed>>} $request The Nextcloud file id and the checked entity set.
+	 * @param array{service: object, options: object|null, userId: string}   $call    Filinq's service, its options (null on a filinq
+	 *                                                                                without them) and the acting user.
+	 *
+	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
+	 *
+	 * @throws RuntimeException When filinq fails for a reason that is not an outcome.
+	 */
+	private function anonymized(array $request, array $call): array {
+		$fileId = $request['fileId'];
+		$entities = $request['entities'];
+		$service = $call['service'];
+		$options = $call['options'];
+
 		try {
 			if ($options === null) {
 				// A filinq from before AnonymizeOptions takes the format and the user positionally.
-				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $userId);
+				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $call['userId']);
 			} else {
 				$result = (array)$service->anonymizeDocument($fileId, $entities, $options);
 			}
 		} catch (Throwable $e) {
-			return $this->refusedOrThrow(error: $e, fileId: $fileId, entities: $entities);
+			return $this->refusedOrThrow(error: $e, request: $request);
 		}
 
-		return $this->completed(result: $result, fileId: $fileId, entities: $entities);
-	}//end anonymize()
+		return $this->completed(result: $result, request: $request);
+	}//end anonymized()
 
 	/**
 	 * Filinq's options for one anonymise call: the PDF output, the acting user
@@ -221,9 +244,8 @@ class FilinqRedactionClient {
 	/**
 	 * The refusal filinq answered a redaction with, or an exception when it failed for another reason.
 	 *
-	 * @param Throwable                        $error    What filinq threw.
-	 * @param int                              $fileId   The Nextcloud file id.
-	 * @param array<int, array<string, mixed>> $entities The checked entity set.
+	 * @param Throwable                                                      $error   What filinq threw.
+	 * @param array{fileId: int, entities: array<int, array<string, mixed>>} $request The Nextcloud file id and the checked entity set.
 	 *
 	 * @return array<string, mixed> The refusal, with the source file and the entity count.
 	 *
@@ -231,14 +253,15 @@ class FilinqRedactionClient {
 	 *
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
-	private function refusedOrThrow(Throwable $error, int $fileId, array $entities): array {
+	private function refusedOrThrow(Throwable $error, array $request): array {
+		$fileId = $request['fileId'];
 		$refusal = ($this->detectorRefusal(error: $error) ?? $this->reviewRefusal(error: $error));
 		if ($refusal !== null) {
 			$this->logger->warning(
 				'Filinq refused a redaction',
 				['app' => AppIdentity::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
 			);
-			return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
+			return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($request['entities'])];
 		}
 
 		$this->logger->warning(
@@ -251,22 +274,22 @@ class FilinqRedactionClient {
 	/**
 	 * What a redaction filinq completed answers.
 	 *
-	 * @param array<string, mixed>             $result   Filinq's result.
-	 * @param int                              $fileId   The Nextcloud file id.
-	 * @param array<int, array<string, mixed>> $entities The checked entity set.
+	 * @param array<string, mixed>                                           $result  Filinq's result.
+	 * @param array{fileId: int, entities: array<int, array<string, mixed>>} $request The Nextcloud file id and the checked entity set.
 	 *
 	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
 	 *
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
-	private function completed(array $result, int $fileId, array $entities): array {
+	private function completed(array $result, array $request): array {
+		$entities = $request['entities'];
 		$anonymisedFileId = ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null));
 		$detection = $this->detectionReport(result: $result);
 		$backend = ($detection['backend'] ?? $this->detectionBackend());
 
 		return [
-			'status' => $this->statusOf(entities: $entities, anonymisedFileId: $anonymisedFileId, detection: $detection),
-			'sourceFileId' => $fileId,
+			'status' => $this->statusOf(entities: $entities, produced: ['anonymisedFileId' => $anonymisedFileId, 'detection' => $detection]),
+			'sourceFileId' => $request['fileId'],
 			'entityCount' => count($entities),
 			'anonymizedFileId' => $anonymisedFileId,
 			'detectionBackend' => $backend,
@@ -296,20 +319,21 @@ class FilinqRedactionClient {
 	/**
 	 * The outcome word for a run filinq completed.
 	 *
-	 * @param array<mixed>              $entities         What extraction detected.
-	 * @param mixed                     $anonymisedFileId The file filinq named, or null.
-	 * @param array<string, mixed>|null $detection        Filinq's own detection report, or null.
+	 * @param array<mixed>         $entities What extraction detected.
+	 * @param array<string, mixed> $produced The file filinq named as `anonymisedFileId` (or null), and filinq's own
+	 *                                       `detection` report (or null).
 	 *
 	 * @return string `redacted`, `no_entities_detected` or `no_output_produced`.
 	 */
-	private function statusOf(array $entities, mixed $anonymisedFileId, ?array $detection): string {
+	private function statusOf(array $entities, array $produced): string {
+		$detection = $produced['detection'];
 		// Filinq's own `nothing_found` counts as much as an empty entity list:
 		// either way the file's content is the original's.
 		if ($entities === [] || ($detection['outcome'] ?? null) === 'nothing_found') {
 			return 'no_entities_detected';
 		}
 
-		if ($anonymisedFileId === null) {
+		if ($produced['anonymisedFileId'] === null) {
 			// Filinq detected entities and then named no output file. Whatever
 			// happened, this document's bytes are still the ones a person
 			// assessed as deels openbaar, so the outcome is not `redacted`.

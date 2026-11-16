@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Closure;
+use OCA\Dossiq\Controller\Support\ReadsKccBodies;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
@@ -49,6 +50,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
  */
 class KccContactController extends Controller {
+	use ReadsKccBodies;
+
 	/**
 	 * Constructor.
 	 *
@@ -284,24 +287,4 @@ class KccContactController extends Controller {
 	private function isPrivileged(string $userId): bool {
 		return $this->groupManager->isAdmin($userId);
 	}//end isPrivileged()
-
-	/**
-	 * Read the JSON / form body parameters, excluding routing params.
-	 *
-	 * @return array<string, mixed> The body parameters.
-	 */
-	private function bodyParams(): array {
-		$params = $this->request->getParams();
-		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
-		return $params;
-	}//end bodyParams()
-
-	/**
-	 * Build a 401 Unauthorized response.
-	 *
-	 * @return JSONResponse
-	 */
-	private function unauthorized(): JSONResponse {
-		return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
-	}//end unauthorized()
 }//end class

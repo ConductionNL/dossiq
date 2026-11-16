@@ -88,10 +88,8 @@ class CaseSteps {
 			}
 
 			$steps[] = $this->entry(
-				step: $step,
-				state: $this->stateOf(index: $index, current: $current),
-				entered: $entered,
-				case: $case
+				step: $step + ['state' => $this->stateOf(index: $index, current: $current)],
+				walk: ['entered' => $entered, 'case' => $case]
 			);
 		}//end foreach
 
@@ -128,22 +126,21 @@ class CaseSteps {
 	 * One step as the portal reads it: its label, its state, and the
 	 * description and date when there are any.
 	 *
-	 * @param array{label: string, description: string, ids: array<int, string>} $step The folded step.
-	 * @param string                                                             $state   Its state.
-	 * @param array<string, string>                                              $entered The dates per status id.
-	 * @param array<string, mixed>                                               $case    The case row.
+	 * @param array{label: string, description: string, ids: array<int, string>, state: string} $step The folded step and its state.
+	 * @param array{entered: array<string, string>, case: array<string, mixed>}                $walk The dates per status id, and
+	 *                                                                                               the case row.
 	 *
 	 * @return array<string, string> The step.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
-	private function entry(array $step, string $state, array $entered, array $case): array {
-		$entry = ['label' => $step['label'], 'state' => $state];
+	private function entry(array $step, array $walk): array {
+		$entry = ['label' => $step['label'], 'state' => $step['state']];
 		if ($step['description'] !== '') {
 			$entry['description'] = $step['description'];
 		}
 
-		$date = $this->dateOf(step: $step, entered: $entered, state: $state, case: $case);
+		$date = $this->dateOf(step: $step, walk: $walk);
 		if ($date !== '') {
 			$entry['date'] = $date;
 		}
@@ -279,22 +276,22 @@ class CaseSteps {
 	 * statuses it folded. The current step falls back to the case's own
 	 * `currentStatusEnteredAt`, which every case carries.
 	 *
-	 * @param array{label: string, description: string, ids: array<int, string>} $step The step.
-	 * @param array<string, string> $entered The date per status id.
-	 * @param string $state The step's state.
-	 * @param array<string, mixed> $case The case row.
+	 * @param array{label: string, description: string, ids: array<int, string>, state: string} $step The step and its state.
+	 * @param array{entered: array<string, string>, case: array<string, mixed>}                $walk The date per status id, and
+	 *                                                                                               the case row.
 	 *
 	 * @return string The date, or ''.
 	 */
-	private function dateOf(array $step, array $entered, string $state, array $case): string {
+	private function dateOf(array $step, array $walk): string {
+		$entered = $walk['entered'];
 		foreach ($step['ids'] as $id) {
 			if (($entered[$id] ?? '') !== '') {
 				return $entered[$id];
 			}
 		}
 
-		if ($state === self::CURRENT) {
-			return $this->asDate(moment: (string)($case['currentStatusEnteredAt'] ?? ''));
+		if ($step['state'] === self::CURRENT) {
+			return $this->asDate(moment: (string)($walk['case']['currentStatusEnteredAt'] ?? ''));
 		}
 
 		return '';

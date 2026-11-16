@@ -97,19 +97,35 @@ class NoteEnvelope {
 			throw new InvalidArgumentException('A note with no case is not sent.');
 		}
 
+		return $this->envelope(
+			note: $note,
+			fields: ['body' => $body, 'bronorganisatie' => $bronorganisatie, 'informatieobjecttype' => trim($informatieobjecttype), 'zaak' => $caseId]
+		);
+	}//end build()
+
+	/**
+	 * The ZGW document envelope of a sendable note.
+	 *
+	 * @param array<string, mixed>  $note   The note as OpenRegister answers it.
+	 * @param array<string, string> $fields The note's trimmed text as `body`, and the bronorganisatie,
+	 *                                      informatieobjecttype and zaak the envelope carries.
+	 *
+	 * @return array<string, mixed> The envelope.
+	 */
+	private function envelope(array $note, array $fields): array {
 		return [
 			'identificatie' => 'dossiq-note-' . (string)($note['id'] ?? ''),
-			'bronorganisatie' => $bronorganisatie,
-			'titel' => $this->titleOf(body: $body),
+			'bronorganisatie' => $fields['bronorganisatie'],
+			'titel' => $this->titleOf(body: $fields['body']),
 			'auteur' => $this->authorOf(note: $note),
 			'taal' => self::LANGUAGE,
-			'informatieobjecttype' => trim($informatieobjecttype),
+			'informatieobjecttype' => $fields['informatieobjecttype'],
 			'creatiedatum' => $this->createdOn(note: $note),
 			'formaat' => 'text/plain',
-			'inhoud' => base64_encode($body),
-			'zaak' => $caseId,
+			'inhoud' => base64_encode($fields['body']),
+			'zaak' => $fields['zaak'],
 		];
-	}//end build()
+	}//end envelope()
 
 	/**
 	 * Refuse a note with no text, and any note while no informatieobjecttype is reserved for notes.

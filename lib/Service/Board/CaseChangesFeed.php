@@ -87,22 +87,36 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 	 */
 	public function since(string $readerId, DateTimeImmutable $since, array $scope): array {
 		$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($mapper === null || $objectService === null || $register === '' || $schema === '') {
+		$store = $this->auditStore();
+		if ($store === null) {
 			return ['changes' => [], 'now' => $now];
 		}
 
 		return [
 			'changes' => $this->changesIn(
-				store: ['mapper' => $mapper, 'objectService' => $objectService, 'register' => $register, 'schema' => $schema],
-				window: ['schema' => $schema, 'since' => $since, 'readerId' => $readerId, 'scope' => $scope]
+				store: $store,
+				window: ['schema' => $store['schema'], 'since' => $since, 'readerId' => $readerId, 'scope' => $scope]
 			),
 			'now' => $now,
 		];
 	}//end since()
+
+	/**
+	 * OpenRegister's audit mapper and object service with the register and case schema, or null when any is missing.
+	 *
+	 * @return array{mapper: object, objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function auditStore(): ?array {
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($mapper === null || $objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['mapper' => $mapper, 'objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end auditStore()
 
 	/**
 	 * The newest change per readable case in scope, up to the answer limit.

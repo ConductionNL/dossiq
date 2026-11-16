@@ -114,6 +114,7 @@ import {
 	NcModal,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
@@ -141,16 +142,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case the file is requested for. Falls back to the route when the
-		 * manifest's `@objectId` token reaches the dialog unresolved.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

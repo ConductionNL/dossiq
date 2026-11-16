@@ -94,17 +94,13 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function available(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Only PARTLY unguarded before this: the transition list itself is
 		// role-filtered inside the engine, but the case's current status was
 		// emitted unconditionally, so any authenticated user could read the
 		// status of any case.
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -369,13 +365,9 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function history(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -392,6 +384,26 @@ class StatusTransitionController extends Controller {
 			);
 		}
 	}//end history()
+
+	/**
+	 * Refuse a caller who is not signed in or may not read the case.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may read the case.
+	 */
+	private function readRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end readRefusal()
 
 	/**
 	 * Decode a JSON request body safely.

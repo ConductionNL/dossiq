@@ -10,21 +10,12 @@
 
 <script>
 import WorkflowTab from '../../views/settings/tabs/WorkflowTab.vue'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 
 export default {
 	name: 'CaseTypeWorkflowEditorWidget',
 	components: { WorkflowTab },
 
-	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
-	},
+	mixins: [caseTypeWidget],
 }
 </script>

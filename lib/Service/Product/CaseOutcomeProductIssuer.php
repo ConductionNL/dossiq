@@ -118,6 +118,22 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function issueFor(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
+		$outcome = $this->outcomeOf(caseId: $caseId);
+		if ($outcome === null) {
+			return null;
+		}
+
+		return $this->issueOrChange(outcome: $outcome, decision: ['status' => $status, 'id' => $decisionId, 'decidedAt' => $decidedAt]);
+	}//end issueFor()
+
+	/**
+	 * The case and the product its case type declares, or null without a store, a case or a declaration.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return ProductOutcome|null The outcome to issue on.
+	 */
+	private function outcomeOf(string $caseId): ?ProductOutcome {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || trim($caseId) === '') {
@@ -131,11 +147,8 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
-		return $this->issueOrChange(
-			outcome: new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared),
-			decision: ['status' => $status, 'id' => $decisionId, 'decidedAt' => $decidedAt]
-		);
-	}//end issueFor()
+		return new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared);
+	}//end outcomeOf()
 
 	/**
 	 * Issue the product, or change the one a change case names, when the decision's status is one the case type

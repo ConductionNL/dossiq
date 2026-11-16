@@ -77,6 +77,19 @@ class SubsidieRegisterExporter implements SubsidieRegisterExporterInterface {
 	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function toFeedEntry(array $request, array $regeling, array $decision): array {
+		return $this->decidedEntry(decision: $decision, parties: ['regeling' => $regeling, 'ontvanger' => $this->publicOntvanger(request: $request)]);
+	}//end toFeedEntry()
+
+	/**
+	 * The feed entry of a decided subsidy, for its regeling and public recipient.
+	 *
+	 * @param array<string, mixed>                                      $decision The (latest) decision record.
+	 * @param array{regeling: array<string, mixed>, ontvanger: string} $parties  The regeling record and the public recipient.
+	 *
+	 * @return array<string, mixed> The feed entry.
+	 */
+	private function decidedEntry(array $decision, array $parties): array {
+		$regeling = $parties['regeling'];
 		$determined = (string)($decision['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
 		$status = 'granted';
 		if ($determined === true) {
@@ -86,7 +99,7 @@ class SubsidieRegisterExporter implements SubsidieRegisterExporterInterface {
 		return [
 			'@type' => 'Subsidie',
 			'regeling' => (string)($regeling['schemeName'] ?? ''),
-			'ontvanger' => $this->publicOntvanger(request: $request),
+			'ontvanger' => $parties['ontvanger'],
 			'amount' => (float)($decision['grantedAmount'] ?? 0),
 			'looptijd' => [
 				'start' => (string)($decision['termStart'] ?? ''),
@@ -96,7 +109,7 @@ class SubsidieRegisterExporter implements SubsidieRegisterExporterInterface {
 			'status' => $status,
 			'basis' => (string)($decision['legalBasis'] ?? ''),
 		];
-	}//end toFeedEntry()
+	}//end decidedEntry()
 
 	/**
 	 * Build a complete, paginated JSON-LD feed document (REQ-SUB-006).
@@ -112,18 +125,31 @@ class SubsidieRegisterExporter implements SubsidieRegisterExporterInterface {
 	public function buildFeed(array $entries, int $limit = 100, int $offset = 0): array {
 		$limit = max(1, $limit);
 		$offset = max(0, $offset);
-		$total = count($entries);
-		// The array_values() that used to wrap `$page` below was a no-op:
-		// array_slice() without $preserve_keys already renumbers from 0.
-		$page = array_slice($entries, $offset, $limit);
 
+		// The array_values() that used to wrap the page was a no-op:
+		// array_slice() without $preserve_keys already renumbers from 0.
+		return $this->feedDocument(
+			counts: ['total' => count($entries), 'limit' => $limit, 'offset' => $offset],
+			page: array_slice($entries, $offset, $limit)
+		);
+	}//end buildFeed()
+
+	/**
+	 * The JSON-LD feed document around one page of entries.
+	 *
+	 * @param array{total: int, limit: int, offset: int} $counts The entry total, page size and page offset.
+	 * @param array<int, array<string, mixed>>           $page   The page of entries.
+	 *
+	 * @return array<string, mixed> The feed document.
+	 */
+	private function feedDocument(array $counts, array $page): array {
 		return [
 			'@context' => self::JSON_LD_CONTEXT,
 			'@type' => 'Subsidieregister',
-			'total' => $total,
-			'limit' => $limit,
-			'offset' => $offset,
+			'total' => $counts['total'],
+			'limit' => $counts['limit'],
+			'offset' => $counts['offset'],
 			'results' => $page,
 		];
-	}//end buildFeed()
+	}//end feedDocument()
 }//end class

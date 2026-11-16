@@ -163,14 +163,26 @@ class NotificationRouting {
 			return null;
 		}
 
+		return $this->entryFor(entries: $entries, wanted: ['schema' => $schema, 'notification' => $notification]);
+	}//end effectiveOne()
+
+	/**
+	 * The first entry for the schema and notification, or null.
+	 *
+	 * @param array<int, array<string, mixed>>           $entries The effective entries.
+	 * @param array{schema: string, notification: string} $wanted  The schema and the notification.
+	 *
+	 * @return array<string, mixed>|null The entry.
+	 */
+	private function entryFor(array $entries, array $wanted): ?array {
 		foreach ($entries as $entry) {
-			if (($entry['schema'] ?? null) === $schema && ($entry['notification'] ?? null) === $notification) {
+			if (($entry['schema'] ?? null) === $wanted['schema'] && ($entry['notification'] ?? null) === $wanted['notification']) {
 				return $entry;
 			}
 		}
 
 		return null;
-	}//end effectiveOne()
+	}//end entryFor()
 
 	/**
 	 * Whether this person's daily work digest is switched on.

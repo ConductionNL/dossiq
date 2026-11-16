@@ -141,8 +141,7 @@ class CaseEnricher {
 
 		$deadline = $this->resolveCaseDeadline(
 			rawDeadline: $caseData['deadline'] ?? null,
-			startDate: $startDate,
-			caseType: $caseType,
+			derivation: ['startDate' => $startDate, 'caseType' => $caseType],
 		);
 
 		$daysRemaining = null;
@@ -230,15 +229,17 @@ class CaseEnricher {
 	 * Resolve a case deadline, deriving it from the case-type when the case
 	 * itself carries none.
 	 *
-	 * @param mixed $rawDeadline Raw deadline value on the case.
-	 * @param string|null $startDate Normalised start date.
-	 * @param array<string, mixed>|null $caseType Resolved case-type, if any.
+	 * @param mixed                                                              $rawDeadline Raw deadline value on the case.
+	 * @param array{startDate: string|null, caseType: array<string, mixed>|null} $derivation  The normalised start date and
+	 *                                                                                        the resolved case-type, if any.
 	 *
 	 * @return string|null The `Y-m-d` deadline, or null when unresolvable.
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function resolveCaseDeadline(mixed $rawDeadline, ?string $startDate, ?array $caseType): ?string {
+	private function resolveCaseDeadline(mixed $rawDeadline, array $derivation): ?string {
+		$startDate = $derivation['startDate'];
+		$caseType = $derivation['caseType'];
 		$deadline = $this->dates->toCalendarDateOrNull($rawDeadline);
 		if ($deadline === null && $startDate !== null && $caseType !== null) {
 			$deadline = $this->deriveDeadline(
