@@ -126,4 +126,37 @@ class WooRefusalGroundsTest extends TestCase {
 		$this->assertSame('5.1', $grounds->byCode(code: '5.1.2')['parent']);
 		$this->assertNull($grounds->byCode(code: '5.1')['parent']);
 	}//end testANarrowerGroundSitsUnderABroaderOne()
+	/**
+	 * Without OpenRegister the list throws and says why, rather than answering [].
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterTheListThrows(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$grounds = new WooRefusalGrounds(settingsService: $settings, logger: new NullLogger());
+
+		$this->expectException(WooRefusalGroundsUnavailable::class);
+		$this->expectExceptionMessage('OpenRegister is not available');
+		$grounds->listWithRetired();
+	}//end testWithoutOpenRegisterTheListThrows()
+
+	/**
+	 * A stored row without a code is no ground: it is left out of every answer, retired ones included.
+	 *
+	 * @return void
+	 */
+	public function testARowWithoutACodeIsLeftOut(): void {
+		$store = RefusalGroundStore::seeded();
+		$count = count($this->grounds(store: $store)->listWithRetired());
+		$blank = $store->rows[0];
+		$blank['code'] = '   ';
+		$store->rows[] = $blank;
+
+		$codes = array_column($this->grounds(store: $store)->listWithRetired(), 'code');
+
+		$this->assertCount($count, $codes);
+		$this->assertNotContains('', $codes);
+		$this->assertNull($this->grounds(store: $store)->byCode(code: ' '));
+	}//end testARowWithoutACodeIsLeftOut()
 }//end class
