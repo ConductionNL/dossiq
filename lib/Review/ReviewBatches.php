@@ -50,7 +50,6 @@ use Throwable;
  * batch and its reviews when the case type keeps them private.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ReviewBatches implements ReviewBatchesInterface {
 

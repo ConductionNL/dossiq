@@ -25,9 +25,9 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
+use OCA\Dossiq\Service\Complaint\ComplaintDeadlineAlerts;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermResolution;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -37,8 +37,6 @@ use RuntimeException;
 
 /**
  * Service for complaint (klacht) management per Awb chapter 9.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
@@ -100,6 +98,13 @@ class ComplaintService implements ComplaintServiceInterface {
 	private const AWB_VERDAGING_WEEKS = 4;
 
 	/**
+	 * Sorts complaints by their deadlines and projects the overdue list.
+	 *
+	 * @var ComplaintDeadlineAlerts
+	 */
+	private readonly ComplaintDeadlineAlerts $alerts;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -110,7 +115,9 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @param TermResolution|null $resolution The case type's own first-response
 	 *                                        term, which wins over the Awb
 	 *                                        default when one is declared.
-	 * @param DayCount $days Counts the days between two moments.
+	 * @param ComplaintDeadlineAlerts|null $alerts Sorts complaints by their
+	 *                                             deadlines; built over the same
+	 *                                             date path when not given.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -118,8 +125,9 @@ class ComplaintService implements ComplaintServiceInterface {
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermResolution $resolution = null,
-		private readonly DayCount $days = new DayCount(),
+		?ComplaintDeadlineAlerts $alerts = null,
 	) {
+		$this->alerts = ($alerts ?? new ComplaintDeadlineAlerts(dates: $this->dates));
 	}//end __construct()
 
 	/**
@@ -473,52 +481,17 @@ class ComplaintService implements ComplaintServiceInterface {
 	 */
 	public function getDeadlineAlerts(int $warningDays = 3): array {
 		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
-		$all = $this->listComplaints(filters: ['status' => $activeStatuses]);
-		$today = $this->dates->today();
-		$overdue = [];
-		$warning = [];
 
-		foreach ($all as $complaint) {
-			$deadlineDate = $this->dates->tryParse($complaint['afhandelDeadline'] ?? null);
-			if ($deadlineDate === null) {
-				continue;
-			}
-
-			$diff = $this->days->between(from: $today, to: $deadlineDate);
-			$isPast = $today > $deadlineDate;
-
-			if ($isPast === true) {
-				$overdue[] = $complaint;
-			} elseif ($diff <= $warningDays) {
-				$warning[] = $complaint;
-			}
-		}
-
-		return ['overdue' => $overdue, 'warning' => $warning];
+		return $this->alerts->grouped(
+			complaints: $this->listComplaints(filters: ['status' => $activeStatuses]),
+			warningDays: $warningDays
+		);
 	}//end getDeadlineAlerts()
-
-	/**
-	 * Fields of a complaint an assistant may see in a list (REQ-MCP-203).
-	 *
-	 * `complainant` is the citizen and is never one of them.
-	 *
-	 * @var array<string>
-	 */
-	private const OVERDUE_PROJECTION = [
-		'id',
-		'complaintNumber',
-		'subject',
-		'category',
-		'status',
-		'handler',
-		'acknowledgementOfReceiptDeadline',
-		'afhandelDeadline',
-	];
 
 	/**
 	 * The complaints past their handling deadline, without the complainant.
 	 *
-	 * The projection is applied HERE, on the way out, because the dialect has
+	 * The projection is applied on the way out (in ComplaintDeadlineAlerts), because the dialect has
 	 * no field projection and `complaint` stays get-only there. A row is
 	 * rebuilt from an allowlist rather than stripped of a denylist, so a field
 	 * added to the schema later stays out until someone names it.
@@ -538,25 +511,7 @@ class ComplaintService implements ComplaintServiceInterface {
 		annotations: ['outsideAgent' => true]
 	)]
 	public function listOverdueComplaints(): array {
-		$today = $this->dates->today();
-		$rows = [];
-		foreach ($this->getDeadlineAlerts()['overdue'] as $complaint) {
-			$row = [];
-			foreach (self::OVERDUE_PROJECTION as $field) {
-				if (array_key_exists($field, $complaint) === true) {
-					$row[$field] = $complaint[$field];
-				}
-			}
-
-			$ackDeadline = $this->dates->tryParse($complaint['acknowledgementOfReceiptDeadline'] ?? null);
-			$row['handlingOverdue'] = true;
-			$row['acknowledgementOverdue'] = $ackDeadline !== null
-				&& $today > $ackDeadline
-				&& ($complaint['status'] ?? null) === 'received';
-			$rows[] = $row;
-		}
-
-		return ['complaints' => $rows, 'count' => count($rows)];
+		return $this->alerts->overdueRows(overdue: $this->getDeadlineAlerts()['overdue']);
 	}//end listOverdueComplaints()
 
 	/**

@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Scoring\FormulaScorer
+ * @uses \OCA\Dossiq\Service\Scoring\FormulaTokens
  */
 final class FormulaScorerTest extends TestCase {
 
