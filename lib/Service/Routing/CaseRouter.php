@@ -43,6 +43,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
@@ -55,6 +56,7 @@ use RuntimeException;
  */
 class CaseRouter implements CaseRouterInterface {
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * The rule keys a routing keeps; anything else in a request is dropped.
@@ -474,10 +476,7 @@ class CaseRouter implements CaseRouterInterface {
 	 * @throws RuntimeException When OpenRegister is absent.
 	 */
 	private function write(array $case, array $changes): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$this->patchObjectAsArray(
 			objectService: $objectService,

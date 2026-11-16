@@ -28,12 +28,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
+
 /**
  * Says what is wrong with a package's settings, and reads a schema reference.
  *
  * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
  */
 class PackageSettingRules {
+
+	use ReadsLooseValues {
+		looseText as private text;
+	}
 
 	/**
 	 * The one key of a setting value that names a schema.
@@ -131,19 +137,4 @@ class PackageSettingRules {
 
 		return array_values(array_filter(array_map(fn (mixed $slug): string => $this->text(value: $slug), $value)));
 	}//end registers()
-
-	/**
-	 * A value as trimmed text, or '' when it is not a string.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The text.
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class

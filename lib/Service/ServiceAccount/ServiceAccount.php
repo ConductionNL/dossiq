@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\ServiceAccount;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ServiceAccountInterface;
 use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-abstract class ServiceAccount {
+abstract class ServiceAccount implements ServiceAccountInterface {
 
 	/**
 	 * Why the account cannot be used: none is set.
@@ -58,27 +59,6 @@ abstract class ServiceAccount {
 	 * @var string
 	 */
 	public const REASON_UNSET = 'unset';
-
-	/**
-	 * Why the account cannot be used: the uid names no account.
-	 *
-	 * @var string
-	 */
-	public const REASON_UNKNOWN = 'unknown';
-
-	/**
-	 * Why the account cannot be used: the account is disabled.
-	 *
-	 * @var string
-	 */
-	public const REASON_DISABLED = 'disabled';
-
-	/**
-	 * Why the account cannot be used: it is not in the service group.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_A_MEMBER = 'not-in-group';
 
 	/**
 	 * Constructor.

@@ -33,6 +33,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRecordedDeliveryInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
  */
-class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
+class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface, WooRecordedDeliveryInterface {
 
 	use SearchesObjects;
 
@@ -55,11 +56,6 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 * A set that is being delivered.
 	 */
 	public const STATUS_PENDING = 'pending';
-
-	/**
-	 * The failure a delivery answers when its set cannot be written first.
-	 */
-	public const SET_NOT_WRITTEN = 'woo_delivered_set_not_written';
 
 	/**
 	 * OpenRegister's archive handler, which freezes an object and its files.

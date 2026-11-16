@@ -39,6 +39,9 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\SerialisedRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -289,7 +292,12 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 		}
 
 		$case['properties'] = $entries;
-		$objectService->saveObject($store->caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
+		$objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store->register, schema: $store->caseSchema), uuid: $caseId),
+			_rbac: false,
+			_multitenancy: false
+		);
 		return 'written';
 	}//end foldInto()
 
@@ -304,7 +312,7 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 * @throws Throwable When the read fails.
 	 */
 	private function readCase(object $objectService, string $caseId): mixed {
-		$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
+		$case = $objectService->find(id: $caseId, _rbac: false, _multitenancy: false);
 		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
 			$case = $case->jsonSerialize();
 		}
@@ -335,17 +343,6 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			return [];
 		}
 
-		$out = [];
-		foreach ($rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
+		return (new SerialisedRows())->arrays(rows: $rows);
 	}//end readAll()
 }//end class

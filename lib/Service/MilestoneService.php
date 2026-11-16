@@ -31,6 +31,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\MilestoneServiceInterface;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -50,6 +51,19 @@ use RuntimeException;
 class MilestoneService implements MilestoneServiceInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
+
+	/**
+	 * The progress of a case without milestones, or without a resolvable type.
+	 *
+	 * @var array{milestones: array<int, mixed>, reached: int, total: int, percentage: int}
+	 */
+	private const NO_PROGRESS = [
+		'milestones' => [],
+		'reached' => 0,
+		'total' => 0,
+		'percentage' => 0,
+	];
 
 	/**
 	 * Constructor.
@@ -110,12 +124,7 @@ class MilestoneService implements MilestoneServiceInterface {
 	public function getCaseProgressForCase(string $caseId): array {
 		$caseTypeId = $this->repository->findCaseTypeId(caseId: $caseId);
 		if ($caseTypeId === null) {
-			return [
-				'milestones' => [],
-				'reached' => 0,
-				'total' => 0,
-				'percentage' => 0,
-			];
+			return self::NO_PROGRESS;
 		}
 
 		return $this->getCaseProgress(caseId: $caseId, caseTypeId: $caseTypeId);
@@ -134,12 +143,7 @@ class MilestoneService implements MilestoneServiceInterface {
 	public function getCaseProgress(string $caseId, string $caseTypeId): array {
 		$definitions = $this->getMilestones(caseTypeId: $caseTypeId);
 		if (count($definitions) === 0) {
-			return [
-				'milestones' => [],
-				'reached' => 0,
-				'total' => 0,
-				'percentage' => 0,
-			];
+			return self::NO_PROGRESS;
 		}
 
 		$recordMap = $this->recordMapFor(caseId: $caseId);
@@ -294,10 +298,7 @@ class MilestoneService implements MilestoneServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function milestoneRecordStore(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
@@ -365,22 +366,6 @@ class MilestoneService implements MilestoneServiceInterface {
 
 		return true;
 	}//end reverseMilestone()
-
-	/**
-	 * Resolve the OpenRegister ObjectService.
-	 *
-	 * @return object The OpenRegister ObjectService
-	 *
-	 * @throws \RuntimeException If OpenRegister unavailable
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * Delete the given milestone records.
