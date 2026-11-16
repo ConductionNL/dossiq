@@ -38,6 +38,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A register that refuses creates outside the initial state and undeclared moves.
@@ -102,12 +106,13 @@ class LifecycleRegister extends RefusableRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		$uuid ??= $this->payloadId(object: $object);
 		$stored  = [];
 		if ($uuid !== null) {
@@ -129,7 +134,7 @@ class LifecycleRegister extends RefusableRegister {
 			}
 		}
 
-		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+		return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end saveObject()
 
 	/**
@@ -147,20 +152,21 @@ class LifecycleRegister extends RefusableRegister {
 	 * @throws RuntimeException When there is no such object, or the save is refused.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->patches += 1;
 		$stored = $this->row(schema: (string)$schema, uuid: $objectId);
 		if ($stored === []) {
 			throw new RuntimeException('No object ' . $objectId . ' to patch.');
 		}
 
-		return $this->saveObject(object: array_merge($stored, $data), register: (string)$register, schema: (string)$schema, uuid: $objectId, _rbac: $_rbac, _multitenancy: $_multitenancy);
+		return $this->saveObject(object: array_merge($stored, $data), options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (string)$register, schema: (string)$schema), uuid: $objectId), _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end patchObject()
 
 	/**
@@ -176,14 +182,17 @@ class LifecycleRegister extends RefusableRegister {
 	 *
 	 * @throws RuntimeException When the caller may not delete in the schema.
 	 */
-	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$register = $deletion->target->register ?? '';
+		$schema = $deletion->target->schema ?? '';
+		$uuid = $deletion->uuid ?? '';
 		if ($_rbac === true && in_array((string)$schema, $this->callerMayOnlyCreate, true) === true) {
 			throw new RuntimeException("The caller may not delete objects in schema '" . (string)$schema . "'.");
 		}
 
 		$this->deletes[] = (string)$schema . '/' . $uuid;
 
-		return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+		return parent::deleteObject(new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end deleteObject()
 
 	/**

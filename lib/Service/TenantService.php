@@ -38,6 +38,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -148,9 +151,10 @@ class TenantService implements TenantServiceInterface {
 		try {
 			$objectService->saveObject(
 				object: $this->anchorFor(organisation: $organisation),
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA_TENANT),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -204,8 +208,7 @@ class TenantService implements TenantServiceInterface {
 		try {
 			$found = $objectService->find(
 				$uuid,
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
+				new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA_TENANT),
 				_rbac: false,
 				_multitenancy: false
 			);

@@ -144,6 +144,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
+import { savingFormEditor } from '../mixins/formEditor.js'
 
 export default {
 	name: 'MandaatEditor',
@@ -155,6 +156,8 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
+
+	mixins: [savingFormEditor],
 
 	props: {
 		mandaat: { type: Object, default: null },
@@ -233,7 +236,7 @@ export default {
 	methods: {
 		t,
 		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
-		validate() {
+		formErrors() {
 			const errs = {}
 			if (!this.form.mandateNumber)
 				errs.mandateNumber = t('dossiq', 'Mandaatnummer is required')
@@ -250,25 +253,15 @@ export default {
 			} catch (e) {
 				errs.terms = t('dossiq', 'Voorwaarden must be valid JSON')
 			}
-			this.errors = errs
-			return Object.keys(errs).length === 0
-		},
-
-		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
-		async save() {
-			if (!this.validate()) return
-			this.saving = true
-			try {
-				this.$emit('save', { ...this.form })
-			} finally {
-				this.saving = false
-			}
+			return errs
 		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .mandaat-editor {
 	padding: 24px;
 	max-width: 720px;
@@ -284,22 +277,10 @@ export default {
 	gap: 12px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 
 .mandaat-editor__textarea {
-	width: 100%;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
+	@include editor.bordered-input;
 	font-family: inherit;
 }
 
@@ -309,18 +290,10 @@ export default {
 }
 
 .mandaat-editor__date {
-	width: 100%;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
+	@include editor.bordered-input;
 }
 
-.field-error {
-	display: block;
-	color: var(--color-error);
-	font-size: 12px;
-	margin-top: 4px;
-}
+@include editor.field-error;
 
 .mandaat-editor__actions {
 	display: flex;

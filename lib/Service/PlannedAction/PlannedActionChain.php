@@ -99,15 +99,33 @@ class PlannedActionChain {
 			return null;
 		}
 
-		$successor = ['identifier' => $successorIdentifier, 'type' => $types[$successorIdentifier], 'roleHolders' => $roleHolders];
+		return $this->plannedSuccessor(
+			completed: $completed,
+			plan: [
+				'successor' => ['identifier' => $successorIdentifier, 'type' => $types[$successorIdentifier], 'roleHolders' => $roleHolders],
+				'types' => $types,
+				'completedOn' => $completedOn,
+			]
+		);
+	}//end next()
 
-		return $this->successorHead(completed: $completed, successor: $successor) + [
-			'plannedFor' => $this->plannedFor(type: $types[(string)($completed['actionType'] ?? '')], completedOn: $completedOn),
+	/**
+	 * The successor action to write, planned from the completed one.
+	 *
+	 * @param array<string, mixed> $completed The action being completed.
+	 * @param array<string, mixed> $plan      The successor (`identifier`, `type`, `roleHolders`), the action types
+	 *                                        by identifier (`types`) and the completion date (`completedOn`).
+	 *
+	 * @return array<string, mixed> The action to write.
+	 */
+	private function plannedSuccessor(array $completed, array $plan): array {
+		return $this->successorHead(completed: $completed, successor: $plan['successor']) + [
+			'plannedFor' => $this->plannedFor(type: $plan['types'][(string)($completed['actionType'] ?? '')], completedOn: $plan['completedOn']),
 			'state' => 'planned',
 			'plannedFrom' => (string)($completed['id'] ?? ($completed['uuid'] ?? '')),
 			'plannedByRule' => (string)($completed['plannedByRule'] ?? ''),
 		];
-	}//end next()
+	}//end plannedSuccessor()
 
 	/**
 	 * The successor action's case, type, label and owner.

@@ -35,6 +35,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -125,7 +127,10 @@ class ComplaintCategoryController extends Controller {
 			$data = array_diff_key($data, ['id' => true, 'uuid' => true, '@self' => true]);
 			$register = $this->settingsService->getConfigValue('register');
 			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
-			$category = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+			$category = $objectService->saveObject(
+				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 
 			if (is_array($category) === true) {
 				return new JSONResponse($category, Http::STATUS_CREATED);
@@ -158,7 +163,10 @@ class ComplaintCategoryController extends Controller {
 			$data = $this->accessGuard->parseBody();
 			$register = $this->settingsService->getConfigValue('register');
 			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
-			$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
+			$result = $objectService->saveObject(
+				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+			);
 
 			if (is_array($result) === true) {
 				return new JSONResponse($result);

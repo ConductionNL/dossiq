@@ -31,6 +31,7 @@ use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -474,7 +475,12 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		}
 
 		try {
-			$anchor = $objectService->find($tenantId, register: AppIdentity::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+			$anchor = $objectService->find(
+				$tenantId,
+				new ObjectFindOptions(register: AppIdentity::REGISTER_SLUG, schema: 'tenant'),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			return 'basic';
 		}

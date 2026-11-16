@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -366,7 +367,7 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 
 		[$objectService, $register, $schema] = $source;
 		try {
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
+			$object = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq grants gateway: the case could not be read for its own authorization block',

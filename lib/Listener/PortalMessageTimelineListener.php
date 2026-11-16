@@ -52,6 +52,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
+use OCA\Dossiq\Listener\Support\ReadsPayloadIdentifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -65,6 +66,7 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageTimelineListener implements IEventListener {
+	use ReadsPayloadIdentifier;
 
 	/**
 	 * The schema whose creates this listener answers to.
@@ -215,22 +217,6 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		return $subject;
 	}//end subject()
-
-	/**
-	 * The message's own id, so the handler's Reply can open it.
-	 *
-	 * @param array<string, mixed> $payload The stored record.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function identifier(array $payload): string {
-		$fromSelf = (string)($payload['@self']['id'] ?? '');
-		if ($fromSelf !== '') {
-			return $fromSelf;
-		}
-
-		return (string)($payload['id'] ?? '');
-	}//end identifier()
 
 	/**
 	 * The created object as a plain array.

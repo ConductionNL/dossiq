@@ -19,6 +19,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\DecisionAdvice;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use Throwable;
 
@@ -53,7 +56,7 @@ class DecisionAdviceStore {
 	public function find(string $adviceId): array {
 		[$objectService, $register, $schema] = $this->store();
 		try {
-			$found = $objectService->find($adviceId, register: $register, schema: $schema);
+			$found = $objectService->find($adviceId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable) {
 			$found = null;
 		}
@@ -80,7 +83,10 @@ class DecisionAdviceStore {
 	public function save(array $advice): array {
 		[$objectService, $register, $schema] = $this->store();
 		try {
-			$saved = $objectService->saveObject(register: $register, schema: $schema, object: $advice);
+			$saved = $objectService->saveObject(
+				object: $advice,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable) {
 			throw new DecisionAdviceRefusal('Het advies kon niet worden opgeslagen', Http::STATUS_INTERNAL_SERVER_ERROR);
 		}

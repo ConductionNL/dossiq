@@ -82,17 +82,18 @@ class WooCaseDocuments implements WooCaseDocumentsInterface {
 			return [];
 		}
 
+		$scope = ['objectService' => $objectService, 'register' => $register, 'caseId' => $caseId];
 		$ids = [];
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		if ($joinSchema !== '') {
-			foreach ($this->search(objectService: $objectService, register: $register, schema: $joinSchema, caseId: $caseId) as $join) {
+			foreach ($this->search(scope: $scope, schema: $joinSchema) as $join) {
 				$ids[] = (string)($join['informatieobject'] ?? '');
 			}
 		}
 
 		$legacySchema = $this->settingsService->getConfigValue('document_schema');
 		if ($legacySchema !== '') {
-			foreach ($this->search(objectService: $objectService, register: $register, schema: $legacySchema, caseId: $caseId) as $document) {
+			foreach ($this->search(scope: $scope, schema: $legacySchema) as $document) {
 				$ids[] = (string)($document['id'] ?? $document['uuid'] ?? '');
 			}
 		}
@@ -152,18 +153,18 @@ class WooCaseDocuments implements WooCaseDocumentsInterface {
 	/**
 	 * The rows of one schema that name the case.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The schema.
-	 * @param string $caseId        The case uuid.
+	 * @param array{objectService: object, register: string, caseId: string} $scope  The OpenRegister ObjectService, the dossiq
+	 *                                                                             register and the case uuid.
+	 * @param string                                                          $schema The schema.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function search(object $objectService, string $register, string $schema, string $caseId): array {
+	private function search(array $scope, string $schema): array {
+		$caseId = $scope['caseId'];
 		try {
 			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $scope['objectService'],
+				register: $scope['register'],
 				schema: $schema,
 				filters: ['case' => $caseId, '_limit' => 500],
 			);

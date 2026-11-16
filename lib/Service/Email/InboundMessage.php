@@ -86,13 +86,7 @@ final class InboundMessage {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public static function fromRow(array $row, int $accountId = 0, string $mailbox = ''): self {
-		$headers = [];
-		$raw = ($row['headers'] ?? []);
-		if (is_array($raw) === true) {
-			foreach ($raw as $name => $value) {
-				$headers[strtolower((string)$name)] = (string)$value;
-			}
-		}
+		$headers = self::rowHeaders(row: $row);
 
 		return new self(
 			accountId: (int)($row['accountId'] ?? $accountId),
@@ -107,6 +101,25 @@ final class InboundMessage {
 			source: (string)($row['source'] ?? ''),
 		);
 	}//end fromRow()
+
+	/**
+	 * The row's headers, keyed by lower-case name; none when the row carries no list.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 *
+	 * @return array<string, string> The headers.
+	 */
+	private static function rowHeaders(array $row): array {
+		$headers = [];
+		$raw = ($row['headers'] ?? []);
+		if (is_array($raw) === true) {
+			foreach ($raw as $name => $value) {
+				$headers[strtolower((string)$name)] = (string)$value;
+			}
+		}
+
+		return $headers;
+	}//end rowHeaders()
 
 	/**
 	 * The same message with its raw source read in.

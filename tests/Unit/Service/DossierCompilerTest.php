@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for DossierCompiler.
@@ -143,7 +144,11 @@ class DossierCompilerTest extends TestCase {
 			/**
 			 * Entity-shaped find, mirroring the real ObjectService contract.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject($this->case);
 			}
 
@@ -197,7 +202,11 @@ class DossierCompilerTest extends TestCase {
 			/**
 			 * Entity-shaped find, mirroring the real ObjectService contract.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject(['relatedCases' => []]);
 			}
 

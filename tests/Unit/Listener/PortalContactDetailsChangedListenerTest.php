@@ -24,6 +24,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * REQ-PORTAL-016: the channel a resident picks in the portal reaches their running cases.
@@ -92,7 +93,11 @@ class PortalContactDetailsChangedListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->asSystem === false) {
 					$this->wroteAsCaller = true;
 				}

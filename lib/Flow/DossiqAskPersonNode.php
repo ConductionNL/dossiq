@@ -24,7 +24,7 @@ use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
-use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCA\OpenRegister\Service\Flow\ICallFlowNode;
 use OCA\OpenRegister\Service\Task\TaskFormReader;
 use OCP\IL10N;
 use OCP\IUserSession;
@@ -82,7 +82,7 @@ use UnexpectedValueException;
  *     key, value template) AND dossiq's own storage seam. Splitting a class to
  *     shed an import would separate the ask from the wait it exists to pair.
  */
-class DossiqAskPersonNode implements IFlowNode {
+class DossiqAskPersonNode implements ICallFlowNode {
 
     /**
      * Minutes between heartbeats when the config names none.

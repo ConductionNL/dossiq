@@ -46,6 +46,7 @@ import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import { useEngineTaskStore } from '../store/modules/engineTask.js'
 import {
 	defaultValues,
@@ -64,13 +65,9 @@ export default {
 
 	components: { CnSettingsField, CnWizardDialog },
 
-	props: {
-		/** The case the record belongs to. Absent when the manifest opened the dialog: the route answers. */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialogFromRoute],
 
+	props: {
 		/** The dialog's title. */
 		dialogTitle: {
 			type: String,
@@ -138,14 +135,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case: the prop, else the route.
-		 * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {Array<object>} The steps as the stepper reads them.
 		 * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard

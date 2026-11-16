@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Service\Advice\AdviceRepository
@@ -69,6 +70,7 @@ class AdviceRepositoryTest extends TestCase {
 			}
 
 			public function find(...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = ['find', $args];
 				return ($this->answers['find'])($args);
 			}
@@ -84,6 +86,7 @@ class AdviceRepositoryTest extends TestCase {
 			}
 
 			public function patchObject(...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = ['patchObject', $args];
 				return ($this->answers['patchObject'])($args);
 			}

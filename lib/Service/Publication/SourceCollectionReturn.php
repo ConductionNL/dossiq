@@ -42,6 +42,9 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCA\Dossiq\Woo\WooDecisionNotice;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -315,12 +318,13 @@ class SourceCollectionReturn {
 		$objectService = $target['objectService'];
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $objectService->patchObject(
-				objectId: $target['id'],
-				data: ['items' => $collection['items']],
-				register: $target['register'],
-				schema: $target['schema'],
+				new ObjectPatch(
+					objectId: $target['id'],
+					data: ['items' => $collection['items']],
+					target: new ObjectFindTarget(register: $target['register'], schema: $target['schema'])
+				),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		}
 
@@ -329,11 +333,12 @@ class SourceCollectionReturn {
 
 		return $objectService->saveObject(
 			object: $data,
-			register: $target['register'],
-			schema: $target['schema'],
-			uuid: $target['id'],
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $target['register'], schema: $target['schema']),
+				uuid: $target['id']
+			),
 			_rbac: false,
-			_multitenancy: false,
+			_multitenancy: false
 		);
 	}//end writeItems()
 

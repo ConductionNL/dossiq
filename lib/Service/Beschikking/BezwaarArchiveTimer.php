@@ -131,25 +131,25 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			return $cancelled;
 		}
 
-		return $this->armUntil(trigger: $trigger, triggerId: $triggerId, archive: $archive);
+		return $this->armUntil(trigger: $trigger, timer: ['triggerId' => $triggerId, 'archive' => $archive]);
 	}//end syncActive()
 
 	/**
 	 * Arm the timer up to the archive date, or report it due when that date has passed.
 	 *
-	 * @param array<string, mixed> $trigger   The bezwaarTrigger object.
-	 * @param string               $triggerId The trigger's id.
-	 * @param DateTimeImmutable    $archive   The archive date at midnight.
+	 * @param array<string, mixed>                                $trigger The bezwaarTrigger object.
+	 * @param array{triggerId: string, archive: DateTimeImmutable} $timer   The trigger's id, and the archive date at midnight.
 	 *
 	 * @return string One of the outcome constants.
 	 */
-	private function armUntil(array $trigger, string $triggerId, DateTimeImmutable $archive): string {
+	private function armUntil(array $trigger, array $timer): string {
+		[$triggerId, $archive] = [$timer['triggerId'], $timer['archive']];
 		$today = $this->dates->today();
 		if ($archive <= $today) {
 			return self::DUE;
 		}
 
-		$anchor = $this->anchorFor(trigger: $trigger, archive: $archive, today: $today);
+		$anchor = $this->anchorFor(trigger: $trigger, dates: ['archive' => $archive, 'today' => $today]);
 
 		return $this->arm(
 			start: new ArchiveTimerStart(
@@ -164,13 +164,13 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	/**
 	 * The timer's anchor: the bekendmaking, as AWB 6:7 counts from it.
 	 *
-	 * @param array<string, mixed> $trigger The bezwaarTrigger object.
-	 * @param DateTimeImmutable    $archive The archive date at midnight.
-	 * @param DateTimeImmutable    $today   Today at midnight.
+	 * @param array<string, mixed>                                        $trigger The bezwaarTrigger object.
+	 * @param array{archive: DateTimeImmutable, today: DateTimeImmutable} $dates   `archive` the archive date at midnight; `today` today at midnight.
 	 *
 	 * @return DateTimeImmutable The anchor.
 	 */
-	private function anchorFor(array $trigger, DateTimeImmutable $archive, DateTimeImmutable $today): DateTimeImmutable {
+	private function anchorFor(array $trigger, array $dates): DateTimeImmutable {
+		[$archive, $today] = [$dates['archive'], $dates['today']];
 		// Anchored on the bekendmaking, as AWB 6:7 counts from it. A trigger
 		// without a usable one, or with one after its archive date, is
 		// anchored today, so the timer still breaches on the archive date.

@@ -32,6 +32,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * An item the register cannot answer for is not opened and not recorded:
@@ -177,7 +178,9 @@ class EndOfDayWithoutTheRegisterTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return (object)['uuid' => $id];
 			}
 		};
@@ -245,7 +248,9 @@ class EndOfDayWithoutTheRegisterTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return (object)['uuid' => $id];
 			}
 		};

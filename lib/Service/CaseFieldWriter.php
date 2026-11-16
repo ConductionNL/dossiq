@@ -93,6 +93,28 @@ class CaseFieldWriter {
 			return;
 		}
 
+		// The PATCH seam every partial write in lib/ shares:
+		// `patchObject()` where OpenRegister has it, otherwise a fresh read
+		// with only these fields applied. See SearchesObjects.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $this->requiredCaseId(case: $case),
+			changes: $changes,
+		);
+	}//end write()
+
+	/**
+	 * The stored identity this snapshot points at, refused when it names none.
+	 *
+	 * @param array<string, mixed> $case The case snapshot.
+	 *
+	 * @return string The case id.
+	 *
+	 * @throws RuntimeException When the snapshot carries no case id.
+	 */
+	private function requiredCaseId(array $case): string {
 		$caseId = $this->caseId(case: $case);
 		if ($caseId === '') {
 			// A snapshot with no identity cannot address the stored case, and
@@ -101,17 +123,8 @@ class CaseFieldWriter {
 			throw new RuntimeException('case_snapshot_has_no_id');
 		}
 
-		// The PATCH seam every partial write in lib/ shares:
-		// `patchObject()` where OpenRegister has it, otherwise a fresh read
-		// with only these fields applied. See SearchesObjects.
-		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-			changes: $changes,
-		);
-	}//end write()
+		return $caseId;
+	}//end requiredCaseId()
 
 
 	/**

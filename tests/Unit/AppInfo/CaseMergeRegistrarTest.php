@@ -15,7 +15,8 @@ use OCA\OpenRegister\Event\ObjectsMergedEvent;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A merge of objects reaches the case merge listener.
+ * A merge of two cases in OpenRegister reaches the case-merge listener, once,
+ * at the default priority.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\AppInfo

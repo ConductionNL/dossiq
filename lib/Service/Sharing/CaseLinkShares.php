@@ -35,6 +35,9 @@ namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -208,14 +211,17 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		[$objectService, $register, $shareSchema] = $store;
 		try {
 			$share = $this->gateway->toArray(
-				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
+				$objectService->find($shareId, new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema))
 			);
 			if ($share === []) {
 				return false;
 			}
 
 			$share['lastCollectedNote'] = $noteId;
-			$objectService->saveObject(object: $share, register: (int)$register, schema: (int)$shareSchema);
+			$objectService->saveObject(
+				object: $share,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema))
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseLinkShares: could not record the collected comment on the share',
@@ -300,8 +306,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		try {
 			$result = $objectService->saveObject(
 				object: $this->recordFor(share: $share),
-				register: (int)$register,
-				schema: (int)$schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
 			);
 		} catch (\Throwable $e) {
 			return $this->rolledBackError(caseId: $share->caseId, exception: $e);

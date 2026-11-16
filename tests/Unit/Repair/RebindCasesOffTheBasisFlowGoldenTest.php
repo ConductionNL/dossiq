@@ -30,6 +30,8 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Every read, write, log line and output line of the rebind, per world.
@@ -234,7 +236,11 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->log[] = ['find' => ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (in_array('find:' . $id, $this->fails, true) === true) {
 					throw new RuntimeException('find ' . $id . ' failed');
@@ -254,7 +260,11 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->log[] = ['save' => ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				if (in_array('save:' . $uuid, $this->fails, true) === true) {
 					throw new RuntimeException('save ' . $uuid . ' failed');

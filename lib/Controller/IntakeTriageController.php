@@ -253,12 +253,24 @@ class IntakeTriageController extends Controller {
 			return $user;
 		}
 
+		return $this->recordAdmissibility(caseId: $caseId, judgement: ['verdict' => $verdict, 'reason' => $reason, 'user' => $user]);
+	}//end judgeAdmissibility()
+
+	/**
+	 * Record the verdict; a refusal or a failure is answered as such.
+	 *
+	 * @param string                                              $caseId    The case.
+	 * @param array{verdict: string, reason: string, user: IUser} $judgement The verdict, why, and the handler judging.
+	 *
+	 * @return JSONResponse What was recorded, or the refusal.
+	 */
+	private function recordAdmissibility(string $caseId, array $judgement): JSONResponse {
 		try {
 			$recorded = $this->admissibility->judge(
 				caseId: $caseId,
-				verdict: $verdict,
-				reason: $reason,
-				judgedBy: $user->getUID(),
+				verdict: $judgement['verdict'],
+				reason: $judgement['reason'],
+				judgedBy: $judgement['user']->getUID(),
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'judge admissibility of case ' . $caseId, e: $e);
@@ -267,7 +279,7 @@ class IntakeTriageController extends Controller {
 		}//end try
 
 		return new JSONResponse($recorded);
-	}//end judgeAdmissibility()
+	}//end recordAdmissibility()
 
 	/**
 	 * Log a verdict that could not be recorded, and answer it.
@@ -391,11 +403,23 @@ class IntakeTriageController extends Controller {
 			return $refusal;
 		}
 
+		return $this->sleepUntil(entryId: $entryId, sleep: ['until' => $until, 'reason' => $reason]);
+	}//end sleepItem()
+
+	/**
+	 * Put the triage item to sleep as the caller; a refusal is answered as such.
+	 *
+	 * @param string                               $entryId The triage item.
+	 * @param array{until: string, reason: string} $sleep   Until when, and why.
+	 *
+	 * @return JSONResponse The sleeping item, or the refusal.
+	 */
+	private function sleepUntil(string $entryId, array $sleep): JSONResponse {
 		try {
 			$record = $this->sleep->sleep(
 				entryId: $entryId,
-				until: $until,
-				reason: $reason,
+				until: $sleep['until'],
+				reason: $sleep['reason'],
 				actorId: $this->callerId()
 			);
 		} catch (RefusedException $e) {
@@ -403,7 +427,7 @@ class IntakeTriageController extends Controller {
 		}
 
 		return new JSONResponse($record);
-	}//end sleepItem()
+	}//end sleepUntil()
 
 	/**
 	 * Open one case per destination an intake form declares.
@@ -427,18 +451,30 @@ class IntakeTriageController extends Controller {
 			return $refusal;
 		}
 
+		return $this->submitFanOut(caseTypeId: $caseTypeId, form: ['submission' => $submission, 'submissionId' => $submissionId]);
+	}//end fanOut()
+
+	/**
+	 * Fan the submission out over the case types its form names; a refusal is answered as such.
+	 *
+	 * @param string                                                        $caseTypeId The form's case type.
+	 * @param array{submission: array<string, mixed>, submissionId: string} $form       The submission, and its id.
+	 *
+	 * @return JSONResponse What was opened, or the refusal.
+	 */
+	private function submitFanOut(string $caseTypeId, array $form): JSONResponse {
 		try {
 			$result = $this->fanOut->submit(
 				formCaseTypeId: $caseTypeId,
-				submission: $submission,
-				submissionId: $submissionId
+				submission: $form['submission'],
+				submissionId: $form['submissionId']
 			);
 		} catch (RefusedException $e) {
-			return $this->refused(op: 'fan out submission ' . $submissionId, e: $e);
+			return $this->refused(op: 'fan out submission ' . $form['submissionId'], e: $e);
 		}
 
 		return new JSONResponse($result);
-	}//end fanOut()
+	}//end submitFanOut()
 
 	/**
 	 * Refuse a caller who may not mutate this case.

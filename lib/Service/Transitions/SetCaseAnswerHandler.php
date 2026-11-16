@@ -25,6 +25,8 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Kernel\Contracts\SetCaseAnswerHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -103,8 +105,10 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 		);
 		$objects->saveObject(
 			object: $stored,
-			register: $this->settings->getConfigValue(key: 'register'),
-			schema: $this->settings->getConfigValue(key: 'case_schema')
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $this->settings->getConfigValue(key: 'register'),
+					schema: $this->settings->getConfigValue(key: 'case_schema')
+				))
 		);
 	}//end writeAnswer()
 

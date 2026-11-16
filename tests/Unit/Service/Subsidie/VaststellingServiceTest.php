@@ -33,6 +33,8 @@ use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * In-memory ObjectService fake for VaststellingServiceTest, pinned to
@@ -66,7 +68,11 @@ class VaststellingFakeObjectService {
 	 *
 	 * @throws DoesNotExistException When the id is unknown.
 	 */
-	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$_extend = $options?->extend ?? [];
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$row = ($this->store[(string)$schema][(string)$id] ?? null);
 		if ($row === null) {
 			throw new DoesNotExistException('Object ' . $id . ' does not exist');
@@ -87,7 +93,11 @@ class VaststellingFakeObjectService {
 	 *
 	 * @return FakeStoredObject The merged row.
 	 */
-	public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$uuid = ($uuid ?? ('generated-' . count($this->store[$schema] ?? [])));
 		$existing = ($this->store[$schema][$uuid] ?? []);

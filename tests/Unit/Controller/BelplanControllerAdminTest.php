@@ -27,6 +27,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Controller\BelplanController
@@ -169,11 +171,17 @@ class BelplanControllerAdminTest extends TestCase {
 				return $this->answer(['searchObjectsBySlug', $register, $schema, $filters]);
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return $this->answer(['saveObject', $object, $register, $schema]);
 			}
 
-			public function patchObject(string $objectId, array $data, string $register, string $schema): mixed {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				return $this->answer(['patchObject', $objectId, $data, $register, $schema]);
 			}
 		};

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -294,8 +295,7 @@ class ZgwParentStateResolver {
 
 		$object = $objectService->find(
 			$mapped['uuid'],
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
+			new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
 		);
 		if ($object === null) {
 			return null;

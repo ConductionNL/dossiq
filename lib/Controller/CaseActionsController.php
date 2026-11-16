@@ -262,6 +262,23 @@ class CaseActionsController extends Controller {
 	 * @return JSONResponse The gesture's answer, or a refusal.
 	 */
 	private function guarded(string $caseId, bool $write, callable $run): JSONResponse {
+		$refusal = $this->refusal(caseId: $caseId, write: $write);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->ran(caseId: $caseId, run: $run);
+	}//end guarded()
+
+	/**
+	 * The refusal for a caller without a session or without access to the case, or null.
+	 *
+	 * @param string  $caseId The case UUID.
+	 * @param boolean $write  Whether the gesture writes, and so needs mutation access.
+	 *
+	 * @return JSONResponse|null The 401 or 403 answer, or null when the caller may go on.
+	 */
+	private function refusal(string $caseId, bool $write): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -271,6 +288,18 @@ class CaseActionsController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
+		return null;
+	}//end refusal()
+
+	/**
+	 * Run the gesture and answer with its result, or with the refusal or failure it ended in.
+	 *
+	 * @param string                           $caseId The case UUID, for the log line.
+	 * @param callable(): array<string, mixed> $run    The gesture.
+	 *
+	 * @return JSONResponse The gesture's answer, or a refusal.
+	 */
+	private function ran(string $caseId, callable $run): JSONResponse {
 		try {
 			return new JSONResponse($run());
 		} catch (RuntimeException $e) {
@@ -287,7 +316,7 @@ class CaseActionsController extends Controller {
 
 			return new JSONResponse(['error' => 'Could not act on the case'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
-	}//end guarded()
+	}//end ran()
 
 	/**
 	 * Whether this user may run this gesture on this case.

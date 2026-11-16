@@ -70,56 +70,20 @@
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import {
-	caseTypeRefusalMessages,
-	postAndLand,
-} from '../utils/caseTypeDialogs.js'
+import { caseTypeDialog } from '../mixins/caseTypeDialog.js'
+import { postAndLand } from '../utils/caseTypeDialogs.js'
 
 export default {
 	name: 'CaseTypeNewVersionDialog',
 
 	components: { NcButton, NcDialog },
 
-	props: {
-		/**
-		 * The case type to version. Falls back to the route: an `open-modal`
-		 * header action forwards its props verbatim, so a manifest `@objectId`
-		 * would arrive as that literal string.
-		 */
-		caseTypeId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTypeDialog],
 
 	emits: ['close'],
 
 	data() {
 		return { busy: false, error: '' }
-	},
-
-	computed: {
-		/**
-		 * The sentences a refusal can carry, already translated.
-		 *
-		 * @return {object} The messages.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		refusalMessages() {
-			return caseTypeRefusalMessages()
-		},
-
-		/**
-		 * The case type this dialog versions.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		id() {
-			return this.caseTypeId || String(this.$route?.params?.id ?? '')
-		},
 	},
 
 	methods: {

@@ -27,12 +27,13 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZrcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the entry rules call with named arguments.
  */
 interface CaseEntryObjectServiceStub {
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**

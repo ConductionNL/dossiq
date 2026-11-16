@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\ZgwBrcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for the brc-002 lookup.
@@ -87,7 +88,9 @@ class ZgwBrcUniquenessLookupTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null Nothing is stored.
 			 */
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 

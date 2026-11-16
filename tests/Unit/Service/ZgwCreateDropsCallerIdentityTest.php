@@ -25,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ReflectionProperty;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * `_directFields` reach the stored payload unmapped. A create whose direct
@@ -82,6 +83,7 @@ class ZgwCreateDropsCallerIdentityTest extends TestCase {
 			 * @return never
 			 */
 			public function saveObject(array $object, mixed ...$rest): never {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				$this->saved[] = ['object' => $object, 'uuid' => ($rest['uuid'] ?? null)];
 				throw new RuntimeException('stop after the write');
 			}

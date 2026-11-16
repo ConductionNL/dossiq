@@ -214,7 +214,7 @@ class CaseTypeRuleSentences implements CaseTypeRuleSentencesInterface {
 		$value = $this->value(value: ($condition['value'] ?? null));
 
 		return match ($condition['kind'] ?? null) {
-			'fieldCompare'    => $this->comparison(field: $field, operator: ($condition['op'] ?? 'eq'), value: $value),
+			'fieldCompare'    => $this->comparison(field: $field, compared: ['operator' => ($condition['op'] ?? 'eq'), 'value' => $value]),
 			'fieldEquals'     => $this->l10n->t('%1$s is %2$s', [$field, $value]),
 			'fieldPresent'    => $this->l10n->t('%1$s is filled in', [$field]),
 			'documentPresent' => $this->l10n->t(
@@ -232,13 +232,13 @@ class CaseTypeRuleSentences implements CaseTypeRuleSentencesInterface {
 	/**
 	 * A field compared with a value.
 	 *
-	 * @param string $field    The field.
-	 * @param mixed  $operator The stored operator.
-	 * @param string $value    The value in words.
+	 * @param string                                $field    The field.
+	 * @param array{operator: mixed, value: string} $compared `operator` the stored operator; `value` the value in words.
 	 *
 	 * @return string The comparison in words.
 	 */
-	private function comparison(string $field, mixed $operator, string $value): string {
+	private function comparison(string $field, array $compared): string {
+		[$operator, $value] = [$compared['operator'], $compared['value']];
 		return match ($operator) {
 			'neq'   => $this->l10n->t('%1$s is not %2$s', [$field, $value]),
 			'gt'    => $this->l10n->t('%1$s is greater than %2$s', [$field, $value]),

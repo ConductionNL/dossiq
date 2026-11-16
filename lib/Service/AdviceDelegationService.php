@@ -77,12 +77,27 @@ class AdviceDelegationService implements AdviceDelegationServiceInterface {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function raiseAdviceDecision(string $subjectSchema, string $subjectId, array $payload = []): string {
+		return $this->raiseFor(subject: ['subjectSchema' => $subjectSchema, 'subjectId' => $subjectId], payload: $payload);
+	}//end raiseAdviceDecision()
+
+	/**
+	 * Raise the advice Decision on the subject, with the payload's provenance and question.
+	 *
+	 * @param array{subjectSchema: string, subjectId: string} $subject The subject schema and object UUID.
+	 * @param array<string,mixed>                             $payload Advice context + provenance.
+	 *
+	 * @return string The decidesk decisionRef (UUID) to persist on the case.
+	 *
+	 * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+	 */
+	private function raiseFor(array $subject, array $payload): string {
+		$subjectId = $subject['subjectId'];
 		return $this->core->raiseDecision(
 			decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
 			externalReference: (string)($payload['externalReference'] ?? $subjectId),
 			subject: [
 				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
-				'subjectSchema' => $subjectSchema,
+				'subjectSchema' => $subject['subjectSchema'],
 				'subjectId' => $subjectId,
 				'subjectLabel' => (string)($payload['subjectLabel'] ?? ''),
 			],
@@ -92,5 +107,5 @@ class AdviceDelegationService implements AdviceDelegationServiceInterface {
 				'advisor' => (string)($payload['advisor'] ?? ''),
 			],
 		);
-	}//end raiseAdviceDecision()
+	}//end raiseFor()
 }//end class

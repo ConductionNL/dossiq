@@ -34,6 +34,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The save half of the ObjectService, as requestAdvice() calls it.
@@ -49,7 +50,7 @@ interface AdviceGoldenSaveStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null): mixed;
+	public function saveObject(mixed $object = null, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -126,7 +127,10 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 	private function service(mixed $saved, bool $refuses): AdviceService {
 		$objects = $this->createMock(originalClassName: AdviceGoldenSaveStub::class);
 		$objects->method('saveObject')->willReturnCallback(
-			function (mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null) use ($saved): mixed {
+			function (mixed $object = null, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($saved): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->log[] = ['saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				return $saved;
 			}

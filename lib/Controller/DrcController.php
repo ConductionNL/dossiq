@@ -35,6 +35,12 @@ use OCA\Dossiq\Service\Zgw\RelationSearch;
 use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Support\MapsZgwRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\LockRequest;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\UnlockRequest;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -360,9 +366,11 @@ class DrcController extends ZgwController {
 		$englishData = $this->eioEnglishData(body: $body, mappingConfig: $mappingConfig);
 
 		$object = $this->zgwService->getObjectService()->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
-			object: $englishData
+			object: $englishData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				))
 		);
 		$objectData = $this->objectToArray(row: $object);
 
@@ -552,9 +560,11 @@ class DrcController extends ZgwController {
 		// informatieobject schema requires (#1960).
 		$objectData['uuid'] = $objectUuid;
 		$this->zgwService->getObjectService()->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
-			object: $objectData
+			object: $objectData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				))
 		);
 
 		return $objectData;
@@ -879,8 +889,10 @@ class DrcController extends ZgwController {
 		try {
 			$this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
 			return true;
 		} catch (\Throwable $e) {
@@ -954,9 +966,11 @@ class DrcController extends ZgwController {
 	 */
 	private function downloadStoredFile(string $uuid, array $mappingConfig): DataDownloadResponse|JSONResponse {
 		$object = $this->zgwService->getObjectService()->find(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
-			id: $uuid
+			id: $uuid,
+			options: new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 		$objectData = $this->objectToArray(row: $object);
 
@@ -1056,7 +1070,7 @@ class DrcController extends ZgwController {
 	 * @throws \Throwable When OpenRegister refuses or fails the lock.
 	 */
 	private function lockWithNewLockId(object $objectService, ?array $mappingConfig, string $uuid): JSONResponse {
-		$objectService->lockObject(identifier: $uuid);
+		$objectService->lockObject(new LockRequest(identifier: $uuid));
 
 		// OpenRegister's lock system doesn't produce a ZGW lockId.
 		// Generate one and store it in the data blob for verification.
@@ -1129,8 +1143,10 @@ class DrcController extends ZgwController {
 	private function fallbackObjectData(EioDocument $document): array {
 		$existing = $document->objectService->find(
 			$document->uuid,
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $document->mappingConfig['sourceRegister'],
+				schema: $document->mappingConfig['sourceSchema']
+			)
 		);
 		return $this->objectToArray(row: $existing);
 	}//end fallbackObjectData()
@@ -1147,10 +1163,14 @@ class DrcController extends ZgwController {
 	 */
 	private function saveFallbackObject(EioDocument $document, array $data): void {
 		$document->objectService->saveObject(
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema'],
 			object: $data,
-			uuid: $document->uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $document->mappingConfig['sourceRegister'],
+						schema: $document->mappingConfig['sourceSchema']
+					),
+				uuid: $document->uuid
+			)
 		);
 	}//end saveFallbackObject()
 
@@ -1263,7 +1283,7 @@ class DrcController extends ZgwController {
 	 * @throws \Throwable When OpenRegister fails the unlock.
 	 */
 	private function unlockAndClearLockId(object $objectService, ?array $mappingConfig, string $uuid): JSONResponse {
-		$objectService->unlockObject(identifier: $uuid);
+		$objectService->unlockObject(new UnlockRequest(identifier: $uuid));
 
 		// Clear lockId from the data blob.
 		if ($mappingConfig !== null) {
@@ -1621,7 +1641,7 @@ class DrcController extends ZgwController {
 
 			$grUuid = $grData['id'] ?? ($grData['@self']['id'] ?? '');
 			if ($grUuid !== '') {
-				$objectService->deleteObject(uuid: $grUuid);
+				$objectService->deleteObject(new ObjectDeletion(uuid: $grUuid));
 			}
 		}
 	}//end deleteGebruiksrechtenOf()
@@ -1664,7 +1684,10 @@ class DrcController extends ZgwController {
 
 		[$objectService, $mappingConfig] = $source;
 		try {
-			$obj = $objectService->find($uuid, register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']);
+			$obj = $objectService->find(
+				$uuid,
+				new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
+			);
 			return $this->informatieobjectUuidOf(data: $this->objectToArray(row: $obj));
 		} catch (\Throwable $e) {
 			// Not found.
@@ -1849,8 +1872,10 @@ class DrcController extends ZgwController {
 	private function writeUsageRightsIndication(EioDocument $document, ?bool $value): void {
 		$eioObj = $document->objectService->find(
 			$document->uuid,
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $document->mappingConfig['sourceRegister'],
+				schema: $document->mappingConfig['sourceSchema']
+			)
 		);
 		$eioData = $this->objectToArray(row: $eioObj);
 
@@ -1858,10 +1883,14 @@ class DrcController extends ZgwController {
 
 		unset($eioData['@self'], $eioData['id'], $eioData['organisation']);
 		$document->objectService->saveObject(
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema'],
 			object: $eioData,
-			uuid: $document->uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $document->mappingConfig['sourceRegister'],
+						schema: $document->mappingConfig['sourceSchema']
+					),
+				uuid: $document->uuid
+			)
 		);
 	}//end writeUsageRightsIndication()
 
@@ -1997,8 +2026,10 @@ class DrcController extends ZgwController {
 		// Find the EIO object.
 		$existing = $objectService->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 		$objectData = $this->objectToArray(row: $existing);
 
@@ -2129,10 +2160,14 @@ class DrcController extends ZgwController {
 		}
 
 		$this->zgwService->getObjectService()->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
 			object: $objectData,
-			uuid: $uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $mappingConfig['sourceRegister'],
+						schema: $mappingConfig['sourceSchema']
+					),
+				uuid: $uuid
+			)
 		);
 
 		return $mergedSize;
@@ -2223,8 +2258,10 @@ class DrcController extends ZgwController {
 	private function storedEioData(string $uuid, array $mappingConfig): array {
 		$existing = $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 
 		return $this->objectToArray(row: $existing);
@@ -2526,8 +2563,10 @@ class DrcController extends ZgwController {
 		$existingData = $this->objectToArray(
 			row: $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			)
 		);
 
@@ -2537,10 +2576,14 @@ class DrcController extends ZgwController {
 
 		return $this->objectToArray(
 			row: $objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $englishData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $mappingConfig['sourceRegister'],
+							schema: $mappingConfig['sourceSchema']
+						),
+					uuid: $uuid
+				)
 			)
 		);
 	}//end saveEioKeepingItsLock()
@@ -2721,8 +2764,10 @@ class DrcController extends ZgwController {
 			$existingData = $this->objectToArray(
 				row: $document->objectService->find(
 					$document->uuid,
-					register: $document->mappingConfig['sourceRegister'],
-					schema: $document->mappingConfig['sourceSchema']
+					new ObjectFindOptions(
+						register: $document->mappingConfig['sourceRegister'],
+						schema: $document->mappingConfig['sourceSchema']
+					)
 				)
 			);
 		} catch (\Throwable $e) {
@@ -2795,8 +2840,10 @@ class DrcController extends ZgwController {
 	private function lockDataOf(EioDocument $document): array {
 		$existing = $document->objectService->find(
 			$document->uuid,
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $document->mappingConfig['sourceRegister'],
+				schema: $document->mappingConfig['sourceSchema']
+			)
 		);
 		$existingData = $this->objectToArray(row: $existing);
 
@@ -2817,10 +2864,14 @@ class DrcController extends ZgwController {
 	 */
 	private function saveLockData(EioDocument $document, array $data): void {
 		$document->objectService->saveObject(
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema'],
 			object: $data,
-			uuid: $document->uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $document->mappingConfig['sourceRegister'],
+						schema: $document->mappingConfig['sourceSchema']
+					),
+				uuid: $document->uuid
+			)
 		);
 	}//end saveLockData()
 }//end class

@@ -36,6 +36,7 @@ use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\ObjectArray;
 use OCA\Dossiq\Service\Support\RowList;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -181,7 +182,7 @@ class RoutingController extends Controller {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
 
-		$case = $this->toArray(value: $objectService->find($id, register: $register, schema: $caseSchema));
+		$case = $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $caseSchema)));
 
 		return new JSONResponse(
 			[
@@ -210,7 +211,7 @@ class RoutingController extends Controller {
 		$workflowId = (string)($case['workflowTemplate'] ?? '');
 		$steps = [];
 		if ($workflowId !== '' && $workflowSlug !== '') {
-			$workflow = $this->toArray(value: $objectService->find($workflowId, register: $register, schema: $workflowSlug));
+			$workflow = $this->toArray(value: $objectService->find($workflowId, new ObjectFindOptions(register: $register, schema: $workflowSlug)));
 			$steps = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
 		}
 

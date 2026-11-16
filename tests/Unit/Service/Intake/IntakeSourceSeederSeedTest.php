@@ -37,6 +37,8 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The seed run over the intake-source catalogue.
@@ -95,7 +97,10 @@ class IntakeSourceSeederSeedTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->onSave !== null) {
 					($this->onSave)($object);
 				}
@@ -143,8 +148,11 @@ class IntakeSourceSeederSeedTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): array {
-				return $this->inner->saveObject($register, $schema, $object, $uuid);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				return $this->inner->saveObject($object, $options);
 			}
 
 			/**
@@ -183,6 +191,7 @@ class IntakeSourceSeederSeedTest extends TestCase {
 			 * @return object
 			 */
 			public function find(mixed ...$args): object {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = $args;
 				if ($this->present === false) {
 					throw new RuntimeException('no such register');

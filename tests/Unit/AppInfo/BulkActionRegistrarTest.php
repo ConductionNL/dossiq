@@ -15,8 +15,8 @@ use OCA\OpenRegister\Event\BulkActionRegistrationEvent;
 use PHPUnit\Framework\TestCase;
 
 /**
- * With OpenRegister's bulk action event present, dossiq listens on it to
- * register its case actions.
+ * Where OpenRegister publishes its bulk-action registration event, dossiq
+ * listens to it to offer its case bulk actions.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
@@ -26,11 +26,12 @@ use PHPUnit\Framework\TestCase;
 class BulkActionRegistrarTest extends TestCase {
 	use RecordsRegistrations;
 
-	public function testTheRegistrationEventReachesTheListener(): void {
-		self::assertTrue(class_exists(BulkActionRegistrationEvent::class), 'The suite stubs the OpenRegister event.');
+	public function testTheBulkActionListenerJoinsOpenRegistersRegistrationEvent(): void {
+		self::assertTrue(class_exists(BulkActionRegistrationEvent::class), 'OpenRegister publishes the event in this test run');
 
 		(new BulkActionRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame([[BulkActionRegistrationEvent::class, BulkActionRegistrationListener::class, 0]], $this->listeners);
-	}//end testTheRegistrationEventReachesTheListener()
+		self::assertSame([], $this->services);
+	}//end testTheBulkActionListenerJoinsOpenRegistersRegistrationEvent()
 }//end class

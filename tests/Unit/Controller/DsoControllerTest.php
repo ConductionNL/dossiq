@@ -37,6 +37,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal ObjectService stub with named-parameter signatures for DsoController tests.
@@ -62,7 +63,7 @@ interface DsoControllerObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**

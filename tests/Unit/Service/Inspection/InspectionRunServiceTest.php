@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for {@see InspectionRunService}.
@@ -273,7 +274,9 @@ final class InspectionRunServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The template.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				unset($register, $schema);
 				if ($this->findThrows === true) {
 					throw new RuntimeException('not a template uuid: ' . $id);
