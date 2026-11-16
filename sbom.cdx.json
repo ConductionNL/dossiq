@@ -11775,8 +11775,8 @@
     {
       "type": "library",
       "name": "eslint",
-      "version": "10.10.0",
-      "bom-ref": "dossiq@0.1.0|eslint@10.10.0",
+      "version": "10.11.0",
+      "bom-ref": "dossiq@0.1.0|eslint@10.11.0",
       "licenses": [
         {
           "license": {
@@ -11784,15 +11784,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/eslint@10.10.0",
+      "purl": "pkg:npm/eslint@10.11.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/eslint/-/eslint-10.10.0.tgz",
+          "url": "https://registry.npmjs.org/eslint/-/eslint-10.11.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "34f5e7eabe73978b844f50c054f68ec335f7aeeb78734c1c9b0ddd58901f3ac4cce7e4e8817a340c38f3f29c26fe12fc73254da47a9e2b82693743639f214537"
+              "content": "3fb6ba50412a6fd1bde4c600b6a926b136d55c8632cc87e5e8d18e209935eb63da6a117117278672b9576054a26a0102838b049bc22c78975904a477af1e8cb1"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -11813,7 +11813,7 @@
           "type": "library",
           "name": "ajv",
           "version": "6.15.0",
-          "bom-ref": "dossiq@0.1.0|eslint@10.10.0|ajv@6.15.0",
+          "bom-ref": "dossiq@0.1.0|eslint@10.11.0|ajv@6.15.0",
           "licenses": [
             {
               "license": {
@@ -11850,7 +11850,7 @@
           "type": "library",
           "name": "eslint-visitor-keys",
           "version": "5.0.1",
-          "bom-ref": "dossiq@0.1.0|eslint@10.10.0|eslint-visitor-keys@5.0.1",
+          "bom-ref": "dossiq@0.1.0|eslint@10.11.0|eslint-visitor-keys@5.0.1",
           "licenses": [
             {
               "license": {
@@ -11887,7 +11887,7 @@
           "type": "library",
           "name": "espree",
           "version": "11.2.0",
-          "bom-ref": "dossiq@0.1.0|eslint@10.10.0|espree@11.2.0",
+          "bom-ref": "dossiq@0.1.0|eslint@10.11.0|espree@11.2.0",
           "licenses": [
             {
               "license": {
@@ -11924,7 +11924,7 @@
           "type": "library",
           "name": "json-schema-traverse",
           "version": "0.4.1",
-          "bom-ref": "dossiq@0.1.0|eslint@10.10.0|json-schema-traverse@0.4.1",
+          "bom-ref": "dossiq@0.1.0|eslint@10.11.0|json-schema-traverse@0.4.1",
           "licenses": [
             {
               "license": {
@@ -20822,8 +20822,8 @@
     {
       "type": "library",
       "name": "sass",
-      "version": "1.104.0",
-      "bom-ref": "dossiq@0.1.0|sass@1.104.0",
+      "version": "1.105.0",
+      "bom-ref": "dossiq@0.1.0|sass@1.105.0",
       "licenses": [
         {
           "license": {
@@ -20831,15 +20831,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/sass@1.104.0",
+      "purl": "pkg:npm/sass@1.105.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/sass/-/sass-1.104.0.tgz",
+          "url": "https://registry.npmjs.org/sass/-/sass-1.105.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "6ed1cc0295b66e0a25bc2961456f00950273808f65501de93d2a1f050413f84e3a196bdff68d13550d77498bf9ae2599545c8f37e24dcf74ca5bd5e1065735d3"
+              "content": "e048d2b914f21bc338c915d76353d3f4e515e73cf6df10712646c8029ae884a1ea7fa1ce538302a44dd4def002fa23b5831a1b06311235b723f2b6004195a7c8"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
