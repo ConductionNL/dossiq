@@ -674,3 +674,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         unchanged after but for one `@uses` line each. Own test:
         `tests/Unit/Service/Vth/LhsMatrixCellsTest` (2); a loose axis comparison turns it red
         (checked).
+  - [x] 8v `Scoring/FormulaScorer` (1: ExcessiveClassComplexity 51 against 50). Splitting an
+        expression into its tokens moved to the new `Scoring/FormulaTokens` (`split()`; was the
+        private static `tokenise()`). Its `elseif`/`else` became early `continue`s, which also clears
+        the ElseExpression finding development reports on the old method; same tokens in the same
+        order. The scorer builds the tokeniser in a new argument-free constructor, so every
+        `new FormulaScorer()` keeps working and the grammar, limits and refusal messages are
+        unchanged.
+        Characterisation: the existing `FormulaScorerTest` (8 tests, 17 cases including every
+        refusal of the grammar), green before and unchanged after but for one `@uses` line. Own
+        test: `tests/Unit/Service/Scoring/FormulaTokensTest` (3); giving a name the `num` kind turns
+        12 tests red (checked).
