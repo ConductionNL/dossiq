@@ -60,7 +60,6 @@ use Psr\Log\LoggerInterface;
  * parameter is a distinct, independently-used collaborator (same rationale
  * as CouplingBetweenObjects above); `woo-llm-anonymisation` adds one more
  * (`WOOAnonymisationAssistService`) to an already-wide, long-established list.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7

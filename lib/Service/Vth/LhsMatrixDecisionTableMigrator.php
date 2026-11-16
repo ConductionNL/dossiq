@@ -56,7 +56,6 @@ use Throwable;
  * longer has a settings page, so an overwrite would replace an administrator's
  * work with a source they cannot even read.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/lhs-decision-table/spec.md
  */
@@ -94,6 +93,13 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	public const MARKER_PREFIX = 'dossiq:lhsMatrix:';
 
 	/**
+	 * Turns matrix cells into decision rules.
+	 *
+	 * @var LhsMatrixCells
+	 */
+	private readonly LhsMatrixCells $cells;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register/schema configuration.
@@ -107,7 +113,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 		private readonly LoggerInterface $logger,
 		private readonly StoredDecisionTables $tables,
 	) {
-
+		$this->cells = new LhsMatrixCells();
 	}//end __construct()
 
 	/**
@@ -469,7 +475,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			return null;
 		}
 
-		$rules = $this->rulesFor(cells: $cells, axes: $axes);
+		$rules = $this->cells->rules(cells: $cells, axes: $axes);
 		if ($rules === null) {
 			return null;
 		}
@@ -494,65 +500,6 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 			'actorType' => $this->decode(value: ($matrix['actorTypeAxis'] ?? null)),
 		];
 	}//end axesOf()
-
-	/**
-	 * One rule per cell, or null when a cell is off its axes.
-	 *
-	 * @param array<int, mixed>                $cells The matrix cells.
-	 * @param array<string, array<int, mixed>> $axes  The allowed values per axis.
-	 *
-	 * @return array<int, array<string, mixed>>|null The rules.
-	 */
-	private function rulesFor(array $cells, array $axes): ?array {
-		$rules = [];
-		foreach ($cells as $cell) {
-			if ($this->isOnAxes(cell: $cell, axes: $axes) === false) {
-				return null;
-			}
-
-			$rules[] = $this->ruleFor(cell: $cell);
-		}
-
-		return $rules;
-	}//end rulesFor()
-
-	/**
-	 * Whether every coordinate of a cell is a value its axis allows.
-	 *
-	 * @param mixed                            $cell The cell.
-	 * @param array<string, array<int, mixed>> $axes The allowed values per axis.
-	 *
-	 * @return bool True when the cell is on its axes.
-	 */
-	private function isOnAxes(mixed $cell, array $axes): bool {
-		foreach ($axes as $key => $allowed) {
-			if (in_array(($cell[$key] ?? null), $allowed, true) === false) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end isOnAxes()
-
-	/**
-	 * The decision rule one cell becomes.
-	 *
-	 * @param array<string, mixed> $cell The cell, on its axes.
-	 *
-	 * @return array<string, mixed> The rule.
-	 */
-	private function ruleFor(array $cell): array {
-		return [
-			'id' => sprintf('%s:%s:%s', $cell['severity'], $cell['behaviour'], $cell['actorType']),
-			'annotation' => (string)($cell['note'] ?? ''),
-			'inputEntries' => [
-				(string)$cell['severity'],
-				(string)$cell['behaviour'],
-				(string)$cell['actorType'],
-			],
-			'outputEntries' => [(string)($cell['intervention'] ?? '')],
-		];
-	}//end ruleFor()
 
 	/**
 	 * The decision table for a matrix, everything but its rules.

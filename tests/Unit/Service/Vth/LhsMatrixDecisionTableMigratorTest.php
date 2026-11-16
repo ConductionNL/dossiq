@@ -27,6 +27,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * @covers \OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator
  * @uses   \OCA\Dossiq\Service\Dmn\StoredDecisionTables
+ * @uses   \OCA\Dossiq\Service\Vth\LhsMatrixCells
  */
 class LhsMatrixDecisionTableMigratorTest extends TestCase {
 
