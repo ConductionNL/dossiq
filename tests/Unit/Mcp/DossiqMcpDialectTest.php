@@ -155,7 +155,7 @@ class DossiqMcpDialectTest extends TestCase {
 	 * @spec openspec/specs/mcp-integration/spec.md
 	 */
 	public function testOpenRegistersValidatorAcceptsEveryBlock(): void {
-		$validatorClass = 'OCA\\OpenRegister\\Service\\Mcp\\McpAnnotationValidator';
+		$validatorClass = 'OCA\\OpenRegister\\Mcp\\Service\\Mcp\\McpAnnotationValidator';
 		if (class_exists($validatorClass) === false) {
 			$this->addToAssertionCount(1);
 			$this->assertFalse(class_exists($validatorClass), 'OpenRegister absent: the mirror rules are the check.');
