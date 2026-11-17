@@ -42,7 +42,7 @@ class ZuiddrechtJeugdwetHistoryTest extends TestCase {
 
 		$report = $entries['jeugdwet-inzage-medisch-verslag'] ?? null;
 		$this->assertNotNull($report);
-		$this->assertSame(['e0b306d2-c523-5938-9b5c-3474d292dc01', 'file.downloaded', '{{cast:fatma.uid}}', '{{datetime:-11 11:05}}'], [$report['object'], $report['action'], $report['user'], $report['at']]);
+		$this->assertSame(['{{object:jeugdwet-gezin-oosthaven.id}}', 'file.downloaded', '{{cast:fatma.uid}}', '{{datetime:-11 11:05}}'], [$report['object'], $report['action'], $report['user'], $report['at']]);
 		$this->assertSame('medisch verslag', $report['changed']['data']['fileName']);
 	}//end testFatmaRecordsTheConsentAndReadsTheReport()
 }//end class
