@@ -18,11 +18,12 @@ affordance is nextcloud-vue's and is not in yet.
   - `@spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md`
 - [x] 1.2 Mark as read and mark as unread, on a case row and on the case
   page (D-5).
-- [ ] 1.2b Mark a single MESSAGE read or unread. Not built: a dossiq
-  message is a `contactmoment` object with its own uuid, so the gesture is
-  the same endpoint on a different schema, but no dossiq surface lists
-  messages with a per-row menu yet. It belongs with the communication
-  panel's own row actions rather than bolted onto this change.
+- [x] 1.2b Mark a single MESSAGE read or unread. A dossiq message is a
+  `contactmoment` object with its own uuid, so the gesture is the case's
+  read-state write on that schema (`src/utils/messageUnread.js`). Offered as
+  row actions on every message list: the case's Communication list, the
+  contact and organisation Contact moments, and the simple layout's case card.
+  - `tests/vitest/messageUnread.spec.js`
 - [x] 1.3 A test that fails when dossiq gains a read marker of its own
   (D-1): `tests/Unit/Architecture/NoLocalReadStateTest.php`, scanning the
   whole of `lib/` and carrying a control so its silence means something.

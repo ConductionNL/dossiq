@@ -4665,7 +4665,24 @@
 											],
 											"sortable": true,
 											"filterable": true,
-											"emptyText": "No contact logged on this case yet"
+											"emptyText": "No contact logged on this case yet",
+											"rowActions": [
+												{
+													"id": "mark-unread",
+													"label": "Mark unread",
+													"icon": "EmailMarkAsUnread",
+													"handler": "markMessageUnread",
+													"type": "handler"
+												},
+												{
+													"id": "mark-read",
+													"label": "Mark read",
+													"icon": "EmailOpenOutline",
+													"handler": "markMessageRead",
+													"type": "handler"
+												}
+											],
+											"_rowActionsNote": "unread-state-on-the-case 1.2b: a message is a contactmoment object, so it is marked read or unread by hand through OpenRegister's read state, the case's own gesture on another schema (markMessageRead, markMessageUnread). dossiq stores no read marker."
 										}
 									}
 								},
@@ -16169,6 +16186,20 @@
 									"icon": "PhoneLogOutline",
 									"type": "open-modal",
 									"target": "ContactMomentDetailDialog"
+								},
+								{
+									"id": "mark-unread",
+									"label": "Mark unread",
+									"icon": "EmailMarkAsUnread",
+									"handler": "markMessageUnread",
+									"type": "handler"
+								},
+								{
+									"id": "mark-read",
+									"label": "Mark read",
+									"icon": "EmailOpenOutline",
+									"handler": "markMessageRead",
+									"type": "handler"
 								}
 							],
 							"emptyText": "No contact moments yet"
@@ -16978,6 +17009,20 @@
 									"icon": "PhoneLogOutline",
 									"type": "open-modal",
 									"target": "ContactMomentDetailDialog"
+								},
+								{
+									"id": "mark-unread",
+									"label": "Mark unread",
+									"icon": "EmailMarkAsUnread",
+									"handler": "markMessageUnread",
+									"type": "handler"
+								},
+								{
+									"id": "mark-read",
+									"label": "Mark read",
+									"icon": "EmailOpenOutline",
+									"handler": "markMessageRead",
+									"type": "handler"
 								}
 							],
 							"emptyText": "No contact moments yet"
