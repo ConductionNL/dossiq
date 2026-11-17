@@ -47,6 +47,8 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -321,10 +323,11 @@ class DrainIntakeObjectsCommand extends Command {
 	private function submit(PortalDrainSetup $setup, array $case): array {
 		try {
 			$answer = $setup->submitter->submit(
-				destination: ['register' => $setup->register, 'schema' => $setup->caseSchema],
-				mapping: null,
-				payload: $case,
-				subject: $setup->admin
+				new FormSubmission(
+					writes: [['register' => $setup->register, 'schema' => $setup->caseSchema, 'mapping' => null]],
+					payload: $case,
+					submitter: new FormSubmitter(subject: $setup->admin)
+				)
 			);
 		} catch (Throwable $e) {
 			$findings = [['property' => '', 'code' => 'refused', 'message' => $e->getMessage()]];

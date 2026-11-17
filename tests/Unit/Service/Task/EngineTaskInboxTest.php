@@ -112,7 +112,9 @@ class EngineTaskInboxTest extends TestCase {
 			 *
 			 * @return mixed The rows.
 			 */
-			public function inbox(object $criteria, int $limit, int $offset): mixed {
+			public function inbox(object $criteria, ?object $page = null): mixed {
+				$limit = ($page?->limit ?? 25);
+				$offset = ($page?->offset ?? 0);
 				$this->seenCriteria = $criteria;
 				$this->seenLimit    = $limit;
 
@@ -502,7 +504,9 @@ class EngineTaskInboxTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The page.
 			 */
-			public function inbox(object $criteria, int $limit, int $offset): array {
+			public function inbox(object $criteria, ?object $page = null): array {
+				$limit = ($page?->limit ?? 25);
+				$offset = ($page?->offset ?? 0);
 				if ($this->first === true) {
 					$this->first = false;
 					throw new RuntimeException('engine down');

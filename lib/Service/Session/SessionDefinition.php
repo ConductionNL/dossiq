@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Session;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 
 /**
  * A validated session of a case type.
@@ -40,6 +41,10 @@ use InvalidArgumentException;
  * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-case-type-declares-the-sessions-a-case-holds-req-css-1
  */
 final class SessionDefinition {
+
+	use ReadsLooseValues {
+		looseConfigText as private text;
+	}
 
 	/**
 	 * The status names a session moves through when the case type names none.
@@ -307,21 +312,4 @@ final class SessionDefinition {
 
 		return $value;
 	}//end flag()
-
-	/**
-	 * A trimmed string value, or '' when absent or not a string.
-	 *
-	 * @param array<array-key, mixed> $config The entry.
-	 * @param string                  $key    The key.
-	 *
-	 * @return string The value.
-	 */
-	private static function text(array $config, string $key): string {
-		$value = ($config[$key] ?? '');
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class

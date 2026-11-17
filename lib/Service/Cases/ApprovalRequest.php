@@ -44,6 +44,7 @@ use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCA\Dossiq\Service\Lifecycle\LoadsCaseOrRefuses;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use RuntimeException;
@@ -57,6 +58,10 @@ use RuntimeException;
  * reader over two arrays with no state and nothing to inject.
  */
 class ApprovalRequest implements ApprovalRequestInterface {
+
+	use LoadsCaseOrRefuses {
+		load as private foundCase;
+	}
 
 	/**
 	 * Constructor.
@@ -95,28 +100,6 @@ class ApprovalRequest implements ApprovalRequestInterface {
 
 		return $this->recordReference(case: $case, link: ['act' => $gate['act'], 'decisionRef' => $decisionRef]);
 	}//end raise()
-
-	/**
-	 * The stored case, refused when it cannot be found.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case is not found.
-	 */
-	private function foundCase(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end foundCase()
 
 	/**
 	 * The approval gate the case type declares for the act.

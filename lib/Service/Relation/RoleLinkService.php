@@ -41,6 +41,7 @@ use OCA\Dossiq\Kernel\Contracts\RoleLinkServiceInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseRegisterReads;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use RuntimeException;
@@ -53,6 +54,9 @@ use RuntimeException;
 class RoleLinkService implements RoleLinkServiceInterface {
 
 	use SearchesObjects;
+	use NamesTheSessionUser {
+		sessionActor as private actor;
+	}
 
 	/**
 	 * Constructor.
@@ -331,19 +335,5 @@ class RoleLinkService implements RoleLinkServiceInterface {
 
 		return false;
 	}//end isLinked()
-
-	/**
-	 * The acting user id from the session.
-	 *
-	 * @return string The user id, or 'system' outside a user session.
-	 */
-	private function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end actor()
 
 }//end class

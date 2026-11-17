@@ -50,6 +50,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\ListQuery;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -308,8 +309,7 @@ class CaseTimeline implements CaseTimelineInterface {
 			if ($object !== null) {
 				$entries = $this->container->get(self::READ_SERVICE)->listForObject(
 					object: $object,
-					visibility: self::PUBLIC_ENTRY,
-					limit: $limit,
+					query: new ListQuery(limit: $limit, filters: ['visibility' => self::PUBLIC_ENTRY]),
 				);
 			}
 		} catch (Throwable $e) {

@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\ReadsCaseActEvents;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -43,7 +44,6 @@ use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCP\Comments\CommentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
-use Throwable;
 
 /**
  * Stamps `lastActivityAt` on the case the work was done on.
@@ -55,6 +55,7 @@ use Throwable;
 class CaseLastActivityListener implements IEventListener {
 
 	use SavedObjectPayload;
+	use ReadsCaseActEvents;
 
 	/**
 	 * The case schema's slug.
@@ -196,46 +197,4 @@ class CaseLastActivityListener implements IEventListener {
 
 		return (string)$after['id'];
 	}//end caseWithMovedStatus()
-
-	/**
-	 * The object a new note was written on.
-	 *
-	 * @param CommentsEvent $event The comment event.
-	 *
-	 * @return string The object uuid, or ''.
-	 */
-	private function notedObject(CommentsEvent $event): string {
-		try {
-			$comment = $event->getComment();
-			if ($event->getEvent() !== 'add' || $comment->getObjectType() !== self::NOTE_OBJECT_TYPE) {
-				return '';
-			}
-
-			return trim($comment->getObjectId());
-		} catch (Throwable) {
-			return '';
-		}
-	}//end notedObject()
-
-	/**
-	 * The case a completed task was on.
-	 *
-	 * A task withdrawn (`terminated`, `disabled`) is not work done.
-	 *
-	 * @param TaskTerminalEvent $event The engine's terminal event.
-	 *
-	 * @return string The case uuid, or ''.
-	 */
-	private function completedTaskCase(TaskTerminalEvent $event): string {
-		try {
-			$task = $event->getTask();
-			if ($event->isCommitted() === false || (string)$task->getState() !== 'completed') {
-				return '';
-			}
-
-			return trim((string)($task->getObjectUuid() ?? ''));
-		} catch (Throwable) {
-			return '';
-		}
-	}//end completedTaskCase()
 }//end class

@@ -34,6 +34,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
 use OCA\Dossiq\Service\Publication\PublicationDateRule;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -49,6 +50,9 @@ use Throwable;
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class PublicationService implements PublicationServiceInterface {
+
+	use RequiresObjectService;
+
 	/**
 	 * Supported publication channels.
 	 */
@@ -116,10 +120,7 @@ class PublicationService implements PublicationServiceInterface {
 			throw new InvalidArgumentException('Invalid publication channel: ' . $channel);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$entry = $this->entryFor(caseId: $caseId, channel: $channel);
 		$case = $this->loadCase(objectService: $objectService, entry: $entry);

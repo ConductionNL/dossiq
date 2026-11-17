@@ -72,6 +72,7 @@ use Throwable;
 class BeroepService {
 
 	use SearchesObjects;
+	use SavesIntoStore;
 
 	/*
 	 * NO VALID_OUTCOMES HERE — it was the whitelist `recordJudgment()` validated
@@ -236,12 +237,7 @@ class BeroepService {
 	 */
 	private function saveAppeal(array $store, array $record): array {
 		try {
-			return ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq beroep: failed to register: ' . $e->getMessage()

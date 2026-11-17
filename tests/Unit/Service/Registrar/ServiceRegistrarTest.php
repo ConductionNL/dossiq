@@ -20,7 +20,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Registrar;
 
-use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
 use OCA\Dossiq\Service\External\Brk\BrkAdapterInterface;
 use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
@@ -68,7 +67,7 @@ class ServiceRegistrarTest extends TestCase {
 
 		(new ServiceRegistrar())->register(context: $context);
 
-		foreach ([SettingsService::class, SigningAdapterInterface::class, BrkAdapterInterface::class, WozAdapterInterface::class, FilterPipeline::class] as $seam) {
+		foreach ([SettingsService::class, BrkAdapterInterface::class, WozAdapterInterface::class, FilterPipeline::class] as $seam) {
 			$this->assertSame(1, count(array_keys($services, $seam, true)), $seam . ' is bound once');
 		}
 
