@@ -259,6 +259,29 @@ class ManifestControllerTest extends TestCase {
 	}//end testManifestCaseTypeViewsAreSecondaryWithADescription()
 
 	/**
+	 * manifest: a pinned case type's view shows the case type's own
+	 * description under its name, and its title when it has none
+	 * (saved-filters-manage-and-defaults REQ-SVM-04).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	public function testManifestCaseTypeViewsShowTheCaseTypeDescription(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-b', 'title' => 'Bezwaar', 'description' => 'Bezwaar tegen een besluit'],
+				['id' => 'uuid-m', 'title' => 'Melding'],
+			]
+		);
+
+		$views = self::views(data: $this->controller(stored: '["uuid-b","uuid-m"]')->manifest()->getData());
+
+		$this->assertSame(expected: ['Bezwaar', 'Melding'], actual: array_column($views, 'name'));
+		$this->assertSame(expected: ['Bezwaar tegen een besluit', 'Melding'], actual: array_column($views, 'description'));
+	}//end testManifestCaseTypeViewsShowTheCaseTypeDescription()
+
+	/**
 	 * manifest: a pinned case type the user's team does not handle gets no view.
 	 *
 	 * @return void

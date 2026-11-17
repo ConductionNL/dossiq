@@ -78,7 +78,7 @@ final class CaseTypeViews implements CaseTypeViewsInterface {
 	 * title and placed under "More default views" (`secondary`). The Woo
 	 * request case type is left out: the page ships that view itself.
 	 *
-	 * @param array<int, array{id: string, title: string, icon?: string}> $caseTypes The pinned case types.
+	 * @param array<int, array{id: string, title: string, icon?: string, description?: string}> $caseTypes The pinned case types.
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>, icon?: string}>
 	 *
@@ -95,7 +95,7 @@ final class CaseTypeViews implements CaseTypeViewsInterface {
 			$view = [
 				'slug' => $this->slugFor(caseTypeId: $id),
 				'name' => (string)$caseType['title'],
-				'description' => (string)$caseType['title'],
+				'description' => $this->descriptionOf(caseType: $caseType),
 				'secondary' => true,
 				'filters' => ['caseType' => $id, 'statusHiddenInLists' => false, 'isDraft' => false],
 			];
@@ -140,7 +140,7 @@ final class CaseTypeViews implements CaseTypeViewsInterface {
 	 * under "More default views" (`secondary`) and described so the panel does
 	 * not show the case type's id while it resolves the filter.
 	 *
-	 * @param array<string, array{id: string, title: string}> $byIdentifier The instance's case types, by identifier.
+	 * @param array<string, array{id: string, title: string, description?: string}> $byIdentifier The instance's case types, by identifier.
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>}> The views.
 	 *
@@ -156,7 +156,7 @@ final class CaseTypeViews implements CaseTypeViewsInterface {
 
 			$description = $view['description'];
 			if ($description === '') {
-				$description = (string)$caseType['title'];
+				$description = $this->descriptionOf(caseType: $caseType);
 			}
 
 			$views[] = [
@@ -198,6 +198,25 @@ final class CaseTypeViews implements CaseTypeViewsInterface {
 			array_values($caseTypes)
 		);
 	}//end menuEntries()
+
+	/**
+	 * The line a case type's view shows under its name: the case type's own
+	 * description, or its title when it has none.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return string The description.
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	private function descriptionOf(array $caseType): string {
+		$description = ($caseType['description'] ?? '');
+		if (is_string($description) === true && trim($description) !== '') {
+			return trim($description);
+		}
+
+		return (string)$caseType['title'];
+	}//end descriptionOf()
 
 	/**
 	 * The icon a case type names, or '' when it names none.
