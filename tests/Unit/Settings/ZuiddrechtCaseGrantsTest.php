@@ -31,7 +31,7 @@ class ZuiddrechtCaseGrantsTest extends TestCase {
 	/**
 	 * The fields OpenRegister lets an example set write on a grant (ExampleSetGrants::FIELDS, plus the row key).
 	 */
-	private const GRANT_FIELDS = ['key', 'object', 'type', 'shareWith', 'sharedBy', 'permissions', 'verbs', 'sharedAt', 'expiresAt'];
+	private const GRANT_FIELDS = ['object', 'type', 'shareWith', 'sharedBy', 'permissions', 'verbs', 'sharedAt', 'expiresAt'];
 
 	/**
 	 * The fragment with its parts' lists appended, as the loader reads it.
@@ -83,7 +83,7 @@ class ZuiddrechtCaseGrantsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheLindelaanCaseIsSharedWithJuridischeZakenByPieter(): void {
-		$grant = $this->grant(key: 'woo-fietspad-juridische-zaken');
+		$grant = $this->grant(key: 'woo-fietspad-juridische-zaken')['data'];
 
 		$this->assertSame(expected: '{{object:woo-fietspad-besluitklaar.id}}', actual: $grant['object']);
 		$this->assertSame(expected: 'group', actual: $grant['type']);
@@ -125,12 +125,19 @@ class ZuiddrechtCaseGrantsTest extends TestCase {
 		$this->assertNotSame(expected: [], actual: $grants);
 
 		foreach ($grants as $grant) {
-			$this->assertSame(expected: [], actual: array_values(array_diff(array_keys($grant), self::GRANT_FIELDS)), message: (string)($grant['key'] ?? ''));
-			foreach (['key', 'object', 'type', 'shareWith', 'sharedBy'] as $required) {
-				$this->assertNotSame(expected: '', actual: (string)($grant[$required] ?? ''), message: $required);
+			// OpenRegister reads a grant as a keyed row, {key, data: {...}}
+			// (ExampleSetFragmentShape::keyedRow), and refuses any other shape.
+			$this->assertSame(expected: ['key', 'data'], actual: array_keys($grant));
+			$this->assertNotSame(expected: '', actual: (string)$grant['key']);
+			$this->assertIsArray(actual: $grant['data']);
+
+			$data = $grant['data'];
+			$this->assertSame(expected: [], actual: array_values(array_diff(array_keys($data), self::GRANT_FIELDS)), message: (string)$grant['key']);
+			foreach (['object', 'type', 'shareWith', 'sharedBy'] as $required) {
+				$this->assertNotSame(expected: '', actual: (string)($data[$required] ?? ''), message: $required);
 			}
 
-			$this->assertContains(needle: $grant['type'], haystack: ['user', 'group']);
+			$this->assertContains(needle: $data['type'], haystack: ['user', 'group']);
 		}
 
 	}//end testEveryGrantHasOnlyFieldsASetMayWrite()

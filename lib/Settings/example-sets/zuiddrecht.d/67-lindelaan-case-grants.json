@@ -3,13 +3,15 @@
 	"grants": [
 		{
 			"key": "woo-fietspad-juridische-zaken",
-			"object": "{{object:woo-fietspad-besluitklaar.id}}",
-			"type": "group",
-			"shareWith": "{{cast:juridische-zaken.gid}}",
-			"permissions": 1,
-			"sharedBy": "{{cast:pieter.uid}}",
-			"sharedAt": "{{datetime:-11 10:00}}",
-			"expiresAt": "{{date:14}}"
+			"data": {
+				"object": "{{object:woo-fietspad-besluitklaar.id}}",
+				"type": "group",
+				"shareWith": "{{cast:juridische-zaken.gid}}",
+				"permissions": 1,
+				"sharedBy": "{{cast:pieter.uid}}",
+				"sharedAt": "{{datetime:-11 10:00}}",
+				"expiresAt": "{{date:14}}"
+			}
 		}
 	]
 }
