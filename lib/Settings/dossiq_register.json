@@ -3413,33 +3413,40 @@
                             "properties": {
                                 "kind": {
                                     "type": "string",
+                                    "title": "Kind",
                                     "description": "The obligation kind, as the case type lists it under obligationKinds."
                                 },
                                 "title": {
                                     "type": "string",
+                                    "title": "What is awaited",
                                     "description": "What is awaited, in the words the applicant reads."
                                 },
                                 "holderName": {
                                     "type": "string",
+                                    "title": "Holder",
                                     "description": "The person the form named to do it."
                                 },
                                 "holderEmail": {
                                     "type": "string",
+                                    "title": "Holder email",
                                     "format": "email",
                                     "description": "Where the portal sent that person the link."
                                 },
                                 "holderSubject": {
                                     "type": "string",
+                                    "title": "Holder portal subject",
                                     "maxLength": 255,
                                     "description": "The pseudonymous portal subject of that person, never a BSN. Only this subject may sign or refuse the entry from the portal; an entry without one cannot be settled there."
                                 },
                                 "dueAt": {
                                     "type": "string",
+                                    "title": "Due",
                                     "format": "date",
                                     "description": "The last day it can be done."
                                 },
                                 "state": {
                                     "type": "string",
+                                    "title": "State",
                                     "enum": [
                                         "awaiting",
                                         "signed",
@@ -3450,6 +3457,7 @@
                                 },
                                 "settledAt": {
                                     "type": "string",
+                                    "title": "Settled at",
                                     "format": "date-time",
                                     "description": "When it was signed, refused or expired."
                                 }
