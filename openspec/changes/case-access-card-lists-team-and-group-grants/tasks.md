@@ -2,7 +2,8 @@
 
 ## 0. Dependencies
 - [x] 0.1 openregister `an-object-lists-its-grants-with-their-origin` merged: `GET /api/objects/{r}/{s}/{id}/grants` and the `readGrants` verb
-- [ ] 0.2 nextcloud-vue record list `sections` (one card, several sources) and `meta.cases` with `op: contains` (design D-5)
+- [x] 0.2 nextcloud-vue record list `sections` (one card, several sources) and `meta.cases` with `op: contains` (design D-5)
+  - In @conduction/nextcloud-vue 2.181.0 (`CnRecordListWidget` `sections`, `meta.cases`, the `contains` operator), the version package-lock.json already pins; the card's vitest passes on it.
 - [x] 0.3 people-tab-access-card merged (the card this change extends)
 
 ## 1. Who may read a case's grants
