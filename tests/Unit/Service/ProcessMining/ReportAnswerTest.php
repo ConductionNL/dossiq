@@ -100,7 +100,7 @@ class ReportAnswerTest extends TestCase {
 			$json = $this->answer()->json(report: $report, view: $view);
 
 			$this->assertSame(
-				expected: ['period', 'clock', 'caseTypes', 'extra', 'labels', 'summary', 'dwell', 'throughput', 'bottlenecks', 'byAssignee'],
+				expected: ['period', 'clock', 'caseTypes', 'extra', 'labels', 'summary', 'dwell', 'throughput', 'bottlenecks', 'byAssignee', 'heatmap'],
 				actual: array_keys($json),
 				message: var_export($view, true)
 			);

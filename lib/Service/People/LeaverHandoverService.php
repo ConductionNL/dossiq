@@ -62,12 +62,12 @@ use OCA\Dossiq\Kernel\Contracts\LeaverHandoverServiceInterface;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\DelegatesToDossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -78,6 +78,7 @@ use Throwable;
 class LeaverHandoverService implements LeaverHandoverServiceInterface {
 
 	use SearchesObjects;
+	use DelegatesToDossierRegister;
 
 	/**
 	 * How many rows one draft lookup reads.
@@ -523,28 +524,4 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 			'schema' => 'caseType',
 		];
 	}//end draftEntry()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		return $this->dossierRegister->context();
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 }//end class

@@ -627,6 +627,25 @@
 								"prompt": "Cases waiting for your teams show here"
 							}
 						}
+					},
+					{
+						"id": "on-time-against-target",
+						"kind": "kpi-target-gauge",
+						"label": "Cases on time against target",
+						"_note": "REQ-CRS-35 (row 10.1): a KPI as a gauge. The share of this month's closed cases that met their deadline (the SLA Compliance tile's figure), drawn against a target of 90% and said in words: \"80% of target 90%\". The figure is null for a reader without the controller role, and the gauge then says it is not available rather than drawing 0.",
+						"widget": {
+							"type": "kpi-target-gauge",
+							"title": "Cases on time against target",
+							"icon": "Gauge",
+							"content": {
+								"label": "Cases on time against target",
+								"endpoint": "/apps/dossiq/api/dashboard/kpis",
+								"valueField": "slaCompliance",
+								"target": 90,
+								"max": 100,
+								"format": { "decimals": 0, "suffix": "%" }
+							}
+						}
 					}
 				],
 				"_userWidgetsNote": "REQ-DASH-031 (archived as REQ-DASH-024), my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
@@ -10348,6 +10367,49 @@
 						}
 					},
 					{
+						"id": "pm-dwell-heatmap",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-dwell-heatmap",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The same dwell figures as Dwell time by status, laid out by week, so declared for the same audience.",
+						"_note": "REQ-CRS-36 (row 10.4): statuses against weeks, each cell the median dwell of the visits entered that week, the darkest cell the longest. Each cell prints its median, so a cell names its value when read. A week a status had no visit in is blank, not 0.",
+						"type": "chart",
+						"title": "Dwell time heatmap",
+						"subtitle": "Median hours per status, by the week the case entered it",
+						"content": {
+							"chartKind": "matrix",
+							"matrixLabelWidth": 200,
+							"valueFormat": {
+								"name": "number",
+								"decimals": 1,
+								"suffix": " h"
+							},
+							"footnote": "The darker, the longer cases waited in that status that week. A blank cell means no case entered the status that week.",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "heatmap"
+								},
+								"responsePath": "heatmap",
+								"labelsPath": "columns",
+								"rowsPath": "rows",
+								"rowLabelPath": "label",
+								"rowValuesPath": "values"
+							},
+							"emptyLabel": "No dwell-time data available"
+						}
+					},
+					{
 						"id": "pm-complaint-kpis",
 						"roles": [
 							"controllers",
@@ -10796,10 +10858,19 @@
 						"sizeToContent": true
 					},
 					{
+						"id": 27,
+						"widgetId": "pm-dwell-heatmap",
+						"gridX": 0,
+						"gridY": 29,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"sizeToContent": true
+					},
+					{
 						"id": 20,
 						"widgetId": "pm-complaint-kpis",
 						"gridX": 0,
-						"gridY": 29,
+						"gridY": 35,
 						"gridWidth": 12,
 						"gridHeight": 3,
 						"sizeToContent": true
@@ -10808,7 +10879,7 @@
 						"id": 21,
 						"widgetId": "pm-complaint-finding",
 						"gridX": 0,
-						"gridY": 32,
+						"gridY": 38,
 						"gridWidth": 12,
 						"gridHeight": 3,
 						"sizeToContent": true
@@ -10817,7 +10888,7 @@
 						"id": 22,
 						"widgetId": "pm-complaints-by-category",
 						"gridX": 0,
-						"gridY": 35,
+						"gridY": 41,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10826,7 +10897,7 @@
 						"id": 23,
 						"widgetId": "pm-complaints-by-department",
 						"gridX": 6,
-						"gridY": 35,
+						"gridY": 41,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10835,7 +10906,7 @@
 						"id": 24,
 						"widgetId": "pm-complaints-by-channel",
 						"gridX": 0,
-						"gridY": 39,
+						"gridY": 45,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10844,7 +10915,7 @@
 						"id": 25,
 						"widgetId": "pm-complaints-by-month",
 						"gridX": 6,
-						"gridY": 39,
+						"gridY": 45,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10853,7 +10924,7 @@
 						"id": 26,
 						"widgetId": "pm-complaint-resolution",
 						"gridX": 0,
-						"gridY": 43,
+						"gridY": 49,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"sizeToContent": true

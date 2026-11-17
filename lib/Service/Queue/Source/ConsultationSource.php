@@ -34,6 +34,9 @@ use OCP\IL10N;
  * @spec openspec/specs/my-work/spec.md
  */
 class ConsultationSource extends RegisterBackedSource {
+
+	use WaitingRequestItems;
+
 	/**
 	 * The statuses a consultation is still waiting in.
 	 *
@@ -117,16 +120,11 @@ class ConsultationSource extends RegisterBackedSource {
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
-		$items = [];
-		foreach ($this->rows(schema: 'consultation', filters: ['assignee' => $userId]) as $row) {
-			$id = $this->idOf(row: $row);
-			if ($rows->isWaiting(id: $id, row: $row) === true) {
-				$items[] = $this->itemOf(row: $row, id: $id);
-			}
-		}
-
-		return $items;
+		return $this->waitingItems(
+			schema: 'consultation',
+			filters: ['assignee' => $userId],
+			itemOf: fn (array $row, string $id): QueueItem => $this->itemOf(row: $row, id: $id)
+		);
 	}//end itemsFor()
 
 	/**

@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Milestone;
 use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -51,6 +52,7 @@ use RuntimeException;
 class MilestoneRepository implements MilestoneRepositoryInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * Reads a configured schema, or answers an empty list when it cannot.
@@ -82,10 +84,7 @@ class MilestoneRepository implements MilestoneRepositoryInterface {
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function findDefinitions(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('milestone_definition_schema');

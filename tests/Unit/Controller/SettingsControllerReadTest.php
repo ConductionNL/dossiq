@@ -138,7 +138,7 @@ class SettingsControllerReadTest extends TestCase {
 	}//end signIn()
 
 	/**
-	 * An admin gets the full settings, with OpenRegister and LibreSign present and no hint.
+	 * An admin gets the full settings, with OpenRegister and filinq present and no hint.
 	 *
 	 * @return void
 	 */
@@ -147,7 +147,7 @@ class SettingsControllerReadTest extends TestCase {
 		$this->groups->expects($this->once())->method('isAdmin')->with('admin')->willReturn(true);
 		$this->settings->expects($this->once())->method('getSettings')->willReturn(['register' => '5', 'secret' => 'x']);
 		$this->settings->expects($this->never())->method('getPublicSettings');
-		$this->appManager->method('isEnabledForUser')->with('libresign')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->with('filinq')->willReturn(true);
 		$this->appManager->method('getInstalledApps')->willReturn(['files', 'openregister']);
 
 		$response = $this->controller()->index();
@@ -158,15 +158,15 @@ class SettingsControllerReadTest extends TestCase {
 				'openRegisters' => true,
 				'isAdmin' => true,
 				'config' => ['register' => '5', 'secret' => 'x'],
-				'libresignAvailable' => true,
-				'libresignHint' => null,
+				'signingAvailable' => true,
+				'signingHint' => null,
 			],
 			$response->getData()
 		);
 	}//end testAnAdminGetsTheFullSettings()
 
 	/**
-	 * A user who is not an admin gets the public settings and the LibreSign hint when it is missing.
+	 * A user who is not an admin gets the public settings and the signing hint when filinq is missing.
 	 *
 	 * @return void
 	 */
@@ -183,8 +183,8 @@ class SettingsControllerReadTest extends TestCase {
 		$this->assertFalse($data['isAdmin']);
 		$this->assertFalse($data['openRegisters']);
 		$this->assertSame(['register' => '5'], $data['config']);
-		$this->assertFalse($data['libresignAvailable']);
-		$this->assertStringStartsWith('NL: LibreSign is not installed or enabled.', $data['libresignHint']);
+		$this->assertFalse($data['signingAvailable']);
+		$this->assertStringStartsWith('NL: Filinq is not installed or enabled', $data['signingHint']);
 	}//end testANonAdminGetsThePublicSettingsAndTheHint()
 
 	/**

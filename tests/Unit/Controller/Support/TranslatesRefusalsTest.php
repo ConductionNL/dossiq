@@ -221,4 +221,25 @@ final class TranslatesRefusalsTest extends TestCase {
 		$this->assertSame('The case is closed.', $response->getData()['message']);
 		$this->assertSame('case_closed', $response->getData()['code']);
 	}//end testWithoutAnyTranslatorTheSentenceGoesOutAsWritten()
+	/**
+	 * A controller that does not override refusalL10n() has no translator of its own.
+	 *
+	 * @return void
+	 */
+	public function testTheDefaultOwnTranslatorIsNone(): void {
+		$controller = new class {
+			use TranslatesRefusals;
+
+			/**
+			 * The trait's own translator, exposed.
+			 *
+			 * @return IL10N|null The translator.
+			 */
+			public function ownTranslator(): ?IL10N {
+				return $this->refusalL10n();
+			}
+		};
+
+		$this->assertNull($controller->ownTranslator());
+	}//end testTheDefaultOwnTranslatorIsNone()
 }//end class

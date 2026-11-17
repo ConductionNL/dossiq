@@ -73,7 +73,9 @@ class DuplicatePolicyDeclarationTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function checkCandidate(string $register, string $schema, array $candidate): mixed {
+			public function checkCandidate(object $request, array $candidate): mixed {
+				$register = $request->register;
+				$schema = $request->schema;
 				$this->candidates[] = ['register' => $register, 'schema' => $schema, 'candidate' => $candidate];
 				return $this->matches;
 			}

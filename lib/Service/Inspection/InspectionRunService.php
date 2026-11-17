@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Inspection;
 
 use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use RuntimeException;
@@ -48,6 +49,9 @@ use Throwable;
  */
 class InspectionRunService implements InspectionRunServiceInterface {
 	use SearchesObjects;
+	use ReadsLooseValues {
+		looseList as private arrayOrEmpty;
+	}
 
 	/**
 	 * How many runs one case answers.
@@ -200,23 +204,6 @@ class InspectionRunService implements InspectionRunServiceInterface {
 
 		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, metadata: $metadata);
 	}//end asRun()
-
-	/**
-	 * The value when it is an array, else the empty array.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return array<mixed> The array.
-	 *
-	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
-	 */
-	private function arrayOrEmpty(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end arrayOrEmpty()
 
 	/**
 	 * The run's identity, who did it, when and with what result.

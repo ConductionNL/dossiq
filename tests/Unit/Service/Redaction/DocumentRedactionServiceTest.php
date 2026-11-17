@@ -239,14 +239,18 @@ class DocumentRedactionServiceTest extends TestCase {
 	private function fileService(): object {
 		$stored = &$this->stored;
 
-		return new class($stored) {
+		$file = $this->createMock(originalClassName: File::class);
+		$file->method('getId')->willReturn(7001);
+
+		return new class($stored, $file) {
 
 			/**
 			 * Constructor.
 			 *
 			 * @param array<string, string> $stored Where the files go.
+			 * @param File                  $file   The stored file openregister answers.
 			 */
-			public function __construct(private array &$stored) {
+			public function __construct(private array &$stored, private File $file) {
 			}
 
 			/**
@@ -264,17 +268,7 @@ class DocumentRedactionServiceTest extends TestCase {
 			public function addFile(string $objectEntity, string $fileName, string $content, bool $share = false, array $tags = [], string $registerId = ''): object {
 				$this->stored[$fileName] = $objectEntity . ':' . $content;
 
-				return new class {
-
-					/**
-					 * The stored file's id.
-					 *
-					 * @return int
-					 */
-					public function getFileId(): int {
-						return 7001;
-					}
-				};
+				return $this->file;
 			}
 		};
 	}//end fileService()
@@ -297,7 +291,7 @@ class DocumentRedactionServiceTest extends TestCase {
 					return [];
 				}
 
-				$file = $this->createMock(File::class);
+				$file = $this->createMock(originalClassName: File::class);
 				$file->method('getId')->willReturn($id);
 				$file->method('getName')->willReturn($files[$id]);
 				$file->method('getSize')->willReturn(1234);

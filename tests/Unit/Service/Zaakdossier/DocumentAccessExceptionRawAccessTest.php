@@ -12,19 +12,19 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Listener\RestrictedDocumentHandlerListener;
-use OCA\Dossiq\Service\Beschikking\LibresignResultAssembler;
+use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Redaction\RedactedCopyRecorder;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
+use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
+use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\FileRestrictionMirror;
 use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
-use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCP\Files\File;
-use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -212,27 +212,22 @@ class DocumentAccessExceptionRawAccessTest extends TestCase {
 				: null
 		);
 		$this->files->expects($this->once())->method('restrict')->with(88, ['pieter'], ['woo-team'], 'Prijzen');
-		$signed = $this->createMock(File::class);
-		$signed->method('getContent')->willReturn('%PDF signed');
-		$folder = $this->createMock(Folder::class);
-		$folder->method('getFirstNodeById')->willReturn($signed);
-		$folder->method('getById')->willReturn([$signed]);
-		$root = $this->createMock(IRootFolder::class);
-		$root->method('getUserFolder')->willReturn($folder);
-		$documents = $this->createMock(ZgwDocumentService::class);
-		$documents->method('getFileId')->willReturn(88);
-		$readers = $this->readers();
-		$assembler = new LibresignResultAssembler(
-			rootFolder: $root,
-			documentService: $documents,
-			signedVersionOf: static fn (string $originalId, int $fileId, string $signatory): bool => $readers->inheritFromId(
-				originalId: $originalId,
-				fileId: $fileId,
-				madeBy: $signatory
-			),
+		$repository = $this->createMock(BeschikkingRepository::class);
+		$repository->method('find')->willReturn(
+			[
+				'id' => 'dec-1',
+				'currentStatus' => 'approved',
+				'compositeContent' => ['fileId' => 'doc-r'],
+				'signing' => ['state' => 'requested', 'requestId' => 'req-1', 'signatory' => 'pieter', 'level' => 'SES'],
+			]
 		);
+		$stateMachine = $this->createMock(StateMachineService::class);
+		$stateMachine->method('validateTransition')->willReturn(true);
+		$recorder = new SigningConclusionRecorder(repository: $repository, stateMachine: $stateMachine, readers: $this->readers());
 
-		$assembler->assembleSignedResult(fileId: 'doc-r', signatory: 'pieter', uuid: 'ls-1', status: ['file' => ['signedFileId' => 5]]);
+		$conclusion = new SigningConclusion(decisionId: 'dec-1', requestId: 'req-1', status: 'signed', signedDocumentRef: '88', signedAt: null);
+
+		$this->assertTrue($recorder->record(conclusion: $conclusion));
 	}//end testASignedVersionCarriesTheOriginalsException()
 
 	public function testAHandlerThatCannotBeReadIsDroppedNotKept(): void {

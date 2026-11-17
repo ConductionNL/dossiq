@@ -467,13 +467,12 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	 * @return array<string, mixed>|null
 	 */
 	private function findEscalation(string $escalationId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->escalationStore();
+		if ($store === null) {
 			return null;
 		}
 
+		[$objectService, $register, $schema] = $store;
 		try {
 			return $this->findObjectAsArray(
 				objectService: $objectService,

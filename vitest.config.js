@@ -83,7 +83,11 @@ module.exports = {
 				// Inline Vue 2 + Nextcloud packages so Vite transforms their
 				// .css side-effect imports through the cssNoop plugin above,
 				// for the (jsdom-opted-in) component specs that import them.
-				inline: [/@nextcloud\/vue/, /vue-material-design-icons/],
+				// @nextcloud/dialogs too: since @nextcloud/vue 9.13 its upload
+				// code reaches the dialogs' conflict picker, which imports
+				// @nextcloud/vue components and their .css; left external,
+				// Node loads that .css natively and refuses it.
+				inline: [/@nextcloud\/vue/, /@nextcloud\/dialogs/, /vue-material-design-icons/],
 			},
 		},
 	},

@@ -146,6 +146,7 @@
         "OpenRegister",
         "{minutes} min {seconds} s",
         "{seconds} s",
+        "{recipientParties.0}",
         "Registry",
         "E-mail",
         "Thematiq",

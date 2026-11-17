@@ -58,7 +58,7 @@ final class ReportRequestDisplayTest extends TestCase {
 
 	public function testAnUnknownViewIsRefusedWithTheChoices(): void {
 		$this->assertSame(
-			'view must be one of summary, dwell, throughput, bottlenecks, byAssignee',
+			'view must be one of summary, dwell, throughput, bottlenecks, byAssignee, heatmap',
 			$this->requests->refusal(query: $this->query(['view' => 'gantt']))
 		);
 	}//end testAnUnknownViewIsRefusedWithTheChoices()

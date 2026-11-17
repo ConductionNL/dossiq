@@ -68,7 +68,7 @@ test.describe('A Woo term is computed by law', () => {
 		const created = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Woo-verzoek over de ringweg`,
 			caseType: objectId(caseType),
-			startDate: '2026-11-27',
+			registrationDate: '2026-11-27',
 		})
 		const caseId = objectId(created)
 

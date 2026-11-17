@@ -22,9 +22,9 @@
  * the mock LOUDLY: a translated warning in the log, and a Simulated row on the
  * Integrations page, which is the half a reader actually sees.
  *
- * The shape is the `SigningAdapterInterface` one that already shipped in
- * {@see BeschikkingAdapterRegistrar}: probe, use the real thing when it is
- * there, fall back with a translated warning when it is not.
+ * The shape is the one the signing seam had before signing moved to filinq:
+ * probe, use the real thing when it is there, fall back with a translated
+ * warning when it is not.
  *
  * @category AppInfo
  * @package  OCA\Dossiq\Service\Registrar
@@ -102,26 +102,41 @@ final class ConfiguredAdapter {
 	): object {
 		$logger = $container->get(LoggerInterface::class);
 		$named = self::named(container: $container, configKey: $configKey, mockClass: $mockClass, defaultClass: $defaultClass);
-
-		if ($named === '') {
-			$logger->warning($fallbackReason, ['app' => AppIdentity::APP_ID, 'configKey' => $configKey]);
-
-			return $container->get($mockClass);
-		}
-
-		if ($named === $mockClass && $chosenMockReason !== null) {
-			$logger->warning($chosenMockReason, ['app' => AppIdentity::APP_ID, 'configKey' => $configKey]);
-
-			return $container->get($mockClass);
-		}
-
 		$binding = new AdapterBinding(container: $container, logger: $logger, configKey: $configKey, named: $named);
-		if (self::isUnusable(binding: $binding, interface: $interface) === true) {
+		$mock = ['class' => $mockClass, 'fallbackReason' => $fallbackReason, 'chosenMockReason' => $chosenMockReason];
+		if (self::mockIsAsked(binding: $binding, mock: $mock) === true || self::isUnusable(binding: $binding, interface: $interface) === true) {
 			return $container->get($mockClass);
 		}
 
 		return self::buildNamed(binding: $binding, mockClass: $mockClass);
 	}//end resolve()
+
+	/**
+	 * Whether the key names no adapter, or names the mock itself; logged when so.
+	 *
+	 * @param AdapterBinding       $binding The container, logger, config key and the class the key names.
+	 * @param array<string, mixed> $mock    The built-in mock as `class`, the translated sentences for an empty key
+	 *                                      as `fallbackReason` and for a chosen mock as `chosenMockReason` (or null).
+	 *
+	 * @return bool True when the mock runs.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private static function mockIsAsked(AdapterBinding $binding, array $mock): bool {
+		if ($binding->named === '') {
+			$binding->logger->warning($mock['fallbackReason'], ['app' => AppIdentity::APP_ID, 'configKey' => $binding->configKey]);
+
+			return true;
+		}
+
+		if ($binding->named === $mock['class'] && $mock['chosenMockReason'] !== null) {
+			$binding->logger->warning($mock['chosenMockReason'], ['app' => AppIdentity::APP_ID, 'configKey' => $binding->configKey]);
+
+			return true;
+		}
+
+		return false;
+	}//end mockIsAsked()
 
 	/**
 	 * Whether the named class is missing or does not implement the seam, logged when so.
