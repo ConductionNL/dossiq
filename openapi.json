@@ -9712,48 +9712,6 @@
                 }
             }
         },
-        "/cases/{caseId}/notes/push": {
-            "post": {
-                "operationId": "notes-push",
-                "summary": "Send one case note to the neighbouring register, or say why it stayed",
-                "description": "Send one case note to the neighbouring register, or say why it stayed. A DELIBERATE ACT RATHER THAN A HOOK ON SAVE, and that is measured rather than preferred. Note storage is OpenRegister's entirely (ADR-022): this app never reads or writes a note, and OpenRegister dispatches no note-saved event dossiq could listen for. `notes#mention` beside this method exists for the same reason and works the same way, as a call the frontend makes after the note is already stored. Pushing on save needs an event that does not exist yet, and that is an openregister row. The GUARD IS MUTATION, not read. Sending a note to another organisation is externally visible and not undoable, so it refuses what a change to the case would refuse rather than what reading it would. Needs a signed-in Nextcloud user.",
-                "tags": [
-                    "notes"
-                ],
-                "parameters": [
-                    {
-                        "name": "caseId",
-                        "in": "path",
-                        "required": true,
-                        "description": "The case the note is on.",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The request succeeded.",
-                        "headers": {
-                            "API-Version": {
-                                "$ref": "#/components/headers/API-Version"
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/Problem400"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Problem401"
-                    }
-                }
-            }
-        },
         "/cases/{caseId}/notices-of-default": {
             "get": {
                 "operationId": "case-notices-of-default-index",
