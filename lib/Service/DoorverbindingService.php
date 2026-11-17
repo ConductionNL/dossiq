@@ -165,15 +165,7 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function acceptTransfer(string $doorverbindingId, string $callerUid = ''): array {
-		$current = $this->load(doorverbindingId: $doorverbindingId);
-		if (($current['accepted'] ?? null) !== null) {
-			throw new RuntimeException('Doorverbinding already answered');
-		}
-
-		$assignedTo = ($current['toEmployeeId'] ?? null);
-		if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
-			throw new RuntimeException('Not authorized to answer this doorverbinding');
-		}
+		$this->assertAnswerable(doorverbindingId: $doorverbindingId, callerUid: $callerUid);
 
 		return $this->update(
 			doorverbindingId: $doorverbindingId,
@@ -203,15 +195,7 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 			throw new RuntimeException('Rejection reason is required');
 		}
 
-		$current = $this->load(doorverbindingId: $doorverbindingId);
-		if (($current['accepted'] ?? null) !== null) {
-			throw new RuntimeException('Doorverbinding already answered');
-		}
-
-		$assignedTo = ($current['toEmployeeId'] ?? null);
-		if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
-			throw new RuntimeException('Not authorized to answer this doorverbinding');
-		}
+		$this->assertAnswerable(doorverbindingId: $doorverbindingId, callerUid: $callerUid);
 
 		return $this->update(
 			doorverbindingId: $doorverbindingId,
@@ -221,6 +205,28 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 			],
 		);
 	}//end rejectTransfer()
+
+	/**
+	 * Refuse when the doorverbinding is already answered or the caller is not its recipient.
+	 *
+	 * @param string $doorverbindingId The doorverbinding UUID.
+	 * @param string $callerUid        The UID of the medewerker answering, or ''.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When already answered or the caller is not the assigned recipient.
+	 */
+	private function assertAnswerable(string $doorverbindingId, string $callerUid): void {
+		$current = $this->load(doorverbindingId: $doorverbindingId);
+		if (($current['accepted'] ?? null) !== null) {
+			throw new RuntimeException('Doorverbinding already answered');
+		}
+
+		$assignedTo = ($current['toEmployeeId'] ?? null);
+		if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
+			throw new RuntimeException('Not authorized to answer this doorverbinding');
+		}
+	}//end assertAnswerable()
 
 	/**
 	 * Append handover notes to a doorverbinding without overwriting prior notes.

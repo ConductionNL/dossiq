@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\DocumentSeries;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 
 /**
  * One series' configuration, read from `documentSeries.<series>` on a case type.
@@ -41,6 +42,10 @@ use InvalidArgumentException;
  * @spec openspec/specs/numbered-document-series/spec.md
  */
 final class SeriesDefinition {
+
+	use ReadsLooseValues {
+		looseTextOr as private trimmedOr;
+	}
 
 	/**
 	 * Every listing numbers its documents 1..n again, so a removed document leaves no gap.
@@ -170,24 +175,6 @@ final class SeriesDefinition {
 			numberField: $numberField,
 		);
 	}//end fromArray()
-
-	/**
-	 * A configured text, trimmed, or the default when it is no text or blank.
-	 *
-	 * @param mixed  $value   The configured value.
-	 * @param string $default The default.
-	 *
-	 * @return string The text.
-	 *
-	 * @spec openspec/specs/numbered-document-series/spec.md
-	 */
-	private static function trimmedOr(mixed $value, string $default): string {
-		if (is_string($value) === true && trim($value) !== '') {
-			return trim($value);
-		}
-
-		return $default;
-	}//end trimmedOr()
 
 	/**
 	 * The sort keys of a configuration block, each as field and direction.

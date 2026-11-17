@@ -24,6 +24,7 @@ description:
       workflows. Built on Open Register, it integrates with the Nextcloud ecosystem
       and supports process automation and standardisation for both government and
       commercial organisations.
+      Conduction maintains this component within the Nextcloud ISV programme.
     features:
       - Business process modelling and execution
       - Workflow automation
@@ -39,6 +40,7 @@ description:
       uit te voeren en te monitoren. Gebouwd op Open Register integreert het met het
       Nextcloud-ecosysteem en ondersteunt procesautomatisering en -standaardisatie
       voor zowel overheids- als commerciële organisaties.
+      Conduction onderhoudt dit component binnen het Nextcloud ISV-programma.
     features:
       - Bedrijfsprocessen modelleren en uitvoeren
       - Workflowautomatisering
@@ -51,7 +53,12 @@ legal:
   repoOwner: "Conduction B.V."
 
 maintenance:
-  type: community
+  type: contract
+  contractors:
+    - name: Conduction B.V.
+      until: "2028-12-31"
+      email: info@conduction.nl
+      website: https://conduction.nl
   contacts:
     - name: Conduction B.V.
       email: info@conduction.nl

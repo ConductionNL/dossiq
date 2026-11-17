@@ -31,8 +31,8 @@ namespace OCA\Dossiq\Service\Publication;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRecordedDeliveryInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,7 +49,7 @@ class CasePublicationState {
 	/**
 	 * The failure a delivery answers when its set cannot be written first.
 	 */
-	public const SET_NOT_WRITTEN = WooDeliveredSetWriter::SET_NOT_WRITTEN;
+	public const SET_NOT_WRITTEN = WooRecordedDeliveryInterface::SET_NOT_WRITTEN;
 
 	/**
 	 * Constructor.
@@ -57,14 +57,14 @@ class CasePublicationState {
 	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
-	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
+	 * @param WooRecordedDeliveryInterface|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
 	 * @param WithheldListRecorderInterface|null $withheldRecorder Records what a publication withheld in opencatalogi.
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,
-		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
+		private readonly ?WooRecordedDeliveryInterface $deliveredSets = null,
 		private readonly ?WithheldListRecorderInterface $withheldRecorder = null,
 	) {
 	}//end __construct()

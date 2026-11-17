@@ -40,7 +40,28 @@
  */
 
 import { config } from '@vue/test-utils'
+import events from 'node:events'
 import { translate, translatePlural } from './stubs/nextcloud-l10n.js'
+
+// p-queue 10 (pulled in by @nextcloud/vue 9.13) raises Node's listener cap on
+// every queue it builds: `process.getBuiltinModule('node:events')
+// .setMaxListeners(Infinity, queue)`. The queue extends the global
+// `EventTarget`, which under the jsdom environment is jsdom's, not Node's, so
+// Node refuses it with ERR_INVALID_ARG_TYPE and importing any NcBlurHash user
+// fails the whole spec file. A browser has no `process` and never makes the
+// call, so only the test environment needs this: the cap is a warning
+// threshold, and skipping it for a target Node does not recognise changes
+// nothing else.
+const setMaxListeners = events.setMaxListeners
+events.setMaxListeners = (count, ...targets) => {
+	try {
+		setMaxListeners(count, ...targets)
+	} catch (error) {
+		if (error?.code !== 'ERR_INVALID_ARG_TYPE') {
+			throw error
+		}
+	}
+}
 
 globalThis.t = translate
 globalThis.n = translatePlural

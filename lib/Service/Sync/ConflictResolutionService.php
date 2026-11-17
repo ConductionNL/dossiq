@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Sync;
 use OCA\Dossiq\Kernel\Contracts\ConflictResolutionServiceInterface;
 use OCA\Dossiq\Service\Access\ObjectUpdateRight;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
@@ -62,6 +63,9 @@ use Throwable;
  */
 class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
+	use ReadsLooseValues {
+		looseList as private arrayOf;
+	}
 
 	/**
 	 * The schema conflict records live in.
@@ -574,21 +578,6 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 
 		return $segment;
 	}//end keyOf()
-
-	/**
-	 * A value as an array, or an empty one.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array<int|string, mixed> The array.
-	 */
-	private function arrayOf(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end arrayOf()
 
 	/**
 	 * A scalar value as a string, or an empty one.

@@ -38,7 +38,6 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
@@ -48,6 +47,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  */
 class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	use NormalisesObjectRows;
+	use FindsMappedObjects;
 
 	/**
 	 * A UUID anywhere in a URL or bare value.
@@ -424,34 +424,4 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 			)
 		);
 	}//end saveCase()
-
-	/**
-	 * Find one object of a mapped schema.
-	 *
-	 * @param string $uuid The object.
-	 * @param array $config The mapping.
-	 *
-	 * @return mixed The row, or null.
-	 */
-	private function find(string $uuid, array $config): mixed {
-		return $this->zgwService->getObjectService()->find(
-			$uuid,
-			new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
-		);
-	}//end find()
-
-	/**
-	 * The first UUID in a value, or null.
-	 *
-	 * @param string $value A URL or bare uuid.
-	 *
-	 * @return string|null
-	 */
-	private function uuidOf(string $value): ?string {
-		if ($value === '' || preg_match(self::UUID_PATTERN, $value, $matches) !== 1) {
-			return null;
-		}
-
-		return $matches[1];
-	}//end uuidOf()
 }//end class

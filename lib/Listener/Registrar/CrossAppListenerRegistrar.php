@@ -101,6 +101,15 @@ class CrossAppListenerRegistrar {
 			\OCA\Dossiq\Listener\DocumentGeneratedListener::EVENT,
 			\OCA\Dossiq\Listener\DocumentGeneratedListener::class
 		);
+		// Signing-through-filinq: filinq signs a decision dossiq asked it to
+		// sign and concludes the request (signed, declined, cancelled or
+		// expired). By name, as filinq's document event above.
+		// Both named by string, which keeps this registrar under phpmd's
+		// coupling ceiling (SigningConcludedListener::EVENT is the same name).
+		$context->registerEventListener(
+			'OCA\Filinq\Event\SigningConcludedEvent',
+			'OCA\Dossiq\Listener\SigningConcludedListener'
+		);
 	}//end registerOwnedStepListeners()
 
 	/**

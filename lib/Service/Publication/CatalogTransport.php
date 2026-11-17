@@ -75,15 +75,9 @@ class CatalogTransport {
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function deliver(string $caseId, string $decisionId, array $items, array $payload, array $disclosable, string $existingId): array {
+		$set = ['caseId' => $caseId, 'decisionId' => $decisionId, 'items' => $items];
 		try {
-			$delivered = $this->caseLedger->deliver(
-				caseId: $caseId,
-				decisionId: $decisionId,
-				items: $items,
-				send: fn (): string => $this->sendPublicationToOpenCatalogi(
-					publication: ['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId]
-				),
-			);
+			$delivered = $this->deliverSet(set: $set, publication: ['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId]);
 		} catch (Throwable $e) {
 			return $this->notDelivered(
 				error: $e,
@@ -98,6 +92,29 @@ class CatalogTransport {
 
 		return $delivered;
 	}//end deliver()
+
+	/**
+	 * Record the delivered set on the case ledger, sending the publication as part of it.
+	 *
+	 * @param array<string, mixed> $set         The caseId, decisionId and the items the set records.
+	 * @param array<string, mixed> $publication The payload, the disclosable documents and the existingId.
+	 *
+	 * @return array{publicationId: string, setId: string} The publication and set.
+	 *
+	 * @throws Throwable When the set cannot be recorded or the publication cannot be sent.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	private function deliverSet(array $set, array $publication): array {
+		return $this->caseLedger->deliver(
+			caseId: $set['caseId'],
+			decisionId: $set['decisionId'],
+			items: $set['items'],
+			send: fn (): string => $this->sendPublicationToOpenCatalogi(
+				publication: $publication
+			),
+		);
+	}//end deliverSet()
 
 	/**
 	 * Log a failed delivery and say why it failed.

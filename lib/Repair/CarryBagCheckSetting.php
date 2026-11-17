@@ -49,7 +49,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
-use OCA\Dossiq\Listener\LocationBagValidationListener;
+use OCA\Dossiq\Kernel\Contracts\LocationBagValidationListenerInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -116,7 +116,7 @@ class CarryBagCheckSetting implements IRepairStep {
 				return;
 			}
 
-			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CHECK_KEY, LocationBagValidationListener::CHECK_ON);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::CHECK_KEY, LocationBagValidationListenerInterface::CHECK_ON);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not carry the BAG check setting; the BAG check is off until an administrator sets {key} to on',

@@ -74,7 +74,9 @@ class OnboardingStepsRowsTest extends TestCase {
 			 *
 			 * @return mixed The answer.
 			 */
-			public function inbox(object $criteria, int $limit, int $offset): mixed {
+			public function inbox(object $criteria, ?object $page = null): mixed {
+				$limit = ($page?->limit ?? 25);
+				$offset = ($page?->offset ?? 0);
 				$this->seen = $criteria;
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;

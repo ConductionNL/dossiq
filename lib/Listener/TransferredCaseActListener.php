@@ -29,8 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TransferredCaseFollowInterface;
+use OCA\Dossiq\Listener\Support\ReadsCaseActEvents;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Transfer\TransferredCaseFollow;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
@@ -38,7 +39,6 @@ use OCP\Comments\CommentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IUserSession;
-use Throwable;
 
 /**
  * Hands each act on a case to the follow of a transfer that handed it over.
@@ -50,6 +50,7 @@ use Throwable;
 class TransferredCaseActListener implements IEventListener {
 
 	use SavedObjectPayload;
+	use ReadsCaseActEvents;
 
 	/**
 	 * The case schema's slug.
@@ -79,12 +80,12 @@ class TransferredCaseActListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TransferredCaseFollow             $follow       Records the act for the sender.
+	 * @param TransferredCaseFollowInterface    $follow       Records the act for the sender.
 	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 * @param IUserSession|null                 $userSession  Who did it; nobody means the system.
 	 */
 	public function __construct(
-		private readonly TransferredCaseFollow $follow,
+		private readonly TransferredCaseFollowInterface $follow,
 		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly ?IUserSession $userSession = null,
 	) {
@@ -167,46 +168,6 @@ class TransferredCaseActListener implements IEventListener {
 
 		return [(string)($after['id'] ?? ''), 'status changed'];
 	}//end objectAct()
-
-	/**
-	 * The object a new note was written on.
-	 *
-	 * @param CommentsEvent $event The comment event.
-	 *
-	 * @return string The object uuid, or ''.
-	 */
-	private function notedObject(CommentsEvent $event): string {
-		try {
-			$comment = $event->getComment();
-			if ($event->getEvent() !== 'add' || $comment->getObjectType() !== self::NOTE_OBJECT_TYPE) {
-				return '';
-			}
-
-			return trim($comment->getObjectId());
-		} catch (Throwable) {
-			return '';
-		}
-	}//end notedObject()
-
-	/**
-	 * The case a completed task was on; a withdrawn or uncommitted task is no act.
-	 *
-	 * @param TaskTerminalEvent $event The engine's terminal event.
-	 *
-	 * @return string The case uuid, or ''.
-	 */
-	private function completedTaskCase(TaskTerminalEvent $event): string {
-		try {
-			$task = $event->getTask();
-			if ($event->isCommitted() === false || (string)$task->getState() !== 'completed') {
-				return '';
-			}
-
-			return trim((string)($task->getObjectUuid() ?? ''));
-		} catch (Throwable) {
-			return '';
-		}
-	}//end completedTaskCase()
 
 	/**
 	 * The user who did it, or an empty string for the system.

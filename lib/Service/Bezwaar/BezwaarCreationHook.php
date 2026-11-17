@@ -43,7 +43,9 @@ use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -60,6 +62,10 @@ use RuntimeException;
 class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
+	use NamesTheSessionUser {
+		sessionActor as private resolveUserId;
+	}
 
 	/**
 	 * Constructor.
@@ -142,22 +148,6 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 			);
 		}
 	}//end requireIds()
-
-	/**
-	 * Resolve the OpenRegister ObjectService.
-	 *
-	 * @return object The OpenRegister ObjectService.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * Load the contested decision.
@@ -327,20 +317,6 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 		return $objection;
 	}//end buildObjection()
-
-	/**
-	 * Resolve the acting user id from the session (server-authoritative).
-	 *
-	 * @return string The acting user id, or 'system' when no user is set.
-	 */
-	private function resolveUserId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end resolveUserId()
 
 	/**
 	 * Extract a UUID from a reference value (string or object/array).

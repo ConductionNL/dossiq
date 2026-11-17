@@ -144,7 +144,7 @@ class OpenRegisterSharingGateway {
 	public function noteService(): ?object {
 		return $this->resolve(
 			className: 'OCA\OpenRegister\Files\Service\NoteService',
-			methods: ['getNotesForObject']
+			methods: ['listNotes']
 		);
 	}//end noteService()
 

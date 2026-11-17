@@ -57,9 +57,9 @@ class ReportRequestPresetsTest extends TestCase {
 		return [
 			'an unknown period' => [[...$ok, 'period' => 'decade'], 'period must be one of 1m, 3m, 6m, 12m, year, all'],
 			'a period that is no string' => [[...$ok, 'period' => 3], 'period must be one of 1m, 3m, 6m, 12m, year, all'],
-			'an unknown view' => [[...$ok, 'view' => 'sankey'], 'view must be one of summary, dwell, throughput, bottlenecks, byAssignee'],
+			'an unknown view' => [[...$ok, 'view' => 'sankey'], 'view must be one of summary, dwell, throughput, bottlenecks, byAssignee, heatmap'],
 			'the period is refused before the view' => [[...$ok, 'period' => 'decade', 'view' => 'sankey'], 'period must be one of 1m, 3m, 6m, 12m, year, all'],
-			'the display is refused before the download' => [['view' => 'sankey', 'format' => 'xml'], 'view must be one of summary, dwell, throughput, bottlenecks, byAssignee'],
+			'the display is refused before the download' => [['view' => 'sankey', 'format' => 'xml'], 'view must be one of summary, dwell, throughput, bottlenecks, byAssignee, heatmap'],
 			'no format at all' => [['statistic' => 'mean'], 'format must be json or csv'],
 			'no statistic at all' => [['format' => 'json'], 'statistic must be mean or median'],
 			'an empty period and view are accepted' => [[...$ok, 'period' => '', 'view' => ''], null],

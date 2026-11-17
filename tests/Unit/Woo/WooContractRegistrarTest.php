@@ -28,8 +28,10 @@ use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRecordedDeliveryInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
@@ -41,6 +43,7 @@ use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooContractRegistrar;
 use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooReportReadLog;
@@ -59,7 +62,7 @@ class WooContractRegistrarTest extends TestCase {
 	public function testEveryContractIsAliasedToItsImplementationInOrder(): void {
 		$aliases = [];
 		$context = $this->createMock(IRegistrationContext::class);
-		$context->expects(self::exactly(12))->method('registerServiceAlias')->willReturnCallback(
+		$context->expects(self::exactly(14))->method('registerServiceAlias')->willReturnCallback(
 			static function (string $alias, string $target) use (&$aliases): void {
 				$aliases[] = [$alias, $target];
 			}
@@ -74,8 +77,10 @@ class WooContractRegistrarTest extends TestCase {
 				[WooCollectionQueriesInterface::class, WooCollectionQueries::class],
 				[WooDeliveredSetVerifierInterface::class, WooDeliveredSetVerifier::class],
 				[WooDeliveredSetWriterInterface::class, WooDeliveredSetWriter::class],
+				[WooDossierReturnInterface::class, SourceCollectionReturn::class],
 				[WooGatherAddInterface::class, WooGatherAdd::class],
 				[WooReceivedAnswersInterface::class, WooReceivedAnswers::class],
+				[WooRecordedDeliveryInterface::class, WooDeliveredSetWriter::class],
 				[WooReportReadLogInterface::class, WooReportReadLog::class],
 				[WooRequestIntakeInterface::class, WooRequestIntake::class],
 				[WooSearchPlansInterface::class, WooSearchPlans::class],

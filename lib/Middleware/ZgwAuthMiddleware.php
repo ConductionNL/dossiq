@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Controller\ZgwController;
-use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectAccessGuardInterface;
 use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -99,7 +99,7 @@ class ZgwAuthMiddleware extends Middleware {
 	 *
 	 * @var string[]
 	 */
-	private const CONFIDENTIALITY_ORDER = InformatieobjectAccessGuard::HIERARCHY;
+	private const CONFIDENTIALITY_ORDER = InformatieobjectAccessGuardInterface::HIERARCHY;
 
 	/**
 	 * Constructor.

@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectAccessGuardInterface;
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
@@ -45,21 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T03
  */
-class InformatieobjectAccessGuard {
-	/**
-	 * ZGW confidentiality levels ordered lowest (index 0) to highest.
-	 */
-	public const HIERARCHY = [
-		'openbaar',
-		'beperkt_openbaar',
-		'intern',
-		'zaakvertrouwelijk',
-		'vertrouwelijk',
-		'confidentieel',
-		'geheim',
-		'zeer_geheim',
-	];
-
+class InformatieobjectAccessGuard implements InformatieobjectAccessGuardInterface {
 	/**
 	 * Classification at or above which a public share is forbidden.
 	 */
