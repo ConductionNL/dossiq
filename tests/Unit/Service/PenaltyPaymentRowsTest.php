@@ -93,6 +93,21 @@ class PenaltyPaymentRowsTest extends TestCase {
 	}
 
 	/**
+	 * A case type title stored as a language map reads as its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeTitleStoredAsALanguageMapReadsAsText(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-woo', 'title' => ['en' => 'Woo request', 'nl' => 'Woo-verzoek']]);
+
+		$first = $this->rows->forYear(year: 2026)['rows'][2];
+
+		self::assertSame(expected: 'Woo-verzoek', actual: $first['caseTypeTitle']);
+	}
+
+	/**
 	 * With a finance app the audit reads its payouts, named by their case, beside
 	 * the rows finance does not hold (REQ-DQM-004).
 	 *
