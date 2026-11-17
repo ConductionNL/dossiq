@@ -40,10 +40,15 @@ affordance is nextcloud-vue's and is not in yet.
 - [x] 3.1 `caseType.unreadTriggers`: declare which changes make a case
   unread, defaulting to status, documents and messages (D-2).
   - `tests/Unit/Service/UnreadTriggerServiceTest.php`
-- [ ] 3.1b Enforce the declaration PER CASE TYPE. Not possible today and
-  not faked: OpenRegister resolves `x-openregister-read-state` per schema
-  (`SubstantiveChangeEvaluator::annotation()` takes a `Schema`), so the
-  enforced floor is the whole vocabulary on the `case` schema. See D-6.
+- [x] 3.1b Enforce the declaration PER CASE TYPE. OpenRegister now asks,
+  per object, whether a leaf app narrows the schema's read-state properties
+  (`ObjectReadStatePropertiesEvent`, openregister#10614); it can only narrow,
+  so the `case` schema's block stays the floor (D-6).
+  `lib/Listener/CaseReadStateTriggersListener.php` keeps, for a case, only the
+  properties its case type's `unreadTriggers` map to; an unreadable type keeps
+  the schema's list. Works once openregister#10614 is on main; before that
+  nothing dispatches the event and the schema-wide floor stands.
+  - `tests/Unit/Listener/CaseReadStateTriggersListenerTest.php`
 - [x] 4.1 Dutch and English strings.
 - [x] 4.2 Record the openregister slug here once that lane opens it, and
   ask it whether its change carries the snooze and the notification-list
