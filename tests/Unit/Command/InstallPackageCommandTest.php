@@ -186,4 +186,27 @@ class InstallPackageCommandTest extends TestCase {
 			actual: $tester->getDisplay()
 		);
 	}//end testAllInstallsTheCatalogueAndAFailedPackageFailsTheRun()
+
+	/**
+	 * `--root` installs from the installer over that directory, resolved to its real path; the default one is not asked.
+	 *
+	 * @return void
+	 */
+	public function testRootInstallsThroughTheInstallerOverThatDirectory(): void {
+		$rooted = $this->createMock(originalClassName: PackageInstaller::class);
+		$rooted->expects($this->once())->method('install')->with('jeugdwet')->willReturn(
+			value: ['status' => PackageInstaller::INSTALLED, 'package' => 'jeugdwet', 'version' => '2.0.0', 'message' => 'from root']
+		);
+		$installer = $this->createMock(originalClassName: PackageInstaller::class);
+		$installer->expects($this->once())->method('fromRoot')->with((string)realpath(__DIR__ . '/..'))->willReturn(value: $rooted);
+		$installer->expects($this->never())->method('install');
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(value: null);
+		$tester = new CommandTester(command: new InstallPackageCommand(installer: $installer, settings: $settings));
+
+		$exit = $tester->execute(input: ['ids' => ['jeugdwet'], '--root' => __DIR__ . '/../Command/..']);
+
+		$this->assertSame(expected: Command::SUCCESS, actual: $exit);
+		$this->assertStringContainsString(needle: '2.0.0', haystack: $tester->getDisplay());
+	}//end testRootInstallsThroughTheInstallerOverThatDirectory()
 }//end class
