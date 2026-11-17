@@ -4579,6 +4579,7 @@ OC.L10N.register(
         "Inspector Reference": "Verwijzing naar de inspecteur",
         "Install": "Installeren",
         "Install case types, workflows and enforcement tables that other organisations have published.": "Installeer zaaktypen, workflows en handhavingstabellen die andere organisaties hebben gepubliceerd.",
+        "Install Shillinq to choose from the BBV list.": "Installeer Shillinq om uit de BBV-lijst te kiezen.",
         "Installed": "Geïnstalleerd",
         "Installed by {package} {version}": "Geïnstalleerd door {package} {version}",
         "Installed.": "Geïnstalleerd.",

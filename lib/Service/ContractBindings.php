@@ -297,7 +297,6 @@ use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeToolsInterface;
 use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
 use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\Iv3TaakveldListInterface;
 use OCA\Dossiq\Kernel\Contracts\JsonEncodedStringPropertiesInterface;
 use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
 use OCA\Dossiq\Kernel\Contracts\KccContactMomentServiceInterface;
@@ -1114,7 +1113,6 @@ final class ContractBindings {
 		$context->registerServiceAlias(IntakeToolsInterface::class, IntakeTools::class);
 		$context->registerServiceAlias(IntegrationModeInterface::class, IntegrationMode::class);
 		$context->registerServiceAlias(IntegrationStatusServiceInterface::class, IntegrationStatusService::class);
-		$context->registerServiceAlias(Iv3TaakveldListInterface::class, Iv3TaakveldList::class);
 		$context->registerServiceAlias(JsonEncodedStringPropertiesInterface::class, JsonEncodedStringProperties::class);
 		$context->registerServiceAlias(JunkRulesInterface::class, JunkRules::class);
 		$context->registerServiceAlias(KccContactMomentServiceInterface::class, KccContactMomentService::class);

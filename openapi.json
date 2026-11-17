@@ -452,10 +452,6 @@
             "description": "The intake declaration, and the three acts an intake worker performs on it."
         },
         {
-            "name": "iv3-taakveld",
-            "description": "Read-only access to the IV3/BBV taakveld reference list."
-        },
-        {
             "name": "kcc-contact",
             "description": "Controller exposing KCC contact-moment and callback endpoints."
         },
@@ -22910,34 +22906,6 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/Problem404"
-                    }
-                }
-            }
-        },
-        "/reports/iv3/taakvelden": {
-            "get": {
-                "operationId": "iv3-taakveld-taakvelden",
-                "summary": "The IV3 taakveld reference list — open to any authenticated user (it is a public CBS classification, not report data)",
-                "description": "The IV3 taakveld reference list — open to any authenticated user (it is a public CBS classification, not report data). Needs a signed-in Nextcloud user.",
-                "tags": [
-                    "iv3-taakveld"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The request succeeded.",
-                        "headers": {
-                            "API-Version": {
-                                "$ref": "#/components/headers/API-Version"
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Problem401"
                     }
                 }
             }
