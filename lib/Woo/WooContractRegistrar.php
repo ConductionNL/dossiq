@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -63,7 +64,7 @@ class WooContractRegistrar {
 		$context->registerServiceAlias(WooCollectionQueriesInterface::class, WooCollectionQueries::class);
 		$context->registerServiceAlias(WooDeliveredSetVerifierInterface::class, WooDeliveredSetVerifier::class);
 		$context->registerServiceAlias(WooDeliveredSetWriterInterface::class, WooDeliveredSetWriter::class);
-		$context->registerServiceAlias(WooDossierReturnInterface::class, WooDossierReturn::class);
+		$context->registerServiceAlias(WooDossierReturnInterface::class, SourceCollectionReturn::class);
 		$context->registerServiceAlias(WooGatherAddInterface::class, WooGatherAdd::class);
 		$context->registerServiceAlias(WooReceivedAnswersInterface::class, WooReceivedAnswers::class);
 		$context->registerServiceAlias(WooRecordedDeliveryInterface::class, WooDeliveredSetWriter::class);

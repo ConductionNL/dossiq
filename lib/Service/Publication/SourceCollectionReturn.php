@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq Woo dossier return
+ * Dossiq source collection return
  *
  * BRINGS A PUBLISHED DECISION BACK TO THE DOSSIER THE REQUEST CAME FROM (hydra
  * woo-citizen-journey C6, journey step J5.5). A Woo request started from a
@@ -19,8 +19,8 @@
  * publish {@see self::tellTheResident()} has WooDecisionNotice write them a
  * message that says the decision is published and links to it.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Service
+ * @package  OCA\Dossiq\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -36,12 +36,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -50,11 +51,11 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Appends a published Woo decision to its source dossier, once.
+ * Appends a published decision to the collection the request was started from, once.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
  */
-class WooDossierReturn implements WooDossierReturnInterface {
+class SourceCollectionReturn implements WooDossierReturnInterface {
 
 	use SearchesObjects;
 
@@ -158,7 +159,7 @@ class WooDossierReturn implements WooDossierReturnInterface {
 	 */
 	private function warnNotAppended(string $collectionId, string $publicationId, Throwable $error): void {
 		$this->logger->warning(
-			'WooDossierReturn: the decision could not be added to its source dossier',
+			'SourceCollectionReturn: the decision could not be added to its source dossier',
 			['collection' => $collectionId, 'publication' => $publicationId, 'error' => $error->getMessage()]
 		);
 	}//end warnNotAppended()
@@ -243,12 +244,12 @@ class WooDossierReturn implements WooDossierReturnInterface {
 			id: $collectionId
 		);
 		if (is_array($collection) === false) {
-			$this->logger->warning('WooDossierReturn: the source dossier is gone', ['collection' => $collectionId]);
+			$this->logger->warning('SourceCollectionReturn: the source dossier is gone', ['collection' => $collectionId]);
 			return null;
 		}
 
 		if ($this->isTheRequesters(case: $case, collection: $collection) === false) {
-			$this->logger->warning('WooDossierReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
+			$this->logger->warning('SourceCollectionReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
 			return null;
 		}
 

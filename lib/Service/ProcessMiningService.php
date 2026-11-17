@@ -51,6 +51,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
 use OCA\Dossiq\Service\ProcessMining\CaseStatusRecords;
+use OCA\Dossiq\Service\ProcessMining\DwellHeatmap;
 use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
@@ -77,6 +78,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
+	 * @param DwellHeatmap $heatmap Statuses against weeks, shaded by median dwell.
 	 *
 	 * @return void
 	 */
@@ -86,6 +88,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 		private readonly PhaseSummary $phases = new PhaseSummary(),
+		private readonly DwellHeatmap $heatmap = new DwellHeatmap(),
 	) {
 		$this->statusRecords = new CaseStatusRecords(dates: $this->dates);
 	}//end __construct()
@@ -254,7 +257,7 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	 * @param array<string, mixed> $scope The case type's cases (cases), the moment of reading (now)
 	 *                                    and the StatusType rows by id (statusTypeIndex).
 	 *
-	 * @return array<string, mixed> dwellTime, dwellTimeCompleted, dwellDaysHeld, dwellByAssignee and bottlenecks.
+	 * @return array<string, mixed> dwellTime, dwellTimeCompleted, dwellDaysHeld, dwellByAssignee, bottlenecks and dwellHeatmap.
 	 */
 	private function dwellOf(array $intervals, array $scope): array {
 		$dwellStats = $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $scope['statusTypeIndex']);
@@ -279,6 +282,8 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 			// would drift from the by-phase one beside it.
 			'dwellByAssignee' => $this->analysers->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
 			'bottlenecks' => $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats),
+			// Statuses against weeks, each cell the median (REQ-CRS-36).
+			'dwellHeatmap' => $this->heatmap->grid(intervals: $intervals, dwellStats: $dwellStats),
 		];
 	}//end dwellOf()
 

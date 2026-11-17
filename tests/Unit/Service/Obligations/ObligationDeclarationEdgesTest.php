@@ -82,6 +82,7 @@ class ObligationDeclarationEdgesTest extends TestCase {
 				'settledBy' => '',
 				'blocks' => ['closing'],
 				'term' => null,
+				'whenUnmet' => 'stay',
 			]],
 			$kinds
 		);

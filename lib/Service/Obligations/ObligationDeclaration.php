@@ -89,6 +89,20 @@ class ObligationDeclaration {
 	public const BLOCKS_CLOSING = 'closing';
 
 	/**
+	 * A refused or lapsed obligation stays open and blocking.
+	 *
+	 * @var string
+	 */
+	public const WHEN_UNMET_STAY = 'stay';
+
+	/**
+	 * A refused or lapsed obligation is withdrawn, releasing the case.
+	 *
+	 * @var string
+	 */
+	public const WHEN_UNMET_WITHDRAW = 'withdraw';
+
+	/**
 	 * The obligation kinds this case type declares, keyed by kind.
 	 *
 	 * @param array<string, mixed> $caseType The effective case type row.
@@ -121,6 +135,7 @@ class ObligationDeclaration {
 				'settledBy' => (string)($row['settledBy'] ?? ''),
 				'blocks' => $this->blocksOf(row: $row),
 				'term' => $this->termOf(row: $row),
+				'whenUnmet' => $this->whenUnmetOf(row: $row),
 			];
 		}
 
@@ -183,6 +198,26 @@ class ObligationDeclaration {
 
 		return $days;
 	}//end termOf()
+
+	/**
+	 * What one declared kind does when it is refused or its due date passes.
+	 *
+	 * Anything but `withdraw` reads as `stay`: an unknown value keeps the
+	 * case blocked rather than releasing it.
+	 *
+	 * @param array<string, mixed> $row The declaration row.
+	 *
+	 * @return string `stay` or `withdraw`.
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
+	 */
+	private function whenUnmetOf(array $row): string {
+		if (($row['whenUnmet'] ?? null) === self::WHEN_UNMET_WITHDRAW) {
+			return self::WHEN_UNMET_WITHDRAW;
+		}
+
+		return self::WHEN_UNMET_STAY;
+	}//end whenUnmetOf()
 
 	/**
 	 * Whether an obligation row still blocks what it was placed against.

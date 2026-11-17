@@ -5,7 +5,8 @@
         "actor": "ann",
         "hours": 24.0,
         "workingHours": 24.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-01-01T01:00:00+01:00"
     },
     {
         "caseId": "open",
@@ -13,7 +14,8 @@
         "actor": "",
         "hours": 0.0,
         "workingHours": 0.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-01-03T07:00:00+01:00"
     },
     {
         "caseId": "open",
@@ -21,7 +23,8 @@
         "actor": "bob",
         "hours": 0.0,
         "workingHours": 0.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-01-05T01:00:00+01:00"
     },
     {
         "caseId": "open",
@@ -29,7 +32,8 @@
         "actor": "",
         "hours": 0.0,
         "workingHours": 0.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-01-04T01:00:00+01:00"
     },
     {
         "caseId": "open",
@@ -37,7 +41,8 @@
         "actor": "",
         "hours": 4260.0,
         "workingHours": 4260.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-01-04T01:00:00+01:00"
     },
     {
         "caseId": "open",
@@ -45,7 +50,8 @@
         "actor": "",
         "hours": 12.0,
         "workingHours": 12.0,
-        "open": true
+        "open": true,
+        "enteredAt": "2026-06-30T14:00:00+02:00"
     },
     {
         "caseId": "closed",
@@ -53,7 +59,8 @@
         "actor": "",
         "hours": 24.0,
         "workingHours": 24.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-03-01T11:00:00+01:00"
     },
     {
         "caseId": "closed",
@@ -61,7 +68,8 @@
         "actor": "",
         "hours": 72.0,
         "workingHours": 72.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-03-02T11:00:00+01:00"
     },
     {
         "caseId": "closed-garbled",
@@ -69,7 +77,8 @@
         "actor": "",
         "hours": 0.0,
         "workingHours": 0.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2027-01-01T00:59:59+01:00"
     },
     {
         "caseId": "closed-empty-end",
@@ -77,7 +86,8 @@
         "actor": "",
         "hours": 0.0,
         "workingHours": 0.0,
-        "open": false
+        "open": false,
+        "enteredAt": "2026-05-01T02:00:00+02:00"
     },
     {
         "caseId": "blank-end",
@@ -85,7 +95,8 @@
         "actor": "",
         "hours": 24.0,
         "workingHours": 24.0,
-        "open": true
+        "open": true,
+        "enteredAt": "2026-06-30T02:00:00+02:00"
     },
     {
         "caseId": "no-row",
@@ -93,6 +104,7 @@
         "actor": "",
         "hours": 3600.0,
         "workingHours": 3600.0,
-        "open": true
+        "open": true,
+        "enteredAt": "2026-02-01T01:00:00+01:00"
     }
 ]
