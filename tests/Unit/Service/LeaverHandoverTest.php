@@ -38,6 +38,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * What one act moves, what it only names, and what it records.
@@ -171,6 +172,26 @@ class LeaverHandoverTest extends TestCase {
 	}//end testWhatMovedIsReadableOnTheCase()
 
 	/**
+	 * A handover record lands only on a case that exists: a blank id or a case
+	 * that is gone by the time the record is written creates no row.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	public function testARecordIsWrittenOnlyOnACaseThatExists(): void {
+		$this->service(caseIds: ['case-a', '   ', 'case-gone'])->execute(fromUser: 'jan', toUser: 'karim', actor: 'beheerder');
+
+		self::assertSame('karim', $this->store->row(schema: 'case', uuid: 'case-a')['handoverRecord']['toUser']);
+		self::assertSame([], $this->store->row(schema: 'case', uuid: 'case-gone'), 'A missing case is not created by its handover record.');
+		self::assertArrayNotHasKey('', $this->store->rows['case']);
+		self::assertSame(
+			['case-a', 'case-b', 'case-c', 'case-d', 'case-e'],
+			array_keys($this->store->rows['case']),
+		);
+	}//end testARecordIsWrittenOnlyOnACaseThatExists()
+
+	/**
 	 * A draft is named rather than silently left behind.
 	 *
 	 * @return void
@@ -235,6 +256,7 @@ class LeaverHandoverTest extends TestCase {
 			 * @return never
 			 */
 			public function saveObject(mixed ...$args): never {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('store is read-only');
 			}
 		});
@@ -290,9 +312,12 @@ class LeaverHandoverTest extends TestCase {
 	/**
 	 * The service under test, over a reassignment double that reports two cases and a task.
 	 *
+	 * @param LoggerInterface|null $logger  The logger, a mock when null.
+	 * @param array<int, string>   $caseIds The cases the bulk job reports it was ordered over.
+	 *
 	 * @return LeaverHandoverService The service.
 	 */
-	private function service(?LoggerInterface $logger=null): LeaverHandoverService {
+	private function service(?LoggerInterface $logger=null, array $caseIds=['case-a', 'case-b']): LeaverHandoverService {
 		$reassignment = $this->createMock(originalClassName: CaseReassignmentService::class);
 		$reassignment->method('preview')->willReturn(
 			[
@@ -308,7 +333,7 @@ class LeaverHandoverTest extends TestCase {
 		$reassignment->method('releaseCaseload')->willReturn(
 			[
 				'job' => ['id' => 7, 'uuid' => 'batch-1', 'state' => 'running', 'total' => 2],
-				'caseIds' => ['case-a', 'case-b'],
+				'caseIds' => $caseIds,
 				'tasks' => [['id' => 'task-1', 'title' => 'Beoordelen', 'success' => true]],
 			]
 		);

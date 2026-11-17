@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
+use OCA\Dossiq\Kernel\Contracts\LhsRecommendationServiceInterface;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -56,7 +57,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  */
-class LhsRecommendationService {
+class LhsRecommendationService implements LhsRecommendationServiceInterface {
 	/**
 	 * Severity ordering of the `interventie` enum, lowest -> highest.
 	 *
@@ -124,8 +125,6 @@ class LhsRecommendationService {
 		?int $lhsVersion = null,
 		?string $inspection = null,
 	): array {
-		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor LHS-aanbeveling');
-		$matrix = $this->store->loadMatrix(version: $lhsVersion);
 		$question = new LhsQuestion(
 			caseId: $caseId,
 			severity: $severity,
@@ -134,11 +133,28 @@ class LhsRecommendationService {
 			inspection: $inspection,
 		);
 
+		return $this->recommendFor(question: $question, lhsVersion: $lhsVersion);
+	}//end recommend()
+
+	/**
+	 * Look the question up in the matrix and persist the recommendation, named after the signed-in user.
+	 *
+	 * @param LhsQuestion $question   The question.
+	 * @param int|null    $lhsVersion Optional explicit matrix version; null = active
+	 *
+	 * @return array<string, mixed> The persisted recommendation row
+	 *
+	 * @throws RuntimeException When nobody is signed in, no matching matrix exists, or no cell matches.
+	 */
+	private function recommendFor(LhsQuestion $question, ?int $lhsVersion): array {
+		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor LHS-aanbeveling');
+		$matrix = $this->store->loadMatrix(version: $lhsVersion);
+
 		$recommendation = $this->recommendationRow(question: $question, matrix: $matrix);
 		$recommendation['recommendedBy'] = $user->getUID();
 
 		return $this->store->persistRecommendation(row: $recommendation);
-	}//end recommend()
+	}//end recommendFor()
 
 	/**
 	 * Apply an override to an existing LHS recommendation.
@@ -179,10 +195,25 @@ class LhsRecommendationService {
 		string $justification,
 		string $userRole,
 	): array {
-		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor override');
-		self::requireJustification(justification: $justification);
+		$override = new LhsOverride(intervention: $intervention, justification: $justification, userRole: $userRole);
 
-		$recommendationId = trim($recommendationId);
+		return $this->overrideWith(recommendationId: trim($recommendationId), override: $override);
+	}//end override()
+
+	/**
+	 * Apply a checked override onto the stored recommendation.
+	 *
+	 * @param string      $recommendationId Id of the stored recommendation, trimmed
+	 * @param LhsOverride $override         The chosen intervention, justification and caller role
+	 *
+	 * @return array<string, mixed> The updated recommendation row
+	 *
+	 * @throws RuntimeException When validation fails (HTTP-mapped by controller).
+	 */
+	private function overrideWith(string $recommendationId, LhsOverride $override): array {
+		$user = $this->sessionUser(refusal: 'Authenticatie vereist voor override');
+		self::requireJustification(justification: $override->justification);
+
 		if ($recommendationId === '') {
 			throw new RuntimeException('Recommendation ID ontbreekt voor override');
 		}
@@ -190,7 +221,6 @@ class LhsRecommendationService {
 		// Read back, never trust. The escalation guard compares against what
 		// the MATRIX said, so that value has to come from the store.
 		$recommendation = $this->store->loadRecommendation(recommendationId: $recommendationId);
-		$override = new LhsOverride(intervention: $intervention, justification: $justification, userRole: $userRole);
 		self::requireAuthority(recommendation: $recommendation, override: $override);
 
 		// Only the override fields are written. The stored row supplies
@@ -201,7 +231,7 @@ class LhsRecommendationService {
 		$updated = array_merge($recommendation, self::overrideFields(override: $override, user: $user));
 
 		return $this->store->persistRecommendation(row: $updated, id: $recommendationId);
-	}//end override()
+	}//end overrideWith()
 
 	/**
 	 * The signed-in user; identity always comes from the session.
@@ -345,10 +375,6 @@ class LhsRecommendationService {
 		];
 	}//end overrideFields()
 
-
-
-
-
 	/**
 	 * Read the intervention straight off the matrix.
 	 *
@@ -411,6 +437,5 @@ class LhsRecommendationService {
 
 		return $index;
 	}//end indexCells()
-
 
 }//end class

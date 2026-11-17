@@ -65,6 +65,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
  * @uses \OCA\Dossiq\Service\Termijn\TermLookups
  * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */

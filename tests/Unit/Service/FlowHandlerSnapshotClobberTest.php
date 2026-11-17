@@ -37,6 +37,9 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class FlowHandlerSnapshotClobberTest extends TestCase {
 
@@ -94,7 +97,9 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			 *
 			 * @return ObjectEntity The saved entity.
 			 */
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->stored = $object;
 
 				return $this->entity();
@@ -110,7 +115,11 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			 *
 			 * @return ObjectEntity The patched entity.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): ObjectEntity {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				foreach ($data as $field => $value) {
 					$this->stored[$field] = $value;
 				}
@@ -127,7 +136,11 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			 *
 			 * @return ObjectEntity The stored entity.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): ObjectEntity {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->entity();
 			}
 

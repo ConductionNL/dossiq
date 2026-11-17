@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\CaseLifecycleService;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -51,7 +51,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class LifecycleCasesAction implements BulkActionInterface {
+class LifecycleCasesAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -84,7 +84,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseLifecycleService $lifecycle The suspend/resume/extend gestures.
+	 * @param CaseLifecycleServiceInterface $lifecycle The suspend/resume/extend gestures.
 	 * @param IL10N                $l10n      Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -92,7 +92,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseLifecycleService $lifecycle,
+		private readonly CaseLifecycleServiceInterface $lifecycle,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()

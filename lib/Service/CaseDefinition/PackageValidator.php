@@ -257,7 +257,6 @@ class PackageValidator {
 		$errors = $this->findMissingManifestFields(manifest: $manifest);
 
 		$components = (array)($manifest['components'] ?? []);
-		$dependencies = (array)($manifest['dependencies'] ?? []);
 
 		$componentIssues = $this->validateComponentFiles(zip: $zip, components: $components);
 		$errors = array_merge($errors, $componentIssues['errors']);
@@ -267,7 +266,7 @@ class PackageValidator {
 
 		$warnings = array_merge(
 			$warnings,
-			$this->buildDependencyWarnings(zip: $zip, components: $components, dependencies: $dependencies)
+			$this->buildDependencyWarnings(zip: $zip, manifest: $manifest)
 		);
 
 		return [
@@ -392,16 +391,15 @@ class PackageValidator {
 	 * that is the one worth naming.
 	 *
 	 * @param \ZipArchive $zip The opened ZIP archive.
-	 * @param array<mixed> $components The components declared in the manifest.
-	 * @param array<mixed> $dependencies The dependencies declared in the manifest.
+	 * @param array<mixed> $manifest The manifest, declaring its components and dependencies.
 	 *
 	 * @return string[] One warning per unresolvable dependency.
 	 */
-	private function buildDependencyWarnings(\ZipArchive $zip, array $components, array $dependencies): array {
-		$carried = $this->ids->idsCarriedBy(zip: $zip, components: $components);
+	private function buildDependencyWarnings(\ZipArchive $zip, array $manifest): array {
+		$carried = $this->ids->idsCarriedBy(zip: $zip, components: (array)($manifest['components'] ?? []));
 		$warnings = [];
 
-		foreach ($dependencies as $dependency) {
+		foreach ((array)($manifest['dependencies'] ?? []) as $dependency) {
 			// Both shapes: a plain ref, and the `{type, name}` entry older
 			// packages carry. An entry in neither shape is named as it stands
 			// rather than reported as `unknown`, which said nothing.

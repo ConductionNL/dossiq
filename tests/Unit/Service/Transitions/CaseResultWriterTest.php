@@ -28,6 +28,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Resolving the closing result against the case type's own results.
@@ -158,7 +160,9 @@ class ResultWriterObjectServiceDouble {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->saved[] = $object;
 
 		return array_merge($object, ['id' => 'result-' . count($this->saved)]);
@@ -173,7 +177,9 @@ class ResultWriterObjectServiceDouble {
 	 *
 	 * @return array<string, mixed> An empty row.
 	 */
-	public function find(string $id, string $register, string $schema): array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		return [];
 	}//end find()
 }//end class

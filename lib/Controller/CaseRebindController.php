@@ -37,17 +37,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseRebindService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRebindServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +59,7 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindController extends Controller {
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -68,8 +68,8 @@ class CaseRebindController extends Controller {
 	 *
 	 * @param string            $appName     The app name.
 	 * @param IRequest          $request     The request.
-	 * @param CaseRebindService $rebind      The act itself.
-	 * @param CaseAccessGuard   $accessGuard Per-case authorization, failing closed.
+	 * @param CaseRebindServiceInterface $rebind      The act itself.
+	 * @param CaseAccessGuardInterface   $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession      $userSession The session.
 	 * @param LoggerInterface   $logger      The logger.
 	 *
@@ -80,8 +80,8 @@ class CaseRebindController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseRebindService $rebind,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseRebindServiceInterface $rebind,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -141,26 +141,40 @@ class CaseRebindController extends Controller {
 		}
 
 		try {
-			$answer = $this->rebind->options(caseId: $caseId);
-
-			$target = trim((string)$this->request->getParam('target', ''));
-			if ($target !== '') {
-				$answer['preview'] = $this->rebind->preview(
-					caseId: $caseId,
-					targetCaseTypeId: $target,
-					targetStatusId: trim((string)$this->request->getParam('status', '')),
-					remap: $this->arrayParam(name: 'remap'),
-					properties: $this->arrayParam(name: 'properties'),
-				);
-			}
-
-			return new JSONResponse($answer);
+			return new JSONResponse($this->rebindOptionsOf(caseId: $caseId));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'rebind-options', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'rebind-options', e: $e);
 		}
 	}//end options()
+
+	/**
+	 * The rebind options of a case, with a preview when the request names a target case type.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array The options, and the preview when a target was named.
+	 *
+	 * @throws RefusedException When the rebind is refused.
+	 * @throws Throwable When reading the options fails.
+	 */
+	private function rebindOptionsOf(string $caseId): array {
+		$answer = $this->rebind->options(caseId: $caseId);
+
+		$target = trim((string)$this->request->getParam('target', ''));
+		if ($target !== '') {
+			$answer['preview'] = $this->rebind->preview(
+				caseId: $caseId,
+				targetCaseTypeId: $target,
+				targetStatusId: trim((string)$this->request->getParam('status', '')),
+				remap: $this->arrayParam(name: 'remap'),
+				properties: $this->arrayParam(name: 'properties'),
+			);
+		}
+
+		return $answer;
+	}//end rebindOptionsOf()
 
 	/**
 	 * Rebind this case onto another case type.
@@ -216,19 +230,6 @@ class CaseRebindController extends Controller {
 
 		return $value;
 	}//end arrayParam()
-
-	/**
-	 * The caller, when they may write this case, and null otherwise.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
-	}//end writerOf()
 
 	/**
 	 * The answer a caller who may not touch this case gets.

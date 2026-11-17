@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -148,7 +148,7 @@ final class CaseReadAndPatch {
 	private function warn(string $warning, array $context): void {
 		$this->logger->warning(
 			'Dossiq ' . $this->owner . ': ' . $warning,
-			['app' => Application::APP_ID] + $context
+			['app' => AppIdentity::APP_ID] + $context
 		);
 	}//end warn()
 }//end class

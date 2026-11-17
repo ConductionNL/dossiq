@@ -49,7 +49,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Service\Rbac\GrantLookup;
@@ -65,7 +66,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CaseAccessGuard {
+class CaseAccessGuard implements CaseAccessGuardInterface {
 
 	use SearchesObjects;
 
@@ -194,7 +195,7 @@ class CaseAccessGuard {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -318,7 +319,7 @@ class CaseAccessGuard {
 			// An unreadable case type is not a team: deny, as every other branch of this guard does.
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -406,7 +407,7 @@ class CaseAccessGuard {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: the platform grant lookup failed, treating the caller as holding none: '
 				. $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -422,24 +423,12 @@ class CaseAccessGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function loadCase(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
-				['app' => Application::APP_ID]
-			);
+		$source = $this->caseSource();
+		if ($source === null) {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
-				['app' => Application::APP_ID]
-			);
-			return null;
-		}
+		[$objectService, $register, $caseSchema] = $source;
 
 		try {
 			return $this->findObjectAsArray(
@@ -451,9 +440,39 @@ class CaseAccessGuard {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
 	}//end loadCase()
+
+	/**
+	 * The object service, register and case schema a case is loaded from, logging what is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The source, or null when OpenRegister or the schema is missing.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function caseSource(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if (empty($register) === true || empty($caseSchema) === true) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		return [$objectService, $register, $caseSchema];
+	}//end caseSource()
 }//end class

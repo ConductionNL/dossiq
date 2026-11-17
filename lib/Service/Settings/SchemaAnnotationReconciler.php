@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Settings;
 
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
+use OCA\Dossiq\Service\Support\ReadsMergedRegisterConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class SchemaAnnotationReconciler {
+	use ReadsMergedRegisterConfig;
+
 	/**
 	 * Constructor.
 	 *
@@ -107,11 +110,7 @@ class SchemaAnnotationReconciler {
 	private function reconcileEach(object $schemaMapper, array $schemas): int {
 		$written = 0;
 		foreach ($schemas as $key => $schemaDef) {
-			$written += $this->reconcileSchemaAnnotationBlocks(
-				schemaMapper: $schemaMapper,
-				key: $key,
-				schemaDef: $schemaDef
-			);
+			$written += $this->reconcileSchemaAnnotationBlocks(schemaMapper: $schemaMapper, declared: [$key, $schemaDef]);
 		}//end foreach
 
 		$this->logger->info(
@@ -129,17 +128,12 @@ class SchemaAnnotationReconciler {
 	 *                                      the register JSON is missing or invalid.
 	 */
 	private function loadDeclarativeRegisterSchemas(): ?array {
-		$configData = self::readRegisterJson();
+		// Modular register fragments are folded on top, so a schema's
+		// annotation blocks declared in a register.d fragment are reconciled too.
+		$configData = $this->mergedRegisterConfig();
 		if ($configData === null) {
 			return null;
 		}
-
-		// Fold modular register fragments on top so a schema's annotation
-		// blocks declared in a register.d fragment are reconciled too.
-		[$configData] = $this->fragments->merge(
-			base: $configData,
-			fragmentDir: __DIR__ . '/../../Settings/register.d'
-		);
 
 		$schemas = ($configData['components']['schemas'] ?? []);
 		if (is_array($schemas) === false) {
@@ -150,34 +144,15 @@ class SchemaAnnotationReconciler {
 	}//end loadDeclarativeRegisterSchemas()
 
 	/**
-	 * Read and decode the shipped register JSON.
-	 *
-	 * @return array<array-key, mixed>|null The register JSON, or null when missing or invalid.
-	 */
-	private static function readRegisterJson(): ?array {
-		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			return null;
-		}
-
-		$configData = json_decode((string)file_get_contents($configPath), true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-			return null;
-		}
-
-		return $configData;
-	}//end readRegisterJson()
-
-	/**
 	 * Reconcile the declarative annotation blocks of one schema definition.
 	 *
-	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param int|string $key The schema key in the register JSON.
-	 * @param mixed $schemaDef The raw schema definition.
+	 * @param object                       $schemaMapper The OpenRegister SchemaMapper.
+	 * @param array{0: int|string, 1: mixed} $declared     The schema key in the register JSON, and the raw schema definition.
 	 *
 	 * @return int 1 when the configuration was (re)written, 0 otherwise.
 	 */
-	private function reconcileSchemaAnnotationBlocks(object $schemaMapper, int|string $key, mixed $schemaDef): int {
+	private function reconcileSchemaAnnotationBlocks(object $schemaMapper, array $declared): int {
+		[$key, $schemaDef] = $declared;
 		if (is_array($schemaDef) === false) {
 			return 0;
 		}
@@ -193,11 +168,7 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		return $this->mergeOntoLiveSchema(
-			schemaMapper: $schemaMapper,
-			slug: (string)$slug,
-			annotations: $annotations
-		);
+		return $this->mergeOntoLiveSchema(schemaMapper: $schemaMapper, owned: ['slug' => (string)$slug, 'annotations' => $annotations]);
 	}//end reconcileSchemaAnnotationBlocks()
 
 	/**
@@ -241,8 +212,7 @@ class SchemaAnnotationReconciler {
 	 * configuration already carries identical blocks.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param string $slug The schema slug (e.g. 'case').
-	 * @param array<string, mixed> $annotations The annotation blocks to merge.
+	 * @param array{slug: string, annotations: array<string, mixed>} $owned The schema slug (e.g. 'case') and the annotation blocks to merge.
 	 *
 	 * 🔴 ONE KEY IS NOT THE REGISTER JSON'S TO OVERWRITE. The states under
 	 * `x-openregister-lifecycle` on the `case` schema are keyed by statusType
@@ -258,7 +228,8 @@ class SchemaAnnotationReconciler {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
+	private function mergeOntoLiveSchema(object $schemaMapper, array $owned): int {
+		['slug' => $slug, 'annotations' => $annotations] = $owned;
 		// 🔴 RESOLVE INSIDE OUR OWN REGISTER. An unscoped slug lookup here merged
 		// Dossiq's task calculations onto ANOTHER APP'S `task` schema, so
 		// isTerminalStatus and daysUntilDue were installed where nothing read

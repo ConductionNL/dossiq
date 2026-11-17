@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -35,19 +36,19 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
-class WooDeliveredSetVerifier {
+class WooDeliveredSetVerifier implements WooDeliveredSetVerifierInterface {
 
 	use SearchesObjects;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings  Bridge to OpenRegister.
+	 * @param SettingsServiceInterface       $settings  Bridge to OpenRegister.
 	 * @param WooDeliveredSetWriter $sets      The hash rule and the set schema.
 	 * @param WooCaseDocuments      $documents Reads a document with its file bytes.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly WooDeliveredSetWriter $sets,
 		private readonly WooCaseDocuments $documents,
 	) {
@@ -87,6 +88,25 @@ class WooDeliveredSetVerifier {
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	public function verify(array $set): array {
+		$checked = $this->checkedItems(set: $set);
+		$expectedSetHash = (string)($set['setHash'] ?? '');
+		$actualSetHash = $this->sets->setHash(items: $checked['actualItems']);
+
+		return [
+			'verified' => ($checked['verified'] === true && hash_equals($expectedSetHash, $actualSetHash) === true),
+			'setHash' => ['expected' => $expectedSetHash, 'actual' => $actualSetHash],
+			'items' => $checked['items'],
+		];
+	}//end verify()
+
+	/**
+	 * Hash every delivered item again and compare it with what was recorded.
+	 *
+	 * @param array<string, mixed> $set The stored delivered set.
+	 *
+	 * @return array{items: array<int, array<string, string>>, actualItems: array<int, array<string, string>>, verified: bool}
+	 */
+	private function checkedItems(array $set): array {
 		$items = [];
 		$actualItems = [];
 		$verified = true;
@@ -94,28 +114,35 @@ class WooDeliveredSetVerifier {
 			$ref = (string)($item['deliveredRef'] ?? '');
 			$expected = (string)($item['sha256'] ?? '');
 			$actual = $this->hashOf(documentRef: $ref);
-			$status = 'missing';
-			if ($actual !== '') {
-				$status = 'changed';
-				if (hash_equals($expected, $actual) === true) {
-					$status = 'match';
-				}
-			}
+			$status = $this->statusOf(expected: $expected, actual: $actual);
 
 			$verified = ($verified === true && $status === 'match');
 			$items[] = ['deliveredRef' => $ref, 'expected' => $expected, 'actual' => $actual, 'status' => $status];
 			$actualItems[] = ['deliveredRef' => $ref, 'sha256' => $actual];
 		}
 
-		$expectedSetHash = (string)($set['setHash'] ?? '');
-		$actualSetHash = $this->sets->setHash(items: $actualItems);
+		return ['items' => $items, 'actualItems' => $actualItems, 'verified' => $verified];
+	}//end checkedItems()
 
-		return [
-			'verified' => ($verified === true && hash_equals($expectedSetHash, $actualSetHash) === true),
-			'setHash' => ['expected' => $expectedSetHash, 'actual' => $actualSetHash],
-			'items' => $items,
-		];
-	}//end verify()
+	/**
+	 * Whether an item's current hash is missing, changed or a match.
+	 *
+	 * @param string $expected The recorded hash.
+	 * @param string $actual   The current hash, '' when the document is gone.
+	 *
+	 * @return string missing, changed or match.
+	 */
+	private function statusOf(string $expected, string $actual): string {
+		$status = 'missing';
+		if ($actual !== '') {
+			$status = 'changed';
+			if (hash_equals($expected, $actual) === true) {
+				$status = 'match';
+			}
+		}
+
+		return $status;
+	}//end statusOf()
 
 	/**
 	 * The SHA-256 of a document's bytes, or '' when they cannot be read.

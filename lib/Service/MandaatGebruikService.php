@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatGebruikServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -38,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
  */
-class MandaatGebruikService {
+class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -75,23 +76,34 @@ class MandaatGebruikService {
 		array $roleSnapshot = [],
 		array $conditionsApplied = [],
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		return $this->storeUse(
+			row: [
+				'caseId' => $caseId,
+				'decisionId' => $decisionId,
+				'mandateId' => $mandateId,
+				'userId' => $userId,
+				'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+				'roleOnMomentFromDecision' => $roleSnapshot,
+				'usedTerms' => $conditionsApplied,
+				'mandateVersionId' => $mandateId,
+			]
+		);
+	}//end logMandaatGebruik()
+
+	/**
+	 * Store one mandate-use row; the row itself is the answer when nothing is configured or the save fails.
+	 *
+	 * @param array<string, mixed> $row The mandate-use row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function storeUse(array $row): array {
+		$target = $this->target();
+		if ($target === null) {
 			return [];
 		}
 
-		$row = [
-			'caseId' => $caseId,
-			'decisionId' => $decisionId,
-			'mandateId' => $mandateId,
-			'userId' => $userId,
-			'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-			'roleOnMomentFromDecision' => $roleSnapshot,
-			'usedTerms' => $conditionsApplied,
-			'mandateVersionId' => $mandateId,
-		];
+		[$objectService, $register, $schema] = $target;
 
 		try {
 			$saved = $this->saveObjectAsArray(
@@ -102,10 +114,10 @@ class MandaatGebruikService {
 			);
 			return ($saved ?? $row);
 		} catch (\Throwable $e) {
-			$this->logger->error('MandaatGebruik log failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+			$this->logger->error('MandaatGebruik log failed', ['caseId' => $row['caseId'], 'error' => $e->getMessage()]);
 			return $row;
 		}
-	}//end logMandaatGebruik()
+	}//end storeUse()
 
 	/**
 	 * Retrieve the decision audit trail for a case.
@@ -117,18 +129,7 @@ class MandaatGebruikService {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionAuditTrail(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseId' => $caseId]);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		return $this->usageRows(filters: ['caseId' => $caseId]);
 	}//end getDecisionAuditTrail()
 
 	/**
@@ -143,43 +144,64 @@ class MandaatGebruikService {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['mandateId' => $mandateId]
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
+		$rows = $this->mandateRows(mandateId: $mandateId);
 		if ($from === null && $until === null) {
 			return $rows;
 		}
 
-		return $this->filterByDateRange(rows: $rows, from: $from, until: $until);
+		return $this->filterByDateRange(rows: $rows, range: [$from, $until]);
 	}//end getDecisionByMandaat()
+
+	/**
+	 * The mandate-usage rows recorded under a mandate; empty when nothing is configured or the search fails.
+	 *
+	 * @param string $mandateId Mandate id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function mandateRows(string $mandateId): array {
+		return $this->usageRows(filters: ['mandateId' => $mandateId]);
+	}//end mandateRows()
+
+	/**
+	 * The mandate-usage rows matching the filters; empty when nothing is configured or the search fails.
+	 *
+	 * @param array<string, mixed> $filters The object-field filters.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function usageRows(array $filters): array {
+		$target = $this->target();
+		if ($target === null) {
+			return [];
+		}
+
+		[$objectService, $register, $schema] = $target;
+
+		try {
+			return $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: $filters
+			);
+		} catch (\Throwable $e) {
+			return [];
+		}
+	}//end usageRows()
 
 	/**
 	 * Keep only the rows whose `tijdstip` day falls inside the supplied (inclusive) bounds.
 	 *
 	 * A null bound is not applied, so a row is dropped only by a bound that is actually set.
 	 *
-	 * @param array<int, array<string, mixed>> $rows The mandate-usage rows.
-	 * @param DateTimeImmutable|null $from From (inclusive).
-	 * @param DateTimeImmutable|null $until Until (inclusive).
+	 * @param array<int, array<string, mixed>>                          $rows  The mandate-usage rows.
+	 * @param array{0: DateTimeImmutable|null, 1: DateTimeImmutable|null} $range From and until (both inclusive).
 	 *
 	 * @return array<int, array<string, mixed>> The rows within the range.
 	 */
-	private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array {
+	private function filterByDateRange(array $rows, array $range): array {
+		[$from, $until] = $range;
 		$out = [];
 		foreach ($rows as $row) {
 			$when = substr((string)($row['moment'] ?? ''), 0, 10);
@@ -196,4 +218,20 @@ class MandaatGebruikService {
 
 		return $out;
 	}//end filterByDateRange()
+
+	/**
+	 * OpenRegister, the register and the mandate-use schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function target(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end target()
 }//end class

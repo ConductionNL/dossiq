@@ -417,6 +417,25 @@ describe('the Case types index shows one row per case type', () => {
 		expect(all.default).toBeUndefined()
 	})
 
+	// @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
+	it('narrows the current versions to the shipped case types, before All versions', () => {
+		const labels = chips().map((chip) => chip.label)
+		const shipped = chips().find((chip) => chip.label === 'Shipped')
+		expect(shipped.filter).toEqual({ supersededBy: 'IS NULL', shipped: true })
+		expect(shipped.default).toBeUndefined()
+		expect(labels.indexOf('Shipped')).toBeLessThan(labels.indexOf('All versions'))
+		expect(labels.at(-1)).toBe('All versions')
+		expect(schema('caseType').properties.shipped.facetable).toBe(true)
+	})
+
+	// @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
+	it('reads each row as Shipped or Own', () => {
+		const origin = page('CaseTypes').config.columns.find((column) => column.key === 'shipped')
+		expect(origin.label).toBe('Origin')
+		expect(origin.widgetProps).toEqual({ trueLabel: 'Shipped', falseLabel: 'Own', pill: true })
+		expect(schema('caseType').properties.shipped.type).toBe('boolean')
+	})
+
 	it('filters on a real, facetable caseType property', () => {
 		expect(schema('caseType').properties).toHaveProperty('supersededBy')
 		expect(schema('caseType').properties.supersededBy.facetable).toBe(true)

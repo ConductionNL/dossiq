@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A configured schema is searched in the configured register; an unconfigured one has no rows.
@@ -45,6 +46,12 @@ final class ConfiguredSchemaRowsTest extends TestCase {
 		$calls = &$this->calls;
 		$service = new class($calls) {
 			public function __construct(private array &$calls) {
+			}
+
+			public function find(string $id, ...$scope): array {
+				$scope = LegacyObjectArgs::flatten(args: $scope);
+				$this->calls[] = ['find' => $id] + $scope;
+				return ['id' => $id];
 			}
 
 			public function searchObjects(array $query, ...$scope): array {
@@ -76,4 +83,11 @@ final class ConfiguredSchemaRowsTest extends TestCase {
 		$this->assertSame([], $this->rows(['register' => '5', 'note_schema' => '30'], openRegister: false)->search('note_schema', []));
 		$this->assertSame([], $this->calls);
 	}//end testAnUnconfiguredSchemaOrNoOpenRegisterHasNoRows()
+
+	public function testAConfiguredObjectIsFoundByItsUuid(): void {
+		$this->assertSame(['id' => 'o-1'], $this->rows(['register' => '5', 'note_schema' => '30'])->find('note_schema', 'o-1'));
+		$this->assertSame([['find' => 'o-1', 'register' => '5', 'schema' => '30']], $this->calls);
+		$this->assertNull($this->rows(['register' => '5'])->find('note_schema', 'o-1'));
+		$this->assertNull($this->rows(['register' => '5', 'note_schema' => '30'], openRegister: false)->find('note_schema', 'o-1'));
+	}//end testAConfiguredObjectIsFoundByItsUuid()
 }//end class

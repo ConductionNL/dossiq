@@ -20,6 +20,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Relation;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * Objects by uuid, relation rows by uuid, and a log of every call.
  */
@@ -43,7 +46,9 @@ class FakeObjectService {
 	) {
 	}
 
-	public function find(string $uuid, string $register, string $schema): mixed {
+	public function find(string $uuid, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->calls[] = ['find', $uuid, $register, $schema];
 		$object = ($this->objects[$uuid] ?? null);
 		if ($object instanceof \Throwable) {
@@ -53,7 +58,9 @@ class FakeObjectService {
 		return $object;
 	}
 
-	public function saveObject(array $object, string $register, string $schema): void {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): void {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->calls[] = ['saveObject', $object, $register, $schema];
 		if ($this->saveFails !== null) {
 			throw $this->saveFails;

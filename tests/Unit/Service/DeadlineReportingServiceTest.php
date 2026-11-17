@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\Reporting\AnnualPayoutStatement;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -34,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Money\PayoutReader
@@ -591,7 +593,10 @@ class DeadlineReportingServiceTest extends TestCase {
 				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'correlationId' => 'calc-1', 'amount' => 357.0, 'state' => 'paid', 'paidOn' => '2026-04-20', 'bankReference' => 'ERP-1', 'payee' => ['name' => 'J', 'iban' => 'NL91ABNA0417164300']]]);
 			}
 		);
-		$service = new DeadlineReportingService(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher));
+		$service = new DeadlineReportingService(
+			settingsService: $this->settings,
+			statements: new AnnualPayoutStatement(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher))
+		);
 
 		$report = $service->generateDwangsomAuditReport(2026);
 

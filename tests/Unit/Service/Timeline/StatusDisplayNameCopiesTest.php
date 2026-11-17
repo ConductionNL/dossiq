@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Timeline;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Listener\DerivedStatusTimelineListener;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
@@ -42,6 +43,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\DerivedStatusTimelineListener
  * @covers \OCA\Dossiq\Service\Timeline\StatusMoveEntry
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  *
  * @spec openspec/specs/case-management/spec.md
  * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
@@ -137,7 +139,7 @@ class StatusDisplayNameCopiesTest extends TestCase {
 		foreach ((new ReflectionClass($class))->getConstructor()->getParameters() as $parameter) {
 			$type = $parameter->getType();
 			self::assertInstanceOf(expected: ReflectionNamedType::class, actual: $type);
-			$arguments[] = ($type->getName() === StatusTypeLookup::class) ? $lookup : $this->createMock(originalClassName: $type->getName());
+			$arguments[] = (in_array($type->getName(), [StatusTypeLookup::class, StatusTypeLookupInterface::class], true) === true) ? $lookup : $this->createMock(originalClassName: $type->getName());
 		}
 
 		$subject = new $class(...$arguments);

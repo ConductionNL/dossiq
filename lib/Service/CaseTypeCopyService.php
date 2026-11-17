@@ -33,12 +33,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeChildCopy;
 use OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget;
 use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -47,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
-class CaseTypeCopyService {
+class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 
 	/**
 	 * Config keys (resolved via {@see SettingsService::getConfigValue()})
@@ -364,8 +368,7 @@ class CaseTypeCopyService {
 		try {
 			$created = $target->objectService->saveObject(
 				object: $payload,
-				register: $target->register,
-				schema: $target->schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schema))
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -477,8 +480,7 @@ class CaseTypeCopyService {
 
 		return $copy->target->objectService->saveObject(
 			object: $payload,
-			register: $copy->target->register,
-			schema: $copy->target->schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $copy->target->register, schema: $copy->target->schema))
 		);
 	}//end saveChild()
 
@@ -591,7 +593,7 @@ class CaseTypeCopyService {
 		}
 
 		try {
-			$obj = $target->objectService->find($id, register: $target->register, schema: $target->schema);
+			$obj = $target->objectService->find($id, new ObjectFindOptions(register: $target->register, schema: $target->schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseTypeCopyService: object lookup failed',
@@ -619,6 +621,5 @@ class CaseTypeCopyService {
 		unset($data['id'], $data['@self']);
 		return $data;
 	}//end stripIdentity()
-
 
 }//end class

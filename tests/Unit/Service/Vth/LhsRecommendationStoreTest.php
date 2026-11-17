@@ -31,6 +31,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The slice of OpenRegister's ObjectService the store calls, for mocking.
@@ -46,7 +49,9 @@ class LhsStoreObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return null;
 	}//end find()
 
@@ -59,7 +64,9 @@ class LhsStoreObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(int|string $register = '', int|string $schema = '', array $object = []): mixed {
+	public function saveObject(array $object = [], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
 		return null;
 	}//end saveObject()
 
@@ -79,6 +86,7 @@ class LhsStoreObjectService {
  * The store reads and writes recommendations and reads the matrix, refusing loudly.
  *
  * @covers \OCA\Dossiq\Service\Vth\LhsRecommendationStore
+ * @uses   \OCA\Dossiq\Service\Support\ObjectArray
  *
  * @spec openspec/specs/enforcement-lhs/spec.md
  * @uses \OCA\Dossiq\Service\Support\ObjectArray
@@ -179,7 +187,11 @@ class LhsRecommendationStoreTest extends TestCase {
 	public function testLoadRecommendationReadsTheRow(): void {
 		$this->objects->expects($this->once())
 			->method('find')
-			->with('rec-1', 'dossiq', 'lhsRecommendation')
+			->with(...LegacyObjectArgs::with(method: 'find', expected: [
+					'id' => 'rec-1',
+					'register' => 'dossiq',
+					'schema' => 'lhsRecommendation',
+				]))
 			->willReturn(['id' => 'rec-1', 'intervention' => 'B2']);
 
 		$this->assertSame(['id' => 'rec-1', 'intervention' => 'B2'], $this->store()->loadRecommendation(recommendationId: 'rec-1'));
@@ -225,7 +237,9 @@ class LhsRecommendationStoreTest extends TestCase {
 		$this->objects->expects($this->exactly(2))
 			->method('saveObject')
 			->willReturnCallback(
-				function (int|string $register, int|string $schema, array $object) use (&$saved): array {
+				function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
 					$saved[] = [$register, $schema, $object];
 
 					return $object + ['stored' => true];

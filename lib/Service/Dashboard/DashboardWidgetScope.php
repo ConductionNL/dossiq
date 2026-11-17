@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dashboard;
 
+use OCA\Dossiq\Kernel\Contracts\DashboardWidgetScopeInterface;
 use OCP\IGroupManager;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dashboard/spec.md
  */
-class DashboardWidgetScope {
+class DashboardWidgetScope implements DashboardWidgetScopeInterface {
 	/**
 	 * Where the shipped manifest lives, relative to the app root.
 	 *

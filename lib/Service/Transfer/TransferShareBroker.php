@@ -85,25 +85,38 @@ class TransferShareBroker {
 			return null;
 		}
 
+		return $this->createShare(
+			shareService: $shareService,
+			params: [
+				'scope' => 'object',
+				'register' => $register,
+				'schema' => $schema,
+				'objectUri' => $transferUuid,
+				'sharedWith' => $remoteCloudId,
+				'permissions' => 'read-write',
+			]
+		);
+	}//end mintTransferShare()
+
+	/**
+	 * Create the outgoing share; a failure is logged and answers null.
+	 *
+	 * @param object               $shareService The OR FederationShareService.
+	 * @param array<string, mixed> $params       The share parameters; `objectUri` is the transfer uuid.
+	 *
+	 * @return object|null The minted OR FederatedShare, or null on failure
+	 */
+	private function createShare(object $shareService, array $params): ?object {
 		try {
-			return $shareService->createOutgoingShare(
-				params: [
-					'scope' => 'object',
-					'register' => $register,
-					'schema' => $schema,
-					'objectUri' => $transferUuid,
-					'sharedWith' => $remoteCloudId,
-					'permissions' => 'read-write',
-				]
-			);
+			return $shareService->createOutgoingShare(params: $params);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseTransferService: OR createOutgoingShare failed',
-				['transferUuid' => $transferUuid, 'exception' => $e->getMessage()]
+				['transferUuid' => $params['objectUri'], 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
-	}//end mintTransferShare()
+	}//end createShare()
 
 	/**
 	 * Resolve a scoped bearer token to the transfer it authorises — used
@@ -132,6 +145,20 @@ class TransferShareBroker {
 			return null;
 		}
 
+		return $this->grantOf(share: $share, transferId: $transferId);
+	}//end resolveTransferShare()
+
+	/**
+	 * The grant a share carries, when it may accept this exact transfer.
+	 *
+	 * @param object $share The OR FederatedShare
+	 * @param string $transferId The candidate transfer UUID
+	 *
+	 * @return array{sharedWith: string, organisation: ?string}|null The resolved grant, or null when invalid
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#a-read-only-case-share-token-cannot-accept-a-transfer
+	 */
+	private function grantOf(object $share, string $transferId): ?array {
 		if ($share->getDirection() !== 'outgoing') {
 			return null;
 		}
@@ -153,7 +180,7 @@ class TransferShareBroker {
 			'sharedWith' => (string)$share->getSharedWith(),
 			'organisation' => $share->getOrganisation(),
 		];
-	}//end resolveTransferShare()
+	}//end grantOf()
 
 	/**
 	 * Extract the trailing uuid from a canonical object uri (or return it

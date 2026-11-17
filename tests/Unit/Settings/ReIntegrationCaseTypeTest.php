@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * The package, its record import over the trajectory shape, and the Cases view.
  *
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Import\RecordMappingRun

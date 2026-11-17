@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
 
 /**
  * Who a case type lets a handler pick.
@@ -47,7 +48,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class AssigneeNarrowing {
+class AssigneeNarrowing implements AssigneeNarrowingInterface {
 
 	/**
 	 * The case-type property holding the declaration.

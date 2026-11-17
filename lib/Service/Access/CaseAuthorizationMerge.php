@@ -74,37 +74,82 @@ class CaseAuthorizationMerge {
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function merge(array $desired, array $live, ?array $baseline, array $managed = []): array {
-		$teams = array_merge($managed, $this->entries->teamsIn(block: $desired), $this->entries->teamsIn(block: ($baseline ?? [])));
-		$teams = array_values(array_unique($teams));
-		$block = [];
-		$conflicts = [];
-		$restored = [];
+		$teams = $this->teamsOf(desired: $desired, baseline: $baseline, managed: $managed);
+		$result = ['block' => [], 'conflicts' => [], 'restored' => []];
 		foreach (array_unique(array_merge(array_keys($desired), array_keys($live))) as $action) {
-			$owned = null;
-			if ($baseline !== null) {
-				$owned = ['owned' => ($baseline[$action] ?? null)];
-			}
-
 			$merged = $this->mergeAction(
 				values: ['desired' => ($desired[$action] ?? null), 'live' => ($live[$action] ?? null)],
-				baseline: $owned,
+				baseline: $this->ownedOf(baseline: $baseline, action: $action),
 				teams: $teams,
 			);
-			if ($merged['value'] !== null) {
-				$block[$action] = $merged['value'];
-			}
-
-			foreach ($merged['conflicts'] as $suffix) {
-				$conflicts[] = $action . $suffix;
-			}
-
-			foreach (($merged['restored'] ?? []) as $suffix) {
-				$restored[] = $action . $suffix;
-			}
+			$result = $this->withMerged(result: $result, action: $action, merged: $merged);
 		}
 
-		return ['block' => $block, 'conflicts' => $conflicts, 'restored' => $restored];
+		return $result;
 	}//end merge()
+
+	/**
+	 * The managed teams: the ones named, and those the desired block and the baseline name.
+	 *
+	 * @param array<string, mixed> $desired What the projector would write now.
+	 * @param array<string, mixed>|null $baseline What the projector wrote last, or null.
+	 * @param array<int, string> $managed The teams the projector manages besides those it derives now.
+	 *
+	 * @return array<int, string> The teams, each once.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function teamsOf(array $desired, ?array $baseline, array $managed): array {
+		$teams = array_merge($managed, $this->entries->teamsIn(block: $desired), $this->entries->teamsIn(block: ($baseline ?? [])));
+
+		return array_values(array_unique($teams));
+	}//end teamsOf()
+
+	/**
+	 * What the projector wrote last for one action, or null without a baseline.
+	 *
+	 * @param array<string, mixed>|null $baseline What the projector wrote last, or null.
+	 * @param string|int $action The action.
+	 *
+	 * @return array{owned: mixed}|null The owned value, or null.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function ownedOf(?array $baseline, string|int $action): ?array {
+		$owned = null;
+		if ($baseline !== null) {
+			$owned = ['owned' => ($baseline[$action] ?? null)];
+		}
+
+		return $owned;
+	}//end ownedOf()
+
+	/**
+	 * The result with one action's merged value, conflicts and restored rules added.
+	 *
+	 * @param array{block: array<string, mixed>, conflicts: array<int, string>, restored: array<int, string>} $result The result so far.
+	 * @param string|int $action The action.
+	 * @param array{value: mixed, conflicts: array<int, string>, restored?: array<int, string>} $merged The action's merge.
+	 *
+	 * @return array{block: array<string, mixed>, conflicts: array<int, string>, restored: array<int, string>} The result.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function withMerged(array $result, string|int $action, array $merged): array {
+		if ($merged['value'] !== null) {
+			$result['block'][$action] = $merged['value'];
+		}
+
+		foreach ($merged['conflicts'] as $suffix) {
+			$result['conflicts'][] = $action . $suffix;
+		}
+
+		foreach (($merged['restored'] ?? []) as $suffix) {
+			$result['restored'][] = $action . $suffix;
+		}
+
+		return $result;
+	}//end withMerged()
 
 	/**
 	 * One action's value.

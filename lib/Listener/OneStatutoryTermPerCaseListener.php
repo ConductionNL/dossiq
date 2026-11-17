@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
-use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -64,15 +64,15 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the term instance schema.
-	 * @param TermijnService  $terms           Reads the case's terms and writes the withdrawal.
+	 * @param SettingsServiceInterface $settingsService Names the term instance schema.
+	 * @param TermijnServiceInterface  $terms           Reads the case's terms and writes the withdrawal.
 	 * @param LoggerInterface $logger          Logs a withdrawal that could not be written.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $terms,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $terms,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

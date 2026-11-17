@@ -28,6 +28,7 @@ use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class BulkJobHandoff {
+class BulkJobHandoff implements BulkJobHandoffInterface {
 
 	/**
 	 * OpenRegister's job service, resolved by name so dossiq stays installable
@@ -135,21 +136,39 @@ class BulkJobHandoff {
 
 		$this->guardSelection(actionId: $actionId, selection: $selection);
 
+		return $this->createJob(
+			actionId: $actionId,
+			request: ['parameters' => $parameters, 'selection' => $selection, 'justification' => $justification, 'actorUid' => $actorUid]
+		);
+	}//end create()
+
+	/**
+	 * Create the previewed job in OpenRegister's bulk-job service, scoped to dossiq's case register and schema.
+	 *
+	 * @param string               $actionId The dossiq action to run.
+	 * @param array<string, mixed> $request  The action's `parameters`, the `selection`, the coordinator's
+	 *                                       `justification` and the `actorUid` doing it.
+	 *
+	 * @return array<string, mixed> The previewed job, as the job serialises itself.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function createJob(string $actionId, array $request): array {
 		$service = $this->jobService();
 		[$registerId, $schemaId] = $this->scope();
 
 		$job = $service->create(
 			actionId: $actionId,
-			parameters: $parameters,
-			selection: $selection,
-			justification: $justification,
-			actorUid: $actorUid,
+			parameters: $request['parameters'],
+			selection: $request['selection'],
+			justification: $request['justification'],
+			actorUid: $request['actorUid'],
 			registerId: $registerId,
 			schemaId: $schemaId,
 		);
 
 		return $this->asArray(job: $job);
-	}//end create()
+	}//end createJob()
 
 	/**
 	 * Start a rehearsed job. This is the call that writes.

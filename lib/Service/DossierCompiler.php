@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\ReferencedUuid;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -51,6 +52,7 @@ use RuntimeException;
 class DossierCompiler {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * AWB-conventional ordering of dossier document categories. Keys are
@@ -115,11 +117,63 @@ class DossierCompiler {
 			throw new RuntimeException('A case id is required to compile a dossier');
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
+		$objectService = $this->requireObjectService();
+		$schemas = $this->dossierSchemas();
+		$case = $this->requireCase(store: [$objectService, $schemas], caseId: $caseId);
+
+		// Build the ordered set of case UUIDs whose documents belong in
+		// the dossier: the primair besluit case(s) first, then the case
+		// itself. This keeps inherited documents ahead of bezwaar-own
+		// documents within the same rank.
+		$caseUuids = $this->resolveDossierCaseUuids(case: $case, caseId: $caseId);
+
+		$documents = $this->documentsOf(
+			source: new CaseDocumentSource(objectService: $objectService, register: $schemas['register'], docSchema: $schemas['docSchema']),
+			uuids: $caseUuids
+		);
+
+		return $this->orderDocuments(documents: $documents);
+	}//end compile()
+
+	/**
+	 * The case a dossier is compiled for, or an exception when it cannot be loaded.
+	 *
+	 * @param array{0: object, 1: array{register: string, caseSchema: string, docSchema: string}} $store  The OpenRegister
+	 *                                                                                                 ObjectService and
+	 *                                                                                                 the configured ids.
+	 * @param string                                                                                $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RuntimeException When the case cannot be loaded.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function requireCase(array $store, string $caseId): array {
+		[$objectService, $schemas] = $store;
+		$case = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $schemas['register'],
+			schema: $schemas['caseSchema'],
+			id: $caseId
+		);
+		if ($case === null) {
+			throw new RuntimeException('Case not found');
 		}
 
+		return $case;
+	}//end requireCase()
+
+	/**
+	 * The register and the case and document schemas a dossier is read from.
+	 *
+	 * @return array{register: string, caseSchema: string, docSchema: string} The configured ids.
+	 *
+	 * @throws RuntimeException When any of them is not configured.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function dossierSchemas(): array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 		$docSchema = $this->settingsService->getConfigValue(key: 'case_document_schema');
@@ -128,37 +182,30 @@ class DossierCompiler {
 			throw new RuntimeException('Case or document schema is not configured');
 		}
 
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-		if ($case === null) {
-			throw new RuntimeException('Case not found');
-		}
+		return ['register' => $register, 'caseSchema' => $caseSchema, 'docSchema' => $docSchema];
+	}//end dossierSchemas()
 
-		// Build the ordered set of case UUIDs whose documents belong in
-		// the dossier: the primair besluit case(s) first, then the case
-		// itself. This keeps inherited documents ahead of bezwaar-own
-		// documents within the same rank.
-		$caseUuids = $this->resolveDossierCaseUuids(case: $case, caseId: $caseId);
-
+	/**
+	 * The caseDocument records of every case in the dossier, case by case.
+	 *
+	 * @param CaseDocumentSource $source The object service, register and caseDocument schema.
+	 * @param array<int, string> $uuids  The cases whose documents belong in the dossier.
+	 *
+	 * @return array<int, array<string, mixed>> The documents, unordered.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function documentsOf(CaseDocumentSource $source, array $uuids): array {
 		$documents = [];
-		foreach ($caseUuids as $uuid) {
+		foreach ($uuids as $uuid) {
 			$documents = array_merge(
 				$documents,
-				$this->collectCaseDocuments(
-					objectService: $objectService,
-					register: $register,
-					docSchema: $docSchema,
-					caseUuid: $uuid
-				)
+				$this->collectCaseDocuments(source: $source, caseUuid: $uuid)
 			);
 		}
 
-		return $this->orderDocuments(documents: $documents);
-	}//end compile()
+		return $documents;
+	}//end documentsOf()
 
 	/**
 	 * Resolve the ordered list of case UUIDs that contribute documents.
@@ -215,28 +262,15 @@ class DossierCompiler {
 	/**
 	 * Collect caseDocument records for a single case UUID.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $docSchema case_document schema id.
-	 * @param string $caseUuid The case UUID to filter on.
+	 * @param CaseDocumentSource $source   The object service, register and case_document schema.
+	 * @param string             $caseUuid The case UUID to filter on.
 	 *
 	 * @return array<int, array<string, mixed>> Normalised caseDocument records.
 	 */
-	private function collectCaseDocuments(
-		object $objectService,
-		string $register,
-		string $docSchema,
-		string $caseUuid,
-	): array {
+	private function collectCaseDocuments(CaseDocumentSource $source, string $caseUuid): array {
 		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $docSchema,
-						'case' => $caseUuid,
-					],
-				]
+			$results = $source->objectService->findAll(
+				['filters' => ['register' => $source->register, 'schema' => $source->docSchema, 'case' => $caseUuid]]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
@@ -248,6 +282,18 @@ class DossierCompiler {
 
 		$rows = $this->unwrapResults(results: $results);
 
+		return $this->sourcedRecords(rows: $rows, caseUuid: $caseUuid);
+	}//end collectCaseDocuments()
+
+	/**
+	 * The rows as records, each marked with the case it came from.
+	 *
+	 * @param array<int, mixed> $rows     The caseDocument rows.
+	 * @param string            $caseUuid The case the rows belong to.
+	 *
+	 * @return array<int, array<string, mixed>> Normalised caseDocument records.
+	 */
+	private function sourcedRecords(array $rows, string $caseUuid): array {
 		$documents = [];
 		foreach ($rows as $row) {
 			$record = $this->toArray(value: $row);
@@ -260,7 +306,7 @@ class DossierCompiler {
 		}
 
 		return $documents;
-	}//end collectCaseDocuments()
+	}//end sourcedRecords()
 
 	/**
 	 * Order documents by the AWB-conventional dossier sequence.

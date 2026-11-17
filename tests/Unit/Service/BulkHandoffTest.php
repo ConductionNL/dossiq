@@ -38,6 +38,8 @@ use RuntimeException;
  * type versions, and that the act reaches the job at all.
  *
  * @covers \OCA\Dossiq\Service\Bulk\BulkJobHandoff
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  * @uses \OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException
  *
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md

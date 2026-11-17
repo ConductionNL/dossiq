@@ -46,11 +46,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\StatusDisplayName;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
-use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -78,14 +78,14 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param DerivedStatusJournal $journal  What the derivation staged this request.
-	 * @param CaseTimeline         $timeline The one seam that writes a timeline entry.
-	 * @param StatusTypeLookup     $statuses Resolves a statusType id to its name.
+	 * @param CaseTimelineInterface         $timeline The one seam that writes a timeline entry.
+	 * @param StatusTypeLookupInterface $statuses Resolves a statusType id to its name.
 	 * @param LoggerInterface      $logger   Structured logger.
 	 */
 	public function __construct(
 		private readonly DerivedStatusJournal $journal,
-		private readonly CaseTimeline $timeline,
-		private readonly StatusTypeLookup $statuses,
+		private readonly CaseTimelineInterface $timeline,
+		private readonly StatusTypeLookupInterface $statuses,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->statusNames = new StatusDisplayName(statuses: $statuses);
@@ -189,7 +189,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::STATUS_CHANGE,
+			kind: TimelineKindsInterface::STATUS_CHANGE,
 			message: $message,
 			fields: [
 				'from' => $staged['from'],
@@ -226,10 +226,10 @@ class DerivedStatusTimelineListener implements IEventListener {
 
 		$publicLabel = $this->publicLabel(statusTypeId: $staged['to']);
 		if ($publicLabel !== '') {
-			return ['Status: ' . $publicLabel, CaseTimeline::PUBLIC_ENTRY];
+			return ['Status: ' . $publicLabel, CaseTimelineInterface::PUBLIC_ENTRY];
 		}
 
-		return [$message, CaseTimeline::INTERNAL];
+		return [$message, CaseTimelineInterface::INTERNAL];
 	}//end announcement()
 
 	/**

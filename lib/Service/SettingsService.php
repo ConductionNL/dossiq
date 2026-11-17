@@ -26,7 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 	/**
 	 * Configuration keys that contain secrets and must be redacted for non-admin callers.
 	 *
@@ -182,7 +183,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
@@ -346,11 +347,11 @@ class SettingsService {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
 			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
-				$config[$key.'Set'] = $this->appConfig->getValueString(Application::APP_ID, $key, '') !== '';
+				$config[$key.'Set'] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') !== '';
 				continue;
 			}
 
-			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$config[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return $config;
@@ -406,7 +407,7 @@ class SettingsService {
 
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
-				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$data[$key]);
 			}
 		}
 
@@ -478,12 +479,12 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 
 		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
 		$legacy = (self::RENAMED_KEYS[$key] ?? null);
-		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(Application::APP_ID, $key) === false) {
-			$value = $this->appConfig->getValueString(Application::APP_ID, $legacy, $default);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, $default);
 		}
 
 		// LAST, and only when nothing local answered.
@@ -567,7 +568,7 @@ class SettingsService {
 	 */
 	public function getKccConfigValue(string $key): string {
 		$default = (self::KCC_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -592,7 +593,7 @@ class SettingsService {
 	 */
 	public function getWooPublicationConfigValue(string $key): string {
 		$default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -611,7 +612,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function setConfigValue(string $key, string $value): void {
-		$this->appConfig->setValueString(Application::APP_ID, $key, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $value);
 	}//end setConfigValue()
 
 	/**

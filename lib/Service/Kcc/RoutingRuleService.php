@@ -31,8 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**
@@ -42,7 +46,10 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
-class RoutingRuleService {
+class RoutingRuleService implements RoutingRuleServiceInterface {
+
+	use ResolvesKccStore;
+
 	/**
 	 * Constructor.
 	 *
@@ -87,7 +94,12 @@ class RoutingRuleService {
 	public function createRule(array $data): array {
 		$payload = $this->validateRule(data: $data);
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			)
+		);
 	}//end createRule()
 
 	/**
@@ -105,7 +117,12 @@ class RoutingRuleService {
 	public function updateRule(string $id, array $data): array {
 		$payload = $this->validateRule(data: $data);
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema, uuid: (string)$id));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+			)
+		);
 	}//end updateRule()
 
 	/**
@@ -119,7 +136,7 @@ class RoutingRuleService {
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+		$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end deleteRule()
 
 	/**
@@ -140,14 +157,44 @@ class RoutingRuleService {
 			return ['matched' => false, 'suggestedAgents' => []];
 		}
 
-		$team = (string)($routing['assignedTeam'] ?? '');
-		$agents = $this->listAgents();
-		$ranked = $this->routingEngine->rankAgents(
+		$call = ['agents' => $this->listAgents(), 'contactMoment' => $contactMoment, 'routing' => $routing];
+		$ranked = $this->rankPrimaryTeam(call: $call);
+
+		[$ranked, $escalated] = $this->withEscalation(ranked: $ranked, call: $call);
+
+		return $this->routingDecision(routing: $routing, ranking: ['escalated' => $escalated, 'ranked' => $ranked]);
+	}//end route()
+
+	/**
+	 * Rank the agents of the routed team for the contact moment.
+	 *
+	 * @param array<string, mixed> $call The agents, the contact moment and the routing decision, naming the team.
+	 *
+	 * @return array<int, array<string, mixed>> The ranked agents.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function rankPrimaryTeam(array $call): array {
+		['agents' => $agents, 'contactMoment' => $contactMoment, 'routing' => $routing] = $call;
+		return $this->routingEngine->rankAgents(
 			agents: $agents,
-			team: $team,
+			team: (string)($routing['assignedTeam'] ?? ''),
 			contactMoment: array_merge($contactMoment, ['assignedDomain' => ($routing['assignedDomain'] ?? '')]),
 		);
+	}//end rankPrimaryTeam()
 
+	/**
+	 * Fall back to the escalation team when nobody in the primary team is available.
+	 *
+	 * @param array<int, array<string, mixed>> $ranked The primary team's ranking.
+	 * @param array<string, mixed> $call The agents, the contact moment and the routing decision.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: bool} The ranking, and whether it escalated.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function withEscalation(array $ranked, array $call): array {
+		['agents' => $agents, 'contactMoment' => $contactMoment, 'routing' => $routing] = $call;
 		// Escalation: if no agent is available in the primary team, fall back
 		// to the configured escalation team.
 		$escalated = false;
@@ -160,15 +207,30 @@ class RoutingRuleService {
 			$escalated = true;
 		}
 
+		return [$ranked, $escalated];
+	}//end withEscalation()
+
+	/**
+	 * The routing decision with its agent suggestions.
+	 *
+	 * @param array<string, mixed> $routing The routing decision.
+	 * @param array{escalated: bool, ranked: array<int, array<string, mixed>>} $ranking Whether the escalation team was
+	 *                                                                                 used, and the ranked agents.
+	 *
+	 * @return array<string, mixed> The routing decision plus agent suggestions.
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 */
+	private function routingDecision(array $routing, array $ranking): array {
 		return [
 			'matched' => true,
 			'assignedDomain' => ($routing['assignedDomain'] ?? ''),
-			'assignedTeam' => $team,
+			'assignedTeam' => (string)($routing['assignedTeam'] ?? ''),
 			'rule' => ($routing['rule'] ?? ''),
-			'escalated' => $escalated,
-			'suggestedAgents' => $ranked,
+			'escalated' => $ranking['escalated'],
+			'suggestedAgents' => $ranking['ranked'],
 		];
-	}//end route()
+	}//end routingDecision()
 
 	/**
 	 * List all KCC agents.
@@ -193,29 +255,9 @@ class RoutingRuleService {
 	 * @throws OCSBadRequestException When validation fails.
 	 */
 	private function validateRule(array $data): array {
-		$name = trim((string)($data['name'] ?? ''));
-		if ($name === '') {
-			throw new OCSBadRequestException('Rule name is required');
-		}
+		$name = $this->requiredRuleName(data: $data);
 
-		$conditions = ($data['matchConditions'] ?? []);
-		if (is_array($conditions) === false) {
-			throw new OCSBadRequestException('matchConditions must be an array');
-		}
-
-		$valid = [];
-		foreach ($conditions as $condition) {
-			if (is_array($condition) === false) {
-				continue;
-			}
-
-			$type = (string)($condition['type'] ?? '');
-			if (in_array($type, ['keyword', 'regex', 'channel', 'customer_type', 'time_of_day', 'day_of_week'], true) === false) {
-				throw new OCSBadRequestException('Invalid condition type: ' . $type);
-			}
-
-			$valid[] = ['type' => $type, 'value' => (string)($condition['value'] ?? '')];
-		}
+		$valid = $this->validConditions(data: $data);
 
 		return [
 			'name' => $name,
@@ -229,6 +271,69 @@ class RoutingRuleService {
 	}//end validateRule()
 
 	/**
+	 * The rule's name, refusing an empty one.
+	 *
+	 * @param array<string, mixed> $data The rule data.
+	 *
+	 * @return string The trimmed name.
+	 *
+	 * @throws OCSBadRequestException When the name is empty.
+	 */
+	private function requiredRuleName(array $data): string {
+		$name = trim((string)($data['name'] ?? ''));
+		if ($name === '') {
+			throw new OCSBadRequestException('Rule name is required');
+		}
+
+		return $name;
+	}//end requiredRuleName()
+
+	/**
+	 * The rule's match conditions, validated.
+	 *
+	 * @param array<string, mixed> $data The rule data.
+	 *
+	 * @return array<int, array{type: string, value: string}> The conditions.
+	 *
+	 * @throws OCSBadRequestException When the conditions are no array or a type is unknown.
+	 */
+	private function validConditions(array $data): array {
+		$conditions = ($data['matchConditions'] ?? []);
+		if (is_array($conditions) === false) {
+			throw new OCSBadRequestException('matchConditions must be an array');
+		}
+
+		$valid = [];
+		foreach ($conditions as $condition) {
+			if (is_array($condition) === false) {
+				continue;
+			}
+
+			$valid[] = $this->validCondition(condition: $condition);
+		}
+
+		return $valid;
+	}//end validConditions()
+
+	/**
+	 * One match condition, validated.
+	 *
+	 * @param array<string, mixed> $condition The condition.
+	 *
+	 * @return array{type: string, value: string} The condition.
+	 *
+	 * @throws OCSBadRequestException When the type is unknown.
+	 */
+	private function validCondition(array $condition): array {
+		$type = (string)($condition['type'] ?? '');
+		if (in_array($type, ['keyword', 'regex', 'channel', 'customer_type', 'time_of_day', 'day_of_week'], true) === false) {
+			throw new OCSBadRequestException('Invalid condition type: ' . $type);
+		}
+
+		return ['type' => $type, 'value' => (string)($condition['value'] ?? '')];
+	}//end validCondition()
+
+	/**
 	 * Resolve the ObjectService and register/schema identifiers.
 	 *
 	 * @param string $schemaKey The app-config key holding the schema id.
@@ -238,19 +343,7 @@ class RoutingRuleService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(string $schemaKey): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue($schemaKey);
-
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('KCC schema is not configured');
-		}
-
-		return [$objectService, $register, $schema];
+		return $this->kccStore(schemaKey: $schemaKey, unconfigured: 'KCC schema is not configured');
 	}//end resolve()
 
 	/**

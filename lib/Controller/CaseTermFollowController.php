@@ -36,8 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Term\DependentTermOffer;
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
+use OCA\Dossiq\Controller\Support\FindsCaseChangers;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -52,6 +54,9 @@ use OCP\IUserSession;
  * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class CaseTermFollowController extends Controller {
+	use AnswersSignedOutCallers;
+	use FindsCaseChangers;
+
 	/**
 	 * The status each refusal answers with.
 	 *
@@ -69,16 +74,16 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @param string             $appName         The app name.
 	 * @param IRequest           $request         The HTTP request.
-	 * @param DependentTermOffer $offers          Makes and settles the offer.
-	 * @param CaseAccessGuard    $caseAccessGuard Per-case authorization (fails closed).
+	 * @param DependentTermOfferInterface $offers          Makes and settles the offer.
+	 * @param CaseAccessGuardInterface    $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession       $userSession     The current session.
 	 * @param IL10N              $l10n            The translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DependentTermOffer $offers,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly DependentTermOfferInterface $offers,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
@@ -161,19 +166,9 @@ class CaseTermFollowController extends Controller {
 	 * @return JSONResponse|null The refusal, or null when the caller may act.
 	 */
 	private function requireHandler(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You do not handle this case.')],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->caseChanger(caseId: $caseId, refusal: $this->l10n->t('You do not handle this case.'));
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return null;

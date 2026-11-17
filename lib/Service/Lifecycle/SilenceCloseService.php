@@ -50,6 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SilenceCloseServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-status-machinery/spec.md
  */
-class SilenceCloseService {
+class SilenceCloseService implements SilenceCloseServiceInterface {
 
 	/**
 	 * The journal entry a warning writes.
@@ -154,7 +155,24 @@ class SilenceCloseService {
 	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function warn(string $caseId, array $case, string $closesOn): void {
-		$case = $this->steps->journal->append(
+		$this->store->saveCase(case: $this->withWarning(case: $case, closesOn: $closesOn));
+
+		$this->logger->info(
+			'SilenceCloseService: the applicant was told the case will close',
+			['caseId' => $caseId, 'closesOn' => $closesOn],
+		);
+	}//end warn()
+
+	/**
+	 * The case with the warning, made by the product, on its journal.
+	 *
+	 * @param array<string, mixed> $case     The loaded case.
+	 * @param string               $closesOn The date it will close, as Y-m-d.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function withWarning(array $case, string $closesOn): array {
+		return $this->steps->journal->append(
 			case: $case,
 			entry: [
 				'type' => self::WARNING_TYPE,
@@ -162,13 +180,7 @@ class SilenceCloseService {
 				'product' => true,
 			],
 		);
-		$this->store->saveCase(case: $case);
-
-		$this->logger->info(
-			'SilenceCloseService: the applicant was told the case will close',
-			['caseId' => $caseId, 'closesOn' => $closesOn],
-		);
-	}//end warn()
+	}//end withWarning()
 
 	/**
 	 * Close the case, recording that the product did it.

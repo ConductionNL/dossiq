@@ -23,9 +23,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -52,7 +52,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class TransitionCasesAction implements BulkActionInterface {
+class TransitionCasesAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -68,7 +68,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTransitionService $engine The only write path for case.status.
+	 * @param StatusTransitionServiceInterface $engine The only write path for case.status.
 	 * @param IL10N                   $l10n   Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -76,7 +76,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly StatusTransitionService $engine,
+		private readonly StatusTransitionServiceInterface $engine,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -166,25 +166,55 @@ class TransitionCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->moveCase(step: $step, caseId: $caseId));
+	}//end apply()
+
+	/**
+	 * Move a case that has an id, or say what moving it would do.
+	 *
+	 * @param BulkStep $step   The member object, the parameters, whether to commit and who started the job.
+	 * @param string   $caseId The case.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function moveCase(BulkStep $step, string $caseId): BulkActionResult {
 		$parameters = $step->parameters;
 		$commit = $step->commit;
-		$caseId = $this->caseId(object: $object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
-
 		$transitionId = trim((string)($parameters['transitionId'] ?? ''));
 
 		if ($commit === false) {
 			return $this->rehearse(caseId: $caseId, transitionId: $transitionId);
 		}
 
+		return $this->commitMove(caseId: $caseId, transitionId: $transitionId, comment: $this->commentOf(parameters: $parameters));
+	}//end moveCase()
+
+	/**
+	 * The comment the job carries, or null when it carries none.
+	 *
+	 * @param array<string, mixed> $parameters The job parameters.
+	 *
+	 * @return string|null
+	 */
+	private function commentOf(array $parameters): ?string {
 		$comment = null;
 		if (isset($parameters['comment']) === true) {
 			$comment = (string)$parameters['comment'];
 		}
 
+		return $comment;
+	}//end commentOf()
+
+	/**
+	 * Execute the transition on one case and translate the outcome.
+	 *
+	 * @param string      $caseId       The case to move.
+	 * @param string      $transitionId The transition to take.
+	 * @param string|null $comment      The comment, or null.
+	 *
+	 * @return BulkActionResult What happened.
+	 */
+	private function commitMove(string $caseId, string $transitionId, ?string $comment): BulkActionResult {
 		try {
 			$outcome = $this->engine->execute(caseId: $caseId, transitionId: $transitionId, comment: $comment);
 
@@ -204,7 +234,7 @@ class TransitionCasesAction implements BulkActionInterface {
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end commitMove()
 
 	/**
 	 * The automatic actions that did not run, named on the row.

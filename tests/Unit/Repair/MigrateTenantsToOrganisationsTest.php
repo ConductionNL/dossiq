@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\MigrateTenantsToOrganisations
@@ -109,12 +112,19 @@ class MigrateTenantsToOrganisationsTest extends TestCase {
 				return $this->store->findAll(config: $config);
 			}
 
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
-				return $this->entities->find(id: $id, register: $register, schema: $schema);
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
+				return $this->entities->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
-				return $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				return $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 			}
 		};
 	}

@@ -17,6 +17,10 @@
                 "dwellDaysHeld": [],
                 "dwellByAssignee": [],
                 "bottlenecks": [],
+                "dwellHeatmap": {
+                    "columns": [],
+                    "rows": []
+                },
                 "transitionMatrix": [],
                 "reworkPercent": 0.0,
                 "transitionCount": 0
@@ -117,6 +121,30 @@
                         "score": 96.0
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W10",
+                        "2026-W11"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-rev",
+                            "label": "Review",
+                            "values": [
+                                96.0,
+                                null
+                            ]
+                        },
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                null,
+                                168.0
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [
                     {
                         "from": "st-in",
@@ -155,6 +183,10 @@
                 "dwellDaysHeld": [],
                 "dwellByAssignee": [],
                 "bottlenecks": [],
+                "dwellHeatmap": {
+                    "columns": [],
+                    "rows": []
+                },
                 "transitionMatrix": [
                     {
                         "from": "st-in",

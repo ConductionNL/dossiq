@@ -24,6 +24,7 @@ use JsonSerializable;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Support\UnscopedObjectReader
@@ -48,7 +49,9 @@ class UnscopedObjectReaderTest extends TestCase {
 				return $operation();
 			}
 
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['id' => $id, 'register' => $register, 'schema' => $schema, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				return ['id' => $id, 'title' => 'Found'];
 			}
@@ -68,7 +71,9 @@ class UnscopedObjectReaderTest extends TestCase {
 	 */
 	public function testAnEntityIsAnsweredAsItsArray(): void {
 		$service = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): JsonSerializable {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): JsonSerializable {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new class implements JsonSerializable {
 					public function jsonSerialize(): array {
 						return ['id' => 'uuid-2'];
@@ -87,12 +92,16 @@ class UnscopedObjectReaderTest extends TestCase {
 	 */
 	public function testAMissingRowReadsAsNull(): void {
 		$missing = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new DoesNotExistException('gone');
 			}
 		};
 		$nothing = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): ?string {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?string {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}
 		};

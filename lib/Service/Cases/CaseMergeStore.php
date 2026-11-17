@@ -129,6 +129,19 @@ class CaseMergeStore {
 			return false;
 		}
 
+		return $this->patched(row: [$objectService, $register, $schemaId, $id], changes: $changes);
+	}//end patchRow()
+
+	/**
+	 * Write the fields onto the row, logging a refused write.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $row     The object service, the register id, the schema id and the row uuid.
+	 * @param array<string, mixed>                               $changes The fields to write.
+	 *
+	 * @return bool True when the write landed.
+	 */
+	private function patched(array $row, array $changes): bool {
+		[$objectService, $register, $schemaId, $id] = $row;
 		try {
 			return $this->patchObjectAsArray(
 				objectService: $objectService,
@@ -143,7 +156,7 @@ class CaseMergeStore {
 			);
 			return false;
 		}
-	}//end patchRow()
+	}//end patched()
 
 	/**
 	 * Every row of a schema that points at one case.

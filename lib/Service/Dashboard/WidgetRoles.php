@@ -51,12 +51,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dashboard;
 
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
+
 /**
  * Reads the widget role declarations, and says what one reader may receive.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
 class WidgetRoles {
+
+	use ReadsLooseValues {
+		looseList as private listAt;
+	}
+
 	/**
 	 * The key a widget declares its audience under.
 	 *
@@ -133,23 +140,6 @@ class WidgetRoles {
 	}//end definitionsOn()
 
 	/**
-	 * A manifest value as a list, or an empty one when it is not a list.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array<int|string, mixed> The list.
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	private function listAt(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end listAt()
-
-	/**
 	 * The roles one widget declares.
 	 *
 	 * @param array<string, mixed> $widget One widget definition.
@@ -201,20 +191,32 @@ class WidgetRoles {
 			return 'visible';
 		}
 
+		return $this->rolesVerdict(roles: $roles, groups: ['held' => $held, 'known' => $known]);
+	}//end verdictFor()
+
+	/**
+	 * The verdict for declared roles: unresolvable when one does not exist, visible when the reader holds one.
+	 *
+	 * @param array<int, string>                                          $roles  The roles the widget declares.
+	 * @param array{held: array<int, string>, known: array<int, string>} $groups The reader's groups, and every group that exists.
+	 *
+	 * @return string `visible`, `hidden` or `unresolvable`.
+	 */
+	private function rolesVerdict(array $roles, array $groups): string {
 		foreach ($roles as $role) {
-			if (in_array($role, $known, true) === false) {
+			if (in_array($role, $groups['known'], true) === false) {
 				return 'unresolvable';
 			}
 		}
 
 		foreach ($roles as $role) {
-			if (in_array($role, $held, true) === true) {
+			if (in_array($role, $groups['held'], true) === true) {
 				return 'visible';
 			}
 		}
 
 		return 'hidden';
-	}//end verdictFor()
+	}//end rolesVerdict()
 
 	/**
 	 * The payload fields one widget would show.
@@ -270,12 +272,26 @@ class WidgetRoles {
 	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function withheldFields(array $manifest, array $held, array $known): array {
+		[$shown, $restricted, $unresolvable] = $this->fieldVerdicts(manifest: $manifest, groups: ['held' => $held, 'known' => $known]);
+
+		return ['withhold' => $this->withheld(shown: $shown, restricted: $restricted), 'unresolvable' => $unresolvable];
+	}//end withheldFields()
+
+	/**
+	 * The fields a visible widget shows, the fields a hidden widget shows, and the unresolvable widgets.
+	 *
+	 * @param array<string, mixed>                                        $manifest The app manifest.
+	 * @param array{held: array<int, string>, known: array<int, string>} $groups   The reader's groups, and every group that exists.
+	 *
+	 * @return array{0: array<string, true>, 1: array<string, true>, 2: array<int, string>} Shown, restricted, unresolvable.
+	 */
+	private function fieldVerdicts(array $manifest, array $groups): array {
 		$shown = [];
 		$restricted = [];
 		$unresolvable = [];
 
 		foreach ($this->dashboardWidgets(manifest: $manifest) as $widget) {
-			$verdict = $this->verdictFor(widget: $widget, held: $held, known: $known);
+			$verdict = $this->verdictFor(widget: $widget, held: $groups['held'], known: $groups['known']);
 			$fields = $this->fieldsOf(widget: $widget);
 
 			if ($verdict === 'unresolvable') {
@@ -292,6 +308,18 @@ class WidgetRoles {
 			}
 		}
 
+		return [$shown, $restricted, $unresolvable];
+	}//end fieldVerdicts()
+
+	/**
+	 * The restricted fields no visible widget shows.
+	 *
+	 * @param array<string, true> $shown The fields a visible widget shows.
+	 * @param array<string, true> $restricted The fields a hidden widget shows.
+	 *
+	 * @return array<int, string> The fields to remove.
+	 */
+	private function withheld(array $shown, array $restricted): array {
 		$withhold = [];
 		foreach (array_keys($restricted) as $field) {
 			if (isset($shown[$field]) === false) {
@@ -299,8 +327,8 @@ class WidgetRoles {
 			}
 		}
 
-		return ['withhold' => $withhold, 'unresolvable' => $unresolvable];
-	}//end withheldFields()
+		return $withhold;
+	}//end withheld()
 
 	/**
 	 * A dashboard payload with the fields this reader may not see taken out.

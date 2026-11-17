@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\Listener\IntakeFormBindingListener;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindingCheck;
@@ -37,12 +37,14 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Service\Form\FormDestination;
+use OCA\Dossiq\Tests\Support\SchemaRow;
 
 /**
  * The registered listener refuses a case type whose intake form the case schema refuses.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\IntakeFormBindingListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding
@@ -91,7 +93,9 @@ class IntakeFormBindingRegistrationTest extends TestCase {
 		self::assertCount(1, $named, 'The intake form check is registered once for ' . $event::class . '.');
 
 		$validator = new class() {
-			public function validate(array $mapping, object $schema, array $options = []): array {
+			public function validate(array $mapping, FormDestination $destination): array {
+				$schema = $destination->schema;
+				$options = ($destination->audience === null) ? [] : ['audience' => $destination->audience];
 				$findings = [];
 				foreach ($mapping['fields'] as $field) {
 					if ($field['property'] !== 'title') {
@@ -104,7 +108,7 @@ class IntakeFormBindingRegistrationTest extends TestCase {
 		};
 		$mapper = new class() {
 			public function find(string|int $id, ?array $_extend = [], bool $_rbac = true, bool $_multitenancy = true): object {
-				return (object)['id' => $id];
+				return SchemaRow::of(['id' => $id]);
 			}//end find()
 		};
 

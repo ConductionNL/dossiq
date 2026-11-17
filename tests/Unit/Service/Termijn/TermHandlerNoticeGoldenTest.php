@@ -20,6 +20,7 @@ use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 class TermHandlerNoticeGoldenTest extends TestCase {
 
@@ -30,7 +31,9 @@ class TermHandlerNoticeGoldenTest extends TestCase {
 			public function __construct(private array $rows) {
 			}
 
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->rows[$schema][$id] ?? null);
 			}
 		};

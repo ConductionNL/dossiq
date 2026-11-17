@@ -57,7 +57,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Pause;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
@@ -73,12 +74,9 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The act joins five things that
- * already exist: the term store, the outbound route, the reason vocabulary, the
- * schedule and the case timeline. Splitting it would put the count that keeps
- * two triggers apart in one class and the send that increments it in another.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PauseChaseService {
+class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -179,7 +177,10 @@ class PauseChaseService {
 			return false;
 		}
 
-		return $this->chase(instance: $fresh, reason: $reason, moment: $moment);
+		$step = $this->stepFor(instance: $fresh, reason: $reason);
+		$step->moment = $moment;
+
+		return $this->chase(step: $step);
 	}//end chaseIfDue()
 
 	/**
@@ -205,7 +206,10 @@ class PauseChaseService {
 			return false;
 		}
 
-		return $this->escalate(instance: $fresh, reason: $reason, moment: $moment);
+		$step = $this->stepFor(instance: $fresh, reason: $reason);
+		$step->moment = $moment;
+
+		return $this->escalate(step: $step);
 	}//end escalateIfDue()
 
 	/**
@@ -232,6 +236,18 @@ class PauseChaseService {
 			return null;
 		}
 
+		return $this->contextOfPaused(fresh: $fresh);
+	}//end contextFor()
+
+	/**
+	 * The still-paused row with its reason in force, or null when it names no reason or case,
+	 * or when the case type does not chase it.
+	 *
+	 * @param array<string, mixed> $fresh The row as it stands now.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
+	 */
+	private function contextOfPaused(array $fresh): array|null {
 		$key = trim((string)($fresh['pauseReason'] ?? ''));
 		$caseId = trim((string)($fresh['case'] ?? ''));
 		if ($key === '' || $caseId === '') {
@@ -256,39 +272,60 @@ class PauseChaseService {
 		}//end foreach
 
 		return null;
-	}//end contextFor()
+	}//end contextOfPaused()
 
 	/**
 	 * Send one reminder and write down that it went.
 	 *
-	 * @param array<string, mixed> $instance The fresh, still-paused row.
-	 * @param array<string, mixed> $reason   The normalised reason in force.
-	 * @param DateTimeImmutable    $moment   When this is happening.
+	 * @param PauseStep $step The fresh, still-paused row with the normalised reason in force and the moment.
 	 *
 	 * @return bool True when the reminder went out.
 	 */
-	private function chase(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$step = $this->stepFor(instance: $instance, reason: $reason);
-		$step->moment = $moment;
+	private function chase(PauseStep $step): bool {
 		$step->recipient = $this->recipientFor(caseId: $step->caseId);
 		if ($step->recipient === '') {
-			$this->logger->warning(
-				'Dossiq pause: a reminder was due but the case carries no address to send it to',
-				['app' => Application::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
-			);
+			$this->warnNoRecipient(step: $step);
 			return false;
 		}
 
-		$step->number = ($this->chase->schedule->sent(instance: $instance) + 1);
+		$step->number = ($this->chase->schedule->sent(instance: $step->instance) + 1);
 		if ($this->sendReminder(step: $step) === false) {
 			return false;
 		}
 
+		$this->recordChased(step: $step, reason: $step->reason);
+
+		return true;
+	}//end chase()
+
+	/**
+	 * Log that a reminder was due but the case has no address to send it to.
+	 *
+	 * @param PauseStep $step The step.
+	 *
+	 * @return void
+	 */
+	private function warnNoRecipient(PauseStep $step): void {
+		$this->logger->warning(
+			'Dossiq pause: a reminder was due but the case carries no address to send it to',
+			['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'case' => $step->caseId]
+		);
+	}//end warnNoRecipient()
+
+	/**
+	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
+	 *
+	 * @param PauseStep            $step   The step, numbered, carrying when this is happening.
+	 * @param array<string, mixed> $reason The normalised reason in force.
+	 *
+	 * @return void
+	 */
+	private function recordChased(PauseStep $step, array $reason): void {
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
 			[
 				'chasesSent' => $step->number,
-				'lastChasedAt' => $moment->format('c'),
+				'lastChasedAt' => $step->moment->format('c'),
 			]
 		);
 
@@ -297,9 +334,7 @@ class PauseChaseService {
 		$this->recordStep(step: $step);
 		$this->projectOntoCase(step: $step);
 		$this->logChased(step: $step);
-
-		return true;
-	}//end chase()
+	}//end recordChased()
 
 	/**
 	 * The step for one paused row and its reason.
@@ -348,7 +383,7 @@ class PauseChaseService {
 			// budget on a letter nobody received.
 			$this->logger->warning(
 				'Dossiq pause: a reminder could not be sent, so nothing was counted',
-				['app' => Application::APP_ID, 'instance' => $step->instanceId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'instance' => $step->instanceId, 'error' => $e->getMessage()]
 			);
 			return false;
 		}//end try
@@ -367,7 +402,7 @@ class PauseChaseService {
 		$this->logger->info(
 			'Dossiq pause: a reminder went out on a suspended term',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'instance' => $step->instanceId,
 				'case' => $step->caseId,
 				'reason' => (string)$step->reason['key'],
@@ -379,28 +414,25 @@ class PauseChaseService {
 	/**
 	 * Record that the reminders ran out without an answer.
 	 *
-	 * @param array<string, mixed> $instance The fresh, still-paused row.
-	 * @param array<string, mixed> $reason   The normalised reason in force.
-	 * @param DateTimeImmutable    $moment   When this is happening.
+	 * @param PauseStep $step The fresh, still-paused row with the normalised reason in force and the moment.
 	 *
 	 * @return bool True when the escalation was recorded.
 	 */
-	private function escalate(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$step = $this->stepFor(instance: $instance, reason: $reason);
-		$step->moment = $moment;
+	private function escalate(PauseStep $step): bool {
+		$reason = $step->reason;
 		$step->event = self::EVENT_ESCALATED;
-		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $instance));
+		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $step->instance));
 
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
-			['chaseEscalatedAt' => $moment->format('c')]
+			['chaseEscalatedAt' => $step->moment->format('c')]
 		);
 
 		$this->recordStep(step: $step);
 		$this->logger->info(
 			'Dossiq pause: the reminders ran out without an answer',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'instance' => $step->instanceId,
 				'case' => $step->caseId,
 				'reason' => (string)$reason['key'],
@@ -514,7 +546,7 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the open request behind a suspended term could not be read',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -537,21 +569,13 @@ class PauseChaseService {
 	 */
 	private function projectOntoCase(PauseStep $step): void {
 		$caseId = $step->caseId;
-		$objectService = $this->settings->getObjectService();
-		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('case_schema');
-		if ($objectService === null || $caseId === '' || $register === '' || $schema === '') {
+		$store = $this->caseStore();
+		if ($store === null || $caseId === '') {
 			return;
 		}
 
-		$changes = [
-			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
-			'chasesSent' => $step->number,
-		];
-		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
-		if ($since !== null) {
-			$changes['waitingSince'] = $since;
-		}
+		[$objectService, $register, $schema] = $store;
+		$changes = $this->waitingChanges(step: $step);
 
 		try {
 			$this->patchObjectAsArray(
@@ -564,10 +588,46 @@ class PauseChaseService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pause: the waiting sentence on the case could not be written; the term is correct',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end projectOntoCase()
+
+	/**
+	 * The object service, register and case schema, or null when any of them is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The case store.
+	 */
+	private function caseStore(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = (string)$this->settings->getConfigValue('register');
+		$schema = (string)$this->settings->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The waiting facts to write onto the case for a reminder.
+	 *
+	 * @param PauseStep $step The reminder that went out.
+	 *
+	 * @return array<string, mixed> The case changes.
+	 */
+	private function waitingChanges(PauseStep $step): array {
+		$changes = [
+			'pauseWaitingOn' => (string)$step->reason['waitingOn'],
+			'chasesSent' => $step->number,
+		];
+		$since = $this->chase->schedule->pauseStartMoment(date: (string)($step->instance['pauzeStartDatum'] ?? ''));
+		if ($since !== null) {
+			$changes['waitingSince'] = $since;
+		}
+
+		return $changes;
+	}//end waitingChanges()
 
 	/**
 	 * Every suspended term instance.

@@ -37,10 +37,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ApplicantTermNoteInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Term\ApplicantTermNote;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -58,15 +58,15 @@ class ApplicantTermNoteListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Schema id bridge.
-	 * @param ApplicantTermNote $note            The sentence and the date.
-	 * @param CaseTypeReader    $caseTypes       The case type's extension period.
+	 * @param SettingsServiceInterface   $settingsService Schema id bridge.
+	 * @param ApplicantTermNoteInterface $note            The sentence and the date.
+	 * @param CaseTypeReaderInterface    $caseTypes       The case type's extension period.
 	 * @param LoggerInterface   $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly ApplicantTermNote $note,
-		private readonly CaseTypeReader $caseTypes,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ApplicantTermNoteInterface $note,
+		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

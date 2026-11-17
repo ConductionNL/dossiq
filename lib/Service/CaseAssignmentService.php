@@ -43,8 +43,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAssignmentService {
+class CaseAssignmentService implements CaseAssignmentServiceInterface {
 
 	/**
 	 * Reads and patches the case, naming this service in its warnings.
@@ -187,16 +188,30 @@ class CaseAssignmentService {
 			throw new RuntimeException('already_assigned');
 		}
 
-		$this->write(caseId: $caseId, assignee: $toUser);
-		$this->notifyReceiver(toUser: $toUser, fromUser: $previous, caseId: $caseId);
+		return $this->handOver(move: ['caseId' => $caseId, 'from' => $previous, 'to' => $toUser], actorId: $actorId);
+	}//end reassign()
+
+	/**
+	 * Write the new handler, tell them and log the move.
+	 *
+	 * @param array{caseId: string, from: string, to: string} $move    The case UUID, the previous handler (or empty) and the receiving one.
+	 * @param string                                          $actorId Who ordered it.
+	 *
+	 * @return array{caseId: string, assignee: string, previousAssignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `assignment_write_failed`.
+	 */
+	private function handOver(array $move, string $actorId): array {
+		$this->write(caseId: $move['caseId'], assignee: $move['to']);
+		$this->notifyReceiver(move: $move);
 
 		$this->logger->info(
 			'Dossiq CaseAssignmentService: case reassigned',
-			['app' => Application::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
+			['app' => AppIdentity::APP_ID, ...$move, 'actor' => $actorId]
 		);
 
-		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
-	}//end reassign()
+		return (['previousAssignee' => $move['from']] + $this->describe(caseId: $move['caseId'], userId: $actorId, assignee: $move['to']));
+	}//end handOver()
 
 	/**
 	 * Tell the receiving handler a case was handed to them.
@@ -204,29 +219,27 @@ class CaseAssignmentService {
 	 * The `cases_reassigned` subject the bulk release already sends, with a
 	 * count of one. A failed notification never undoes the move.
 	 *
-	 * @param string $toUser   The receiving handler.
-	 * @param string $fromUser The previous handler, or empty.
-	 * @param string $caseId   The case UUID.
+	 * @param array{caseId: string, from: string, to: string} $move The case UUID, the previous handler (or empty) and the receiving one.
 	 *
 	 * @return void
 	 */
-	private function notifyReceiver(string $toUser, string $fromUser, string $caseId): void {
+	private function notifyReceiver(array $move): void {
 		if ($this->notificationManager === null) {
 			return;
 		}
 
 		try {
 			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
-				->setUser($toUser)
+			$notification->setApp(AppIdentity::APP_ID)
+				->setUser($move['to'])
 				->setDateTime(new DateTime())
-				->setObject('case', $caseId)
-				->setSubject(Notifier::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
+				->setObject('case', $move['caseId'])
+				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $move['from'], 'count' => 1]);
 			$this->notificationManager->notify($notification);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
+				['app' => AppIdentity::APP_ID, 'caseId' => $move['caseId'], 'toUser' => $move['to']]
 			);
 		}
 	}//end notifyReceiver()

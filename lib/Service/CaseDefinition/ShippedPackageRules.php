@@ -30,12 +30,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Service\Support\DescribesValues;
+
 /**
  * Checks a shipped package's manifest and part files.
  *
  * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
  */
 class ShippedPackageRules {
+	use DecodesPackageFiles;
+	use DescribesValues;
 
 	/**
 	 * Each part the installer writes, and the capability it stands for.
@@ -125,6 +129,11 @@ class ShippedPackageRules {
 		if (in_array($install, self::INSTALL_MODES, true) === false) {
 			$this->errors[] = "package.json: install must be 'auto' or 'on-request'.";
 		}
+
+		$this->errors = array_merge(
+			$this->errors,
+			(new PackageAdminTab())->errors(adminTab: ($manifest[PackageAdminTab::KEY] ?? null))
+		);
 	}//end checkManifest()
 
 	/**
@@ -146,21 +155,6 @@ class ShippedPackageRules {
 			}
 		}
 	}//end checkParts()
-
-	/**
-	 * A value as it reads in a message.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The string, or the type of anything else.
-	 */
-	private function describe(mixed $value): string {
-		if (is_string($value) === true) {
-			return $value;
-		}
-
-		return gettype($value);
-	}//end describe()
 
 	/**
 	 * Files that belong to no declared part, as warnings.
@@ -213,29 +207,6 @@ class ShippedPackageRules {
 
 		return false;
 	}//end startsWithAny()
-
-	/**
-	 * Decode one file to an object, recording why when it cannot be.
-	 *
-	 * @param array<string, string> $files The package files.
-	 * @param string                $path  The file.
-	 *
-	 * @return array<string, mixed>|null The object, or null.
-	 */
-	private function decode(array $files, string $path): ?array {
-		if (isset($files[$path]) === false) {
-			$this->errors[] = "{$path} is missing.";
-			return null;
-		}
-
-		$data = json_decode($files[$path], true);
-		if (is_array($data) === false || ($data !== [] && array_is_list($data) === true)) {
-			$this->errors[] = "{$path} is not a JSON object: " . json_last_error_msg();
-			return null;
-		}
-
-		return $data;
-	}//end decode()
 
 	/**
 	 * The result in the validator's shape.

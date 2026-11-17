@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Custody;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseCustodyChain {
+class CaseCustodyChain implements CaseCustodyChainInterface {
 
 	use SearchesObjects;
 

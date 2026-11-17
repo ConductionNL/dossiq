@@ -33,6 +33,7 @@ use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
 use OCA\Dossiq\Flow\DossiqTxSendMessageNode;
 use OCA\Dossiq\Flow\DossiqTxSetCaseAnswerNode;
 use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
+use OCA\Dossiq\Flow\DossiqTxRaiseDecisionNode;
 use OCA\Dossiq\Flow\DossiqTxSuspendTermNode;
 use OCA\Dossiq\Service\Transitions\ActionResult;
 use OCA\Dossiq\Service\Transitions\BesluitvormingPublishHandler;
@@ -41,6 +42,7 @@ use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCA\Dossiq\Service\Transitions\SendTemplateMessageHandler;
 use OCA\Dossiq\Service\Transitions\SetCaseAnswerHandler;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
+use OCA\Dossiq\Service\Transitions\RaiseDecisionHandler;
 use OCA\Dossiq\Service\Transitions\SuspendTermHandler;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCP\IL10N;
@@ -58,6 +60,7 @@ use UnexpectedValueException;
 #[CoversClass(DossiqFlowNodeBase::class)]
 #[CoversClass(DossiqTxSetStatusNode::class)]
 #[CoversClass(DossiqTxSuspendTermNode::class)]
+#[CoversClass(DossiqTxRaiseDecisionNode::class)]
 #[CoversClass(DossiqTxCreateTaskNode::class)]
 #[CoversClass(DossiqTxCreateSubCaseNode::class)]
 #[CoversClass(DossiqTxBesluitvormingPublishNode::class)]
@@ -103,6 +106,7 @@ final class DossiqTransitionNodesTest extends TestCase {
 		return [
 			'set status'             => [DossiqTxSetStatusNode::class, SetStatusHandler::class, 'dossiq.setStatus', []],
 			'suspend term'           => [DossiqTxSuspendTermNode::class, SuspendTermHandler::class, 'dossiq.suspendTerm', ['durationDays']],
+			'raise decision'         => [DossiqTxRaiseDecisionNode::class, RaiseDecisionHandler::class, 'dossiq.raiseDecision', ['decisionType']],
 			'create task'            => [DossiqTxCreateTaskNode::class, CreateTaskHandler::class, 'dossiq.createTask', ['title']],
 			'create sub-case'        => [DossiqTxCreateSubCaseNode::class, CreateSubCaseHandler::class, 'dossiq.createSubCase', ['caseType']],
 			'publish decision-making' => [DossiqTxBesluitvormingPublishNode::class, BesluitvormingPublishHandler::class, 'dossiq.besluitvormingPublish', []],

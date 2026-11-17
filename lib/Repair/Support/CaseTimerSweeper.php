@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair\Support;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,11 +41,11 @@ final class CaseTimerSweeper {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Reaches OpenRegister and the case schema.
+	 * @param SettingsServiceInterface $settingsService Reaches OpenRegister and the case schema.
 	 * @param LoggerInterface $logger          Logs a failed read.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

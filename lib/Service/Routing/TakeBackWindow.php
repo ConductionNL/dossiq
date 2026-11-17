@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Kernel\Contracts\TimerChange;
 use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/role-based-step-routing/spec.md#requirement-work-not-taken-up-returns-to-the-pool-req-rtp-03
  */
-class TakeBackWindow {
+class TakeBackWindow implements TakeBackWindowInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -58,13 +59,6 @@ class TakeBackWindow {
 	 * @var string
 	 */
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
-
-	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-take-back';
 
 	/**
 	 * The suffix that keeps the timer's subject apart from the case's own timers.
@@ -177,36 +171,89 @@ class TakeBackWindow {
 			return self::UNAVAILABLE;
 		}
 
-		$config = [
+		$routed = new RoutedCase(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt);
+		$config = $this->takeBackConfig(routed: $routed, window: $window);
+
+		return $this->armOnEngine(config: $config, caseId: $caseId);
+	}//end arm()
+
+	/**
+	 * The timer configuration of a take-back window.
+	 *
+	 * @param RoutedCase                      $routed The case, who it was routed to and when.
+	 * @param array{value: int, unit: string} $window The window.
+	 *
+	 * @return array<string, mixed> The engine configuration.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function takeBackConfig(RoutedCase $routed, array $window): array {
+		return [
 			'subjectType'     => 'object',
-			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
+			'subjectUuid'     => $routed->caseId.self::SUBJECT_SUFFIX,
 			'appId'           => 'dossiq',
 			'title'           => 'Terugnemen als niet opgepakt',
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
 			'sla'             => $window,
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'hours',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'zaak-teruggenomen',
-					'openIncident'   => false,
-				],
-			],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'case_routed',
-			'anchorEventAt'   => $routedAt,
-			'metadata'        => [
-				'source'   => self::METADATA_SOURCE,
-				'caseId'   => $caseId,
-				'routedTo' => $routedTo,
-				'routedAt' => $routedAt->format(DATE_ATOM),
+			'anchorEventAt'   => $routed->routedAt,
+			'metadata'        => $this->timerMetadata(routed: $routed),
+		];
+	}//end takeBackConfig()
+
+	/**
+	 * The escalation rules of the window: take the case back when it breaches.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function escalationRules(): array {
+		return [
+			[
+				'trigger'        => 'slaBreached',
+				'offset'         => 0,
+				'offsetUnit'     => 'hours',
+				'notifyRole'     => [],
+				'escalateToRole' => [],
+				'priority'       => 'normal',
+				'message'        => 'zaak-teruggenomen',
+				'openIncident'   => false,
 			],
 		];
+	}//end escalationRules()
 
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param RoutedCase $routed The case, who it was routed to and when.
+	 *
+	 * @return array<string, string> The metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function timerMetadata(RoutedCase $routed): array {
+		return [
+			'source'   => self::METADATA_SOURCE,
+			'caseId'   => $routed->caseId,
+			'routedTo' => $routed->routedTo,
+			'routedAt' => $routed->routedAt->format(DATE_ATOM),
+		];
+	}//end timerMetadata()
+
+	/**
+	 * Arm the configured timer on the engine.
+	 *
+	 * @param array<string, mixed> $config The engine configuration.
+	 * @param string               $caseId The case id.
+	 *
+	 * @return string ARMED or UNAVAILABLE.
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	private function armOnEngine(array $config, string $caseId): string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return self::UNAVAILABLE;
@@ -220,7 +267,7 @@ class TakeBackWindow {
 		}
 
 		return self::ARMED;
-	}//end arm()
+	}//end armOnEngine()
 
 	/**
 	 * Cancel the case's take-back timer (and only that one).

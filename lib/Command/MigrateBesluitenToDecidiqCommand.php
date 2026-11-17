@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\BesluitMigrationService;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -43,10 +43,10 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param BesluitMigrationService $migrationService Besluit → decidiq Decision migrator.
+	 * @param BesluitMigrationServiceInterface $migrationService Besluit → decidiq Decision migrator.
 	 */
 	public function __construct(
-		private readonly BesluitMigrationService $migrationService,
+		private readonly BesluitMigrationServiceInterface $migrationService,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -98,7 +98,7 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 			return Command::SUCCESS;
 		}
 
-		$this->report(output: $output, summary: $summary, commit: $commit);
+		$this->report(output: $output, summary: [...$summary, 'commit' => $commit]);
 
 		if ($summary['failed'] > 0) {
 			return Command::FAILURE;
@@ -111,14 +111,13 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 	 * Print the counts and what they mean for the local schema key.
 	 *
 	 * @param OutputInterface $output Console output.
-	 * @param array{total:int, migrated:int, skipped:int, failed:int, detached:bool} $summary The run.
-	 * @param bool $commit Whether the run wrote.
+	 * @param array{total:int, migrated:int, skipped:int, failed:int, detached:bool, commit:bool} $summary The run, and whether it wrote.
 	 *
 	 * @return void
 	 */
-	private function report(OutputInterface $output, array $summary, bool $commit): void {
+	private function report(OutputInterface $output, array $summary): void {
 		$mode = 'dry run, nothing written';
-		if ($commit === true) {
+		if ($summary['commit'] === true) {
 			$mode = 'committed';
 		}
 
@@ -128,7 +127,7 @@ class MigrateBesluitenToDecidiqCommand extends Command {
 		$output->writeln('  already there   = ' . $summary['skipped']);
 		$output->writeln('  failed          = ' . $summary['failed']);
 
-		if ($commit === false) {
+		if ($summary['commit'] === false) {
 			if ($summary['migrated'] > 0) {
 				$output->writeln('  Re-run with <info>--commit</info> to write.');
 			}

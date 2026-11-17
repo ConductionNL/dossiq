@@ -34,8 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QueueViewPreferencesInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class QueueViewPreferences {
+class QueueViewPreferences implements QueueViewPreferencesInterface {
 	/**
 	 * The preference holding the groups hidden for a day, as JSON.
 	 *
@@ -94,7 +95,7 @@ class QueueViewPreferences {
 	 */
 	public function groupBy(string $userId): string {
 		try {
-			$stored = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_GROUP_BY, 'source');
+			$stored = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_GROUP_BY, 'source');
 		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the queue grouping could not be read: ' . $e->getMessage());
 
@@ -123,7 +124,7 @@ class QueueViewPreferences {
 			$groupBy = 'source';
 		}
 
-		$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_GROUP_BY, $groupBy);
+		$this->userConfig->setValueString($userId, AppIdentity::APP_ID, self::PREF_GROUP_BY, $groupBy);
 
 		return $groupBy;
 	}//end setGroupBy()
@@ -201,7 +202,7 @@ class QueueViewPreferences {
 	private function saveHidden(string $userId, array $stored): array {
 		$this->userConfig->setValueString(
 			$userId,
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::PREF_HIDDEN_GROUPS,
 			json_encode($stored, JSON_THROW_ON_ERROR)
 		);
@@ -222,7 +223,7 @@ class QueueViewPreferences {
 	 */
 	private function storedHidden(string $userId): array {
 		try {
-			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_HIDDEN_GROUPS, '');
+			$raw = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_HIDDEN_GROUPS, '');
 		} catch (InvalidArgumentException $e) {
 			// Narrow on purpose: see the note in PersonalStageService. A
 			// reader whose preference cannot be read sees every group, which

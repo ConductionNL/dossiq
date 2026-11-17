@@ -27,9 +27,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
+use OCA\Dossiq\Service\TemplateLibrary\TemplateMetadata;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -38,7 +42,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/template-library/spec.md
  */
-class TemplateLibraryService {
+class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
 	/**
 	 * Path to the templates directory.
@@ -59,6 +63,13 @@ class TemplateLibraryService {
 	];
 
 	/**
+	 * Reads the metadata the library lists for one template.
+	 *
+	 * @var TemplateMetadata
+	 */
+	private readonly TemplateMetadata $metadata;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service for register/schema references
@@ -70,6 +81,7 @@ class TemplateLibraryService {
 		private readonly LoggerInterface $logger,
 		private readonly string $templatesDir=self::TEMPLATES_DIR,
 	) {
+		$this->metadata = new TemplateMetadata();
 	}//end __construct()
 
 	/**
@@ -85,34 +97,43 @@ class TemplateLibraryService {
 		$templates = [];
 
 		foreach ($this->templateFiles() as $file) {
-			$content = file_get_contents($file);
-			if ($content === false) {
+			$template = $this->templateMetadata(file: $file);
+			if ($template === null) {
 				continue;
 			}
 
-			$data = json_decode($content, true);
-			if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-				$this->logger->warning(
-					'Invalid template file: ' . basename($file),
-					['app' => Application::APP_ID]
-				);
-				continue;
-			}
-
-			$templates[] = [
-				'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
-				'title' => $data['title'] ?? '',
-				'description' => $data['description'] ?? '',
-				'category' => $data['category'] ?? 'general',
-				'version' => $data['version'] ?? '1.0.0',
-				'file' => basename($file),
-				'fills' => $this->fillsOf(data: $data),
-				'notes' => $this->notesOf(data: $data),
-			];
+			$templates[] = $template;
 		}//end foreach
 
 		return $templates;
 	}//end listTemplates()
+
+	/**
+	 * One template file's metadata, or null when it cannot be read or is not valid JSON.
+	 *
+	 * @param string $file The template file path.
+	 *
+	 * @return array<string, mixed>|null The template metadata.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateMetadata(string $file): ?array {
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return null;
+		}
+
+		$data = json_decode($content, true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+			$this->logger->warning(
+				'Invalid template file: ' . basename($file),
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		return $this->metadata->entry(data: $data, file: $file);
+	}//end templateMetadata()
 
 	/**
 	 * The template JSON files in the templates directory.
@@ -133,47 +154,6 @@ class TemplateLibraryService {
 
 		return $files;
 	}//end templateFiles()
-
-	/**
-	 * What a template fills in from the case, for the generate dialog.
-	 *
-	 * @param array<string, mixed> $data The template file's content.
-	 *
-	 * @return array<int, mixed> The template's fills, or an empty list.
-	 *
-	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-names-what-it-fills-in
-	 */
-	private function fillsOf(array $data): array {
-		if (isset($data['fills']) === false || is_array($data['fills']) === false) {
-			return [];
-		}
-
-		return array_values($data['fills']);
-	}//end fillsOf()
-
-	/**
-	 * The notes a template carries for whoever generates it, e.g. about the objection period.
-	 *
-	 * @param array<string, mixed> $data The template file's content.
-	 *
-	 * @return array<int, string> The notes, blanks and non-strings left out.
-	 *
-	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
-	 */
-	private function notesOf(array $data): array {
-		if (isset($data['notes']) === false || is_array($data['notes']) === false) {
-			return [];
-		}
-
-		$notes = [];
-		foreach ($data['notes'] as $note) {
-			if (is_string($note) === true && trim($note) !== '') {
-				$notes[] = trim($note);
-			}
-		}
-
-		return $notes;
-	}//end notesOf()
 
 	/**
 	 * Load a template by its ID.
@@ -239,17 +219,7 @@ class TemplateLibraryService {
 			throw new RuntimeException('Dossiq register not configured');
 		}
 
-		// Create the case type.
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		// No `?? []`: the refusal above already proved this is an array, so
-		// the coalesce was dead and phpstan said so.
-		$caseTypeData = $template['caseType'];
-		$caseType = $objectService->saveObject(
-			object: $caseTypeData,
-			register: $register,
-			schema: $caseTypeSchema,
-		);
-		$caseTypeId = $caseType->getUuid();
+		$caseTypeId = $this->createCaseType(template: $template, store: [$objectService, $register]);
 
 		$created = $this->createTemplateEntities(
 			activation: new TemplateActivation(objectService: $objectService, register: $register, caseTypeId: $caseTypeId),
@@ -260,11 +230,36 @@ class TemplateLibraryService {
 
 		$this->logger->info(
 			'Template activated: ' . $templateId . ' -> caseType ' . $caseTypeId,
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		return $result;
 	}//end activateTemplate()
+
+	/**
+	 * Create the template's case type and answer its id.
+	 *
+	 * @param array<string, mixed>        $template The template, with a case type.
+	 * @param array{0: object, 1: string} $store    OpenRegister's ObjectService and the register.
+	 *
+	 * @return string The new case type's id.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function createCaseType(array $template, array $store): string {
+		[$objectService, $register] = $store;
+		// Create the case type.
+		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+		// No `?? []`: the refusal above already proved this is an array, so
+		// the coalesce was dead and phpstan said so.
+		$caseTypeData = $template['caseType'];
+		$caseType = $objectService->saveObject(
+			object: $caseTypeData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseTypeSchema))
+		);
+
+		return $caseType->getUuid();
+	}//end createCaseType()
 
 	/**
 	 * The template to activate, refused when it is missing or describes no case type.
@@ -339,8 +334,7 @@ class TemplateLibraryService {
 			$row['caseType'] = $activation->caseTypeId;
 			$uuids[] = $activation->objectService->saveObject(
 				object: $row,
-				register: $activation->register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $activation->register, schema: $schema))
 			)->getUuid();
 		}
 
@@ -408,8 +402,10 @@ class TemplateLibraryService {
 
 		return $activation->objectService->saveObject(
 			object: $workflow,
-			register: $activation->register,
-			schema: $this->settingsService->getConfigValue('workflow_template_schema'),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $activation->register,
+					schema: $this->settingsService->getConfigValue('workflow_template_schema')
+				))
 		)->getUuid();
 	}//end createWorkflowTemplate()
 
@@ -452,7 +448,7 @@ class TemplateLibraryService {
 			$this->logger->warning(
 				'Template transition names a status the template does not declare, dropped: '
 				. (string)($transition['label'] ?? ''),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}

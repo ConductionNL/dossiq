@@ -31,6 +31,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Db\Schema;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The schema and object lookups behind a provenance question, and their failures.
@@ -87,7 +90,11 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return mixed The dictated answer.
 			 */
-			public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): mixed {
+			public function provenanceFor(object $request): mixed {
+				$schema = $request->schema;
+				$actions = $request->actions;
+				$userId = $request->userId;
+				$object = $request->object;
 				$this->asked[] = compact('schema', 'actions', 'userId', 'object');
 				return $this->answer;
 			}
@@ -181,8 +188,8 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheHandlerIsAskedAboutTheCaseObject(): void {
-		$schema = new \stdClass();
-		$case = new \stdClass();
+		$schema = new Schema();
+		$case = new ObjectEntity();
 		$handler = $this->handler(answer: ['read' => ['granted' => true]]);
 		$mapper = $this->mapper(schema: $schema);
 		$objects = new class($case) {
@@ -210,7 +217,9 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object The case.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->finds[] = [$id, $register, $schema];
 				return $this->case;
 			}
@@ -239,7 +248,7 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 	 */
 	public function testNoCaseSchemaAsksNothing(): void {
 		$handler = $this->handler(answer: ['read' => []]);
-		$mapper = $this->mapper(schema: new \stdClass());
+		$mapper = $this->mapper(schema: new Schema());
 
 		$gateway = $this->gateway(services: [self::HANDLER => $handler, self::MAPPER => $mapper], config: ['register' => 'dossiq']);
 
@@ -302,7 +311,9 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object Never.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('gone');
 			}
 		};
@@ -313,7 +324,7 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 		);
 
 		$gateway = $this->gateway(
-			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new \stdClass())],
+			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new Schema())],
 			config: ['case_schema' => 'case', 'register' => 'dossiq'],
 			objectService: $objects,
 			logger: $logger,
@@ -347,14 +358,16 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object A case.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->finds++;
-				return new \stdClass();
+				return new ObjectEntity();
 			}
 		};
 
 		$gateway = $this->gateway(
-			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new \stdClass())],
+			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new Schema())],
 			config: ['case_schema' => 'case'],
 			objectService: $objects,
 		);
@@ -371,7 +384,7 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 	 */
 	public function testANonArrayProvenanceAnswersNull(): void {
 		$gateway = $this->gateway(
-			services: [self::HANDLER => $this->handler(answer: 'granted'), self::MAPPER => $this->mapper(schema: new \stdClass())],
+			services: [self::HANDLER => $this->handler(answer: 'granted'), self::MAPPER => $this->mapper(schema: new Schema())],
 			config: ['case_schema' => 'case'],
 		);
 
@@ -393,7 +406,7 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 		$handler = $this->handler(answer: ['update' => $record]);
 
 		$gateway = $this->gateway(
-			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new \stdClass())],
+			services: [self::HANDLER => $handler, self::MAPPER => $this->mapper(schema: new Schema())],
 			config: ['case_schema' => 'case'],
 			logger: $logger,
 		);
@@ -414,7 +427,7 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			$logger->expects(self::never())->method('info');
 
 			$gateway = $this->gateway(
-				services: [self::HANDLER => $this->handler(answer: $answer), self::MAPPER => $this->mapper(schema: new \stdClass())],
+				services: [self::HANDLER => $this->handler(answer: $answer), self::MAPPER => $this->mapper(schema: new Schema())],
 				config: ['case_schema' => 'case'],
 				logger: $logger,
 			);

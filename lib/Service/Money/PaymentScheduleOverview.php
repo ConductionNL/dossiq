@@ -27,9 +27,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleOverviewInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 
 /**
  * The instalments and totals of the payment schedules on one case.
@@ -41,7 +42,9 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-a-handler-runs-a-grant-from-its-case-page-req-sub-case-01
  */
-class PaymentScheduleOverview {
+class PaymentScheduleOverview implements PaymentScheduleOverviewInterface {
+	use ReadsRegisterRows;
+
 	/**
 	 * Decisions read for one case.
 	 */
@@ -76,7 +79,7 @@ class PaymentScheduleOverview {
 		$instalments = [];
 		foreach ($this->decisionsOf(caseId: $caseId) as $decision) {
 			foreach ((array)($decision['paymentSchedule']['instalments'] ?? []) as $instalment) {
-				$instalments[] = $this->rowOf(decision: $decision, instalment: (array)$instalment, today: $today);
+				$instalments[] = $this->rowOf(held: ['decision' => $decision, 'instalment' => (array)$instalment], today: $today);
 			}
 		}
 
@@ -92,13 +95,13 @@ class PaymentScheduleOverview {
 	/**
 	 * One instalment as the case page reads it.
 	 *
-	 * @param array<string, mixed> $decision   The decision that holds it.
-	 * @param array<string, mixed> $instalment The instalment.
-	 * @param DateTimeImmutable    $today      The day the state counts from.
+	 * @param array{decision: array<string, mixed>, instalment: array<string, mixed>} $held  The instalment, and the decision that holds it.
+	 * @param DateTimeImmutable                                                       $today The day the state counts from.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(array $decision, array $instalment, DateTimeImmutable $today): array {
+	private function rowOf(array $held, DateTimeImmutable $today): array {
+		['decision' => $decision, 'instalment' => $instalment] = $held;
 		return [
 			'decisionId' => (string)($decision['id'] ?? $decision['uuid'] ?? ''),
 			'label' => (string)($instalment['label'] ?? ''),
@@ -201,24 +204,13 @@ class PaymentScheduleOverview {
 	 * @return list<array<string, mixed>>
 	 */
 	private function decisionsOf(string $caseId): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null || $caseId === '') {
-			return [];
-		}
-
-		$rows = $objectService->findAll(
-			[
-				'filters' => [
-					'register' => Application::REGISTER_SLUG,
-					'schema' => PaymentScheduleRaiser::DECISION_SCHEMA,
-					'caseId' => $caseId,
-				],
-				'limit' => self::LIMIT,
-			]
+		$rows = $this->registerRows(
+			id: $caseId,
+			filters: ['schema' => PaymentScheduleRaiser::DECISION_SCHEMA, 'caseId' => $caseId]
 		);
 
 		$decisions = [];
-		foreach ((array)$rows as $row) {
+		foreach ($rows as $row) {
 			$decisions[] = $this->rowNormaliser->normalise(row: $row)['data'];
 		}
 

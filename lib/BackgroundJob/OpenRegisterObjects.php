@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCP\App\IAppManager;
 
@@ -41,11 +41,11 @@ final class OpenRegisterObjects {
 	 * Constructor.
 	 *
 	 * @param IAppManager     $appManager      Tells whether OpenRegister is installed.
-	 * @param SettingsService $settingsService Holds the object service.
+	 * @param SettingsServiceInterface $settingsService Holds the object service.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 

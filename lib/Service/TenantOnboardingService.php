@@ -25,10 +25,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -40,7 +44,9 @@ use Throwable;
  *
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
-class TenantOnboardingService {
+class TenantOnboardingService implements TenantOnboardingServiceInterface {
+
+	use ResolvesInstalledObjectService;
 	/**
 	 * The seven canonical onboarding steps.
 	 */
@@ -65,6 +71,7 @@ class TenantOnboardingService {
 	 * @param OnboardingSteps $steps The onboarding steps, as engine tasks.
 	 * @param IUserSession $userSession The acting user.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
+	 * @param MandaatCheckService|null $mandates Answers whether the tenant has an active mandate.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -75,6 +82,7 @@ class TenantOnboardingService {
 		private readonly OnboardingSteps $steps,
 		private readonly IUserSession $userSession,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
+		private readonly ?MandaatCheckService $mandates = null,
 	) {
 	}//end __construct()
 
@@ -108,6 +116,17 @@ class TenantOnboardingService {
 			return [];
 		}
 
+		return $this->openMissingSteps(tenantId: $tenantId);
+	}//end createOnboarding()
+
+	/**
+	 * Open every onboarding step the tenant does not carry yet, legacy rows carried over first.
+	 *
+	 * @param string $tenantId The tenant (Organisation) uuid.
+	 *
+	 * @return array<int, array<string, string>> The steps opened.
+	 */
+	private function openMissingSteps(string $tenantId): array {
 		$actor = $this->actor();
 		$existing = $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $actor);
 		$created = [];
@@ -123,7 +142,39 @@ class TenantOnboardingService {
 		}
 
 		return $created;
-	}//end createOnboarding()
+	}//end openMissingSteps()
+
+	/**
+	 * The steps with "Mandates set" done once the tenant has an active mandate.
+	 *
+	 * Read when the checklist is shown, so the step follows the mandate
+	 * register without a write on a read. A step already completed or skipped
+	 * keeps its own state, and so does one the register cannot confirm.
+	 *
+	 * @param string                              $tenantId The tenant (organisation) UUID.
+	 * @param array<string, array<string, mixed>> $steps    The steps, keyed by step.
+	 *
+	 * @return array<string, array<string, mixed>> The steps.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function withMandatesSet(string $tenantId, array $steps): array {
+		$step = ($steps['mandate_import'] ?? null);
+		if ($step === null || $this->mandates === null) {
+			return $steps;
+		}
+
+		if (in_array((string) ($step['status'] ?? ''), ['completed', 'skipped'], true) === true) {
+			return $steps;
+		}
+
+		if ($this->mandates->hasActiveMandateFor(organisation: $tenantId, date: new DateTimeImmutable()) === false) {
+			return $steps;
+		}
+
+		$steps['mandate_import']['status'] = 'completed';
+		return $steps;
+	}//end withMandatesSet()
 
 	/**
 	 * Get the per-step progress and overall completion fraction.
@@ -135,7 +186,12 @@ class TenantOnboardingService {
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function getProgress(string $tenantId): array {
-		$steps = array_values($this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor()));
+		$steps = array_values(
+			$this->withMandatesSet(
+				tenantId: $tenantId,
+				steps: $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor())
+			)
+		);
 
 		$completed = 0;
 		foreach ($steps as $step) {
@@ -210,6 +266,22 @@ class TenantOnboardingService {
 			return $steps;
 		}
 
+		if ($this->carryLegacyRows(tenantId: $tenantId, actor: $actor) === 0) {
+			return [];
+		}
+
+		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
+	}//end stepsCarryingLegacyRows()
+
+	/**
+	 * Open an engine step for every known step a legacy onboarding row holds.
+	 *
+	 * @param string $tenantId The tenant (Organisation) uuid.
+	 * @param string $actor    Who carries the rows over.
+	 *
+	 * @return int How many steps the engine accepted.
+	 */
+	private function carryLegacyRows(string $tenantId, string $actor): int {
 		$carried = 0;
 		foreach ($this->legacyRows(tenantId: $tenantId) as $row) {
 			$step = (string) ($row['data']['step'] ?? '');
@@ -218,24 +290,32 @@ class TenantOnboardingService {
 				continue;
 			}
 
-			$metadata = ['onboardingRow' => $row['uuid']];
-			foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
-				if ((string) ($row['data'][$field] ?? '') !== '') {
-					$metadata[$field] = (string) $row['data'][$field];
-				}
-			}
-
+			$metadata = $this->legacyMetadata(row: $row);
 			if ($this->steps->open(tenantId: $tenantId, step: $step, title: $step, status: $status, actor: $actor, metadata: $metadata) !== '') {
 				$carried++;
 			}
 		}
 
-		if ($carried === 0) {
-			return [];
+		return $carried;
+	}//end carryLegacyRows()
+
+	/**
+	 * The metadata a carried step keeps from its legacy row.
+	 *
+	 * @param array $row The legacy onboarding row.
+	 *
+	 * @return array<string, string> The row's uuid and its non-empty completion and block fields.
+	 */
+	private function legacyMetadata(array $row): array {
+		$metadata = ['onboardingRow' => $row['uuid']];
+		foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
+			if ((string) ($row['data'][$field] ?? '') !== '') {
+				$metadata[$field] = (string) $row['data'][$field];
+			}
 		}
 
-		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
-	}//end stepsCarryingLegacyRows()
+		return $metadata;
+	}//end legacyMetadata()
 
 	/**
 	 * The tenant's legacy `tenantOnboardingTask` rows, each as uuid and data.
@@ -254,7 +334,7 @@ class TenantOnboardingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => Application::REGISTER_SLUG,
+						'register' => AppIdentity::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
 					],
@@ -267,6 +347,18 @@ class TenantOnboardingService {
 			return [];
 		}
 
+		return $this->rowsOfTenant(rows: $rows, tenantId: $tenantId);
+	}//end legacyRows()
+
+	/**
+	 * The normalised rows that carry data and belong to the tenant.
+	 *
+	 * @param mixed  $rows     The rows as read.
+	 * @param string $tenantId The Organisation's uuid.
+	 *
+	 * @return array<int, array{uuid: string, data: array<string, mixed>}> The rows.
+	 */
+	private function rowsOfTenant(mixed $rows, string $tenantId): array {
 		$out = [];
 		foreach ((array) $rows as $row) {
 			$normalised = $this->rowNormaliser->normalise(row: $row);
@@ -276,7 +368,7 @@ class TenantOnboardingService {
 		}
 
 		return $out;
-	}//end legacyRows()
+	}//end rowsOfTenant()
 
 	/**
 	 * The signed-in user, or `admin` for a call without a session.
@@ -386,7 +478,12 @@ class TenantOnboardingService {
 		}
 
 		try {
-			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+			$anchor = $objectService->find(
+				$tenantId,
+				new ObjectFindOptions(register: AppIdentity::REGISTER_SLUG, schema: 'tenant'),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			return 'basic';
 		}
@@ -416,7 +513,7 @@ class TenantOnboardingService {
 				[
 					'filters' => array_merge(
 						[
-							'register' => Application::REGISTER_SLUG,
+							'register' => AppIdentity::REGISTER_SLUG,
 							'schema' => $schema,
 						],
 						$filters
@@ -434,24 +531,4 @@ class TenantOnboardingService {
 			return 0;
 		}//end try
 	}//end countSchemaRows()
-
-	/**
-	 * Resolve the OpenRegister object service, or null when unavailable.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

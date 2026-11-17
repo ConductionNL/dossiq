@@ -28,6 +28,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @covers \OCA\Dossiq\Repair\RewriteRenamedLayoutIds
@@ -164,7 +165,11 @@ final class RewriteRenamedLayoutIdsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored arrangement.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				foreach ($this->rows as $index => $row) {
 					if ($row['@self']['id'] === $objectId) {
 						$this->rows[$index] = array_merge($row, $data);

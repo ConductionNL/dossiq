@@ -176,7 +176,7 @@ class FilinqRedactionTest extends TestCase {
 		$outcome = ['status' => 'redacted', 'fileId' => 99];
 		$this->client->expects($this->once())
 			->method('anonymize')
-			->with(42, [['text' => 'Jan'], ['text' => '06-12345678']], 'anna')
+			->with(42, [['text' => 'Jan'], ['text' => '06-12345678']], 'anna', true)
 			->willReturn($outcome);
 
 		$this->assertSame($outcome, $this->filinq->anonymize(run: $this->step()));
@@ -192,7 +192,7 @@ class FilinqRedactionTest extends TestCase {
 		$run->redaction = [];
 		$this->client->expects($this->once())
 			->method('anonymize')
-			->with(42, [], 'anna')
+			->with(42, [], 'anna', true)
 			->willReturn(['status' => 'redacted']);
 
 		$this->assertSame(['status' => 'redacted'], $this->filinq->anonymize(run: $run));
@@ -236,6 +236,18 @@ class FilinqRedactionTest extends TestCase {
 				['status' => 'not_checked'],
 				'not-checked',
 				'Filinq has no check for these passages. Confirm the list again.',
+				RefusedException::STATUS_REFUSED,
+			],
+			'checked by the same officer' => [
+				['status' => 'same_person'],
+				'same-person',
+				'You checked these passages yourself. A colleague must make the redacted copy.',
+				RefusedException::STATUS_REFUSED,
+			],
+			'no officer known' => [
+				['status' => 'anonymiser_unknown'],
+				'anonymiser-unknown',
+				'It is not known who asks for the redacted copy. Sign in and try again.',
 				RefusedException::STATUS_REFUSED,
 			],
 			'other status' => [

@@ -91,12 +91,33 @@ class MentionQueueRecords {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function record(string $person, string $actor, string $subjectType, string $subjectId, string $noteId): bool {
-		if (trim($person) === '' || trim($subjectId) === '') {
+		return $this->store(
+			mention: [
+				'person' => $person,
+				'actor' => $actor,
+				'subjectType' => $subjectType,
+				'subjectId' => $subjectId,
+				'noteId' => $noteId,
+			]
+		);
+	}//end record()
+
+	/**
+	 * Write the mention, stamped with the moment it is written; a failure is logged.
+	 *
+	 * Nothing is written without a person or a subject id; a subject without a type is a case.
+	 *
+	 * @param array<string, string> $mention Who was mentioned, by whom, in what, and the note.
+	 *
+	 * @return bool TRUE when the record was written.
+	 */
+	private function store(array $mention): bool {
+		if (trim($mention['person']) === '' || trim($mention['subjectId']) === '') {
 			return false;
 		}
 
-		if (trim($subjectType) === '') {
-			$subjectType = 'case';
+		if (trim($mention['subjectType']) === '') {
+			$mention['subjectType'] = 'case';
 		}
 
 		try {
@@ -104,14 +125,7 @@ class MentionQueueRecords {
 				objectService: $this->objects(),
 				register: $this->register(),
 				schema: self::SCHEMA,
-				object: [
-					'person' => $person,
-					'actor' => $actor,
-					'subjectType' => $subjectType,
-					'subjectId' => $subjectId,
-					'noteId' => $noteId,
-					'mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-				]
+				object: $mention + ['mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP')]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: could not record a mention on the queue: ' . $e->getMessage());
@@ -119,7 +133,7 @@ class MentionQueueRecords {
 		}
 
 		return ($saved !== null);
-	}//end record()
+	}//end store()
 
 	/**
 	 * The mentions this person has not dealt with.

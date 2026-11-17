@@ -36,7 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseConversationServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,40 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseConversationService {
-
-	/**
-	 * Refusal reason: this instance has no Talk, so there is no conversation
-	 * to start and the case says so instead of offering a dead affordance.
-	 *
-	 * @var string
-	 */
-	public const REASON_NO_TALK = 'talk_not_available';
-
-	/**
-	 * Refusal reason: the case is not readable, or OpenRegister is not
-	 * configured for cases.
-	 *
-	 * @var string
-	 */
-	public const REASON_NO_CASE = 'case_not_found';
-
-	/**
-	 * Refusal reason: no conversation on this case carries the room id given,
-	 * so there is nothing to record an ending against.
-	 *
-	 * @var string
-	 */
-	public const REASON_UNKNOWN_ROOM = 'conversation_not_found';
-
-	/**
-	 * Refusal reason: the case type names responders that do not resolve, so
-	 * the major declaration is refused rather than opening an empty channel
-	 * (ADR-102: absent config fails closed with a status).
-	 *
-	 * @var string
-	 */
-	public const REASON_UNRESOLVED_RESPONDERS = 'responders_unresolved';
+class CaseConversationService implements CaseConversationServiceInterface {
 
 	/**
 	 * What a conversation on a case is called when no subject is given.
@@ -137,7 +105,22 @@ class CaseConversationService {
 			return ['ok' => false, 'reason' => self::REASON_NO_TALK];
 		}
 
-		$name = $this->roomName(case: $case, subject: $subject);
+		return $this->openConversation(onCase: ['caseId' => $caseId, 'case' => $case], start: ['subject' => $subject, 'startedBy' => $startedBy]);
+	}//end startConversation()
+
+	/**
+	 * Open the Talk room for the case and record the conversation on it.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>}   $onCase The case UUID and the case.
+	 * @param array{subject: string|null, startedBy: string|null} $start  What the conversation is about, and who started it.
+	 *
+	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
+	 *         The conversation record, or a refusal naming its reason.
+	 */
+	private function openConversation(array $onCase, array $start): array {
+		$case = $onCase['case'];
+		$startedBy = $start['startedBy'];
+		$name = $this->roomName(case: $case, subject: $start['subject']);
 		$room = $this->broker->createRoom(
 			name: $name,
 			moderators: $this->moderatorsOf(case: $case, startedBy: $startedBy),
@@ -146,29 +129,59 @@ class CaseConversationService {
 			return ['ok' => false, 'reason' => self::REASON_NO_TALK];
 		}
 
-		$record = [
+		$record = $this->conversationRecord(room: $room, start: ['subject' => $name, 'startedBy' => $startedBy]);
+
+		$this->appendConversation(onCase: $onCase, record: $record);
+
+		return ['ok' => true, 'conversation' => $record];
+	}//end openConversation()
+
+	/**
+	 * The record of a conversation just started.
+	 *
+	 * @param array<string, mixed>                          $room  The Talk room, with its id and url.
+	 * @param array{subject: string, startedBy: string|null} $start The room name, which is the subject, and the user id
+	 *                                                              that started it.
+	 *
+	 * @return array<string, mixed> The conversation record.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function conversationRecord(array $room, array $start): array {
+		return [
 			'kind' => 'conversation',
-			'subject' => $name,
+			'subject' => $start['subject'],
 			'roomId' => $room['id'],
 			'roomUrl' => $room['url'],
 			'startedAt' => $this->cases->now(),
-			'startedBy' => ($startedBy ?? ''),
+			'startedBy' => ($start['startedBy'] ?? ''),
 			'participants' => [],
 			'durationSeconds' => 0,
 			'endedAt' => '',
 		];
+	}//end conversationRecord()
 
-		$conversations = $this->cases->conversationsOf(case: $case);
+	/**
+	 * Append a conversation record to the case and log it.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>} $onCase The case UUID and the case.
+	 * @param array<string, mixed>                              $record The conversation record.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function appendConversation(array $onCase, array $record): void {
+		$caseId = $onCase['caseId'];
+		$conversations = $this->cases->conversationsOf(case: $onCase['case']);
 		$conversations[] = $record;
 		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
 
 		$this->logger->info(
 			'Conversation started on case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
-
-		return ['ok' => true, 'conversation' => $record];
-	}//end startConversation()
+	}//end appendConversation()
 
 	/**
 	 * Record that a conversation ended: the moment, who joined, how long.
@@ -188,39 +201,66 @@ class CaseConversationService {
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function recordConversationEnd(
-		string $caseId,
-		string $roomId,
-		array $participants,
-		int $durationSeconds,
-	): array {
+	public function recordConversationEnd(string $caseId, string $roomId, array $participants, int $durationSeconds): array {
 		$case = $this->cases->read(caseId: $caseId);
 		if ($case === null) {
 			return ['ok' => false, 'reason' => self::REASON_NO_CASE];
 		}
 
-		$conversations = $this->cases->conversationsOf(case: $case);
-		$found = null;
-		foreach ($conversations as $index => $conversation) {
-			if (($conversation['roomId'] ?? '') !== $roomId) {
-				continue;
-			}
+		return $this->endOn(
+			onCase: ['caseId' => $caseId, 'case' => $case],
+			end: ['roomId' => $roomId, 'participants' => $participants, 'durationSeconds' => $durationSeconds]
+		);
+	}//end recordConversationEnd()
 
-			$conversation['participants'] = array_values($participants);
-			$conversation['durationSeconds'] = max(0, $durationSeconds);
-			$conversation['endedAt'] = $this->cases->now();
-			$conversations[$index] = $conversation;
-			$found = $conversation;
-		}
+	/**
+	 * Complete the room's conversation on the case and write it, or refuse an unknown room.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>} $onCase The case UUID and the case.
+	 * @param array<string, mixed>                              $end    The `roomId`, the `participants` and the `durationSeconds`.
+	 *
+	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
+	 */
+	private function endOn(array $onCase, array $end): array {
+		[$conversations, $found] = $this->ended(caseData: $onCase['case'], end: $end);
 
 		if ($found === null) {
 			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
 		}
 
-		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);
+		$this->cases->write(caseId: $onCase['caseId'], changes: ['conversations' => $conversations]);
 
 		return ['ok' => true, 'conversation' => $found];
-	}//end recordConversationEnd()
+	}//end endOn()
+
+	/**
+	 * The case's conversations with the room's conversation completed, and that conversation.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 * @param array<string, mixed> $end      The Talk conversation's `roomId`, the `participants` (user ids or display
+	 *                                       names that joined) and how long it lasted in `durationSeconds`.
+	 *
+	 * @return array{0: array<int|string, array<string, mixed>>, 1: array<string, mixed>|null} The conversations, and the completed one or null.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function ended(array $caseData, array $end): array {
+		$conversations = $this->cases->conversationsOf(case: $caseData);
+		$found = null;
+		foreach ($conversations as $index => $conversation) {
+			if (($conversation['roomId'] ?? '') !== $end['roomId']) {
+				continue;
+			}
+
+			$conversation['participants'] = array_values($end['participants']);
+			$conversation['durationSeconds'] = max(0, $end['durationSeconds']);
+			$conversation['endedAt'] = $this->cases->now();
+			$conversations[$index] = $conversation;
+			$found = $conversation;
+		}
+
+		return [$conversations, $found];
+	}//end ended()
 
 	/**
 	 * The room name a conversation on this case carries into Talk.

@@ -30,8 +30,13 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskAttachmentService
@@ -68,6 +73,13 @@ class TaskAttachmentTest extends TestCase {
 			public array $created = [];
 
 			/**
+			 * Whether the case is gone from the store.
+			 *
+			 * @var bool
+			 */
+			public bool $missing = false;
+
+			/**
 			 * @param string $objectId The case.
 			 * @param array<string, mixed> $data The changes.
 			 * @param mixed $register The register.
@@ -75,7 +87,11 @@ class TaskAttachmentTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored case.
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->case = array_merge($this->case, $data);
 
 				return $this->case;
@@ -89,7 +105,10 @@ class TaskAttachmentTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, mixed $register, mixed $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->created[] = $object;
 
 				return $object;
@@ -102,7 +121,13 @@ class TaskAttachmentTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function find(string $id, mixed $register, mixed $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				if ($this->missing === true) {
+					throw new DoesNotExistException('gone');
+				}
+
 				return $this->case;
 			}
 		};
@@ -205,6 +230,58 @@ class TaskAttachmentTest extends TestCase {
 
 		$this->assertSame(expected: 1, actual: $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
 		$this->assertSame(expected: 'file-7', actual: $this->store->created[0]['document']);
+	}
+
+	/**
+	 * A bind without a task or without a file is refused and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnIncompleteBindIsRefusedBeforeTheCaseIsTouched(): void {
+		$before = $this->store->case;
+
+		try {
+			$this->service()->bind(caseId: 'case-9', taskId: '  ', file: ['file' => 'file-7'], uploader: 'hbakker');
+			$this->fail(message: 'A bind without a task must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 'task_attachment_incomplete', actual: $e->getMessage());
+		}
+
+		$this->expectExceptionMessage('task_attachment_incomplete');
+		try {
+			$this->service()->bind(caseId: 'case-9', taskId: 'task-1', file: ['title' => 'Verslag.pdf'], uploader: 'hbakker');
+		} finally {
+			$this->assertSame(expected: $before, actual: $this->store->case);
+		}
+	}
+
+	/**
+	 * A case the store no longer has is refused by name, not answered as empty.
+	 *
+	 * @return void
+	 */
+	public function testAMissingCaseIsRefusedByName(): void {
+		$this->store->missing = true;
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('case_not_found');
+
+		$this->service()->release(caseId: 'case-9', taskId: 'task-1', fileId: 'file-7');
+	}
+
+	/**
+	 * A hold that is neither a list nor JSON holds nothing, and its non-entries are skipped.
+	 *
+	 * @return void
+	 */
+	public function testAHoldOfNeitherListNorJsonHoldsNothing(): void {
+		$service = $this->service();
+
+		$this->assertSame(expected: [], actual: $service->heldFor(case: [TaskAttachmentService::HOLD => 42], taskId: 'task-1'));
+		$this->assertSame(
+			expected: [['task' => 'task-1', 'file' => 'file-7']],
+			actual: $service->heldFor(case: [TaskAttachmentService::HOLD => ['junk', ['task' => 'task-1', 'file' => 'file-7'], ['task' => 'task-2']]], taskId: 'task-1')
+		);
 	}
 
 	/**

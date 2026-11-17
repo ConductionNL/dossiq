@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Portal;
  * Builds dossiq's declared portal pages.
  *
  * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalPages {
 
@@ -62,33 +64,71 @@ class PortalPages {
 	 */
 	public function forCollections(array $collections, array $actions, string $group, array $labels=[]): array {
 		$pages = [];
-		foreach ($collections as $collection) {
-			if (($collection['listable'] ?? true) !== true) {
-				continue;
-			}
-
+		foreach ($this->listable(collections: $collections) as $collection) {
 			$id = (string)$collection['id'];
-			$blocks = [];
-			foreach ($actions as $action) {
-				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
-					$blocks[] = ['type' => 'action', 'action' => (string)$action['id']];
-					break;
-				}
-			}
-
-			$blocks[] = ['type' => 'collection', 'collection' => $id];
-			$blocks[] = ['type' => 'detail', 'collection' => $id];
-
 			$pages[] = [
 				'id' => $id,
 				'label' => ($labels[$id] ?? (string)($collection['label'] ?? $id)),
 				'group' => $group,
-				'blocks' => $blocks,
+				'blocks' => $this->blocksFor(collection: $collection, actions: $actions),
 			];
 		}
 
 		return $pages;
 	}//end forCollections()
+
+	/**
+	 * The collections that are listable, in order.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The audience's collections.
+	 *
+	 * @return array<int, array<string, mixed>> The listable collections.
+	 */
+	private function listable(array $collections): array {
+		$listable = [];
+		foreach ($collections as $collection) {
+			if (($collection['listable'] ?? true) === true) {
+				$listable[] = $collection;
+			}
+		}
+
+		return $listable;
+	}//end listable()
+
+	/**
+	 * A collection page's blocks: the create action for its schema, the list, the selected row.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param array<int, array<string, mixed>> $actions    The audience's actions.
+	 *
+	 * @return array<int, array<string, string>> The blocks.
+	 */
+	private function blocksFor(array $collection, array $actions): array {
+		$id = (string)$collection['id'];
+		$blocks = $this->createBlocks(collection: $collection, actions: $actions);
+		$blocks[] = ['type' => 'collection', 'collection' => $id];
+		$blocks[] = ['type' => 'detail', 'collection' => $id];
+
+		return $blocks;
+	}//end blocksFor()
+
+	/**
+	 * The first create action for the collection's schema, as a block.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param array<int, array<string, mixed>> $actions    The audience's actions.
+	 *
+	 * @return array<int, array<string, string>> The action block, or none.
+	 */
+	private function createBlocks(array $collection, array $actions): array {
+		foreach ($actions as $action) {
+			if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
+				return [['type' => 'action', 'action' => (string)$action['id']]];
+			}
+		}
+
+		return [];
+	}//end createBlocks()
 
 	/**
 	 * The four pages a resident reads (site-resident-portal-design D4), in
@@ -120,12 +160,23 @@ class PortalPages {
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
-		$listPages = $this->residentListPages(collections: $collections, actions: $actions, group: $group, labels: $labels);
-		$startPages = $this->startPages(
-			actions: $actions,
-			offered: $this->offeredActions(pages: $listPages),
-			group: $group
-		);
+		return $this->residentPages(portal: new ResidentPortal(collections: $collections, actions: $actions, group: $group, labels: $labels));
+	}//end forResident()
+
+	/**
+	 * The overview, the case page, the two list pages and the start pages.
+	 *
+	 * @param ResidentPortal $portal The citizen collections and actions, the page group and the label per page id.
+	 *
+	 * @return array<int, array<string, mixed>> The pages.
+	 */
+	private function residentPages(ResidentPortal $portal): array {
+		$collections = $portal->collections;
+		$actions = $portal->actions;
+		$group = $portal->group;
+		$labels = $portal->labels;
+		$listPages = $this->residentListPages(portal: $portal);
+		$startPages = $this->startPages(portal: $portal, offered: $this->offeredActions(pages: $listPages));
 
 		$pages = [];
 		$pages[] = [
@@ -137,7 +188,7 @@ class PortalPages {
 			// renders the rest below it.
 			'home' => true,
 			'menu' => false,
-			'blocks' => $this->residentOverviewBlocks(collections: $collections, labels: $labels, startPages: $startPages),
+			'blocks' => $this->residentOverviewBlocks(portal: $portal, startPages: $startPages),
 		];
 
 		$pages[] = [
@@ -156,21 +207,19 @@ class PortalPages {
 		];
 
 		return array_merge($pages, $listPages, $startPages);
-	}//end forResident()
+	}//end residentPages()
 
 	/**
 	 * The two list pages that stay as they were: the messages and the requests.
 	 *
-	 * @param array<int, array<string, mixed>> $collections The citizen collections.
-	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
-	 * @param string                           $group       The group every page sits in.
-	 * @param array<string, string>            $labels      The label per page id.
+	 * @param ResidentPortal $portal The citizen collections and actions, the page group and the label per page id.
 	 *
 	 * @return array<int, array<string, mixed>> The pages, those whose collection is declared.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
-	private function residentListPages(array $collections, array $actions, string $group, array $labels): array {
+	private function residentListPages(ResidentPortal $portal): array {
+		$collections = $portal->collections;
 		$pages = [];
 		foreach (['berichten', 'verzoeken'] as $id) {
 			if ($this->declares(rows: $collections, id: $id) === false) {
@@ -179,12 +228,12 @@ class PortalPages {
 
 			$page = [
 				'id' => $id,
-				'label' => ($labels[$id] ?? $id),
-				'group' => $group,
+				'label' => ($portal->labels[$id] ?? $id),
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [],
 			];
-			foreach ($actions as $action) {
+			foreach ($portal->actions as $action) {
 				if ($this->startsOn(action: $action, page: $id, collections: $collections) === true) {
 					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
 					break;
@@ -209,17 +258,16 @@ class PortalPages {
 	 * form, as the boards draw a request form on a page of its own. Without
 	 * it an action that starts from nothing had no tile and no way in.
 	 *
-	 * @param array<int, array<string, mixed>> $actions The citizen actions.
-	 * @param array<string, true>              $offered The action ids a page already offers.
-	 * @param string                           $group   The group every page sits in.
+	 * @param ResidentPortal      $portal  The citizen actions and the group every page sits in.
+	 * @param array<string, true> $offered The action ids a page already offers.
 	 *
 	 * @return array<int, array<string, mixed>> The pages; the page id is the action id.
 	 *
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function startPages(array $actions, array $offered, string $group): array {
+	private function startPages(ResidentPortal $portal, array $offered): array {
 		$pages = [];
-		foreach ($actions as $action) {
+		foreach ($portal->actions as $action) {
 			$id = (string)($action['id'] ?? '');
 			if ($id === '' || isset($offered[$id]) === true || $this->isStartPoint(action: $action) === false) {
 				continue;
@@ -228,7 +276,7 @@ class PortalPages {
 			$pages[] = [
 				'id' => $id,
 				'label' => (string)$action['label'],
-				'group' => $group,
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [['type' => 'action', 'action' => $id]],
 			];
@@ -290,9 +338,9 @@ class PortalPages {
 	 * The overview's blocks: what the resident still has to do, their running
 	 * cases and the newest messages.
 	 *
-	 * @param array<int, array<string, mixed>> $collections The citizen collections.
-	 * @param array<string, string>            $labels      The label per page id, and `lopendeZaken` for the running cases.
-	 * @param array<int, array<string, mixed>> $startPages  The start pages, each a tile after what the resident still has to do.
+	 * @param ResidentPortal                   $portal     The citizen collections, and the label per page id
+	 *                                                     and `lopendeZaken` for the running cases.
+	 * @param array<int, array<string, mixed>> $startPages The start pages, each a tile after what the resident still has to do.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
@@ -303,7 +351,9 @@ class PortalPages {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function residentOverviewBlocks(array $collections, array $labels = [], array $startPages = []): array {
+	private function residentOverviewBlocks(ResidentPortal $portal, array $startPages = []): array {
+		$collections = $portal->collections;
+		$labels = $portal->labels;
 		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME
 		// ("Goedemiddag, Sanne"), as the Zuiddrecht design draws it. Portaliq's
 		// `greeting` block says that itself and takes the place of the plain

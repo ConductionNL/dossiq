@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
+use OCA\Dossiq\Kernel\Contracts\DashboardWidgetScopeInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -65,7 +65,7 @@ class WidgetVisibilityController extends Controller {
 	 *
 	 * @param string               $appName     The app name.
 	 * @param IRequest             $request     The request.
-	 * @param DashboardWidgetScope $scope       The one place the verdict is decided.
+	 * @param DashboardWidgetScopeInterface $scope       The one place the verdict is decided.
 	 * @param IUserSession         $userSession The session.
 	 *
 	 * @return void
@@ -73,7 +73,7 @@ class WidgetVisibilityController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DashboardWidgetScope $scope,
+		private readonly DashboardWidgetScopeInterface $scope,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

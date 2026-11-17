@@ -254,6 +254,25 @@ class BackgroundServiceAccountTest extends TestCase {
 	}//end testNoAdminGroupNotifiesNobody()
 
 	/**
+	 * An account that vanishes between the check and the lookup is refused as unknown.
+	 *
+	 * @return void
+	 */
+	public function testRequireRefusesAnAccountThatVanishesAsUnknown(): void {
+		$this->userManager->method('get')->with('svc')->willReturnOnConsecutiveCalls($this->user('svc'), null);
+		$this->groupManager->method('isInGroup')->willReturn(true);
+		$this->groupManager->method('get')->with('admin')->willReturn(null);
+		$this->logger->expects($this->once())->method('error')->with(
+			'Dossiq: no usable background service account, the background jobs write nothing and send nothing',
+			$this->callback(fn (array $ctx) => $ctx['userId'] === 'svc' && $ctx['reason'] === ServiceAccount::REASON_UNKNOWN)
+		);
+
+		$this->expectException(ServiceAccountUnavailableException::class);
+		$this->expectExceptionMessage('No usable background service account (unknown).');
+		$this->account()->require();
+	}//end testRequireRefusesAnAccountThatVanishesAsUnknown()
+
+	/**
 	 * runAs() swaps in the account and restores the previous user, even on a throw.
 	 *
 	 * @return void

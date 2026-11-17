@@ -28,8 +28,46 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Service\Decision;
 
+use OCA\OpenRegister\Kernel\Contracts\ReviewPolicyInterface;
+
 /**
  * The review policy that applies to a decision (type only; the real class is final with a private constructor).
  */
-class ReviewPolicy {
+class ReviewPolicy implements ReviewPolicyInterface {
+
+	/**
+	 * Whether the decider owns the decision.
+	 *
+	 * @return bool False on the stub.
+	 */
+	public function isDeciderOwned(): bool {
+		return false;
+	}//end isDeciderOwned()
+
+	/**
+	 * The supervising groups.
+	 *
+	 * @return array<int, string> None on the stub.
+	 */
+	public function getSupervisors(): array {
+		return [];
+	}//end getSupervisors()
+
+	/**
+	 * Whether others' decisions are hidden.
+	 *
+	 * @return bool False on the stub.
+	 */
+	public function hidesOthers(): bool {
+		return false;
+	}//end hidesOthers()
+
+	/**
+	 * The policy as an array.
+	 *
+	 * @return array<string, mixed> Empty on the stub.
+	 */
+	public function toArray(): array {
+		return [];
+	}//end toArray()
 }//end class

@@ -30,6 +30,8 @@ use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins every read, search and save of a plate change, and which resident it runs for.
@@ -129,7 +131,9 @@ class PermitPlateChangeGoldenTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->trace->append(['find', $register, $schema, $id]);
 				if (($this->config['readThrows'] ?? '') === $schema) {
 					throw new RuntimeException('database gone');
@@ -169,7 +173,10 @@ class PermitPlateChangeGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The stored object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null): ?array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if (($object['startDate'] ?? null) === date('Y-m-d')) {
 					$object['startDate'] = '<today>';
 				}

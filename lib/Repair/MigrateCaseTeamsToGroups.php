@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Team\CaseTeamMigration;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamMigrationInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -52,13 +52,13 @@ class MigrateCaseTeamsToGroups implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTeamMigration $migration The one service that moves a case's team.
+	 * @param CaseTeamMigrationInterface $migration The one service that moves a case's team.
 	 * @param LoggerInterface   $logger    Logger.
 	 *
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function __construct(
-		private readonly CaseTeamMigration $migration,
+		private readonly CaseTeamMigrationInterface $migration,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -95,6 +95,18 @@ class MigrateCaseTeamsToGroups implements IRepairStep {
 			return;
 		}
 
+		$this->reportOutcome(output: $output, report: $report);
+	}//end run()
+
+	/**
+	 * Report what the migration did, or why it was skipped.
+	 *
+	 * @param IOutput              $output The repair output.
+	 * @param array<string, mixed> $report The migration report.
+	 *
+	 * @return void
+	 */
+	private function reportOutcome(IOutput $output, array $report): void {
 		if ($report['ran'] === false) {
 			$output->info('Team migration skipped: ' . $report['skippedBecause'] . '.');
 			return;
@@ -108,10 +120,22 @@ class MigrateCaseTeamsToGroups implements IRepairStep {
 		);
 
 		if ($unmapped > 0) {
-			$message = $unmapped . ' cases still name an organisation role as their team, because the role names no '
-				. 'existing Nextcloud group. Set ncGroupId on the role, then run occ dossiq:teams:migrate to list and move them.';
-			$output->warning($message);
-			$this->logger->warning('Dossiq team migration: ' . $message);
+			$this->warnUnmapped(output: $output, unmapped: $unmapped);
 		}
-	}//end run()
+	}//end reportOutcome()
+
+	/**
+	 * Warn that some cases still name an organisation role as their team.
+	 *
+	 * @param IOutput $output   The repair output.
+	 * @param int     $unmapped How many cases kept their value.
+	 *
+	 * @return void
+	 */
+	private function warnUnmapped(IOutput $output, int $unmapped): void {
+		$message = $unmapped . ' cases still name an organisation role as their team, because the role names no '
+			. 'existing Nextcloud group. Set ncGroupId on the role, then run occ dossiq:teams:migrate to list and move them.';
+		$output->warning($message);
+		$this->logger->warning('Dossiq team migration: ' . $message);
+	}//end warnUnmapped()
 }//end class

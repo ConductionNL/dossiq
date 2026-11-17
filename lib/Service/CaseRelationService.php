@@ -49,18 +49,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
-use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 
 /**
  * Service for typed peer relations between cases.
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseRelationService {
+class CaseRelationService implements CaseRelationServiceInterface {
 
 	/**
 	 * Allowed ZRC relation types (`aardRelatie`).

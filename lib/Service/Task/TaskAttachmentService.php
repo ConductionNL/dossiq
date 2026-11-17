@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -60,7 +61,7 @@ use Throwable;
  *
  * @spec openspec/specs/task-management/spec.md
  */
-class TaskAttachmentService {
+class TaskAttachmentService implements TaskAttachmentServiceInterface {
 
 	use SearchesObjects;
 
@@ -126,19 +127,33 @@ class TaskAttachmentService {
 
 		$case = $this->readCase(caseId: $caseId);
 		$held = self::allHeld(case: $case);
-		$held[] = [
-			'task' => trim($taskId),
-			'file' => $fileId,
-			'title' => trim((string)($file['title'] ?? $fileId)),
-			'link' => trim((string)($file['link'] ?? '')),
-			'uploadedBy' => $uploader,
-			'uploadedAt' => (new DateTimeImmutable())->format('c'),
-		];
+		$held[] = $this->heldEntry(file: $file, holder: ['taskId' => $taskId, 'fileId' => $fileId, 'uploader' => $uploader]);
 
 		$this->writeHold(caseId: $caseId, held: $held);
 
 		return $this->heldFor(case: [self::HOLD => $held], taskId: $taskId);
 	}//end bind()
+
+	/**
+	 * One held file, as the case stores it.
+	 *
+	 * @param array<string, mixed>                                   $file   The file: `title` and, optionally, `link`.
+	 * @param array{taskId: string, fileId: string, uploader: string} $holder The task, the file id and who uploaded it.
+	 *
+	 * @return array<string, string> The held entry.
+	 */
+	private function heldEntry(array $file, array $holder): array {
+		$fileId = $holder['fileId'];
+
+		return [
+			'task' => trim($holder['taskId']),
+			'file' => $fileId,
+			'title' => trim((string)($file['title'] ?? $fileId)),
+			'link' => trim((string)($file['link'] ?? '')),
+			'uploadedBy' => $holder['uploader'],
+			'uploadedAt' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end heldEntry()
 
 	/**
 	 * Take a file off an open task.
@@ -155,20 +170,32 @@ class TaskAttachmentService {
 	 */
 	public function release(string $caseId, string $taskId, string $fileId): array {
 		$case = $this->readCase(caseId: $caseId);
-		$kept = array_values(
-			array_filter(
-				self::allHeld(case: $case),
-				static fn (array $held): bool => (
-					trim((string)($held['task'] ?? '')) !== trim($taskId)
-					|| trim((string)($held['file'] ?? '')) !== trim($fileId)
-				)
-			)
-		);
+		$kept = self::withoutFile(held: self::allHeld(case: $case), pair: ['taskId' => $taskId, 'fileId' => $fileId]);
 
 		$this->writeHold(caseId: $caseId, held: $kept);
 
 		return $this->heldFor(case: [self::HOLD => $kept], taskId: $taskId);
 	}//end release()
+
+	/**
+	 * The held files without the one the task holds under this file id.
+	 *
+	 * @param array<int, array<string, mixed>>       $held The held files.
+	 * @param array{taskId: string, fileId: string} $pair The task and the file.
+	 *
+	 * @return array<int, array<string, mixed>> The files that stay held.
+	 */
+	private static function withoutFile(array $held, array $pair): array {
+		return array_values(
+			array_filter(
+				$held,
+				static fn (array $entry): bool => (
+					trim((string)($entry['task'] ?? '')) !== trim($pair['taskId'])
+					|| trim((string)($entry['file'] ?? '')) !== trim($pair['fileId'])
+				)
+			)
+		);
+	}//end withoutFile()
 
 	/**
 	 * Publish every file held against a completed task to the case.

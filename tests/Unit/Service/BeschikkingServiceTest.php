@@ -36,7 +36,6 @@ use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
-use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\BeschikkingService;
@@ -48,11 +47,20 @@ use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Signing\DocumentSigningRequester;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
+use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
+use OCA\Filinq\Event\DocumentSigningRequestedEvent;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * In-memory ObjectService fake.
@@ -86,7 +94,9 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return ($this->store[$schema][$id] ?? null);
 	}//end find()
 
@@ -133,7 +143,9 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		if (empty($object['id']) === true) {
 			$this->seq++;
 			$object['id'] = $schema . '-' . $this->seq;
@@ -158,7 +170,9 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
  * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
  * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
- * @uses \OCA\Dossiq\Service\Beschikking\MockSigningAdapter
+ * @uses \OCA\Dossiq\Service\Signing\DocumentSigningRequester
+ * @uses \OCA\Dossiq\Service\Signing\SigningConclusionRecorder
+ * @uses \OCA\Dossiq\Service\Signing\SigningConclusion
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
  * @uses \OCA\Dossiq\Service\StateMachineService
@@ -200,6 +214,27 @@ class BeschikkingServiceTest extends TestCase {
 	 * @var BeschikkingService
 	 */
 	private BeschikkingService $service;
+
+	/**
+	 * The signing requests filinq took, in order.
+	 *
+	 * @var list<DocumentSigningRequestedEvent>
+	 */
+	private array $signingRequests = [];
+
+	/**
+	 * Whether filinq takes a signing request (false: filinq absent or refusing).
+	 *
+	 * @var bool
+	 */
+	private bool $filinqTakesRequests = true;
+
+	/**
+	 * Records filinq's conclusion, over the same repository and state machine.
+	 *
+	 * @var SigningConclusionRecorder
+	 */
+	private SigningConclusionRecorder $recorder;
 
 	/**
 	 * The settings double the graph reads its keys from.
@@ -305,17 +340,37 @@ class BeschikkingServiceTest extends TestCase {
 			$cases,
 		);
 
-		$signingAdapter = new MockSigningAdapter();
+		// Filinq's side of the signing request: a dispatcher that takes the
+		// request event the way filinq's listener does (an id written back,
+		// handled), unless a test says filinq is not there.
+		$this->signingRequests = [];
+		$this->filinqTakesRequests = true;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			function (object $event): void {
+				if ($event instanceof DocumentSigningRequestedEvent === false || $this->filinqTakesRequests === false) {
+					return;
+				}
+
+				$this->signingRequests[] = $event;
+				$event->setSigningRequestId('sr-' . count($this->signingRequests));
+				$event->setHandled(true);
+			}
+		);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => $key === DocumentSigningRequester::LEVEL_KEY ? 'QES' : $default
+		);
 
 		$this->service = new BeschikkingService(
 			$stateMachine,
 			$delivery,
 			new MockTemplateEngineAdapter(),
-			$signingAdapter,
+			new DocumentSigningRequester($dispatcher, $appConfig, $logger),
 			new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
 			$this->repository = new BeschikkingRepository($settings, $logger),
 			new MandaatVerifier($settings, $logger),
-			new AuditPacketBuilder($settings, $signingAdapter, $logger),
+			new AuditPacketBuilder($settings, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
 			$this->createMock(CoordinatorRequirement::class),
 			$this->timeline,
@@ -328,10 +383,10 @@ class BeschikkingServiceTest extends TestCase {
 			),
 		);
 
+		$this->recorder = new SigningConclusionRecorder($this->repository, $stateMachine);
+
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
 		$this->objects->saveObject(
-			'dossiq',
-			'mandaatRegeling',
 			[
 				'id' => 'mr-2024-007-wmo',
 				'name' => 'Mandaatregeling WMO',
@@ -339,7 +394,8 @@ class BeschikkingServiceTest extends TestCase {
 					['level' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
 					['level' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'rejection']],
 				],
-			]
+			],
+			new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'mandaatRegeling'))
 		);
 	}//end setUp()
 
@@ -366,7 +422,10 @@ class BeschikkingServiceTest extends TestCase {
 			 *
 			 * @return int The reserved value.
 			 */
-			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+			public function reserveNext(object $sequence): int {
+				$registerId = $sequence->registerId;
+				$schemaId = $sequence->schemaId;
+				$scopeKey = $sequence->scopeKey;
 				$value = ($this->next[$scopeKey] ?? 1);
 				$this->next[$scopeKey] = ($value + 1);
 
@@ -569,7 +628,7 @@ class BeschikkingServiceTest extends TestCase {
 
 		$id = $this->composeWmo()['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
 
 		// The stored end is the declared 28 days, not the scheduler's six
@@ -592,7 +651,7 @@ class BeschikkingServiceTest extends TestCase {
 
 		$id = $this->composeWmo()['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
 	}//end testSendingRecordsTheDaySentOnTheCase()
 
@@ -611,9 +670,10 @@ class BeschikkingServiceTest extends TestCase {
 		// deliberately left Dutch until the JSON-rewrite migration.
 		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateLevel']);
 
-		$afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$afterSign = $this->sign(id: $id);
 		$this->assertSame('signed', $afterSign['currentStatus']);
-		$this->assertNotEmpty($afterSign['signature']['validationRapportId']);
+		$this->assertSame('sr-1', $afterSign['signature']['signingRequestId']);
+		$this->assertSame('gekwalificeerde-elektronische-handtekening', $afterSign['signature']['kind']);
 
 		$afterSend = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
 		$this->assertSame('sent', $afterSend['currentStatus']);
@@ -653,7 +713,7 @@ class BeschikkingServiceTest extends TestCase {
 		$id = $decision['id'];
 
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
 
 		$delivered = array_values(
@@ -690,7 +750,7 @@ class BeschikkingServiceTest extends TestCase {
 		// Addressed to a burger with no BSN, on a case with no address.
 		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 
 		$refused = null;
 		try {
@@ -726,7 +786,7 @@ class BeschikkingServiceTest extends TestCase {
 
 		$id = $this->composeWmo()['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 
 		try {
 			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
@@ -754,7 +814,7 @@ class BeschikkingServiceTest extends TestCase {
 	public function testASentBeschikkingCarriesTheTransportsMessageId(): void {
 		$id = $this->composeWmo()['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
 
 		$this->assertSame('sent', $sent['currentStatus']);
@@ -793,7 +853,7 @@ class BeschikkingServiceTest extends TestCase {
 		$id = $decision['id'];
 
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('immutable');
@@ -826,7 +886,7 @@ class BeschikkingServiceTest extends TestCase {
 		$id = $decision['id'];
 
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 
 		$zip = $this->service->exportAuditPacket($id);
 
@@ -834,6 +894,161 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame("PK\x03\x04", substr($zip, 0, 4));
 		$this->assertGreaterThan(100, strlen($zip));
 	}//end testAuditPacketIsZip()
+	/**
+	 * Ask for the signature and let filinq conclude it signed.
+	 *
+	 * @param string $id The beschikking id.
+	 *
+	 * @return array<string, mixed> The beschikking after the conclusion.
+	 */
+	private function sign(string $id): array {
+		$waiting = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->assertTrue(
+			$this->recorder->record(
+				new SigningConclusion(
+					decisionId: $id,
+					requestId: (string)$waiting['signing']['requestId'],
+					status: 'signed',
+					signedDocumentRef: '9001',
+					signedAt: '2026-10-14T10:00:00+02:00',
+				)
+			)
+		);
+
+		return (array)$this->repository->find(decisionId: $id);
+	}//end sign()
+
+	/**
+	 * Asking for the signature signs nothing: the decision waits, visibly, on filinq. [T08]
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
+	 */
+	public function testAskingForTheSignatureLeavesTheDecisionWaiting(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+
+		$waiting = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		$this->assertSame('approved-mandate', $waiting['currentStatus']);
+		$this->assertSame('requested', $waiting['signing']['state']);
+		$this->assertSame('sr-1', $waiting['signing']['requestId']);
+		$this->assertArrayNotHasKey('signature', $waiting);
+		$this->assertCount(1, $this->signingRequests);
+		$request = $this->signingRequests[0];
+		$this->assertSame('dossiq', $request->getSourceApp());
+		$this->assertSame($id, $request->getSubjectId());
+		$this->assertSame([['userId' => 'afdelingsmanager-wmo-15']], $request->getSigners());
+		$this->assertSame('QES', $request->getSignatureLevel());
+
+		try {
+			$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+			$this->fail('A second request while one is open must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertSame('signing_in_progress', $e->getMessage());
+		}
+
+		$this->assertCount(1, $this->signingRequests);
+	}//end testAskingForTheSignatureLeavesTheDecisionWaiting()
+
+	/**
+	 * Without filinq taking the request, nothing is signed and nothing is pretended.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
+	 */
+	public function testWithoutFilinqTheSignatureIsRefused(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->filinqTakesRequests = false;
+
+		try {
+			$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+			$this->fail('A request filinq did not take must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertSame('signing_unavailable', $e->getMessage());
+		}
+
+		$stored = (array)$this->repository->find(decisionId: $id);
+		$this->assertSame('approved-mandate', $stored['currentStatus']);
+		$this->assertArrayNotHasKey('signing', $stored);
+	}//end testWithoutFilinqTheSignatureIsRefused()
+
+	/**
+	 * A request filinq ends unsigned is shown as not concluded, and can be asked again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-signing-request-that-ends-unsigned-is-shown-as-not-concluded
+	 */
+	public function testARequestThatEndsUnsignedIsShownAsNotConcluded(): void {
+		foreach (['expired', 'declined', 'cancelled'] as $status) {
+			$this->setUp();
+			$id = $this->composeWmo()['id'];
+			$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+			$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+			$this->assertTrue($this->recorder->record(new SigningConclusion(decisionId: $id, requestId: 'sr-1', status: $status, signedDocumentRef: null, signedAt: null)));
+
+			$stored = (array)$this->repository->find(decisionId: $id);
+			$this->assertSame('not-concluded', $stored['signing']['state'], $status);
+			$this->assertSame($status, $stored['signing']['outcome'], $status);
+			$this->assertSame('approved-mandate', $stored['currentStatus'], $status);
+			$this->assertArrayNotHasKey('signature', $stored, $status);
+
+			$again = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+			$this->assertSame('requested', $again['signing']['state'], $status);
+			$this->assertSame('sr-2', $again['signing']['requestId'], $status);
+		}
+	}//end testARequestThatEndsUnsignedIsShownAsNotConcluded()
+
+	/**
+	 * A conclusion for a request the decision is not waiting on changes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-signing-request-that-ends-unsigned-is-shown-as-not-concluded
+	 */
+	public function testAConclusionForAnotherRequestChangesNothing(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		$this->assertFalse($this->recorder->record(new SigningConclusion(decisionId: $id, requestId: 'sr-other', status: 'signed', signedDocumentRef: '1', signedAt: null)));
+		$this->assertFalse($this->recorder->record(new SigningConclusion(decisionId: 'no-such-decision', requestId: 'sr-1', status: 'signed', signedDocumentRef: '1', signedAt: null)));
+
+		$stored = (array)$this->repository->find(decisionId: $id);
+		$this->assertSame('requested', $stored['signing']['state']);
+		$this->assertSame('approved-mandate', $stored['currentStatus']);
+	}//end testAConclusionForAnotherRequestChangesNothing()
+
+	/**
+	 * The audit packet says no validation report is available, rather than vouching for one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-the-audit-packet-says-when-no-validation-report-is-available
+	 */
+	public function testTheAuditPacketSaysNoValidationReportIsAvailable(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
+
+		$path = tempnam(sys_get_temp_dir(), 'audit');
+		file_put_contents($path, $this->service->exportAuditPacket($id));
+		$zip = new \ZipArchive();
+		$this->assertTrue($zip->open($path));
+		$report = json_decode((string)$zip->getFromName('validatierapport.json'), true);
+		$zip->close();
+		unlink($path);
+
+		$this->assertFalse($report['available']);
+		$this->assertSame('sr-1', $report['signingRequestId']);
+		$this->assertStringContainsString('No validation report is available', $report['reason']);
+	}//end testTheAuditPacketSaysNoValidationReportIsAvailable()
+
 	/**
 	 * Sending writes the delivered line, the trigger and the transition with
 	 * exactly these fields, after the dispatch the transport answered.
@@ -843,7 +1058,7 @@ class BeschikkingServiceTest extends TestCase {
 	public function testTheSentLineTriggerAndTransitionCarryTheseFields(): void {
 		$id = $this->composeWmo()['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$this->entries = [];
 
 		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
@@ -882,7 +1097,7 @@ class BeschikkingServiceTest extends TestCase {
 	public function testTheNotSentLineAndTheNoAddressRefusal(): void {
 		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->sign(id: $id);
 		$this->entries = [];
 		$decision = $this->service->find($id);
 

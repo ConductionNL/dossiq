@@ -8,9 +8,11 @@
  *   - Automatic detection: extract applicant BSN from the case, walk a
  *     relationship lookup (BRP integration — pluggable here, stub by
  *     default) for the userId's BSN.
- *   - Manual registration: caseworker can register a conflict reason
- *     against a case; subsequent isAuthorized() checks see it and
- *     return belangenconflict.
+ *
+ * There is no manual registration. `registerConflict()`/`clearConflict()`
+ * filled and emptied a request-scoped in-memory map that nothing ever called
+ * (dossiq#1302); an override that cannot outlive the request it was set in is
+ * no escape hatch. A real one needs a persisted, per-case-authorised record.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -84,13 +86,6 @@ class ConflictOfInterestService {
 	 * conflict-of-interest check must never report "no conflict".
 	 */
 	public const REASON_IDENTITY_INDETERMINATE = 'identiteit_onbepaald';
-
-	/**
-	 * Manually-registered conflicts keyed by zaakId.
-	 *
-	 * @var array<string, string>
-	 */
-	private array $registered = [];
 
 	/**
 	 * In-memory relationship index for tests; production wires a BRP
@@ -217,11 +212,6 @@ class ConflictOfInterestService {
 	public function checkConflict(string $userId, string $caseId, array $caseProperties = []): array {
 		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'caseId' => $caseId]);
 
-		// Manual registration trumps automatic detection.
-		if (isset($this->registered[$caseId]) === true) {
-			return ['conflict' => true, 'reason' => $this->registered[$caseId]];
-		}
-
 		// The applicant identity is authoritative ONLY because the caller
 		// (MandaatMatrixController::probe) re-derives it server-side from the
 		// case object and strips any client-supplied identity keys first.
@@ -255,7 +245,7 @@ class ConflictOfInterestService {
 			return ['conflict' => true, 'reason' => 'self'];
 		}
 
-		return $this->detectRelationConflict(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
+		return $this->detectRelationConflict(bsns: [$userBsn, $applicantBsn], caseId: $caseId);
 	}//end checkConflict()
 
 	/**
@@ -263,15 +253,15 @@ class ConflictOfInterestService {
 	 *
 	 * Both identities are already resolved server-side by the caller.
 	 *
-	 * @param string $userBsn The case worker's BSN (in memory only).
-	 * @param string $applicantBsn The applicant's BSN (in memory only).
-	 * @param string $caseId Case id (audit correlation).
+	 * @param array{0: string, 1: string} $bsns   The case worker's and the applicant's BSN (in memory only).
+	 * @param string                      $caseId Case id (audit correlation).
 	 *
 	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function detectRelationConflict(string $userBsn, string $applicantBsn, string $caseId): array {
+	private function detectRelationConflict(array $bsns, string $caseId): array {
+		[$userBsn, $applicantBsn] = $bsns;
 		if ($this->relationshipLookup !== null) {
 			try {
 				$relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
@@ -288,7 +278,7 @@ class ConflictOfInterestService {
 			}
 		}
 
-		return $this->relationFromRegistry(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
+		return $this->relationFromRegistry(bsns: $bsns, caseId: $caseId);
 	}//end detectRelationConflict()
 
 	/**
@@ -309,15 +299,34 @@ class ConflictOfInterestService {
 	 *
 	 * Per AVG art. 9 no BSN is logged, and numbers are compared as hashes.
 	 *
-	 * @param string $userBsn The case worker's BSN (in memory only).
-	 * @param string $applicantBsn The applicant's BSN (in memory only).
-	 * @param string $caseId Case id (audit correlation).
+	 * @param array{0: string, 1: string} $bsns   The case worker's and the applicant's BSN (in memory only).
+	 * @param string                      $caseId Case id (audit correlation).
 	 *
 	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
-	private function relationFromRegistry(string $userBsn, string $applicantBsn, string $caseId): array {
+	private function relationFromRegistry(array $bsns, string $caseId): array {
+		[$userBsn, $applicantBsn] = $bsns;
+		$answer = $this->readRelations(userBsn: $userBsn);
+
+		if ($answer['available'] === false) {
+			return $this->unansweredRelationCheck(answer: $answer, caseId: $caseId);
+		}
+
+		return $this->relationTo(relations: $answer['relations'], applicantBsn: $applicantBsn);
+	}//end relationFromRegistry()
+
+	/**
+	 * Read the case worker's family relations through integriq.
+	 *
+	 * @param string $userBsn The case worker's BSN (in memory only).
+	 *
+	 * @return array{available:bool,reason:string,relations:array<int,array{relation:string,burgerservicenummer:string}>} The reader's answer.
+	 *
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
+	 */
+	private function readRelations(string $userBsn): array {
 		$answer = ['available' => false, 'reason' => PersonRelationReader::REASON_NO_INTEGRIQ, 'relations' => []];
 		if ($this->relationReader !== null) {
 			try {
@@ -327,57 +336,57 @@ class ConflictOfInterestService {
 			}
 		}
 
-		if ($answer['available'] === false) {
-			if (in_array($answer['reason'], self::RELATION_READ_ABSENT, true) === true) {
-				$this->logger->notice(
-					'Belangenconflict: the family relation step is not available',
-					['caseId' => $caseId, 'reason' => $answer['reason']]
-				);
-				return [
-					'conflict' => false,
-					'relationCheck' => self::RELATION_CHECK_NOT_AVAILABLE,
-					'relationCheckReason' => $answer['reason'],
-				];
-			}
+		return $answer;
+	}//end readRelations()
 
-			$this->logger->warning(
-				'Belangenconflict: the family relation read gave no answer, blocking',
+	/**
+	 * The outcome when the relation read gave no answer: not available, or indeterminate.
+	 *
+	 * @param array{available:bool,reason:string,relations:array<int,array{relation:string,burgerservicenummer:string}>} $answer The reader's answer.
+	 * @param string $caseId Case id (audit correlation).
+	 *
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
+	 *
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
+	 */
+	private function unansweredRelationCheck(array $answer, string $caseId): array {
+		if (in_array($answer['reason'], self::RELATION_READ_ABSENT, true) === true) {
+			$this->logger->notice(
+				'Belangenconflict: the family relation step is not available',
 				['caseId' => $caseId, 'reason' => $answer['reason']]
 			);
-			return ['conflict' => true, 'reason' => self::REASON_RELATION_INDETERMINATE];
+			return [
+				'conflict' => false,
+				'relationCheck' => self::RELATION_CHECK_NOT_AVAILABLE,
+				'relationCheckReason' => $answer['reason'],
+			];
 		}
 
+		$this->logger->warning(
+			'Belangenconflict: the family relation read gave no answer, blocking',
+			['caseId' => $caseId, 'reason' => $answer['reason']]
+		);
+		return ['conflict' => true, 'reason' => self::REASON_RELATION_INDETERMINATE];
+	}//end unansweredRelationCheck()
+
+	/**
+	 * The outcome when the relation read answered: a conflict named by the relation to the applicant, if any.
+	 *
+	 * @param array<int,array{relation:string,burgerservicenummer:string}> $relations    The case worker's relations.
+	 * @param string $applicantBsn The applicant's BSN (in memory only).
+	 *
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
+	 *
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
+	 */
+	private function relationTo(array $relations, string $applicantBsn): array {
 		$applicantHash = self::hashBsn(bsn: $applicantBsn);
-		foreach ($answer['relations'] as $relation) {
+		foreach ($relations as $relation) {
 			if (hash_equals($applicantHash, self::hashBsn(bsn: $relation['burgerservicenummer'])) === true) {
 				return ['conflict' => true, 'reason' => $relation['relation']];
 			}
 		}
 
 		return ['conflict' => false, 'relationCheck' => self::RELATION_CHECK_DONE];
-	}//end relationFromRegistry()
-
-	/**
-	 * Manually register a belangenconflict on a case.
-	 *
-	 * @param string $caseId Case id.
-	 * @param string $reason Reason.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-06-temporal-and-conflict/tasks.md
-	 */
-	public function registerConflict(string $caseId, string $reason): void {
-		$this->registered[$caseId] = $reason;
-	}//end registerConflict()
-
-	/*
-	 * NO clearConflict() HERE.
-	 *
-	 * It removed an entry from the in-memory `$registered` map above and had
-	 * no caller. Neither has `registerConflict()`, which fills that map — the
-	 * manual-override pair is unreached from either end, and the map is
-	 * request-scoped, so an entry cannot survive long enough to need clearing.
-	 * `checkConflict()`, the live method, is unaffected.
-	 */
+	}//end relationTo()
 }//end class

@@ -23,9 +23,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectSearch;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Throwable;
@@ -43,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooThroughputReport {
+class WooThroughputReport implements WooThroughputReportInterface {
 
 	use SearchesObjects;
 
@@ -65,15 +67,15 @@ class WooThroughputReport {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param CaseDateNormaliser $caseDates Reads a moment as a day in the instance's zone.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param CaseDateNormaliserInterface $caseDates Reads a moment as a day in the instance's zone.
 	 * @param IUserManager $userManager The user manager, for display names.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDateNormaliser $caseDates,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDateNormaliserInterface $caseDates,
 		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()
@@ -246,19 +248,24 @@ class WooThroughputReport {
 			throw $this->unavailable(previous: null);
 		}
 
+		return $this->pagedAssessments(
+			search: new ObjectSearch(objectService: $objectService, register: $register, schema: $schema, filters: $filters, scope: [])
+		);
+	}//end readAssessments()
+
+	/**
+	 * Page through the assessments in the register, up to the page cap.
+	 *
+	 * @param ObjectSearch $search The object service, register, assessment schema and object filters.
+	 *
+	 * @return array{rows: list<array<string, mixed>>, truncated: bool} The rows, and whether the page cap cut them short.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function pagedAssessments(ObjectSearch $search): array {
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			try {
-				$batch = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
-				);
-			} catch (Throwable $e) {
-				throw $this->unavailable(previous: $e);
-			}
-
+			$batch = $this->assessmentPage(search: $search, page: $page);
 			array_push($rows, ...$batch);
 			if (count($batch) < self::PAGE) {
 				return ['rows' => $rows, 'truncated' => false];
@@ -266,7 +273,32 @@ class WooThroughputReport {
 		}
 
 		return ['rows' => $rows, 'truncated' => true];
-	}//end readAssessments()
+	}//end pagedAssessments()
+
+	/**
+	 * Read one page of assessments.
+	 *
+	 * @param ObjectSearch $search The object service, register, assessment schema and object filters.
+	 * @param int          $page   The page, from 0.
+	 *
+	 * @return list<array<string, mixed>> The page.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function assessmentPage(ObjectSearch $search, int $page): array {
+		try {
+			$batch = $this->searchObjectsAsArrays(
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->schema,
+				filters: $search->filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
+			);
+		} catch (Throwable $e) {
+			throw $this->unavailable(previous: $e);
+		}
+
+		return $batch;
+	}//end assessmentPage()
 
 	/**
 	 * The refusal when the assessments cannot be read.

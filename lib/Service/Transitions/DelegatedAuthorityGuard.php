@@ -112,6 +112,19 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			return $this->refuse(reason: 'no-act');
 		}
 
+		return $this->askForActor(config: $config, request: ['case' => $case, 'userId' => $userId, 'act' => $act]);
+	}//end evaluate()
+
+	/**
+	 * Ask the register whether the actor may perform the act, once the amount reads.
+	 *
+	 * @param array<string, mixed> $config  The guard configuration, with its defaults.
+	 * @param array<string, mixed> $request The case, the acting user and the act key.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function askForActor(array $config, array $request): GuardResult {
+		['case' => $case, 'userId' => $userId, 'act' => $act] = $request;
 		$actor = $this->actorOf(config: $config, case: $case);
 		if ($actor === '') {
 			$actor = $userId;
@@ -122,8 +135,8 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			return $refusal;
 		}
 
-		return $this->ask(actor: $actor, act: $act, amount: $this->amountOf(config: $config, case: $case));
-	}//end evaluate()
+		return $this->ask(actor: $actor, asked: ['act' => $act, 'amount' => $this->amountOf(config: $config, case: $case)]);
+	}//end askForActor()
 
 	/**
 	 * The act to check the mandate for: the configured one, else the one the
@@ -213,13 +226,13 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	/**
 	 * Ask decidiq and translate the answer.
 	 *
-	 * @param string     $actor  The acting account.
-	 * @param string     $act    The act key.
-	 * @param float|null $amount The amount in euro.
+	 * @param string                                 $actor The acting account.
+	 * @param array{act: string, amount: float|null} $asked The act key and the amount in euro.
 	 *
 	 * @return GuardResult
 	 */
-	private function ask(string $actor, string $act, ?float $amount): GuardResult {
+	private function ask(string $actor, array $asked): GuardResult {
+		['act' => $act, 'amount' => $amount] = $asked;
 		$check = FleetAppId::getService(
 			container: $this->container,
 			canonical: 'decidiq',

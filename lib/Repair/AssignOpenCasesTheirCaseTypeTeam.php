@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeHandlingInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -63,13 +63,13 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService The settings service.
-	 * @param CaseTypeHandling $handling        The one reader of a case type's handling block.
+	 * @param SettingsServiceInterface  $settingsService The settings service.
+	 * @param CaseTypeHandlingInterface $handling        The one reader of a case type's handling block.
 	 * @param LoggerInterface  $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTypeHandling $handling,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTypeHandlingInterface $handling,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -152,16 +152,11 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 */
 	private function caseTypes(CaseTeamFillRun $run): array {
 		try {
-			return $this->allRows(
-				objectService: $run->objectService,
-				register: $run->register,
-				schema: $run->caseTypeSchema,
-				filters: [],
-			);
+			return $this->allRows(run: $run, search: ['schema' => $run->caseTypeSchema, 'filters' => []]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not list case types',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -202,16 +197,11 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 */
 	private function casesOf(CaseTeamFillRun $run): array {
 		try {
-			return $this->allRows(
-				objectService: $run->objectService,
-				register: $run->register,
-				schema: $run->caseSchema,
-				filters: ['caseType' => $run->caseTypeId],
-			);
+			return $this->allRows(run: $run, search: ['schema' => $run->caseSchema, 'filters' => ['caseType' => $run->caseTypeId]]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not list cases',
-				['app' => Application::APP_ID, 'caseType' => $run->caseTypeId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $run->caseTypeId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -258,7 +248,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case team fill could not write a case',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}
@@ -286,23 +276,21 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	/**
 	 * Every row of a schema matching the filters, page by page.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The schema.
-	 * @param array<string, mixed> $filters       Object-field filters.
+	 * @param CaseTeamFillRun                                     $run    The pass: OpenRegister's ObjectService and the register.
+	 * @param array{schema: string, filters: array<string, mixed>} $search The schema and its object-field filters.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function allRows(object $objectService, string $register, string $schema, array $filters): array {
+	private function allRows(CaseTeamFillRun $run, array $search): array {
 		$rows = [];
 		$offset = 0;
 		$full = true;
 		while ($full === true) {
 			$page = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: $filters + ['_limit' => self::PAGE, '_offset' => $offset],
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $search['schema'],
+				filters: $search['filters'] + ['_limit' => self::PAGE, '_offset' => $offset],
 			);
 			array_push($rows, ...$page);
 			$offset += self::PAGE;

@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * An ObjectService double holding case types and recording partial writes.
@@ -69,7 +70,11 @@ class FakeDuplicateCaseTypeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->patches[] = [$objectId, $data];
 		return array_merge(['id' => $objectId], $data);
 	}//end patchObject()

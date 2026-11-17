@@ -37,6 +37,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests for FederatedCaseShareService.
@@ -141,7 +143,9 @@ final class FederatedCaseShareServiceTest extends TestCase {
 			public function __construct(private array $found, private bool $serialise, private \ArrayObject $calls) {
 			}
 
-			public function find(string $id, int $register, int $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->found[$id] ?? null);
 				if ($found instanceof \Throwable) {
@@ -151,7 +155,9 @@ final class FederatedCaseShareServiceTest extends TestCase {
 				return $found;
 			}
 
-			public function saveObject(array $object, int $register, int $schema): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				$this->saves++;
 				$saved = $object + ['id' => 'fshare-1', 'save' => $this->saves];
@@ -265,6 +271,44 @@ final class FederatedCaseShareServiceTest extends TestCase {
 		$this->assertSame(77, $result['federationShareId']);
 		$this->assertCount(2, $saves);
 		$this->assertSame(['find', 'case-1', 5, 3], $this->calls[0]);
+	}
+
+	/**
+	 * A created share is logged with its record id and the activated record comes back whole.
+	 *
+	 * @return void
+	 */
+	public function testCreateLogsTheShareAndReturnsTheActivatedRecord(): void {
+		$this->logger->expects($this->once())->method('info')->with(
+			'Dossiq: Federated case share created',
+			['caseId' => 'case-1', 'remoteCloudId' => 'bob@partner.example', 'shareId' => 'fshare-1']
+		);
+
+		$result = $this->service(objects: $this->objects(found: ['case-1' => $this->caseRow()], serialise: true), federation: $this->federation())->createFederatedShare(
+			caseId: 'case-1',
+			remoteCloudId: 'bob@partner.example',
+			sharedFields: [2 => 'title'],
+			sharedDocuments: ['doc-1'],
+			permissionLevel: 'bekijken',
+			createdBy: 'ann'
+		);
+
+		$this->assertSame(
+			[
+				'caseId' => 'case-1',
+				'remoteCloudId' => 'bob@partner.example',
+				'sharedFields' => ['title'],
+				'sharedDocuments' => ['doc-1'],
+				'fieldSnapshot' => ['title' => 'Bouwvergunning'],
+				'permissionLevel' => 'bekijken',
+				'status' => 'active',
+				'createdBy' => 'ann',
+				'id' => 'fshare-1',
+				'save' => 1,
+				'federationShareId' => 77,
+			],
+			$result
+		);
 	}
 
 	/**

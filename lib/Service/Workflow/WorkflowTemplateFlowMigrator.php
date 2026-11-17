@@ -16,11 +16,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
 use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
+use OCA\Dossiq\Service\Support\ResolvesSchemaStore;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -49,10 +51,11 @@ use Throwable;
  *
  * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
-class WorkflowTemplateFlowMigrator {
+class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterface {
 
 	use SearchesObjects;
 	use ProjectsOntoFlows;
+	use ResolvesSchemaStore;
 
 	/**
 	 * Provenance marker prefix written into the flow's notes.
@@ -64,7 +67,6 @@ class WorkflowTemplateFlowMigrator {
 	 * @var string
 	 */
 	private const MARKER_PREFIX = 'dossiq:workflowTemplate:';
-
 
 	/**
 	 * Templates read per pass.
@@ -121,7 +123,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end migrate()
 
-
 	/**
 	 * Walk every template and project it, inside the acting user's context.
 	 *
@@ -141,14 +142,9 @@ class WorkflowTemplateFlowMigrator {
 		$summary['total'] = count($templates);
 		unset($summary['note']);
 
+		$pass = new FlowMigrationPass(flowService: $flowService, existing: $existing, statusNames: $statusNames, dryRun: $dryRun);
 		foreach ($templates as $template) {
-			$row = $this->migrateOne(
-				template: $template,
-				existing: $existing,
-				flowService: $flowService,
-				dryRun: $dryRun,
-				statusNames: $statusNames,
-			);
+			$row = $this->migrateOne(template: $template, pass: $pass);
 			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
 			$summary['rows'][] = $row;
 		}
@@ -160,15 +156,13 @@ class WorkflowTemplateFlowMigrator {
 	/**
 	 * Project one template, returning the row that describes what happened.
 	 *
-	 * @param array<string, mixed>  $template    The stored workflowTemplate.
-	 * @param array<string, string> $existing    Marker to flow uuid.
-	 * @param object                $flowService OpenRegister's FlowService.
-	 * @param boolean               $dryRun      Report only.
-	 * @param array<string, string> $statusNames statusType uuid => name.
+	 * @param array<string, mixed> $template The stored workflowTemplate.
+	 * @param FlowMigrationPass    $pass     The flow service, existing flows, status names and dry-run flag.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 */
-	private function migrateOne(array $template, array $existing, object $flowService, bool $dryRun, array $statusNames = []): array {
+	private function migrateOne(array $template, FlowMigrationPass $pass): array {
+		$existing = $pass->existing;
 		$id = (string)($template['id'] ?? ($template['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
@@ -176,7 +170,7 @@ class WorkflowTemplateFlowMigrator {
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'the template has no id'];
 		}
 
-		$graph = $this->graphOf(template: $template, statusNames: $statusNames);
+		$graph = $this->graphOf(template: $template, statusNames: $pass->statusNames);
 		if ($graph === null) {
 			// A template with no transitions is not a state machine; projecting
 			// it would produce a flow with nodes and no way between them, which
@@ -184,7 +178,7 @@ class WorkflowTemplateFlowMigrator {
 			return ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'no usable transitions'];
 		}
 
-		if ($dryRun === true) {
+		if ($pass->dryRun === true) {
 			return [
 				'outcome' => $this->outcomeFor(uuid: ($existing[$marker] ?? null)),
 				'marker' => $marker,
@@ -193,7 +187,7 @@ class WorkflowTemplateFlowMigrator {
 		}
 
 		return $this->writeFlow(
-			flowService: $flowService,
+			flowService: $pass->flowService,
 			document: $this->flowDocument(template: $template, graph: $graph, marker: $marker),
 			marker: $marker,
 			uuid: ($existing[$marker] ?? null),
@@ -331,7 +325,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end nodeId()
 
-
 	/**
 	 * The flow document to store.
 	 *
@@ -345,7 +338,7 @@ class WorkflowTemplateFlowMigrator {
 		return [
 			'name' => (string)($template['title'] ?? 'Workflow'),
 			'description' => $this->description(template: $template),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			// DISABLED. The template still drives cases through
 			// StatusTransitionService; an enabled projection would move the
 			// same case a second time on every status change.
@@ -430,7 +423,7 @@ class WorkflowTemplateFlowMigrator {
 	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusNames(): array {
-		$store = $this->storeFor(schemaKey: 'status_type_schema');
+		$store = $this->schemaStore(schemaKey: 'status_type_schema');
 		if ($store === null) {
 			return [];
 		}
@@ -438,7 +431,7 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			$rows = $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list status types for the flow projection', $context);
 
 			return [];
@@ -473,7 +466,7 @@ class WorkflowTemplateFlowMigrator {
 	 * @return array<int, array<string, mixed>> The templates.
 	 */
 	private function fetchTemplates(): array {
-		$store = $this->storeFor(schemaKey: 'workflow_template_schema');
+		$store = $this->schemaStore(schemaKey: 'workflow_template_schema');
 		if ($store === null) {
 			return [];
 		}
@@ -481,34 +474,12 @@ class WorkflowTemplateFlowMigrator {
 		try {
 			return $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$context = ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()];
 			$this->logger->warning('Dossiq: could not list workflow templates', $context);
 
 			return [];
 		}
 	}//end fetchTemplates()
-
-	/**
-	 * The object service, register and schema for one schema key, null when any is missing.
-	 *
-	 * @param string $schemaKey The settings key of the schema.
-	 *
-	 * @return array{objectService: object, register: string, schema: string}|null The store.
-	 */
-	private function storeFor(string $schemaKey): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema   = $this->settingsService->getConfigValue(key: $schemaKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
-	}//end storeFor()
 
 	/**
 	 * One batch of the objects of a store.
@@ -525,8 +496,5 @@ class WorkflowTemplateFlowMigrator {
 			filters: ['_limit' => self::BATCH_LIMIT],
 		);
 	}//end batchOf()
-
-
-
 
 }//end class

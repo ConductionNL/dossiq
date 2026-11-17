@@ -235,12 +235,16 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 	it('offers the two preset lists through the library that reads them', () => {
 		const dashboard = manifest.pages.find((page) => page.id === 'Dashboard')
 
-		const presets = userWidgetPresets(dashboard.config)
+		const offered = userWidgetPresets(dashboard.config)
+		// The KPI gauge (REQ-CRS-35) is offered too; it reads an app endpoint.
+		const presets = offered.filter((preset) => preset.kind === 'object-list')
 
-		expect(presets.map((preset) => preset.label)).toEqual([
+		expect(offered.map((preset) => preset.label)).toEqual([
 			'Cases you follow',
 			"Your team's queue",
+			'Cases on time against target',
 		])
+		expect(presets).toHaveLength(2)
 		presets.forEach((preset) => {
 			// A preset carries its own register, schema and filter, because a
 			// reader has none of the three in front of them and a widget that

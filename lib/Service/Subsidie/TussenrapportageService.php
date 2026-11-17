@@ -32,10 +32,11 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class TussenrapportageService {
+class TussenrapportageService implements TussenrapportageServiceInterface {
 
 	use SearchesObjects;
 
@@ -193,6 +194,21 @@ class TussenrapportageService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
+		return $this->assessed(
+			reportId: $reportId,
+			patch: $this->approvalPatch(beoordelingsoordeel: $beoordelingsoordeel, approvedAmount: $approvedAmount)
+		);
+	}//end approveReport()
+
+	/**
+	 * The patch that approves a report, with the judgement and the amount when given.
+	 *
+	 * @param string|null $beoordelingsoordeel The judgement, or null.
+	 * @param float|null  $approvedAmount      The approved amount, or null.
+	 *
+	 * @return array<string, mixed> The patch.
+	 */
+	private function approvalPatch(?string $beoordelingsoordeel, ?float $approvedAmount): array {
 		$patch = [
 			'status' => 'approved',
 			'assessor' => $this->assessorId(),
@@ -206,8 +222,8 @@ class TussenrapportageService {
 			$patch['approvedAmount'] = $approvedAmount;
 		}
 
-		return $this->assessed(reportId: $reportId, patch: $patch);
-	}//end approveReport()
+		return $patch;
+	}//end approvalPatch()
 
 	/**
 	 * Partially approve an interim report with required corrections
@@ -229,17 +245,26 @@ class TussenrapportageService {
 			throw new OCSBadRequestException('Een correctieverzoek is verplicht bij gedeeltelijke goedkeuring');
 		}
 
-		return $this->assessed(
-			reportId: $reportId,
-			patch: [
-				'status' => 'gedeeltelijk_approved',
-				'correctionRequest' => $correctionRequest,
-				'amendmentNumerator' => ($currentTeller + 1),
-				'assessor' => $this->assessorId(),
-				'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
-			]
-		);
+		return $this->assessed(reportId: $reportId, patch: $this->correctionPatch(correctionRequest: $correctionRequest, currentTeller: $currentTeller));
 	}//end partialApprove()
+
+	/**
+	 * The patch that approves a report in part and asks for a correction.
+	 *
+	 * @param string $correctionRequest What must be corrected.
+	 * @param int    $currentTeller     The current amendment numerator.
+	 *
+	 * @return array<string, mixed> The patch.
+	 */
+	private function correctionPatch(string $correctionRequest, int $currentTeller): array {
+		return [
+			'status' => 'gedeeltelijk_approved',
+			'correctionRequest' => $correctionRequest,
+			'amendmentNumerator' => ($currentTeller + 1),
+			'assessor' => $this->assessorId(),
+			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+		];
+	}//end correctionPatch()
 
 	/**
 	 * The signed-in assessor's uid, or a refusal.

@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -213,9 +214,7 @@ class WorkingClock {
 		if ($this->calculator !== null && $this->calendar !== null) {
 			try {
 				return (float)$this->calculator->elapsedBusinessHours(
-					from: $from,
-					to: $to,
-					calendar: $this->calendar
+					new CalendarSpan(from: $from, to: $to, calendar: $this->calendar)
 				);
 			} catch (Throwable $e) {
 				// A calculator that refused this one interval has not stopped

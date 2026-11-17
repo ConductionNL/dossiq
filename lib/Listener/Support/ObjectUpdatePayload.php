@@ -154,25 +154,10 @@ trait ObjectUpdatePayload {
 	 * @param mixed $value The raw value.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) SerialisedObject is a stateless reader.
 	 */
 	private function payloadArray(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === false) {
-			return null;
-		}
-
-		foreach (['jsonSerialize', 'toArray'] as $method) {
-			if (method_exists($value, $method) === true) {
-				$array = $value->{$method}();
-				if (is_array($array) === true) {
-					return $array;
-				}
-			}
-		}
-
-		return null;
+		return SerialisedObject::of(value: $value);
 	}//end payloadArray()
 }//end trait

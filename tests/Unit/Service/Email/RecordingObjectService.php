@@ -21,6 +21,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Records calls; answers from the canned values.
@@ -59,7 +61,9 @@ class RecordingObjectService {
 	 *
 	 * @return mixed The canned object.
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		$this->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 		if ($this->findFails !== null) {
 			throw $this->findFails;
@@ -91,7 +95,9 @@ class RecordingObjectService {
 	 *
 	 * @return mixed The canned saved object.
 	 */
-	public function saveObject(array $object, int|string $register = '', int|string $schema = ''): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
 		$this->calls[] = ['save', ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		return $this->saved;
 	}//end saveObject()

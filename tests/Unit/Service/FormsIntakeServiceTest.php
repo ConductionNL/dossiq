@@ -46,6 +46,7 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\OpenRegister\Service\Form\FormSubmission;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A bound form opens a clocked case; anything else opens nothing.
@@ -145,7 +146,9 @@ class FormsIntakeServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				$this->writes[] = ['schema' => $schema, 'object' => $object];
 
 				return array_merge($object, ['id' => 'case-new']);

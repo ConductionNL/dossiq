@@ -41,7 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,9 +53,10 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
  */
-class IntakeCaseTypes {
+class IntakeCaseTypes implements IntakeCaseTypesInterface {
 
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * The setting mapping each case-opening path to its case type.
@@ -180,20 +183,27 @@ class IntakeCaseTypes {
 			return $reference;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'case_type_schema');
+		if ($source === null) {
 			return '';
 		}
 
+		return $this->searchIdentifier(source: $source, reference: $reference);
+	}//end lookup()
+
+	/**
+	 * Find a case type uuid by its identifier.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $source    The object service, register and case type schema.
+	 * @param string                                 $reference The identifier.
+	 *
+	 * @return string The uuid, or the empty string.
+	 */
+	private function searchIdentifier(array $source, string $reference): string {
+		[$objectService, $register, $schema] = $source;
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['identifier' => $reference, '_limit' => 1]
-			);
+			$filters = ['identifier' => $reference, '_limit' => 1];
+			$rows = $this->searchObjectsAsArraysUnscoped(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq intake: the case type could not be looked up',
@@ -205,5 +215,5 @@ class IntakeCaseTypes {
 		$row = ($rows[0] ?? []);
 
 		return trim((string)($row['id'] ?? ($row['@self']['id'] ?? '')));
-	}//end lookup()
+	}//end searchIdentifier()
 }//end class

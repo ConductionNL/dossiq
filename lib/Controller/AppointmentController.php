@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\AppointmentService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -44,17 +44,17 @@ class AppointmentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param AppointmentService $appointmentService The appointment service.
+	 * @param AppointmentServiceInterface $appointmentService The appointment service.
 	 * @param IUserSession $userSession The user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private AppointmentService $appointmentService,
+		private AppointmentServiceInterface $appointmentService,
 		private IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -156,16 +156,9 @@ class AppointmentController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancel(string $appointmentId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->requireAppointmentMutator(appointmentId: $appointmentId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$result = $this->appointmentService->cancelAppointment($appointmentId);
@@ -184,16 +177,9 @@ class AppointmentController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function noShow(string $appointmentId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->requireAppointmentMutator(appointmentId: $appointmentId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$result = $this->appointmentService->markNoShow($appointmentId);
@@ -231,6 +217,29 @@ class AppointmentController extends Controller {
 		$slots = $this->appointmentService->getTimeslots($productId, $locationId, $date);
 		return new JSONResponse(['success' => true, 'timeslots' => $slots]);
 	}//end timeslots()
+
+	/**
+	 * The refusal for a caller who may not change this appointment, else null.
+	 *
+	 * @param string $appointmentId The appointment UUID.
+	 *
+	 * @return JSONResponse|null 401 without a session, 403 without the right, else null.
+	 */
+	private function requireAppointmentMutator(string $appointmentId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end requireAppointmentMutator()
 
 	/**
 	 * Whether the caller may mutate the appointment with the given id.

@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\RowList;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\IUserSession;
 
 /**
@@ -154,11 +155,6 @@ class CaseJournal {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end actor()
 }//end class

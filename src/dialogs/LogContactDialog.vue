@@ -149,6 +149,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import {
 	logContactMoment,
 	refusalOf,
@@ -170,16 +171,7 @@ export default {
 		PhoneLogOutline,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -199,16 +191,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
 		channels() {
 			return [
@@ -292,10 +274,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .log-contact {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	&__pair {
 		display: grid;
@@ -304,21 +286,14 @@ export default {
 	}
 
 	&__saved {
-		margin: 0;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-success);
-		color: var(--color-success-text, var(--color-primary-element-text));
+		@include banner.saved-banner;
 	}
 
 	&__refusal {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
+		@include banner.warning-banner;
 	}
 
 	&__summary {

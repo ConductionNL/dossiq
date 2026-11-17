@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DoorlooptijdServiceInterface;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
@@ -46,7 +47,7 @@ use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
  *
  * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
-class DoorlooptijdService {
+class DoorlooptijdService implements DoorlooptijdServiceInterface {
 
 	/**
 	 * Reads a configured schema, or answers an empty list when it cannot.
@@ -86,29 +87,10 @@ class DoorlooptijdService {
 	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function getMetrics(array $params): array {
-		$caseTypeFilter = null;
-		if (isset($params['caseType']) === true && is_string($params['caseType']) === true) {
-			$caseTypeFilter = $params['caseType'];
-		}
-
-		$period = '12m';
-		if (isset($params['period']) === true && is_string($params['period']) === true) {
-			$period = $params['period'];
-		}
-
-		$granularity = 'month';
-		if (isset($params['granularity']) === true && is_string($params['granularity']) === true) {
-			$granularity = $params['granularity'];
-		}
-
-		$atRiskDays = 5;
-		if (isset($params['atRiskDays']) === true) {
-			$atRiskDays = (int)$params['atRiskDays'];
-		}
-
-		if ($atRiskDays < 0) {
-			$atRiskDays = 0;
-		}
+		$caseTypeFilter = $this->stringParam(params: $params, key: 'caseType');
+		$period = ($this->stringParam(params: $params, key: 'period') ?? '12m');
+		$granularity = ($this->stringParam(params: $params, key: 'granularity') ?? 'month');
+		$atRiskDays = $this->atRiskDays(params: $params);
 
 		$cases = $this->loadCases(caseTypeFilter: $caseTypeFilter);
 		$caseTypes = $this->loadCaseTypes();
@@ -128,6 +110,46 @@ class DoorlooptijdService {
 			],
 		];
 	}//end getMetrics()
+
+	/**
+	 * A query parameter when it is set and a string.
+	 *
+	 * @param array<string, mixed> $params Query parameters from the controller.
+	 * @param string               $key    The parameter.
+	 *
+	 * @return string|null The parameter, or null when it is absent or not a string.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
+	 */
+	private function stringParam(array $params, string $key): ?string {
+		if (isset($params[$key]) === true && is_string($params[$key]) === true) {
+			return $params[$key];
+		}
+
+		return null;
+	}//end stringParam()
+
+	/**
+	 * The at-risk window in days, 5 when absent and never negative.
+	 *
+	 * @param array<string, mixed> $params Query parameters from the controller.
+	 *
+	 * @return int The window in days.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
+	 */
+	private function atRiskDays(array $params): int {
+		$atRiskDays = 5;
+		if (isset($params['atRiskDays']) === true) {
+			$atRiskDays = (int)$params['atRiskDays'];
+		}
+
+		if ($atRiskDays < 0) {
+			$atRiskDays = 0;
+		}
+
+		return $atRiskDays;
+	}//end atRiskDays()
 
 	/**
 	 * The processing-time figures per case type and month, for a download.

@@ -191,6 +191,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
 import { fetchCaseParties } from '../services/caseParties.js'
 import {
 	allowedFor,
@@ -204,7 +205,6 @@ import {
 	DEFAULT_DIRECTION,
 	DOCUMENT_DIRECTIONS,
 } from '../utils/dossierHelpers.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -236,16 +236,12 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialogResolved],
+
 	props: {
 		files: {
 			type: Array,
 			default: () => [],
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		caseId: {
-			type: String,
-			default: '',
 		},
 
 		/**
@@ -365,20 +361,6 @@ export default {
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
-		},
-
-		/**
-		 * The case this dialog files documents on.
-		 *
-		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is (mirrors
-		 * GenerateDocumentDialog.resolvedCaseId).
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

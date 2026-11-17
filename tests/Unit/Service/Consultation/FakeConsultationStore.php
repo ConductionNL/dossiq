@@ -20,6 +20,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Consultation;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * Answers searches from a row list and records every call.
  */
@@ -63,7 +66,9 @@ class FakeConsultationStore {
 		);
 	}
 
-	public function find(string $id, string $register, string $schema): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->calls[] = ['find', $id, $register, $schema];
 		if (array_key_exists($id, $this->byId) === false) {
 			throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
@@ -72,7 +77,10 @@ class FakeConsultationStore {
 		return $this->byId[$id];
 	}
 
-	public function deleteObject(string $uuid, string $register, string $schema): void {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
+		$schema = $deletion->target->schema;
 		$this->calls[] = ['deleteObject', $uuid, $register, $schema];
 	}
 }

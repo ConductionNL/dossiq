@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -67,11 +67,11 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister and config.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->mapper = new InspectionTemplateMapper();

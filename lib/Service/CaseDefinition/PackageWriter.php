@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;
@@ -161,7 +163,31 @@ class PackageWriter {
 			return $this->packageFailure(message: "Package '{$package}' was not installed: this instance has no OpenRegister register configured.");
 		}
 
-		$run = [
+		$run = $this->newRun(target: $target, package: $package);
+
+		try {
+			$this->writeGroups(groups: $groups, run: $run);
+		} catch (\Throwable $e) {
+			$this->undo(written: $run['written']);
+
+			return $this->packageFailure(message: "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage());
+		}
+
+		return $this->installed(package: $package, run: $run);
+	}//end writePackage()
+
+	/**
+	 * The empty run state an install accumulates into.
+	 *
+	 * @param RowTarget $target Where the rows go.
+	 * @param string $package The package name.
+	 *
+	 * @return array<string, mixed> The run.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function newRun(RowTarget $target, string $package): array {
+		return [
 			'target' => $target,
 			'package' => $package,
 			'written' => [],
@@ -171,17 +197,35 @@ class PackageWriter {
 			'ids' => [],
 			'caseTypes' => [],
 		];
+	}//end newRun()
 
-		try {
-			foreach ($groups as $group) {
-				$this->writeGroup(group: $group, run: $run);
-			}
-		} catch (\Throwable $e) {
-			$this->undo(written: $run['written']);
-
-			return $this->packageFailure(message: "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage());
+	/**
+	 * Write every group of the package into the run.
+	 *
+	 * @param array<int, array<string, mixed>> $groups The package's groups.
+	 * @param array<string, mixed> $run The run, accumulated in place.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function writeGroups(array $groups, array &$run): void {
+		foreach ($groups as $group) {
+			$this->writeGroup(group: $group, run: $run);
 		}
+	}//end writeGroups()
 
+	/**
+	 * The report of an install that kept what it wrote.
+	 *
+	 * @param string $package The package name.
+	 * @param array<string, mixed> $run The finished run.
+	 *
+	 * @return array<string, mixed> The success report.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function installed(string $package, array $run): array {
 		$run['adopted'] = $this->fills()->withFillsPointedAt(adopted: $run['adopted'], ids: $run['ids']);
 
 		return [
@@ -193,7 +237,7 @@ class PackageWriter {
 			'adopted' => $run['adopted'],
 			'held' => $run['held'],
 		];
-	}//end writePackage()
+	}//end installed()
 
 	/**
 	 * A package install that wrote nothing it kept.
@@ -488,9 +532,10 @@ class PackageWriter {
 		// An administrator's install; see holds() for why it passes the access check.
 		$stored = $target->objectService->saveObject(
 			$this->withoutMetadata(row: $row),
-			register: $target->register,
-			schema: $target->schema,
-			uuid: $rowUuid,
+			new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $target->register, schema: $target->schema),
+				uuid: $rowUuid
+			),
 			_rbac: false
 		);
 

@@ -36,7 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -213,7 +213,7 @@ class InformatieobjectStatusLifecycle {
 
 		$this->logger->info(
 			'Dossiq dossier: informatieobject ' . $document->id . ' transitioned ' . $move->from . ' -> ' . $move->to,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return self::summary(infoObjectId: $document->id, updateData: $updateData);

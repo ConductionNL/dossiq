@@ -31,10 +31,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
 use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Support\ResolvesLoggedObjectService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -50,7 +55,10 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
-class AppointmentService {
+class AppointmentService implements AppointmentServiceInterface {
+
+	use ResolvesLoggedObjectService;
+
 	/**
 	 * Constructor.
 	 *
@@ -111,7 +119,31 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointmentData = array_merge(
+		$appointmentData = $this->appointmentRecord(caseId: $caseId, data: $data, backendResult: $backendResult);
+
+		$result = $objectService->saveObject(
+			object: $appointmentData,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
+
+		$this->logBooked(caseId: $caseId, result: $result);
+
+		return $result->jsonSerialize();
+	}//end bookAppointment()
+
+	/**
+	 * The appointment record to store: the submitted data, linked to the case and the backend booking.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, mixed> $data Appointment data.
+	 * @param array<string, mixed> $backendResult What the booking backend answered.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function appointmentRecord(string $caseId, array $data, array $backendResult): array {
+		return array_merge(
 			$data,
 			[
 				'caseId' => $caseId,
@@ -120,13 +152,19 @@ class AppointmentService {
 				'cancelToken' => bin2hex(random_bytes(16)),
 			]
 		);
+	}//end appointmentRecord()
 
-		$result = $objectService->saveObject(
-			object: $appointmentData,
-			register: (int)$register,
-			schema: (int)$schema,
-		);
-
+	/**
+	 * Log the booked appointment.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param object $result The stored appointment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function logBooked(string $caseId, $result): void {
 		$this->logger->info(
 			'Dossiq: Appointment booked',
 			[
@@ -134,9 +172,7 @@ class AppointmentService {
 				'appointmentId' => $result->getUuid(),
 			]
 		);
-
-		return $result->jsonSerialize();
-	}//end bookAppointment()
+	}//end logBooked()
 
 	/**
 	 * Resolve the case an appointment belongs to.
@@ -179,7 +215,7 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 
 		// Cancel in backend.
@@ -188,7 +224,10 @@ class AppointmentService {
 		}
 
 		$data['status'] = 'cancelled';
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
 
 		return $result->jsonSerialize();
 	}//end cancelAppointment()
@@ -211,11 +250,14 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 		$data['status'] = 'no_show';
 
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
+		);
 		return $result->jsonSerialize();
 	}//end markNoShow()
 
@@ -315,22 +357,4 @@ class AppointmentService {
 				);
 		}//end switch
 	}//end getBackend()
-
-	/**
-	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.
-	 *
-	 * @return \OCA\OpenRegister\Contract\ObjectServiceInterface|null The object service or null.
-	 */
-	private function getObjectService(): ?\OCA\OpenRegister\Contract\ObjectServiceInterface {
-		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error('Dossiq: Could not get ObjectService', ['exception' => $e->getMessage()]);
-			return null;
-		}
-	}//end getObjectService()
 }//end class

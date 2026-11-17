@@ -67,21 +67,27 @@ class ThroughputTrendCalculator {
 	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
+		return $this->sortedWeeks(buckets: $this->closedPerWeek(cases: $cases, period: [$from, $to]));
+	}//end computeThroughputTrend()
+
+	/**
+	 * The number of cases closed per ISO week of the period, every week of it present.
+	 *
+	 * @param array<string, array<string, mixed>>               $cases  Case rows, keyed by id.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period Inclusive period start and end.
+	 *
+	 * @return array<string, int> The count per ISO week.
+	 */
+	private function closedPerWeek(array $cases, array $period): array {
 		// Seed every ISO week in range so gaps render as zero, not "missing".
-		$buckets = $this->seedWeekBuckets(from: $from, to: $to);
+		$buckets = $this->seedWeekBuckets(from: $period[0], to: $period[1]);
 
 		foreach ($cases as $caseData) {
-			$endDate = ($caseData['endDate'] ?? null);
-			if (is_string($endDate) === false || $endDate === '') {
+			$week = $this->closedWeek(caseData: $caseData, period: $period);
+			if ($week === '') {
 				continue;
 			}
 
-			$closedAt = $this->dates->tryParse($endDate);
-			if ($closedAt === null || $closedAt < $from || $closedAt > $to) {
-				continue;
-			}
-
-			$week = $closedAt->format('o-\WW');
 			if (isset($buckets[$week]) === false) {
 				$buckets[$week] = 0;
 			}
@@ -89,6 +95,50 @@ class ThroughputTrendCalculator {
 			$buckets[$week]++;
 		}//end foreach
 
+		return $buckets;
+	}//end closedPerWeek()
+
+	/**
+	 * The ISO week a case closed in, when it closed within `[from, to]`.
+	 *
+	 * @param array<string, mixed>                              $caseData A case row.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period   Inclusive period start and end.
+	 *
+	 * @return string The ISO week ("o-\WW"), or '' when it did not close in the period.
+	 */
+	private function closedWeek(array $caseData, array $period): string {
+		$closedAt = $this->closedAt(caseData: $caseData);
+		if ($closedAt === null || $closedAt < $period[0] || $closedAt > $period[1]) {
+			return '';
+		}
+
+		return $closedAt->format('o-\WW');
+	}//end closedWeek()
+
+	/**
+	 * The moment a case closed, by its `endDate`.
+	 *
+	 * @param array<string, mixed> $caseData A case row.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when it has none or it does not parse.
+	 */
+	private function closedAt(array $caseData): DateTimeImmutable|null {
+		$endDate = ($caseData['endDate'] ?? null);
+		if (is_string($endDate) === false || $endDate === '') {
+			return null;
+		}
+
+		return $this->dates->tryParse($endDate);
+	}//end closedAt()
+
+	/**
+	 * The week buckets as rows, in week order.
+	 *
+	 * @param array<string, int> $buckets The counts, keyed by ISO week.
+	 *
+	 * @return array<int, array{week: string, count: int}>
+	 */
+	private function sortedWeeks(array $buckets): array {
 		$out = [];
 		foreach ($buckets as $week => $count) {
 			$out[] = ['week' => $week, 'count' => $count];
@@ -100,7 +150,7 @@ class ThroughputTrendCalculator {
 		usort($out, static fn (array $left, array $right): int => strcmp($left['week'], $right['week']));
 
 		return $out;
-	}//end computeThroughputTrend()
+	}//end sortedWeeks()
 
 	/**
 	 * Seed a zero-valued bucket for every ISO week that starts within `[from, to]`.

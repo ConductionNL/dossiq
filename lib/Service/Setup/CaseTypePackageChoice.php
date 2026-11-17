@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Setup;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCP\IAppConfig;
 
@@ -37,7 +39,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/first-time-setup/spec.md
  */
-class CaseTypePackageChoice {
+class CaseTypePackageChoice implements CaseTypePackageChoiceInterface {
 
 	/**
 	 * App-config key the step's choice is stored under.
@@ -58,12 +60,14 @@ class CaseTypePackageChoice {
 	/**
 	 * Constructor.
 	 *
-	 * @param PackageInstaller $packages  The case definition package installer.
-	 * @param IAppConfig       $appConfig App config, for the stored choice.
+	 * @param PackageInstaller         $packages  The case definition package installer.
+	 * @param IAppConfig               $appConfig App config, for the stored choice.
+	 * @param InstalledPackageExamples $examples  Writes the examples of the packages installed here.
 	 */
 	public function __construct(
 		private readonly PackageInstaller $packages,
 		private readonly IAppConfig $appConfig,
+		private readonly InstalledPackageExamples $examples,
 	) {
 	}//end __construct()
 
@@ -191,6 +195,26 @@ class CaseTypePackageChoice {
 
 		return ['success' => true, 'message' => (string)($outcome['message'] ?? ''), 'detail' => $outcome];
 	}//end install()
+
+	/**
+	 * Write the example rows of the packages installed before example data
+	 * was chosen.
+	 *
+	 * Called once the example data decision is recorded. The dataset itself
+	 * is in by then, so a failure here is answered as an outcome beside it
+	 * rather than thrown.
+	 *
+	 * @return array<int, array<string, mixed>> One outcome per installed package.
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function writeExamplesOfInstalled(): array {
+		try {
+			return $this->examples->forInstalled();
+		} catch (\Throwable $e) {
+			return [['status' => PackageInstaller::FAILED, 'package' => '', 'version' => '', 'message' => $e->getMessage()]];
+		}
+	}//end writeExamplesOfInstalled()
 
 	/**
 	 * The valid on-request packages in the catalogue.

@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -97,6 +99,29 @@ class DerivedCaseTypeReferences {
 		array $statusMap,
 		array $templateMap,
 	): array {
+		[$caseType, $changed] = $this->repointedReferences(caseType: $caseType, maps: ['status' => $statusMap, 'template' => $templateMap]);
+
+		if ($changed === false) {
+			return $caseType;
+		}
+
+		return $this->saveRepointed(store: ['objectService' => $objectService, 'register' => $register, 'schema' => $schema], caseType: $caseType);
+	}//end repoint()
+
+	/**
+	 * The case type with its initial status and workflow pin repointed.
+	 *
+	 * @param array<string, mixed>                                                 $caseType The freshly created case type.
+	 * @param array{status: array<string, string>, template: array<string, string>} $maps     Old status id to new status
+	 *                                                                                       id, and old template id to
+	 *                                                                                       new template id.
+	 *
+	 * @return array{0: array<string, mixed>, 1: bool} The case type and whether it changed.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function repointedReferences(array $caseType, array $maps): array {
+		['status' => $statusMap, 'template' => $templateMap] = $maps;
 		$changed = false;
 
 		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
@@ -111,15 +136,26 @@ class DerivedCaseTypeReferences {
 			$changed = true;
 		}
 
-		if ($changed === false) {
-			return $caseType;
-		}
+		return [$caseType, $changed];
+	}//end repointedReferences()
 
+	/**
+	 * Save the repointed case type, keeping it unsaved (logged) on failure.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The OpenRegister ObjectService,
+	 *                                                                         the register slug and the case type
+	 *                                                                         schema id.
+	 * @param array<string, mixed>                                           $caseType The repointed case type.
+	 *
+	 * @return array<string, mixed> The saved row, or the case type when the save failed.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function saveRepointed(array $store, array $caseType): array {
 		try {
-			$saved = $objectService->saveObject(
+			$saved = $store['objectService']->saveObject(
 				object: $caseType,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -130,5 +166,5 @@ class DerivedCaseTypeReferences {
 		}
 
 		return $this->store->asRow(value: $saved);
-	}//end repoint()
+	}//end saveRepointed()
 }//end class

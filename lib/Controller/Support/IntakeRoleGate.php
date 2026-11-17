@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\Email\IntakePolicy;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUserSession;
@@ -43,11 +44,11 @@ final class IntakeRoleGate {
 	 * Constructor.
 	 *
 	 * @param IUserSession $userSession The signed-in caller.
-	 * @param IntakePolicy $policy      Who may run intake.
+	 * @param IntakePolicyInterface $policy      Who may run intake.
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
-		private readonly IntakePolicy $policy,
+		private readonly IntakePolicyInterface $policy,
 	) {
 	}//end __construct()
 
@@ -79,11 +80,6 @@ final class IntakeRoleGate {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end callerId()
 }//end class

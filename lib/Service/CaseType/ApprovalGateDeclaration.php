@@ -189,8 +189,29 @@ final class ApprovalGateDeclaration {
 	 */
 	public static function withReference(array $case, string $act, string $decisionRef, string $raisedAt): array {
 		$act = trim($act);
-		$refs = [];
+		$refs = self::otherReferences(case: $case, act: $act);
 
+		if ($act !== '') {
+			$refs[] = [
+				'act' => $act,
+				'decisionRef' => trim($decisionRef),
+				'raisedAt' => trim($raisedAt),
+			];
+		}
+
+		return $refs;
+	}//end withReference()
+
+	/**
+	 * The references the case keeps for every other act.
+	 *
+	 * @param array<string, mixed> $case The stored case.
+	 * @param string               $act  The gated act, trimmed.
+	 *
+	 * @return array<int, array{act: string, decisionRef: string, raisedAt: string}> The references.
+	 */
+	private static function otherReferences(array $case, string $act): array {
+		$refs = [];
 		foreach (self::rowsOf(value: ($case[self::REFERENCES] ?? [])) as $row) {
 			$rowAct = trim((string)($row['act'] ?? ''));
 			if ($rowAct === '' || $rowAct === $act) {
@@ -204,16 +225,8 @@ final class ApprovalGateDeclaration {
 			];
 		}//end foreach
 
-		if ($act !== '') {
-			$refs[] = [
-				'act' => $act,
-				'decisionRef' => trim($decisionRef),
-				'raisedAt' => trim($raisedAt),
-			];
-		}
-
 		return $refs;
-	}//end withReference()
+	}//end otherReferences()
 
 	/**
 	 * A stored list, whether it arrived as an array or as a JSON string.

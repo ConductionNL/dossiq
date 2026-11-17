@@ -40,6 +40,28 @@ use Psr\Log\LoggerInterface;
  */
 class ZrcCaseFieldRules extends ZgwRulesBase {
 	/**
+	 * Zrc-012 for the opschorting gegevensgroep: body key => [field name, reason, null-only], and the detail.
+	 */
+	private const OPSCHORTING = [
+		'required' => [
+			'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
+			'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
+		],
+		'detail' => 'Opschorting vereist indicatie en reden.',
+	];
+
+	/**
+	 * Zrc-012 for the verlenging gegevensgroep: body key => [field name, reason, null-only], and the detail.
+	 */
+	private const VERLENGING = [
+		'required' => [
+			'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
+			'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
+		],
+		'detail' => 'Verlenging vereist reden en duur.',
+	];
+
+	/**
 	 * The rules that read another object (hoofdzaak, products).
 	 *
 	 * @var ZrcCaseRelationRules
@@ -142,14 +164,7 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array|null The refusal, or null when acceptable
 	 */
 	private function checkOpschorting(array $body): ?array {
-		return $this->checkGegevensgroep(
-			group: $body['suspension'] ?? null,
-			required: [
-				'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
-				'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
-			],
-			detail: 'Opschorting vereist indicatie en reden.'
-		);
+		return $this->checkGegevensgroep(group: $body['suspension'] ?? null, rule: self::OPSCHORTING);
 	}//end checkOpschorting()
 
 	/**
@@ -160,14 +175,7 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array|null The refusal, or null when acceptable
 	 */
 	private function checkVerlenging(array $body): ?array {
-		return $this->checkGegevensgroep(
-			group: $body['verlenging'] ?? null,
-			required: [
-				'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
-				'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
-			],
-			detail: 'Verlenging vereist reden en duur.'
-		);
+		return $this->checkGegevensgroep(group: $body['verlenging'] ?? null, rule: self::VERLENGING);
 	}//end checkVerlenging()
 
 	/**
@@ -287,13 +295,14 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	/**
 	 * Zrc-012: a gegevensgroep (opschorting, verlenging) needs all of its required fields.
 	 *
-	 * @param mixed $group The gegevensgroep from the body; anything but an array is skipped
-	 * @param array<string, array{0: string, 1: string, 2: bool}> $required Body key => [field name, reason, null-only]
-	 * @param string $detail The error detail
+	 * @param mixed                $group The gegevensgroep from the body; anything but an array is skipped
+	 * @param array<string, mixed> $rule  The `required` fields (body key => [field name, reason, null-only])
+	 *                                    and the error `detail`
 	 *
 	 * @return array|null The refusal listing every missing field, or null when acceptable
 	 */
-	private function checkGegevensgroep(mixed $group, array $required, string $detail): ?array {
+	private function checkGegevensgroep(mixed $group, array $rule): ?array {
+		['required' => $required, 'detail' => $detail] = $rule;
 		if (is_array($group) === false) {
 			return null;
 		}
@@ -330,6 +339,32 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array{error: array|null, body: array} The refusal, or the (possibly cleared) body
 	 */
 	private function applyBetalingsindicatie(array $body, ?array $existingObject): array {
+		[$betalingsindicatie, $lastPaid] = $this->effectivePayment(body: $body, existingObject: $existingObject);
+
+		if ($this->noNvtDateConflict(betalingsindicatie: $betalingsindicatie, lastPaid: $lastPaid) === true) {
+			return ['error' => null, 'body' => $body];
+		}
+
+		// On create: reject (cannot set date with nvt).
+		if ($existingObject === null) {
+			return $this->nvtWithDateRefused(body: $body);
+		}
+
+		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
+		$body['laatsteBetaaldatum'] = null;
+
+		return ['error' => null, 'body' => $body];
+	}//end applyBetalingsindicatie()
+
+	/**
+	 * The betalingsindicatie and laatsteBetaaldatum that count, the stored ones filling what the body leaves out.
+	 *
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing zaak, null on create
+	 *
+	 * @return array{0: mixed, 1: mixed} The betalingsindicatie and laatsteBetaaldatum.
+	 */
+	private function effectivePayment(array $body, ?array $existingObject): array {
 		$betalingsindicatie = $body['betalingsindicatie'] ?? null;
 		$lastPaid           = $body['laatsteBetaaldatum'] ?? null;
 
@@ -339,30 +374,41 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 			$lastPaid           ??= $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
-		if ($betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '') {
-			return ['error' => null, 'body' => $body];
-		}
+		return [$betalingsindicatie, $lastPaid];
+	}//end effectivePayment()
 
-		// On create: reject (cannot set date with nvt).
-		if ($existingObject === null) {
-			$error = $this->error(
-				status: 400,
-				detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'laatsteBetaaldatum',
-					code: 'betaling-nvt',
-					reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
-				)
-				]
-			);
-			return ['error' => $error, 'body' => $body];
-		}
+	/**
+	 * Whether the pair leaves nothing to refuse: no "nvt", or no laatsteBetaaldatum.
+	 *
+	 * @param mixed $betalingsindicatie The betalingsindicatie that counts.
+	 * @param mixed $lastPaid The laatsteBetaaldatum that counts.
+	 *
+	 * @return bool True when the pair goes together.
+	 */
+	private function noNvtDateConflict(mixed $betalingsindicatie, mixed $lastPaid): bool {
+		return $betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '';
+	}//end noNvtDateConflict()
 
-		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
-		$body['laatsteBetaaldatum'] = null;
-
-		return ['error' => null, 'body' => $body];
-	}//end applyBetalingsindicatie()
+	/**
+	 * Refuse a laatsteBetaaldatum alongside betalingsindicatie "nvt" on create.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array{error: array|null, body: array} The refusal and the body
+	 */
+	private function nvtWithDateRefused(array $body): array {
+		$error = $this->error(
+			status: 400,
+			detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
+			invalidParams: [$this->fieldError(
+				fieldName: 'laatsteBetaaldatum',
+				code: 'betaling-nvt',
+				reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
+			)
+			]
+		);
+		return ['error' => $error, 'body' => $body];
+	}//end nvtWithDateRefused()
 
 	/**
 	 * Zrc-022: an archiefstatus past nog_te_archiveren needs archiefnominatie and archiefactiedatum.

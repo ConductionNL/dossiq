@@ -49,6 +49,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A store that writes to the object a payload names, as OpenRegister's saveObject() does.
@@ -85,6 +87,7 @@ class ObjectNamingStore {
 	 * @return ObjectEntity The stored object.
 	 */
 	public function saveObject(array $object, mixed ...$rest): ObjectEntity {
+		$rest = LegacyObjectArgs::flatten(args: $rest);
 		$this->saved[] = $object;
 		$uuid = (string)($rest['uuid'] ?? ($object['@self']['id'] ?? ($object['id'] ?? '')));
 		if ($uuid !== '' && isset($this->rows[$uuid]) === true) {
@@ -112,6 +115,7 @@ class ObjectNamingStore {
 	 * @return ObjectEntity|null The object, or null.
 	 */
 	public function find(int|string $id, mixed ...$rest): ?ObjectEntity {
+		$rest = LegacyObjectArgs::flatten(args: $rest);
 		if (isset($this->rows[(string)$id]) === false) {
 			return null;
 		}
@@ -289,7 +293,7 @@ class CreatesIgnoreCallerIdentityTest extends TestCase {
 		$apps->method('getInstalledApps')->willReturn(['openregister']);
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('saveObject')->willReturnCallback(
-			fn (array $object, mixed ...$rest): ObjectEntity => $this->store->saveObject($object, uuid: ($rest[3] ?? null))
+			fn (array $object, mixed ...$rest): ObjectEntity => $this->store->saveObject($object, new ObjectSaveOptions(uuid: $rest[3] ?? null))
 		);
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objects);

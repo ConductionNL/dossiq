@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\Migration\IOutput;
@@ -90,12 +90,12 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param SettingsServiceInterface   $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param WooRefusalGrounds $grounds         The settled list, so a code already on it is kept.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly WooRefusalGrounds $grounds,
 		private readonly LoggerInterface $logger,
 	) {
@@ -122,35 +122,93 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
 	 */
 	public function run(IOutput $output): void {
+		$target = $this->mappingTarget(output: $output);
+		if ($target === null) {
+			return;
+		}
+
+		$this->mapTargets(target: $target, output: $output);
+	}//end run()
+
+	/**
+	 * The object service, register and settled codes, or null (said on the output) when one is unavailable.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return array{0: object, 1: string, 2: array<int, string>}|null The mapping target.
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 */
+	private function mappingTarget(IOutput $output): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '') {
 			$output->info('OpenRegister unavailable, skipping the Woo refusal ground mapping.');
-			return;
+			return null;
 		}
 
 		$settled = $this->settledCodes(output: $output);
 		if ($settled === null) {
-			return;
+			return null;
 		}
 
+		return [$objectService, $register, $settled];
+	}//end mappingTarget()
+
+	/**
+	 * Map the rows of every configured target schema and report each tally.
+	 *
+	 * @param array{0: object, 1: string, 2: array<int, string>} $target The object service, register and settled codes.
+	 * @param IOutput                                            $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 */
+	private function mapTargets(array $target, IOutput $output): void {
 		foreach (self::TARGET_CONFIG_KEYS as $key) {
-			$schema = (string)$this->settingsService->getConfigValue($key);
-			if ($schema === '') {
+			$mapping = $this->mappingFor(target: $target, key: $key);
+			if ($mapping->schema === '') {
 				continue;
 			}
 
-			$mapping = new RefusalGroundMapping(objectService: $objectService, register: $register);
-			$mapping->configKey = $key;
-			$mapping->schema = $schema;
-			$mapping->settled = $settled;
-			$mapping->tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->mapSchema(mapping: $mapping)
-			);
+			$mapping->tally = $this->tallyAsSystem(mapping: $mapping);
 			$this->reportTally(output: $output, mapping: $mapping);
 		}
-	}//end run()
+	}//end mapTargets()
+
+	/**
+	 * A fresh mapping of one target schema; its schema is '' when the key configures none.
+	 *
+	 * @param array{0: object, 1: string, 2: array<int, string>} $target The object service, register and settled codes.
+	 * @param string                                             $key    The schema's config key.
+	 *
+	 * @return RefusalGroundMapping The mapping.
+	 */
+	private function mappingFor(array $target, string $key): RefusalGroundMapping {
+		[$objectService, $register, $settled] = $target;
+
+		$mapping = new RefusalGroundMapping(objectService: $objectService, register: $register);
+		$mapping->configKey = $key;
+		$mapping->schema = (string)$this->settingsService->getConfigValue($key);
+		$mapping->settled = $settled;
+
+		return $mapping;
+	}//end mappingFor()
+
+	/**
+	 * Map the schema's rows as the system.
+	 *
+	 * @param RefusalGroundMapping $mapping The mapping.
+	 *
+	 * @return array<string, mixed> The tally.
+	 */
+	private function tallyAsSystem(RefusalGroundMapping $mapping): array {
+		return (array)$this->runAsSystemIfAvailable(
+			objectService: $mapping->objectService,
+			operation: fn (): array => $this->mapSchema(mapping: $mapping)
+		);
+	}//end tallyAsSystem()
 
 	/**
 	 * The codes on the settled list, or null (said on the output) while it cannot be read yet.
@@ -294,7 +352,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the Woo refusal ground mapping could not read ' . $mapping->schema,
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -315,6 +373,27 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 			return;
 		}
 
+		if ($this->patchRow(mapping: $mapping, patch: ['uuid' => $uuid, 'changes' => $changes]) === false) {
+			return;
+		}
+
+		$mapping->tally['mapped']++;
+		if (isset($changes['groundsUnmapped']) === true) {
+			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
+		}
+	}//end mapRow()
+
+	/**
+	 * Write the changes onto the row, counting a failed write.
+	 *
+	 * @param RefusalGroundMapping                                $mapping The schema, with its tally.
+	 * @param array{uuid: string, changes: array<string, mixed>} $patch   The row's uuid and the mapped codes.
+	 *
+	 * @return bool True when the row was written.
+	 */
+	private function patchRow(RefusalGroundMapping $mapping, array $patch): bool {
+		$uuid = $patch['uuid'];
+		$changes = $patch['changes'];
 		try {
 			$this->patchObjectAsArray(
 				objectService: $mapping->objectService,
@@ -324,17 +403,26 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 				changes: $changes
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the Woo refusal ground mapping failed for one row',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-			);
-			$mapping->tally['failed']++;
-			return;
+			$this->rowFailed(mapping: $mapping, failure: ['uuid' => $uuid, 'error' => $e]);
+			return false;
 		}
 
-		$mapping->tally['mapped']++;
-		if (isset($changes['groundsUnmapped']) === true) {
-			$mapping->tally['unmapped'][$uuid] = $changes['groundsUnmapped'];
-		}
-	}//end mapRow()
+		return true;
+	}//end patchRow()
+
+	/**
+	 * Log a row that could not be written and count it as failed.
+	 *
+	 * @param RefusalGroundMapping                    $mapping The schema, with its tally.
+	 * @param array{uuid: string, error: Throwable} $failure The row's uuid and the failure.
+	 *
+	 * @return void
+	 */
+	private function rowFailed(RefusalGroundMapping $mapping, array $failure): void {
+		$this->logger->error(
+			'Dossiq: the Woo refusal ground mapping failed for one row',
+			['app' => AppIdentity::APP_ID, 'uuid' => $failure['uuid'], 'exception' => $failure['error']->getMessage()]
+		);
+		$mapping->tally['failed']++;
+	}//end rowFailed()
 }//end class

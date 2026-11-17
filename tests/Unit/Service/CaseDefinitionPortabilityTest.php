@@ -49,6 +49,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ZipArchive;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CaseDefinitionPortabilityTest extends TestCase {
 
@@ -194,7 +196,11 @@ class CaseDefinitionPortabilityTest extends TestCase {
 	private function importer(bool $writesFail = false): CaseDefinitionImportService {
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null, ...$rest) use ($writesFail): ObjectEntityInterface {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true, ...$rest) use ($writesFail): ObjectEntityInterface {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$key = (string)$schema;
 				$this->written[$key] ??= [];
 				if ($writesFail === true && ($object['name'] ?? '') === 'Afgehandeld') {
@@ -211,7 +217,8 @@ class CaseDefinitionPortabilityTest extends TestCase {
 			}
 		);
 		$objects->method('deleteObject')->willReturnCallback(
-			function (string $uuid, ...$rest): bool {
+			function (ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false, ...$rest): bool {
+				$uuid = $deletion->uuid;
 				$this->deleted[] = $uuid;
 
 				return true;

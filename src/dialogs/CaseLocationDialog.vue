@@ -119,12 +119,14 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import DialogNotice from '../components/dialog/DialogNotice.vue'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
 import { dialogNoticeProps } from '../utils/dialogNotice.js'
 import { locationSaveRefusal } from '../utils/locationSaveRefusal.js'
+import { mapLayerDefinition } from '../utils/mapLayers.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
 const DEFAULT_CENTER = [52.13, 5.29]
@@ -142,13 +144,7 @@ export default {
 		NcCheckboxRadioSwitch,
 	},
 
-	props: {
-		/** The case the location goes on; falls back to the route's id. */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close', 'saved'],
 
@@ -156,7 +152,7 @@ export default {
 		return {
 			/** What the address search emitted for the chosen address, or null. */
 			chosen: null,
-			/** The configured WMS/WFS layers, `{ id, title, type, url, layerName, isDefault }`. */
+			/** The configured WMS, WFS and ArcGIS layers, `{ id, title, type, url, layerName, isDefault }`. */
 			layers: [],
 			/** The ids of the layers drawn on the map. */
 			shown: [],
@@ -176,19 +172,6 @@ export default {
 		/** @spec openspec/specs/bag-location-save-validation/spec.md */
 		noticeProps() {
 			return dialogNoticeProps(this.notice)
-		},
-
-		/**
-		 * @return {string} The case id, from the prop or the route.
-		 *
-		 * @spec openspec/specs/case-dashboard-view/spec.md
-		 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-			return String(this.$route?.params?.id ?? '')
 		},
 
 		/**
@@ -240,11 +223,8 @@ export default {
 		activeLayers() {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
-				.map((layer) => ({
-					type: String(layer.type).toLowerCase() === 'wfs' ? 'wfs' : 'wms',
-					url: layer.url,
-					options: { layers: layer.layerName, format: 'image/png', transparent: true },
-				}))
+				.map(mapLayerDefinition)
+				.filter((definition) => definition !== null)
 		},
 
 		/**

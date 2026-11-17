@@ -160,9 +160,50 @@ class PublicationChecks {
 			return ['This case type could not be read.'];
 		}
 
-		$findings = [];
 		$statuses = $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
+		$findings = $this->structureFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses);
 
+		return array_merge(
+			$findings,
+			$this->missingFieldFindings(caseType: $caseType),
+			$this->handlingFindings(caseType: $caseType),
+			// A case type naming a mail account Nextcloud Mail does not hold
+			// would send its team's mail nowhere (REQ-IMF-12).
+			$this->senders->publicationFindings(caseType: $caseType),
+			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
+		);
+	}//end validate()
+
+	/**
+	 * The status and cycle findings of a case type.
+	 *
+	 * @param string                           $caseTypeId CaseType UUID.
+	 * @param array<string, mixed>             $caseType   The effective case type.
+	 * @param array<int, array<string, mixed>> $statuses   Its status types.
+	 *
+	 * @return array<int, string> The findings.
+	 */
+	private function structureFindings(string $caseTypeId, array $caseType, array $statuses): array {
+		$findings = $this->statusFindings(caseType: $caseType, statuses: $statuses);
+
+		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
+		if ($cycle !== '') {
+			$findings[] = $cycle;
+		}
+
+		return $findings;
+	}//end structureFindings()
+
+	/**
+	 * The findings about the case type's statuses.
+	 *
+	 * @param array<string, mixed>             $caseType The effective case type.
+	 * @param array<int, array<string, mixed>> $statuses Its status types.
+	 *
+	 * @return array<int, string> The findings.
+	 */
+	private function statusFindings(array $caseType, array $statuses): array {
+		$findings = [];
 		if ($statuses === []) {
 			$findings[] = 'Give the case type at least one status.';
 		}
@@ -175,21 +216,8 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
-		if ($cycle !== '') {
-			$findings[] = $cycle;
-		}
-
-		return array_merge(
-			$findings,
-			$this->missingFieldFindings(caseType: $caseType),
-			$this->handlingFindings(caseType: $caseType),
-			// A case type naming a mail account Nextcloud Mail does not hold
-			// would send its team's mail nowhere (REQ-IMF-12).
-			$this->senders->publicationFindings(caseType: $caseType),
-			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
-		);
-	}//end validate()
+		return $findings;
+	}//end statusFindings()
 
 	/**
 	 * What this case type's moves could never reach.
@@ -217,6 +245,23 @@ class PublicationChecks {
 			return [];
 		}
 
+		return $this->reachability->findings(
+			statuses: $this->declaredStatuses(statuses: $statuses),
+			initial: $this->store->referenceId(value: ($caseType['initialStatus'] ?? '')),
+			moves: $this->moves(template: $template)
+		);
+	}//end reachabilityFindings()
+
+	/**
+	 * The resolved statuses by id, each with its title (its id when it has none) and whether it is final.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
+	 *
+	 * @return array<string, array{title: string, final: bool}> The declared statuses; a row without id is left out.
+	 *
+	 * @spec openspec/specs/case-type-publish-validation/spec.md
+	 */
+	private function declaredStatuses(array $statuses): array {
 		$declared = [];
 		foreach ($statuses as $status) {
 			$id = $this->store->rowId(row: $status);
@@ -235,12 +280,8 @@ class PublicationChecks {
 			];
 		}
 
-		return $this->reachability->findings(
-			statuses: $declared,
-			initial: $this->store->referenceId(value: ($caseType['initialStatus'] ?? '')),
-			moves: $this->moves(template: $template)
-		);
-	}//end reachabilityFindings()
+		return $declared;
+	}//end declaredStatuses()
 
 	/**
 	 * The transitions on a template row, whichever way OpenRegister stored them.

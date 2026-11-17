@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -65,7 +66,7 @@ use Throwable;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class RefusalOutcome {
+class RefusalOutcome implements RefusalOutcomeInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;
@@ -379,7 +380,7 @@ class RefusalOutcome {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -401,6 +402,19 @@ class RefusalOutcome {
 
 		return $rows;
 	}//end roleRowsFor()
+
+	/**
+	 * Whether the object service, register and organisation role schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The organisation role schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
 
 	/**
 	 * Log that the team of a destination could not be resolved.

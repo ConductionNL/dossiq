@@ -94,13 +94,26 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 		$groupManager->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => in_array($group, $groups, true));
 
 		$handler = 'OCA\\OpenRegister\\Service\\PropertyRbacHandler';
-		$rbac = new $handler(
-			$session,
-			$groupManager,
-			$this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher'),
-			new NullLogger(),
-			$this->noStateRules(),
-		);
+		$matcher = $this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher');
+		// OpenRegister main takes the caller and the rules as two bundles.
+		$service = 'OCA\\OpenRegister\\Service\\';
+		if (class_exists(class: $service . 'PropertyRbacCaller') === true) {
+			$rbac = new $handler(
+				new ($service . 'PropertyRbacCaller')($session, $groupManager),
+				new ($service . 'PropertyRbacRules')($matcher, $this->noStateRules()),
+				new NullLogger(),
+			);
+		}
+
+		if (class_exists(class: $service . 'PropertyRbacCaller') === false) {
+			$rbac = new $handler(
+				$session,
+				$groupManager,
+				$matcher,
+				new NullLogger(),
+				$this->noStateRules(),
+			);
+		}
 
 		return $rbac->filterReadableProperties(
 			$this->caseSchema(),

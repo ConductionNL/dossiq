@@ -38,7 +38,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Repair\SeedStaffGroup;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SeedStaffGroupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-declares-the-records-it-keeps-private-to-the-case-req-cra-001
  */
-class CaseReviewerAccess {
+class CaseReviewerAccess implements CaseReviewerAccessInterface {
 
 	/**
 	 * The supervising group when the case type names none.
@@ -115,28 +116,8 @@ class CaseReviewerAccess {
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = (array)($caseType['reviewerAccess'] ?? []);
-		$records = [];
-		foreach ((array)($declared['records'] ?? []) as $row) {
-			$row = (array)$row;
-			$schemaKey = trim((string)($row['schemaKey'] ?? ''));
-			if ($schemaKey !== '') {
-				$entry = ['schemaKey' => $schemaKey, 'caseField' => trim((string)($row['caseField'] ?? 'case'))];
-				$records[] = ($entry + $this->recordReaders->ruleOf(declared: $row));
-			}
-		}
-
-		$reviewers = [];
-		foreach ((array)($declared['reviewers'] ?? []) as $row) {
-			$row = (array)$row;
-			$schemaKey = trim((string)($row['schemaKey'] ?? ''));
-			if ($schemaKey !== '') {
-				$reviewers[] = [
-					'schemaKey' => $schemaKey,
-					'caseField' => trim((string)($row['caseField'] ?? 'case')),
-					'userField' => trim((string)($row['userField'] ?? 'assignee')),
-				];
-			}
-		}
+		$records = $this->declaredRecords(declared: $declared);
+		$reviewers = $this->declaredReviewers(declared: $declared);
 
 		$group = trim((string)($declared['supervisorGroup'] ?? ''));
 		if ($group === '') {
@@ -150,6 +131,55 @@ class CaseReviewerAccess {
 			'hideOthers' => (($declared['hideOthers'] ?? false) === true),
 		];
 	}//end declarationFor()
+
+	/**
+	 * The declared private records with a schema key, each with its reader rule.
+	 *
+	 * @param array<string, mixed> $declared The case type's reviewer access block.
+	 *
+	 * @return list<array<string, mixed>> The normalised record rules.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-declares-the-records-it-keeps-private-to-the-case-req-cra-001
+	 */
+	private function declaredRecords(array $declared): array {
+		$records = [];
+		foreach ((array)($declared['records'] ?? []) as $row) {
+			$row = (array)$row;
+			$schemaKey = trim((string)($row['schemaKey'] ?? ''));
+			if ($schemaKey !== '') {
+				$entry = ['schemaKey' => $schemaKey, 'caseField' => trim((string)($row['caseField'] ?? 'case'))];
+				$records[] = ($entry + $this->recordReaders->ruleOf(declared: $row));
+			}
+		}
+
+		return $records;
+	}//end declaredRecords()
+
+	/**
+	 * The declared reviewer rows with a schema key, normalised.
+	 *
+	 * @param array<string, mixed> $declared The case type's reviewer access block.
+	 *
+	 * @return list<array{schemaKey: string, caseField: string, userField: string}> The reviewer rules.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-declares-the-records-it-keeps-private-to-the-case-req-cra-001
+	 */
+	private function declaredReviewers(array $declared): array {
+		$reviewers = [];
+		foreach ((array)($declared['reviewers'] ?? []) as $row) {
+			$row = (array)$row;
+			$schemaKey = trim((string)($row['schemaKey'] ?? ''));
+			if ($schemaKey !== '') {
+				$reviewers[] = [
+					'schemaKey' => $schemaKey,
+					'caseField' => trim((string)($row['caseField'] ?? 'case')),
+					'userField' => trim((string)($row['userField'] ?? 'assignee')),
+				];
+			}
+		}
+
+		return $reviewers;
+	}//end declaredReviewers()
 
 	/**
 	 * Make the grants of every declared record of the case match the people on it.
@@ -170,6 +200,24 @@ class CaseReviewerAccess {
 			return $answer;
 		}
 
+		return $this->reconcileDeclared(target: ['caseId' => $caseId, 'case' => $case, 'answer' => $answer], declaration: $declaration);
+	}//end reconcile()
+
+	/**
+	 * Reconcile the grants of every declared record of the case, adding up the counts.
+	 *
+	 * Nothing is written when this OpenRegister has no per-object sharing.
+	 *
+	 * @param array<string, mixed> $target      The case uuid (`caseId`), the case row (`case`) and the answer so far
+	 *                                          (`answer`).
+	 * @param array<string, mixed> $declaration The case type's normalised declaration.
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int}
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	private function reconcileDeclared(array $target, array $declaration): array {
+		['caseId' => $caseId, 'case' => $case, 'answer' => $answer] = $target;
 		if ($this->grants->available() === false) {
 			$answer['status'] = 'unavailable';
 			return $answer;
@@ -178,29 +226,67 @@ class CaseReviewerAccess {
 		$assignee = trim((string)($case['assignee'] ?? ''));
 		$reviewers = $this->reviewersOf(caseId: $caseId, declaration: $declaration);
 		$answer['status'] = 'reconciled';
+		$reconcileRow = $this->rowReconciler(people: ['assignee' => $assignee, 'reviewers' => $reviewers], declaration: $declaration);
 		foreach ($declaration['records'] as $declared) {
-			$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
-			foreach ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
-				$result = $this->grants->reconcile(
-					schema: $schema,
-					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					readers: $this->recordReaders->toGrant(
-						rule: $declared,
-						record: $row,
-						assignee: $assignee,
-						reviewers: $reviewers,
-						hideOthers: $declaration['hideOthers']
-					),
-					group: $declaration['supervisorGroup']
-				);
-				$answer['granted'] += $result['granted'];
-				$answer['revoked'] += $result['revoked'];
-				$answer['refused'] += $result['refused'];
-			}
+			$answer = $this->reconcileRecords(
+				answer: $answer,
+				step: ['declared' => $declared, 'caseId' => $caseId, 'reconcileRow' => $reconcileRow]
+			);
 		}
 
 		return $answer;
-	}//end reconcile()
+	}//end reconcileDeclared()
+
+	/**
+	 * The step that reconciles the grants of one record row.
+	 *
+	 * @param array<string, mixed> $people      The case's assignee (`assignee`) and the reviewers named on the case, by
+	 *                                          the id of the row that names them (`reviewers`).
+	 * @param array<string, mixed> $declaration The case type's normalised declaration.
+	 *
+	 * @return callable(string, array<string, mixed>, array<string, mixed>): array{granted: int, revoked: int, refused: int}
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	private function rowReconciler(array $people, array $declaration): callable {
+		['assignee' => $assignee, 'reviewers' => $reviewers] = $people;
+		return fn (string $schema, array $declared, array $row): array => $this->grants->reconcile(
+			schema: $schema,
+			uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
+			readers: $this->recordReaders->toGrant(
+				rule: $declared,
+				record: $row,
+				assignee: $assignee,
+				reviewers: $reviewers,
+				hideOthers: $declaration['hideOthers']
+			),
+			group: $declaration['supervisorGroup']
+		);
+	}//end rowReconciler()
+
+	/**
+	 * Reconcile the grants of every row of one declared record, adding up the counts.
+	 *
+	 * @param array<string, mixed> $answer The answer so far.
+	 * @param array<string, mixed> $step   The declared record (`declared`: `schemaKey`, `caseField`, ...), the case
+	 *                                     uuid (`caseId`) and the step that reconciles one row (`reconcileRow`).
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int}
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	private function reconcileRecords(array $answer, array $step): array {
+		['declared' => $declared, 'caseId' => $caseId, 'reconcileRow' => $reconcileRow] = $step;
+		$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
+		foreach ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
+			$result = $reconcileRow($schema, $declared, $row);
+			$answer['granted'] += $result['granted'];
+			$answer['revoked'] += $result['revoked'];
+			$answer['refused'] += $result['refused'];
+		}
+
+		return $answer;
+	}//end reconcileRecords()
 
 	/**
 	 * Whether the user may change this record of the case: its author, a supervisor or an administrator.
@@ -400,7 +486,7 @@ class CaseReviewerAccess {
 		}
 
 		return $this->groupManager->isAdmin($userId) === true
-			|| $this->groupManager->isInGroup($userId, SeedStaffGroup::STAFF_GROUP) === true;
+			|| $this->groupManager->isInGroup($userId, SeedStaffGroupInterface::STAFF_GROUP) === true;
 	}//end isAdmittedReader()
 
 	/**

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Support;
 
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 
@@ -45,11 +45,11 @@ final class CreatedCaseRecord {
 	/**
 	 * Constructor.
 	 *
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves the schema slug from a payload.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves the schema slug from a payload.
 	 * @param string                   $schema       The schema slug the listener acts on.
 	 */
 	public function __construct(
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly string $schema,
 	) {
 	}//end __construct()

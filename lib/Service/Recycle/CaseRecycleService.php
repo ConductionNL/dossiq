@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseRecycleService {
+class CaseRecycleService implements CaseRecycleServiceInterface {
 
 	use SearchesObjects;
 
@@ -84,13 +85,6 @@ class CaseRecycleService {
 	 * @var string
 	 */
 	public const RESTORE_ACTION = 'object.restored';
-
-	/**
-	 * How many deleted rows one page of the lens holds.
-	 *
-	 * @var int
-	 */
-	public const PAGE_SIZE = 50;
 
 	/**
 	 * OpenRegister's register mapper.
@@ -169,11 +163,27 @@ class CaseRecycleService {
 		bool $isAdmin = false,
 		string $search = '',
 	): array {
+		return $this->pageOf(
+			cases: $this->visibleCases(viewer: ['forUser' => $forUser, 'isAdmin' => $isAdmin], search: $search),
+			window: ['offset' => $offset, 'limit' => $limit]
+		);
+	}//end deletedCases()
+
+	/**
+	 * Every deleted case the caller may see and the search term matches, unsorted.
+	 *
+	 * @param array{forUser: string, isAdmin: bool} $viewer The caller's user id (an empty id sees nothing), and whether
+	 *                                                     the caller is an administrator.
+	 * @param string                                $search A term the number, title or deleter must hold; empty for all.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visibleCases(array $viewer, string $search): array {
 		$cases = [];
 		foreach ($this->deletedRows() as $row) {
-			if ($this->isCase(entity: $row) === false
-				|| $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false
-			) {
+			if ($this->visible(row: $row, viewer: $viewer) === false) {
 				continue;
 			}
 
@@ -183,6 +193,36 @@ class CaseRecycleService {
 			}
 		}
 
+		return $cases;
+	}//end visibleCases()
+
+	/**
+	 * Whether a deleted row is a case the caller may see.
+	 *
+	 * @param mixed                                 $row    The deleted row.
+	 * @param array{forUser: string, isAdmin: bool} $viewer The caller's user id, and whether the caller is an administrator.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function visible(mixed $row, array $viewer): bool {
+		return $this->isCase(entity: $row) === true
+			&& $this->maySee(entity: $row, userId: $viewer['forUser'], isAdmin: $viewer['isAdmin']) === true;
+	}//end visible()
+
+	/**
+	 * One page of the cases, newest deletion first, with the total.
+	 *
+	 * @param array<int, array<string, mixed>> $cases  The cases.
+	 * @param array{offset: int, limit: int}   $window How many rows to skip, and how many to return.
+	 *
+	 * @return array{results: array<int, array<string, mixed>>, total: int}
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function pageOf(array $cases, array $window): array {
+		['offset' => $offset, 'limit' => $limit] = $window;
 		usort(
 			$cases,
 			static fn (array $first, array $second): int => strcmp($second['deletedAt'], $first['deletedAt'])
@@ -192,7 +232,7 @@ class CaseRecycleService {
 			'results' => array_slice($cases, max(0, $offset), max(0, $limit)),
 			'total' => count($cases),
 		];
-	}//end deletedCases()
+	}//end pageOf()
 
 	/**
 	 * The soft-deleted rows the lens chooses from.
@@ -481,6 +521,23 @@ class CaseRecycleService {
 			return;
 		}
 
+		[$actor, $actorName] = $this->restoringActor();
+
+		try {
+			$context = self::restoreContext(entity: $entity, restoring: ['window' => $window, 'actor' => $actor]);
+			$event = ObjectAuditEvents::of(object: $entity, action: self::RESTORE_ACTION, context: $context, actorId: $actor, actorName: $actorName);
+			$mapper->recordObjectEvent(event: $event);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the case was restored but the record could not be written: ' . $e->getMessage());
+		}
+	}//end recordRestore()
+
+	/**
+	 * Who is restoring: the signed-in user, or the system.
+	 *
+	 * @return array{0: string, 1: string} The actor's id and display name.
+	 */
+	private function restoringActor(): array {
 		$user = $this->userSession->getUser();
 		$actor = 'system';
 		$actorName = 'System';
@@ -489,25 +546,26 @@ class CaseRecycleService {
 			$actorName = $user->getDisplayName();
 		}
 
-		try {
-			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
-				object: $entity,
-				action: self::RESTORE_ACTION,
-				context: [
-					'restoredBy' => $actor,
-					'restoredAt' => (new DateTime())->format(DateTime::ATOM),
-					'objectUuid' => (string)$entity->getUuid(),
-					'restoredWithin' => $window,
-				],
-				actorId: $actor,
-				actorName: $actorName
-			));
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the case was restored but the record could not be written: ' . $e->getMessage()
-			);
-		}
-	}//end recordRestore()
+		return [$actor, $actorName];
+	}//end restoringActor()
+
+	/**
+	 * What the restore record says: who, when, which case and inside which window.
+	 *
+	 * @param object                                                  $entity    The case restored.
+	 * @param array{window: array<string, mixed>|null, actor: string} $restoring `window` the window it came back inside; `actor` who restored it.
+	 *
+	 * @return array<string, mixed> The context.
+	 */
+	private static function restoreContext(object $entity, array $restoring): array {
+		[$window, $actor] = [$restoring['window'], $restoring['actor']];
+		return [
+			'restoredBy' => $actor,
+			'restoredAt' => (new DateTime())->format(DateTime::ATOM),
+			'objectUuid' => (string)$entity->getUuid(),
+			'restoredWithin' => $window,
+		];
+	}//end restoreContext()
 
 	/**
 	 * OpenRegister's mapper, or an exception.
@@ -564,6 +622,18 @@ class CaseRecycleService {
 			return false;
 		}
 
+		return $this->deletedOrHeldBy(entity: $entity, userId: $userId);
+	}//end maySee()
+
+	/**
+	 * Whether the user deleted the case, or handled it when it was deleted.
+	 *
+	 * @param object $entity The deleted case.
+	 * @param string $userId The user.
+	 *
+	 * @return bool True when it was theirs.
+	 */
+	private function deletedOrHeldBy(object $entity, string $userId): bool {
 		$marker = $this->windowReader->marker(entity: $entity);
 		if (trim((string)($marker['deletedBy'] ?? '')) === $userId) {
 			return true;
@@ -572,7 +642,7 @@ class CaseRecycleService {
 		$payload = $this->windowReader->payload(entity: $entity);
 
 		return (trim((string)($payload['assignee'] ?? '')) === $userId);
-	}//end maySee()
+	}//end deletedOrHeldBy()
 
 	/**
 	 * Whether an entity belongs to the configured case schema.

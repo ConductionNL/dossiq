@@ -41,7 +41,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\InternalWriteMarker;
@@ -55,11 +56,14 @@ use RuntimeException;
  * BAC service: committee assignment + advice request lifecycle.
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class AdvisoryCommitteeService {
+class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 	use SearchesObjects;
 	use ReadsPanelMembers;
+	use SavesIntoStore;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -104,16 +108,6 @@ class AdvisoryCommitteeService {
 	 * Default deadline in days for advice delivery (12 weeks per Awb 7:24(1)).
 	 */
 	private const DEFAULT_DEADLINE_DAYS = 84;
-
-	/**
-	 * The code of the RuntimeException raised for an advice request that does not exist.
-	 */
-	public const NOT_FOUND = 404;
-
-	/**
-	 * The code of the RuntimeException raised when someone other than the committee chair signs the advice.
-	 */
-	public const NOT_CHAIR = 403;
 
 	/**
 	 * The statuses the committee chair signs.
@@ -165,18 +159,8 @@ class AdvisoryCommitteeService {
 		array $payload = [],
 	): array {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
-		$committeeSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaaradviescommissie_schema'
-		);
-
-		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
-			throw new RuntimeException(
-				'BAC schemas are not configured'
-			);
-		}
-
 		$this->assertCommitteeAcceptsReferrals(
-			committees: ['schema' => $committeeSchema] + $store,
+			committees: ['schema' => $this->committeeSchema(store: $store)] + $store,
 			commissieId: $commissieId
 		);
 
@@ -187,6 +171,29 @@ class AdvisoryCommitteeService {
 
 		return $this->saveNewRequest(store: $store, record: $record);
 	}//end assignToCommittee()
+
+	/**
+	 * The configured committee schema, refused when it or the store's register or schema is not configured.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 *
+	 * @return string The committee schema.
+	 *
+	 * @throws RuntimeException When the BAC schemas are not configured.
+	 */
+	private function committeeSchema(array $store): string {
+		$committeeSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaaradviescommissie_schema'
+		);
+
+		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
+			throw new RuntimeException(
+				'BAC schemas are not configured'
+			);
+		}
+
+		return $committeeSchema;
+	}//end committeeSchema()
 
 	/**
 	 * The object service, register and advice-request schema, or null without OpenRegister.
@@ -250,20 +257,48 @@ class AdvisoryCommitteeService {
 	 * @spec exclude one step of assignToCommittee(), which carries the requirement
 	 */
 	private function saveNewRequest(array $store, array $record): array {
+		$saved = $this->createRequest(store: $store, record: $record);
+
+		$this->recordPanel(store: $store, request: [$record, $saved]);
+
+		return $saved;
+	}//end saveNewRequest()
+
+	/**
+	 * Save a new advice request.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store  The request store.
+	 * @param array<string, mixed>                                            $record The request to save.
+	 *
+	 * @return array<string, mixed> The saved request, or the record when the store answers nothing.
+	 *
+	 * @throws RuntimeException When the save fails.
+	 *
+	 * @spec exclude one step of assignToCommittee(), which carries the requirement
+	 */
+	private function createRequest(array $store, array $record): array {
 		try {
-			$saved = ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not create advice request');
 		}
+	}//end createRequest()
 
+	/**
+	 * Put a new request's panel on its own trail.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store   The request store.
+	 * @param array{0: array<string, mixed>, 1: array<string, mixed>}        $request The request as saved, and the stored request.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude one step of assignToCommittee(), which carries the requirement
+	 */
+	private function recordPanel(array $store, array $request): void {
+		[$record, $saved] = $request;
 		// The panel composition is a row on the request's own OpenRegister
 		// trail; a request whose entry cannot be written is deleted again.
 		$this->auditTrail->recordForNewRecord(
@@ -278,9 +313,7 @@ class AdvisoryCommitteeService {
 				'objectionProceeding' => $record['bezwaar'],
 			],
 		);
-
-		return $saved;
-	}//end saveNewRequest()
+	}//end recordPanel()
 
 	/**
 	 * Refuse a committee that does not exist or no longer accepts referrals.
@@ -353,20 +386,88 @@ class AdvisoryCommitteeService {
 			throw new RuntimeException('Invalid BAC advice status');
 		}
 
+		return $this->movedTo(requestId: $requestId, move: ['newStatus' => $newStatus, 'payload' => $payload]);
+	}//end transitionAdviceStatus()
+
+	/**
+	 * Move the advice request to the new status, when the move is allowed, and store it.
+	 *
+	 * @param string                                                 $requestId UUID of the bacAdviceRequest
+	 * @param array{newStatus: string, payload: array<string, mixed>} $move      The target status, and the extra fields.
+	 *
+	 * @return array<string, mixed> The updated request.
+	 *
+	 * @throws RuntimeException When the move is not allowed or the request cannot be stored.
+	 */
+	private function movedTo(string $requestId, array $move): array {
+		$newStatus = $move['newStatus'];
 		$request = $this->loadAdviceRequest(requestId: $requestId);
 		$from = (string)($request['current']['status'] ?? 'assigned');
+		$this->assertMayMove(request: $request, from: $from, newStatus: $newStatus);
+
+		$update = $move['payload'];
+		$update['status'] = $newStatus;
+		$update = $this->transitionUpdate(request: $request, move: ['from' => $from, 'update' => $update]);
+
+		return $this->applyOrFail(request: $request, change: ['update' => $update, 'requestId' => $requestId]);
+	}//end movedTo()
+
+	/**
+	 * Refuse a move the lifecycle forbids, or a signing move by a caller who does not chair.
+	 *
+	 * @param array<string, mixed> $request   The advice request.
+	 * @param string               $from      Its current status.
+	 * @param string               $newStatus Target status.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the transition is forbidden
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function assertMayMove(array $request, string $from, string $newStatus): void {
 		$this->assertTransitionAllowed(from: $from, newStatus: $newStatus);
 		if (in_array($newStatus, self::SIGNED_STATUSES, true) === true) {
 			$this->assertCallerChairs(request: $request);
 		}
+	}//end assertMayMove()
 
-		$update = $payload;
-		$update['status'] = $newStatus;
-		$update = $this->buildTransitionUpdate(
+	/**
+	 * The update a transition writes, after the independence check.
+	 *
+	 * @param array<string, mixed>                               $request The advice request.
+	 * @param array{from: string, update: array<string, mixed>} $move    Its current status, and the optional patch with the
+	 *                                                                   target status.
+	 *
+	 * @return array<string, mixed> The update.
+	 *
+	 * @throws GuardFailedException When the independence check fails
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function transitionUpdate(array $request, array $move): array {
+		['from' => $from, 'update' => $update] = $move;
+
+		return $this->buildTransitionUpdate(
 			update: $update,
 			adviceDecisionRef: $this->guardTransition(request: $request, move: ['from' => $from] + $update),
 		);
+	}//end transitionUpdate()
 
+	/**
+	 * Apply the transition, logging a failure and refusing with a plain message.
+	 *
+	 * @param array<string, mixed>                                $request The advice request.
+	 * @param array{update: array<string, mixed>, requestId: string} $change  The update, and the advice request UUID for the log.
+	 *
+	 * @return array<string, mixed> The updated advice request record
+	 *
+	 * @throws RuntimeException When the write fails
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
+	 */
+	private function applyOrFail(array $request, array $change): array {
+		['update' => $update, 'requestId' => $requestId] = $change;
 		try {
 			return $this->applyTransition(request: $request, update: $update);
 		} catch (\Throwable $e) {
@@ -376,7 +477,7 @@ class AdvisoryCommitteeService {
 			);
 			throw new RuntimeException('Could not transition advice request');
 		}//end try
-	}//end transitionAdviceStatus()
+	}//end applyOrFail()
 
 	/**
 	 * The stored advice request, null when it does not exist.
@@ -546,8 +647,24 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
 	private function applyTransition(array $request, array $update): array {
+		if (isset($update['adviceIssuedAt']) === false) {
+			return $this->transitionWrite(request: $request, update: $update)();
+		}
+
+		return $this->signThenApply(request: $request, update: $update);
+	}//end applyTransition()
+
+	/**
+	 * The write of a transition's patch, marked as internal.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
+	 * @param array<string, mixed>                                                                                       $update  The patch.
+	 *
+	 * @return callable(): array<string, mixed> The write.
+	 */
+	private function transitionWrite(array $request, array $update): callable {
 		// Marked so DeliberationStartGuard lets this save reach an outcome status.
-		$apply = fn (): array => $this->internalWrites->runInternal(
+		return fn (): array => $this->internalWrites->runInternal(
 			objectId: $request['id'],
 			write: fn (): array => ($this->patchObjectAsArray(
 				objectService: $request['objectService'],
@@ -557,11 +674,19 @@ class AdvisoryCommitteeService {
 				changes: $update
 			) ?? array_merge($request['current'], $update))
 		);
+	}//end transitionWrite()
 
-		if (isset($update['adviceIssuedAt']) === false) {
-			return $apply();
-		}
-
+	/**
+	 * Record the chair's signature, then apply the terminal transition.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
+	 * @param array<string, mixed>                                                                                       $update  The patch.
+	 *
+	 * @return array<string, mixed> The updated advice request record.
+	 *
+	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
+	 */
+	private function signThenApply(array $request, array $update): array {
 		return $this->auditTrail->recordThenApply(
 			register: $request['register'],
 			schema: $request['schema'],
@@ -573,9 +698,9 @@ class AdvisoryCommitteeService {
 				'conclusion' => $update['conclusion'] ?? ($request['current']['conclusion'] ?? null),
 			],
 			tag: '',
-			apply: $apply,
+			apply: $this->transitionWrite(request: $request, update: $update),
 		);
-	}//end applyTransition()
+	}//end signThenApply()
 
 	/**
 	 * Listener entry-point: when a bezwaar enters status
@@ -642,25 +767,42 @@ class AdvisoryCommitteeService {
 			return;
 		}
 
-		$current = $this->readForDeviation(store: $store, requestId: $requestId);
-		if ($current === null) {
+		if ($this->readForDeviation(store: $store, requestId: $requestId) === null) {
 			return;
 		}
 
 		// Outside the try on purpose: an entry that cannot be written goes to
 		// the caller, which logs it with the entry (REQ-BAT-003).
+		$this->recordDeviationEntry(
+			store: $store,
+			entry: ['request' => $requestId, 'decision' => $decisionId, 'motivatie' => $rationaleRef]
+		);
+	}//end recordCouncilDeviation()
+
+	/**
+	 * Write the council-deviation entry on the advice request's audit trail.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 * @param array{request: string, decision: string, motivatie: string}     $entry The advice request, the besluit op bezwaar
+	 *                                                                               and the motivation reference.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written.
+	 */
+	private function recordDeviationEntry(array $store, array $entry): void {
 		$this->auditTrail->record(
 			register: $store['register'],
 			schema: $store['schema'],
-			objectUuid: $requestId,
+			objectUuid: $entry['request'],
 			event: 'council-deviation-recorded',
 			payload: [
-				'decision' => $decisionId,
-				'motivatie' => $rationaleRef,
+				'decision' => $entry['decision'],
+				'motivatie' => $entry['motivatie'],
 			],
 			tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
 		);
-	}//end recordCouncilDeviation()
+	}//end recordDeviationEntry()
 
 	/**
 	 * Assert that the requested advice-status transition is permitted by the
@@ -842,7 +984,7 @@ class AdvisoryCommitteeService {
 		if ($legacy !== '') {
 			$this->logger->warning(
 				'Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step',
-				['app' => Application::APP_ID, 'requestId' => ($request['id'] ?? null)]
+				['app' => AppIdentity::APP_ID, 'requestId' => ($request['id'] ?? null)]
 			);
 		}
 

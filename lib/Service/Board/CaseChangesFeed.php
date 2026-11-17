@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Board;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseChangesFeedInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -43,7 +44,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/realtime-updates-ui/spec.md
  */
-class CaseChangesFeed {
+class CaseChangesFeed implements CaseChangesFeedInterface {
 	use SearchesObjects;
 
 	/**
@@ -86,18 +87,50 @@ class CaseChangesFeed {
 	 */
 	public function since(string $readerId, DateTimeImmutable $since, array $scope): array {
 		$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+		$store = $this->auditStore();
+		if ($store === null) {
+			return ['changes' => [], 'now' => $now];
+		}
+
+		return [
+			'changes' => $this->changesIn(
+				store: $store,
+				window: ['schema' => $store['schema'], 'since' => $since, 'readerId' => $readerId, 'scope' => $scope]
+			),
+			'now' => $now,
+		];
+	}//end since()
+
+	/**
+	 * OpenRegister's audit mapper and object service with the register and case schema, or null when any is missing.
+	 *
+	 * @return array{mapper: object, objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function auditStore(): ?array {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
 		if ($mapper === null || $objectService === null || $register === '' || $schema === '') {
-			return ['changes' => [], 'now' => $now];
+			return null;
 		}
 
+		return ['mapper' => $mapper, 'objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end auditStore()
+
+	/**
+	 * The newest change per readable case in scope, up to the answer limit.
+	 *
+	 * @param array<string, mixed> $store  The audit trail mapper, the object service, the register and the case schema.
+	 * @param array<string, mixed> $window The case schema id, the moment, the reader and the board's scope.
+	 *
+	 * @return array<int, array<string, mixed>> The changes.
+	 */
+	private function changesIn(array $store, array $window): array {
 		$changes = [];
-		foreach ($this->latestPerCase(mapper: $mapper, schema: $schema, since: $since, readerId: $readerId) as $caseId => $entry) {
-			$case = $this->readableCase(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
-			if ($case !== null && $this->inScope(case: $case, scope: $scope) === true) {
+		foreach ($this->latestPerCase(mapper: $store['mapper'], window: $window) as $caseId => $entry) {
+			$case = $this->readableCase(store: $store, caseId: $caseId);
+			if ($case !== null && $this->inScope(case: $case, scope: $window['scope']) === true) {
 				$changes[] = $this->changeOf(entry: $entry, caseId: $caseId);
 			}
 
@@ -106,20 +139,20 @@ class CaseChangesFeed {
 			}
 		}
 
-		return ['changes' => $changes, 'now' => $now];
-	}//end since()
+		return $changes;
+	}//end changesIn()
 
 	/**
 	 * The newest audit entry per case after the moment, by someone else.
 	 *
-	 * @param object            $mapper   The audit trail mapper.
-	 * @param string            $schema   The case schema id.
-	 * @param DateTimeImmutable $since    The moment.
-	 * @param string            $readerId The reader.
+	 * @param object                                                            $mapper The audit trail mapper.
+	 * @param array{schema: string, since: DateTimeImmutable, readerId: string} $window The case schema id, the moment
+	 *                                                                                  and the reader.
 	 *
 	 * @return array<string, object> The entry per case id, newest case first.
 	 */
-	private function latestPerCase(object $mapper, string $schema, DateTimeImmutable $since, string $readerId): array {
+	private function latestPerCase(object $mapper, array $window): array {
+		['schema' => $schema, 'since' => $since, 'readerId' => $readerId] = $window;
 		$filters = [];
 		if (ctype_digit($schema) === true) {
 			$filters['schema'] = $schema;
@@ -146,15 +179,13 @@ class CaseChangesFeed {
 	 * outside the reader's rights as not found, which the read maps to null; any
 	 * other failure is not swallowed.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case schema id.
-	 * @param string $caseId        The case id.
+	 * @param array<string, mixed> $store  The OpenRegister object service, the register id and the case schema id.
+	 * @param string               $caseId The case id.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function readableCase(object $objectService, string $register, string $schema, string $caseId): ?array {
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
+	private function readableCase(array $store, string $caseId): ?array {
+		return $this->findObjectAsArray(objectService: $store['objectService'], register: $store['register'], schema: $store['schema'], id: $caseId);
 	}//end readableCase()
 
 	/**

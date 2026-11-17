@@ -46,6 +46,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,7 +56,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionFlagService {
+class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 
 	/**
 	 * The two acts a history row can record.
@@ -139,28 +140,7 @@ class CaseAttentionFlagService {
 			throw new RuntimeException('already_raised');
 		}
 
-		$moment = (new DateTimeImmutable())->format('c');
-		$history = $this->history(case: $case);
-		$history[] = [
-			'act' => 'raised',
-			'reason' => $reason,
-			'actor' => $userId,
-			'moment' => $moment,
-		];
-
-		$changes = [
-			'needsAttention' => true,
-			'attentionFlag' => [
-				'reason' => $reason,
-				'raisedBy' => $userId,
-				'raisedAt' => $moment,
-			],
-			'attentionFlagHistory' => $history,
-		];
-
-		$this->write(caseId: $caseId, changes: $changes);
-
-		return $this->describe(caseId: $caseId, case: array_merge($case, $changes));
+		return $this->flagged(case: $case, act: ['caseId' => $caseId, 'act' => 'raised', 'reason' => $reason, 'actor' => $userId]);
 	}//end raise()
 
 	/**
@@ -190,24 +170,68 @@ class CaseAttentionFlagService {
 			throw new RuntimeException('not_raised');
 		}
 
-		$history = $this->history(case: $case);
-		$history[] = [
-			'act' => 'cleared',
-			'reason' => $reason,
-			'actor' => $userId,
-			'moment' => (new DateTimeImmutable())->format('c'),
-		];
+		return $this->flagged(case: $case, act: ['caseId' => $caseId, 'act' => 'cleared', 'reason' => $reason, 'actor' => $userId]);
+	}//end clear()
 
-		$changes = [
-			'needsAttention' => false,
-			'attentionFlag' => null,
-			'attentionFlagHistory' => $history,
-		];
+	/**
+	 * Write the raising or clearing act onto the case, with its moment, and describe the case after it.
+	 *
+	 * @param array<string, mixed>  $case The case as read.
+	 * @param array<string, string> $act  The `caseId`, the `act` (`raised` or `cleared`), the `reason` and the `actor`.
+	 *
+	 * @return array<string, mixed> The case's flag as it now stands.
+	 */
+	private function flagged(array $case, array $act): array {
+		$caseId = $act['caseId'];
+		$entry = ['act' => $act['act'], 'reason' => $act['reason'], 'actor' => $act['actor'], 'moment' => (new DateTimeImmutable())->format('c')];
+		$changes = match ($act['act']) {
+			'raised' => $this->raisedChanges(case: $case, act: $entry),
+			default => [
+				'needsAttention' => false,
+				'attentionFlag' => null,
+				'attentionFlagHistory' => $this->historyWith(case: $case, act: $entry),
+			],
+		};
 
 		$this->write(caseId: $caseId, changes: $changes);
 
 		return $this->describe(caseId: $caseId, case: array_merge($case, $changes));
-	}//end clear()
+	}//end flagged()
+
+	/**
+	 * The changes that raise the flag, with the raising act appended to the history.
+	 *
+	 * @param array<string, mixed>                                            $case The case as read.
+	 * @param array{act: string, reason: string, actor: string, moment: string} $act  The raising act.
+	 *
+	 * @return array<string, mixed> The case fields to write.
+	 */
+	private function raisedChanges(array $case, array $act): array {
+		return [
+			'needsAttention' => true,
+			'attentionFlag' => [
+				'reason' => $act['reason'],
+				'raisedBy' => $act['actor'],
+				'raisedAt' => $act['moment'],
+			],
+			'attentionFlagHistory' => $this->historyWith(case: $case, act: $act),
+		];
+	}//end raisedChanges()
+
+	/**
+	 * The case's flag history with one more act at the end.
+	 *
+	 * @param array<string, mixed>                                            $case The case as read.
+	 * @param array{act: string, reason: string, actor: string, moment: string} $act  The act.
+	 *
+	 * @return array<int, array<string, mixed>> The history.
+	 */
+	private function historyWith(array $case, array $act): array {
+		$history = $this->history(case: $case);
+		$history[] = $act;
+
+		return $history;
+	}//end historyWith()
 
 	/**
 	 * The reason both acts require, or the refusal that names what is missing.
@@ -302,26 +326,40 @@ class CaseAttentionFlagService {
 
 		$readable = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
+			$entry = $this->readableRow(row: $row);
+			if ($entry !== null) {
+				$readable[] = $entry;
 			}
-
-			$act = trim((string)($row['act'] ?? ''));
-			$reason = trim((string)($row['reason'] ?? ''));
-			if (in_array($act, self::ACTS, true) === false || $reason === '') {
-				continue;
-			}
-
-			$readable[] = [
-				'act' => $act,
-				'reason' => $reason,
-				'actor' => trim((string)($row['actor'] ?? '')),
-				'moment' => trim((string)($row['moment'] ?? '')),
-			];
 		}
 
 		return $readable;
 	}//end history()
+
+	/**
+	 * One history row, trimmed, or null when it misses its act or its reason.
+	 *
+	 * @param mixed $row The stored row.
+	 *
+	 * @return array<string, string>|null The row, or null.
+	 */
+	private function readableRow(mixed $row): array|null {
+		if (is_array($row) === false) {
+			return null;
+		}
+
+		$act = trim((string)($row['act'] ?? ''));
+		$reason = trim((string)($row['reason'] ?? ''));
+		if (in_array($act, self::ACTS, true) === false || $reason === '') {
+			return null;
+		}
+
+		return [
+			'act' => $act,
+			'reason' => $reason,
+			'actor' => trim((string)($row['actor'] ?? '')),
+			'moment' => trim((string)($row['moment'] ?? '')),
+		];
+	}//end readableRow()
 
 	/**
 	 * Read the stored case, as the signed-in user.

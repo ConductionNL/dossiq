@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -56,7 +56,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class SetCaseAttributeAction implements BulkActionInterface {
+class SetCaseAttributeAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -94,7 +94,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register/schema configuration and the object service.
+	 * @param SettingsServiceInterface $settingsService Register/schema configuration and the object service.
 	 * @param IL10N           $l10n            Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -102,7 +102,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -159,7 +159,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
-		return [BulkActionInterface::GUARD_HOMOGENEITY];
+		return [StepBulkActionInterface::GUARD_HOMOGENEITY];
 	}//end getGuards()
 
 	/**
@@ -201,35 +201,52 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
-		$parameters = $step->parameters;
-		$commit = $step->commit;
-		$caseId = $this->caseId(object: $object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->applyTo(step: $step, caseId: $caseId));
+	}//end apply()
 
-		$case = $this->caseData(object: $object);
-		$property = trim((string)($parameters['property'] ?? ''));
-		$value = ($parameters['value'] ?? null);
+	/**
+	 * Write the value onto a case with an id, or say whether it would change anything.
+	 *
+	 * @param BulkStep $step   The member object, the parameters and whether to commit.
+	 * @param string   $caseId The case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function applyTo(BulkStep $step, string $caseId): BulkActionResult {
+		$caseData = $this->caseData(object: $step->object);
+		$property = trim((string)($step->parameters['property'] ?? ''));
+		$value = ($step->parameters['value'] ?? null);
 
-		if (array_key_exists($property, $case) === true && $case[$property] === $value) {
+		if (array_key_exists($property, $caseData) === true && $caseData[$property] === $value) {
 			return BulkActionResult::skipped(reason: 'already_set');
 		}
 
-		if ($commit === false) {
+		if ($step->commit === false) {
 			return BulkActionResult::applied();
 		}
 
+		$caseData[$property] = $value;
+
+		return $this->written(caseId: $caseId, caseData: $caseData);
+	}//end applyTo()
+
+	/**
+	 * Store the changed case and say how it went.
+	 *
+	 * @param string               $caseId   The case uuid.
+	 * @param array<string, mixed> $caseData The case, with the new value on it.
+	 *
+	 * @return BulkActionResult Applied, or failed with the reason.
+	 */
+	private function written(string $caseId, array $caseData): BulkActionResult {
 		try {
-			$case[$property] = $value;
-			$this->write(caseId: $caseId, case: $case);
+			$this->write(caseId: $caseId, case: $caseData);
 
 			return BulkActionResult::applied();
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end written()
 
 	/**
 	 * Store the changed case.

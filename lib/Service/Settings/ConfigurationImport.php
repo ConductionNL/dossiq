@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -142,9 +142,7 @@ class ConfigurationImport {
 		}
 
 		try {
-			$configurationService = $this->container->get(
-				'OCA\OpenRegister\Service\ConfigurationService'
-			);
+			$configurationService = $this->container->get('OCA\OpenRegister\Service\ConfigurationService');
 		} catch (\Exception $e) {
 			return $this->unreachableServiceAnswer(exception: $e);
 		}
@@ -154,15 +152,28 @@ class ConfigurationImport {
 			return $effective['error'];
 		}
 
-		$configData = $effective['data'];
+		return $this->importAnswer(configurationService: $configurationService, import: ['data' => $effective['data'], 'force' => $force]);
+	}//end loadConfiguration()
+
+	/**
+	 * Import the effective configuration through OpenRegister, and answer the import or why it failed.
+	 *
+	 * @param object                          $configurationService OpenRegister's ConfigurationService.
+	 * @param array{data: array, force: bool} $import               The effective configuration, and whether to force
+	 *                                                              re-import regardless of version.
+	 *
+	 * @return array Import result
+	 */
+	private function importAnswer($configurationService, array $import): array {
+		$configData = $import['data'];
 		$configVersion = ($configData['info']['version'] ?? '0.0.0');
 
 		try {
 			$importResult = $configurationService->importFromApp(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				data: $configData,
 				version: $configVersion,
-				force: $force,
+				force: $import['force'],
 			);
 
 			return $this->reconciledAnswer(importResult: $importResult, configVersion: $configVersion);
@@ -182,7 +193,7 @@ class ConfigurationImport {
 			// about which declaration is wrong; the shape below names it.
 			return $this->importFailedAnswer(exception: $e);
 		}//end try
-	}//end loadConfiguration()
+	}//end importAnswer()
 
 	/**
 	 * Auto-configure and reconcile the imported schemas, and answer the import.

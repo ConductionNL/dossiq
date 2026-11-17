@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\NotificatieService;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
-use OCA\Dossiq\Service\ZgwJwtValidator;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwPaginationHelper;
 use OCA\Dossiq\Service\ZgwService;
@@ -25,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ReflectionProperty;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * `_directFields` reach the stored payload unmapped. A create whose direct
@@ -65,7 +66,7 @@ class ZgwCreateDropsCallerIdentityTest extends TestCase {
 			$this->createMock(ZgwDocumentService::class),
 			$this->createMock(NotificatieService::class),
 			$rules,
-			$this->createMock(ZgwJwtValidator::class),
+			$this->createMock(ApiCredentialResolver::class),
 			new NullLogger(),
 		);
 
@@ -82,6 +83,7 @@ class ZgwCreateDropsCallerIdentityTest extends TestCase {
 			 * @return never
 			 */
 			public function saveObject(array $object, mixed ...$rest): never {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				$this->saved[] = ['object' => $object, 'uuid' => ($rest['uuid'] ?? null)];
 				throw new RuntimeException('stop after the write');
 			}

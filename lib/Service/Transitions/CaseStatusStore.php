@@ -41,6 +41,9 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -92,7 +95,7 @@ class CaseStatusStore {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			return $this->toArray(value: $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $caseSchema)));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: loadCase failed',
@@ -125,7 +128,12 @@ class CaseStatusStore {
 			throw new RuntimeException('case_schema_not_configured');
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $case, register: $register, schema: $caseSchema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $case,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseSchema))
+			)
+		);
 	}//end saveCase()
 
 	/**
@@ -156,6 +164,96 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
+		$move = ['caseId' => $caseId, 'toStatus' => $toStatus, 'fromStatus' => $fromStatus];
+		$move += ['label' => $label, 'comment' => $comment, 'actor' => $actor];
+		$record = $this->saveStatusRecord(move: $move, verdict: ['evaluatedGuards' => $evaluatedGuards, 'noWorkflowTemplate' => $noWorkflowTemplate]);
+		$this->recordMoveEntry(move: $move, record: $record);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * Save the statusRecord row of a move.
+	 *
+	 * @param array<string, mixed> $move    The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $verdict The evaluatedGuards snapshots and the noWorkflowTemplate flag.
+	 *
+	 * @return array<string, mixed> The written statusRecord.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function saveStatusRecord(array $move, array $verdict): array {
+		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
+
+		$payload = [
+			'case' => $move['caseId'],
+			'statusType' => $move['toStatus'],
+			'transitionLabel' => $move['label'],
+			'evaluatedGuards' => $verdict['evaluatedGuards'],
+			'dispatchedActions' => [],
+			'noWorkflowTemplate' => $verdict['noWorkflowTemplate'],
+		];
+
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($move['actor']) !== '') {
+			$payload['actor'] = $move['actor'];
+		}
+
+		// The prior statusType UUID and the comment, each only when neither null nor empty.
+		foreach (['fromStatus' => $move['fromStatus'], 'description' => $move['comment']] as $key => $value) {
+			if ((string)$value !== '') {
+				$payload[$key] = $value;
+			}
+		}
+
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+			)
+		);
+	}//end saveStatusRecord()
+
+	/**
+	 * Hand a written move to the timeline.
+	 *
+	 * @param array<string, mixed> $move   The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $record The written statusRecord.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordMoveEntry(array $move, array $record): void {
+		$this->moveEntry?->record(
+			caseId: $move['caseId'],
+			toStatus: $move['toStatus'],
+			fromStatus: $move['fromStatus'],
+			label: $move['label'],
+			comment: $move['comment'],
+			record: $record,
+			actor: $move['actor'],
+		);
+	}//end recordMoveEntry()
+
+	/**
+	 * The object service, register and statusRecord schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The store.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusRecordStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('storage_unavailable');
@@ -167,47 +265,8 @@ class CaseStatusStore {
 			throw new RuntimeException('status_record_schema_not_configured');
 		}
 
-		$payload = [
-			'case' => $caseId,
-			'statusType' => $toStatus,
-			'transitionLabel' => $label,
-			'evaluatedGuards' => $evaluatedGuards,
-			'dispatchedActions' => [],
-			'noWorkflowTemplate' => $noWorkflowTemplate,
-		];
-
-		// WHO made this move. The four-eyes rule reads this chain to find who
-		// performed a named earlier act, and before this property the only
-		// answer was the row's OpenRegister owner, which is a fact about who
-		// wrote the record rather than about who took the step. They agree
-		// today and they are not the same claim. Written only when the caller
-		// names somebody: an empty string is not an actor, and a record
-		// stamped with one would read as a move nobody made.
-		if (trim($actor) !== '') {
-			$payload['actor'] = $actor;
-		}
-		if ($fromStatus !== '') {
-			$payload['fromStatus'] = $fromStatus;
-		}
-
-		if ($comment !== null && $comment !== '') {
-			$payload['description'] = $comment;
-		}
-
-		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
-
-		$this->moveEntry?->record(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $fromStatus,
-			label: $label,
-			comment: $comment,
-			record: $record,
-			actor: $actor,
-		);
-
-		return $record;
-	}//end writeStatusRecord()
+		return [$objectService, $register, $recordSchema];
+	}//end statusRecordStore()
 
 	/**
 	 * Where the move's timeline entry is built.
@@ -250,7 +309,12 @@ class CaseStatusStore {
 			return $record;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $record, register: $register, schema: $recordSchema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+			)
+		);
 	}//end updateStatusRecord()
 
 	/**

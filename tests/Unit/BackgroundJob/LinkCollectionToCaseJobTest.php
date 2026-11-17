@@ -30,11 +30,14 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Tests for LinkCollectionToCaseJob.
  *
  * @covers \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses   \OCA\Dossiq\Service\Intake\CollectionCaseLinks
+ * @uses   \OCA\Dossiq\Service\Support\UnscopedObjectReader
  */
 class LinkCollectionToCaseJobTest extends TestCase {
 
@@ -173,4 +176,63 @@ class LinkCollectionToCaseJobTest extends TestCase {
 
 		$this->assertSame(expected: [], actual: $objectService->calls);
 	}//end testAnIncompleteArgumentLinksNothing()
+
+	/**
+	 * A dossier that is no longer the resident's is left alone and the case gets no link.
+	 *
+	 * @return void
+	 */
+	public function testADossierThatIsNoLongerTheResidentsIsLeftAlone(): void {
+		$objectService = new class {
+
+			/**
+			 * Saves made on the service.
+			 *
+			 * @var list<array<string, mixed>>
+			 */
+			public array $saved = [];
+
+			/**
+			 * The collection, now owned by someone else.
+			 *
+			 * @param mixed ...$arguments The lookup.
+			 *
+			 * @return array<string, mixed> The collection.
+			 */
+			public function find(mixed ...$arguments): array {
+				$arguments = LegacyObjectArgs::flatten(args: $arguments);
+				return ['owner' => 'bsn-2', 'items' => [['publication' => 'pub-1']]];
+			}//end find()
+
+			/**
+			 * Record a save.
+			 *
+			 * @param mixed ...$arguments The save.
+			 *
+			 * @return array<string, mixed> Nothing useful.
+			 */
+			public function saveObject(mixed ...$arguments): array {
+				$arguments = LegacyObjectArgs::flatten(args: $arguments);
+				$this->saved[] = $arguments;
+				return [];
+			}//end saveObject()
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'LinkCollectionToCaseJob: the dossier is no longer the resident\'s',
+			['case' => 'case-1', 'collection' => 'col-1']
+		);
+
+		$job = $this->job(
+			settings: $settings,
+			jobList: $this->createMock(originalClassName: IJobList::class),
+			logger: $logger,
+			account: $this->createMock(originalClassName: BackgroundServiceAccount::class)
+		);
+		$job->link(argument: self::ARGUMENT);
+
+		$this->assertSame(expected: [], actual: $objectService->saved);
+	}//end testADossierThatIsNoLongerTheResidentsIsLeftAlone()
 }//end class

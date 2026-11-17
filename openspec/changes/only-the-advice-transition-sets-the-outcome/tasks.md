@@ -5,5 +5,5 @@
 - **files**: `lib/Controller/BezwaarAdviceRequestController.php`, `appinfo/routes.php`, `lib/Service/InternalWriteMarker.php`, `lib/Service/Bezwaar/AdvisoryCommitteeService.php`, `lib/Listener/DeliberationStartGuard.php`, `lib/AppInfo/Registrar/BezwaarListenerRegistrar.php`
 - [x] Implement
 - [x] Test: `tests/Unit/Listener/DeliberationStartGuardTest.php`, `tests/Unit/Controller/BezwaarAdviceRequestControllerTest.php`, `tests/Unit/Service/InternalWriteMarkerTest.php`
-- [ ] Page: the advice request page's lifecycle action calls the endpoint (manifest, screens)
+- [x] Page: the advice request page's lifecycle action calls the endpoint (manifest, screens)
 - [ ] Live: on a seeded instance, an API write of `status: advice-issued` is refused and the advice request page still issues the advice

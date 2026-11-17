@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Milestone;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MilestoneScheduleInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
@@ -56,7 +57,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
  *
  * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
  */
-class MilestoneSchedule {
+class MilestoneSchedule implements MilestoneScheduleInterface {
 
 	/**
 	 * How deep a dependency chain may be resolved.
@@ -204,6 +205,19 @@ class MilestoneSchedule {
 			return '';
 		}
 
+		return $this->holderOf(role: $role, known: ['roleHolders' => $roleHolders, 'case' => $case]);
+	}//end ownerOf()
+
+	/**
+	 * Who holds a role: the role holder named for it, else the case handler for the roles that name the handler.
+	 *
+	 * @param string                                                          $role  The owner role.
+	 * @param array{roleHolders: array<string, mixed>, case: array<string, mixed>} $known The holders by role, and the case.
+	 *
+	 * @return string The user id, or ''.
+	 */
+	private function holderOf(string $role, array $known): string {
+		$roleHolders = $known['roleHolders'];
 		if (isset($roleHolders[$role]) === true && (string)$roleHolders[$role] !== '') {
 			return (string)$roleHolders[$role];
 		}
@@ -213,11 +227,11 @@ class MilestoneSchedule {
 		// role table. It is resolved here ONLY for the role that names it, so
 		// this is a lookup and not the fallback the docblock refuses.
 		if (in_array($role, ['assignee', 'behandelaar', 'caseHandler'], true) === true) {
-			return (string)($case['assignee'] ?? '');
+			return (string)($known['case']['assignee'] ?? '');
 		}
 
 		return '';
-	}//end ownerOf()
+	}//end holderOf()
 
 	/**
 	 * Resolve one milestone's date, recursively.

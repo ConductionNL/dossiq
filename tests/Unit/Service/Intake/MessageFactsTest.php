@@ -82,6 +82,8 @@ final class MessageFactsTest extends TestCase {
 			'no text'                   => [[], [], ChannelIntake::UNTITLED],
 			'blank text'                => [['text' => "  \n  "], [], ChannelIntake::UNTITLED],
 			'leading blank line'        => [['text' => "\nTweede regel"], [], 'Tweede regel'],
+			// A form feed is a line break to \R but not whitespace to trim(), so the first line is empty.
+			'form feed before the text' => [['text' => "\fTweede regel"], [], ChannelIntake::UNTITLED],
 		];
 	}//end titles()
 

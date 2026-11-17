@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Notice;
 
+use OCA\Dossiq\Kernel\Contracts\CaseActNoticesInterface;
 use OCP\IL10N;
 
 /**
@@ -36,7 +37,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
-class CaseActNotices {
+class CaseActNotices implements CaseActNoticesInterface {
 
 	/**
 	 * Constructor.

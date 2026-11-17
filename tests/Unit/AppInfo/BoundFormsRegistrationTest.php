@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseTypeBoundFormsListener;
 use OCA\Dossiq\Listener\IntakeFormDependentsListener;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
@@ -54,12 +54,15 @@ use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Form\PublishedForm;
+use OCA\OpenRegister\Service\Form\FormDependentsSignals;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The registered listeners judge the forms bound to a case type, and answer for dossiq's own.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\CaseTypeBoundFormsListener
  * @covers \OCA\Dossiq\Listener\IntakeFormDependentsListener
  * @covers \OCA\Dossiq\Service\Intake\BoundFormsCheck
@@ -159,7 +162,11 @@ class BoundFormsRegistrationTest extends TestCase {
 				return ['results' => $this->caseTypes];
 			}//end searchObjects()
 
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patches[] = ['id' => $objectId, 'data' => $data, 'schema' => $schema];
 
 				return array_merge(['id' => $objectId], $data);
@@ -179,9 +186,7 @@ class BoundFormsRegistrationTest extends TestCase {
 	 */
 	private function form(string $id, string $caseType, array $properties, string $app = 'portaliq'): FormDependent {
 		return new FormDependent(
-			id: $id,
-			app: $app,
-			title: 'Formulier ' . $id,
+			form: new PublishedForm(id: $id, app: $app, title: 'Formulier ' . $id, audience: 'public'),
 			author: 'maker-' . $id,
 			mapping: [
 				'fields' => array_map(static fn (string $property): array => ['field' => $property, 'property' => $property, 'type' => 'text'], $properties),
@@ -190,7 +195,6 @@ class BoundFormsRegistrationTest extends TestCase {
 			unpublish: function () use ($id): void {
 				$this->unpublished[] = $id;
 			},
-			audience: 'public',
 		);
 	}//end form()
 
@@ -252,7 +256,7 @@ class BoundFormsRegistrationTest extends TestCase {
 		$notifications->method('createNotification')->willReturn($notification);
 
 		// OpenRegister's own service applies the assessment dossiq builds.
-		$dependents = new FormDependentsCheck($dispatcher, $validator, $appConfig, $notifications, $logger);
+		$dependents = new FormDependentsCheck(new FormDependentsSignals(dispatcher: $dispatcher, notifications: $notifications), $validator, $appConfig, $logger);
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(

@@ -54,4 +54,42 @@ describe('the case type blueprint as a summary card', () => {
 		expect(facts).toEqual(['3, of which 2 final', '3', '14 fields, 6 inherited from Omgevingsvergunning'])
 		expect(w.find('details [data-testid="case-type-statuses"]').exists()).toBe(true)
 	})
+
+
+	it('reads nothing and says so when the route carries no case type id', async () => {
+		mockGet.mockClear()
+		const w = mount(CaseTypeBlueprintWidget, { global: { mocks: { $route: { params: {} } } } })
+		await flushPromises()
+
+		expect(mockGet).not.toHaveBeenCalled()
+		expect(w.vm.error).toBe(true)
+		expect(w.vm.loading).toBe(false)
+	})
+
+	it('shows the error state when the blueprint cannot be read', async () => {
+		mockGet.mockRejectedValue(new Error('down'))
+		const w = mount(CaseTypeBlueprintWidget, { global: { mocks: { $route: { params: { id: 'ct-1' } } } } })
+		await flushPromises()
+
+		expect(w.vm.error).toBe(true)
+		expect(w.vm.blueprint).toBe(null)
+	})
+
+	it('reads the attributes line without an inherited clause when nothing is inherited', async () => {
+		mockGet.mockResolvedValue({ data: {
+			statusTypes: [{ name: 'Ontvangen' }],
+			resultTypes: [],
+			propertyDefinitions: [],
+			counts: { propertyDefinitions: { total: 4, inherited: 0 } },
+			parents: [],
+		} })
+		const w = mount(CaseTypeBlueprintWidget, { global: { mocks: { $route: { params: { id: 'ct-1' } } } } })
+		await flushPromises()
+
+		const facts = w.findAll('[data-testid="case-type-blueprint-summary"] dd').map((d) => d.text())
+		expect(facts[facts.length - 1]).toBe('4 fields')
+
+		// Tearing it down detaches the refresh listener.
+		expect(() => w.unmount()).not.toThrow()
+	})
 })

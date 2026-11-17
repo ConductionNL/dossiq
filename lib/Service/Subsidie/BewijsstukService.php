@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\BewijsstukServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class BewijsstukService {
+class BewijsstukService implements BewijsstukServiceInterface {
 
 	use SearchesObjects;
 
@@ -182,15 +183,48 @@ class BewijsstukService {
 		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$linkedIn = (string)($payload['linkedIn'] ?? '');
 		$type = (string)($payload['evidenceType'] ?? '');
+		$this->requireAllowedType(linkedIn: $linkedIn, type: $type);
+
+		$store = $this->resolve();
+
+		$record = $this->recordOf(payload: $payload, retention: ['linkedIn' => $linkedIn, 'regelingRetention' => $regelingRetention]);
+		if ($contents !== null) {
+			$record['fileHashSha256'] = $this->computeHash(contents: $contents);
+		}
+
+		return $this->saveRecord(store: $store, record: $record);
+	}//end create()
+
+	/**
+	 * Refuse an evidence type the phase does not allow.
+	 *
+	 * @param string $linkedIn The phase the bewijsstuk is linked in.
+	 * @param string $type     The evidence type.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When the type is not allowed.
+	 */
+	private function requireAllowedType(string $linkedIn, string $type): void {
 		if ($this->isTypeAllowed(linkedIn: $linkedIn, type: $type) === false) {
 			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $linkedIn . '"');
 		}
+	}//end requireAllowedType()
 
-		[$objectService, $register, $schema] = $this->resolve();
-
+	/**
+	 * The record: the payload with its bewaartermijn and archive status.
+	 *
+	 * @param array<string, mixed>                                 $payload   The bewijsstuk metadata.
+	 * @param array{linkedIn: string, regelingRetention: int|null} $retention `linkedIn` the phase the bewijsstuk is linked in; `regelingRetention`
+	 *                                                                        regeling-configured retention override.
+	 *
+	 * @return array<string, mixed> The record to store.
+	 */
+	private function recordOf(array $payload, array $retention): array {
+		[$linkedIn, $regelingRetention] = [$retention['linkedIn'], $retention['regelingRetention']];
 		$now = new DateTimeImmutable();
 		$jaren = $this->bewaartermijnJaren(linkedIn: $linkedIn, override: $regelingRetention);
-		$record = array_merge(
+		return array_merge(
 			$payload,
 			[
 				'retentionPeriodYears' => $jaren,
@@ -199,17 +233,27 @@ class BewijsstukService {
 				'immutable' => ($linkedIn === 'determination'),
 			]
 		);
-		if ($contents !== null) {
-			$record['fileHashSha256'] = $this->computeHash(contents: $contents);
-		}
+	}//end recordOf()
 
+	/**
+	 * Store the record, refusing with a domain error when the write fails.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store  OpenRegister's object service, the register and the bewijsstuk schema.
+	 * @param array<string, mixed>                   $record The record to store.
+	 *
+	 * @return array<string, mixed> The stored record.
+	 *
+	 * @throws OCSBadRequestException When the write fails.
+	 */
+	private function saveRecord(array $store, array $record): array {
+		[$objectService, $register, $schema] = $store;
 		try {
 			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: bewijsstuk create failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon bewijsstuk niet opslaan');
 		}
-	}//end create()
+	}//end saveRecord()
 
 	/**
 	 * Guard against mutating/deleting a bewijsstuk linked to a vaststelling

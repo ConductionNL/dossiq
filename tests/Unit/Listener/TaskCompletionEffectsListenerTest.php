@@ -33,6 +33,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A completed task runs its declared effects on its case and publishes its
@@ -111,7 +112,9 @@ class TaskCompletionEffectsListenerTest extends TestCase {
 			 *
 			 * @return array
 			 */
-			public function find(string $id, mixed $register, mixed $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->asked[] = ['id' => $id, 'register' => $register, 'schema' => $schema];
 				if ($this->case === null) {
 					throw new RuntimeException('store down');

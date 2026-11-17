@@ -49,6 +49,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A stand-in for the entry OpenRegister answers with.
@@ -211,12 +212,10 @@ class FakeTimelineReader {
 	 *
 	 * @return array<int, mixed> The entries.
 	 */
-	public function listForObject(
-		mixed $object,
-		?string $visibility = null,
-		int $limit = 50,
-		int $offset = 0,
-	): array {
+	public function listForObject(mixed $object, ?object $query = null): array {
+		$visibility = ($query?->filters['visibility'] ?? null);
+		$limit = ($query?->limit ?? 50);
+		$offset = ($query?->offset ?? 0);
 		if ($this->throws === true) {
 			throw new RuntimeException('the reader is a release behind');
 		}
@@ -305,11 +304,12 @@ class FakeTimelineObjectService {
 	 */
 	public function find(
 		string $id,
-		mixed $register = null,
-		mixed $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?object {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->scopes[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 		$this->findsAsSystem[] = $this->inSystem;
 		if (in_array($id, $this->throwing, true) === true) {

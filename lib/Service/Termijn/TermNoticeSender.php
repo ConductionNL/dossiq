@@ -63,9 +63,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
@@ -433,7 +433,7 @@ class TermNoticeSender {
 		$code = (self::OUTBOUND_CODES[$refusal->getRule()] ?? $refusal->getRule());
 		$this->logger->warning(
 			'Dossiq term notice not sent: the outbound mail refused it',
-			['app' => Application::APP_ID, 'code' => $code, 'rule' => $refusal->getRule()]
+			['app' => AppIdentity::APP_ID, 'code' => $code, 'rule' => $refusal->getRule()]
 		);
 		throw new NoticeNotSentException(reasonCode: $code, reason: $refusal->getSentence());
 	}//end refuseTransport()
@@ -465,7 +465,7 @@ class TermNoticeSender {
 	 */
 	private static function logContext(TermNotice $notice, string $category): array {
 		return [
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'template' => $notice->template,
 			'instance' => $notice->instanceId,
 			'category' => $category,

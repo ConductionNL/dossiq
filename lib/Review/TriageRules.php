@@ -24,12 +24,16 @@ namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Review\Support\ReviewStoreSteps;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,9 +51,10 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  */
-class TriageRules {
+class TriageRules implements TriageRulesInterface {
 
 	use SearchesObjects;
+	use ReviewStoreSteps;
 
 	/**
 	 * The app config key of the rule schema.
@@ -74,23 +79,23 @@ class TriageRules {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService        $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface        $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance      $reviews         The reviews a rule marks.
-	 * @param WooCaseDocuments       $caseDocuments   The case's documents.
+	 * @param WooCaseDocumentsInterface       $caseDocuments   The case's documents.
 	 * @param TriageFacts            $facts           What a rule reads about each document.
 	 * @param TriageConditions       $conditions      Checks and matches a rule's conditions.
-	 * @param CaseReviewerAccess     $reviewerAccess  Who may read the case's private review records.
+	 * @param CaseReviewerAccessInterface     $reviewerAccess  Who may read the case's private review records.
 	 * @param LoggerInterface        $logger          The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly TriageFacts $facts,
 		private readonly TriageConditions $conditions,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -190,7 +195,7 @@ class TriageRules {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a triage rule was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -213,9 +218,13 @@ class TriageRules {
 		$this->ruleOf(rows: $this->rows(caseId: $caseId), ruleId: $ruleId);
 		try {
 			$this->settingsService->getObjectService()->deleteObject(
-				uuid: $ruleId,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				new ObjectDeletion(
+					uuid: $ruleId,
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+						)
+				)
 			);
 		} catch (Throwable $e) {
 			throw $this->unavailable(previous: $e);
@@ -488,16 +497,6 @@ class TriageRules {
 	}//end idOf()
 
 	/**
-	 * Whether the rule schema can be read and written.
-	 *
-	 * @return bool
-	 */
-	private function isAvailable(): bool {
-		return $this->reviews->isAvailable() === true
-			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
-	}//end isAvailable()
-
-	/**
 	 * Every rule of a case the caller may read, as stored: what a listing shows and a change starts from.
 	 *
 	 * @param string $caseId The case UUID.
@@ -546,7 +545,7 @@ class TriageRules {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a triage rule could not be written',
-				['app' => Application::APP_ID, 'case' => ($rule['case'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => ($rule['case'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->unavailable(previous: $e);
 		}
@@ -569,23 +568,4 @@ class TriageRules {
 			previous: $previous,
 		);
 	}//end unavailable()
-
-	/**
-	 * A refusal, 422 unless said otherwise.
-	 *
-	 * @param string         $rule     The rule.
-	 * @param string         $sentence The static sentence.
-	 * @param int            $status   The status.
-	 * @param Throwable|null $previous The cause.
-	 *
-	 * @return RefusedException
-	 */
-	private function refusal(
-		string $rule,
-		string $sentence,
-		int $status = RefusedException::STATUS_UNPROCESSABLE,
-		?Throwable $previous = null,
-	): RefusedException {
-		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
-	}//end refusal()
 }//end class

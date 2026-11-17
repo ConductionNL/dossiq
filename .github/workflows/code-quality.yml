@@ -210,8 +210,9 @@ jobs:
       # merged or deleted (the checkout step does `git clone --depth 1 --branch
       # "$ref"`, which fails outright). dossiq's own appinfo/routes.php depends
       # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
-      # needs the `settings#load` route it ships — `development` is where that
-      # plumbing lands first.
+      # needs the `settings#load` route it ships. openregister develops on
+      # `main` since 2026-11-09 (ADR-122) and `development` is frozen, so `main`
+      # is where that plumbing lands first.
       #
       # decidiq is here so the e2e suite can reach the surfaces that need it.
       # Without it, `retired-surfaces.spec.ts` ("decidiq registers the
@@ -231,7 +232,7 @@ jobs:
       # missing-dependency screen and `integrations-page.spec.ts` fails on
       # every run. `app` is `integriq`, verified in its appinfo/info.xml on
       # `development` on 2026-09-14.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
       # SBOM was disabled here until @conduction/nextcloud-vue's dependency
       # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
       # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version

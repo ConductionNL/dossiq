@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service\External\Woz;
 
 use OCA\Dossiq\Service\External\HalResponseBody;
 use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Support\SendsHalHeaders;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use Psr\Log\LoggerInterface;
@@ -63,6 +64,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class WozApiAdapter implements WozAdapterInterface {
+	use SendsHalHeaders;
+
 	/**
 	 * Default base URL — SwaggerHub auto-mock of the published WOZ
 	 * Bevragen OpenAPI spec (`test`-tier smoke-testing only; see class
@@ -116,16 +119,45 @@ class WozApiAdapter implements WozAdapterInterface {
 		?string $toevoeging = null,
 		array $context = [],
 	): WozLookupResult {
-		$normalizedPostcode = strtoupper(str_replace(' ', '', $postcode));
-		if (preg_match(self::POSTCODE_PATTERN, $normalizedPostcode) !== 1) {
+		$query = ['postcode' => strtoupper(str_replace(' ', '', $postcode)), 'houseNumber' => $houseNumber];
+		$invalid = $this->invalidInput(query: $query);
+		if ($invalid !== null) {
+			return $invalid;
+		}
+
+		return $this->search(query: $this->withAddition(query: $query, addition: [$huisletter, $toevoeging]), context: $context);
+	}//end lookupAddress()
+
+	/**
+	 * The INVALID_INPUT result for a malformed postcode or house number, or null when both are well formed.
+	 *
+	 * @param array{postcode: string, houseNumber: string} $query The normalised postcode and the house number.
+	 *
+	 * @return WozLookupResult|null The refusal, or null.
+	 */
+	private function invalidInput(array $query): ?WozLookupResult {
+		if (preg_match(self::POSTCODE_PATTERN, $query['postcode']) !== 1) {
 			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-postcode']);
 		}
 
+		$houseNumber = $query['houseNumber'];
 		if ($houseNumber === '' || ctype_digit($houseNumber) === false) {
 			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
 		}
 
-		$query = ['postcode' => $normalizedPostcode, 'houseNumber' => $houseNumber];
+		return null;
+	}//end invalidInput()
+
+	/**
+	 * The query with the house letter and the house number addition, each when given.
+	 *
+	 * @param array<string, string>        $query    The postcode and house number.
+	 * @param array{0: ?string, 1: ?string} $addition The house letter and the house number addition.
+	 *
+	 * @return array<string, string> The query.
+	 */
+	private function withAddition(array $query, array $addition): array {
+		[$huisletter, $toevoeging] = $addition;
 		if ($huisletter !== null && $huisletter !== '') {
 			$query['huisletter'] = $huisletter;
 		}
@@ -134,8 +166,8 @@ class WozApiAdapter implements WozAdapterInterface {
 			$query['huisnummertoevoeging'] = $toevoeging;
 		}
 
-		return $this->search(query: $query, context: $context);
-	}//end lookupAddress()
+		return $query;
+	}//end withAddition()
 
 	/**
 	 * Look up WOZ object(s) by BAG nummeraanduiding identificatie.
@@ -174,33 +206,39 @@ class WozApiAdapter implements WozAdapterInterface {
 		try {
 			$response = $this->clientService->newClient()->get(
 				rtrim($baseUrl, '/') . '/wozobjecten',
-				[
-					'timeout' => 10,
-					'query' => $query,
-					'headers' => $this->headers(),
-				]
+				['timeout' => 10, 'query' => $query, 'headers' => $this->halHeaders(integration: 'woz')]
 			);
 
-			$status = (int)$response->getStatusCode();
-			if ($status < 200 || $status >= 300) {
-				return $this->errorResult(status: $status, context: $context);
-			}
-
-			$wozObjecten = $this->extractWozObjecten(body: (string)$response->getBody());
-			if ($wozObjecten === []) {
-				return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
-			}
-
-			return $this->foundSearchResult(wozObjecten: $wozObjecten);
+			return $this->searchResultOf(response: $response, context: $context);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq WOZ search lookup failed',
-				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]
-			);
+			$this->logger->warning('Dossiq WOZ search lookup failed',
+				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]);
 
 			return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
 		}//end try
 	}//end search()
+
+	/**
+	 * The lookup result of a `/wozobjecten` search response.
+	 *
+	 * @param IResponse           $response The response.
+	 * @param array<string,mixed> $context  Lookup context.
+	 *
+	 * @return WozLookupResult
+	 */
+	private function searchResultOf(IResponse $response, array $context): WozLookupResult {
+		$status = (int)$response->getStatusCode();
+		if ($status < 200 || $status >= 300) {
+			return $this->errorResult(status: $status, context: $context);
+		}
+
+		$wozObjecten = $this->extractWozObjecten(body: (string)$response->getBody());
+		if ($wozObjecten === []) {
+			return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
+		}
+
+		return $this->foundSearchResult(wozObjecten: $wozObjecten);
+	}//end searchResultOf()
 
 	/**
 	 * Extract the `_embedded.wozObjecten` list from a decoded response
@@ -279,7 +317,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	private function fetchObject(string $url): IResponse {
 		$client = $this->clientService->newClient();
 
-		return $client->get($url, ['timeout' => 10, 'headers' => $this->headers()]);
+		return $client->get($url, ['timeout' => 10, 'headers' => $this->halHeaders(integration: 'woz')]);
 	}//end fetchObject()
 
 	/**
@@ -332,21 +370,6 @@ class WozApiAdapter implements WozAdapterInterface {
 	public function isDormant(): bool {
 		return false;
 	}//end isDormant()
-
-	/**
-	 * Build the shared request headers.
-	 *
-	 * @return array<string,string>
-	 */
-	private function headers(): array {
-		$apiKey = $this->mode->setting(integration: 'woz', key: 'apiKey');
-		$headers = ['Accept' => 'application/hal+json'];
-		if ($apiKey !== '') {
-			$headers['X-Api-Key'] = $apiKey;
-		}
-
-		return $headers;
-	}//end headers()
 
 	/**
 	 * Build a LOOKUP_ERROR result for a non-2xx, non-404 HTTP status.

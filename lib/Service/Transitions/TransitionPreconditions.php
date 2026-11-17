@@ -167,57 +167,54 @@ class TransitionPreconditions {
 			return [];
 		}
 
-		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-		$toStatus = (string)($transition['toStatus'] ?? '');
+		$destination = new TransitionDestination(
+			case: $case,
+			caseId: (string)($case['id'] ?? ($case['@self']['id'] ?? '')),
+			toStatus: (string)($transition['toStatus'] ?? ''),
+			toIsClosing: $toIsClosing,
+		);
 
+		return $this->reasonsAt(dependencies: $dependencies, destination: $destination);
+	}//end withheldReasons()
+
+	/**
+	 * The reason each unmet dependency withholds the move, in declaration order.
+	 *
+	 * @param array<int, array<string, mixed>> $dependencies The dependencies the transition declares.
+	 * @param TransitionDestination            $destination  The case and where the move goes.
+	 *
+	 * @return array<int, string> The reasons; none when every dependency is met.
+	 */
+	private function reasonsAt(array $dependencies, TransitionDestination $destination): array {
 		$reasons = [];
 		foreach ($dependencies as $dependency) {
-			$reason = $this->reasonFor(
-				dependency: $dependency,
-				case: $case,
-				caseId: $caseId,
-				toStatus: $toStatus,
-				toIsClosing: $toIsClosing,
-			);
+			$reason = $this->reasonFor(dependency: $dependency, destination: $destination);
 			if ($reason !== '') {
 				$reasons[] = $reason;
 			}
 		}
 
 		return $reasons;
-	}//end withheldReasons()
+	}//end reasonsAt()
 
 	/**
 	 * Why one dependency is in the way, or the empty string when it is settled.
 	 *
-	 * @param array<string, mixed> $dependency  The normalised dependency.
-	 * @param array<string, mixed> $case        The case.
-	 * @param string               $caseId      The case id.
-	 * @param string               $toStatus    The destination status.
-	 * @param bool                 $toIsClosing Whether the destination closes the case.
+	 * @param array<string, mixed>  $dependency  The normalised dependency.
+	 * @param TransitionDestination $destination The case, its id and the destination status.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function reasonFor(
-		array $dependency,
-		array $case,
-		string $caseId,
-		string $toStatus,
-		bool $toIsClosing,
-	): string {
+	private function reasonFor(array $dependency, TransitionDestination $destination): string {
+		$case = $destination->case;
 		if ((string)($dependency['kind'] ?? '') === 'erasureComplete') {
 			return $this->erasureReason(dependency: $dependency, case: $case);
 		}
 
 		if ((string)($dependency['kind'] ?? '') === 'obligationOpen') {
-			return $this->obligationReason(
-				dependency: $dependency,
-				caseId: $caseId,
-				toStatus: $toStatus,
-				toIsClosing: $toIsClosing,
-			);
+			return $this->obligationReason(dependency: $dependency, destination: $destination);
 		}
 
 		// The field and document kinds are the SAME evaluation a derived status
@@ -238,50 +235,71 @@ class TransitionPreconditions {
 	/**
 	 * Why an open obligation is in the way.
 	 *
-	 * @param array<string, mixed> $dependency  The normalised dependency.
-	 * @param string               $caseId      The case id.
-	 * @param string               $toStatus    The destination status.
-	 * @param bool                 $toIsClosing Whether the destination closes the case.
+	 * @param array<string, mixed>  $dependency  The normalised dependency.
+	 * @param TransitionDestination $destination The case id, the destination status and whether it closes the case.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function obligationReason(
-		array $dependency,
-		string $caseId,
-		string $toStatus,
-		bool $toIsClosing,
-	): string {
-		if ($caseId === '') {
+	private function obligationReason(array $dependency, TransitionDestination $destination): string {
+		if ($destination->caseId === '') {
 			return '';
 		}
 
 		$wanted = trim((string)($dependency['obligationKind'] ?? ''));
 		foreach ($this->obligations->blocking(
-			caseId: $caseId,
-			statusId: $toStatus,
-			isClosing: $toIsClosing,
+			caseId: $destination->caseId,
+			statusId: $destination->toStatus,
+			isClosing: $destination->toIsClosing,
 		) as $obligation) {
-			if ($wanted !== '' && trim((string)($obligation['kind'] ?? '')) !== $wanted) {
+			if ($this->isOtherKind(obligation: $obligation, wanted: $wanted) === true) {
 				continue;
 			}
 
-			$label = trim((string)($dependency['label'] ?? ''));
-			if ($label !== '') {
-				return $label;
-			}
-
-			$title = $this->text->forReader(value: ($obligation['title'] ?? ''));
-			if ($title !== '') {
-				return $title;
-			}
-
-			return trim((string)($obligation['kind'] ?? ''));
+			return $this->obligationLabel(dependency: $dependency, obligation: $obligation);
 		}
 
 		return '';
 	}//end obligationReason()
+
+	/**
+	 * Whether the dependency asks for one obligation kind and this obligation is another.
+	 *
+	 * @param array<string, mixed> $obligation The blocking obligation.
+	 * @param string               $wanted     The kind the dependency names, or ''.
+	 *
+	 * @return bool True when the obligation is not the one the dependency means.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function isOtherKind(array $obligation, string $wanted): bool {
+		return $wanted !== '' && trim((string)($obligation['kind'] ?? '')) !== $wanted;
+	}//end isOtherKind()
+
+	/**
+	 * The reason an obligation gives: the dependency's label, else the obligation's title, else its kind.
+	 *
+	 * @param array<string, mixed> $dependency The normalised dependency.
+	 * @param array<string, mixed> $obligation The blocking obligation.
+	 *
+	 * @return string The reason.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function obligationLabel(array $dependency, array $obligation): string {
+		$label = trim((string)($dependency['label'] ?? ''));
+		if ($label !== '') {
+			return $label;
+		}
+
+		$title = $this->text->forReader(value: ($obligation['title'] ?? ''));
+		if ($title !== '') {
+			return $title;
+		}
+
+		return trim((string)($obligation['kind'] ?? ''));
+	}//end obligationLabel()
 
 	/**
 	 * Why an unfinished erasure is in the way, naming what is left.

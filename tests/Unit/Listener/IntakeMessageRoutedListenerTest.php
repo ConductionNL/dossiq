@@ -37,6 +37,8 @@ use OCA\Integriq\Event\IntakeMessageRoutedEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The ObjectService surface these tests drive.
@@ -56,7 +58,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -68,7 +70,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The stored object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Search objects by register and schema slug.
@@ -174,7 +176,10 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($schema === 'case' && $this->elevated === false) {
 					throw new \RuntimeException('Anonymous callers may not create objects.');
 				}
@@ -190,7 +195,9 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('find')->willReturnCallback(
-			function (string $id, string $register, string $schema): array {
+			function (string $id, ?ObjectFindOptions $options = null): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'caseType' && $this->caseTypeExists === true) {
 					return ['id' => $id, 'initialStatus' => 'status-ontvangen'];
 				}

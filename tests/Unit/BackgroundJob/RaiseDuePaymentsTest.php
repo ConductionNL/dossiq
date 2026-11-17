@@ -21,6 +21,9 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use DateTime;
 use OCA\Dossiq\BackgroundJob\RaiseDuePayments;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleRaiserInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Money\PaymentScheduleRaiser;
 use OCA\Dossiq\Service\Money\PayoutRequester;
 use OCA\Dossiq\Service\SettingsService;
@@ -152,4 +155,24 @@ class RaiseDuePaymentsTest extends TestCase {
 			serviceAccount: $this->backgroundAccount(),
 		);
 	}//end job()
+
+	/**
+	 * An unavailable service account ends the run quietly, so the next run tries again.
+	 *
+	 * @return void
+	 */
+	public function testAnUnavailableServiceAccountEndsTheRunQuietly(): void {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new DateTime($this->today));
+		$raiser = $this->createMock(PaymentScheduleRaiserInterface::class);
+		$raiser->expects($this->never())->method('raiseDue');
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->expects($this->once())->method('runAs')
+			->willThrowException(new ServiceAccountUnavailableException('no account'));
+
+		$job = new RaiseDuePayments(time: $time, raiser: $raiser, serviceAccount: $account);
+		(new \ReflectionMethod($job, 'run'))->invoke($job, null);
+
+		$this->assertSame([], $this->raised);
+	}//end testAnUnavailableServiceAccountEndsTheRunQuietly()
 }//end class

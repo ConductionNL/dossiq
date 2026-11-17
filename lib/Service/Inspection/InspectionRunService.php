@@ -34,7 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Inspection;
 
+use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use RuntimeException;
@@ -45,22 +47,11 @@ use Throwable;
  *
  * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
  */
-class InspectionRunService {
+class InspectionRunService implements InspectionRunServiceInterface {
 	use SearchesObjects;
-
-	/**
-	 * The task kind every run carries.
-	 *
-	 * @var string
-	 */
-	public const KIND = 'inspection';
-
-	/**
-	 * OpenRegister's task lifecycle, resolved by name.
-	 *
-	 * @var string
-	 */
-	public const TASK_SERVICE = 'OCA\\OpenRegister\\Service\\Task\\TaskService';
+	use ReadsLooseValues {
+		looseList as private arrayOrEmpty;
+	}
 
 	/**
 	 * How many runs one case answers.
@@ -118,24 +109,41 @@ class InspectionRunService {
 			throw new RuntimeException(implode(' ', $violations));
 		}
 
+		return $this->completeRun(
+			start: new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor),
+			answers: $answers
+		);
+	}//end submit()
+
+	/**
+	 * Create the inspection task and complete it with the answers.
+	 *
+	 * @param InspectionRunStart               $start   The case, the template snapshot, the submitted payload and the actor.
+	 * @param array<int, array<string, mixed>> $answers The answers, read from the payload and checked.
+	 *
+	 * @return array<string, mixed> The run, as {@see runsForCase()} answers one.
+	 *
+	 * @throws RuntimeException When the OpenRegister task layer is not available.
+	 */
+	private function completeRun(InspectionRunStart $start, array $answers): array {
 		$tasks = $this->settingsService->getOpenRegisterClass(class: self::TASK_SERVICE);
 		if ($tasks === null) {
 			throw new RuntimeException('The OpenRegister task layer is not available');
 		}
 
-		$task = $tasks->create(data: $this->taskData(caseId: $caseId, template: $template, payload: $payload, actor: $actor), actor: $actor);
+		$task = $tasks->create(data: $this->taskData(start: $start), actor: $start->actor);
 		$completed = $tasks->complete(
 			uuid: (string)$task->getUuid(),
-			outcome: $this->answers->outcome(snapshot: $template, answers: $answers),
+			outcome: $this->answers->outcome(snapshot: $start->template, answers: $answers),
 			resultText: null,
-			comment: $this->stringOrNull(value: ($payload['remarks'] ?? null)),
-			actor: $actor,
+			comment: $this->stringOrNull(value: ($start->payload['remarks'] ?? null)),
+			actor: $start->actor,
 			responses: $answers,
 			evidence: $this->answers->evidence(answers: $answers),
 		);
 
 		return $this->asRun(task: $completed->jsonSerialize());
-	}//end submit()
+	}//end completeRun()
 
 	/**
 	 * Every run on a case, newest last.
@@ -190,18 +198,24 @@ class InspectionRunService {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 	 */
 	public function asRun(array $task): array {
-		$responses = ($task['responses'] ?? []);
-		if (is_array($responses) === false) {
-			$responses = [];
-		}
-
-		$metadata = ($task['metadata'] ?? []);
-		if (is_array($metadata) === false) {
-			$metadata = [];
-		}
+		$metadata = $this->arrayOrEmpty(value: ($task['metadata'] ?? []));
 
 		$moment = (string)($task['completedAt'] ?? $metadata['legacyCompletedAt'] ?? $task['created'] ?? '');
 
+		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, metadata: $metadata);
+	}//end asRun()
+
+	/**
+	 * The run's identity, who did it, when and with what result.
+	 *
+	 * @param array<string, mixed> $task   The serialised task.
+	 * @param string               $moment When it was completed.
+	 *
+	 * @return array<string, mixed> The leading fields of the run.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	private function runHead(array $task, string $moment): array {
 		return [
 			'id' => (string)($task['uuid'] ?? ''),
 			'case' => (string)($task['objectUuid'] ?? ''),
@@ -211,6 +225,22 @@ class InspectionRunService {
 			'completedBy' => (string)($task['completedBy'] ?? ''),
 			'inspectionDate' => $moment,
 			'result' => (string)($task['outcome'] ?? ''),
+		];
+	}//end runHead()
+
+	/**
+	 * The run's answers, remarks, location, photos and state.
+	 *
+	 * @param array<string, mixed> $task     The serialised task, with its answers.
+	 * @param array<string, mixed> $metadata The task metadata.
+	 *
+	 * @return array<string, mixed> The trailing fields of the run.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	private function runFindings(array $task, array $metadata): array {
+		$responses = $this->arrayOrEmpty(value: ($task['responses'] ?? []));
+		return [
 			'failedItems' => $this->answers->failedCount(answers: $responses),
 			'items' => array_map(fn (array $answer): array => $this->answers->forPanel(answer: $answer), array_values(array_filter($responses, 'is_array'))),
 			'remarks' => (string)($task['comment'] ?? ''),
@@ -218,19 +248,34 @@ class InspectionRunService {
 			'photos' => ($task['evidence'] ?? []),
 			'state' => (string)($task['state'] ?? ''),
 		];
-	}//end asRun()
+	}//end runFindings()
 
 	/**
 	 * The fields of the run's task.
 	 *
-	 * @param string               $caseId   The case uuid.
-	 * @param array<string, mixed> $template The frozen template.
-	 * @param array<string, mixed> $payload  The request body.
-	 * @param string               $actor    The inspector.
+	 * @param InspectionRunStart $start The case, the frozen template, the request body and the inspector.
 	 *
 	 * @return array<string, mixed> The task fields.
 	 */
-	private function taskData(string $caseId, array $template, array $payload, string $actor): array {
+	private function taskData(InspectionRunStart $start): array {
+		$metadata = $this->metadataOf(payload: $start->payload);
+
+		$data = $this->baseTaskData(start: $start);
+		if ($metadata !== []) {
+			$data['metadata'] = $metadata;
+		}
+
+		return $this->withRegister(data: $data);
+	}//end taskData()
+
+	/**
+	 * The metadata the request body carries, without empty values.
+	 *
+	 * @param array<string, mixed> $payload The request body.
+	 *
+	 * @return array<string, mixed> The metadata.
+	 */
+	private function metadataOf(array $payload): array {
 		$metadata = [];
 		foreach (self::METADATA as $key) {
 			if (array_key_exists($key, $payload) === true && $payload[$key] !== null && $payload[$key] !== '') {
@@ -238,22 +283,40 @@ class InspectionRunService {
 			}
 		}
 
-		$data = [
+		return $metadata;
+	}//end metadataOf()
+
+	/**
+	 * The task fields every run carries.
+	 *
+	 * @param InspectionRunStart $start The case, the frozen template, the request body and the inspector.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function baseTaskData(InspectionRunStart $start): array {
+		$template = $start->template;
+		return [
 			'title' => 'Inspectie: ' . (string)($template['name'] ?? ''),
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
-			'objectUuid' => $caseId,
-			'assignee' => $actor,
+			'objectUuid' => $start->caseId,
+			'assignee' => $start->actor,
 			'state' => 'active',
 			'templateId' => (string)($template['@self']['id'] ?? $template['id'] ?? ''),
 			'templateVersion' => (int)($template['version'] ?? 1),
 			'templateSnapshot' => $template,
-			'startAt' => (string)($payload['inspectionDate'] ?? date(format: 'c')),
+			'startAt' => (string)($start->payload['inspectionDate'] ?? date(format: 'c')),
 		];
-		if ($metadata !== []) {
-			$data['metadata'] = $metadata;
-		}
+	}//end baseTaskData()
 
+	/**
+	 * The task fields with the case's register and schema, when both are configured.
+	 *
+	 * @param array<string, mixed> $data The task fields.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private function withRegister(array $data): array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($register !== '' && $schema !== '') {
@@ -262,7 +325,7 @@ class InspectionRunService {
 		}
 
 		return $data;
-	}//end taskData()
+	}//end withRegister()
 
 	/**
 	 * The template a run is filled against.
@@ -283,21 +346,49 @@ class InspectionRunService {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		$store = [$objects, $register];
+		$template = $this->templateById(store: $store, templateId: $templateId);
+		if ($template !== null) {
+			return $template;
+		}
+
+		return $this->templateFoldedFrom(store: $store, templateId: $templateId);
+	}//end template()
+
+	/**
+	 * The template with this uuid, or null when it is not a template uuid.
+	 *
+	 * @param array{0: object, 1: string} $store      OpenRegister's object service and the register id.
+	 * @param string                      $templateId The template uuid, or an older checklist uuid.
+	 *
+	 * @return array<string, mixed>|null The template.
+	 */
+	private function templateById(array $store, string $templateId): ?array {
 		try {
-			$template = $this->findObjectAsArray(objectService: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
+			$template = $this->findObjectAsArray(objectService: $store[0], register: $store[1], schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
 		} catch (Throwable) {
 			// Not a template uuid; the older-checklist lookup below decides.
 			$template = null;
 		}
 
-		if ($template !== null) {
-			return $template;
-		}
+		return $template;
+	}//end templateById()
 
+	/**
+	 * The template folded from an older checklist with this uuid.
+	 *
+	 * @param array{0: object, 1: string} $store      OpenRegister's object service and the register id.
+	 * @param string                      $templateId The older checklist uuid.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When nothing answers to it.
+	 */
+	private function templateFoldedFrom(array $store, string $templateId): array {
 		foreach (['inspectieChecklist/', 'inspectionChecklist/'] as $prefix) {
 			$found = $this->searchObjectsAsArrays(
-				objectService: $objects,
-				register: $register,
+				objectService: $store[0],
+				register: $store[1],
 				schema: InspectionTemplateMapper::SCHEMA,
 				filters: ['legacyRef' => $prefix . $templateId, '_limit' => 1]
 			);
@@ -307,7 +398,7 @@ class InspectionRunService {
 		}
 
 		throw new RuntimeException('Unknown checklist template: ' . $templateId);
-	}//end template()
+	}//end templateFoldedFrom()
 
 	/**
 	 * A trimmed string, or null when empty.

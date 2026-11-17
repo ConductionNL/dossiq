@@ -31,12 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\MailPartiesReportInterface;
+
 /**
  * The parties of a case's collected mail, counted.
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
-class MailPartiesReport {
+class MailPartiesReport implements MailPartiesReportInterface {
 
 	/**
 	 * Constructor.

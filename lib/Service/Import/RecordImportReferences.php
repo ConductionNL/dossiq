@@ -73,6 +73,19 @@ class RecordImportReferences {
 			schema: (string)$this->settingsService->getConfigValue('case_schema'),
 			filters: ['caseType' => $this->store->idOf(row: $caseType)]
 		);
+
+		return $this->byFormerReference(cases: $cases, application: $application);
+	}//end casesByFormerReference()
+
+	/**
+	 * Case ids keyed by the former reference each case carries for the application.
+	 *
+	 * @param array<int, array<string, mixed>> $cases       The case type's cases.
+	 * @param string                           $application The application the former references belong to.
+	 *
+	 * @return array<string, string> Former reference to case id.
+	 */
+	private function byFormerReference(array $cases, string $application): array {
 		$byKey = [];
 		foreach ($cases as $case) {
 			foreach ((array)($case['formerReferences'] ?? []) as $former) {
@@ -84,7 +97,7 @@ class RecordImportReferences {
 		}
 
 		return $byKey;
-	}//end casesByFormerReference()
+	}//end byFormerReference()
 
 	/**
 	 * The number a record shares with its duplicates, by `dedupeBy`, or ''.
@@ -196,54 +209,105 @@ class RecordImportReferences {
 	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function repoint(object $objectService, array $import, array $oldValues, string $caseId): int {
+		$move = [
+			'objectService' => $objectService,
+			'oldValues' => array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== ''))),
+			'caseId' => $caseId,
+		];
+
 		$moved = 0;
 		foreach ((array)($import['references'] ?? []) as $reference) {
-			$register = (string)($reference['register'] ?? ($import['sourceRegister'] ?? ''));
-			$schema = (string)($reference['schema'] ?? '');
-			$field = (string)($reference['field'] ?? '');
-			if ($schema === '' || $field === '') {
-				continue;
-			}
-
-			$old = array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== '')));
-			if (($reference['list'] ?? false) === true) {
-				$moved += $this->repointLists(objectService: $objectService, where: [$register, $schema, $field], oldValues: $old, caseId: $caseId);
-				continue;
-			}
-
-			foreach ($old as $value) {
-				foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $value]) as $row) {
-					$this->patchObjectAsArray(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						id: $this->store->idOf(row: $row),
-						changes: [$field => $caseId]
-					);
-					$moved++;
-				}
-			}
+			$moved += $this->repointReference(reference: $reference, move: $move + ['import' => $import]);
 		}
 
 		return $moved;
 	}//end repoint()
 
 	/**
+	 * Point the values one `references` entry names at the case.
+	 *
+	 * @param mixed                $reference The `references` entry.
+	 * @param array<string, mixed> $move      The ObjectService, the moved record's id and slug, the case and the
+	 *                                        declaration (`import`).
+	 *
+	 * @return int How many references moved.
+	 *
+	 * @throws Throwable When a referencing record cannot be read or written.
+	 */
+	private function repointReference(mixed $reference, array $move): int {
+		$where = $this->referenceWhere(reference: $reference, import: $move['import']);
+		if ($where === null) {
+			return 0;
+		}
+
+		if (($reference['list'] ?? false) === true) {
+			return $this->repointLists(where: $where, move: $move);
+		}
+
+		return $this->repointRows(where: $where, move: $move);
+	}//end repointReference()
+
+	/**
+	 * The register, schema and field one `references` entry names.
+	 *
+	 * @param mixed                $reference The `references` entry.
+	 * @param array<string, mixed> $import    The declaration.
+	 *
+	 * @return array<int, string>|null Register, schema and field, or null when the schema or field is missing.
+	 */
+	private function referenceWhere(mixed $reference, array $import): array|null {
+		$register = (string)($reference['register'] ?? ($import['sourceRegister'] ?? ''));
+		$schema = (string)($reference['schema'] ?? '');
+		$field = (string)($reference['field'] ?? '');
+		if ($schema === '' || $field === '') {
+			return null;
+		}
+
+		return [$register, $schema, $field];
+	}//end referenceWhere()
+
+	/**
+	 * Point every row whose field holds one of the old values at the case.
+	 *
+	 * @param array<int, string>   $where Register, schema and field.
+	 * @param array<string, mixed> $move  The OpenRegister ObjectService (`objectService`), the moved record's id and
+	 *                                    slug (`oldValues`) and the case (`caseId`).
+	 *
+	 * @return int How many references moved.
+	 *
+	 * @throws Throwable When a referencing record cannot be read or written.
+	 */
+	private function repointRows(array $where, array $move): int {
+		[$register, $schema, $field] = $where;
+		['objectService' => $objectService, 'caseId' => $caseId] = $move;
+		$moved = 0;
+		foreach ($move['oldValues'] as $value) {
+			foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $value]) as $row) {
+				$id = $this->store->idOf(row: $row);
+				$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: [$field => $caseId]);
+				$moved++;
+			}
+		}
+
+		return $moved;
+	}//end repointRows()
+
+	/**
 	 * Replace the moved record's entry in a list of references, keeping the
 	 * other entries and their order. A list cannot be filtered on one of its
 	 * entries, so every row of the schema is read.
 	 *
-	 * @param object             $objectService The OpenRegister ObjectService.
-	 * @param array<int, string> $where         Register, schema and list field.
-	 * @param array<int, string> $oldValues     The moved record's id and slug.
-	 * @param string             $caseId        The case.
+	 * @param array<int, string>   $where Register, schema and list field.
+	 * @param array<string, mixed> $move  The OpenRegister ObjectService (`objectService`), the moved record's id and
+	 *                                    slug (`oldValues`) and the case (`caseId`).
 	 *
 	 * @return int How many rows changed.
 	 *
 	 * @throws Throwable When a row cannot be read or written.
 	 */
-	private function repointLists(object $objectService, array $where, array $oldValues, string $caseId): int {
+	private function repointLists(array $where, array $move): int {
 		[$register, $schema, $field] = $where;
+		['objectService' => $objectService, 'oldValues' => $oldValues] = $move;
 		$moved = 0;
 		foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: []) as $row) {
 			$list = $row[$field] ?? null;
@@ -256,7 +320,7 @@ class RecordImportReferences {
 				register: $register,
 				schema: $schema,
 				id: $this->store->idOf(row: $row),
-				changes: [$field => array_map(fn (mixed $entry): mixed => $this->replaced(entry: $entry, oldValues: $oldValues, caseId: $caseId), $list)]
+				changes: [$field => array_map(fn (mixed $entry): mixed => $this->replaced(entry: $entry, move: $move), $list)]
 			);
 			$moved++;
 		}
@@ -267,15 +331,14 @@ class RecordImportReferences {
 	/**
 	 * One entry of a list of references, the case where it named the moved record.
 	 *
-	 * @param mixed              $entry     The entry.
-	 * @param array<int, string> $oldValues The moved record's id and slug.
-	 * @param string             $caseId    The case.
+	 * @param mixed                $entry The entry.
+	 * @param array<string, mixed> $move  The moved record's id and slug (`oldValues`) and the case (`caseId`).
 	 *
 	 * @return mixed The entry.
 	 */
-	private function replaced(mixed $entry, array $oldValues, string $caseId): mixed {
-		if (in_array($entry, $oldValues, true) === true) {
-			return $caseId;
+	private function replaced(mixed $entry, array $move): mixed {
+		if (in_array($entry, $move['oldValues'], true) === true) {
+			return $move['caseId'];
 		}
 
 		return $entry;

@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Subsidie;
 
+use OCA\Dossiq\Kernel\Contracts\VaststellingServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class VaststellingService {
+class VaststellingService implements VaststellingServiceInterface {
 
 	use SearchesObjects;
 

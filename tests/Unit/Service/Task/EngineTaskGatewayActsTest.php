@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\TaskActorRef;
 use OCA\OpenRegister\Service\Task\TaskFormCompletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -31,6 +32,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  */
 class EngineTaskGatewayActsTest extends TestCase {
 
@@ -105,13 +108,14 @@ class EngineTaskGatewayActsTest extends TestCase {
 			public array $calls = [];
 
 			/**
-			 * @param string      $uuid     The task.
-			 * @param string      $assignee The new assignee.
-			 * @param string|null $actor    Who reassigns.
+			 * @param TaskActorRef $ref      The task and who reassigns.
+			 * @param string       $assignee The new assignee.
 			 *
 			 * @return void
 			 */
-			public function reassign(string $uuid, string $assignee, ?string $actor): void {
+			public function reassign(TaskActorRef $ref, string $assignee): void {
+				$uuid  = $ref->uuid;
+				$actor = $ref->actor;
 				if ($uuid === 'locked') {
 					throw new RuntimeException('task is closed');
 				}

@@ -31,8 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\Support\FilledValue;
+use OCA\Dossiq\Kernel\Contracts\CaseCompletenessInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Support\FilledValue;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -43,7 +44,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
-class CaseCompleteness {
+class CaseCompleteness implements CaseCompletenessInterface {
 
 	/**
 	 * Constructor.
@@ -206,19 +207,25 @@ class CaseCompleteness {
 			return ['items' => []];
 		}
 
-		$readableIds = $this->documentIds(documents: $readable);
+		$evidence = ['case' => $case, 'documents' => $documents, 'readableIds' => $this->documentIds(documents: $readable)];
 
-		$rows    = [];
-		$present = 0;
+		$rows = [];
 		foreach ($items as $item) {
-			$row = $this->tick(item: $item, case: $case, documents: $documents, readableIds: $readableIds);
-			if ($row['present'] === true) {
-				$present++;
-			}
-
-			$rows[] = $row;
+			$rows[] = $this->tick(item: $item, evidence: $evidence);
 		}
 
+		return $this->summaryOf(rows: $rows);
+	}//end check()
+
+	/**
+	 * The ticked items with how many are present, how many are missing and the verdict.
+	 *
+	 * @param array<int, array{key: string, label: string, present: bool, evidence: string|null}> $rows The ticked items.
+	 *
+	 * @return array<string, mixed> `{ items, present, total, missing, verdict }`.
+	 */
+	private function summaryOf(array $rows): array {
+		$present = count(array_filter($rows, static fn (array $row): bool => $row['present'] === true));
 		$total = count($rows);
 
 		return [
@@ -228,7 +235,7 @@ class CaseCompleteness {
 			'missing' => ($total - $present),
 			'verdict' => $this->verdictOf(present: $present, total: $total),
 		];
-	}//end check()
+	}//end summaryOf()
 
 	/**
 	 * The ids of documents.
@@ -265,23 +272,22 @@ class CaseCompleteness {
 	/**
 	 * One item, ticked against the documents and then the case field.
 	 *
-	 * @param array<string, string>             $item        The item.
-	 * @param array<string, mixed>              $case        The case.
-	 * @param array<int, array<string, mixed>>  $documents   Every document of the case.
-	 * @param array<int, string>                $readableIds Ids of the documents the reader may read.
+	 * @param array<string, string> $item     The item.
+	 * @param array<string, mixed>  $evidence The `case`, every document of it (`documents`) and the ids of the
+	 *                                        documents the reader may read (`readableIds`).
 	 *
 	 * @return array{key: string, label: string, present: bool, evidence: string|null}
 	 */
-	private function tick(array $item, array $case, array $documents, array $readableIds): array {
-		$answering = $this->answeringDocuments(item: $item, documents: $documents);
+	private function tick(array $item, array $evidence): array {
+		$answering = $this->answeringDocuments(item: $item, documents: $evidence['documents']);
 		if ($answering !== []) {
 			$row = $this->emptyRow(item: $item);
 			$row['present']  = true;
-			$row['evidence'] = $this->readableName(answering: $answering, readableIds: $readableIds);
+			$row['evidence'] = $this->readableName(answering: $answering, readableIds: $evidence['readableIds']);
 			return $row;
 		}
 
-		return $this->fieldRow(item: $item, case: $case);
+		return $this->fieldRow(item: $item, case: $evidence['case']);
 	}//end tick()
 
 	/**

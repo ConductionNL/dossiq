@@ -39,9 +39,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Advice;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -92,11 +94,11 @@ class AdviceRepository {
 		}
 
 		try {
-			$advice = $objectService->find($adviceId, register: $register, schema: $schema);
+			$advice = $objectService->find($adviceId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load advice: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
@@ -114,29 +116,15 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function findForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+				schemaKey: 'advies_aanvraag_schema',
 				filters: ['case' => $caseId, '_limit' => 200],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch advice for case: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -150,29 +138,15 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function findOpen(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+				schemaKey: 'advies_aanvraag_schema',
 				filters: ['status' => 'requested', '_limit' => 500],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load open advice: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
@@ -191,6 +165,29 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function save(array $update, string $adviceId): array {
+		[$objectService, $register, $schema] = $this->adviceStore();
+
+		try {
+			$advice = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema,
+				id: (string)$adviceId, changes: $update);
+		} catch (Throwable $e) {
+			$this->logTransitionFailed(error: $e);
+			throw new RuntimeException('Could not update advice request');
+		}
+
+		return $this->normalize(result: $advice);
+	}//end save()
+
+	/**
+	 * The object service, register and advice schema advice requests are written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The advice store.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the schema is not configured.
+	 *
+	 * @spec openspec/specs/advice-management/spec.md
+	 */
+	private function adviceStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -203,24 +200,22 @@ class AdviceRepository {
 			throw new RuntimeException('Advice schema is not configured');
 		}
 
-		try {
-			$advice = $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: (string)$adviceId,
-				changes: $update
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to transition advice status: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			throw new RuntimeException('Could not update advice request');
-		}
+		return [$objectService, $register, $schema];
+	}//end adviceStore()
 
-		return $this->normalize(result: $advice);
-	}//end save()
+	/**
+	 * Log an advice write that failed.
+	 *
+	 * @param Throwable $error Why it failed.
+	 *
+	 * @return void
+	 */
+	private function logTransitionFailed(Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: failed to transition advice status: ' . $error->getMessage(),
+			['app' => AppIdentity::APP_ID]
+		);
+	}//end logTransitionFailed()
 
 	/**
 	 * Convert an object/array result to an associative array.

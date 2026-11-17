@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\DelegatesToDossierRegister;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -32,9 +34,12 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
-class CaseRoleVocabulary {
+class CaseRoleVocabulary implements CaseRoleVocabularyInterface {
 
 	use SearchesObjects;
+	use DelegatesToDossierRegister {
+		context as private requireRegister;
+	}
 
 	/**
 	 * How many role types one read takes.
@@ -321,28 +326,4 @@ class CaseRoleVocabulary {
 
 		return $mapper;
 	}//end schemaMapper()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		return $this->dossierRegister->context();
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 }//end class

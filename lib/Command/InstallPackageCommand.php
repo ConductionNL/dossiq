@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
-use OCA\Dossiq\Service\SettingsService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -51,12 +51,12 @@ class InstallPackageCommand extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param PackageInstaller $installer The package installer.
-	 * @param SettingsService  $settings  Resolves the OpenRegister object service.
+	 * @param PackageInstallerInterface $installer The package installer.
+	 * @param SettingsServiceInterface  $settings  Resolves the OpenRegister object service.
 	 */
 	public function __construct(
-		private readonly PackageInstaller $installer,
-		private readonly SettingsService $settings,
+		private readonly PackageInstallerInterface $installer,
+		private readonly SettingsServiceInterface $settings,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -190,11 +190,11 @@ class InstallPackageCommand extends Command {
 	 * The ids the input asks for.
 	 *
 	 * @param InputInterface   $input     The input.
-	 * @param PackageInstaller $installer The installer, for --all.
+	 * @param PackageInstallerInterface $installer The installer, for --all.
 	 *
 	 * @return array<int, string> The ids.
 	 */
-	private function idsToInstall(InputInterface $input, PackageInstaller $installer): array {
+	private function idsToInstall(InputInterface $input, PackageInstallerInterface $installer): array {
 		if ($input->getOption('all') === true) {
 			return array_column($installer->catalogue(), 'id');
 		}
@@ -241,7 +241,7 @@ class InstallPackageCommand extends Command {
 			$run->output->writeln('  ' . $error);
 		}
 
-		return $outcome['status'] === PackageInstaller::INSTALLED || $outcome['status'] === PackageInstaller::CURRENT;
+		return $outcome['status'] === PackageInstallerInterface::INSTALLED || $outcome['status'] === PackageInstallerInterface::CURRENT;
 	}//end installOne()
 
 	/**

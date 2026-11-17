@@ -41,8 +41,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -51,9 +54,15 @@ use RuntimeException;
  *
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-an-outcome-cascade-runs-its-configured-steps-req-lcr-5
  */
-class OutcomeCascade {
+class OutcomeCascade implements OutcomeCascadeInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService {
+		requireObjectService as private objectService;
+	}
+	use ReadsLooseValues {
+		looseText as private text;
+	}
 
 	/**
 	 * The app config key that holds the cascades.
@@ -117,16 +126,29 @@ class OutcomeCascade {
 			throw new InvalidArgumentException("Cascade '$name' has no steps.");
 		}
 
-		$this->guardInputs(name: $name, steps: $steps, inputs: $inputs);
+		$this->guardInputs(name: $name, guarded: ['steps' => $steps, 'inputs' => $inputs]);
 
-		$run = $this->startRun(cascade: $cascade, targetId: $targetId);
-		$run->inputs = $inputs;
-		foreach ($steps as $step) {
-			$this->runStep(run: $run, step: $step);
+		return $this->ranOn(cascade: $cascade, run: ['targetId' => $targetId, 'steps' => $steps, 'inputs' => $inputs]);
+	}//end run()
+
+	/**
+	 * Run every step of the cascade on its target, and answer the target as the steps left it.
+	 *
+	 * @param array<string, mixed>                                                              $cascade The cascade.
+	 * @param array{targetId: string, steps: array<int, mixed>, inputs: array<string, mixed>}   $run     The target, the cascade's steps
+	 *                                                                                                 and the caller's inputs.
+	 *
+	 * @return array<string, mixed> The target.
+	 */
+	private function ranOn(array $cascade, array $run): array {
+		$cascadeRun = $this->startRun(cascade: $cascade, targetId: $run['targetId']);
+		$cascadeRun->inputs = $run['inputs'];
+		foreach ($run['steps'] as $step) {
+			$this->runStep(run: $cascadeRun, step: $step);
 		}
 
-		return $run->target;
-	}//end run()
+		return $cascadeRun->target;
+	}//end ranOn()
 
 	/**
 	 * A run of a cascade on its target, read as it stands now.
@@ -221,8 +243,10 @@ class OutcomeCascade {
 	private function writeTarget(CascadeRun $run, array $set): void {
 		$run->target = ($this->write(
 			schemaKey: (string)$run->cascade['target'],
-			id: $run->targetId,
-			changes: $this->values(values: $set, inputs: $run->inputs)
+			written: [
+				'id' => $run->targetId,
+				'changes' => $this->values(values: $set, inputs: $run->inputs),
+			]
 		) ?? $run->target);
 	}//end writeTarget()
 
@@ -253,7 +277,7 @@ class OutcomeCascade {
 		foreach ($dependents as $dependent) {
 			$id = $this->text(value: ($dependent['@self']['id'] ?? ($dependent['id'] ?? '')));
 			if ($id !== '') {
-				$this->write(schemaKey: $schemaKey, id: $id, changes: $changes);
+				$this->write(schemaKey: $schemaKey, written: ['id' => $id, 'changes' => $changes]);
 			}
 		}
 	}//end setDependents()
@@ -296,15 +320,30 @@ class OutcomeCascade {
 	/**
 	 * Refuse before writing when the steps ask for an input the caller did not give.
 	 *
-	 * @param string               $name   The cascade, for the message.
-	 * @param array<int, mixed>    $steps  The steps.
-	 * @param array<string, mixed> $inputs The caller's values.
+	 * @param string                                                        $name    The cascade, for the message.
+	 * @param array{steps: array<int, mixed>, inputs: array<string, mixed>} $guarded `steps` the steps; `inputs` the caller's values.
 	 *
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When an input is missing or not a scalar.
 	 */
-	private function guardInputs(string $name, array $steps, array $inputs): void {
+	private function guardInputs(string $name, array $guarded): void {
+		[$steps, $inputs] = [$guarded['steps'], $guarded['inputs']];
+		foreach (array_unique(self::askedInputs(steps: $steps)) as $input) {
+			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
+				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
+			}
+		}
+	}//end guardInputs()
+
+	/**
+	 * Every input the steps ask for, by `{"input": name}`, possibly repeated.
+	 *
+	 * @param array<int, mixed> $steps The steps.
+	 *
+	 * @return array<int, string> The input names.
+	 */
+	private static function askedInputs(array $steps): array {
 		$asked = [];
 		array_walk_recursive(
 			$steps,
@@ -315,12 +354,8 @@ class OutcomeCascade {
 			}
 		);
 
-		foreach (array_unique($asked) as $input) {
-			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
-				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
-			}
-		}
-	}//end guardInputs()
+		return $asked;
+	}//end askedInputs()
 
 	/**
 	 * Resolve `{"input": name}` values against the caller's inputs.
@@ -392,13 +427,13 @@ class OutcomeCascade {
 	/**
 	 * Write fields onto one object.
 	 *
-	 * @param string               $schemaKey Config key of its schema.
-	 * @param string               $id        Its uuid.
-	 * @param array<string, mixed> $changes   The fields.
+	 * @param string                                           $schemaKey Config key of its schema.
+	 * @param array{id: string, changes: array<string, mixed>} $written   `id` its uuid; `changes` the fields.
 	 *
 	 * @return array<string, mixed>|null The object after the write.
 	 */
-	private function write(string $schemaKey, string $id, array $changes): ?array {
+	private function write(string $schemaKey, array $written): ?array {
+		[$id, $changes] = [$written['id'], $written['changes']];
 		return $this->patchObjectAsArray(
 			objectService: $this->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
@@ -407,22 +442,6 @@ class OutcomeCascade {
 			changes: $changes
 		);
 	}//end write()
-
-	/**
-	 * The object service, or a refusal when OpenRegister is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
 
 	/**
 	 * The schema behind a config key, or a refusal naming the key.
@@ -445,19 +464,4 @@ class OutcomeCascade {
 
 		return $schema;
 	}//end schema()
-
-	/**
-	 * A trimmed string, or '' for anything else.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The string.
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class

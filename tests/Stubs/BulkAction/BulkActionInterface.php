@@ -1,27 +1,28 @@
 <?php
 
 /**
- * Stub of OpenRegister's BulkActionInterface.
+ * A bulk action: one named thing an operator can do to many objects at once.
  *
- * Dossiq's four case bulk actions IMPLEMENT this interface, so without the
- * stub they cannot be loaded at all in a unit test on a host where
- * OpenRegister is absent. Mirrors openregister
- * `lib/BulkAction/BulkActionInterface.php` verbatim; if that contract changes,
- * this changes with it.
+ * An action declares what it needs rather than a controller branching on it
+ * (ADR-031). It says whether a justification is required, which guards the
+ * engine must enforce before a single object is touched, and what it would do
+ * to one object. A leaf app registers its own action on the
+ * {@see \OCA\OpenRegister\Event\BulkActionRegistrationEvent} and writes no
+ * loop of its own (ADR-022).
  *
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
- *
- * @category Stub
+ * @category BulkAction
  * @package  OCA\OpenRegister\BulkAction
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
  * @version GIT: <git-id>
  *
- * @link https://conduction.nl
+ * @link https://www.OpenRegister.app
  */
 
 declare(strict_types=1);
@@ -31,11 +32,21 @@ namespace OCA\OpenRegister\BulkAction;
 
 /**
  * The contract every bulk action implements.
+ *
+ * This base declares no `apply()`, so an action written for either published
+ * signature loads. Implement {@see StepBulkActionInterface} (one `BulkStep`)
+ * for new actions; actions that still take
+ * `(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null)`
+ * keep working and may say so with {@see LegacyBulkActionInterface}. The job
+ * executor calls either form through {@see BulkActionInvoker}.
  */
 interface BulkActionInterface {
 
 	/**
 	 * Refuse a selection that spans more than one schema version.
+	 *
+	 * Right for an attribute write, wrong for a redistribution, which is why
+	 * the guard belongs to the action and not to the engine (D-6).
 	 *
 	 * @var string
 	 */
@@ -63,7 +74,7 @@ interface BulkActionInterface {
 	public function getDescription(): string;
 
 	/**
-	 * Whether the job may not commit without a written reason.
+	 * Whether the job may not commit without a written reason (D-7).
 	 *
 	 * @return bool True when a justification is required.
 	 */
@@ -86,13 +97,4 @@ interface BulkActionInterface {
 	 * @throws \InvalidArgumentException When the parameters do not make sense.
 	 */
 	public function validateParameters(array $parameters): void;
-
-	/**
-	 * What the action would do, or does, to one object.
-	 *
-	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
-	 *
-	 * @return BulkActionResult What happened, or what would happen.
-	 */
-	public function apply(BulkStep $step): BulkActionResult;
 }//end interface
