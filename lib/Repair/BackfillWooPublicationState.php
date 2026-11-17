@@ -31,8 +31,8 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Publication\PublicationResultLink;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use OCP\Migration\IOutput;

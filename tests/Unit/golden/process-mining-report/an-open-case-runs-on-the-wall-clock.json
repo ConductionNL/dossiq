@@ -51,6 +51,20 @@
                         "score": "<n>"
                     }
                 ],
+                "dwellHeatmap": {
+                    "columns": [
+                        "2026-W10"
+                    ],
+                    "rows": [
+                        {
+                            "statusId": "st-in",
+                            "label": "Intake",
+                            "values": [
+                                "<n>"
+                            ]
+                        }
+                    ]
+                },
                 "transitionMatrix": [],
                 "reworkPercent": "<n>",
                 "transitionCount": "<n>"

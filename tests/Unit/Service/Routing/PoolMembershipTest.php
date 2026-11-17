@@ -87,4 +87,13 @@ class PoolMembershipTest extends TestCase {
 		$this->assertSame(['a', 'b'], array_slice($rotation, 0, 2));
 		$this->assertCount(21, $rotation);
 	}//end testARotationCapsAMembersShare()
+
+	/**
+	 * A pool with nobody in it turns through nobody.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyPoolHasAnEmptyRotation(): void {
+		$this->assertSame(expected: [], actual: (new PoolMembership())->rotation(members: []));
+	}//end testAnEmptyPoolHasAnEmptyRotation()
 }//end class

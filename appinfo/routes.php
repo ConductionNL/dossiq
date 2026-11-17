@@ -449,13 +449,6 @@ $extra = [
         // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
-        // a-case-note-reaches-the-neighbouring-register: sending ONE note to a
-        // neighbouring ZGW register, as a zaakinformatieobject of a reserved
-        // type. A deliberate act rather than a hook on save, because note
-        // storage is OpenRegister's entirely and it dispatches no note-saved
-        // event dossiq could listen for; `notes#mention` above is called the
-        // same way, after the note is already stored.
-    ['name' => 'notes#push', 'url' => '/api/cases/{caseId}/notes/push', 'verb' => 'POST'],
 
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
@@ -917,6 +910,9 @@ $extra = [
     ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
     ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
+    // The person a form named, such as a second signer, signs or refuses from the portal
+    // (obligations-placed-at-intake); portaliq forwards with a signed X-Portal-Subject assertion.
+    ['name' => 'portalObligation#settle', 'url' => '/api/portal/obligations/settle', 'verb' => 'POST'],
     // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],

@@ -123,4 +123,26 @@ class CaseStatusRecordsTest extends TestCase {
 
 		$this->assertSame(['stored'], array_column($result['d'], 'statusType'));
 	}//end testRecordsWinOverTheHistory()
+
+	/**
+	 * Records without a usable timestamp keep the order they arrived in.
+	 *
+	 * A missing key, an empty string and a non-string value all read as "no
+	 * timestamp", and a comparison involving one never reorders the pair.
+	 *
+	 * @return void
+	 */
+	public function testRecordsWithoutATimestampKeepTheirPlace(): void {
+		$result = $this->records->byCase(
+			records: [
+				['case' => 'e', 'statusType' => 'none'],
+				['case' => 'e', 'statusType' => 'later', 'createdAt' => '2026-03-05T00:00:00Z'],
+				['case' => 'e', 'statusType' => 'empty', 'createdAt' => ''],
+				['case' => 'e', 'statusType' => 'number', '@self' => ['created' => 20260301]],
+			],
+			cases: ['e' => ['id' => 'e']]
+		);
+
+		$this->assertSame(['none', 'later', 'empty', 'number'], array_column($result['e'], 'statusType'));
+	}//end testRecordsWithoutATimestampKeepTheirPlace()
 }//end class

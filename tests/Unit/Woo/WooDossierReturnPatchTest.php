@@ -3,7 +3,7 @@
 /**
  * The decision's return to its dossier through OpenRegister's PATCH seam, and a failed write.
  *
- * WooDossierReturnTest runs the return against a store that only saves whole
+ * SourceCollectionReturnTest runs the return against a store that only saves whole
  * objects. OpenRegister also offers patchObject(), and when it does the return
  * must use it, unscoped, writing ONLY the collection's items, so a share or a
  * note another app wrote meanwhile is not saved away. A write that fails is a
@@ -20,7 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -32,7 +32,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 /**
  * The PATCH path and the failed write.
  *
- * @covers \OCA\Dossiq\Woo\WooDossierReturn
+ * @covers \OCA\Dossiq\Service\Publication\SourceCollectionReturn
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  */
 class WooDossierReturnPatchTest extends TestCase {
@@ -123,9 +123,9 @@ class WooDossierReturnPatchTest extends TestCase {
 	 * @param object          $objectService The object service.
 	 * @param LoggerInterface $logger        The logger.
 	 *
-	 * @return WooDossierReturn
+	 * @return SourceCollectionReturn
 	 */
-	private function returnOver(object $objectService, LoggerInterface $logger): WooDossierReturn {
+	private function returnOver(object $objectService, LoggerInterface $logger): SourceCollectionReturn {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
@@ -134,7 +134,7 @@ class WooDossierReturnPatchTest extends TestCase {
 		$random = $this->createMock(ISecureRandom::class);
 		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
 
-		return new WooDossierReturn(settingsService: $settings, random: $random, logger: $logger);
+		return new SourceCollectionReturn(settingsService: $settings, random: $random, logger: $logger);
 	}//end returnOver()
 
 	/**
@@ -166,7 +166,7 @@ class WooDossierReturnPatchTest extends TestCase {
 		$this->assertSame(['items'], array_keys($patch['data']));
 		$this->assertSame(['pub-a', 'pub-b'], array_column($patch['data']['items'], 'publication'));
 		$this->assertSame('01234567-89ab-4def-8123-456789abcdef', $patch['data']['items'][1]['id']);
-		$this->assertSame(WooDossierReturn::ADDED_BY, $patch['data']['items'][1]['addedBy']);
+		$this->assertSame(SourceCollectionReturn::ADDED_BY, $patch['data']['items'][1]['addedBy']);
 		$this->assertArrayNotHasKey('attachment', $patch['data']['items'][1]);
 	}//end testThePatchWritesOnlyTheItemsUnscoped()
 
@@ -178,7 +178,7 @@ class WooDossierReturnPatchTest extends TestCase {
 	public function testAFailedWriteIsLoggedNotThrown(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
-			'WooDossierReturn: the decision could not be added to its source dossier',
+			'SourceCollectionReturn: the decision could not be added to its source dossier',
 			['collection' => self::COLLECTION, 'publication' => 'pub-b', 'error' => 'schema refused']
 		);
 

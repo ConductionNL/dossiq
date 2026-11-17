@@ -37,13 +37,13 @@ use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSourcesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
 use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooContractRegistrar;
 use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
-use OCA\Dossiq\Woo\WooDossierReturn;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooReportReadLog;
@@ -77,7 +77,7 @@ class WooContractRegistrarTest extends TestCase {
 				[WooCollectionQueriesInterface::class, WooCollectionQueries::class],
 				[WooDeliveredSetVerifierInterface::class, WooDeliveredSetVerifier::class],
 				[WooDeliveredSetWriterInterface::class, WooDeliveredSetWriter::class],
-				[WooDossierReturnInterface::class, WooDossierReturn::class],
+				[WooDossierReturnInterface::class, SourceCollectionReturn::class],
 				[WooGatherAddInterface::class, WooGatherAdd::class],
 				[WooReceivedAnswersInterface::class, WooReceivedAnswers::class],
 				[WooRecordedDeliveryInterface::class, WooDeliveredSetWriter::class],
