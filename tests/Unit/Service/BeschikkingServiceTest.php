@@ -372,7 +372,10 @@ class BeschikkingServiceTest extends TestCase {
 			 *
 			 * @return int The reserved value.
 			 */
-			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+			public function reserveNext(object $sequence): int {
+				$registerId = $sequence->registerId;
+				$schemaId = $sequence->schemaId;
+				$scopeKey = $sequence->scopeKey;
 				$value = ($this->next[$scopeKey] ?? 1);
 				$this->next[$scopeKey] = ($value + 1);
 

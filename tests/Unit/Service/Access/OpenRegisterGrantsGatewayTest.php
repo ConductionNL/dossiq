@@ -161,7 +161,11 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 			 *
 			 * @return array<string, mixed> Never returns.
 			 */
-			public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): array {
+			public function provenanceFor(object $request): array {
+				$schema = $request->schema;
+				$actions = $request->actions;
+				$userId = $request->userId;
+				$object = $request->object;
 				throw new RuntimeException('the rbac tables are unreachable');
 			}
 		};
@@ -229,7 +233,11 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The provenance.
 			 */
-			public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): array {
+			public function provenanceFor(object $request): array {
+				$schema = $request->schema;
+				$actions = $request->actions;
+				$userId = $request->userId;
+				$object = $request->object;
 				return ['update' => $this->record];
 			}
 		};
@@ -317,7 +325,11 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The provenance.
 				 */
-				public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): array {
+				public function provenanceFor(object $request): array {
+					$schema = $request->schema;
+					$actions = $request->actions;
+					$userId = $request->userId;
+					$object = $request->object;
 					return ['update' => ['action' => 'update', 'granted' => $this->granted, 'source' => 'role']];
 				}
 			};

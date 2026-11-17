@@ -73,15 +73,14 @@ final class CalFakeAccessLinkService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function mint(
-		string $userId,
-		string $subjectType,
-		string $subjectId,
-		array $capabilities = [],
-		?string $expiresAt = null,
-		?string $password = null,
-		?string $label = null,
-	): array {
+	public function mint(object $request): array {
+		$userId = $request->minter;
+		$subjectType = $request->subjectType;
+		$subjectId = $request->subjectId;
+		$capabilities = $request->terms->capabilities;
+		$expiresAt = $request->terms->expiresAt;
+		$password = $request->terms->password;
+		$label = $request->terms->label;
 		if ($this->throwOnMint === true) {
 			throw new \RuntimeException('no link for you');
 		}

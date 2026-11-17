@@ -88,7 +88,11 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return mixed The dictated answer.
 			 */
-			public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): mixed {
+			public function provenanceFor(object $request): mixed {
+				$schema = $request->schema;
+				$actions = $request->actions;
+				$userId = $request->userId;
+				$object = $request->object;
 				$this->asked[] = compact('schema', 'actions', 'userId', 'object');
 				return $this->answer;
 			}
