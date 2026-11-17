@@ -2,50 +2,97 @@ publiccodeYmlVersion: "0.4"
 
 name: Dossiq
 url: "https://github.com/ConductionNL/dossiq"
-softwareVersion: "0.2.2"
-releaseDate: "2026-05-26"
+landingURL: "https://apps.nextcloud.com/apps/dossiq"
+roadmap: "https://github.com/ConductionNL/dossiq/blob/development/openspec/ROADMAP.md"
+logo: img/app-store.svg
+softwareVersion: "0.4.0"
+releaseDate: "2026-09-06"
 developmentStatus: beta
-softwareType: "standalone/other"
+softwareType: "addon"
 
 platforms:
-  - nextcloud
+  - web
 
 categories:
   - workflow-management
   - business-process-management
+  - document-management
+
+dependsOn:
+  open:
+    - name: Nextcloud
+      versionMin: "32"
+      versionMax: "35"
+    - name: OpenRegister
+
+intendedAudience:
+  countries:
+    - nl
+  scope:
+    - government
+    - local-authorities
 
 description:
   en:
     shortDescription: >
-      Business process and workflow management for Nextcloud.
+      Case management with configurable workflows, deadlines and decisions.
     longDescription: >
-      Dossiq is a business process and workflow management application for Nextcloud.
-      It enables organisations to model, execute, and monitor business processes and
-      workflows. Built on Open Register, it integrates with the Nextcloud ecosystem
-      and supports process automation and standardisation for both government and
-      commercial organisations.
+      Dossiq brings structured case management to Nextcloud. Define case
+      types, track progress through status lifecycles, manage deadlines and
+      record formal decisions. Case types set the statuses, deadlines,
+      required documents and extra fields each kind of case needs, and
+      participants get a role on every case. Dutch government case work is
+      supported with process templates, objections and appeals, disclosure
+      requests and deadline monitoring. Dossiq stores its data in
+      OpenRegister.
+      Dossiq is available in the Nextcloud App Store at
+      https://apps.nextcloud.com/apps/dossiq.
       Conduction maintains this component within the Nextcloud ISV programme.
     features:
-      - Business process modelling and execution
-      - Workflow automation
-      - Process monitoring and reporting
-      - Integration with Nextcloud collaboration tools
+      - Configurable case types with statuses, deadlines, documents and fields
+      - Status lifecycle with a visual timeline and validation rules
+      - Automatic deadlines with a countdown and an overdue alert
+      - Tasks and formal decisions with their outcome
+      - Participant roles for handler, advisor and decision maker
+      - Document checklists per stage with upload verification
+      - Sub-cases for breaking up a complex case
+      - Eight confidentiality levels, defaulted from the case type
+      - My Work dashboard with assigned cases and open tasks
+      - Workflow board to move a case between statuses
+    screenshots:
+      - img/screenshot-dashboard.png
+      - img/screenshot-cases.png
+      - img/screenshot-admin.png
 
   nl:
     shortDescription: >
-      Bedrijfsproces- en workflowbeheer voor Nextcloud.
+      Zaakafhandeling met configureerbare workflows, deadlines en besluiten.
     longDescription: >
-      Dossiq is een bedrijfsprocesbeheers- en workflowtoepassing voor Nextcloud.
-      Het stelt organisaties in staat bedrijfsprocessen en workflows te modelleren,
-      uit te voeren en te monitoren. Gebouwd op Open Register integreert het met het
-      Nextcloud-ecosysteem en ondersteunt procesautomatisering en -standaardisatie
-      voor zowel overheids- als commerciële organisaties.
+      Dossiq brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer
+      zaaktypen, volg de voortgang via statuslifecycles, beheer deadlines en
+      leg formele besluiten vast. Een zaaktype bepaalt de statussen,
+      deadlines, verplichte documenten en extra velden die een zaak nodig
+      heeft, en deelnemers krijgen een rol op elke zaak. Voor de Nederlandse
+      overheid zijn er processjablonen, bezwaar en beroep, Woo-verzoeken en
+      termijnbewaking. Dossiq slaat zijn gegevens op in OpenRegister.
+      Dossiq is beschikbaar in de Nextcloud App Store op
+      https://apps.nextcloud.com/apps/dossiq.
       Conduction onderhoudt dit component binnen het Nextcloud ISV-programma.
     features:
-      - Bedrijfsprocessen modelleren en uitvoeren
-      - Workflowautomatisering
-      - Procesmonitoring en rapportage
-      - Integratie met Nextcloud-samenwerkingstools
+      - Configureerbare zaaktypen met statussen, deadlines, documenten en velden
+      - Statuslifecycle met een visuele tijdlijn en validatieregels
+      - Automatische deadlines met afteltelling en melding bij overschrijding
+      - Taken en formele besluiten met hun uitkomst
+      - Deelnemersrollen voor behandelaar, adviseur en beslisser
+      - Documentchecklists per fase met uploadverificatie
+      - Subzaken om een complexe zaak op te splitsen
+      - Acht vertrouwelijkheidsniveaus, standaard vanuit het zaaktype
+      - Mijn Werk-overzicht met toegewezen zaken en openstaande taken
+      - Werkbord om een zaak tussen statussen te verplaatsen
+    screenshots:
+      - img/screenshot-dashboard.png
+      - img/screenshot-cases.png
+      - img/screenshot-admin.png
 
 legal:
   license: EUPL-1.2
@@ -67,9 +114,41 @@ maintenance:
 localisation:
   localisationReady: true
   availableLanguages:
-    - nl
+    - be
+    - bg
+    - bs
+    - ca
+    - cs
+    - da
+    - de
+    - el
     - en
-
-# Common Ground layer (nl.vng profile), as a standard supports entry.
-supports:
-  - id: https://commonground.nl/cms/view/54476261/5-lagen-model#process
+    - en-US
+    - es
+    - et
+    - fi
+    - fr
+    - ga
+    - hr
+    - hu
+    - is
+    - it
+    - lb
+    - lt
+    - lv
+    - mk
+    - mt
+    - nb
+    - nl
+    - pl
+    - pt
+    - rm
+    - ro
+    - ru
+    - sk
+    - sl
+    - sq
+    - sr
+    - sv
+    - tr
+    - uk
