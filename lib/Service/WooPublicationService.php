@@ -40,12 +40,12 @@ use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -60,7 +60,7 @@ use RuntimeException;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the threshold. The
  *   last is NothingToDisclose (decision D2), an optional collaborator the container
- *   wires like PagesSeen and WooDossierReturn beside it, so a publish with nothing
+ *   wires like PagesSeen and SourceCollectionReturn beside it, so a publish with nothing
  *   to disclose by record publishes the decision alone. Splitting the publish
  *   step to save one class would put the refusal and its exception in two places.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten, for the same reason: four optional
