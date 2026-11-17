@@ -209,7 +209,7 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	 *
 	 * @param array<int, string> $identifiers The case type identifiers.
 	 *
-	 * @return array<string, array{id: string, title: string}> The case types found.
+	 * @return array<string, array{id: string, title: string, description?: string}> The case types found.
 	 *
 	 * @spec openspec/specs/case-lists/spec.md
 	 */
@@ -222,6 +222,9 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 		foreach ($this->currentCaseTypes() as $row) {
 			if ($row['identifier'] !== '' && in_array($row['identifier'], $identifiers, true) === true) {
 				$found[$row['identifier']] = ['id' => $row['id'], 'title' => $row['title']];
+				if ($row['description'] !== '') {
+					$found[$row['identifier']]['description'] = $row['description'];
+				}
 			}
 		}
 
@@ -231,7 +234,7 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	/**
 	 * The current visible case types with their handling teams, sorted by title.
 	 *
-	 * @return array<int, array{id: string, title: string, identifier: string, icon: string, teams: array<int, string>}> The case types.
+	 * @return array<int, array{id: string, title: string, identifier: string, icon: string, description: string, teams: array<int, string>}> The case types.
 	 *
 	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44

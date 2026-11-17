@@ -99,6 +99,34 @@ class CaseTypeMenuEntryTest extends TestCase {
 	}//end testThePublicRow()
 
 	/**
+	 * An entry reads the description for the reader, trimmed, and the public
+	 * row carries it only when there is one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	public function testTheDescriptionIsReadAndCarriedWhenPresent(): void {
+		$entries = $this->entries();
+
+		$entry = $entries->entry(
+			row: ['title' => 'Kapvergunning', 'description' => ['nl' => ' Een boom kappen ', 'en' => 'Felling a tree']],
+			uuid: 'u-1'
+		);
+		$this->assertSame(expected: 'Een boom kappen', actual: $entry['description']);
+		$this->assertSame(expected: '', actual: $entries->entry(row: ['title' => 'Kap'], uuid: 'u-2')['description']);
+
+		$this->assertSame(
+			expected: ['id' => 'a', 'title' => 'A', 'description' => 'Een boom kappen'],
+			actual: $entries->publicRow(row: ['id' => 'a', 'title' => 'A', 'icon' => '', 'description' => 'Een boom kappen'])
+		);
+		$this->assertSame(
+			expected: ['id' => 'b', 'title' => 'B'],
+			actual: $entries->publicRow(row: ['id' => 'b', 'title' => 'B', 'icon' => '', 'description' => ''])
+		);
+	}//end testTheDescriptionIsReadAndCarriedWhenPresent()
+
+	/**
 	 * The uuid is the first usable of `uuid`, `id` and `@self.id`; an integer is text.
 	 *
 	 * @return void
