@@ -85,7 +85,7 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "^7.22.9",
+    "@babel/core": "^7.29.13",
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
     "@nextcloud/browserslist-config": "^3.0.1",
     "@nextcloud/eslint-config": "^9.0.1",
@@ -103,7 +103,7 @@
     "css-loader": "~7.1.1",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
-    "jsdom": "^30.0.1",
+    "jsdom": "^31.0.1",
     "node-polyfill-webpack-plugin": "4.0.0",
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.9",
