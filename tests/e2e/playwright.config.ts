@@ -84,14 +84,17 @@ const IGNORED = [
  * `demo-data-setup-step` records a setup decision and can install the demo
  * dataset; `integrations-page` POSTs to `/api/settings`; `case-type-edit-and-setup`
  * drives the setup wizard; `demo-caseload` reads the demo dataset and is
- * meaningless if another worker is mid-install. Each of these is either a
- * writer of instance state or a reader that a writer can invalidate.
+ * meaningless if another worker is mid-install; `bezwaar-beroep-package`
+ * installs a case definition package, whose case types every case-type list
+ * then shows. Each of these is either a writer of instance state or a reader
+ * that a writer can invalidate.
  */
 const INSTANCE_MUTATING = [
 	'**/spec-coverage/demo-data-setup-step.spec.ts',
 	'**/integrations-page.spec.ts',
 	'**/case-type-edit-and-setup.spec.ts',
 	'**/demo-caseload.spec.ts',
+	'**/bezwaar-beroep-package.spec.ts',
 ]
 
 /**
