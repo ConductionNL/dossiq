@@ -237,7 +237,13 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		}
 
 		$origin = (new RowOrigins())->originFor(isOwn: true);
-		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(row: $row, origin: $origin, ancestor: $own), array_values($rows)));
+		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(
+			row: $row,
+			tagging: [
+				'origin' => $origin,
+				'ancestor' => $own,
+			]
+		), array_values($rows)));
 	}//end ownLifecycle()
 
 	/**
@@ -384,9 +390,21 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 			$title = $this->titleOf(caseTypeId: $caseTypeId);
 		}
 
+		return $this->cycleNames(title: $title, ids: [$caseTypeId, $parentCaseTypeId]);
+	}//end cycleFor()
+
+	/**
+	 * The titles from the type round its parent chain back to itself.
+	 *
+	 * @param string                      $title The title the type is named by.
+	 * @param array{0: string, 1: string} $ids   The type being saved, and the parent it wants.
+	 *
+	 * @return array<int, string> The titles of the loop.
+	 */
+	private function cycleNames(string $title, array $ids): array {
 		$names = [$title];
-		foreach ($this->chainFor(caseTypeId: $parentCaseTypeId) as $ancestor) {
-			if ($this->store->rowId(row: $ancestor) === trim($caseTypeId)) {
+		foreach ($this->chainFor(caseTypeId: $ids[1]) as $ancestor) {
+			if ($this->store->rowId(row: $ancestor) === trim($ids[0])) {
 				// The loop closes on the type itself: name it by the title it
 				// is being saved with, not by the stored one.
 				$names[] = $title;
@@ -402,7 +420,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		}
 
 		return $names;
-	}//end cycleFor()
+	}//end cycleNames()
 
 	/**
 	 * Rows of one schema for the whole chain, the nearest declaration winning.
@@ -437,8 +455,10 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 				$key    = $this->mergeKey(row: $row);
 				$tagged = $this->tag(
 					row: $row,
-					origin: $origin,
-					ancestor: $ancestor
+					tagging: [
+						'origin' => $origin,
+						'ancestor' => $ancestor,
+					]
 				);
 				$merged[$key] = $origins->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
@@ -463,7 +483,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		foreach ($this->store->sharedRows(schemaKey: $schemaKey) as $row) {
 			$key = $this->mergeKey(row: $row);
 			if (isset($merged[$key]) === false) {
-				$merged[$key] = $this->tag(row: $row, origin: self::ORIGIN_SHARED, ancestor: []);
+				$merged[$key] = $this->tag(row: $row, tagging: ['origin' => self::ORIGIN_SHARED, 'ancestor' => []]);
 			}
 		}
 
@@ -473,15 +493,16 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	/**
 	 * Stamp a row with where it came from.
 	 *
-	 * @param array<string, mixed> $row      The row.
-	 * @param string               $origin   own, inherited or shared.
-	 * @param array<string, mixed> $ancestor The case type it was declared on.
+	 * @param array<string, mixed>                                  $row     The row.
+	 * @param array{origin: string, ancestor: array<string, mixed>} $tagging `origin` own, inherited or shared; `ancestor` the case type it was
+	 *                                                                       declared on.
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function tag(array $row, string $origin, array $ancestor): array {
+	private function tag(array $row, array $tagging): array {
+		[$origin, $ancestor] = [$tagging['origin'], $tagging['ancestor']];
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
 		$row['originCaseTypeTitle'] = $this->text->textOf(value: ($ancestor['title'] ?? null));

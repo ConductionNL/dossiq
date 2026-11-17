@@ -43,7 +43,7 @@ class ReportViews {
 	 *
 	 * @var string[]
 	 */
-	public const VIEWS = ['summary', 'dwell', 'throughput', 'bottlenecks', 'byAssignee'];
+	public const VIEWS = ['summary', 'dwell', 'throughput', 'bottlenecks', 'byAssignee', 'heatmap'];
 
 	/**
 	 * Rows the bottleneck ranking keeps.
@@ -102,6 +102,7 @@ class ReportViews {
 				'dwell' => $this->dwell(rows: ($focused['dwellTime'] ?? [])),
 				'throughput' => array_values(($report['throughputTrend'] ?? [])),
 				'bottlenecks' => $this->bottlenecks(caseTypes: $caseTypes, limit: self::BOTTLENECK_LIMIT),
+				'heatmap' => ($focused['dwellHeatmap'] ?? ['columns' => [], 'rows' => []]),
 				default => $this->byAssignee(rows: ($focused['dwellByAssignee'] ?? [])),
 			};
 		}

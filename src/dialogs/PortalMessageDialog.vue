@@ -60,8 +60,9 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openableDialog } from '../mixins/openable.js'
 import { logContactMoment } from '../services/pipelinqCaseApi.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The handler writes to the applicant of a case, in the portal.
@@ -114,15 +115,9 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialogResolved, openableDialog],
+
 	props: {
-		/**
-		 * The case the message is about. May arrive as the unresolved
-		 * `@objectId` token: `open-modal` forwards props verbatim, so
-		 * `resolvedCaseId` reads the route then.
-		 */
-		caseId: { type: String, default: '' },
-		/** Whether the dialog is showing. */
-		open: { type: Boolean, default: false },
 		/** The subject of the message being answered, or '' for a new message. */
 		subject: { type: String, default: '' },
 		/** A reply already written elsewhere (the case's conversation thread), to start the message with. */
@@ -143,27 +138,6 @@ export default {
 			sending: false,
 			error: '',
 		}
-	},
-
-	computed: {
-		/**
-		 * The case id, from the prop or else from the route.
-		 *
-		 * @return {string} The case id, or ''.
-		 * @spec openspec/specs/portal-contribution/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
-		/**
-		 * Whether the dialog is on screen.
-		 *
-		 * @return {boolean}
-		 */
-		isOpen() {
-			return this.open === true
-		},
 	},
 
 	watch: {

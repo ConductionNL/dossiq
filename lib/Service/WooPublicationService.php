@@ -40,13 +40,13 @@ use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Service\Publication\CasePublicationState;
-use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -60,7 +60,7 @@ use RuntimeException;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the threshold. The
  *   last is NothingToDisclose (decision D2), an optional collaborator the container
- *   wires like PagesSeen and WooDossierReturn beside it, so a publish with nothing
+ *   wires like PagesSeen and SourceCollectionReturn beside it, so a publish with nothing
  *   to disclose by record publishes the decision alone. Splitting the publish
  *   step to save one class would put the refusal and its exception in two places.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten, for the same reason: four optional
@@ -125,7 +125,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 * @param WooCategoryMapper $categoryMapper DIWOO informatiecategorie mapper.
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
-	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
+	 * @param WooDossierReturnInterface|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param CasePublicationState|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocumentsInterface|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; publishing waits for the required ones.
@@ -138,7 +138,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		private readonly WooCategoryMapper $categoryMapper,
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
-		private readonly ?WooDossierReturn $dossierReturn = null,
+		private readonly ?WooDossierReturnInterface $dossierReturn = null,
 		?CasePublicationState $caseLedger = null,
 		?WooCaseDocumentsInterface $caseDocuments = null,
 		private readonly ?PagesSeenInterface $pagesSeen = null,

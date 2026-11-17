@@ -52,7 +52,7 @@
         "digest": "30aa210ecb3ff7ef763a8ba27c22bb11c2bc18f27c3d637c8c03805250b9c934"
     },
     "lib/Settings/dossiq_mock_register.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/dossiq_mock_register.json::besluitinformatieobject": {
@@ -796,7 +796,7 @@
         "digest": "8ed219dd41bbb7124129e1866a7ad3e851225c971b90f2299f61254109ceecd3"
     },
     "lib/Settings/dossiq_register.json::obligation": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "4c79ddb65d2cd215f5534c584f88c0eab55df25451253f52118249b1b7992107"
     },
     "lib/Settings/dossiq_register.json::partnerOrganization": {
@@ -1777,6 +1777,14 @@
     },
     "lib/Settings/register.d/99-case-intake-identification.json::case": {
         "version": "1.59.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-intake-obligations.json::case": {
+        "version": "1.61.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-intake-obligations.json::caseType": {
+        "version": "1.47.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-last-activity-at.json::case": {

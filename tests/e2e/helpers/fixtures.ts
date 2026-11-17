@@ -213,6 +213,9 @@ export const FIXTURE_SCHEMAS = [
 	// run that leaves one behind is worse than an orphan row: it is a standing
 	// authorisation nobody granted.
 	'toestemming',
+	// A running statutory term holds its case: CaseDeleteGuardListener refuses
+	// the delete, the CLI purge included, while a term instance is open.
+	'deadlineInstance',
 	'case',
 	'roleType',
 	// The team a case names. After `case` for the same reason `caseType` is:
@@ -221,6 +224,8 @@ export const FIXTURE_SCHEMAS = [
 	'workflowTemplate',
 	'statusType',
 	'resultType',
+	// Names its case type by identifier, so it goes before it.
+	'deadlineDefinition',
 	'caseType',
 	'propertyDefinition',
 ] as const
@@ -514,12 +519,27 @@ async function httpPurge(
 	schema: string,
 	id: string,
 ): Promise<boolean> {
-	const deleted = await api
-		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
-			headers: writeHeaders(token),
-		})
-		.catch(() => null)
+	const remove = () =>
+		api
+			.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+				headers: writeHeaders(token),
+			})
+			.catch(() => null)
+	const deleted = await remove()
 	if (deleted !== null && deleted.status() === 403) return false
+
+	// CaseTypeDeleteGuard refuses a published case type on every delete path,
+	// the CLI purge included, and seeded types are published so cases can point
+	// at them. Back to draft first, which is the only state the guard deletes.
+	if (schema === 'caseType' && deleted !== null && deleted.status() === 422) {
+		await api
+			.patch(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+				headers: writeHeaders(token),
+				data: { isDraft: true },
+			})
+			.catch(() => undefined)
+		await remove()
+	}
 
 	await api
 		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })

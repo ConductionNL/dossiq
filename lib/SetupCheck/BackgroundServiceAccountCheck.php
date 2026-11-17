@@ -25,8 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\SetupCheck;
 
+use OCA\Dossiq\Kernel\Contracts\ServiceAccountInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccount;
 use OCP\IL10N;
 use OCP\SetupCheck\ISetupCheck;
 use OCP\SetupCheck\SetupResult;
@@ -90,9 +90,9 @@ class BackgroundServiceAccountCheck implements ISetupCheck {
 		}
 
 		$why = match ($status['reason']) {
-			ServiceAccount::REASON_UNKNOWN => $this->l10n->t('The chosen account does not exist.'),
-			ServiceAccount::REASON_DISABLED => $this->l10n->t('The chosen account is disabled.'),
-			ServiceAccount::REASON_NOT_A_MEMBER => $this->l10n->t(
+			ServiceAccountInterface::REASON_UNKNOWN => $this->l10n->t('The chosen account does not exist.'),
+			ServiceAccountInterface::REASON_DISABLED => $this->l10n->t('The chosen account is disabled.'),
+			ServiceAccountInterface::REASON_NOT_A_MEMBER => $this->l10n->t(
 				'The chosen account is not in the group %s.',
 				[$this->serviceAccount->group()]
 			),

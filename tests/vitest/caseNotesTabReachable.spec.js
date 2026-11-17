@@ -3,12 +3,13 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * The note push is reachable from the rendered Notes tab.
+ * The rendered Notes tab lists the case's notes and sends none of them away.
  *
  * The tab is the library's notes tab, wired by the manifest: dossiq ships no
  * wrapper any more. This mounts the real CnNotesTab with exactly the props the
- * manifest declares on `case-notes-panel`, so a manifest that stopped passing
- * the action, or a library that stopped reading it, fails here.
+ * manifest declares on `case-notes-panel`. Case notes stay in dossiq, stored
+ * by OpenRegister as comments on the case (case-notes-stay-in-dossiq), so the
+ * tab offers no action that sends a note to another register.
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
@@ -40,15 +41,13 @@ const SOMEONE_ELSES_NOTE = {
 	versionCount: 0,
 }
 
-describe('the note push is reachable from the rendered notes tab', () => {
+describe('the rendered notes tab keeps notes in dossiq', () => {
 	beforeEach(() => {
 		global.OC = { currentUser: 'admin' }
-		global.fetch = vi.fn((url) => Promise.resolve({
+		global.fetch = vi.fn(() => Promise.resolve({
 			ok: true,
 			status: 200,
-			json: () => Promise.resolve(String(url).includes('/notes/push')
-				? { outcome: 'sent', reason: '' }
-				: { results: [SOMEONE_ELSES_NOTE] }),
+			json: () => Promise.resolve({ results: [SOMEONE_ELSES_NOTE] }),
 		}))
 	})
 
@@ -72,21 +71,17 @@ describe('the note push is reachable from the rendered notes tab', () => {
 		return wrapper
 	}
 
-	it("renders a button carrying dossiq's own label", async () => {
+	it('lists the case note it read from OpenRegister', async () => {
 		const wrapper = await mountTab()
-		const button = wrapper.find('[data-testid="cn-note-action-push-to-neighbouring-register"]')
-		expect(button.exists(), 'the manifest stopped passing the note action, or the library stopped reading it').toBe(true)
-		expect(button.attributes('aria-label')).toBe('Send to the neighbouring register')
+		expect(wrapper.text()).toContain('Gebeld met de aanvrager')
 		wrapper.unmount()
 	})
 
-	it('pressing it sends THAT note to the push endpoint', async () => {
+	it('offers no action that sends a note to another register', async () => {
 		const wrapper = await mountTab()
-		await wrapper.find('[data-testid="cn-note-action-push-to-neighbouring-register"]').trigger('click')
-		await flushPromises()
-		const push = global.fetch.mock.calls.find(([url]) => String(url).includes('/notes/push'))
-		expect(String(push[0])).toContain('/apps/dossiq/api/cases/case-1/notes/push')
-		expect(JSON.parse(push[1].body)).toEqual({ note: SOMEONE_ELSES_NOTE })
+		expect(notesPanel.props.noteActions).toBeUndefined()
+		expect(wrapper.find('[data-testid^="cn-note-action-"]').exists()).toBe(false)
+		expect(global.fetch.mock.calls.some(([url]) => String(url).includes('/notes/push'))).toBe(false)
 		wrapper.unmount()
 	})
 })

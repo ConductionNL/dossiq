@@ -422,26 +422,26 @@ answer, decision and alert MUST reach the resident through portaliq's notice
 path".
 
 #### Scenario: The resident finds the decision in their dossier
-@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `WooDossierReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`, on a store that hides the dossier from a scoped read.
+@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `SourceCollectionReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`, on a store that hides the dossier from a scoped read.
 - **GIVEN** a Woo request started from a dossier, handled by a signed-in handler who cannot see that dossier under their own scope
 - **WHEN** its decision is published
 - **THEN** the dossier MUST hold the new publication, added by dossiq
 - **AND** the resident's case MUST carry the publication link that portaliq's change rule reports
 
 #### Scenario: Republishing does not add the item twice
-@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testRepublishingAddsNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testRepublishingAddsNothing`.
 - **GIVEN** a decision already published and added to the dossier
 - **WHEN** it is published again
 - **THEN** the dossier MUST still hold one item for that publication
 
 #### Scenario: A request without a dossier
-@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testARequestWithoutADossierWritesNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testARequestWithoutADossierWritesNothing`.
 - **GIVEN** a Woo request case with no `wooRequest.collectionId`
 - **WHEN** its decision is published
 - **THEN** the publication MUST be created and no collection MUST be written
 
 #### Scenario: A dossier that is not the requester's gets nothing
-@e2e exclude Covered by `WooDossierReturnTest::testADossierOfSomebodyElseGetsNothing`.
+@e2e exclude Covered by `SourceCollectionReturnTest::testADossierOfSomebodyElseGetsNothing`.
 - **GIVEN** a case whose `wooRequest.collectionId` names a collection owned by somebody else
 - **WHEN** its decision is published
 - **THEN** that collection MUST NOT change
@@ -505,3 +505,20 @@ Publishing a Woo decision MUST attach the file of every document assessed `openb
 - **WHEN** the handler publishes the decision
 - **THEN** the answer MUST be 409 with "Een document dat openbaar mag worden kon niet worden gelezen, dus er is niets gepubliceerd."
 - **AND** the case MUST still read ready, not published
+
+### Requirement: The decision MUST be published when the case records that nothing is disclosable
+
+When no document can be disclosed, publishing SHALL still publish the decision itself, as an opencatalogi publication without attachments, if the case records that nothing is disclosable. That record is either a recorded "nothing found" with its note, or every document under review assessed and every assessment `niet_openbaar`. In every other case an empty disclosable set SHALL still refuse with `no_publishable_documents`.
+
+#### Scenario: Everything withheld
+
+- **GIVEN** a Woo request whose two documents are both assessed `niet_openbaar`
+- **WHEN** the coordinator publishes
+- **THEN** opencatalogi receives one publication with no attachment
+- **AND** the case reads `wooPublicationStatus: published`
+
+#### Scenario: A redaction is still missing
+
+- **GIVEN** one document `niet_openbaar` and one `deels_openbaar` without its redacted version
+- **WHEN** the coordinator publishes
+- **THEN** the publish is refused with `no_publishable_documents`

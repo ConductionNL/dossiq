@@ -289,14 +289,7 @@ class CaseActionList {
 			return $actions;
 		}
 
-		$disabled = [];
-		foreach ($actions as $action) {
-			$action['blocked'] = true;
-			$action['description'] = $sentence;
-			$disabled[] = $action;
-		}
-
-		return $disabled;
+		return self::allBlocked(actions: $actions, sentence: $sentence);
 	}//end honourExternalHome()
 
 	/**

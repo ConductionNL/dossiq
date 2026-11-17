@@ -34,9 +34,9 @@ use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
 use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
 use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
-use OCA\Dossiq\Service\WOODecisionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,7 +60,6 @@ use Psr\Log\LoggerInterface;
  * parameter is a distinct, independently-used collaborator (same rationale
  * as CouplingBetweenObjects above); `woo-llm-anonymisation` adds one more
  * (`WOOAnonymisationAssistService`) to an already-wide, long-established list.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
@@ -74,7 +73,7 @@ class WOOAssessmentController extends Controller {
 	 * @param IRequest $request The request
 	 * @param WOODocumentAssessmentServiceInterface $assessmentService Document assessment service
 	 * @param WOODeadlineServiceInterface $deadlineService Deadline service
-	 * @param WOODecisionService $decisionService Decision service
+	 * @param WOODecisionServiceInterface $decisionService Decision service
 	 * @param WooPublicationServiceInterface $publicationService WOO publication (via OpenCatalogi) service
 	 * @param WOOAnonymisationAssistServiceInterface $anonymisationAssist LLM-assisted redaction-span proposal
 	 *                                                           service (woo-llm-anonymisation)
@@ -94,7 +93,7 @@ class WOOAssessmentController extends Controller {
 		IRequest $request,
 		private readonly WOODocumentAssessmentServiceInterface $assessmentService,
 		private readonly WOODeadlineServiceInterface $deadlineService,
-		private readonly WOODecisionService $decisionService,
+		private readonly WOODecisionServiceInterface $decisionService,
 		private readonly WooPublicationServiceInterface $publicationService,
 		private readonly WOOAnonymisationAssistServiceInterface $anonymisationAssist,
 		private readonly IUserSession $userSession,
@@ -254,21 +253,21 @@ class WOOAssessmentController extends Controller {
 
 		// A chosen letter must be a document of this case, checked before anything is written.
 		$letter = trim((string)$this->request->getParam('letter', ''));
-		return $this->assembleDecisionResponse(id: $id, decisionData: $decisionData, letter: $letter);
+		return $this->assembleDecisionResponse(id: $id, choice: ['decisionData' => $decisionData, 'letter' => $letter]);
 	}//end createDecision()
 
 	/**
 	 * Assemble the besluit with its chosen letter, answering a refusal or failure as a response.
 	 *
-	 * @param string $id           The case UUID.
-	 * @param mixed  $decisionData The decision fields.
-	 * @param string $letter       The chosen letter, or ''.
+	 * @param string                                    $id     The case UUID.
+	 * @param array{decisionData: mixed, letter: string} $choice The decision fields, and the chosen letter or ''.
 	 *
 	 * @return JSONResponse Created decision with assessment summary, or the error.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
-	private function assembleDecisionResponse(string $id, mixed $decisionData, string $letter): JSONResponse {
+	private function assembleDecisionResponse(string $id, array $choice): JSONResponse {
+		[$decisionData, $letter] = [$choice['decisionData'], $choice['letter']];
 		try {
 			$this->letters?->assertOnCase(caseId: $id, documentId: $letter);
 			$result = $this->decisionService->assembleDecision(caseId: $id, decisionData: $decisionData, letter: $letter);
@@ -370,8 +369,10 @@ class WOOAssessmentController extends Controller {
 		// (design D-1), so a header action that knows only the case can publish.
 		return $this->publicationAct(
 			caseId: $id,
-			stepIn: ['ready', 'published'],
-			operation: fn (string $decisionId): array => $this->publicationService->publish(caseId: $id, decisionId: $decisionId),
+			act: [
+				'stepIn' => ['ready', 'published'],
+				'operation' => fn (string $decisionId): array => $this->publicationService->publish(caseId: $id, decisionId: $decisionId),
+			],
 		);
 	}//end publishDecision()
 
@@ -390,21 +391,23 @@ class WOOAssessmentController extends Controller {
 	public function withdrawPublication(string $id): JSONResponse {
 		return $this->publicationAct(
 			caseId: $id,
-			stepIn: ['published'],
-			operation: fn (string $decisionId): array => $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id),
+			act: [
+				'stepIn' => ['published'],
+				'operation' => fn (string $decisionId): array => $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id),
+			],
 		);
 	}//end withdrawPublication()
 
 	/**
 	 * Run a publication act as the case's handler, at the given publication steps.
 	 *
-	 * @param string        $caseId    The case UUID.
-	 * @param array<string> $stepIn    The publication steps the act may run at.
-	 * @param Closure       $operation The act, given the requested decision id.
+	 * @param string                                          $caseId The case UUID.
+	 * @param array{stepIn: array<string>, operation: Closure} $act    The publication steps the act may run at, and
+	 *                                                                 the act itself, given the requested decision id.
 	 *
 	 * @return JSONResponse
 	 */
-	private function publicationAct(string $caseId, array $stepIn, Closure $operation): JSONResponse {
+	private function publicationAct(string $caseId, array $act): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -419,8 +422,8 @@ class WOOAssessmentController extends Controller {
 				caseId: $caseId,
 				user: $user,
 				stepField: 'wooPublicationStatus',
-				stepIn: $stepIn,
-				operation: fn (): array => $operation($decisionId),
+				stepIn: $act['stepIn'],
+				operation: fn (): array => $act['operation']($decisionId),
 			);
 			return $this->publicationResponse(result: $result);
 		} catch (RefusedException $e) {
@@ -455,47 +458,65 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
-		return $this->proposalFor(id: $id, documentRef: $documentRef, user: $user);
+		return $this->proposalFor(document: ['caseId' => $id, 'documentRef' => $documentRef], user: $user);
 	}//end proposeRedaction()
 
 	/**
 	 * Propose the redaction spans for the posted text, answering a refusal or failure as JSON.
 	 *
-	 * @param string $id          The case id.
-	 * @param string $documentRef The document reference.
-	 * @param IUser  $user        The reviewer.
+	 * @param array{caseId: string, documentRef: string} $document The case id and the document reference.
+	 * @param IUser                                      $user     The reviewer.
 	 *
 	 * @return JSONResponse
 	 */
-	private function proposalFor(string $id, string $documentRef, IUser $user): JSONResponse {
+	private function proposalFor(array $document, IUser $user): JSONResponse {
 		$text = (string)$this->request->getParam('text', '');
 
+		return $this->assistAnswer(
+			call: fn (): array => $this->anonymisationAssist->proposeSpans(
+				caseId: $document['caseId'],
+				documentRef: $document['documentRef'],
+				text: $text,
+				userId: $user->getUID()
+			),
+			onFailure: fn (\RuntimeException $e): JSONResponse => $this->proposalFailed(document: $document, error: $e->getMessage())
+		);
+	}//end proposalFor()
+
+	/**
+	 * Answer an anonymisation assist call: its result, a refusal with its rule and status,
+	 * a 400 for bad input, or what the failure handler makes of any other failure.
+	 *
+	 * @param callable(): array                         $call      The assist call.
+	 * @param callable(\RuntimeException): JSONResponse $onFailure The answer to a failed call.
+	 *
+	 * @return JSONResponse
+	 */
+	private function assistAnswer(callable $call, callable $onFailure): JSONResponse {
 		try {
-			$result = $this->anonymisationAssist->proposeSpans(caseId: $id, documentRef: $documentRef, text: $text, userId: $user->getUID());
-			return new JSONResponse($result);
+			return new JSONResponse($call());
 		} catch (RefusedException $e) {
 			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
-			return $this->proposalFailed(id: $id, documentRef: $documentRef, error: $e->getMessage());
+			return $onFailure($e);
 		}
-	}//end proposalFor()
+	}//end assistAnswer()
 
 	/**
 	 * Log a failed redaction proposal and answer it as a bad request.
 	 *
-	 * @param string $id          The case id.
-	 * @param string $documentRef The document reference.
-	 * @param string $error       What went wrong.
+	 * @param array{caseId: string, documentRef: string} $document The case id and the document reference.
+	 * @param string                                     $error    What went wrong.
 	 *
 	 * @return JSONResponse
 	 */
-	private function proposalFailed(string $id, string $documentRef, string $error): JSONResponse {
+	private function proposalFailed(array $document, string $error): JSONResponse {
 		$this->logger->warning(
 			'WOO redaction proposal failed: ' . $error,
-			['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
+			['app' => 'dossiq','caseId' => $document['caseId'], 'documentRef' => $document['documentRef']],
 		);
 		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
 	}//end proposalFailed()
@@ -527,23 +548,16 @@ class WOOAssessmentController extends Controller {
 		$decision = (string)$this->request->getParam('decision', '');
 		$editedSpans = $this->editedSpans();
 
-		try {
-			$result = $this->anonymisationAssist->reviewProposal(
+		return $this->assistAnswer(
+			call: fn (): array => $this->anonymisationAssist->reviewProposal(
 				caseId: $id,
 				documentRef: $documentRef,
 				decision: $decision,
 				reviewerId: $user->getUID(),
 				editedSpans: $editedSpans,
-			);
-			return new JSONResponse($result);
-		} catch (RefusedException $e) {
-			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
-		} catch (\InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+			),
+			onFailure: fn (\RuntimeException $e): JSONResponse => new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST)
+		);
 	}//end reviewRedactionProposal()
 
 	/**

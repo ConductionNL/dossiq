@@ -47,6 +47,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -391,14 +393,11 @@ class FakeIntakeCalculator {
 	/**
 	 * Answer the fixed instant.
 	 *
-	 * @param \DateTimeInterface $from     The moment asked about.
-	 * @param float              $value    The amount, zero for the walk.
-	 * @param string             $unit     The unit.
-	 * @param object             $calendar The calendar.
+	 * @param SlaAddition $addition The moment asked about, the amount (zero for the walk), the unit and the calendar.
 	 *
 	 * @return DateTimeImmutable The answer.
 	 */
-	public function add(\DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
+	public function add(SlaAddition $addition): DateTimeImmutable {
 		return $this->answering;
 	}//end add()
 }//end class
@@ -414,9 +413,11 @@ class FakeIntakeCalendars {
 	 * @param string|null $slug         The calendar slug.
 	 * @param string|null $organisation The organisation.
 	 *
-	 * @return object The calendar.
+	 * @return WorkingCalendar The calendar.
 	 */
-	public function resolve(?string $slug, ?string $organisation): object {
-		return new \stdClass();
+	public function resolve(?string $slug, ?string $organisation): WorkingCalendar {
+		return WorkingCalendar::fromArray(
+			['slug' => 'nl-national', 'workingWeekdays' => [1, 2, 3, 4, 5], 'hoursPerWorkingDay' => 8, 'timezone' => 'Europe/Amsterdam']
+		);
 	}//end resolve()
 }//end class

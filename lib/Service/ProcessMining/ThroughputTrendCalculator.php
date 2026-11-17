@@ -67,11 +67,23 @@ class ThroughputTrendCalculator {
 	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
+		return $this->sortedWeeks(buckets: $this->closedPerWeek(cases: $cases, period: [$from, $to]));
+	}//end computeThroughputTrend()
+
+	/**
+	 * The number of cases closed per ISO week of the period, every week of it present.
+	 *
+	 * @param array<string, array<string, mixed>>               $cases  Case rows, keyed by id.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period Inclusive period start and end.
+	 *
+	 * @return array<string, int> The count per ISO week.
+	 */
+	private function closedPerWeek(array $cases, array $period): array {
 		// Seed every ISO week in range so gaps render as zero, not "missing".
-		$buckets = $this->seedWeekBuckets(from: $from, to: $to);
+		$buckets = $this->seedWeekBuckets(from: $period[0], to: $period[1]);
 
 		foreach ($cases as $caseData) {
-			$week = $this->closedWeek(caseData: $caseData, from: $from, to: $to);
+			$week = $this->closedWeek(caseData: $caseData, period: $period);
 			if ($week === '') {
 				continue;
 			}
@@ -83,21 +95,20 @@ class ThroughputTrendCalculator {
 			$buckets[$week]++;
 		}//end foreach
 
-		return $this->sortedWeeks(buckets: $buckets);
-	}//end computeThroughputTrend()
+		return $buckets;
+	}//end closedPerWeek()
 
 	/**
 	 * The ISO week a case closed in, when it closed within `[from, to]`.
 	 *
-	 * @param array<string, mixed> $caseData A case row.
-	 * @param DateTimeImmutable    $from     Inclusive period start.
-	 * @param DateTimeImmutable    $to       Inclusive period end.
+	 * @param array<string, mixed>                              $caseData A case row.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period   Inclusive period start and end.
 	 *
 	 * @return string The ISO week ("o-\WW"), or '' when it did not close in the period.
 	 */
-	private function closedWeek(array $caseData, DateTimeImmutable $from, DateTimeImmutable $to): string {
+	private function closedWeek(array $caseData, array $period): string {
 		$closedAt = $this->closedAt(caseData: $caseData);
-		if ($closedAt === null || $closedAt < $from || $closedAt > $to) {
+		if ($closedAt === null || $closedAt < $period[0] || $closedAt > $period[1]) {
 			return '';
 		}
 

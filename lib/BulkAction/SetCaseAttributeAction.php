@@ -201,12 +201,7 @@ class SetCaseAttributeAction implements StepBulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$caseId = $this->caseId(object: $step->object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
-
-		return $this->applyTo(step: $step, caseId: $caseId);
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->applyTo(step: $step, caseId: $caseId));
 	}//end apply()
 
 	/**

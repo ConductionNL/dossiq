@@ -63,6 +63,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 	use SearchesObjects;
 	use ReadsPanelMembers;
+	use SavesIntoStore;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -158,18 +159,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		array $payload = [],
 	): array {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
-		$committeeSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaaradviescommissie_schema'
-		);
-
-		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
-			throw new RuntimeException(
-				'BAC schemas are not configured'
-			);
-		}
-
 		$this->assertCommitteeAcceptsReferrals(
-			committees: ['schema' => $committeeSchema] + $store,
+			committees: ['schema' => $this->committeeSchema(store: $store)] + $store,
 			commissieId: $commissieId
 		);
 
@@ -180,6 +171,29 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 		return $this->saveNewRequest(store: $store, record: $record);
 	}//end assignToCommittee()
+
+	/**
+	 * The configured committee schema, refused when it or the store's register or schema is not configured.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 *
+	 * @return string The committee schema.
+	 *
+	 * @throws RuntimeException When the BAC schemas are not configured.
+	 */
+	private function committeeSchema(array $store): string {
+		$committeeSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaaradviescommissie_schema'
+		);
+
+		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
+			throw new RuntimeException(
+				'BAC schemas are not configured'
+			);
+		}
+
+		return $committeeSchema;
+	}//end committeeSchema()
 
 	/**
 	 * The object service, register and advice-request schema, or null without OpenRegister.
@@ -264,12 +278,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 */
 	private function createRequest(array $store, array $record): array {
 		try {
-			return ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
@@ -377,16 +386,31 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			throw new RuntimeException('Invalid BAC advice status');
 		}
 
+		return $this->movedTo(requestId: $requestId, move: ['newStatus' => $newStatus, 'payload' => $payload]);
+	}//end transitionAdviceStatus()
+
+	/**
+	 * Move the advice request to the new status, when the move is allowed, and store it.
+	 *
+	 * @param string                                                 $requestId UUID of the bacAdviceRequest
+	 * @param array{newStatus: string, payload: array<string, mixed>} $move      The target status, and the extra fields.
+	 *
+	 * @return array<string, mixed> The updated request.
+	 *
+	 * @throws RuntimeException When the move is not allowed or the request cannot be stored.
+	 */
+	private function movedTo(string $requestId, array $move): array {
+		$newStatus = $move['newStatus'];
 		$request = $this->loadAdviceRequest(requestId: $requestId);
 		$from = (string)($request['current']['status'] ?? 'assigned');
 		$this->assertMayMove(request: $request, from: $from, newStatus: $newStatus);
 
-		$update = $payload;
+		$update = $move['payload'];
 		$update['status'] = $newStatus;
 		$update = $this->transitionUpdate(request: $request, move: ['from' => $from, 'update' => $update]);
 
 		return $this->applyOrFail(request: $request, change: ['update' => $update, 'requestId' => $requestId]);
-	}//end transitionAdviceStatus()
+	}//end movedTo()
 
 	/**
 	 * Refuse a move the lifecycle forbids, or a signing move by a caller who does not chair.
@@ -743,25 +767,42 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			return;
 		}
 
-		$current = $this->readForDeviation(store: $store, requestId: $requestId);
-		if ($current === null) {
+		if ($this->readForDeviation(store: $store, requestId: $requestId) === null) {
 			return;
 		}
 
 		// Outside the try on purpose: an entry that cannot be written goes to
 		// the caller, which logs it with the entry (REQ-BAT-003).
+		$this->recordDeviationEntry(
+			store: $store,
+			entry: ['request' => $requestId, 'decision' => $decisionId, 'motivatie' => $rationaleRef]
+		);
+	}//end recordCouncilDeviation()
+
+	/**
+	 * Write the council-deviation entry on the advice request's audit trail.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 * @param array{request: string, decision: string, motivatie: string}     $entry The advice request, the besluit op bezwaar
+	 *                                                                               and the motivation reference.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written.
+	 */
+	private function recordDeviationEntry(array $store, array $entry): void {
 		$this->auditTrail->record(
 			register: $store['register'],
 			schema: $store['schema'],
-			objectUuid: $requestId,
+			objectUuid: $entry['request'],
 			event: 'council-deviation-recorded',
 			payload: [
-				'decision' => $decisionId,
-				'motivatie' => $rationaleRef,
+				'decision' => $entry['decision'],
+				'motivatie' => $entry['motivatie'],
 			],
 			tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
 		);
-	}//end recordCouncilDeviation()
+	}//end recordDeviationEntry()
 
 	/**
 	 * Assert that the requested advice-status transition is permitted by the

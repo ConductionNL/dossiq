@@ -22,6 +22,7 @@ use RuntimeException;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCP\Files\File;
 
 class DocumentRecordStoreTest extends TestCase {
 	private const CONFIG = [
@@ -238,7 +239,7 @@ class DocumentRecordStoreTest extends TestCase {
 			 * @param mixed $_register Unused.
 			 * @param mixed $registerId The register.
 			 *
-			 * @return object A file with getFileId().
+			 * @return File The stored file, as openregister's FileService answers.
 			 */
 			public function addFile(
 				mixed $objectEntity,
@@ -249,18 +250,17 @@ class DocumentRecordStoreTest extends TestCase {
 				mixed $_schema = null,
 				mixed $_register = null,
 				mixed $registerId = null,
-			): object {
+			): File {
 				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'register' => $registerId];
-				return new class {
-					/**
-					 * @return int The file id.
-					 */
-					public function getFileId(): int {
-						return 4711;
-					}
-				};
+				return $this->file;
 			}
+
+			/** @var File The file addFile answers. */
+			public File $file;
 		};
+		$file = $this->createMock(originalClassName: File::class);
+		$file->method('getId')->willReturn(4711);
+		$fileService->file = $file;
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getFileService')->willReturn($fileService);
 		$settings->method('getConfigValue')->willReturn('dossiq');

@@ -41,6 +41,7 @@ use OCA\Dossiq\Kernel\Contracts\RoleLinkServiceInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseRegisterReads;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use RuntimeException;
@@ -53,6 +54,9 @@ use RuntimeException;
 class RoleLinkService implements RoleLinkServiceInterface {
 
 	use SearchesObjects;
+	use NamesTheSessionUser {
+		sessionActor as private actor;
+	}
 
 	/**
 	 * Constructor.
@@ -124,28 +128,40 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			throw new InvalidArgumentException('Name the case and what it is linked to.');
 		}
 
+		return $this->linkAs(request: new RoleLinkRequest(caseId: $caseId, targetId: $targetId, payload: $payload), role: $role);
+	}//end link()
+
+	/**
+	 * Link the named case with a role it declares: relate the cases and open the role's record.
+	 *
+	 * @param RoleLinkRequest $request The case, the target and the record's extra fields, trimmed.
+	 * @param string          $role    The role, as the case type declares it.
+	 *
+	 * @return array{linkedCase: string, record: array<string, mixed>|null} What was written.
+	 *
+	 * @throws InvalidArgumentException When the role is not declared or the target is unusable.
+	 * @throws RuntimeException When the register cannot be reached or a write is refused.
+	 */
+	private function linkAs(RoleLinkRequest $request, string $role): array {
 		$location = new RoleLinkRegister(
 			objectService: $this->reads()->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
 		);
-		$roles    = $this->definitionsFor(location: $location, caseId: $caseId);
+		$roles    = $this->definitionsFor(location: $location, caseId: $request->caseId);
 		if (isset($roles[$role]) === false) {
 			throw new InvalidArgumentException("This case type declares no relation role '$role'.");
 		}
 
 		$scope = new RoleLinkScope(location: $location, definition: $roles[$role]);
-		$linkedCase = $this->resolveLinkedCase(scope: $scope, targetId: $targetId);
+		$linkedCase = $this->resolveLinkedCase(scope: $scope, targetId: $request->targetId);
 
-		$this->relateCases(caseId: $caseId, linkedCase: $linkedCase, definition: $scope->definition);
+		$this->relateCases(caseId: $request->caseId, linkedCase: $linkedCase, definition: $scope->definition);
 
 		return [
 			'linkedCase' => $linkedCase,
-			'record'     => $this->openRecord(
-				scope: $scope,
-				request: new RoleLinkRequest(caseId: $caseId, targetId: $targetId, payload: $payload),
-			),
+			'record'     => $this->openRecord(scope: $scope, request: $request),
 		];
-	}//end link()
+	}//end linkAs()
 
 	/**
 	 * Relate the case to the linked case, when there is one other than itself.
@@ -319,19 +335,5 @@ class RoleLinkService implements RoleLinkServiceInterface {
 
 		return false;
 	}//end isLinked()
-
-	/**
-	 * The acting user id from the session.
-	 *
-	 * @return string The user id, or 'system' outside a user session.
-	 */
-	private function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end actor()
 
 }//end class

@@ -59,6 +59,7 @@ use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\ReadsObjectionCase;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -74,6 +75,8 @@ use Throwable;
 class DecisionService implements DecisionServiceInterface {
 
 	use SearchesObjects;
+	use ReadsObjectionCase;
+	use SavesIntoStore;
 
 	/**
 	 * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
@@ -184,12 +187,7 @@ class DecisionService implements DecisionServiceInterface {
 		unset($record['publishedAt'], $record['notifiedRecipients']);
 
 		try {
-			return ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq bezwaar-decision: failed to draft: ' . $e->getMessage()
@@ -495,7 +493,7 @@ class DecisionService implements DecisionServiceInterface {
 	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function applyToBezwaar(string $objectionId, string $decisionId): void {
-		$caseId = $this->caseOfObjection(objectionId: $objectionId);
+		$caseId = $this->storedObjectionCase(objectionId: $objectionId);
 		if ($caseId === '') {
 			return;
 		}
@@ -513,35 +511,6 @@ class DecisionService implements DecisionServiceInterface {
 			);
 		}
 	}//end applyToBezwaar()
-
-	/**
-	 * The case an objection belongs to, as stored, or '' when it cannot be read.
-	 *
-	 * @param string $objectionId UUID of the bezwaar.
-	 *
-	 * @return string The case uuid, or ''.
-	 */
-	private function caseOfObjection(string $objectionId): string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return '';
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-		if ($register === '' || $objectionSchema === '') {
-			return '';
-		}
-
-		$objection = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $objectionSchema,
-			id: $objectionId
-		);
-
-		return (string)($objection['case'] ?? '');
-	}//end caseOfObjection()
 
 	/**
 	 * Build the recipient audit list for the publication notification

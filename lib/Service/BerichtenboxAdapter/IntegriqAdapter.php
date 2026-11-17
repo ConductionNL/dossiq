@@ -53,6 +53,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\BerichtenboxAdapter;
 
 use DateTime;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -67,6 +68,10 @@ use Throwable;
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class IntegriqAdapter implements BerichtenboxAdapterInterface {
+
+	use NamesTheSessionUser {
+		sessionActor as private requestedBy;
+	}
 
 	/**
 	 * The app-config key naming the integriq digital post source to send over.
@@ -135,13 +140,24 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 		$letter->category = $category;
 		$letter->caseRef = $caseRef;
 
+		return $this->sentThroughSeam(letter: $letter);
+	}//end sendMessage()
+
+	/**
+	 * Hand the letter to integriq's seam, or answer why it could not be bound.
+	 *
+	 * @param DigitalPostLetter $letter The letter.
+	 *
+	 * @return array<string, mixed> The dispatch result, or the refusal.
+	 */
+	private function sentThroughSeam(DigitalPostLetter $letter): array {
 		$refusal = $this->bindSeam(letter: $letter);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
 		return $this->dispatchLetter(letter: $letter);
-	}//end sendMessage()
+	}//end sentThroughSeam()
 
 	/**
 	 * Find the seam and the source the letter goes over; a refusal when either is missing.
@@ -450,21 +466,6 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	private function sourceId(): string {
 		return trim($this->appConfig->getValueString('dossiq', self::SOURCE_CONFIG_KEY, ''));
 	}//end sourceId()
-
-	/**
-	 * Who asked for this letter.
-	 *
-	 * @return string The acting user id, or 'system'.
-	 */
-	private function requestedBy(): string {
-		$user = $this->userSession->getUser();
-
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end requestedBy()
 
 	/**
 	 * The attachment references the event carries.

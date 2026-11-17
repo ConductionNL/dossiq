@@ -34,6 +34,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\QuickActionServiceInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Support\CastArray;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -47,6 +48,9 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 class QuickActionService implements QuickActionServiceInterface {
+
+	use RequiresObjectService;
+
 	/**
 	 * Case type identifier used for klacht cases (Awb hoofdstuk 9).
 	 *
@@ -395,10 +399,7 @@ class QuickActionService implements QuickActionServiceInterface {
 	 * @throws RuntimeException When OpenRegister or the case schema is unavailable.
 	 */
 	private function resolveCase(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');

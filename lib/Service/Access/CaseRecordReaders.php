@@ -138,7 +138,10 @@ class CaseRecordReaders {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-reads-it-req-cra-008
 	 */
 	public function readersFor(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
-		$readers = array_merge([$assignee], $this->reviewersReading(rule: $rule, record: $record, reviewers: $reviewers, hideOthers: $hideOthers));
+		$readers = array_merge([$assignee], $this->reviewersReading(
+			ruled: ['rule' => $rule, 'record' => $record],
+			reviewing: ['reviewers' => $reviewers, 'hideOthers' => $hideOthers]
+		));
 
 		return $this->cleaned(users: $readers);
 	}//end readersFor()
@@ -166,18 +169,35 @@ class CaseRecordReaders {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
 	 */
 	public function toGrant(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
+		$reading = $this->cleaned(users: $this->reviewersReading(
+			ruled: ['rule' => $rule, 'record' => $record],
+			reviewing: ['reviewers' => $reviewers, 'hideOthers' => $hideOthers]
+		));
+
+		return $this->grantsOf(rule: $rule, readers: ['assignee' => $assignee, 'reading' => $reading]);
+	}//end toGrant()
+
+	/**
+	 * Core's permission bits per user id for the assignee and the reviewers who read one record.
+	 *
+	 * @param array<string, string> $rule    The record's rule, as ruleOf() answers it.
+	 * @param array<string, mixed>  $readers The case assignee ('' when none) as `assignee`, the cleaned
+	 *                                       reviewers who read the record as `reading`.
+	 *
+	 * @return array<string, int> Permission bits by user id.
+	 */
+	private function grantsOf(array $rule, array $readers): array {
 		$grants = [];
-		$reading = $this->cleaned(users: $this->reviewersReading(rule: $rule, record: $record, reviewers: $reviewers, hideOthers: $hideOthers));
-		foreach ($this->cleaned(users: [$assignee]) as $user) {
+		foreach ($this->cleaned(users: [$readers['assignee']]) as $user) {
 			$grants[$user] = $this->bitsOf(may: ($rule['assigneeMay'] ?? self::MAY_READ));
 		}
 
-		foreach ($reading as $user) {
+		foreach ($readers['reading'] as $user) {
 			$grants[$user] = (($grants[$user] ?? 0) | $this->bitsOf(may: ($rule['reviewersMay'] ?? self::MAY_READ)));
 		}
 
 		return $grants;
-	}//end toGrant()
+	}//end grantsOf()
 
 	/**
 	 * The permission bits of `read` or `update`.
@@ -197,20 +217,20 @@ class CaseRecordReaders {
 	/**
 	 * The reviewers who read one record under its rule, before the assignee is added.
 	 *
-	 * @param array<string, string>       $rule       The record's rule.
-	 * @param array<string, mixed>        $record     The record row.
-	 * @param array<string, list<string>> $reviewers  The reviewers of the case, by row id.
-	 * @param bool                        $hideOthers Whether reviewers are hidden from each other.
+	 * @param array{rule: array<string, string>, record: array<string, mixed>} $ruled     The record's rule, and the record row.
+	 * @param array{reviewers: array<string, list<string>>, hideOthers: bool}  $reviewing The reviewers of the case, by row id,
+	 *                                                                                    and whether they are hidden from each other.
 	 *
 	 * @return list<mixed>
 	 */
-	private function reviewersReading(array $rule, array $record, array $reviewers, bool $hideOthers): array {
-		if ($rule['readers'] === self::ALL && $hideOthers === false) {
-			return array_merge([], ...array_values($reviewers));
+	private function reviewersReading(array $ruled, array $reviewing): array {
+		$readers = $ruled['rule']['readers'];
+		if ($readers === self::ALL && $reviewing['hideOthers'] === false) {
+			return array_merge([], ...array_values($reviewing['reviewers']));
 		}
 
-		if ($rule['readers'] === self::OWN) {
-			return $this->namedOn(rule: $rule, record: $record, reviewers: $reviewers);
+		if ($readers === self::OWN) {
+			return $this->namedOn(ruled: $ruled, reviewers: $reviewing['reviewers']);
 		}
 
 		return [];
@@ -232,13 +252,13 @@ class CaseRecordReaders {
 	/**
 	 * The reviewers one record names, directly or through a reviewer row.
 	 *
-	 * @param array<string, string>       $rule      The record's rule.
-	 * @param array<string, mixed>        $record    The record row.
-	 * @param array<string, list<string>> $reviewers The reviewers of the case, by row id.
+	 * @param array{rule: array<string, string>, record: array<string, mixed>} $ruled     The record's rule, and the record row.
+	 * @param array<string, list<string>>                                      $reviewers The reviewers of the case, by row id.
 	 *
 	 * @return list<mixed>
 	 */
-	private function namedOn(array $rule, array $record, array $reviewers): array {
+	private function namedOn(array $ruled, array $reviewers): array {
+		[$rule, $record] = [$ruled['rule'], $ruled['record']];
 		$named = [];
 		if ($rule['userField'] !== '') {
 			$named = array_values(array_filter((array)($record[$rule['userField']] ?? []), 'is_scalar'));

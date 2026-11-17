@@ -373,7 +373,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 			return;
 		}
 
-		if ($this->patchRow(mapping: $mapping, uuid: $uuid, changes: $changes) === false) {
+		if ($this->patchRow(mapping: $mapping, patch: ['uuid' => $uuid, 'changes' => $changes]) === false) {
 			return;
 		}
 
@@ -386,13 +386,14 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	/**
 	 * Write the changes onto the row, counting a failed write.
 	 *
-	 * @param RefusalGroundMapping $mapping The schema, with its tally.
-	 * @param string               $uuid    The row's uuid.
-	 * @param array<string, mixed> $changes The mapped codes.
+	 * @param RefusalGroundMapping                                $mapping The schema, with its tally.
+	 * @param array{uuid: string, changes: array<string, mixed>} $patch   The row's uuid and the mapped codes.
 	 *
 	 * @return bool True when the row was written.
 	 */
-	private function patchRow(RefusalGroundMapping $mapping, string $uuid, array $changes): bool {
+	private function patchRow(RefusalGroundMapping $mapping, array $patch): bool {
+		$uuid = $patch['uuid'];
+		$changes = $patch['changes'];
 		try {
 			$this->patchObjectAsArray(
 				objectService: $mapping->objectService,
@@ -402,7 +403,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 				changes: $changes
 			);
 		} catch (Throwable $e) {
-			$this->rowFailed(mapping: $mapping, uuid: $uuid, error: $e);
+			$this->rowFailed(mapping: $mapping, failure: ['uuid' => $uuid, 'error' => $e]);
 			return false;
 		}
 
@@ -412,16 +413,15 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	/**
 	 * Log a row that could not be written and count it as failed.
 	 *
-	 * @param RefusalGroundMapping $mapping The schema, with its tally.
-	 * @param string               $uuid    The row's uuid.
-	 * @param Throwable            $error   The failure.
+	 * @param RefusalGroundMapping                    $mapping The schema, with its tally.
+	 * @param array{uuid: string, error: Throwable} $failure The row's uuid and the failure.
 	 *
 	 * @return void
 	 */
-	private function rowFailed(RefusalGroundMapping $mapping, string $uuid, Throwable $error): void {
+	private function rowFailed(RefusalGroundMapping $mapping, array $failure): void {
 		$this->logger->error(
 			'Dossiq: the Woo refusal ground mapping failed for one row',
-			['app' => AppIdentity::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+			['app' => AppIdentity::APP_ID, 'uuid' => $failure['uuid'], 'exception' => $failure['error']->getMessage()]
 		);
 		$mapping->tally['failed']++;
 	}//end rowFailed()

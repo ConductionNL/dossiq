@@ -113,7 +113,11 @@ class DuplicatePolicyTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The matches.
 			 */
-			public function checkCandidate($register, $schema, array $candidate, ?array $matchRules = null, ?float $threshold = null): array {
+			public function checkCandidate(object $request, array $candidate): array {
+				$register = $request->register;
+				$schema = $request->schema;
+				$matchRules = $request->matchRules;
+				$threshold = $request->threshold;
 				return $this->matches;
 			}
 

@@ -82,8 +82,8 @@ final class FoldCasePropertiesOntoCaseTest extends TestCase {
 				return ($this->rows[$query['filters']['schema']] ?? []);
 			}
 
-			public function find(string $id, array $options): mixed {
-				$this->finds[] = [$id, $options];
+			public function find(string $id, ?object $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$this->finds[] = [$id, ['_rbac' => $_rbac, '_multitenancy' => $_multitenancy]];
 				$case = ($this->cases[$id] ?? null);
 				if ($case instanceof \Throwable) {
 					throw $case;
@@ -92,7 +92,9 @@ final class FoldCasePropertiesOntoCaseTest extends TestCase {
 				return $case;
 			}
 
-			public function saveObject(string $schema, array $object, array $options): void {
+			public function saveObject(array $object, ?object $options = null, bool $_rbac = true, bool $_multitenancy = true): void {
+				$schema = $options?->target->schema;
+				$options = ['_rbac' => $_rbac, '_multitenancy' => $_multitenancy];
 				if (($object['id'] ?? '') === 'c-unsaveable') {
 					throw new RuntimeException('validation failed');
 				}

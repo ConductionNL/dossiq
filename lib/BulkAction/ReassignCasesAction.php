@@ -168,11 +168,18 @@ class ReassignCasesAction implements StepBulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$caseId = $this->caseId(object: $step->object);
-		if ($caseId === '') {
-			return BulkActionResult::skipped(reason: 'no_case_id');
-		}
+		return $this->forCase(step: $step, work: fn (string $caseId): BulkActionResult => $this->moveUnlessHeld(step: $step, caseId: $caseId));
+	}//end apply()
 
+	/**
+	 * Move a case that has an id, unless its handler already is the receiver.
+	 *
+	 * @param BulkStep $step   The member object, the parameters, whether to commit and who started the job.
+	 * @param string   $caseId The case.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function moveUnlessHeld(BulkStep $step, string $caseId): BulkActionResult {
 		$caseData = $this->caseData(object: $step->object);
 		$toUser = trim((string)($step->parameters['toUser'] ?? ''));
 
@@ -187,7 +194,7 @@ class ReassignCasesAction implements StepBulkActionInterface {
 		}
 
 		return $this->reassign(step: $step, caseId: $caseId, caseData: $caseData, toUser: $toUser);
-	}//end apply()
+	}//end moveUnlessHeld()
 
 	/**
 	 * Write the reassignment of one case.

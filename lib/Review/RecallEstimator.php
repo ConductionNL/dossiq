@@ -101,25 +101,37 @@ class RecallEstimator {
 	 * @spec openspec/changes/woo-review-recall-and-stopping/proposal.md
 	 */
 	public function estimate(int $found, int $nullSetSize, int $k, int $n, float $confidence): array {
+		$inputs = ['found' => $found, 'nullSetSize' => $nullSetSize, 'k' => $k, 'n' => $n, 'confidence' => $confidence];
+
+		return $inputs + $this->bounds(inputs: $inputs);
+	}//end estimate()
+
+	/**
+	 * The elusion rate, its upper bound, and the recall estimate with its lower bound.
+	 *
+	 * @param array{found: int, nullSetSize: int, k: int, n: int, confidence: float} $inputs The estimate's inputs.
+	 *
+	 * @return array{elusion: float, elusionUpper: float, estimate: float, lowerBound: float} The figures.
+	 *
+	 * @throws InvalidArgumentException When the inputs describe no estimate.
+	 */
+	private function bounds(array $inputs): array {
+		$found = $inputs['found'];
+		$nullSetSize = $inputs['nullSetSize'];
 		if ($found < 0 || $nullSetSize < 0 || ($found === 0 && $nullSetSize === 0)) {
 			throw new InvalidArgumentException('An estimate needs documents: found and the null set cannot both be empty.');
 		}
 
-		$upper = $this->upperBound(k: $k, n: $n, confidence: $confidence);
-		$elusion = ($k / $n);
+		$upper = $this->upperBound(k: $inputs['k'], n: $inputs['n'], confidence: $inputs['confidence']);
+		$elusion = ($inputs['k'] / $inputs['n']);
 
 		return [
-			'found' => $found,
-			'nullSetSize' => $nullSetSize,
-			'k' => $k,
-			'n' => $n,
-			'confidence' => $confidence,
 			'elusion' => $elusion,
 			'elusionUpper' => $upper,
 			'estimate' => self::recall(found: $found, missed: ($elusion * $nullSetSize)),
 			'lowerBound' => self::recall(found: $found, missed: ($upper * $nullSetSize)),
 		];
-	}//end estimate()
+	}//end bounds()
 
 	/**
 	 * Recall from what was found and what is estimated missed. Nothing found and nothing missed reads as 1.

@@ -249,7 +249,7 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 		$out = [];
 		foreach ($edges as $edge) {
 			if (is_array($edge) === true && in_array($first, $this->endpoints(value: ($edge['from'] ?? null)), true) === true) {
-				$edge['from'] = $this->swap(value: $edge['from'], from: $first, to: $last);
+				$edge['from'] = $this->swap(value: $edge['from'], replace: ['from' => $first, 'to' => $last]);
 			}
 
 			$out[] = $edge;
@@ -270,21 +270,20 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	/**
 	 * Replace one node id in an edge endpoint, keeping the endpoint's shape.
 	 *
-	 * @param mixed  $value The endpoint: an id or a list of ids.
-	 * @param string $from  The id to replace.
-	 * @param string $to    Its replacement.
+	 * @param mixed                          $value   The endpoint: an id or a list of ids.
+	 * @param array{from: string, to: string} $replace The id to replace, and its replacement.
 	 *
 	 * @return mixed The endpoint.
 	 */
-	private function swap(mixed $value, string $from, string $to): mixed {
+	private function swap(mixed $value, array $replace): mixed {
 		if (is_array($value) === false) {
-			return $to;
+			return $replace['to'];
 		}
 
 		$swapped = [];
 		foreach ($value as $id) {
-			if ($id === $from) {
-				$id = $to;
+			if ($id === $replace['from']) {
+				$id = $replace['to'];
 			}
 
 			$swapped[] = $id;

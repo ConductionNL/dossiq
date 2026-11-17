@@ -570,6 +570,7 @@ describe('the tabs', () => {
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
+		added.push('case-consents-card')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
 		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.

@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * Lists and loads templates from a temporary directory.
  *
  * @covers \OCA\Dossiq\Service\TemplateLibraryService
+ * @uses \OCA\Dossiq\Service\TemplateLibrary\TemplateMetadata
  */
 class TemplateLibraryDirectoryTest extends TestCase {
 
@@ -176,4 +177,43 @@ class TemplateLibraryDirectoryTest extends TestCase {
 		self::assertNull(@$service->loadTemplate(templateId: 'f'));
 		self::assertCount(2, $this->warnings);
 	}//end testBrokenFilesAreSkipped()
+
+	/**
+	 * Notes are trimmed and keep only non-blank strings; fills that are not a list are none.
+	 *
+	 * @return void
+	 */
+	public function testNotesAreTrimmedAndFillsMustBeAList(): void {
+		file_put_contents(
+			$this->dir . '/n.json',
+			json_encode(['id' => 'n', 'description' => 'D', 'fills' => 'not a list', 'notes' => ['  keep me ', '', '   ', 7, ['x'], 'second']])
+		);
+		file_put_contents($this->dir . '/o.json', json_encode(['id' => 'o', 'notes' => 'a string']));
+
+		self::assertSame(
+			[
+				[
+					'id' => 'n',
+					'title' => '',
+					'description' => 'D',
+					'category' => 'general',
+					'version' => '1.0.0',
+					'file' => 'n.json',
+					'fills' => [],
+					'notes' => ['keep me', 'second'],
+				],
+				[
+					'id' => 'o',
+					'title' => '',
+					'description' => '',
+					'category' => 'general',
+					'version' => '1.0.0',
+					'file' => 'o.json',
+					'fills' => [],
+					'notes' => [],
+				],
+			],
+			$this->service(dir: $this->dir)->listTemplates()
+		);
+	}//end testNotesAreTrimmedAndFillsMustBeAList()
 }//end class

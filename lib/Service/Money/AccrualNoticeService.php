@@ -184,21 +184,35 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 		string $documentLink = '',
 		string $sender = '',
 	): array {
-		$instance = $this->termService->getTermijnInstance($termInstanceId);
-		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
-		}
-
 		$notice = new NoticeRegistration();
 		$notice->termInstanceId = $termInstanceId;
-		$notice->instance = $instance;
 		$notice->receiptDate = $receiptDate;
 		$notice->channel = $channel;
 		$notice->documentLink = $documentLink;
 		$notice->sender = $sender;
 
-		return $this->storeNotice(notice: $notice);
+		return $this->storeOnInstance(notice: $notice);
 	}//end registerNotice()
+
+	/**
+	 * Store the notice on its term instance, refused when the instance is not found.
+	 *
+	 * @param NoticeRegistration $notice The notice, without its instance yet.
+	 *
+	 * @return array<string, mixed> What storeNotice() answers.
+	 *
+	 * @throws RuntimeException When the instance is not found.
+	 */
+	private function storeOnInstance(NoticeRegistration $notice): array {
+		$instance = $this->termService->getTermijnInstance($notice->termInstanceId);
+		if ($instance === null) {
+			throw new RuntimeException('TermijnInstance not found: ' . $notice->termInstanceId);
+		}
+
+		$notice->instance = $instance;
+
+		return $this->storeNotice(notice: $notice);
+	}//end storeOnInstance()
 
 	/**
 	 * Store the notice, and start the penalty payment the first valid one starts.

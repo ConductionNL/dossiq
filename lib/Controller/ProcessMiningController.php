@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AllowsGroupMembers;
 use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ReportAnswerInterface;
 use OCA\Dossiq\Kernel\Contracts\ReportRequestInterface;
@@ -53,6 +54,8 @@ use Throwable;
  * @psalm-suppress UnusedClass
  */
 class ProcessMiningController extends Controller {
+	use AllowsGroupMembers;
+
 	/**
 	 * Groups that may read the process-mining report — same gate shape as
 	 * the same allowed-group shape the retired IV3 report used: it spans the
@@ -172,23 +175,4 @@ class ProcessMiningController extends Controller {
 
 		return null;
 	}//end ensureAllowed()
-
-	/**
-	 * Check whether the given user id belongs to an allowed group (or is an
-	 * NC admin, defensive default) — same shape as
-	 * the retired IV3 report's isAllowed().
-	 *
-	 * @param string $uid The Nextcloud user id.
-	 *
-	 * @return bool
-	 */
-	private function isAllowed(string $uid): bool {
-		foreach (self::ALLOWED_GROUPS as $group) {
-			if ($this->groupManager->isInGroup($uid, $group) === true) {
-				return true;
-			}
-		}
-
-		return $this->groupManager->isAdmin($uid) === true;
-	}//end isAllowed()
 }//end class

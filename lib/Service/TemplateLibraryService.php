@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
+use OCA\Dossiq\Service\TemplateLibrary\TemplateMetadata;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -40,8 +41,6 @@ use RuntimeException;
  * Service for loading and activating zaaktype templates.
  *
  * @spec openspec/specs/template-library/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
@@ -64,6 +63,13 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 	];
 
 	/**
+	 * Reads the metadata the library lists for one template.
+	 *
+	 * @var TemplateMetadata
+	 */
+	private readonly TemplateMetadata $metadata;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service for register/schema references
@@ -75,6 +81,7 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly string $templatesDir=self::TEMPLATES_DIR,
 	) {
+		$this->metadata = new TemplateMetadata();
 	}//end __construct()
 
 	/**
@@ -125,31 +132,8 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 			return null;
 		}
 
-		return $this->metadataOf(data: $data, file: $file);
+		return $this->metadata->entry(data: $data, file: $file);
 	}//end templateMetadata()
-
-	/**
-	 * The metadata the library lists for one template.
-	 *
-	 * @param array<string, mixed> $data The decoded template.
-	 * @param string               $file The template file path.
-	 *
-	 * @return array<string, mixed> The template metadata.
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function metadataOf(array $data, string $file): array {
-		return [
-			'id' => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
-			'title' => $data['title'] ?? '',
-			'description' => $data['description'] ?? '',
-			'category' => $data['category'] ?? 'general',
-			'version' => $data['version'] ?? '1.0.0',
-			'file' => basename($file),
-			'fills' => $this->fillsOf(data: $data),
-			'notes' => $this->notesOf(data: $data),
-		];
-	}//end metadataOf()
 
 	/**
 	 * The template JSON files in the templates directory.
@@ -170,47 +154,6 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 
 		return $files;
 	}//end templateFiles()
-
-	/**
-	 * What a template fills in from the case, for the generate dialog.
-	 *
-	 * @param array<string, mixed> $data The template file's content.
-	 *
-	 * @return array<int, mixed> The template's fills, or an empty list.
-	 *
-	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-names-what-it-fills-in
-	 */
-	private function fillsOf(array $data): array {
-		if (isset($data['fills']) === false || is_array($data['fills']) === false) {
-			return [];
-		}
-
-		return array_values($data['fills']);
-	}//end fillsOf()
-
-	/**
-	 * The notes a template carries for whoever generates it, e.g. about the objection period.
-	 *
-	 * @param array<string, mixed> $data The template file's content.
-	 *
-	 * @return array<int, string> The notes, blanks and non-strings left out.
-	 *
-	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
-	 */
-	private function notesOf(array $data): array {
-		if (isset($data['notes']) === false || is_array($data['notes']) === false) {
-			return [];
-		}
-
-		$notes = [];
-		foreach ($data['notes'] as $note) {
-			if (is_string($note) === true && trim($note) !== '') {
-				$notes[] = trim($note);
-			}
-		}
-
-		return $notes;
-	}//end notesOf()
 
 	/**
 	 * Load a template by its ID.

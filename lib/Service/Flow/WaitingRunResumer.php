@@ -85,17 +85,7 @@ class WaitingRunResumer {
 			return;
 		}
 
-		try {
-			$suspended = $this->runs->findSuspendedBySubject(subjectUuid: $caseId);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not look up runs suspended on case ' . $caseId . ': ' . $e->getMessage()
-			);
-			return;
-		}
-
-		$this->signalAwaiting(
-			suspended: $suspended,
+		$this->resumeOnCase(
 			payload: [
 				// Without a `decision` key the resume is a nudge and the
 				// node suspends again — so the outcome is what makes
@@ -106,6 +96,28 @@ class WaitingRunResumer {
 			]
 		);
 	}//end resumeWaitingRun()
+
+	/**
+	 * Look up the runs suspended on the case and signal the one waiting on the decision.
+	 *
+	 * @param array{decision: string, decisionRef: string, caseId: string} $payload The terminal status decidiq reported,
+	 *                                                                              the concluded decision's id and the case.
+	 *
+	 * @return void
+	 */
+	private function resumeOnCase(array $payload): void {
+		$caseId = $payload['caseId'];
+		try {
+			$suspended = $this->runs->findSuspendedBySubject(subjectUuid: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not look up runs suspended on case ' . $caseId . ': ' . $e->getMessage()
+			);
+			return;
+		}
+
+		$this->signalAwaiting(suspended: $suspended, payload: $payload);
+	}//end resumeOnCase()
 
 	/**
 	 * Signal the first suspended run waiting on this decision with its outcome.

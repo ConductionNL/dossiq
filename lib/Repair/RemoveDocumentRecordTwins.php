@@ -16,8 +16,9 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RunsOnceWithObjectService;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -38,11 +39,18 @@ use Throwable;
  */
 class RemoveDocumentRecordTwins implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
+	use RunsOnceWithObjectService;
 
 	public const DONE_KEY = 'document_record_twins_removed';
 
 	public const DONE_VERSION = '1';
+
+	/**
+	 * What the upgrade output says when OpenRegister is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq documents: OpenRegister unavailable; document records stay as they are.';
 
 	private const PAGE_SIZE = 200;
 
@@ -77,19 +85,9 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('Dossiq documents: OpenRegister unavailable; document records stay as they are.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $output): void {
+		$this->onceWithObjectService(
+			output: $output,
+			work: function (object $objectService) use ($output): void {
 				$this->removeAll(objectService: $objectService, output: $output);
 			}
 		);
@@ -138,25 +136,14 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 * @return array<int, array<int, array<string, mixed>>> file id => its records.
 	 */
 	private function recordsByFile(object $objectService, string $register, string $schema): array {
+		$source = new RepairSchema(objectService: $objectService, register: $register);
+		$source->schema = $schema;
 		$byFile = [];
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$fileId = (int)($row['fileId'] ?? 0);
-				if ($fileId > 0) {
-					$byFile[$fileId][] = $row;
-				}
+		foreach ($source->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$fileId = (int)($row['fileId'] ?? 0);
+			if ($fileId > 0) {
+				$byFile[$fileId][] = $row;
 			}
-
-			$page++;
 		}
 
 		return $byFile;

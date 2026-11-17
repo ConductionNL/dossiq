@@ -115,7 +115,10 @@ class DocumentSeriesNumbererEdgeCasesTest extends TestCase {
 			 *
 			 * @return int|string The answer.
 			 */
-			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int|string {
+			public function reserveNext(object $sequence): int|string {
+				$registerId = $sequence->registerId;
+				$schemaId = $sequence->schemaId;
+				$scopeKey = $sequence->scopeKey;
 				$this->calls[] = [$registerId, $schemaId, $scopeKey];
 
 				return $this->answer;

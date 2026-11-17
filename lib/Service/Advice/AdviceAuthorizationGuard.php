@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -92,14 +93,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertTransitionAuthorized(array $advice, string $to): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
@@ -133,14 +128,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertReminderAuthorized(array $advice): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
@@ -155,6 +144,28 @@ class AdviceAuthorizationGuard {
 
 		throw new RuntimeException('Advice request not accessible');
 	}//end assertReminderAuthorized()
+
+	/**
+	 * The caller's uid, or null for an administrator, who is always authorized.
+	 *
+	 * @return string|null The uid, null for an administrator.
+	 *
+	 * @throws RuntimeException When the caller is not authenticated.
+	 */
+	private function nonAdminCaller(): ?string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException('Not authenticated');
+		}
+
+		$uid = $user->getUID();
+
+		if ($this->groupManager->isAdmin($uid) === true) {
+			return null;
+		}
+
+		return $uid;
+	}//end nonAdminCaller()
 
 	/**
 	 * Whether a non-admin caller may perform the given advice transition.
@@ -221,17 +232,6 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function linkedCase(string $caseId): array|null {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'case_schema', id: $caseId);
 	}//end linkedCase()
 }//end class

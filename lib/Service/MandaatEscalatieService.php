@@ -77,11 +77,20 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	 */
 	public function createEscalatie(string $caseId, string $decisionType, string $initiatorId, string $escalationReason): array {
 		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalationReason: $escalationReason);
-		$row = [
-			'caseId' => $caseId,
-			'decisionType' => $decisionType,
-			'initiatorId' => $initiatorId,
-			'escalationReason' => $escalationReason,
+		$asked = ['caseId' => $caseId, 'decisionType' => $decisionType, 'initiatorId' => $initiatorId, 'escalationReason' => $escalationReason];
+
+		return $this->saveCreated(row: $asked + $this->openTarget(path: $path));
+	}//end createEscalatie()
+
+	/**
+	 * Where an escalation goes, opened now.
+	 *
+	 * @param array<string, mixed> $path The escalation path, with its `mandaatId` and `userId`.
+	 *
+	 * @return array<string, mixed> The target mandate and user, the open status and the creation moment.
+	 */
+	private function openTarget(array $path): array {
+		return [
 			// Key = schema property (renamed). Value = an INTERNAL array key
 			// returned by resolveEscalationPath() in this same class, which is
 			// not a schema property and does not move here.
@@ -90,9 +99,7 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 			'status' => 'open',
 			'createdAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
-
-		return $this->saveCreated(row: $row);
-	}//end createEscalatie()
+	}//end openTarget()
 
 	/**
 	 * Save a new escalation and log that it was created.
@@ -460,13 +467,12 @@ class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	 * @return array<string, mixed>|null
 	 */
 	private function findEscalation(string $escalationId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->escalationStore();
+		if ($store === null) {
 			return null;
 		}
 
+		[$objectService, $register, $schema] = $store;
 		try {
 			return $this->findObjectAsArray(
 				objectService: $objectService,

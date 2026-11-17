@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * import that carries stored complaint records onto cases.
  *
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @covers \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @covers \OCA\Dossiq\Service\Session\SessionDefinition
