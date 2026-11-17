@@ -105,6 +105,34 @@ class FederatedCaseShareService {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
+		$setup = $this->shareSetup(sharedFields: $sharedFields);
+		if (isset($setup['error']) === true) {
+			return $setup;
+		}
+
+		$request = new FederatedShareRequest(
+			caseId: $caseId,
+			remoteCloudId: $remoteCloudId,
+			sharedFields: $sharedFields,
+			sharedDocuments: $sharedDocuments,
+			permissionLevel: $permissionLevel,
+			createdBy: $createdBy,
+		);
+
+		return $this->shareThrough(setup: $setup, request: $request);
+	}//end createFederatedShare()
+
+	/**
+	 * The federation service, the share store and the case schema, once the
+	 * federation leaf and the schemas are there.
+	 *
+	 * @param array<string> $sharedFields Requested case field names
+	 *
+	 * @return array<string, mixed> The federationService, store and caseSchema, or an error array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function shareSetup(array $sharedFields): array {
 		$services = $this->federationServices();
 		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
@@ -119,28 +147,35 @@ class FederatedCaseShareService {
 
 		[$register, $caseSchema, $shareSchema] = $config;
 
-		$request = new FederatedShareRequest(
-			caseId: $caseId,
-			remoteCloudId: $remoteCloudId,
-			sharedFields: $sharedFields,
-			sharedDocuments: $sharedDocuments,
-			permissionLevel: $permissionLevel,
-			createdBy: $createdBy,
-		);
 		$store = new FederatedShareStore(objectService: $objectService, register: $register, shareSchema: $shareSchema);
 
-		$shareData = $this->buildShareData(request: $request, store: $store, caseSchema: $caseSchema);
+		return ['federationService' => $federationService, 'store' => $store, 'caseSchema' => $caseSchema];
+	}//end shareSetup()
+
+	/**
+	 * Build the snapshot and publish it to the remote org.
+	 *
+	 * @param array<string, mixed>  $setup   The federationService, store and caseSchema.
+	 * @param FederatedShareRequest $request The share being created.
+	 *
+	 * @return array The created federated share data, or an error array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function shareThrough(array $setup, FederatedShareRequest $request): array {
+		$store = $setup['store'];
+		$shareData = $this->buildShareData(request: $request, store: $store, caseSchema: $setup['caseSchema']);
 		if (isset($shareData['error']) === true) {
 			return $shareData;
 		}
 
 		return $this->publishShareSnapshot(
-			federationService: $federationService,
+			federationService: $setup['federationService'],
 			store: $store,
 			shareData: $shareData,
 			request: $request,
 		);
-	}//end createFederatedShare()
+	}//end shareThrough()
 
 	/**
 	 * The OR federation-share and object services, or null when either is unavailable.

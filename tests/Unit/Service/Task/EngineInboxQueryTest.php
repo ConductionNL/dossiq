@@ -95,7 +95,9 @@ class EngineInboxQueryTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function inbox(TaskInboxCriteria $criteria, int $limit, int $offset): mixed {
+			public function inbox(object $criteria, ?object $page = null): mixed {
+				$limit = ($page?->limit ?? 25);
+				$offset = ($page?->offset ?? 0);
 				$this->calls[] = [$criteria, $limit, $offset];
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;

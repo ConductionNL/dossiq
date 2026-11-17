@@ -39,9 +39,12 @@ Built 12 Oct 2026 (lane L7). 4.1: `src/services/cmmnApi.js` and `src/utils/cmmnH
 
 ## 5. E2E coverage
 
-- [ ] 5.1 `tests/e2e/cmmn-retirement.spec.ts`: the retirement journey. Anchors `@e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-cmmn-case-shows-the-plan-openregister-holds`, `#working-a-plan-item-through-the-panel` and `#the-old-routes-answer-404-after-removal` (open a CMMN case, work an item through the panel, probe the retired routes for 404).
-- [ ] 5.2 Migration proof in the same spec: seed a case with a populated blob, run the migration, assert the case detail shows the same items in the same states from openregister rows; anchor `#a-drained-case-shows-the-same-plan`.
+- [x] 5.1 `tests/e2e/cmmn-retirement.spec.ts`: the retirement journey. Anchors `@e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-cmmn-case-shows-the-plan-openregister-holds`, `#working-a-plan-item-through-the-panel` and `#the-old-routes-answer-404-after-removal` (open a CMMN case, work an item through the panel, probe the retired routes for 404).
+  - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
+- [x] 5.2 Migration proof in the same spec: seed a case with a populated blob, run the migration, assert the case detail shows the same items in the same states from openregister rows; anchor `#a-drained-case-shows-the-same-plan`.
+  - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
 - [ ] 5.3 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: remove the `cmmn-plan` 409 allowances from its console and network assertions and anchor `#a-bpmn-case-is-untouched` on the BPMN case-detail assertions.
+  - Live pass 2026-11-16: case-detail-kpis-and-tabs.spec.ts fails on assertions unrelated to the cmmn-plan allowances (tab names, KPI tiles, More button no longer match the current case page), so the spec needs rework against the case page board before this closes.
 
 Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmmn-retirement.spec.ts` (5.1, 5.2) and the updated `tests/e2e/case-detail-kpis-and-tabs.spec.ts` (5.3). The boxes stay open until the live pass has run them.
 

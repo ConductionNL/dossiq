@@ -9,7 +9,7 @@
  * (`OCA\{Namespace}\Portal\PortalContributionProvider`) and duck-types it
  * (getAudiences/getAudience + getContribution) via method_exists(), never
  * instanceof. This class is therefore deliberately PLAIN: no portaliq imports,
- * no `implements` clause, no info.xml dependency, no constructor dependencies.
+ * no portaliq interface, no info.xml dependency, no constructor dependencies.
  * Without portaliq installed it is inert and Dossiq behaves exactly as before.
  *
  * It moves Dossiq's four former in-app portal surfaces (ADR-046, procest#162)
@@ -63,6 +63,7 @@ namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
 use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
@@ -81,7 +82,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
  */
-class PortalContributionProvider {
+class PortalContributionProvider implements PortalContributionProviderInterface {
 	/**
 	 * The OpenRegister register slug every collection/action below lives in.
 	 *
@@ -111,13 +112,7 @@ class PortalContributionProvider {
 	 *
 	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
 	 */
-	private const SUPPLIER_ATTACHMENTS_FIELD = [
-		'label' => 'Bijlagen',
-		'type' => 'file',
-		'multiple' => true,
-		'accept' => ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.odt'],
-		'maxSizeMb' => 20,
-	];
+	private const SUPPLIER_ATTACHMENTS_FIELD = PortalConversation::ATTACHMENTS_FIELD;
 
 	/**
 	 * What the citizen inbox projects, and where it keeps what portaliq's
@@ -299,13 +294,6 @@ class PortalContributionProvider {
 		'receivedAt' => ['label' => 'Ontvangen op'],
 		'wooPublicationUrl' => ['label' => 'Gepubliceerd besluit'],
 	];
-
-	/**
-	 * The rule key a resident is told by when the decision on their Woo request is published.
-	 *
-	 * @var string
-	 */
-	public const RULE_WOO_REQUEST_PUBLISHED = 'dossiq.wooRequest.published';
 
 	/**
 	 * The menu heading a resident reads above dossiq's pages (portaliq's `group`).

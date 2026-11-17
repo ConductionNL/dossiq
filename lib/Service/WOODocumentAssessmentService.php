@@ -35,6 +35,7 @@ use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Review\DisclosureAssessmentValidator;
 use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -56,6 +57,7 @@ use RuntimeException;
 class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * The keys that name a stored object, dropped from each caller assessment
@@ -546,22 +548,6 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 
 		return $this->redactionTally(rows: $rows, caseId: $caseId);
 	}//end partlyPublicWithoutCopy()
-
-	/**
-	 * OpenRegister's object service, or a refusal when it is not there.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is unavailable.
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * How many of the rows are the case's partly public documents, and which of them have no redacted copy.

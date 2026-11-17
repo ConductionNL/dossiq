@@ -25,6 +25,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
 use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -97,6 +98,17 @@ class WorkingDayRollCalendarTest extends TestCase {
 
 		return new WorkingDayRoll(settings: $settings, logger: $logger);
 	}//end roll()
+
+	/**
+	 * The seeded national calendar, which the engine's value objects require.
+	 *
+	 * @return WorkingCalendar The calendar.
+	 */
+	private function national(): WorkingCalendar {
+		return WorkingCalendar::fromArray(
+			['slug' => 'nl-national', 'workingWeekdays' => [1, 2, 3, 4, 5], 'hoursPerWorkingDay' => 8, 'timezone' => 'Europe/Amsterdam']
+		);
+	}//end national()
 
 	/**
 	 * A roll over a scripted calendar.
@@ -230,7 +242,7 @@ class WorkingDayRollCalendarTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefusedEndDateFallsBackToCalendarDays(): void {
-		$roll  = $this->over(calendar: new ScriptedCalendar(), calculator: new ScriptedCalculator(refuses: true));
+		$roll  = $this->over(calendar: $this->national(), calculator: new ScriptedCalculator(refuses: true));
 		$start = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
 
 		$this->assertNull(actual: $roll->endAfter(start: $start, days: 5, mode: WorkingDayRoll::MODE_WORKING_DAYS));
@@ -249,7 +261,7 @@ class WorkingDayRollCalendarTest extends TestCase {
 	 */
 	public function testAnAnsweredEndDateIsUsed(): void {
 		$calculator = new ScriptedCalculator(answer: new DateTimeImmutable('2026-09-21T09:00:00+02:00'));
-		$roll       = $this->over(calendar: new ScriptedCalendar(), calculator: $calculator);
+		$roll       = $this->over(calendar: $this->national(), calculator: $calculator);
 
 		$end = $roll->endAfterOrCalendarDays(start: new DateTimeImmutable('2026-09-10T09:00:00+02:00'), days: 7, mode: WorkingDayRoll::MODE_WORKING_DAYS);
 
@@ -297,7 +309,7 @@ class WorkingDayRollCalendarTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefusedFirstWorkingMomentIsNull(): void {
-		$roll = $this->over(calendar: new ScriptedCalendar(), calculator: new ScriptedCalculator(refuses: true));
+		$roll = $this->over(calendar: $this->national(), calculator: new ScriptedCalculator(refuses: true));
 
 		$this->assertNull(actual: $roll->firstWorkingMomentAtOrAfter(moment: new DateTimeImmutable('2026-09-12T10:00:00+02:00')));
 		$this->assertSame(
@@ -315,8 +327,8 @@ class WorkingDayRollCalendarTest extends TestCase {
 	 */
 	public function testOnlyAnAnswerAtOrAfterTheMomentIsKept(): void {
 		$moment  = new DateTimeImmutable('2026-09-12T10:00:00+02:00');
-		$earlier = $this->over(calendar: new ScriptedCalendar(), calculator: new ScriptedCalculator(answer: $moment->modify('-1 hour')));
-		$same    = $this->over(calendar: new ScriptedCalendar(), calculator: new ScriptedCalculator(answer: $moment));
+		$earlier = $this->over(calendar: $this->national(), calculator: new ScriptedCalculator(answer: $moment->modify('-1 hour')));
+		$same    = $this->over(calendar: $this->national(), calculator: new ScriptedCalculator(answer: $moment));
 
 		$this->assertNull(actual: $earlier->firstWorkingMomentAtOrAfter(moment: $moment));
 		$this->assertSame(
@@ -359,21 +371,18 @@ class ScriptedCalculator {
 	/**
 	 * Add a value to a date.
 	 *
-	 * @param DateTimeInterface $from     The start.
-	 * @param float             $value    The value.
-	 * @param string            $unit     The unit.
-	 * @param object            $calendar The calendar.
+	 * @param SlaAddition $addition The start, the amount, the unit and the calendar.
 	 *
 	 * @return DateTimeImmutable The scripted answer.
 	 */
-	public function add(DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
+	public function add(SlaAddition $addition): DateTimeImmutable {
 		if ($this->refuses === true) {
 			throw new RuntimeException(message: 'calculator refused');
 		}
 
-		$this->added[] = [$value, $unit];
+		$this->added[] = [$addition->value, $addition->unit];
 
-		return $this->answer ?? DateTimeImmutable::createFromInterface($from);
+		return $this->answer ?? $addition->start;
 	}//end add()
 
 	/**

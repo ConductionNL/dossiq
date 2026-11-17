@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
+use OCA\Dossiq\Kernel\Contracts\SeedStaffGroupInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -60,14 +61,9 @@ use Throwable;
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
-class SeedStaffGroup implements IRepairStep {
+class SeedStaffGroup implements IRepairStep, SeedStaffGroupInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The staff group the register grants (register.d/91-register-access.json).
-	 */
-	public const STAFF_GROUP = 'dossiq-medewerkers';
 
 	/**
 	 * The app config key that records the seeding ran.

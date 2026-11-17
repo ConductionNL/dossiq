@@ -76,7 +76,9 @@ class EngineTaskInboxCaseAndInstanceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The envelope.
 			 */
-			public function inbox(object $criteria, int $limit, int $offset): array {
+			public function inbox(object $criteria, ?object $page = null): array {
+				$limit = ($page?->limit ?? 25);
+				$offset = ($page?->offset ?? 0);
 				$this->seenCriteria = $criteria;
 				$this->seenLimit    = $limit;
 

@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class StatusTypeLookup {
+class StatusTypeLookup implements StatusTypeLookupInterface {
 	/**
 	 * Constructor.
 	 *

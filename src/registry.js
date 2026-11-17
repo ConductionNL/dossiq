@@ -51,6 +51,9 @@ import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
 import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
+// A KPI against its target, added from the dashboard's presets (row 10.1).
+// @spec openspec/changes/capability-rows-say-the-whole-capability/specs/dashboard/spec.md
+import KpiTargetGauge from './components/dashboard/KpiTargetGauge.vue'
 // The task page's leaves, as detail widgets (task-page-on-the-manifest).
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
@@ -1042,6 +1045,13 @@ const registry = {
 		kind: 'page',
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
+	},
+	'kpi-target-gauge': {
+		// @custom-widget-ratchet exclude the library gauge reads only an aggregate of one schema and prints the value-to-target RATIO (89% for 80 against 90), while this KPI is computed server-side and must read as itself against its target
+		kind: 'widget',
+		component: KpiTargetGauge,
+		...DASHBOARD_TILE_META,
+		_note: 'A KPI as a gauge on the Dashboard (REQ-CRS-35, row 10.1): the userWidgets preset of that type names an app endpoint and the figure in its answer, and the gauge draws it against its target and says "80% of target 90%".',
 	},
 	MailPartiesReportWidget: {
 		kind: 'widget',

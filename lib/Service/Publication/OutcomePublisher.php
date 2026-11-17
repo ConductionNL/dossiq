@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
@@ -121,7 +122,7 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 	 * @param WooCategoryMapper $categoryMapper DIWOO informatiecategorie mapper.
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
-	 * @param SourceCollectionReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
+	 * @param WooDossierReturnInterface|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param CasePublicationState|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocumentsInterface|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; publishing waits for the required ones.
@@ -134,7 +135,7 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 		private readonly WooCategoryMapper $categoryMapper,
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
-		private readonly ?SourceCollectionReturn $dossierReturn = null,
+		private readonly ?WooDossierReturnInterface $dossierReturn = null,
 		?CasePublicationState $caseLedger = null,
 		?WooCaseDocumentsInterface $caseDocuments = null,
 		private readonly ?PagesSeenInterface $pagesSeen = null,

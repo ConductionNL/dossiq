@@ -45,6 +45,7 @@ use OCA\OpenRegister\Db\TaskInboxDueWindow;
 use OCA\OpenRegister\Db\TaskInboxFilter;
 use OCA\OpenRegister\Db\TaskInboxOrder;
 use OCA\OpenRegister\Db\TaskInboxSelection;
+use OCA\OpenRegister\Service\Task\TaskInboxPage;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -287,7 +288,7 @@ class EngineInboxQuery implements EngineInboxQueryInterface {
         }
 
         try {
-            return $inbox->inbox($this->criteriaOf(criteria: $criteria), $limit, 0);
+            return $inbox->inbox($this->criteriaOf(criteria: $criteria), new TaskInboxPage(limit: $limit, offset: 0));
         } catch (Throwable $e) {
             $this->lastError = $e->getMessage();
 
