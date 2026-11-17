@@ -44,6 +44,7 @@ use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCA\Dossiq\Service\Lifecycle\LoadsCaseOrRefuses;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use RuntimeException;
@@ -57,6 +58,10 @@ use RuntimeException;
  * reader over two arrays with no state and nothing to inject.
  */
 class ApprovalRequest implements ApprovalRequestInterface {
+
+	use LoadsCaseOrRefuses {
+		load as private foundCase;
+	}
 
 	/**
 	 * Constructor.
@@ -88,15 +93,7 @@ class ApprovalRequest implements ApprovalRequestInterface {
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function raise(string $caseId, string $act, string $userId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+		$case = $this->foundCase(caseId: $caseId);
 		$gate = $this->gateOf(case: $case, act: $act);
 
 		$decisionRef = $this->raiseDecision(case: $case, request: $gate + ['caseId' => $caseId, 'userId' => $userId]);

@@ -96,7 +96,7 @@ final class CaseLinkSharesTest extends TestCase {
 			[
 				'OCA\OpenRegister\Service\ObjectService' => $objects,
 				'OCA\OpenRegister\Service\Sharing\AccessLinkService' => $links,
-				'OCA\OpenRegister\Service\Sharing\AccessLinkReader' => $reader,
+				'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader' => $reader,
 			]
 		);
 

@@ -168,7 +168,8 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 			'the plan is read from OpenRegister',
 		).toBe(true)
 
-		// The panel offers the move; OpenRegister takes it.
+		// The panel offers the move in the row's actions menu; OpenRegister takes it.
+		await page.getByTestId('cn-plan-menu-controle').getByRole('button').first().click()
 		await page.getByTestId('cn-plan-completed-controle').click()
 		await expect(
 			row(page, 'controle').locator('.cn-plan-row__state'),

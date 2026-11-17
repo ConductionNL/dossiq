@@ -1,0 +1,15 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V.
+// SPDX-License-Identifier: EUPL-1.2
+
+// The DSO case dialogs: the fields in a column and the refusal line.
+@mixin dso-dialog {
+	.dso-dialog {
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--default-grid-baseline, 4px) * 3);
+	}
+
+	.dso-dialog__error {
+		color: var(--color-error-text);
+	}
+}

@@ -67,6 +67,7 @@ use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -318,10 +319,7 @@ class WorkingDayRoll {
 
 		try {
 			return $this->calculator->add(
-				from: $start,
-				value: (float)$days,
-				unit: self::UNIT_BUSINESS_DAYS,
-				calendar: $this->calendar
+				new SlaAddition(start: $start, value: (float)$days, unit: self::UNIT_BUSINESS_DAYS, calendar: $this->calendar)
 			);
 		} catch (Throwable $e) {
 			$this->logger?->warning(
@@ -456,10 +454,7 @@ class WorkingDayRoll {
 
 		try {
 			$answered = $this->calculator->add(
-				from: $moment,
-				value: 0.0,
-				unit: self::UNIT_BUSINESS_DAYS,
-				calendar: $this->calendar
+				new SlaAddition(start: $moment, value: 0.0, unit: self::UNIT_BUSINESS_DAYS, calendar: $this->calendar)
 			);
 		} catch (Throwable $e) {
 			$this->logger?->warning(

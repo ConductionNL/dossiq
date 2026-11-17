@@ -219,32 +219,38 @@ class DsoCaseService implements DsoCaseServiceInterface {
 	): array {
 		$objectService = $this->getObjectService();
 
-		$register = $this->config(key: 'register');
-		$caseSchema = $this->config(key: 'case_schema');
-		$case = $this->requireCase(caseId: $caseId, where: ['register' => $register, 'schema' => $caseSchema]);
+		$where = ['register' => $this->config(key: 'register'), 'schema' => $this->config(key: 'case_schema')];
+		$case = $this->requireCase(caseId: $caseId, where: $where);
 
-		$change = [
-			'requestRef' => (string)($case['permitApplicationRef'] ?? ''),
-			'oldStatus' => (string)($case['dsoStatus'] ?? ''),
-			'newStatus' => $newStatus,
-			'besluitdatum' => $besluitdatum,
-			'notes' => $notes,
-			'userId' => $userId,
-		];
+		$change = ['requestRef' => (string)($case['permitApplicationRef'] ?? ''), 'oldStatus' => (string)($case['dsoStatus'] ?? '')];
+		$change += ['newStatus' => $newStatus, 'besluitdatum' => $besluitdatum, 'notes' => $notes, 'userId' => $userId];
 
-		// Same as above: this method returns an array to its caller.
-		$updatedCase = $this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId,
-			changes: $this->statusChanges(case: $case, change: $change)
-		) ?? [];
+		$target = ['objectService' => $objectService, 'id' => $caseId] + $where;
+		$updatedCase = $this->patchCase(target: $target, changes: $this->statusChanges(case: $case, change: $change));
 
 		$this->announce(objectService: $objectService, change: $change);
 
 		return $updatedCase;
 	}//end transitionStatus()
+
+	/**
+	 * Patch the fields a DSO status act owns on the case.
+	 *
+	 * @param array<string, mixed> $target  The objectService, register, schema and case id.
+	 * @param array<string, mixed> $changes The fields to patch.
+	 *
+	 * @return array<string, mixed> The updated case, or an empty array.
+	 */
+	private function patchCase(array $target, array $changes): array {
+		// Same as above: this method returns an array to its caller.
+		return $this->patchObjectAsArray(
+			objectService: $target['objectService'],
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $target['id'],
+			changes: $changes
+		) ?? [];
+	}//end patchCase()
 
 	/**
 	 * Sync the linked vergunningaanvraag when there is one, then dispatch the change.

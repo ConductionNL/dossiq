@@ -43,6 +43,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Service\Case\AppPlanWrite;
+use OCA\OpenRegister\Service\Case\CaseAnchor;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -322,7 +324,13 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 		}
 
 		try {
-			$plans->createPlanAsSystem(objectUuid: $caseId, registerId: $registerId, schemaId: $schemaId, definition: $definition, app: self::SYSTEM_APP);
+			$plans->createPlanAsSystem(
+				new AppPlanWrite(
+					anchor: new CaseAnchor(objectUuid: $caseId, registerId: $registerId, schemaId: $schemaId),
+					definition: $definition,
+					app: self::SYSTEM_APP
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('CasePlanProjectionService: OpenRegister refused the projected plan', ['caseId' => $caseId, 'exception' => $e->getMessage()]);
 			return ['projected' => false, 'reason' => $e->getMessage()];

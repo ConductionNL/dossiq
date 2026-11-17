@@ -36,6 +36,7 @@ use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 /**
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses   \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class RecordImportStoreTest extends TestCase {

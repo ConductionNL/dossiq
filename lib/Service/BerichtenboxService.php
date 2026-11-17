@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\Dossiq\Service\Support\ResolvesLoggedObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -46,6 +47,9 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class BerichtenboxService implements BerichtenboxServiceInterface {
+
+	use ResolvesLoggedObjectService;
+
 	/**
 	 * Constructor.
 	 *
@@ -522,22 +526,4 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 
 		return [];
 	}//end bsnErrors()
-
-	/**
-	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.
-	 *
-	 * @return \OCA\OpenRegister\Contract\ObjectServiceInterface|null The object service or null.
-	 */
-	private function getObjectService(): ?\OCA\OpenRegister\Contract\ObjectServiceInterface {
-		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error('Dossiq: Could not get ObjectService', ['exception' => $e->getMessage()]);
-			return null;
-		}
-	}//end getObjectService()
 }//end class

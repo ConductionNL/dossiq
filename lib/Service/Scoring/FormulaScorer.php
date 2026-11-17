@@ -42,8 +42,6 @@ use InvalidArgumentException;
  * Evaluates a scoring formula's expression against named values.
  *
  * @spec openspec/specs/dossiq-procurement-evaluation-award/spec.md#requirement-req-eva-003-scoring-formulas-shall-be-data-not-code
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class FormulaScorer {
 
@@ -96,6 +94,20 @@ class FormulaScorer {
 	private int $depth = 0;
 
 	/**
+	 * Splits an expression into its tokens.
+	 *
+	 * @var FormulaTokens
+	 */
+	private readonly FormulaTokens $tokeniser;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->tokeniser = new FormulaTokens();
+	}//end __construct()
+
+	/**
 	 * The score a formula record gives for these values.
 	 *
 	 * @param array<string, mixed> $formula The `scoringFormula` record; its `expression` is evaluated.
@@ -134,7 +146,7 @@ class FormulaScorer {
 			throw new InvalidArgumentException('scoring_formula_too_long');
 		}
 
-		$this->tokens = self::tokenise(expression: $expression);
+		$this->tokens = $this->tokeniser->split(expression: $expression);
 		$this->position = 0;
 		$this->depth = 0;
 		$this->values = [];
@@ -155,41 +167,6 @@ class FormulaScorer {
 
 		return $result;
 	}//end evaluate()
-
-	/**
-	 * Split an expression into tokens: `num`, `name` and `op`.
-	 *
-	 * @param string $expression The expression.
-	 *
-	 * @return array<int, array{0: string, 1: string}>
-	 *
-	 * @throws InvalidArgumentException On a character outside the grammar.
-	 */
-	private static function tokenise(string $expression): array {
-		$matched = preg_match_all('/\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)|([-+*\/(),]))/A', $expression, $parts, PREG_SET_ORDER);
-		$consumed = 0;
-		$tokens = [];
-		if ($matched === false || $matched === 0) {
-			$parts = [];
-		}
-
-		foreach ($parts as $part) {
-			$consumed += strlen($part[0]);
-			if (($part[1] ?? '') !== '') {
-				$tokens[] = ['num', $part[1]];
-			} elseif (($part[2] ?? '') !== '') {
-				$tokens[] = ['name', $part[2]];
-			} else {
-				$tokens[] = ['op', $part[3]];
-			}
-		}
-
-		if (trim(substr($expression, $consumed)) !== '' || $tokens === []) {
-			throw new InvalidArgumentException('scoring_formula_malformed');
-		}
-
-		return $tokens;
-	}//end tokenise()
 
 	/**
 	 * A sum: terms joined by `+` and `-`.

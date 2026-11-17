@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -45,6 +46,9 @@ use Throwable;
 class CaseRoleHolder {
 
 	use SearchesObjects;
+	use RequiresObjectService {
+		requireObjectService as private objectService;
+	}
 
 	/**
 	 * The generic role whose seat is also the case's assignee.
@@ -90,20 +94,34 @@ class CaseRoleHolder {
 			return true;
 		}
 
-		$roleTypes = $this->roleTypeIds(genericRoles: $genericRoles, caseTypeId: '');
+		return $this->boundToAny(case: $case, holder: ['uid' => $uid, 'genericRoles' => $genericRoles]);
+	}//end holdsAny()
+
+	/**
+	 * Whether a role binding on the case binds the person to a role type with one of the generic roles.
+	 *
+	 * @param array<string, mixed>                                $case   The stored case.
+	 * @param array{uid: string, genericRoles: array<int, string>} $holder The person's Nextcloud user id and the generic roles that count.
+	 *
+	 * @return bool True when such a binding exists.
+	 *
+	 * @throws RuntimeException When the role bindings cannot be read.
+	 */
+	private function boundToAny(array $case, array $holder): bool {
+		$roleTypes = $this->roleTypeIds(genericRoles: $holder['genericRoles'], caseTypeId: '');
 		if ($roleTypes === []) {
 			return false;
 		}
 
 		foreach ($this->rows(schemaKey: 'role_schema', filters: ['case' => $this->idOf(row: $case), '_limit' => CaseSeats::PAGE_SIZE]) as $row) {
 			$isRole = in_array(trim((string)($row['roleType'] ?? '')), $roleTypes, true);
-			if ($isRole === true && $this->uidOf(participant: (string)($row['participant'] ?? '')) === $uid) {
+			if ($isRole === true && $this->uidOf(participant: (string)($row['participant'] ?? '')) === $holder['uid']) {
 				return true;
 			}
 		}
 
 		return false;
-	}//end holdsAny()
+	}//end boundToAny()
 
 	/**
 	 * Bind a person to a generic role on a case, unless they hold it already.
@@ -130,6 +148,20 @@ class CaseRoleHolder {
 			genericRole: $genericRole,
 			displayName: $displayName
 		);
+
+		return $this->bindPerson(binding: $binding);
+	}//end bind()
+
+	/**
+	 * Bind the person to the role type the binding resolves to, unless no binding is to be added.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 *
+	 * @return bool True when a binding was added.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
+	 */
+	private function bindPerson(RoleBinding $binding): bool {
 		$roleType = $this->bindableRoleType(binding: $binding);
 		if ($roleType === null) {
 			return false;
@@ -141,7 +173,7 @@ class CaseRoleHolder {
 			$this->logNotBound(binding: $binding, error: $e);
 			return false;
 		}
-	}//end bind()
+	}//end bindPerson()
 
 	/**
 	 * The role type to bind the person to, or null when no binding is to be added.
@@ -333,22 +365,6 @@ class CaseRoleHolder {
 
 		return $this->searchObjectsAsArrays(objectService: $this->objectService(), register: $register, schema: $schema, filters: $filters);
 	}//end rows()
-
-	/**
-	 * OpenRegister's object service.
-	 *
-	 * @return object The service.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
 
 	/**
 	 * The uuid of a row, wherever the reader put it.

@@ -203,7 +203,7 @@ class ProcessingTimeRows {
 
 		$rows = [];
 		foreach ($tallies as $typeId => $tally) {
-			$rows[] = $this->performanceRow(typeId: $typeId, type: $types[$typeId], tally: $tally);
+			$rows[] = $this->performanceRow(typed: ['id' => $typeId, 'type' => $types[$typeId]], tally: $tally);
 		}
 
 		return $rows;
@@ -212,13 +212,14 @@ class ProcessingTimeRows {
 	/**
 	 * The performance row of one case type.
 	 *
-	 * @param int|string           $typeId The type id.
-	 * @param array<string, mixed> $type   The prepared type.
-	 * @param array<string, mixed> $tally  Its tally.
+	 * @param array{id: int|string, type: array<string, mixed>} $typed The type id, and the prepared type.
+	 * @param array<string, mixed>                              $tally Its tally.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function performanceRow(int|string $typeId, array $type, array $tally): array {
+	private function performanceRow(array $typed, array $tally): array {
+		$typeId = $typed['id'];
+		$type = $typed['type'];
 		$target = $type['targetDays'];
 		$avg    = $this->averageDays(tally: $tally);
 		$rate   = $this->complianceRate(target: $target, tally: $tally);

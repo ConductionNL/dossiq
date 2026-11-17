@@ -32,10 +32,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\OrganisationQuotaLimits;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\OrganisationQuotaLimitsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
@@ -77,17 +77,17 @@ class MoveTenantQuotaLimitsOntoOrganisation implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService         $settings           Hands out the object service.
-	 * @param IAppConfig              $appConfig          Holds the completion key.
-	 * @param OrganisationQuotaLimits $organisationLimits Reads and writes the Organisation's user limit.
-	 * @param TenantQuotaService      $quotas             Reads a stored row as an array.
-	 * @param LoggerInterface         $logger             Records a row that refused.
+	 * @param SettingsServiceInterface         $settings           Hands out the object service.
+	 * @param IAppConfig                       $appConfig          Holds the completion key.
+	 * @param OrganisationQuotaLimitsInterface $organisationLimits Reads and writes the Organisation's user limit.
+	 * @param TenantQuotaServiceInterface      $quotas             Reads a stored row as an array.
+	 * @param LoggerInterface                  $logger             Records a row that refused.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IAppConfig $appConfig,
-		private readonly OrganisationQuotaLimits $organisationLimits,
-		private readonly TenantQuotaService $quotas,
+		private readonly OrganisationQuotaLimitsInterface $organisationLimits,
+		private readonly TenantQuotaServiceInterface $quotas,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

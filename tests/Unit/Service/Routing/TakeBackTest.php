@@ -326,6 +326,19 @@ class TakeBackTest extends TestCase {
 	}//end testACaseThatMovedOnIsNotTakenBack()
 
 	/**
+	 * A case whose routing record is not a record is not taken back, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutARoutingRecordIsNotTakenBack(): void {
+		$this->store->cases['case-1'] = ['id' => 'case-1', 'assignee' => 'aad', 'routing' => 'aad'];
+		$this->resolver->expects($this->never())->method('resolve');
+
+		$this->assertSame(expected: CaseRouter::NOT_DUE, actual: $this->router()->takeBack(caseId: 'case-1', routedTo: 'aad', routedAt: ''));
+		$this->assertSame(expected: [], actual: $this->store->patches);
+	}//end testACaseWithoutARoutingRecordIsNotTakenBack()
+
+	/**
 	 * A pool with nobody else keeps the case with its holder, and says so.
 	 *
 	 * @return void

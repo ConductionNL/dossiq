@@ -156,7 +156,20 @@ class CaseEmailMatchPreferences implements CaseEmailMatchPreferencesInterface {
 			throw new InvalidArgumentException('That Mail account is not yours.');
 		}
 
-		$account = max(0, $account);
+		return $this->storeSettings(userId: $userId, settings: ['enabled' => $enabled, 'account' => max(0, $account)]);
+	}//end saveUserSettings()
+
+	/**
+	 * Store the user's settings; switching matching on, or to another account, starts from the newest message.
+	 *
+	 * @param string                             $userId   The user.
+	 * @param array{enabled: bool, account: int} $settings Whether matching is on, and the Mail account (0 for none).
+	 *
+	 * @return array{enabled: bool, account: int} The stored settings.
+	 */
+	private function storeSettings(string $userId, array $settings): array {
+		$enabled = $settings['enabled'];
+		$account = $settings['account'];
 		$before = $this->getUserSettings(userId: $userId);
 		$restart = ($enabled === true
 			&& $account > 0
@@ -168,8 +181,8 @@ class CaseEmailMatchPreferences implements CaseEmailMatchPreferencesInterface {
 			$this->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $account));
 		}
 
-		return ['enabled' => $enabled, 'account' => $account];
-	}//end saveUserSettings()
+		return $settings;
+	}//end storeSettings()
 
 	/**
 	 * The user's cursor, or CURSOR_UNSET when it was never started.

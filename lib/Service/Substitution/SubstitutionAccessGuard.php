@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Substitution;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
@@ -47,6 +48,7 @@ use OCP\IUserSession;
  */
 class SubstitutionAccessGuard {
 	use SearchesObjects;
+	use SearchesConfiguredSchema;
 
 	/**
 	 * Maximum number of substitution rows fetched per call, matching the
@@ -226,22 +228,6 @@ class SubstitutionAccessGuard {
 	 * @spec openspec/specs/performance-hardening/spec.md
 	 */
 	private function allSubstitutions(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('substitution_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::SUBSTITUTION_LIMIT]
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		return ($this->configuredRows(schemaKey: 'substitution_schema', filters: ['_limit' => self::SUBSTITUTION_LIMIT]) ?? []);
 	}//end allSubstitutions()
 }//end class

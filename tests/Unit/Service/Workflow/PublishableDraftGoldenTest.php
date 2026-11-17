@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\Workflow\StepConfigCheck;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
 
 class PublishableDraftGoldenTest extends TestCase {
@@ -67,7 +68,11 @@ class PublishableDraftGoldenTest extends TestCase {
 			return new WorkflowLifecycleGuard(repository: $repository, logger: $logger, stepConfigs: $steps);
 		}
 
-		return new WorkflowLifecycleGuard(repository: $repository, logger: $logger, taskDeclarations: $tasks, stepConfigs: $steps);
+		// The guard resolves its task check from the container on first use.
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->with(TaskDeclarationValidator::class)->willReturn($tasks);
+
+		return new WorkflowLifecycleGuard(repository: $repository, logger: $logger, container: $container, stepConfigs: $steps);
 	}//end guard()
 
 	public function testAPublishableDraft(): void {

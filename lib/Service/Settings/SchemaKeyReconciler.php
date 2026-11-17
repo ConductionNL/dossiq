@@ -94,12 +94,8 @@ class SchemaKeyReconciler {
 		}
 
 		$written = 0;
-		foreach (SchemaSlugMap::SLUG_TO_CONFIG_KEY as $slug => $configKey) {
-			$written += $this->reconcileSingleSchemaKey(
-				schemaMapper: $schemaMapper,
-				slug: (string)$slug,
-				configKey: $configKey
-			);
+		foreach (array_keys(SchemaSlugMap::SLUG_TO_CONFIG_KEY) as $slug) {
+			$written += $this->reconcileSingleSchemaKey(schemaMapper: $schemaMapper, slug: (string)$slug);
 		}
 
 		$this->logger->info(
@@ -181,7 +177,7 @@ class SchemaKeyReconciler {
 		$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
 		$schemaId = (string)$schema->getId();
 
-		$this->writeSchemaKey(slug: (string)$slug, configKey: $configKey, schemaId: $schemaId);
+		$this->writeSchemaKey(slug: (string)$slug, schemaId: $schemaId);
 
 		$this->logger->debug(
 			'Dossiq: Auto-configured schema',
@@ -202,14 +198,14 @@ class SchemaKeyReconciler {
 	 * or the key already holds the correct ID; returns 1 when it (re)writes.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param string $slug The schema slug (e.g. 'caseType').
-	 * @param string $configKey The Dossiq appconfig key to write.
+	 * @param string $slug         The schema slug (e.g. 'caseType'), a key of SchemaSlugMap::SLUG_TO_CONFIG_KEY.
 	 *
 	 * @return int 1 when the key was (re)written, 0 otherwise.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int {
+	private function reconcileSingleSchemaKey(object $schemaMapper, string $slug): int {
+		$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
 		$schemaId = $this->resolveSchemaId(schemaMapper: $schemaMapper, slug: $slug);
 
 		if ($schemaId === '') {
@@ -220,7 +216,7 @@ class SchemaKeyReconciler {
 			return 0;
 		}
 
-		$this->writeSchemaKey(slug: $slug, configKey: $configKey, schemaId: $schemaId);
+		$this->writeSchemaKey(slug: $slug, schemaId: $schemaId);
 
 		return 1;
 	}//end reconcileSingleSchemaKey()
@@ -229,14 +225,13 @@ class SchemaKeyReconciler {
 	 * Write one schema id to its appconfig key, keeping the stable
 	 * workflow_definition_schema alias in sync.
 	 *
-	 * @param string $slug The schema slug.
-	 * @param string $configKey The appconfig key to write.
+	 * @param string $slug     The schema slug, a key of SchemaSlugMap::SLUG_TO_CONFIG_KEY.
 	 * @param string $schemaId The live schema id.
 	 *
 	 * @return void
 	 */
-	private function writeSchemaKey(string $slug, string $configKey, string $schemaId): void {
-		$this->appConfig->setValueString(AppIdentity::APP_ID, $configKey, $schemaId);
+	private function writeSchemaKey(string $slug, string $schemaId): void {
+		$this->appConfig->setValueString(AppIdentity::APP_ID, SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug], $schemaId);
 
 		if ($slug === SchemaSlugMap::WORKFLOW_TEMPLATE_SLUG) {
 			$this->appConfig->setValueString(

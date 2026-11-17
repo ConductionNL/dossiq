@@ -563,14 +563,9 @@ class CaseSharingService implements CaseSharingServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function revokeShare(string $shareId, string $userId): array {
-		$objectService = $this->gateway->objectService();
-		if ($objectService === null) {
-			return ['error' => 'OpenRegister is not available'];
-		}
-
-		$store = $this->shareStore(objectService: $objectService);
-		if ($store->isConfigured() === false) {
-			return ['error' => 'Service unavailable'];
+		$store = $this->configuredStoreOrError();
+		if (is_array($store) === true) {
+			return $store;
 		}
 
 		$shareData = $store->read(shareId: $shareId);

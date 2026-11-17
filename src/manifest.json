@@ -627,6 +627,25 @@
 								"prompt": "Cases waiting for your teams show here"
 							}
 						}
+					},
+					{
+						"id": "on-time-against-target",
+						"kind": "kpi-target-gauge",
+						"label": "Cases on time against target",
+						"_note": "REQ-CRS-35 (row 10.1): a KPI as a gauge. The share of this month's closed cases that met their deadline (the SLA Compliance tile's figure), drawn against a target of 90% and said in words: \"80% of target 90%\". The figure is null for a reader without the controller role, and the gauge then says it is not available rather than drawing 0.",
+						"widget": {
+							"type": "kpi-target-gauge",
+							"title": "Cases on time against target",
+							"icon": "Gauge",
+							"content": {
+								"label": "Cases on time against target",
+								"endpoint": "/apps/dossiq/api/dashboard/kpis",
+								"valueField": "slaCompliance",
+								"target": 90,
+								"max": 100,
+								"format": { "decimals": 0, "suffix": "%" }
+							}
+						}
 					}
 				],
 				"_userWidgetsNote": "REQ-DASH-031 (archived as REQ-DASH-024), my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
@@ -2903,6 +2922,10 @@
 				"createSuccessMessage": "Case created.",
 				"formSize": "normal",
 				"formColumns": 1,
+				"_draftNote": "task-forms-keep-a-draft (row 3.14): the new-case form offers Save draft, which stores the case with isDraft set and skips validation: a draft is the case itself in status draft (decision 180), binds no term and shows only to its author. The draft is kept in the browser under dossiq's key and the signed-in user, and offered back when the same form opens again. Needs nextcloud-vue pages-forward-form-drafts (nextcloud-vue#2021); on an older release the keys are ignored.",
+				"draftAppId": "dossiq",
+				"allowDraft": true,
+				"draftField": "isDraft",
 				"viewModes": ["table", "cards", "board", "map"],
 				"_boardNote": "dqwerkbord-as-the-cases-board. The Werkbord is this list in board view (board DqWerkbord), not a page of its own. A case's status references a statusType row and every case type has its own rows, so the columns come from those rows, merged by name and narrowed to one case type while the list is filtered on one. A drop resolves to the statusType row of the case's own case type and moves the case through `moveCaseStatus`, the status-transition engine, never a PATCH of `status`; `caseStatusTargets` asks the engine where a case may go and what holds it, so the board fades the rest and names the guard. A status type's `capacity` is the column's limit; final statuses are filtered out, so none of them carries one onto the board. The case type and handler columns are read-only: a drag does not change a case type, and handing a case over asks for the reason the bulk Reassign collects.",
 				"board": {
@@ -3460,9 +3483,10 @@
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
 				"formColumns": 2,
-				"_draftNote": "task-forms-keep-a-draft (row 3.14, REQ-TM-DRAFT-01): the case edit form keeps what the handler typed and did not save, under dossiq's key and the signed-in user, and offers it back when the same form opens again. `isDraft` is the case's own draft marker.",
-				"draftField": "isDraft",
+				"_draftNote": "task-forms-keep-a-draft (row 3.14): the case edit form keeps what the handler typed and did not save. Save draft is offered there only while the case is still a draft (isDraft), so a case in use is never taken out of use. The draft is kept in the browser under dossiq's key and the signed-in user, and offered back when the same form opens again. Needs nextcloud-vue pages-forward-form-drafts (nextcloud-vue#2021); on an older release the keys are ignored.",
 				"draftAppId": "dossiq",
+				"allowDraft": true,
+				"draftField": "isDraft",
 				"editTitle": "Edit case",
 				"editSubtitle": "The case's fields. You change the status and the term through Next step.",
 				"includeFields": [
@@ -10343,6 +10367,49 @@
 						}
 					},
 					{
+						"id": "pm-dwell-heatmap",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-dwell-heatmap",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The same dwell figures as Dwell time by status, laid out by week, so declared for the same audience.",
+						"_note": "REQ-CRS-36 (row 10.4): statuses against weeks, each cell the median dwell of the visits entered that week, the darkest cell the longest. Each cell prints its median, so a cell names its value when read. A week a status had no visit in is blank, not 0.",
+						"type": "chart",
+						"title": "Dwell time heatmap",
+						"subtitle": "Median hours per status, by the week the case entered it",
+						"content": {
+							"chartKind": "matrix",
+							"matrixLabelWidth": 200,
+							"valueFormat": {
+								"name": "number",
+								"decimals": 1,
+								"suffix": " h"
+							},
+							"footnote": "The darker, the longer cases waited in that status that week. A blank cell means no case entered the status that week.",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "heatmap"
+								},
+								"responsePath": "heatmap",
+								"labelsPath": "columns",
+								"rowsPath": "rows",
+								"rowLabelPath": "label",
+								"rowValuesPath": "values"
+							},
+							"emptyLabel": "No dwell-time data available"
+						}
+					},
+					{
 						"id": "pm-complaint-kpis",
 						"roles": [
 							"controllers",
@@ -10791,10 +10858,19 @@
 						"sizeToContent": true
 					},
 					{
+						"id": 27,
+						"widgetId": "pm-dwell-heatmap",
+						"gridX": 0,
+						"gridY": 29,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"sizeToContent": true
+					},
+					{
 						"id": 20,
 						"widgetId": "pm-complaint-kpis",
 						"gridX": 0,
-						"gridY": 29,
+						"gridY": 35,
 						"gridWidth": 12,
 						"gridHeight": 3,
 						"sizeToContent": true
@@ -10803,7 +10879,7 @@
 						"id": 21,
 						"widgetId": "pm-complaint-finding",
 						"gridX": 0,
-						"gridY": 32,
+						"gridY": 38,
 						"gridWidth": 12,
 						"gridHeight": 3,
 						"sizeToContent": true
@@ -10812,7 +10888,7 @@
 						"id": 22,
 						"widgetId": "pm-complaints-by-category",
 						"gridX": 0,
-						"gridY": 35,
+						"gridY": 41,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10821,7 +10897,7 @@
 						"id": 23,
 						"widgetId": "pm-complaints-by-department",
 						"gridX": 6,
-						"gridY": 35,
+						"gridY": 41,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10830,7 +10906,7 @@
 						"id": 24,
 						"widgetId": "pm-complaints-by-channel",
 						"gridX": 0,
-						"gridY": 39,
+						"gridY": 45,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10839,7 +10915,7 @@
 						"id": 25,
 						"widgetId": "pm-complaints-by-month",
 						"gridX": 6,
-						"gridY": 39,
+						"gridY": 45,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"sizeToContent": true
@@ -10848,7 +10924,7 @@
 						"id": 26,
 						"widgetId": "pm-complaint-resolution",
 						"gridX": 0,
-						"gridY": 43,
+						"gridY": 49,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"sizeToContent": true

@@ -167,8 +167,22 @@ class CaseTransferConsentGate {
 			}
 		}
 
-		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
-		$candidates = $this->consentsFor(caseId: $caseId, receiver: $receiver);
+		return $this->consentVerdict(transfer: ['caseId' => $caseId, 'receiver' => $receiver, 'atDate' => $atDate, 'crosses' => $crosses]);
+	}//end assess()
+
+	/**
+	 * The verdict of the recorded consents for a hand-off that is not settled inside one organisation.
+	 *
+	 * @param array<string, mixed> $transfer The `caseId`, the trimmed `receiver`, the `atDate` (ISO 8601, or empty for now)
+	 *                                       and whether it `crosses` an organisation.
+	 *
+	 * @return array<string, mixed> The verdict, and the scope when there is one.
+	 */
+	private function consentVerdict(array $transfer): array {
+		$receiver = $transfer['receiver'];
+		$crosses = $transfer['crosses'];
+		$moment = $this->instant(value: $transfer['atDate']) ?? new DateTimeImmutable();
+		$candidates = $this->consentsFor(caseId: $transfer['caseId'], receiver: $receiver);
 		$scan = $this->scanConsents(candidates: $candidates, moment: $moment);
 		if ($scan['covering'] !== null) {
 			return $this->verdict(outcome: $this->granted(consent: $scan['covering']), crosses: $crosses);
@@ -177,7 +191,7 @@ class CaseTransferConsentGate {
 		$refusal = $this->refusals->uncovered(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
 
 		return $this->verdict(outcome: $refusal, crosses: $crosses);
-	}//end assess()
+	}//end consentVerdict()
 
 	/**
 	 * The outcome of a move inside one organisation, or null when it needs a consent check.

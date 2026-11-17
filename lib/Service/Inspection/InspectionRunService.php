@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Inspection;
 
 use OCA\Dossiq\Kernel\Contracts\InspectionRunServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use RuntimeException;
@@ -48,6 +49,9 @@ use Throwable;
  */
 class InspectionRunService implements InspectionRunServiceInterface {
 	use SearchesObjects;
+	use ReadsLooseValues {
+		looseList as private arrayOrEmpty;
+	}
 
 	/**
 	 * How many runs one case answers.
@@ -105,25 +109,41 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException(implode(' ', $violations));
 		}
 
+		return $this->completeRun(
+			start: new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor),
+			answers: $answers
+		);
+	}//end submit()
+
+	/**
+	 * Create the inspection task and complete it with the answers.
+	 *
+	 * @param InspectionRunStart               $start   The case, the template snapshot, the submitted payload and the actor.
+	 * @param array<int, array<string, mixed>> $answers The answers, read from the payload and checked.
+	 *
+	 * @return array<string, mixed> The run, as {@see runsForCase()} answers one.
+	 *
+	 * @throws RuntimeException When the OpenRegister task layer is not available.
+	 */
+	private function completeRun(InspectionRunStart $start, array $answers): array {
 		$tasks = $this->settingsService->getOpenRegisterClass(class: self::TASK_SERVICE);
 		if ($tasks === null) {
 			throw new RuntimeException('The OpenRegister task layer is not available');
 		}
 
-		$start = new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
-		$task = $tasks->create(data: $this->taskData(start: $start), actor: $actor);
+		$task = $tasks->create(data: $this->taskData(start: $start), actor: $start->actor);
 		$completed = $tasks->complete(
 			uuid: (string)$task->getUuid(),
-			outcome: $this->answers->outcome(snapshot: $template, answers: $answers),
+			outcome: $this->answers->outcome(snapshot: $start->template, answers: $answers),
 			resultText: null,
-			comment: $this->stringOrNull(value: ($payload['remarks'] ?? null)),
-			actor: $actor,
+			comment: $this->stringOrNull(value: ($start->payload['remarks'] ?? null)),
+			actor: $start->actor,
 			responses: $answers,
 			evidence: $this->answers->evidence(answers: $answers),
 		);
 
 		return $this->asRun(task: $completed->jsonSerialize());
-	}//end submit()
+	}//end completeRun()
 
 	/**
 	 * Every run on a case, newest last.
@@ -184,23 +204,6 @@ class InspectionRunService implements InspectionRunServiceInterface {
 
 		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, metadata: $metadata);
 	}//end asRun()
-
-	/**
-	 * The value when it is an array, else the empty array.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return array<mixed> The array.
-	 *
-	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
-	 */
-	private function arrayOrEmpty(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end arrayOrEmpty()
 
 	/**
 	 * The run's identity, who did it, when and with what result.

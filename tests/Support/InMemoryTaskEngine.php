@@ -102,7 +102,9 @@ class InMemoryTaskEngine {
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int} The envelope.
 	 */
-	public function inbox(object $criteria, int $limit, int $offset): array {
+	public function inbox(object $criteria, ?object $page = null): array {
+		$limit = ($page?->limit ?? 25);
+		$offset = ($page?->offset ?? 0);
 		$rows = array_values(
 			array_filter(
 				$this->tasks,

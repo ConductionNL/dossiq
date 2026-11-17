@@ -73,15 +73,14 @@ final class CalFakeAccessLinkService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function mint(
-		string $userId,
-		string $subjectType,
-		string $subjectId,
-		array $capabilities = [],
-		?string $expiresAt = null,
-		?string $password = null,
-		?string $label = null,
-	): array {
+	public function mint(object $request): array {
+		$userId = $request->minter;
+		$subjectType = $request->subjectType;
+		$subjectId = $request->subjectId;
+		$capabilities = $request->terms->capabilities;
+		$expiresAt = $request->terms->expiresAt;
+		$password = $request->terms->password;
+		$label = $request->terms->label;
 		if ($this->throwOnMint === true) {
 			throw new \RuntimeException('no link for you');
 		}
@@ -268,7 +267,7 @@ class CaseAccessLinkServiceTest extends TestCase {
 			function (string $id) {
 				return match ($id) {
 					'OCA\OpenRegister\Service\Sharing\AccessLinkService' => $this->links,
-					'OCA\OpenRegister\Service\Sharing\AccessLinkReader' => $this->reader,
+					'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader' => $this->reader,
 					'OCA\OpenRegister\Service\ObjectService' => $this->objects,
 					default => throw new \RuntimeException('no ' . $id),
 				};

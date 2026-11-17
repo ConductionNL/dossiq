@@ -275,6 +275,22 @@ export default {
 		},
 
 		/**
+		 * The onboarding endpoint of the selected tenant.
+		 *
+		 * @param {string} path The path below `/onboarding/`.
+		 * @return {string} The url.
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 */
+		onboardingUrl(path) {
+			return generateUrl(
+				'/apps/dossiq/api/saas/tenants/'
+					+ encodeURIComponent(this.tenantId)
+					+ '/onboarding/'
+					+ path,
+			)
+		},
+
+		/**
 		 * List the tenants to onboard: OpenRegister's organisations.
 		 *
 		 * A tenant is an OpenRegister Organisation, and its uuid is the tenant
@@ -316,11 +332,7 @@ export default {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
+					this.onboardingUrl('progress'),
 				)
 				this.progress = res.data || null
 			} catch (e) {
@@ -342,18 +354,10 @@ export default {
 		async initialise() {
 			try {
 				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/initialise',
-					),
+					this.onboardingUrl('initialise'),
 				)
 				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
+					this.onboardingUrl('progress'),
 				)
 				this.progress = res.data
 			} catch (e) {
@@ -375,13 +379,7 @@ export default {
 			this.markingStep = step
 			try {
 				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/'
-							+ encodeURIComponent(step)
-							+ '/complete',
-					),
+					this.onboardingUrl(encodeURIComponent(step) + '/complete'),
 				)
 				await this.loadProgress()
 			} catch (e) {
@@ -399,11 +397,7 @@ export default {
 			this.checkingGoLive = true
 			try {
 				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
+					this.onboardingUrl('progress'),
 					{ params: { check: 'go-live' } },
 				)
 				this.goLiveResult = res.data?.goLive || res.data?.readiness || null
@@ -432,11 +426,7 @@ export default {
 			this.activating = true
 			try {
 				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/activate',
-					),
+					this.onboardingUrl('activate'),
 				)
 				await this.loadProgress()
 				await this.checkGoLive()

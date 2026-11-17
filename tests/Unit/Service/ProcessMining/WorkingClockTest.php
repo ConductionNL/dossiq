@@ -27,8 +27,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\WorkingClock;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -103,7 +105,7 @@ class WorkingClockTest extends TestCase {
 			class_alias(FakeEngineCalendars::class, WorkingClock::ENGINE_CALENDARS);
 		}
 
-		$calendar = new \stdClass();
+		$calendar = WorkingCalendar::fromArray(['slug' => 'test']);
 		$calculator = new FakeEngineCalculator();
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
@@ -167,7 +169,7 @@ class WorkingClockTest extends TestCase {
 				}
 
 				if ($id === WorkingClock::ENGINE_CALENDARS) {
-					return new FakeEngineCalendars(calendar: new \stdClass());
+					return new FakeEngineCalendars(calendar: WorkingCalendar::fromArray(['slug' => 'test']));
 				}
 
 				throw new RuntimeException('not registered');
@@ -257,7 +259,7 @@ class WorkingClockTest extends TestCase {
 					return $calculator;
 				}
 
-				return new FakeEngineCalendars(calendar: new \stdClass());
+				return new FakeEngineCalendars(calendar: WorkingCalendar::fromArray(['slug' => 'test']));
 			}
 		);
 
@@ -269,6 +271,59 @@ class WorkingClockTest extends TestCase {
 		$this->assertSame(WorkingClock::CLOCK_CALENDAR, $clock->clock());
 		$this->assertSame([WorkingClock::ENGINE_CALCULATOR, WorkingClock::ENGINE_CALENDARS], $lookups);
 	}//end testTheEngineIsLookedUpOnce()
+
+	/**
+	 * An engine that is installed but cannot be reached is noted, and the clock degrades.
+	 *
+	 * The calculator answers but the calendar store throws: neither half of the
+	 * engine is kept, the warning carries the cause, and the report counts
+	 * working days times eight and says so, rather than handing the
+	 * calculator a calendar it never got.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableEngineIsNotedAndTheClockDegrades(): void {
+		if (class_exists(WorkingClock::ENGINE_CALCULATOR) === false) {
+			class_alias(FakeEngineCalculator::class, WorkingClock::ENGINE_CALCULATOR);
+		}
+
+		if (class_exists(WorkingClock::ENGINE_CALENDARS) === false) {
+			class_alias(FakeEngineCalendars::class, WorkingClock::ENGINE_CALENDARS);
+		}
+
+		$calculator = new FakeEngineCalculator();
+		$container  = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($calculator): object {
+				if ($id === WorkingClock::ENGINE_CALCULATOR) {
+					return $calculator;
+				}
+
+				throw new RuntimeException('calendar store down');
+			}
+		);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('warning')
+			->with(
+				'WorkingClock: the engine calendar is unavailable; reporting on working days times eight',
+				['error' => 'calendar store down']
+			);
+
+		$clock = new WorkingClock(container: $container, days: new WorkingDayCalculator(), logger: $logger);
+
+		$this->assertSame(WorkingClock::CLOCK_DAYS_TIMES_EIGHT, $clock->clock());
+
+		$measured = $clock->hoursBetween(
+			from: new DateTimeImmutable('2026-09-11T16:00:00+00:00'),
+			to: new DateTimeImmutable('2026-09-14T09:00:00+00:00')
+		);
+
+		// The degraded 16, not the engine's 1: the calculator was dropped too.
+		$this->assertSame(16.0, $measured['workingHours']);
+		$this->assertSame(65.0, $measured['wallHours']);
+	}//end testAnUnreachableEngineIsNotedAndTheClockDegrades()
 }//end class
 
 /**
@@ -303,7 +358,10 @@ class FakeEngineCalculator {
 	 *
 	 * @return float The working hours.
 	 */
-	public function elapsedBusinessHours(\DateTimeInterface $from, \DateTimeInterface $to, object $calendar): float {
+	public function elapsedBusinessHours(object $span): float {
+		$from = $span->from;
+		$to = $span->to;
+		$calendar = $span->calendar;
 		if ($this->refuse === true) {
 			throw new RuntimeException('no calendar for that year');
 		}

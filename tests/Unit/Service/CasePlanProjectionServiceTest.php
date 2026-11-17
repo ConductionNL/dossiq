@@ -327,7 +327,12 @@ final class CasePlanProjectionServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> An empty plan.
 			 */
-			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+			public function createPlanAsSystem(object $write): array {
+				$objectUuid = $write->anchor->objectUuid;
+				$registerId = $write->anchor->registerId;
+				$schemaId = $write->anchor->schemaId;
+				$definition = $write->definition;
+				$app = $write->app;
 				$this->calls[] = compact('objectUuid', 'registerId', 'schemaId', 'definition', 'app');
 
 				return [];
@@ -589,7 +594,12 @@ final class CasePlanProjectionServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> An empty plan.
 			 */
-			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+			public function createPlanAsSystem(object $write): array {
+				$objectUuid = $write->anchor->objectUuid;
+				$registerId = $write->anchor->registerId;
+				$schemaId = $write->anchor->schemaId;
+				$definition = $write->definition;
+				$app = $write->app;
 				unset($objectUuid, $registerId, $schemaId, $app);
 				$this->definitions[] = $definition;
 

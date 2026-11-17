@@ -48,8 +48,6 @@ use RuntimeException;
  * Copies one case into a new case of the same type.
  *
  * @spec openspec/specs/case-management/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseCopyService implements CaseCopyServiceInterface {
 

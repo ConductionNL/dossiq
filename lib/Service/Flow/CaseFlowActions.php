@@ -204,35 +204,77 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		string $until = '',
 		int $count = 0,
 	): array {
-		$due = $this->document->dueDate(date: $date);
-		$mode = $this->document->recurrenceOf(recurrence: $recurrence);
-		$end = $this->document->endOf(recurrence: $mode, until: $until, count: $count);
-
+		$plan = ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'title' => $title, 'uid' => $uid];
+		$plan += $this->scheduleOf(date: $date, rule: ['recurrence' => $recurrence, 'until' => $until, 'count' => $count]);
 		$service = $this->flowService();
+		$flow = $this->saveAndPublish(service: $service, document: $this->documentOf(plan: $plan), caseId: $caseId);
 
-		$document = $this->document->build(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
-			due: $due,
-			title: $title,
-			uid: $uid,
-			recurrence: $mode,
-			until: $end['until'],
-			count: $end['count']
+		return $this->newPlanRow(flow: $flow, plan: $plan);
+	}//end plan()
+
+	/**
+	 * The due date and the checked recurrence of a planned follow-up.
+	 *
+	 * @param string               $date The date it is due, as `Y-m-d`.
+	 * @param array<string, mixed> $rule The requested recurrence, until and count.
+	 *
+	 * @return array<string, mixed> The schedule: due, recurrence, until, count.
+	 *
+	 * @throws RuntimeException `invalid_date`, `invalid_recurrence`, `invalid_end`.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function scheduleOf(string $date, array $rule): array {
+		$due = $this->document->dueDate(date: $date);
+		$mode = $this->document->recurrenceOf(recurrence: $rule['recurrence']);
+		$end = $this->document->endOf(recurrence: $mode, until: $rule['until'], count: $rule['count']);
+
+		return ['due' => $due, 'recurrence' => $mode, 'until' => $end['until'], 'count' => $end['count']];
+	}//end scheduleOf()
+
+	/**
+	 * The flow document of a planned follow-up.
+	 *
+	 * @param array<string, mixed> $plan The plan: caseId, caseTypeId, title, uid, due, recurrence, until, count.
+	 *
+	 * @return array<string, mixed> The flow document.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function documentOf(array $plan): array {
+		return $this->document->build(
+			caseId: $plan['caseId'],
+			caseTypeId: $plan['caseTypeId'],
+			due: $plan['due'],
+			title: $plan['title'],
+			uid: $plan['uid'],
+			recurrence: $plan['recurrence'],
+			until: $plan['until'],
+			count: $plan['count']
 		);
+	}//end documentOf()
 
-		$flow = $this->saveAndPublish(service: $service, document: $document, caseId: $caseId);
-
+	/**
+	 * The planned follow-up as the caller reads it.
+	 *
+	 * @param object               $flow The published flow.
+	 * @param array<string, mixed> $plan The plan: caseId, caseTypeId, title, uid, due, recurrence, until, count.
+	 *
+	 * @return array{id: string, title: string, date: string, caseType: string, recurrence: string, until: string, count: int} The row.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	private function newPlanRow(object $flow, array $plan): array {
 		return [
 			'id' => (string)$flow->getUuid(),
-			'title' => $title,
-			'date' => $due->format('Y-m-d'),
-			'caseType' => $caseTypeId,
-			'recurrence' => $mode,
-			'until' => $end['until'],
-			'count' => $end['count'],
+			'title' => $plan['title'],
+			'date' => $plan['due']->format('Y-m-d'),
+			'caseType' => $plan['caseTypeId'],
+			'recurrence' => $plan['recurrence'],
+			'until' => $plan['until'],
+			'count' => $plan['count'],
 		];
-	}//end plan()
+	}//end newPlanRow()
 
 	/**
 	 * OpenRegister's flow service.
