@@ -576,6 +576,10 @@
             "description": "The defaults of a new planned item."
         },
         {
+            "name": "portal-obligation",
+            "description": "Records the signature or refusal of the person a form named, as portaliq vouches for them."
+        },
+        {
             "name": "portal-permit",
             "description": "The portal's \"Kenteken wijzigen\": a resident asks for a new plate on a permit they hold."
         },
@@ -22378,6 +22382,72 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/portal/obligations/settle": {
+            "post": {
+                "operationId": "portal-obligation-settle",
+                "summary": "Sign or refuse an obligation a form placed on a case",
+                "description": "The person a form named, such as a second signer, signs or refuses the obligation from the portal. Public: it needs no login; the portal forwards a signed subject assertion.",
+                "tags": [
+                    "portal-obligation"
+                ],
+                "security": [],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "case": {
+                                        "description": "The case id."
+                                    },
+                                    "kind": {
+                                        "description": "The obligation kind."
+                                    },
+                                    "answer": {
+                                        "description": "The answer: sign or refuse."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Problem409"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
                     }
                 }
             }
