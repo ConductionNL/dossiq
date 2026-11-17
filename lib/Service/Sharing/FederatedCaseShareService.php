@@ -102,6 +102,27 @@ class FederatedCaseShareService {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
+		return $this->share(
+			request: new FederatedShareRequest(
+				caseId: $caseId,
+				remoteCloudId: $remoteCloudId,
+				sharedFields: $sharedFields,
+				sharedDocuments: $sharedDocuments,
+				permissionLevel: $permissionLevel,
+				createdBy: $createdBy,
+			)
+		);
+	}//end createFederatedShare()
+
+	/**
+	 * Share a case with a remote organisation: check the services and the
+	 * configuration, build the redacted snapshot and publish it.
+	 *
+	 * @param FederatedShareRequest $request What the share was asked to carry
+	 *
+	 * @return array The created federated share data, or an error array
+	 */
+	private function share(FederatedShareRequest $request): array {
 		$services = $this->federationServices();
 		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
@@ -109,24 +130,21 @@ class FederatedCaseShareService {
 
 		[$federationService, $objectService] = $services;
 
-		$config = $this->federatedShareConfig(sharedFields: $sharedFields);
+		$config = $this->federatedShareConfig(sharedFields: $request->sharedFields);
 		if (isset($config['error']) === true) {
 			return $config;
 		}
 
 		[$register, $caseSchema, $shareSchema] = $config;
 
-		$request = new FederatedShareRequest(
-			caseId: $caseId,
-			remoteCloudId: $remoteCloudId,
-			sharedFields: $sharedFields,
-			sharedDocuments: $sharedDocuments,
-			permissionLevel: $permissionLevel,
-			createdBy: $createdBy,
-		);
 		$store = new FederatedShareStore(objectService: $objectService, register: $register, shareSchema: $shareSchema);
 
-		$shareData = $this->buildShareData(request: $request, store: $store, caseSchema: $caseSchema);
+		$caseData = $this->loadCaseForFederatedShare(store: $store, caseId: $request->caseId, caseSchema: (int)$caseSchema);
+		if ($caseData === null) {
+			return ['error' => 'Case not found'];
+		}
+
+		$shareData = $this->buildShareData(request: $request, caseData: $caseData);
 		if (isset($shareData['error']) === true) {
 			return $shareData;
 		}
@@ -137,7 +155,7 @@ class FederatedCaseShareService {
 			shareData: $shareData,
 			request: $request,
 		);
-	}//end createFederatedShare()
+	}//end share()
 
 	/**
 	 * The OR federation-share and object services, or null when either is unavailable.
@@ -187,22 +205,16 @@ class FederatedCaseShareService {
 	 * Build the redacted snapshot record for a federated case share.
 	 *
 	 * @param FederatedShareRequest $request What the share was asked to carry
-	 * @param FederatedShareStore $store The object service and the register to read the case from
-	 * @param string $caseSchema The configured case schema id
+	 * @param array<string, mixed> $caseData The case the share is taken from
 	 *
 	 * @return array The snapshot record, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
 	 */
-	private function buildShareData(FederatedShareRequest $request, FederatedShareStore $store, string $caseSchema): array {
+	private function buildShareData(FederatedShareRequest $request, array $caseData): array {
 		$caseId = $request->caseId;
 		$sharedFields = $request->sharedFields;
 		$sharedDocuments = $request->sharedDocuments;
-
-		$caseData = $this->loadCaseForFederatedShare(store: $store, caseId: $caseId, caseSchema: (int)$caseSchema);
-		if ($caseData === null) {
-			return ['error' => 'Case not found'];
-		}
 
 		// Build the redacted snapshot — allow-listed fields present on the case only.
 		$fieldSnapshot = $this->buildFieldSnapshot(caseData: $caseData, sharedFields: $sharedFields);

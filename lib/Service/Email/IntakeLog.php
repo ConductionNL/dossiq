@@ -141,18 +141,34 @@ class IntakeLog implements IntakeLogInterface {
 		string $reason,
 		string $caseId = '',
 	): string {
+		return $this->recordMessage(
+			message: $message,
+			filed: ['verdict' => $verdict, 'results' => $results, 'outcome' => $outcome, 'reason' => $reason, 'caseId' => $caseId]
+		);
+	}//end record()
+
+	/**
+	 * Store the entry for one message and put it on its case's timeline.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param array{verdict: FilterVerdict, results: array<string, string>, outcome: string, reason: string, caseId: string} $filed What the filters
+	 *        decided, the authentication results, what became of the message, why, and the case it became (or '').
+	 *
+	 * @return string The entry id, or '' when nothing was stored.
+	 */
+	private function recordMessage(InboundMessage $message, array $filed): string {
 		$target = $this->target();
 		if ($target === null) {
 			$this->logger->warning(
 				'Dossiq: the intake log is not provisioned, so a processed message was not recorded',
-				['messageId' => $message->messageId, 'outcome' => $outcome]
+				['messageId' => $message->messageId, 'outcome' => $filed['outcome']]
 			);
 			return '';
 		}
 
 		$payload = $this->messageFields(message: $message)
-			+ $this->verdictFields(verdict: $verdict, results: $results)
-			+ ['outcome' => $outcome, 'reason' => $reason, 'case' => $caseId]
+			+ $this->verdictFields(verdict: $filed['verdict'], results: $filed['results'])
+			+ ['outcome' => $filed['outcome'], 'reason' => $filed['reason'], 'case' => $filed['caseId']]
 			+ $this->originalFields(message: $message);
 
 		$entryId = $this->saveEntry(
@@ -163,10 +179,10 @@ class IntakeLog implements IntakeLogInterface {
 			return '';
 		}
 
-		$this->recordOnTimeline(message: $message, placed: ['outcome' => $outcome, 'caseId' => $caseId, 'entryId' => $entryId]);
+		$this->recordOnTimeline(message: $message, placed: ['outcome' => $filed['outcome'], 'caseId' => $filed['caseId'], 'entryId' => $entryId]);
 
 		return $entryId;
-	}//end record()
+	}//end recordMessage()
 
 	/**
 	 * Record a message that arrived on a channel rather than in the mailbox.
@@ -211,30 +227,46 @@ class IntakeLog implements IntakeLogInterface {
 		string $reason,
 		string $caseId = '',
 	): string {
+		return $this->recordChannelEntry(
+			message: ['channel' => $channel, 'channelMessageId' => $channelMessageId, 'sender' => $sender, 'subject' => $subject],
+			placed: ['outcome' => $outcome, 'reason' => $reason, 'case' => $caseId]
+		);
+	}//end recordChannelMessage()
+
+	/**
+	 * Store the entry for one channel message.
+	 *
+	 * @param array{channel: string, channelMessageId: string, sender: string, subject: string} $message The message as the channel gave it.
+	 * @param array{outcome: string, reason: string, case: string}                               $placed  What became of it, why,
+	 *                                                                                                     and the case it became (or '').
+	 *
+	 * @return string The entry id, or '' when nothing was stored.
+	 */
+	private function recordChannelEntry(array $message, array $placed): string {
 		$target = $this->target();
 		if ($target === null) {
 			$this->logger->warning(
 				'Dossiq: the intake log is not provisioned, so a channel message was not recorded',
-				['channel' => $channel, 'message' => $channelMessageId, 'outcome' => $outcome]
+				['channel' => $message['channel'], 'message' => $message['channelMessageId'], 'outcome' => $placed['outcome']]
 			);
 			return '';
 		}
 
 		$payload = array_map(
 			static fn (string $value): string => mb_substr($value, 0, 255),
-			['channel' => $channel, 'channelMessageId' => $channelMessageId, 'sender' => $sender, 'subject' => $subject]
+			$message
 		) + [
 			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
-			'outcome' => $outcome,
-			'reason' => $reason,
-			'case' => $caseId,
+			'outcome' => $placed['outcome'],
+			'reason' => $placed['reason'],
+			'case' => $placed['case'],
 		];
 
 		return ($this->saveEntry(
 			write: $target + ['object' => $payload],
-			failure: ['Dossiq: writing a channel intake log entry failed', ['channel' => $channel, 'message' => $channelMessageId]]
+			failure: ['Dossiq: writing a channel intake log entry failed', ['channel' => $message['channel'], 'message' => $message['channelMessageId']]]
 		) ?? '');
-	}//end recordChannelMessage()
+	}//end recordChannelEntry()
 
 	/**
 	 * The entry this channel already holds for this message, when there is one.
