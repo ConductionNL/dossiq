@@ -1,0 +1,235 @@
+{
+	"info": {
+		"name": "Dossiq klacht-behandeling case type",
+		"description": "complaints-are-a-case-type task 1.4 (REQ-CMP-CT-01, scenario A complaint starts as a case with its term): reads the shipped case type `klacht-behandeling`, starts a case of it received on Monday 1 March 2021 through the OpenRegister objects API, reads its terms through GET /api/cases/{id}/terms and asserts the statutory term runs from 1 March to 12 April (six weeks, Awb 9:11 lid 1), then deletes the case. A past year with 1 March on a working day keeps the start off the working-day roll and off any holiday. Self-contained and idempotent. Run it like the main suite: npx newman run tests/integration/klacht-behandeling.postman_collection.json --env-var baseUrl=http://localhost:8080 --env-var adminUser=admin --env-var adminPass=admin.\n\n@newman exclude Not dead: it runs locally like dossiq.postman_collection.json, through newman as above. tests/integration sits outside newman-collection-path 'data' and the caller sets enable-newman false, see .github/workflows/code-quality.yml.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "case type klacht-behandeling",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('case types readable (200)', () => pm.response.to.have.status(200));",
+							"const body = pm.response.json();",
+							"const rows = Array.isArray(body) ? body : (body.results || []);",
+							"const type = rows.find((row) => row.identifier === 'klacht-behandeling');",
+							"pm.test('the register ships klacht-behandeling', () => pm.expect(type, 'case type klacht-behandeling').to.be.an('object'));",
+							"pm.test('its default term is six weeks (Awb 9:11 lid 1)', () => pm.expect(type.processingDeadline).to.equal('P42D'));",
+							"pm.test('it picks no second term (REQ-CMP-CT-03)', () => pm.expect(type.statutoryTermDefinition || '').to.equal(''));",
+							"pm.collectionVariables.set('complaintCaseTypeId', String(type.id || (type['@self'] && type['@self'].id) || ''));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{adminUser}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{adminPass}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "OCS-APIRequest",
+						"value": "true"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType?identifier=klacht-behandeling&_limit=5"
+				}
+			}
+		},
+		{
+			"name": "start a complaint case received on 1 March",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('case created (2xx)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+							"const b = pm.response.json();",
+							"const id = b.id || (b['@self'] && b['@self'].id);",
+							"pm.expect(id, 'created case id').to.be.a('string').and.not.empty;",
+							"pm.collectionVariables.set('complaintCaseId', id);"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{adminUser}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{adminPass}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "OCS-APIRequest",
+						"value": "true"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case"
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"NEWMAN complaint received on 1 March\",\n  \"caseType\": \"{{complaintCaseTypeId}}\",\n  \"receivedAt\": \"2021-03-01T09:00:00+01:00\",\n  \"intakeChannel\": \"email\"\n}"
+				}
+			}
+		},
+		{
+			"name": "its statutory term ends on 12 April",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('terms readable (200)', () => pm.response.to.have.status(200));",
+							"const terms = (pm.response.json().terms || []);",
+							"const statutory = terms.find((term) => term.kind === 'statutory');",
+							"pm.test('the case carries a statutory term', () => pm.expect(statutory, 'statutory term').to.be.an('object'));",
+							"pm.test('it counts from the receipt, Monday 1 March', () => pm.expect(String(statutory.startDate).slice(0, 10)).to.equal('2021-03-01'));",
+							"pm.test('it ends six weeks later, on 12 April', () => pm.expect(String(statutory.endDate).slice(0, 10)).to.equal('2021-04-12'));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{adminUser}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{adminPass}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "OCS-APIRequest",
+						"value": "true"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/index.php/apps/dossiq/api/cases/{{complaintCaseId}}/terms"
+				}
+			}
+		},
+		{
+			"name": "teardown: delete the complaint case",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('case deleted (2xx or already gone)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{adminUser}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{adminPass}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "OCS-APIRequest",
+						"value": "true"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case/{{complaintCaseId}}"
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "adminUser",
+			"value": "admin"
+		},
+		{
+			"key": "adminPass",
+			"value": "admin"
+		},
+		{
+			"key": "complaintCaseTypeId",
+			"value": ""
+		},
+		{
+			"key": "complaintCaseId",
+			"value": ""
+		}
+	]
+}
