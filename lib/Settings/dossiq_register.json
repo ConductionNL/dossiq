@@ -114,6 +114,12 @@
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
                         "title": "Processing deadline"
                     },
+                    "statutoryTermDefinition": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Statutory term choice",
+                        "description": "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term."
+                    },
                     "processingDeadlineDate": {
                         "type": "string",
                         "format": "date",
