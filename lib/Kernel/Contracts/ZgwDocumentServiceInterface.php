@@ -137,7 +137,7 @@ interface ZgwDocumentServiceInterface {
 	/**
 	 * Get the Nextcloud file id of a stored document.
 	 *
-	 * Additive read accessor alongside {@see storeRaw()}/{@see getContent()} — callers that
+	 * Additive read accessor alongside {@see storeBase64()}/{@see getContent()} — callers that
 	 * need the raw Nextcloud file id (e.g. to persist it on a domain object) resolve it here
 	 * instead of duplicating this service's storage-path convention.
 	 *

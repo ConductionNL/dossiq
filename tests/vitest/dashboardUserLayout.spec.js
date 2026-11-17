@@ -139,14 +139,22 @@ describe('the landing page keeps its views', () => {
 })
 
 describe('the two lists a handler wants are offered by name', () => {
-	const presets = page('Dashboard').config.userWidgets || []
+	const offered = page('Dashboard').config.userWidgets || []
+	// The KPI gauge preset (REQ-CRS-35) reads an app endpoint, not a list
+	// query; the list checks below are about the object-list presets.
+	const presets = offered.filter((p) => p.kind === 'object-list')
 
-	it('offers exactly the two presets, each with an id, a kind and a label', () => {
+	it('offers the two lists and the KPI gauge, each with an id, a kind and a label', () => {
+		expect(offered.map((p) => p.id)).toEqual([
+			'cases-you-follow',
+			'your-teams-queue',
+			'on-time-against-target',
+		])
 		expect(presets.map((p) => p.id)).toEqual([
 			'cases-you-follow',
 			'your-teams-queue',
 		])
-		for (const preset of presets) {
+		for (const preset of offered) {
 			expect(preset.kind, `${preset.id} has no kind`).toBeTruthy()
 			expect(preset.label, `${preset.id} has no label`).toBeTruthy()
 		}

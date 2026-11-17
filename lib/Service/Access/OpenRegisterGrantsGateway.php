@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\Access;
 use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Service\Object\ProvenanceRequest;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -141,7 +142,9 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 
 		[$handler, $schema] = $target;
 		try {
-			$provenance = $handler->provenanceFor(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId));
+			$provenance = $handler->provenanceFor(
+				new ProvenanceRequest(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId))
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
 				['exception' => $e->getMessage(), 'caseId' => $caseId]);

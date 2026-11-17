@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Sharing;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
+use OCA\OpenRegister\Service\Sharing\AccessLinkTerms;
+use OCA\OpenRegister\Service\Sharing\LinkMintRequest;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -104,17 +106,9 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		?string $password = null,
 		?string $label = null,
 	): array {
-		return $this->mint(
-			request: new AccessLinkRequest(
-				userId: $userId,
-				subjectType: 'object',
-				subjectId: $caseId,
-				capabilities: $capabilities,
-				expiresAt: $expiresAt,
-				password: $password,
-				label: $label
-			)
-		);
+		$terms = ['capabilities' => $capabilities, 'expiresAt' => $expiresAt, 'password' => $password, 'label' => $label];
+
+		return $this->mint(request: $this->linkRequest(subject: ['userId' => $userId, 'type' => 'object', 'id' => $caseId], terms: $terms));
 	}//end mintCaseLink()
 
 	/**
@@ -148,18 +142,30 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 			return ['error' => 'A file link must name both the case and the file'];
 		}
 
-		return $this->mint(
-			request: new AccessLinkRequest(
-				userId: $userId,
-				subjectType: 'file',
-				subjectId: $subjectId,
-				capabilities: ['read'],
-				expiresAt: $expiresAt,
-				password: $password,
-				label: $label
-			)
-		);
+		$terms = ['capabilities' => ['read'], 'expiresAt' => $expiresAt, 'password' => $password, 'label' => $label];
+
+		return $this->mint(request: $this->linkRequest(subject: ['userId' => $userId, 'type' => 'file', 'id' => $subjectId], terms: $terms));
 	}//end mintFileLink()
+
+	/**
+	 * The access link request for a subject on the given terms.
+	 *
+	 * @param array<string, string> $subject The minting userId, the subject type and the subject id.
+	 * @param array<string, mixed>  $terms   The capabilities, expiresAt, password and label.
+	 *
+	 * @return AccessLinkRequest The request.
+	 */
+	private function linkRequest(array $subject, array $terms): AccessLinkRequest {
+		return new AccessLinkRequest(
+			userId: $subject['userId'],
+			subjectType: $subject['type'],
+			subjectId: $subject['id'],
+			capabilities: $terms['capabilities'],
+			expiresAt: $terms['expiresAt'],
+			password: $terms['password'],
+			label: $terms['label']
+		);
+	}//end linkRequest()
 
 	/**
 	 * The `<objectUuid>/<fileId>` subject of a file link, '' when either part is blank.
@@ -398,13 +404,17 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 
 		try {
 			return (array)$service->mint(
-				$request->userId,
-				$subjectType,
-				$request->subjectId,
-				$declared,
-				$this->expiry(expiresAt: $request->expiresAt),
-				$this->trimmedOrNull(value: $request->password),
-				$this->trimmedOrNull(value: $request->label)
+				new LinkMintRequest(
+					minter: $request->userId,
+					subjectType: $subjectType,
+					subjectId: $request->subjectId,
+					terms: new AccessLinkTerms(
+						capabilities: $declared,
+						expiresAt: $this->expiry(expiresAt: $request->expiresAt),
+						password: $this->trimmedOrNull(value: $request->password),
+						label: $this->trimmedOrNull(value: $request->label)
+					)
+				)
 			);
 		} catch (\Throwable $failure) {
 			return $this->mintFailed(subjectType: $subjectType, failure: $failure);

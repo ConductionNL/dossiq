@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Support\NormalisesObjectRows;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -44,6 +45,11 @@ use RuntimeException;
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
 class DemoCaseloadGateway {
+
+	use NormalisesObjectRows {
+		toArray as private objectRow;
+	}
+
 	/**
 	 * Constructor.
 	 *
@@ -291,23 +297,7 @@ class DemoCaseloadGateway {
 	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
 	 */
 	public function toArray(mixed $object): array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false) {
-			return [];
-		}
-
-		if (method_exists($object, 'getObject') === true) {
-			return (array)$object->getObject();
-		}
-
-		if (method_exists($object, 'jsonSerialize') === true) {
-			return (array)$object->jsonSerialize();
-		}
-
-		return [];
+		return $this->objectRow(object: $object);
 	}//end toArray()
 
 	/**

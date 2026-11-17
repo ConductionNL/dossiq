@@ -63,6 +63,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 	use SearchesObjects;
 	use ReadsPanelMembers;
+	use SavesIntoStore;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -277,12 +278,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 */
 	private function createRequest(array $store, array $record): array {
 		try {
-			return ($this->saveObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				object: $record
-			) ?? $record);
+			return $this->saveIntoStore(store: $store, record: $record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()

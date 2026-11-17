@@ -104,7 +104,7 @@ final class OpenRegisterSharingGatewayTest extends TestCase {
 			public function read(): void {
 			}
 
-			public function getNotesForObject(): void {
+			public function listNotes(): void {
 			}
 
 			public function createOutgoingShare(): void {

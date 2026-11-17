@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCP\Files\Node;
 use RuntimeException;
 use Throwable;
 
@@ -306,11 +307,11 @@ class DocumentRecordStore implements DocumentRecordStoreInterface {
 			throw new RuntimeException('The file could not be stored on ' . $objectId . ': ' . $e->getMessage(), 0, $e);
 		}
 
-		if (is_object($file) === false || is_callable([$file, 'getFileId']) === false) {
+		if (($file instanceof Node) === false) {
 			return 0;
 		}
 
-		return (int)call_user_func([$file, 'getFileId']);
+		return (int)$file->getId();
 	}//end storeFileOnObject()
 
 	/**

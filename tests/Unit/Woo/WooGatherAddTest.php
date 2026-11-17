@@ -202,14 +202,7 @@ class WooGatherAddTest extends TestCase {
 			public function addFile(mixed $objectEntity, string $fileName, string $content, bool $share = false, array $tags = [], mixed $registerId = null): object {
 				$fileId = 900 + count($this->caseFiles);
 				$this->caseFiles[$fileId] = $this->test->fileDouble(path: WooGatherAddTest::CASE_DIR . '/' . $fileName, fileId: $fileId, content: $content);
-				return new class ($fileId) {
-					public function __construct(private int $fileId) {
-					}
-
-					public function getFileId(): int {
-						return $this->fileId;
-					}
-				};
+				return $this->caseFiles[$fileId];
 			}
 
 			public function getObjectFolder(mixed $objectEntity, mixed $registerId = null): ?Folder {

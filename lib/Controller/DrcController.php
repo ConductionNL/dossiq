@@ -2494,11 +2494,7 @@ class DrcController extends ZgwController {
 	 * @return array The saved document.
 	 */
 	private function saveUpdatedEio(EioUpdateRun $run): array {
-		$objectData = $this->saveEioKeepingItsLock(
-			uuid: $run->uuid,
-			englishData: $this->mapEioBody(body: $run->body, mappingConfig: $run->mappingConfig),
-			mappingConfig: $run->mappingConfig
-		);
+		$objectData = $this->saveEioKeepingItsLock(run: $run);
 
 		$run->objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $run->uuid);
 
@@ -2552,13 +2548,14 @@ class DrcController extends ZgwController {
 	/**
 	 * Save an updated document, keeping the lock state the stored one holds.
 	 *
-	 * @param string $uuid The document uuid.
-	 * @param array $englishData The mapped update.
-	 * @param array $mappingConfig The EIO mapping.
+	 * @param EioUpdateRun $run The update: the document, its mapping and the body.
 	 *
 	 * @return array The saved document.
 	 */
-	private function saveEioKeepingItsLock(string $uuid, array $englishData, array $mappingConfig): array {
+	private function saveEioKeepingItsLock(EioUpdateRun $run): array {
+		$uuid          = $run->uuid;
+		$mappingConfig = $run->mappingConfig;
+		$englishData   = $this->mapEioBody(body: $run->body, mappingConfig: $mappingConfig);
 		$objectService = $this->zgwService->getObjectService();
 		$existingData = $this->objectToArray(
 			row: $objectService->find(
