@@ -87,6 +87,21 @@ class RecordFieldShapeTest extends TestCase {
 	}//end testTypedShapes()
 
 	/**
+	 * JSON keeps structure as encoded text, numbers read as numbers, a moment as ISO-8601 in the tenant's zone.
+	 *
+	 * @return void
+	 */
+	public function testJsonNumberAndMomentShapes(): void {
+		self::assertSame('{"a":[1,"é/x"]}', $this->shape->shaped(field: ['as' => 'json'], raw: ['a' => [1, 'é/x']]));
+		self::assertNull($this->shape->shaped(field: ['as' => 'json'], raw: []));
+		self::assertSame(12.5, $this->shape->shaped(field: ['as' => 'number'], raw: ' 12.5 '));
+		self::assertSame(3, $this->shape->shaped(field: ['as' => 'number'], raw: '3'));
+		self::assertNull($this->shape->shaped(field: ['as' => 'number'], raw: 'twelve'));
+		self::assertSame('2026-01-31T11:15:00+01:00', $this->shape->shaped(field: ['as' => 'dateTime'], raw: '2026-01-31T10:15:00+00:00'));
+		self::assertNull($this->shape->shaped(field: ['as' => 'dateTime'], raw: 'not a moment'));
+	}//end testJsonNumberAndMomentShapes()
+
+	/**
 	 * A listed value maps, an empty one takes the default, an unknown one is refused by name.
 	 *
 	 * @return void
