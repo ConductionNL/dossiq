@@ -84,14 +84,18 @@ const IGNORED = [
  * `demo-data-setup-step` records a setup decision and can install the demo
  * dataset; `integrations-page` POSTs to `/api/settings`; `case-type-edit-and-setup`
  * drives the setup wizard; `demo-caseload` reads the demo dataset and is
- * meaningless if another worker is mid-install. Each of these is either a
- * writer of instance state or a reader that a writer can invalidate.
+ * meaningless if another worker is mid-install; `document-access-exception`
+ * adds the ordinary e2e account to `dossiq-medewerkers` and a throwaway group
+ * for its run, which every other spec that signs in as that account would
+ * read. Each of these is either a writer of instance state or a reader that a
+ * writer can invalidate.
  */
 const INSTANCE_MUTATING = [
 	'**/spec-coverage/demo-data-setup-step.spec.ts',
 	'**/integrations-page.spec.ts',
 	'**/case-type-edit-and-setup.spec.ts',
 	'**/demo-caseload.spec.ts',
+	'**/document-access-exception.spec.ts',
 ]
 
 /**
