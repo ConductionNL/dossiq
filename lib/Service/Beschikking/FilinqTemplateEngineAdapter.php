@@ -51,6 +51,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
@@ -90,18 +91,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @var string
 	 */
 	private const TEMPLATE_VERSION_SERVICE = 'Service\TemplateVersionService';
-
-	/**
-	 * How many chain entries to read when resolving the version in force.
-	 *
-	 * Filinq returns them newest first, so this is a ceiling on how far back a
-	 * beschikking's effective date may reach, not a page to iterate. A template
-	 * with more than this many revisions before the date falls through to the
-	 * template's own version rather than reporting a wrong one.
-	 *
-	 * @var integer
-	 */
-	private const VERSION_PAGE_SIZE = 100;
 
 	/**
 	 * Constructor.
@@ -265,25 +254,22 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * front of it, which is worse than the mock, because it looked like a
 	 * query. Filinq #1063 records the same three facts from the other side.
 	 *
-	 * What answers it instead is filinq's OWN version chain, which already
-	 * ships: `TemplateVersionService::getVersions()` returns every stored
-	 * version of a template, newest first, each with a monotonic `version`
-	 * number and its own creation timestamp. The version in force on a date is
-	 * the highest one created on or before that date, so `$effectiveDate` now
-	 * selects rather than being echoed back. A beschikking issued in March can
-	 * therefore name the template that produced it rather than the one that
-	 * happens to be current when someone appeals.
+	 * What answers it instead is filinq itself:
+	 * `TemplateVersionService::versionInForceAt()` names the version that was the
+	 * head of the template at a moment, from its own version chain (filinq change
+	 * generated-document-names-its-template-version). The adapter asks it for the
+	 * end of the effective date, so `$effectiveDate` selects rather than being
+	 * echoed back. A beschikking issued in March can therefore name the template
+	 * that produced it rather than the one that happens to be current when
+	 * someone appeals.
 	 *
 	 * Two fallbacks, in order, and neither of them invents a number:
 	 *
-	 *   - No chain entry at or before the date (a template saved once and never
-	 *     edited has no chain at all): the template object's own OpenRegister
-	 *     version, verbatim, lifted from `@self`.
+	 *   - Filinq names no version for the date (a filinq without the query, or
+	 *     one that cannot read the chain): the template object's own
+	 *     OpenRegister version, verbatim, lifted from `@self`.
 	 *   - Neither available: a refusal. `v1` is not a safe default when the
 	 *     answer is on an appealable decision.
-	 *
-	 * When filinq gains a first-class effective-version query (#1063), this
-	 * method becomes a call to it and the chain walk below moves out.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
@@ -366,17 +352,21 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	}//end effectiveVersion()
 
 	/**
-	 * The highest chain version created on or before the effective date.
+	 * The chain version in force at the end of the effective date.
 	 *
-	 * A version whose creation timestamp cannot be read is skipped rather than
-	 * treated as ancient: an unreadable date must not win a comparison it never
-	 * took part in.
+	 * Filinq answers this itself (`TemplateVersionService::versionInForceAt()`,
+	 * generated-document-names-its-template-version): a snapshot is written when
+	 * its version is replaced, so only filinq knows which version was the head at
+	 * a moment. A beschikking effective on a date takes the version that was the
+	 * head at the end of that day.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
 	 *
 	 * @return string|null The version, as `v<n>`, or null when the chain
 	 *                     answers nothing for that date.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function versionInForce(string $templateId, string $effectiveDate): ?string {
 		$versionService = FleetAppId::getService($this->container, 'filinq', self::TEMPLATE_VERSION_SERVICE);
@@ -384,67 +374,27 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			return null;
 		}
 
-		$cutoff = strtotime($effectiveDate . ' 23:59:59');
-		if ($cutoff === false) {
+		$moment = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', substr($effectiveDate, 0, 10) . ' 23:59:59');
+		if ($moment === false) {
 			return null;
 		}
 
 		try {
-			$page = (array)$versionService->getVersions($templateId, self::VERSION_PAGE_SIZE);
+			$number = $versionService->versionInForceAt($templateId, $moment);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Filinq could not list the versions of a beschikking template',
+				'Filinq could not say which version of a beschikking template was in force',
 				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
 
-		return $this->versionTag(page: $page, cutoff: $cutoff);
-	}//end versionInForce()
-
-	/**
-	 * The tag of the highest version on the page that was in force at the cutoff.
-	 *
-	 * @param array $page   The page of template versions.
-	 * @param int   $cutoff The end of the effective date, as a timestamp.
-	 *
-	 * @return string|null The version tag, or null when none was in force.
-	 */
-	private function versionTag(array $page, int $cutoff): ?string {
-		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
-		if ($highest === null) {
+		if (is_int($number) === false || $number < 1) {
 			return null;
 		}
 
-		return 'v' . $highest;
-	}//end versionTag()
-
-	/**
-	 * The highest version number among the chain rows at or before a moment.
-	 *
-	 * @param array<int, mixed> $rows Filinq's chain rows.
-	 * @param integer $cutoff The last second of the effective date, as a timestamp.
-	 *
-	 * @return integer|null The version number, or null when no row qualifies.
-	 */
-	private function highestVersionAtOrBefore(array $rows, int $cutoff): ?int {
-		$highest = null;
-
-		foreach ($rows as $row) {
-			$row = (array)$row;
-			$created = strtotime((string)(((array)($row['@self'] ?? []))['created'] ?? ''));
-			if ($created === false || $created > $cutoff) {
-				continue;
-			}
-
-			$number = (int)($row['version'] ?? 0);
-			if ($number > 0 && ($highest === null || $number > $highest)) {
-				$highest = $number;
-			}
-		}
-
-		return $highest;
-	}//end highestVersionAtOrBefore()
+		return 'v' . $number;
+	}//end versionInForce()
 
 	/**
 	 * The template object's own OpenRegister version, if it carries one.
@@ -541,28 +491,29 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		return [
 			'format' => (string)($result['format'] ?? 'pdf'),
 			'fileId' => (string)$fileId,
-			'checksumSha256' => hash('sha256', $content),
-			'paginas' => $this->countPages(content: $content),
+			'checksumSha256' => $this->checksumOf(result: $result, content: $content),
+			'paginas' => (int)($result['pageCount'] ?? 0),
 		];
 	}//end toComposition()
 
 	/**
-	 * Count the pages in the produced document.
+	 * The SHA-256 of the produced document, as filinq reports it.
 	 *
-	 * Counted out of the PDF's own page objects rather than assumed, because a
-	 * constant page count was one of the three fields the mock invented. A
-	 * non-PDF output has no page structure to read, so it reports zero rather
-	 * than a guess.
+	 * Filinq holds the bytes and reports their digest with the result
+	 * (generated-document-names-its-template-version). Only a filinq that does
+	 * not report one is answered by hashing the returned bytes here.
 	 *
-	 * @param string $content The produced document bytes.
+	 * @param array<string, mixed> $result  Filinq's `generateDocument()` return value.
+	 * @param string               $content The produced document bytes.
 	 *
-	 * @return int The page count, or 0 when the bytes carry no page structure.
+	 * @return string The lowercase hex digest.
 	 */
-	private function countPages(string $content): int {
-		if (str_starts_with($content, '%PDF') === false) {
-			return 0;
+	private function checksumOf(array $result, string $content): string {
+		$reported = ($result['sha256'] ?? null);
+		if (is_string($reported) === true && preg_match('/^[0-9a-f]{64}$/', $reported) === 1) {
+			return $reported;
 		}
 
-		return preg_match_all('#/Type\s*/Page[^s]#', $content);
-	}//end countPages()
+		return hash('sha256', $content);
+	}//end checksumOf()
 }//end class
