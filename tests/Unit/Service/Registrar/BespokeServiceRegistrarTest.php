@@ -259,6 +259,7 @@ class BespokeServiceRegistrarTest extends TestCase {
 		$this->assertInstanceOf(SettingsSection::class, $section);
 		$this->assertSame('/icon.svg', $section->getIcon());
 	}//end testTheSettingsSectionIsBuilt()
+
 	/**
 	 * The admin settings factory hands the constructor every argument it
 	 * declares, so the admin settings pages build.
@@ -269,16 +270,16 @@ class BespokeServiceRegistrarTest extends TestCase {
 		$settings = $this->factories[AdminSettings::class](
 			$this->container(
 				services: [
-					'OCP\\App\\IAppManager' => $this->createMock(IAppManager::class),
-					'OCP\\AppFramework\\Services\\IInitialState' => $this->createMock(IInitialState::class),
-					'OCA\\Dossiq\\Service\\SettingsService' => $this->createMock(SettingsService::class),
-					'OCA\\Dossiq\\Service\\Queue\\QueueUrgencySettings' => $this->createMock(QueueUrgencySettingsInterface::class),
+					'OCP\\App\\IAppManager' => $this->createMock(originalClassName: IAppManager::class),
+					'OCP\\AppFramework\\Services\\IInitialState' => $this->createMock(originalClassName: IInitialState::class),
+					'OCA\\Dossiq\\Service\\SettingsService' => $this->createMock(originalClassName: SettingsService::class),
+					'OCA\\Dossiq\\Service\\Queue\\QueueUrgencySettings' => $this->createMock(originalClassName: QueueUrgencySettingsInterface::class),
 					'OCP\\ServerVersion' => (new \ReflectionClass(ServerVersion::class))->newInstanceWithoutConstructor(),
-					'OCA\\Dossiq\\Kernel\\Contracts\\PackageAdminTabsInterface' => $this->createMock(PackageAdminTabsInterface::class),
+					'OCA\\Dossiq\\Kernel\\Contracts\\PackageAdminTabsInterface' => $this->createMock(originalClassName: PackageAdminTabsInterface::class),
 				]
 			)
 		);
 
-		$this->assertInstanceOf(AdminSettings::class, $settings);
+		$this->assertInstanceOf(expected: AdminSettings::class, actual: $settings);
 	}//end testTheAdminSettingsAreBuilt()
 }//end class
