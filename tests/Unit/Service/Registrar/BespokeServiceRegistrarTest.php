@@ -22,6 +22,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Registrar;
 
 use OCA\Dossiq\Controller\DashboardController;
 use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Kernel\Contracts\PackageAdminTabsInterface;
+use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Repair\InitializeSettings;
 use OCA\Dossiq\Sections\SettingsSection;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
@@ -39,6 +41,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
+use OCP\ServerVersion;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -256,4 +259,26 @@ class BespokeServiceRegistrarTest extends TestCase {
 		$this->assertInstanceOf(SettingsSection::class, $section);
 		$this->assertSame('/icon.svg', $section->getIcon());
 	}//end testTheSettingsSectionIsBuilt()
+	/**
+	 * The admin settings factory hands the constructor every argument it
+	 * declares, so the admin settings pages build.
+	 *
+	 * @return void
+	 */
+	public function testTheAdminSettingsAreBuilt(): void {
+		$settings = $this->factories[AdminSettings::class](
+			$this->container(
+				services: [
+					'OCP\\App\\IAppManager' => $this->createMock(IAppManager::class),
+					'OCP\\AppFramework\\Services\\IInitialState' => $this->createMock(IInitialState::class),
+					'OCA\\Dossiq\\Service\\SettingsService' => $this->createMock(SettingsService::class),
+					'OCA\\Dossiq\\Service\\Queue\\QueueUrgencySettings' => $this->createMock(QueueUrgencySettingsInterface::class),
+					'OCP\\ServerVersion' => (new \ReflectionClass(ServerVersion::class))->newInstanceWithoutConstructor(),
+					'OCA\\Dossiq\\Kernel\\Contracts\\PackageAdminTabsInterface' => $this->createMock(PackageAdminTabsInterface::class),
+				]
+			)
+		);
+
+		$this->assertInstanceOf(AdminSettings::class, $settings);
+	}//end testTheAdminSettingsAreBuilt()
 }//end class
