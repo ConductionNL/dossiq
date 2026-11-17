@@ -1,7 +1,7 @@
 # Tasks: case-access-card-lists-team-and-group-grants
 
 ## 0. Dependencies
-- [ ] 0.1 openregister `an-object-lists-its-grants-with-their-origin` merged: `GET /api/objects/{r}/{s}/{id}/grants` and the `readGrants` verb
+- [x] 0.1 openregister `an-object-lists-its-grants-with-their-origin` merged: `GET /api/objects/{r}/{s}/{id}/grants` and the `readGrants` verb
 - [ ] 0.2 nextcloud-vue record list `sections` (one card, several sources) and `meta.cases` with `op: contains` (design D-5)
 - [x] 0.3 people-tab-access-card merged (the card this change extends)
 
@@ -31,4 +31,6 @@
 ## 4. Tests
 - [x] 4.1 vitest `tests/vitest/caseAccessCardBoard.spec.js`: the grants section's source, row fields and origin cases
 - [ ] 4.2 Example data: on the Lindelaan case, the handling team "Team Woo en informatie" through its case type, and a share by Pieter Jansen with "Juridische zaken" (DATA)
+  - Done: the share by Pieter Jansen with Juridische zaken, `lib/Settings/example-sets/zuiddrecht.d/67-lindelaan-case-grants.json` (a `grants` row, openregister example-set-access-links-and-grants), test `tests/Unit/Settings/ZuiddrechtCaseGrantsTest.php`.
+  - Left: the team row. The shipped woo-verzoek case type hands cases to `behandelaars` (`handling.defaultGroup`), and an example set adds no procedure, so naming "Team Woo en informatie" through the case type is a product decision on `handling.teams`, not example data.
 - [ ] 4.3 Live pass against the board DqZaakBetrokkenen with a pixel diff of the Toegang card

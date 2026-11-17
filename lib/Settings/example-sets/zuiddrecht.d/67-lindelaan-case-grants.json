@@ -1,0 +1,15 @@
+{
+	"$comment": "The share the Toegang card of DqZaakBetrokkenen lists on the Lindelaan Woo case (dossiq change case-access-card-lists-team-and-group-grants, task 4.2): Pieter Jansen shared the case with the group Juridische zaken 11 days before the install day, ending 14 days after it, so the grants section shows a `shared` row with Pieter as the one who shared it, that date and the pill with its end date. OpenRegister makes it through its object sharing service while Pieter is the active user (example-set-access-links-and-grants, REQ: a fragment may declare grants on its objects) and removes it with the set. Read only (permissions 1).",
+	"grants": [
+		{
+			"key": "woo-fietspad-juridische-zaken",
+			"object": "{{object:woo-fietspad-besluitklaar.id}}",
+			"type": "group",
+			"shareWith": "{{cast:juridische-zaken.gid}}",
+			"permissions": 1,
+			"sharedBy": "{{cast:pieter.uid}}",
+			"sharedAt": "{{datetime:-11 10:00}}",
+			"expiresAt": "{{date:14}}"
+		}
+	]
+}
