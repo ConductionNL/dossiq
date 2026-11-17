@@ -73,9 +73,31 @@ delta specs and validates strictly.
         finished checklist to a configured endpoint (dossiq's
         `POST /api/vth/cases/{id}/inspection-result`) instead of an object
         create. Then repoint `referenceSchema` and drop `checklistResult`.
-  - [ ] 4.3 Portal inspector on OpenRegister's portal task seam: external
+  - [x] 4.3 Portal inspector on OpenRegister's portal task seam: external
         runs as `performerType: external` tasks; a dossiq endpoint action
-        completes one after checking the stored party reference.
+        completes one after checking the stored party reference. Done 17 Nov
+        2026: `POST /api/cases/{id}/checklist-runs/external`
+        (`ExternalInspectionRunController`, case mutation guard first) creates
+        an open `inspection` task with `performerType: external`, assignee
+        `party:<inspectorRef>`, the frozen template and
+        `metadata.completeVia = {app: dossiq, action: completeChecklistTask}`,
+        so OpenRegister refuses any other completion and portaliq's task list
+        opens dossiq's form. The inspector contribution declares the endpoint
+        action `completeChecklistTask` (`taskField: taskId`);
+        `POST /api/portal/inspectie/checklist` (`PortalInspectionController`,
+        assertion and `inspector` audience first) lands in
+        `ExternalInspectionRunService::complete()`, which compares the task's
+        stored kind, performer type and party reference with the assertion's
+        subject (404 otherwise), checks the answers against the snapshot (422)
+        and completes through `PortalTaskService::complete(viaApp: dossiq)`.
+        File ids a portal party names are dropped from its answers, so an item
+        whose photo gate needs a photo is refused until the portal action
+        carries uploads. Tests: `ExternalInspectionRunServiceTest`,
+        `ExternalInspectionRunControllerTest`, `PortalInspectionControllerTest`,
+        the inspector case of `PortalContributionProviderTest`. Left open:
+        portaliq has no checklist field type, so its generic form cannot yet
+        render one answer per item; the collections and `submitChecklistRun`
+        retire in step 5.
   - [ ] 4.4 Live pass (decision 139).
 - [ ] 5 **Remove.** One release after step 4. Retire the six schemas and `checklistResult`, the
       immutability listener, the stack C template paths and the portal
