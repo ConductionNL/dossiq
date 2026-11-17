@@ -32,19 +32,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
+use OCA\Dossiq\Controller\Support\PortalAssertionGate;
+use OCA\Dossiq\Controller\Support\ReadsStringParams;
 use OCA\Dossiq\Service\Obligations\IntakeObligations;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
-use OCP\AppFramework\Http\Attribute\BruteForceProtection;
-use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\Security\Bruteforce\IThrottler;
-use Psr\Log\LoggerInterface;
-use Throwable;
+use OCP\AppFramework\Http\Attribute\PublicPage;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 
 /**
  * Records a sign or refuse that portaliq vouches for.
@@ -52,6 +49,7 @@ use Throwable;
  * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal
  */
 class PortalObligationController extends Controller {
+	use ReadsStringParams;
 
 	/**
 	 * The brute-force bucket a rejected assertion counts against.
@@ -66,20 +64,16 @@ class PortalObligationController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                  $appName     The app name.
-	 * @param IRequest                $request     The request.
-	 * @param PortalAssertionVerifier $verifier    Verifies portaliq's assertion.
-	 * @param IntakeObligations       $obligations Settles the obligation.
-	 * @param IThrottler              $throttler   Counts rejected assertions.
-	 * @param LoggerInterface         $logger      Logger.
+	 * @param string              $appName     The app name.
+	 * @param IRequest            $request     The request.
+	 * @param PortalAssertionGate $gate        Verifies portaliq's assertion and counts rejected ones.
+	 * @param IntakeObligations   $obligations Settles the obligation.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
+		private readonly PortalAssertionGate $gate,
 		private readonly IntakeObligations $obligations,
-		private readonly IThrottler $throttler,
-		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -99,53 +93,18 @@ class PortalObligationController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function settle(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$claims = $this->gate->claimsFor(request: $this->request, audiences: self::AUDIENCES, throttleAction: self::THROTTLE_ACTION);
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
 		$result = $this->obligations->settle(
-			caseId: $this->stringParam(key: 'case'),
-			kind: $this->stringParam(key: 'kind'),
-			answer: $this->stringParam(key: 'answer'),
-			subjectRef: (string)($claims['sub'] ?? ''),
-			trust: (string)($claims['trust'] ?? ''),
+			caseId: ($this->stringParam(name: 'case') ?? ''),
+			kind: ($this->stringParam(name: 'kind') ?? ''),
+			answer: ($this->stringParam(name: 'answer') ?? ''),
+			holder: ['subject' => (string)($claims['sub'] ?? ''), 'trust' => (string)($claims['trust'] ?? '')],
 		);
 
 		return new JSONResponse($result['body'], $result['status']);
 	}//end settle()
-
-	/**
-	 * A string request parameter, or ''.
-	 *
-	 * @param string $key The parameter.
-	 *
-	 * @return string
-	 */
-	private function stringParam(string $key): string {
-		$value = $this->request->getParam($key, '');
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return $value;
-	}//end stringParam()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalObligationController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

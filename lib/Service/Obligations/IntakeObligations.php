@@ -32,8 +32,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Obligations;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\CaseTypeResolver;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -80,18 +78,14 @@ class IntakeObligations {
 	 * Constructor.
 	 *
 	 * @param ObligationService     $obligations Places and settles the obligation rows.
-	 * @param ObligationDeclaration $declaration Reads the case type's obligation kinds.
-	 * @param CaseTypeResolver      $caseTypes   The effective case type of a case.
-	 * @param IntakeObligationCase  $cases       Reads the entries and writes their state.
-	 * @param CaseDateNormaliser    $dates       Today, in the administered zone.
+	 * @param IntakeObligationKinds $kinds       The obligation kinds the case type declares.
+	 * @param IntakeObligationCase  $cases       Reads the entries, writes their state, knows today.
 	 * @param LoggerInterface       $logger      Records a kind the case type does not declare.
 	 */
 	public function __construct(
 		private readonly ObligationService $obligations,
-		private readonly ObligationDeclaration $declaration,
-		private readonly CaseTypeResolver $caseTypes,
+		private readonly IntakeObligationKinds $kinds,
 		private readonly IntakeObligationCase $cases,
-		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -138,23 +132,24 @@ class IntakeObligations {
 	 * the entry is bound to, or an entry bound to none (403), an entry no longer
 	 * awaiting (409), an obligation that cannot be found or written (503).
 	 *
-	 * @param string $caseId     The case.
-	 * @param string $kind       The obligation kind.
-	 * @param string $answer     `sign` or `refuse`.
-	 * @param string $subjectRef The holder's pseudonymous portal subject.
-	 * @param string $trust      The level of assurance the portal stated.
+	 * @param string               $caseId The case.
+	 * @param string               $kind   The obligation kind.
+	 * @param string               $answer `sign` or `refuse`.
+	 * @param array<string, mixed> $holder `subject`: the holder's pseudonymous portal subject;
+	 *                                     `trust`: the level of assurance the portal stated.
 	 *
 	 * @return array{status: int, body: array<string, mixed>}
 	 *
 	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal
 	 */
-	public function settle(string $caseId, string $kind, string $answer, string $subjectRef, string $trust): array {
-		if (in_array($answer, [self::ANSWER_SIGN, self::ANSWER_REFUSE], true) === false || trim($subjectRef) === '') {
+	public function settle(string $caseId, string $kind, string $answer, array $holder): array {
+		$holder = ['subject' => trim((string)($holder['subject'] ?? '')), 'trust' => (string)($holder['trust'] ?? '')];
+		if (in_array($answer, [self::ANSWER_SIGN, self::ANSWER_REFUSE], true) === false || $holder['subject'] === '') {
 			return ['status' => 400, 'body' => ['error' => 'invalid']];
 		}
 
 		return $this->cases->asSystem(
-			operation: fn (): array => $this->settleAs(caseId: $caseId, kind: $kind, answer: $answer, holder: ['subject' => $subjectRef, 'trust' => $trust]),
+			operation: fn (): array => $this->settleAs(caseId: $caseId, kind: $kind, answer: $answer, holder: $holder),
 			fallback: ['status' => 503, 'body' => ['error' => 'try_again_later']]
 		);
 	}//end settle()
@@ -168,28 +163,58 @@ class IntakeObligations {
 	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
 	 */
 	public function lapse(): int {
-		$today  = $this->dates->today()->format('Y-m-d');
+		$today  = $this->cases->today();
 		$lapsed = 0;
 		foreach ($this->obligations->openRows(limit: self::SWEEP_LIMIT) as $row) {
-			$dueAt = substr((string)($row['dueAt'] ?? ''), 0, 10);
-			if (str_starts_with((string)($row['source'] ?? ''), self::SOURCE_PREFIX) === false || $dueAt === '' || $dueAt >= $today) {
-				continue;
-			}
-
-			$case = $this->cases->read(caseId: (string)($row['case'] ?? ''));
-			$kind = (string)($row['kind'] ?? '');
-			if ($case === null || $this->cases->stateOf(case: $case, kind: $kind) !== self::STATE_AWAITING) {
-				continue;
-			}
-
-			$this->applyUnmetRule(case: $case, kind: $kind, obligationId: $this->cases->idOf(row: $row), reason: 'The due date passed.');
-			if ($this->cases->writeState(case: $case, kind: $kind, state: self::STATE_EXPIRED) === true) {
+			if ($this->isOverdueIntakeRow(row: $row, today: $today) === true && $this->lapseOne(row: $row) === true) {
 				$lapsed++;
 			}
 		}
 
 		return $lapsed;
 	}//end lapse()
+
+	/**
+	 * Whether an open obligation row was placed at intake and its due date has passed.
+	 *
+	 * @param array<string, mixed> $row   The obligation row.
+	 * @param string               $today Today, as Y-m-d.
+	 *
+	 * @return bool
+	 */
+	private function isOverdueIntakeRow(array $row, string $today): bool {
+		if (str_starts_with((string)($row['source'] ?? ''), self::SOURCE_PREFIX) === false) {
+			return false;
+		}
+
+		$dueAt = substr((string)($row['dueAt'] ?? ''), 0, 10);
+		return $dueAt !== '' && $dueAt < $today;
+	}//end isOverdueIntakeRow()
+
+	/**
+	 * Lapse one overdue obligation whose entry is still awaiting: apply its kind's rule and mark it expired.
+	 *
+	 * When the rule's withdrawal fails the entry is not marked expired, so the
+	 * case does not read as lapsed while its obligation still blocks it.
+	 *
+	 * @param array<string, mixed> $row The obligation row.
+	 *
+	 * @return bool True when the entry was marked expired.
+	 */
+	private function lapseOne(array $row): bool {
+		$case = $this->cases->read(caseId: (string)($row['case'] ?? ''));
+		$kind = (string)($row['kind'] ?? '');
+		if ($case === null || $this->cases->stateOf(case: $case, kind: $kind) !== self::STATE_AWAITING) {
+			return false;
+		}
+
+		// A withdrawal that could not be written leaves the entry awaiting, so the next sweep tries again.
+		if ($this->applyUnmetRule(case: $case, kind: $kind, obligationId: $this->cases->idOf(row: $row), reason: 'The due date passed.') === false) {
+			return false;
+		}
+
+		return $this->cases->writeState(case: $case, kind: $kind, state: self::STATE_EXPIRED);
+	}//end lapseOne()
 
 	/**
 	 * The placing itself, see placeFor().
@@ -200,7 +225,7 @@ class IntakeObligations {
 	 * @return int How many obligations were placed.
 	 */
 	private function placeAs(string $caseId, array $case): int {
-		$kinds  = $this->kindsOf(case: $case);
+		$kinds  = $this->kinds->of(case: $case);
 		$placed = 0;
 		foreach ($this->cases->entries(case: $case) as $entry) {
 			$kind = trim((string)($entry['kind'] ?? ''));
@@ -278,12 +303,17 @@ class IntakeObligations {
 			return ['status' => 503, 'body' => ['error' => 'try_again_later']];
 		}
 
-		$state = self::STATE_SIGNED;
 		if ($answer === self::ANSWER_REFUSE) {
 			$state = self::STATE_REFUSED;
+			$done  = $this->applyUnmetRule(case: $case, kind: $kind, obligationId: $obligationId, reason: 'Refused from the portal.');
+		} else {
+			$state = self::STATE_SIGNED;
+			$done  = $this->obligations->meet(
+				obligationId: $obligationId,
+				note: 'Signed from the portal.',
+				fields: ['settledBySubject' => $holder['subject'], 'settledTrust' => $holder['trust']]
+			);
 		}
-
-		$done = $this->record(case: $case, kind: $kind, obligationId: $obligationId, state: $state, holder: $holder);
 
 		if ($done === false || $this->cases->writeState(case: $case, kind: $kind, state: $state) === false) {
 			return ['status' => 503, 'body' => ['error' => 'try_again_later']];
@@ -291,29 +321,6 @@ class IntakeObligations {
 
 		return ['status' => 200, 'body' => ['case' => $caseId, 'kind' => $kind, 'state' => $state]];
 	}//end settleAs()
-
-	/**
-	 * Meet the obligation for a signature, or apply the kind's rule for a refusal.
-	 *
-	 * @param array<string, mixed>                  $case         The case.
-	 * @param string                                $kind         The kind.
-	 * @param string                                $obligationId The obligation.
-	 * @param string                                $state        `signed` or `refused`.
-	 * @param array{subject: string, trust: string} $holder       Who answers.
-	 *
-	 * @return bool False when the write failed.
-	 */
-	private function record(array $case, string $kind, string $obligationId, string $state, array $holder): bool {
-		if ($state === self::STATE_REFUSED) {
-			return $this->applyUnmetRule(case: $case, kind: $kind, obligationId: $obligationId, reason: 'Refused from the portal.');
-		}
-
-		return $this->obligations->meet(
-			obligationId: $obligationId,
-			note: 'Signed from the portal.',
-			fields: ['settledBySubject' => $holder['subject'], 'settledTrust' => $holder['trust']]
-		);
-	}//end record()
 
 	/**
 	 * Why this holder may not answer this entry, or null when they may.
@@ -334,22 +341,36 @@ class IntakeObligations {
 			return ['status' => 404, 'body' => ['error' => 'not_found']];
 		}
 
-		if (trim((string)($case['portalSubject'] ?? '')) === trim($subjectRef)) {
+		$refusal = $this->holderRefusal(case: $case, kind: $kind, subjectRef: trim($subjectRef));
+		if ($refusal === null && $state !== self::STATE_AWAITING) {
+			$refusal = ['status' => 409, 'body' => ['error' => 'not_awaiting', 'state' => $state]];
+		}
+
+		return $refusal;
+	}//end refusalFor()
+
+	/**
+	 * Why this subject is not the one to answer this entry, or null when they are.
+	 *
+	 * @param array<string, mixed> $case       The case.
+	 * @param string               $kind       The kind.
+	 * @param string               $subjectRef The holder's portal subject, trimmed.
+	 *
+	 * @return array{status: int, body: array<string, mixed>}|null
+	 */
+	private function holderRefusal(array $case, string $kind, string $subjectRef): ?array {
+		if (trim((string)($case['portalSubject'] ?? '')) === $subjectRef) {
 			return ['status' => 403, 'body' => ['error' => 'same_subject']];
 		}
 
 		// Fail closed: an entry bound to no subject, or to another one, is not this person's to answer.
 		$holder = $this->cases->holderSubjectOf(case: $case, kind: $kind);
-		if ($holder === '' || hash_equals($holder, trim($subjectRef)) === false) {
+		if ($holder === '' || hash_equals($holder, $subjectRef) === false) {
 			return ['status' => 403, 'body' => ['error' => 'not_holder']];
 		}
 
-		if ($state !== self::STATE_AWAITING) {
-			return ['status' => 409, 'body' => ['error' => 'not_awaiting', 'state' => $state]];
-		}
-
 		return null;
-	}//end refusalFor()
+	}//end holderRefusal()
 
 	/**
 	 * Apply the kind's `whenUnmet`: withdraw releases the case, stay keeps it blocked.
@@ -362,27 +383,11 @@ class IntakeObligations {
 	 * @return bool False when a withdrawal could not be written.
 	 */
 	private function applyUnmetRule(array $case, string $kind, string $obligationId, string $reason): bool {
-		$rule = (string)($this->kindsOf(case: $case)[$kind]['whenUnmet'] ?? ObligationDeclaration::WHEN_UNMET_STAY);
+		$rule = (string)($this->kinds->of(case: $case)[$kind]['whenUnmet'] ?? ObligationDeclaration::WHEN_UNMET_STAY);
 		if ($rule !== ObligationDeclaration::WHEN_UNMET_WITHDRAW) {
 			return true;
 		}
 
 		return $this->obligations->withdraw(obligationId: $obligationId, reason: $reason);
 	}//end applyUnmetRule()
-
-	/**
-	 * The obligation kinds the case's type declares.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return array<string, array<string, mixed>>
-	 */
-	private function kindsOf(array $case): array {
-		$caseTypeId = trim((string)($case['caseType'] ?? ''));
-		if ($caseTypeId === '') {
-			return [];
-		}
-
-		return $this->declaration->kindsFor(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId));
-	}//end kindsOf()
 }//end class

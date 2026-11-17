@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PortalObligationController;
+use OCA\Dossiq\Controller\Support\PortalAssertionGate;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Service\Obligations\IntakeObligations;
 use OCA\Dossiq\Tests\Unit\Portal\PortalAssertionVerifierTest;
@@ -48,10 +49,12 @@ class PortalObligationControllerTest extends TestCase {
 		return new PortalObligationController(
 			appName: 'dossiq',
 			request: $request,
-			verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
+			gate: new PortalAssertionGate(
+				verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
+				throttler: $this->createMock(IThrottler::class),
+				logger: $this->createMock(LoggerInterface::class),
+			),
 			obligations: $this->obligations,
-			throttler: $this->createMock(IThrottler::class),
-			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end controller()
 
@@ -63,7 +66,7 @@ class PortalObligationControllerTest extends TestCase {
 	public function testTheAssertedSubjectSettles(): void {
 		$controller = $this->controller(PortalAssertionVerifierTest::mint(), ['case' => 'case-1', 'kind' => 'cosign', 'answer' => 'sign', 'subjectRef' => 'subj-mallory']);
 		$this->obligations->expects(self::once())->method('settle')
-			->with('case-1', 'cosign', 'sign', 'subject-ref-anna', self::anything())
+			->with('case-1', 'cosign', 'sign', self::callback(static fn (array $holder): bool => $holder['subject'] === 'subject-ref-anna'))
 			->willReturn(['status' => 200, 'body' => ['state' => 'signed']]);
 
 		$response = $controller->settle();

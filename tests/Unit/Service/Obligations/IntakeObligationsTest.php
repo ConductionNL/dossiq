@@ -17,6 +17,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Obligations\IntakeObligationCase;
+use OCA\Dossiq\Service\Obligations\IntakeObligationKinds;
 use OCA\Dossiq\Service\Obligations\IntakeObligations;
 use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
@@ -30,6 +31,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\Obligations\IntakeObligations
  * @covers \OCA\Dossiq\Service\Obligations\IntakeObligationCase
+ * @covers \OCA\Dossiq\Service\Obligations\IntakeObligationKinds
  *
  * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md
  */
@@ -129,10 +131,8 @@ class IntakeObligationsTest extends TestCase {
 
 		return new IntakeObligations(
 			obligations: $this->obligations,
-			declaration: new ObligationDeclaration(),
-			caseTypes: $caseTypes,
+			kinds: new IntakeObligationKinds(declaration: new ObligationDeclaration(), caseTypes: $caseTypes),
 			cases: new IntakeObligationCase(settingsService: $settings, dates: $dates, logger: $logger),
-			dates: $dates,
 			logger: $logger,
 		);
 	}//end service()
@@ -239,7 +239,7 @@ class IntakeObligationsTest extends TestCase {
 			['settledBySubject' => 'subject-holder', 'settledTrust' => 'substantial']
 		)->willReturn(true);
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-holder', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', holder: ['subject' => 'subject-holder', 'trust' => 'substantial']);
 
 		self::assertSame(200, $result['status']);
 		self::assertSame('signed', $result['body']['state']);
@@ -259,7 +259,7 @@ class IntakeObligationsTest extends TestCase {
 		$this->stored = $this->waitingCase();
 		$this->obligations->expects(self::never())->method('meet');
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-applicant', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', holder: ['subject' => 'subject-applicant', 'trust' => 'substantial']);
 
 		self::assertSame(403, $result['status']);
 		self::assertSame([], $this->patches);
@@ -280,15 +280,15 @@ class IntakeObligationsTest extends TestCase {
 		$this->obligations->expects(self::never())->method('meet');
 		$this->obligations->expects(self::never())->method('withdraw');
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-stranger', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', holder: ['subject' => 'subject-stranger', 'trust' => 'substantial']);
 		self::assertSame(expected: ['status' => 403, 'body' => ['error' => 'not_holder']], actual: $result);
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', subjectRef: 'subject-stranger', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', holder: ['subject' => 'subject-stranger', 'trust' => 'substantial']);
 		self::assertSame(expected: 403, actual: $result['status']);
 
 		$this->stored = $this->waitingCase();
 		unset($this->stored['intakeObligations'][0]['holderSubject']);
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-holder', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', holder: ['subject' => 'subject-holder', 'trust' => 'substantial']);
 		self::assertSame(expected: ['status' => 403, 'body' => ['error' => 'not_holder']], actual: $result);
 		self::assertSame(expected: [], actual: $this->patches);
 	}//end testOnlyTheEntrysHolderMaySettleIt()
@@ -304,7 +304,7 @@ class IntakeObligationsTest extends TestCase {
 		$service      = $this->service();
 		$this->stored = $this->waitingCase(state: 'expired');
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-holder', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', holder: ['subject' => 'subject-holder', 'trust' => 'substantial']);
 
 		self::assertSame(409, $result['status']);
 	}//end testAnAnsweredEntryIsNotAnsweredTwice()
@@ -320,8 +320,8 @@ class IntakeObligationsTest extends TestCase {
 		$service      = $this->service();
 		$this->stored = $this->waitingCase();
 
-		self::assertSame(400, $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'maybe', subjectRef: 'subject-holder', trust: 'low')['status']);
-		self::assertSame(404, $service->settle(caseId: 'case-1', kind: 'other', answer: 'sign', subjectRef: 'subject-holder', trust: 'low')['status']);
+		self::assertSame(400, $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'maybe', holder: ['subject' => 'subject-holder', 'trust' => 'low'])['status']);
+		self::assertSame(404, $service->settle(caseId: 'case-1', kind: 'other', answer: 'sign', holder: ['subject' => 'subject-holder', 'trust' => 'low'])['status']);
 	}//end testBadInputIsRefused()
 
 	/**
@@ -337,7 +337,7 @@ class IntakeObligationsTest extends TestCase {
 		$this->obligations->method('idForSource')->willReturn('obligation-1');
 		$this->obligations->expects(self::never())->method('withdraw');
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', subjectRef: 'subject-holder', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', holder: ['subject' => 'subject-holder', 'trust' => 'substantial']);
 		self::assertSame('refused', $result['body']['state']);
 		self::assertSame('refused', $this->patches[0]['intakeObligations'][0]['state']);
 
@@ -347,7 +347,7 @@ class IntakeObligationsTest extends TestCase {
 		$this->obligations->method('idForSource')->willReturn('obligation-1');
 		$this->obligations->expects(self::once())->method('withdraw')->with('obligation-1', self::anything())->willReturn(true);
 
-		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', subjectRef: 'subject-holder', trust: 'substantial');
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', holder: ['subject' => 'subject-holder', 'trust' => 'substantial']);
 		self::assertSame(200, $result['status']);
 	}//end testARefusalFollowsTheKindsRule()
 
@@ -372,4 +372,23 @@ class IntakeObligationsTest extends TestCase {
 		self::assertSame(1, $service->lapse());
 		self::assertSame('expired', $this->patches[0]['intakeObligations'][0]['state']);
 	}//end testAPassedDueDateLapses()
+	/**
+	 * A withdrawal that fails leaves the entry awaiting for the next sweep.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
+	 */
+	public function testAFailedWithdrawalDoesNotLapse(): void {
+		$this->whenUnmet = 'withdraw';
+		$service         = $this->service();
+		$this->stored    = $this->waitingCase();
+		$this->obligations->method('openRows')->willReturn([
+			['id' => 'obligation-1', 'case' => 'case-1', 'kind' => 'cosign', 'dueAt' => '2026-10-22', 'source' => 'intake:case-1:cosign'],
+		]);
+		$this->obligations->expects(self::once())->method('withdraw')->with('obligation-1', self::anything())->willReturn(false);
+
+		self::assertSame(0, $service->lapse());
+		self::assertSame([], $this->patches);
+	}//end testAFailedWithdrawalDoesNotLapse()
 }//end class

@@ -191,38 +191,11 @@ class ObligationService {
 			return [];
 		}
 
-		[$objectService, $register, $schema] = $this->store();
-		if ($objectService === null) {
-			return [];
-		}
-
-		// The catch LOGS and falls through, and the empty answer is the last
-		// statement of the method rather than a `return []` inside an
-		// exception handler. `ServiceCatchReturnsNullTest` holds that line for
-		// the reason it names: a caller cannot tell "no obligations" from
-		// "could not read them" when both arrive as the same empty array, and
-		// the shape below at least puts the failure answer where a reader of
-		// the method sees it.
-		$rows = null;
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq obligations: the obligations of a case could not be read',
-				['case' => $caseId, 'error' => $e->getMessage()],
-			);
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		return $rows;
+		return $this->searchRows(
+			filters: ['case' => $caseId],
+			failure: 'Dossiq obligations: the obligations of a case could not be read',
+			context: ['case' => $caseId],
+		);
 	}//end allFor()
 
 	/**
@@ -238,24 +211,38 @@ class ObligationService {
 	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
 	 */
 	public function openRows(int $limit): array {
-		[$objectService, $register, $schema] = $this->store();
-		if ($objectService === null) {
-			return [];
-		}
+		return $this->searchRows(
+			filters: ['state' => ObligationDeclaration::STATE_OPEN, '_limit' => $limit],
+			failure: 'Dossiq obligations: the open obligations could not be read',
+			context: [],
+		);
+	}//end openRows()
 
+	/**
+	 * The obligation rows matching some filters, or an empty list when the store is absent or the read fails.
+	 *
+	 * The catch LOGS and falls through, and the empty answer is the last
+	 * statement of the method rather than a `return []` inside an exception
+	 * handler. `ServiceCatchReturnsNullTest` holds that line for the reason it
+	 * names: a caller cannot tell "no obligations" from "could not read them"
+	 * when both arrive as the same empty array, and this shape at least puts
+	 * the failure answer where a reader of the method sees it.
+	 *
+	 * @param array<string, mixed> $filters The search filters.
+	 * @param string               $failure The warning logged when the read fails.
+	 * @param array<string, mixed> $context What the warning names besides the error.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function searchRows(array $filters, string $failure, array $context): array {
+		[$objectService, $register, $schema] = $this->store();
 		$rows = null;
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['state' => ObligationDeclaration::STATE_OPEN, '_limit' => $limit],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq obligations: the open obligations could not be read',
-				['error' => $e->getMessage()],
-			);
+		if ($objectService !== null) {
+			try {
+				$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+			} catch (Throwable $e) {
+				$this->logger->warning($failure, array_merge($context, ['error' => $e->getMessage()]));
+			}
 		}
 
 		if (is_array($rows) === false) {
@@ -263,7 +250,7 @@ class ObligationService {
 		}
 
 		return $rows;
-	}//end openRows()
+	}//end searchRows()
 
 	/**
 	 * The obligation placed by a given object, if there is one.

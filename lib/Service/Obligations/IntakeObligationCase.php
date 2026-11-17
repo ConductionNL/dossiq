@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Obligations;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -52,7 +52,7 @@ class IntakeObligationCase {
 	 * Constructor.
 	 *
 	 * @param SettingsService    $settingsService Bridge to OpenRegister.
-	 * @param CaseDateNormaliser $dates           The moment a state changes.
+	 * @param CaseDateNormaliser $dates           Today, and the moment a state changes.
 	 * @param LoggerInterface    $logger          Records what could not be read or written.
 	 */
 	public function __construct(
@@ -61,6 +61,17 @@ class IntakeObligationCase {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * Today in the administered zone, as Y-m-d.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
+	 */
+	public function today(): string {
+		return $this->dates->today()->format('Y-m-d');
+	}//end today()
 
 	/**
 	 * The case, or null when it cannot be read.
