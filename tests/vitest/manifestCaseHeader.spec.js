@@ -99,7 +99,8 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 60 -> 58: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
 		// 58 -> 57: SubstitutionAdmin retires; substitution admin lives in the admin settings.
 		// 57 -> 56: ReIntegratieTrajecten retires; re-integration trajectories are cases, their list a view of Cases.
-		expect(manifest.pages).toHaveLength(56)
+		// 56 -> 55: `cases-are-archival-no-delete` retires CasesDeleted; a case is never deleted.
+		expect(manifest.pages).toHaveLength(55)
 		// Two entries open Cases as a place: the list, and the Werkbord, which is the
 		// same list in its board view (`query: { _view: 'board' }`). The
 		// team queue opens a view of it (`savedView`), which is not a page.
