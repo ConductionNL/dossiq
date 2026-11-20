@@ -140,4 +140,21 @@ class ZgwPatchMergerTest extends TestCase {
 		$this->assertSame('Nieuw', $merged['title']);
 
 	}//end testPatchedNonJsonValueIsKept()
+
+	/**
+	 * A stored array patched with a value that is no string (an array, a number) keeps that value as it is.
+	 *
+	 * @return void
+	 */
+	public function testPatchedNonStringValueIsKeptAsItIs(): void {
+		$merged = (new ZgwPatchMerger())->merge(
+			existingData: ['productsOrServices' => ['https://p/1'], 'title' => ['was', 'an', 'array']],
+			body: ['productenOfDiensten' => ['https://p/2'], 'omschrijving' => 7],
+			englishData: ['productsOrServices' => ['https://p/2', 'https://p/3'], 'title' => 7],
+			mappingConfig: self::MAPPING
+		);
+
+		$this->assertSame(expected: ['productsOrServices' => ['https://p/2', 'https://p/3'], 'title' => 7], actual: $merged);
+
+	}//end testPatchedNonStringValueIsKeptAsItIs()
 }//end class

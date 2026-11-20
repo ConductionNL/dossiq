@@ -292,4 +292,75 @@ class CaseArchiveStateTest extends TestCase {
 			$this->assertSame(expected: 'archive-state-refused', actual: $e->getRule());
 		}
 	}//end testThePlatformsRefusalIsCarriedThroughWordsAndAll()
+
+	/**
+	 * A `@self` that is not a block carries no marker.
+	 *
+	 * @return void
+	 */
+	public function testASelfThatIsNotABlockCarriesNoMarker(): void {
+		$state = $this->state(handler: $this->handler());
+
+		$this->assertSame(expected: [], actual: $state->markerOn(case: ['@self' => 'archived']));
+		$this->assertFalse(condition: $state->isArchived(case: ['@self' => 'archived']));
+	}//end testASelfThatIsNotABlockCarriesNoMarker()
+
+	/**
+	 * A refusal the handler raises itself reaches the caller as it was raised,
+	 * not rewrapped as a platform failure.
+	 *
+	 * @return void
+	 */
+	public function testARefusalFromTheHandlerIsPassedOnUnchanged(): void {
+		$refusal = new RefusedException(rule: 'case-locked', sentence: 'The case is locked.', status: RefusedException::STATUS_FORBIDDEN);
+		$handler = new class ($refusal) {
+			/**
+			 * @param RefusedException $refusal What to throw.
+			 */
+			public function __construct(private RefusedException $refusal) {
+			}
+
+			/**
+			 * Refuse with the given refusal.
+			 *
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function unarchiveWith(ObjectStateRequest $request): array {
+				throw $this->refusal;
+			}
+		};
+
+		try {
+			$this->state(handler: $handler)->clear(caseId: 'case-1', reason: 'Heropend');
+			$this->fail(message: 'the refusal must reach the caller');
+		} catch (RefusedException $e) {
+			$this->assertSame(expected: $refusal, actual: $e);
+			$this->assertSame(expected: 'case-locked', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_FORBIDDEN, actual: $e->getStatus());
+		}
+	}//end testARefusalFromTheHandlerIsPassedOnUnchanged()
+
+	/**
+	 * A handler that answers something other than an array answers nothing.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayAnswerIsAnEmptyAnswer(): void {
+		$handler = new class {
+			/**
+			 * Answer an entity rather than an array.
+			 *
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
+			 *
+			 * @return object The entity.
+			 */
+			public function archiveWith(ObjectStateRequest $request): object {
+				return (object)['uuid' => $request->identifier];
+			}
+		};
+
+		$this->assertSame(expected: [], actual: $this->state(handler: $handler)->mark(caseId: 'case-1', reason: 'Afgehandeld'));
+	}//end testANonArrayAnswerIsAnEmptyAnswer()
 }//end class

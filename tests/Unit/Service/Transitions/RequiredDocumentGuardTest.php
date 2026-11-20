@@ -110,6 +110,41 @@ class RequiredDocumentGuardTest extends TestCase {
 	}//end testScansAllAttachmentFields()
 
 	/**
+	 * A listed document that is not a record (a bare id or name) is stepped
+	 * over, and a matching document after it still satisfies the guard.
+	 *
+	 * @return void
+	 */
+	public function testSkipsNonRecordCandidates(): void {
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['documents' => ['Besluit', 7], 'files' => [['type' => 'Besluit']]],
+			userId: 'u',
+		);
+
+		self::assertTrue(condition: $result->passed);
+		self::assertSame(expected: ['documentType' => 'Besluit'], actual: $result->details);
+	}//end testSkipsNonRecordCandidates()
+
+	/**
+	 * A bare string naming the type is not a document of that type.
+	 *
+	 * @return void
+	 */
+	public function testABareStringIsNotADocument(): void {
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['attachments' => ['Besluit']],
+			userId: 'u',
+		);
+
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Required document missing: Besluit', actual: $result->failureMessage);
+	}//end testABareStringIsNotADocument()
+
+	/**
 	 * @return void
 	 */
 	public function testHandlesMissingAttachmentFieldsGracefully(): void {

@@ -149,6 +149,21 @@ class DateReachedGuardTest extends TestCase {
 	}//end testAMissingOrUnreadableDayIsRefused()
 
 	/**
+	 * Answered properties that all name other fields hold no day: the step is
+	 * refused as missing the day, not dated by a neighbouring property.
+	 *
+	 * @return void
+	 */
+	public function testPropertiesNamingOnlyOtherFieldsAreRefused(): void {
+		$case   = ['properties' => ['skip', ['name' => 'gunning', 'value' => '2026-01-01'], ['value' => '2026-02-01']]];
+		$result = $this->evaluate(config: ['field' => 'sluiting'], case: $case);
+
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Date missing: sluiting', actual: $result->failureMessage);
+		self::assertSame(expected: ['field' => 'sluiting'], actual: $result->details);
+	}//end testPropertiesNamingOnlyOtherFieldsAreRefused()
+
+	/**
 	 * A guard without a field is refused as unconfigured.
 	 *
 	 * @return void

@@ -406,6 +406,29 @@ class NextcloudMailGatewayServicesTest extends TestCase {
 	}//end testASynchronisationIsUnpacked()
 
 	/**
+	 * Entities without the getters answer the fallbacks, quietly.
+	 *
+	 * A Mail release whose entities dropped a getter is not an error per
+	 * row: the missing value reads as 0 or '' and nothing is logged, unlike a
+	 * getter that is there and throws.
+	 *
+	 * @return void
+	 */
+	public function testEntitiesWithoutGettersAnswerTheFallbacks(): void {
+		$event = new NewMessagesSynchronized(self::entity(id: 3), new \stdClass(), [new \stdClass()]);
+
+		self::assertSame(
+			expected: [
+				'accountId' => 3,
+				'mailbox' => '',
+				'messages' => [['id' => 0, 'uid' => 0, 'messageId' => '', 'subject' => '', 'sentAt' => '']],
+			],
+			actual: $this->gateway(services: [])->unpackSynchronisation($event)
+		);
+		self::assertSame(expected: [], actual: $this->logged);
+	}//end testEntitiesWithoutGettersAnswerTheFallbacks()
+
+	/**
 	 * Messages that are not a list are none.
 	 *
 	 * @return void

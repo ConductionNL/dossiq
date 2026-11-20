@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
@@ -352,4 +353,79 @@ class SourceCollectionReturnTest extends TestCase {
 		self::assertTrue($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
 		self::assertSame(['woo_collection_register', 'woo_collection_schema'], $asked);
 	}//end testTheDossierIsFoundUnderTheStoredConfigKeys()
+
+	/**
+	 * When OpenRegister offers the PATCH seam, only the items are written, unscoped, to the dossier's own
+	 * register and schema, so a field another app wrote meanwhile is not saved away.
+	 *
+	 * @return void
+	 */
+	public function testThePatchSeamWritesOnlyTheItemsUnscoped(): void {
+		$store = new class extends InMemoryRegister {
+			/**
+			 * The patches written: the patch and its two scope flags.
+			 *
+			 * @var array<int, array{0: ObjectPatch, 1: bool, 2: bool}>
+			 */
+			public array $patches = [];
+
+			/**
+			 * Record a patch.
+			 *
+			 * @param ObjectPatch $patch         The patch.
+			 * @param bool        $_rbac         Whether the write is scoped by access rules.
+			 * @param bool        $_multitenancy Whether the write is scoped to the caller's tenant.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->patches[] = [$patch, $_rbac, $_multitenancy];
+
+				return ['id' => $patch->objectId];
+			}
+		};
+		$store->seed(
+			schema: 'collection',
+			uuid: self::COLLECTION,
+			row: [
+				'title' => 'Parkeren',
+				'owner' => 'subject-ref-anna',
+				'items' => [
+					['id' => 'item-1', 'publication' => 'pub-a', 'note' => 'Het besluit', 'addedAt' => '2026-09-01T10:00:00+00:00', 'addedBy' => 'resident'],
+				],
+				'share' => ['token' => 'tok'],
+			]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
+			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
+		);
+		$random = $this->createMock(originalClassName: ISecureRandom::class);
+		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
+		$return = new SourceCollectionReturn(
+			settingsService: $settings,
+			random: $random,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+
+		self::assertTrue(condition: $return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit op uw Woo-verzoek'));
+
+		self::assertCount(expectedCount: 1, haystack: $store->patches);
+		[$patch, $rbac, $multitenancy] = $store->patches[0];
+		self::assertSame(expected: self::COLLECTION, actual: $patch->objectId);
+		self::assertSame(expected: ['items'], actual: array_keys($patch->data));
+		self::assertCount(expectedCount: 2, haystack: $patch->data['items']);
+		self::assertSame(expected: 'item-1', actual: $patch->data['items'][0]['id']);
+		self::assertSame(expected: 'pub-new', actual: $patch->data['items'][1]['publication']);
+		self::assertSame(expected: SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_register'], actual: $patch->target->register);
+		self::assertSame(expected: SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_schema'], actual: $patch->target->schema);
+		self::assertFalse(condition: $rbac);
+		self::assertFalse(condition: $multitenancy);
+		self::assertCount(
+			expectedCount: 1,
+			haystack: $store->row(schema: 'collection', uuid: self::COLLECTION)['items'],
+			message: 'the full save path is not taken'
+		);
+	}//end testThePatchSeamWritesOnlyTheItemsUnscoped()
 }//end class
