@@ -181,6 +181,7 @@ import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument, openDocumentOfDispatch } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
+import { markMessageRead, markMessageUnread } from './utils/messageUnread.js'
 import { prepareNoticePayout } from './utils/noticePayout.js'
 import { readFileAsMessage } from './utils/savedMail.js'
 
@@ -1102,6 +1103,17 @@ const registry = {
 		kind: 'handler',
 		handler: markCaseUnread,
 		_note: "The Queue's and Cases' mark-unread row action, for the reason markCaseRead is a function.",
+	},
+	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	markMessageRead: {
+		kind: 'handler',
+		handler: markMessageRead,
+		_note: "The message lists' mark-read row action (case Communication, contact and organisation Contact moments). A message is a contactmoment object, so this is markCaseRead's write on another schema.",
+	},
+	markMessageUnread: {
+		kind: 'handler',
+		handler: markMessageUnread,
+		_note: "The message lists' mark-unread row action, for the reason markMessageRead is a function.",
 	},
 	// @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
 	toggleCaseFollow: {
