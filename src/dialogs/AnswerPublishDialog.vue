@@ -56,10 +56,13 @@
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
-				:disabled="!canPublish"
 				data-testid="answer-publish-submit"
+				:disabled="!canPublish"
+				variant="primary"
 				@click="publish">
+				<template #icon>
+					<CommentCheckOutline :size="20" />
+				</template>
 				{{ submitLabel }}
 			</NcButton>
 		</template>
@@ -68,12 +71,14 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import CommentCheckOutline from 'vue-material-design-icons/CommentCheckOutline.vue'
 
 /** Question states that are finished: nothing left to answer. */
 const CLOSED_STATES = ['published', 'rejected']
@@ -87,7 +92,7 @@ const LABEL_LENGTH = 90
 export default {
 	name: 'AnswerPublishDialog',
 
-	components: { NcButton, NcDialog, NcSelect, NcTextArea },
+	components: { CommentCheckOutline, NcButton, NcDialog, NcSelect, NcTextArea },
 
 	props: {
 		/** The case uuid the questions point at. */
@@ -118,6 +123,8 @@ export default {
 		 * The picker options: the question text, cut to one line.
 		 *
 		 * @return {Array<{id: string, label: string}>}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		questionOptions() {
 			return this.questions.map((question) => ({
@@ -130,6 +137,8 @@ export default {
 		 * The chosen question record.
 		 *
 		 * @return {object|null}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		selected() {
 			return this.questions.find((question) => question.id === this.questionId) ?? null
@@ -139,6 +148,8 @@ export default {
 		 * The primary button's label, telling while the answer is being published.
 		 *
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		submitLabel() {
 			return this.saving ? t('dossiq', 'Publishing …') : t('dossiq', 'Publish answer')
@@ -148,6 +159,8 @@ export default {
 		 * Whether there is a question and an answer to publish.
 		 *
 		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		canPublish() {
 			return this.saving === false && this.selected !== null && this.answer.trim() !== ''
@@ -159,6 +172,8 @@ export default {
 		 * Start from the answer already written on the chosen question.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		selected() {
 			this.answer = String(this.selected?.answer ?? '')
@@ -177,6 +192,8 @@ export default {
 		 *
 		 * @param {string} [id] The question id.
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		objectUrl(id = '') {
 			const base = `/apps/openregister/api/objects/${encodeURIComponent(this.register)}/${encodeURIComponent(this.schema)}`
@@ -188,6 +205,8 @@ export default {
 		 *
 		 * @param {object} question The question record.
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		labelOf(question) {
 			const text = String(question.question ?? '').replace(/\s+/g, ' ').trim()
@@ -252,6 +271,7 @@ export default {
 				const { data } = await axios.patch(this.objectUrl(question.id), {
 					publishedAt: new Date().toISOString(),
 				})
+				showSuccess(t('dossiq', 'Answer published.'))
 				this.$emit('done', data)
 				this.$emit('close')
 			} catch (e) {

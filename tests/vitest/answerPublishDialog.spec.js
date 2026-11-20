@@ -28,6 +28,8 @@ vi.mock('@nextcloud/axios', () => ({
 	},
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
+const mockSuccess = vi.fn()
+vi.mock('@nextcloud/dialogs', () => ({ showSuccess: (...a) => mockSuccess(...a) }))
 
 const STUBS = {
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
@@ -38,6 +40,7 @@ const STUBS = {
 	},
 	NcSelect: { props: ['modelValue', 'options'], template: '<select />' },
 	NcTextArea: { props: ['modelValue'], template: '<textarea :value="modelValue" />' },
+	CommentCheckOutline: true,
 }
 
 const QUESTIONS = [
@@ -164,6 +167,7 @@ describe('AnswerPublishDialog', () => {
 			['/apps/openregister/api/objects/q1/transition', { action: 'publish' }],
 		])
 		expect(mockPatch.mock.calls[1][1].publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+		expect(mockSuccess).toHaveBeenCalledWith('Answer published.')
 		expect(wrapper.emitted('done')).toEqual([[{ id: 'q1', state: 'published' }]])
 		expect(wrapper.emitted('close')).toHaveLength(1)
 	})
@@ -192,6 +196,7 @@ describe('AnswerPublishDialog', () => {
 		expect(wrapper.find('[data-testid="answer-publish-error"]').text())
 			.toBe('Transition publish is not allowed from received.')
 		expect(wrapper.emitted('close')).toBeUndefined()
+		expect(mockSuccess).not.toHaveBeenCalled()
 		expect(wrapper.vm.saving).toBe(false)
 	})
 

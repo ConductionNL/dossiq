@@ -883,6 +883,7 @@ OC.L10N.register(
         "Answer by {deadline|date}": "Answer by {deadline|date}",
         "Answer from the applicant": "Answer from the applicant",
         "Answer given for this checklist question": "Answer given for this checklist question",
+        "Answer published.": "Answer published.",
         "Answer recorded by": "Answer recorded by",
         "Answer to the resident": "Answer to the resident",
         "Answer type": "Answer type",

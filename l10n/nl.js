@@ -883,6 +883,7 @@ OC.L10N.register(
         "Answer by {deadline|date}": "Antwoord uiterlijk {deadline|date}",
         "Answer from the applicant": "Antwoord van de indiener",
         "Answer given for this checklist question": "Antwoord op deze checklistvraag",
+        "Answer published.": "Antwoord gepubliceerd.",
         "Answer recorded by": "Antwoord vastgelegd door",
         "Answer to the resident": "Antwoord aan de inwoner",
         "Answer type": "Antwoordtype",
