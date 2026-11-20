@@ -61,7 +61,7 @@
     "dexie": "^4.4.6",
     "dompurify": "^3.4.17",
     "gridstack": "^13.2.0",
-    "marked": "^18.1.1",
+    "marked": "^18.2.0",
     "pinia": "^3.0.3",
     "proj4": "^2.22.0",
     "vue": "^3.5.13",
@@ -85,7 +85,7 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "^7.22.9",
+    "@babel/core": "^7.29.13",
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
     "@nextcloud/browserslist-config": "^3.0.1",
     "@nextcloud/eslint-config": "^9.0.1",
@@ -103,7 +103,7 @@
     "css-loader": "~7.1.1",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
-    "jsdom": "^30.0.1",
+    "jsdom": "^31.0.1",
     "node-polyfill-webpack-plugin": "4.0.0",
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.9",
@@ -116,9 +116,9 @@
     "stylelint-config-recommended-vue": "^2.0.0",
     "terser-webpack-plugin": "^5.6.1",
     "typescript": "^5.9.3",
-    "vite": "^8.3.5",
+    "vite": "^8.3.8",
     "vitest": "^5.0.5",
-    "vue-eslint-parser": "^10.3.0",
+    "vue-eslint-parser": "^10.4.2",
     "vue-loader": "^17.4.2",
     "webpack": "^5.110.3",
     "webpack-cli": "^6.0.1"

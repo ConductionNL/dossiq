@@ -260,6 +260,19 @@ class CaseCustodyChainTest extends TestCase {
 	}//end testAnEmptyChainAnswersNothingRatherThanGuessing()
 
 	/**
+	 * A blank case id answers no holdings and reads nothing, even when a stored holding names no case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testABlankCaseIdAnswersNoHoldings(): void {
+		$this->store->seed(schema: 'caseCustody', uuid: 'stray', row: ['caseId' => '', 'sequence' => 1, 'holder' => 'vergunningen']);
+
+		self::assertSame(expected: [], actual: $this->chain()->holdings(caseId: '   '));
+	}//end testABlankCaseIdAnswersNoHoldings()
+
+	/**
 	 * A move without a case is refused and writes nothing.
 	 *
 	 * @return void

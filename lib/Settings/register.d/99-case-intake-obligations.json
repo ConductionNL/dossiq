@@ -1,0 +1,17 @@
+{
+  "_note": "obligations-placed-at-intake (decision 271): the case's intakeObligations and caseType.obligationKinds[].whenUnmet are declared in dossiq_register.json. The base case schema stays at 1.53.0 and caseType at 1.44.0 (the fragments must stay above them); case moves to 1.61.0 and caseType to 1.47.0 here so an existing instance re-imports both schemas.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.61.0"
+      },
+      "caseType": {
+        "version": "1.47.0"
+      }
+    }
+  }
+}

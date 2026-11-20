@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Contract of WooDossierReturn
+ * Contract of SourceCollectionReturn
  *
- * The public surface of WooDossierReturn that other components call, so they depend
+ * The public surface of SourceCollectionReturn that other components call, so they depend
  * on this contract instead of the implementation.
  *
  * @category  Kernel
@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Kernel\Contracts;
 
 /**
- * Contract of WooDossierReturn.
+ * Contract of SourceCollectionReturn.
  *
  * @category Kernel
  * @package  OCA\Dossiq\Kernel\Contracts

@@ -2,9 +2,9 @@
 
 /**
  * The Jeugdwet example case has its handler: Fatma Kaya, the regisseur, so
- * DqSociaalDomein's "Wat nu?" ticks "Kies een behandelaar". The package's own
- * row names her too, but its import runs before the set creates her account,
- * so the set writes her as a change on the case.
+ * DqSociaalDomein's "Wat nu?" ticks "Kies een behandelaar". The set declares
+ * the case itself (the package's example row is written only on an instance
+ * that opted into example data), and writes her as a change on that object.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtJeugdwetHandlerTest extends TestCase {
 
 	/**
-	 * A change on the case by its title sets Fatma Kaya as handler.
+	 * A change on the case the set declares sets Fatma Kaya as handler.
 	 *
 	 * @return void
 	 */
@@ -38,9 +38,10 @@ class ZuiddrechtJeugdwetHandlerTest extends TestCase {
 		$changes = array_column($set['changes'], null, 'key');
 		$change  = $changes['jeugdwet-zaak-behandelaar'] ?? null;
 
-		$this->assertNotNull($change);
-		$this->assertSame(['dossiq', 'case'], [$change['register'], $change['schema']]);
-		$this->assertSame(['title' => 'Melding Jeugdwet gezin Oosthaven'], $change['where']);
-		$this->assertSame(['assignee' => '{{cast:fatma.uid}}'], $change['set']);
+		$this->assertNotNull(actual: $change);
+		$this->assertSame(expected: ['dossiq', 'case'], actual: [$change['register'], $change['schema']]);
+		$this->assertSame(expected: 'jeugdwet-gezin-oosthaven', actual: $change['object']);
+		$this->assertArrayNotHasKey(key: 'where', array: $change);
+		$this->assertSame(expected: ['assignee' => '{{cast:fatma.uid}}'], actual: $change['set']);
 	}//end testFatmaHandlesTheJeugdwetCase()
 }//end class

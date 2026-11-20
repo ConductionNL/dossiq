@@ -422,7 +422,7 @@ answer, decision and alert MUST reach the resident through portaliq's notice
 path".
 
 #### Scenario: The resident finds the decision in their dossier
-@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `WooDossierReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`, on a store that hides the dossier from a scoped read.
+@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `SourceCollectionReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`, on a store that hides the dossier from a scoped read.
 - **GIVEN** a Woo request started from a dossier, handled by a signed-in handler who cannot see that dossier under their own scope
 - **WHEN** its decision is published
 - **THEN** the dossier MUST hold the new publication, added by dossiq
@@ -441,7 +441,7 @@ path".
 - **THEN** the publication MUST be created and no collection MUST be written
 
 #### Scenario: A dossier that is not the requester's gets nothing
-@e2e exclude Covered by `WooDossierReturnTest::testADossierOfSomebodyElseGetsNothing`.
+@e2e exclude Covered by `SourceCollectionReturnTest::testADossierOfSomebodyElseGetsNothing`.
 - **GIVEN** a case whose `wooRequest.collectionId` names a collection owned by somebody else
 - **WHEN** its decision is published
 - **THEN** that collection MUST NOT change
