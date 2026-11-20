@@ -157,6 +157,25 @@ class HouseholdCasesTest extends TestCase {
 	}//end testShowsTheReadableCasesOfThisDomainInFull()
 
 	/**
+	 * A case type title stored as a language map reads as its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeTitleStoredAsALanguageMapReadsAsText(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-jeugd', 'title' => ['en' => 'Youth report', 'nl' => 'Melding Jeugdwet'], 'category' => 'Jeugd']);
+
+		$rows = $this->household->sameDomain(
+			case: $this->ownCase(),
+			bsns: [self::CHILD, self::PARENT],
+			canRead: fn (string $id): bool => $id !== 'case-hidden',
+		);
+
+		self::assertSame(expected: 'Melding Jeugdwet', actual: $rows[0]['caseTypeTitle']);
+	}//end testACaseTypeTitleStoredAsALanguageMapReadsAsText()
+
+	/**
 	 * 🔴 Another domain answers exists, domain and contact, and NOTHING else.
 	 *
 	 * @return void

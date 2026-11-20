@@ -738,6 +738,8 @@ $extra = [
         // A checklist run on a case: submit one, read them all.
     ['name' => 'taskChecklist#submit', 'url' => '/api/cases/{id}/checklist-results', 'verb' => 'POST'],
     ['name' => 'taskChecklist#runs',   'url' => '/api/cases/{id}/checklist-results', 'verb' => 'GET'],
+    // An external inspector's run is a portal task (inspection-checklists-onto-task 4.3).
+    ['name' => 'externalInspectionRun#assign', 'url' => '/api/cases/{id}/checklist-runs/external', 'verb' => 'POST'],
         // deprecated alias: /api/cases/{id}/checklist-results, remove after the
         // next major. The offline field-inspection leaf replays to the old URL.
     ['name' => 'taskChecklist#submitLegacyPath', 'url' => '/api/vth/cases/{id}/inspection-result',  'verb' => 'POST'],
@@ -930,6 +932,9 @@ $extra = [
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
+    // The external inspector completes their inspection task (inspection-checklists-onto-task 4.3):
+    // portaliq forwards the task's completeVia action here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalInspection#complete', 'url' => '/api/portal/inspectie/checklist', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are
@@ -1256,11 +1261,6 @@ $extra = [
     ['name' => 'deadlineReporting#quarterlyReportLegacyPath',     'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#annualStatementLegacyPath',     'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
     ['name' => 'deadlineReporting#firstResponseReportLegacyPath', 'url' => '/api/termijn/reports/eerste-reactie',   'verb' => 'GET'],
-        // IV3/BBV taakveld reference list, for the case-type classification
-        // picker. The quarterly IV3 cost report that used to sit alongside it
-        // is gone under ADR-081 — Shillinq is the only statutory reporter. The
-        // URL is unchanged because the settings picker calls it directly.
-    ['name' => 'iv3Taakveld#taakvelden',             'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
 
         // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.

@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\PenaltyPaymentRowsInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
 
@@ -190,7 +191,7 @@ class PenaltyPaymentRows implements PenaltyPaymentRowsInterface {
 			'caseId'         => (string)($case['id'] ?? ($term['case'] ?? '')),
 			'caseIdentifier' => (string)($case['identifier'] ?? ''),
 			'caseTitle'      => (string)($case['title'] ?? ''),
-			'caseTypeTitle'  => (string)($caseType['title'] ?? ''),
+			'caseTypeTitle'  => (new LanguageMapText())->textOf(value: ($caseType['title'] ?? null)),
 			'requester'      => (string)($case['initiatorDisplayName'] ?? ''),
 			'forfeitDate'    => self::forfeitDateOf(calculation: $calculation),
 			'amountEuros'    => round(((int)($payment['amount'] ?? 0)) / 100, 2),

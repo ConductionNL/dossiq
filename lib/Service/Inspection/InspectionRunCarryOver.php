@@ -4,8 +4,9 @@
  * An older stored run, as the fields of the task that replaces it.
  *
  * Pure. inspection-checklists-onto-task 4.2: every `inspectieRapport` (stack
- * A), `inspectionChecklistRun` (stack B) and `inspectionResult` (stack C)
- * becomes one inspection task, carried over once and keyed on
+ * A), `inspectionChecklistRun` (stack B) and `inspectionResult` (stack C),
+ * and (task 4.2b) every `checklistResult` the offline leaf queued, becomes one
+ * inspection task, carried over once and keyed on
  * `metadata.legacyRef`. A submitted run arrives completed; a stack B run that
  * was never submitted arrives active. OpenRegister's import path takes no
  * completion moment, so the original one rides in `metadata.legacyCompletedAt`.
@@ -48,7 +49,16 @@ class InspectionRunCarryOver {
 		'inspectieRapport' => ['answers' => 'items', 'checklist' => 'checklist', 'templatePrefix' => 'inspectieChecklist/'],
 		'inspectionChecklistRun' => ['answers' => 'responses', 'checklist' => 'template', 'templatePrefix' => ''],
 		'inspectionResult' => ['answers' => 'answers', 'checklist' => 'checklist', 'templatePrefix' => 'inspectionChecklist/'],
+		'checklistResult' => ['answers' => 'items', 'checklist' => 'checklistTemplateRef', 'templatePrefix' => 'inspectionChecklist/'],
 	];
+
+	/**
+	 * The offline leaf's own result schema (task 4.2b): its rows carry no case,
+	 * only the planned `fieldInspection`, and their answers use the leaf's keys.
+	 *
+	 * @var string
+	 */
+	public const OFFLINE_RESULT = 'checklistResult';
 
 	/**
 	 * Stack B statuses that never reached a submit.
@@ -124,6 +134,10 @@ class InspectionRunCarryOver {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
 	public function taskData(string $schema, array $object, ?array $template): array {
+		if ($schema === self::OFFLINE_RESULT) {
+			$object = (new OfflineChecklistResult())->normalised(object: $object);
+		}
+
 		$source = self::SOURCES[$schema];
 		$run = new InspectionCarryOverRun();
 		$run->schema = $schema;
