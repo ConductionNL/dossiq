@@ -1,5 +1,7 @@
 # Proposal: the deleted cases lens reads the case table
 
+> **Superseded** by `cases-are-archival-no-delete` (Ruben, 17 November 2026): cases are archival and never deleted, so the Deleted cases page is removed and there is no deleted lens to speed up.
+
 ## Why
 
 The Deleted cases page (`/cases/deleted`) span or failed on :8080 (23 Oct). Its endpoint, `GET /api/cases/deleted`, asked OpenRegister for every soft-deleted row in EVERY magic table (`findDeletedAcrossAllMagicTables`), which took 20 to 32 seconds as admin on the example set, and it cut that list to one page (50 rows) BEFORE keeping the cases. On an instance where other apps delete objects, deleted cases past the first page of everybody's deletions never showed at all, so the page could say "Nothing was deleted" while cases waited in the trash.
