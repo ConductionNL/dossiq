@@ -72,30 +72,48 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 				return ExternalInspectionRunServiceTest::task(row: ['uuid' => 'task-9'] + $data);
 			}
 		};
-		$runs = $this->createMock(InspectionRunServiceInterface::class);
+		$runs = $this->createMock(originalClassName: InspectionRunServiceInterface::class);
 		$runs->expects($this->once())->method('templateFor')->with('t-1')->willReturn(self::template());
 		$runs->method('asRun')->willReturnCallback(static fn (array $task): array => ['id' => $task['uuid'], 'state' => $task['state']]);
 
-		$service = new ExternalInspectionRunService($this->settings(class: $tasks), $runs, $this->createMock(LoggerInterface::class));
-		$run = $service->assign(caseId: 'case-1', templateId: 't-1', inspectorRef: ' sub-42 ', payload: ['inspection' => 'visit-3', 'dueAt' => '2026-12-01', 'assignee' => 'someone-else'], actor: 'behandelaar');
+		$service = new ExternalInspectionRunService(
+			settingsService: $this->settings(class: $tasks),
+			runs: $runs,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+		$run = $service->assign(
+			caseId: 'case-1',
+			templateId: 't-1',
+			inspectorRef: ' sub-42 ',
+			payload: ['inspection' => 'visit-3', 'dueAt' => '2026-12-01', 'assignee' => 'someone-else'],
+			actor: 'behandelaar'
+		);
 
 		$data = $tasks->created[0]['data'];
-		$this->assertSame('behandelaar', $tasks->created[0]['actor']);
-		$this->assertSame('inspection', $data['kind']);
-		$this->assertSame('external', $data['performerType']);
-		$this->assertSame('party:sub-42', $data['assignee'], 'the assignee is the reference the caller named, never a body field');
-		$this->assertSame('active', $data['state']);
-		$this->assertSame('case-1', $data['objectUuid']);
-		$this->assertSame('t-1', $data['templateId']);
-		$this->assertSame(2, $data['templateVersion']);
-		$this->assertSame('Fundering', $data['templateSnapshot']['name']);
-		$this->assertSame('2026-12-01', $data['dueAt']);
-		$this->assertSame([7, 11], [$data['registerId'], $data['schemaId']]);
+		$this->assertSame(expected: 'behandelaar', actual: $tasks->created[0]['actor']);
+		$this->assertSame(expected: 'inspection', actual: $data['kind']);
+		$this->assertSame(expected: 'external', actual: $data['performerType']);
 		$this->assertSame(
-			['completeVia' => ['app' => 'dossiq', 'action' => 'completeChecklistTask'], 'partyReference' => 'party:sub-42', 'inspection' => 'visit-3'],
-			$data['metadata']
+			expected: 'party:sub-42',
+			actual: $data['assignee'],
+			message: 'the assignee is the reference the caller named, never a body field'
 		);
-		$this->assertSame(['id' => 'task-9', 'state' => 'active'], $run);
+		$this->assertSame(expected: 'active', actual: $data['state']);
+		$this->assertSame(expected: 'case-1', actual: $data['objectUuid']);
+		$this->assertSame(expected: 't-1', actual: $data['templateId']);
+		$this->assertSame(expected: 2, actual: $data['templateVersion']);
+		$this->assertSame(expected: 'Fundering', actual: $data['templateSnapshot']['name']);
+		$this->assertSame(expected: '2026-12-01', actual: $data['dueAt']);
+		$this->assertSame(expected: [7, 11], actual: [$data['registerId'], $data['schemaId']]);
+		$this->assertSame(
+			expected: [
+				'completeVia' => ['app' => 'dossiq', 'action' => 'completeChecklistTask'],
+				'partyReference' => 'party:sub-42',
+				'inspection' => 'visit-3',
+			],
+			actual: $data['metadata']
+		);
+		$this->assertSame(expected: ['id' => 'task-9', 'state' => 'active'], actual: $run);
 	}//end testAssigningCreatesAnOpenExternalInspectionTask()
 
 	/**
@@ -104,16 +122,20 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAssigningWithoutAUsableReferenceIsRefused(): void {
-		$runs = $this->createMock(InspectionRunServiceInterface::class);
+		$runs = $this->createMock(originalClassName: InspectionRunServiceInterface::class);
 		$runs->expects($this->never())->method('templateFor');
-		$service = new ExternalInspectionRunService($this->settings(class: null), $runs, $this->createMock(LoggerInterface::class));
+		$service = new ExternalInspectionRunService(
+			settingsService: $this->settings(class: null),
+			runs: $runs,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
 		foreach (['', '   ', 'two words'] as $ref) {
 			try {
 				$service->assign(caseId: 'case-1', templateId: 't-1', inspectorRef: $ref, payload: [], actor: 'u');
-				$this->fail('reference "' . $ref . '" must be refused');
+				$this->fail(message: 'reference "' . $ref . '" must be refused');
 			} catch (RuntimeException $e) {
-				$this->assertSame('inspectorRef is required', $e->getMessage());
+				$this->assertSame(expected: 'inspectorRef is required', actual: $e->getMessage());
 			}
 		}
 	}//end testAssigningWithoutAUsableReferenceIsRefused()
@@ -124,12 +146,16 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAssigningWithoutTheTaskLayerIsRefused(): void {
-		$runs = $this->createMock(InspectionRunServiceInterface::class);
+		$runs = $this->createMock(originalClassName: InspectionRunServiceInterface::class);
 		$runs->method('templateFor')->willReturn(self::template());
-		$service = new ExternalInspectionRunService($this->settings(class: null), $runs, $this->createMock(LoggerInterface::class));
+		$service = new ExternalInspectionRunService(
+			settingsService: $this->settings(class: null),
+			runs: $runs,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('The OpenRegister task layer is not available');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'The OpenRegister task layer is not available');
 		$service->assign(caseId: 'case-1', templateId: 't-1', inspectorRef: 'sub-42', payload: [], actor: 'u');
 	}//end testAssigningWithoutTheTaskLayerIsRefused()
 
@@ -145,22 +171,25 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 		$result = $service->complete(
 			claims: ['sub' => 'sub-42', 'audience' => 'inspector', 'trust' => 'low', 'organisation' => 'org', 'jti' => 's1'],
 			taskId: 'task-9',
-			payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja', 'photos' => ['999']], ['itemId' => 'q2', 'value' => 'nee']], 'remarks' => ' kleine afwijking ']
+			payload: [
+				'responses' => [['itemId' => 'q1', 'value' => 'ja', 'photos' => ['999']], ['itemId' => 'q2', 'value' => 'nee']],
+				'remarks' => ' kleine afwijking ',
+			]
 		);
 
-		$this->assertSame(200, $result['status']);
-		$this->assertSame('task-9', $result['body']['id']);
-		$this->assertSame('sub-42', $portal->shown[0]->subjectRef);
-		$this->assertSame('inspector', $portal->shown[0]->claims->audience);
+		$this->assertSame(expected: 200, actual: $result['status']);
+		$this->assertSame(expected: 'task-9', actual: $result['body']['id']);
+		$this->assertSame(expected: 'sub-42', actual: $portal->shown[0]->subjectRef);
+		$this->assertSame(expected: 'inspector', actual: $portal->shown[0]->claims->audience);
 		$call = $portal->completed[0];
-		$this->assertSame('dossiq', $call['viaApp']);
-		$this->assertSame('task-9', $call['uuid']);
-		$this->assertInstanceOf(PortalCompletion::class, $call['completion']);
-		$this->assertSame('partly_conform', $call['completion']->outcome);
-		$this->assertSame('kleine afwijking', $call['completion']->comment);
-		$this->assertSame([], $call['completion']->files);
-		$this->assertSame(['q1', 'q2'], array_column($call['completion']->answers, 'itemId'));
-		$this->assertArrayNotHasKey('photos', $call['completion']->answers[0], 'a file id a portal party names is not evidence');
+		$this->assertSame(expected: 'dossiq', actual: $call['viaApp']);
+		$this->assertSame(expected: 'task-9', actual: $call['uuid']);
+		$this->assertInstanceOf(expected: PortalCompletion::class, actual: $call['completion']);
+		$this->assertSame(expected: 'partly_conform', actual: $call['completion']->outcome);
+		$this->assertSame(expected: 'kleine afwijking', actual: $call['completion']->comment);
+		$this->assertSame(expected: [], actual: $call['completion']->files);
+		$this->assertSame(expected: ['q1', 'q2'], actual: array_column($call['completion']->answers, 'itemId'));
+		$this->assertArrayNotHasKey(key: 'photos', array: $call['completion']->answers[0], message: 'a file id a portal party names is not evidence');
 	}//end testThePartyCompletesItsOwnTask()
 
 	/**
@@ -170,10 +199,14 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 */
 	public function testAnotherPartysTaskReadsAsAbsent(): void {
 		$portal = self::portal(task: ['assignee' => 'party:sub-7'] + self::openTask());
-		$result = $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]);
+		$result = $this->service(portal: $portal)->complete(
+			claims: ['sub' => 'sub-42'],
+			taskId: 'task-9',
+			payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]
+		);
 
-		$this->assertSame(['status' => 404, 'body' => ['error' => 'not_found']], $result);
-		$this->assertSame([], $portal->completed);
+		$this->assertSame(expected: ['status' => 404, 'body' => ['error' => 'not_found']], actual: $result);
+		$this->assertSame(expected: [], actual: $portal->completed);
 	}//end testAnotherPartysTaskReadsAsAbsent()
 
 	/**
@@ -184,10 +217,14 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	public function testATaskThatIsNotAnExternalInspectionReadsAsAbsent(): void {
 		foreach ([['kind' => 'question'], ['performerType' => 'user']] as $override) {
 			$portal = self::portal(task: $override + self::openTask());
-			$result = $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]);
+			$result = $this->service(portal: $portal)->complete(
+				claims: ['sub' => 'sub-42'],
+				taskId: 'task-9',
+				payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]
+			);
 
-			$this->assertSame(404, $result['status']);
-			$this->assertSame([], $portal->completed);
+			$this->assertSame(expected: 404, actual: $result['status']);
+			$this->assertSame(expected: [], actual: $portal->completed);
 		}
 	}//end testATaskThatIsNotAnExternalInspectionReadsAsAbsent()
 
@@ -200,8 +237,8 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 		$portal = self::portal(task: null);
 		$result = $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: []);
 
-		$this->assertSame(404, $result['status']);
-		$this->assertSame([], $portal->completed);
+		$this->assertSame(expected: 404, actual: $result['status']);
+		$this->assertSame(expected: [], actual: $portal->completed);
 	}//end testATaskTheSeamRefusesReadsAsAbsent()
 
 	/**
@@ -211,11 +248,15 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 */
 	public function testAnswersThatBreakTheTemplateAreRefused(): void {
 		$portal = self::portal(task: self::openTask());
-		$result = $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: ['responses' => [['itemId' => 'q1', 'value' => 'nee', 'photos' => ['5']]]]);
+		$result = $this->service(portal: $portal)->complete(
+			claims: ['sub' => 'sub-42'],
+			taskId: 'task-9',
+			payload: ['responses' => [['itemId' => 'q1', 'value' => 'nee', 'photos' => ['5']]]]
+		);
 
-		$this->assertSame(422, $result['status']);
-		$this->assertStringContainsString('photo', $result['body']['message']);
-		$this->assertSame([], $portal->completed);
+		$this->assertSame(expected: 422, actual: $result['status']);
+		$this->assertStringContainsString(needle: 'photo', haystack: $result['body']['message']);
+		$this->assertSame(expected: [], actual: $portal->completed);
 	}//end testAnswersThatBreakTheTemplateAreRefused()
 
 	/**
@@ -226,10 +267,19 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	public function testIncompleteRequestsAreRefusedFirst(): void {
 		$portal = self::portal(task: self::openTask());
 
-		$this->assertSame(401, $this->service(portal: $portal)->complete(claims: ['sub' => ' '], taskId: 'task-9', payload: [])['status']);
-		$this->assertSame(400, $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: ' ', payload: [])['status']);
-		$this->assertSame(503, $this->service(portal: null)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: [])['status']);
-		$this->assertSame([], $portal->shown);
+		$this->assertSame(
+			expected: 401,
+			actual: $this->service(portal: $portal)->complete(claims: ['sub' => ' '], taskId: 'task-9', payload: [])['status']
+		);
+		$this->assertSame(
+			expected: 400,
+			actual: $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: ' ', payload: [])['status']
+		);
+		$this->assertSame(
+			expected: 503,
+			actual: $this->service(portal: null)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: [])['status']
+		);
+		$this->assertSame(expected: [], actual: $portal->shown);
 	}//end testIncompleteRequestsAreRefusedFirst()
 
 	/**
@@ -239,15 +289,19 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 */
 	public function testARefusedCompletionIsAnswered(): void {
 		$portal = self::portal(task: self::openTask(), throws: new TaskConflictException('terminal'));
-		$result = $this->service(portal: $portal)->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]);
-		$this->assertSame(409, $result['status']);
+		$result = $this->service(portal: $portal)->complete(
+			claims: ['sub' => 'sub-42'],
+			taskId: 'task-9',
+			payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]
+		);
+		$this->assertSame(expected: 409, actual: $result['status']);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');
 		$portal = self::portal(task: self::openTask(), throws: new RuntimeException('database gone'));
-		$result = (new ExternalInspectionRunService($this->settings(class: $portal), $this->runs(), $logger))
+		$result = (new ExternalInspectionRunService(settingsService: $this->settings(class: $portal), runs: $this->runs(), logger: $logger))
 			->complete(claims: ['sub' => 'sub-42'], taskId: 'task-9', payload: ['responses' => [['itemId' => 'q1', 'value' => 'ja']]]);
-		$this->assertSame(['status' => 503, 'body' => ['error' => 'unavailable']], $result);
+		$this->assertSame(expected: ['status' => 503, 'body' => ['error' => 'unavailable']], actual: $result);
 	}//end testARefusedCompletionIsAnswered()
 
 	/**
@@ -286,7 +340,11 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 * @return ExternalInspectionRunService The service.
 	 */
 	private function service(?object $portal): ExternalInspectionRunService {
-		return new ExternalInspectionRunService($this->settings(class: $portal), $this->runs(), $this->createMock(LoggerInterface::class));
+		return new ExternalInspectionRunService(
+			settingsService: $this->settings(class: $portal),
+			runs: $this->runs(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 	}//end service()
 
 	/**
@@ -295,7 +353,7 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 * @return InspectionRunServiceInterface The stub.
 	 */
 	private function runs(): InspectionRunServiceInterface {
-		$runs = $this->createMock(InspectionRunServiceInterface::class);
+		$runs = $this->createMock(originalClassName: InspectionRunServiceInterface::class);
 		$runs->method('asRun')->willReturnCallback(static fn (array $task): array => ['id' => $task['uuid'], 'result' => ($task['outcome'] ?? '')]);
 
 		return $runs;
@@ -309,7 +367,7 @@ final class ExternalInspectionRunServiceTest extends TestCase {
 	 * @return SettingsService The stub.
 	 */
 	private function settings(?object $class): SettingsService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn($class);
 		$settings->method('getConfigValue')->willReturnMap([['register', '', '7'], ['case_schema', '', '11']]);
 

@@ -46,7 +46,7 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 	 */
 	public function testOlderReferencesRepointOnceAndTemplateReferencesStay(): void {
 		$store = self::store(
-			[
+			rows: [
 				'inspectionChecklistTemplate' => [
 					['@self' => ['id' => 't-a'], 'legacyRef' => 'inspectieChecklist/a-1'],
 					['@self' => ['id' => 't-c'], 'legacyRef' => 'inspectionChecklist/c-1'],
@@ -60,27 +60,34 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 				],
 			]
 		);
-		$step = new RepointFieldInspectionTemplates($this->settings(store: $store), $this->createMock(LoggerInterface::class));
+		$step = new RepointFieldInspectionTemplates(
+			settingsService: $this->settings(store: $store),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		$first = $this->createMock(IOutput::class);
+		$first = $this->createMock(originalClassName: IOutput::class);
 		$first->expects($this->never())->method('warning');
-		$first->expects($this->once())->method('info')->with('Field inspection repoint: 2 repointed, 1 already on a template, 0 left for a person to look at.');
+		$first->expects($this->once())->method('info')->with(
+			'Field inspection repoint: 2 repointed, 1 already on a template, 0 left for a person to look at.'
+		);
 		$step->run($first);
 
 		$this->assertSame(
-			[
+			expected: [
 				['f-1', ['checklistTemplateRef' => 't-a'], 'fieldInspection'],
 				['f-2', ['checklistTemplateRef' => 't-c'], 'fieldInspection'],
 			],
-			$store->patches
+			actual: $store->patches
 		);
-		$this->assertSame('t-a', $store->rows['fieldInspection'][0]['checklistTemplateRef']);
-		$this->assertSame('case-1', $store->rows['fieldInspection'][0]['caseRef'], 'only the reference is written');
+		$this->assertSame(expected: 't-a', actual: $store->rows['fieldInspection'][0]['checklistTemplateRef']);
+		$this->assertSame(expected: 'case-1', actual: $store->rows['fieldInspection'][0]['caseRef'], message: 'only the reference is written');
 
-		$second = $this->createMock(IOutput::class);
-		$second->expects($this->once())->method('info')->with('Field inspection repoint: 0 repointed, 3 already on a template, 0 left for a person to look at.');
+		$second = $this->createMock(originalClassName: IOutput::class);
+		$second->expects($this->once())->method('info')->with(
+			'Field inspection repoint: 0 repointed, 3 already on a template, 0 left for a person to look at.'
+		);
 		$step->run($second);
-		$this->assertCount(2, $store->patches);
+		$this->assertCount(expectedCount: 2, haystack: $store->patches);
 	}//end testOlderReferencesRepointOnceAndTemplateReferencesStay()
 
 	/**
@@ -90,7 +97,7 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 	 */
 	public function testAnUnfoldedReferenceAndARefusedWriteAreLeft(): void {
 		$store = self::store(
-			[
+			rows: [
 				'inspectionChecklistTemplate' => [
 					['@self' => ['id' => 't-a'], 'legacyRef' => 'inspectieChecklist/a-1'],
 					['@self' => ['id' => 't-b'], 'legacyRef' => 'inspectieChecklist/b-1'],
@@ -103,29 +110,31 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 			]
 		);
 		$store->refuse = 'f-2';
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Field inspection repoint refused',
 			['fieldInspection' => 'f-2', 'exception' => 'store said no']
 		);
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$warnings = [];
 		$output->method('warning')->willReturnCallback(static function (string $message) use (&$warnings): void {
 			$warnings[] = $message;
 		});
-		$output->expects($this->once())->method('info')->with('Field inspection repoint: 1 repointed, 0 already on a template, 2 left for a person to look at.');
+		$output->expects($this->once())->method('info')->with(
+			'Field inspection repoint: 1 repointed, 0 already on a template, 2 left for a person to look at.'
+		);
 
-		(new RepointFieldInspectionTemplates($this->settings(store: $store), $logger))->run($output);
+		(new RepointFieldInspectionTemplates(settingsService: $this->settings(store: $store), logger: $logger))->run($output);
 
 		$this->assertSame(
-			[
+			expected: [
 				'Field inspection f-1 names checklist gone, which has no folded template; not repointed.',
 				'Field inspection f-2 could not be repointed: store said no',
 			],
-			$warnings
+			actual: $warnings
 		);
-		$this->assertSame([['f-3', ['checklistTemplateRef' => 't-b'], 'fieldInspection']], $store->patches);
-		$this->assertSame('gone', $store->rows['fieldInspection'][0]['checklistTemplateRef']);
+		$this->assertSame(expected: [['f-3', ['checklistTemplateRef' => 't-b'], 'fieldInspection']], actual: $store->patches);
+		$this->assertSame(expected: 'gone', actual: $store->rows['fieldInspection'][0]['checklistTemplateRef']);
 	}//end testAnUnfoldedReferenceAndARefusedWriteAreLeft()
 
 	/**
@@ -134,13 +143,15 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterTheStepSkips(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
-		$output = $this->createMock(IOutput::class);
-		$output->expects($this->once())->method('warning')->with($this->stringContains('Skipping'));
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->expects($this->once())->method('warning')->with($this->stringContains(string: 'Skipping'));
 		$output->expects($this->never())->method('info');
 
-		(new RepointFieldInspectionTemplates($settings, $this->createMock(LoggerInterface::class)))->run($output);
+		(
+			new RepointFieldInspectionTemplates(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class))
+		)->run($output);
 	}//end testWithoutOpenRegisterTheStepSkips()
 
 	/**
@@ -151,7 +162,7 @@ final class RepointFieldInspectionTemplatesTest extends TestCase {
 	 * @return SettingsService The stub.
 	 */
 	private function settings(object $store): SettingsService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnMap([['register', '', '7']]);
 

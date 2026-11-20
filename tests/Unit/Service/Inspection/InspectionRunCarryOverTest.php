@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Inspection\InspectionRunCarryOver
  * @uses   \OCA\Dossiq\Service\Inspection\InspectionAnswers
+ * @uses   \OCA\Dossiq\Service\Inspection\OfflineChecklistResult
  * @uses   \OCA\Dossiq\Service\ChecklistService
  * @uses   \OCA\Dossiq\Service\Support\ChecklistPayloadReader
  */
@@ -91,28 +92,35 @@ final class InspectionRunCarryOverTest extends TestCase {
 			'checklistTemplateRef' => 'c-1',
 			'items' => [
 				['questionId' => 'q1', 'answer' => 'yes', 'answeredAt' => '2026-11-01T09:00:00Z'],
-				['questionId' => 'q2', 'answer' => 'no', 'evidenceRefs' => ['41'], 'notes' => 'lekkage', 'answeredAt' => '2026-11-01T09:05:00Z', 'gpsAtAnswer' => ['source' => 'sensorless']],
+				[
+					'questionId' => 'q2',
+					'answer' => 'no',
+					'evidenceRefs' => ['41'],
+					'notes' => 'lekkage',
+					'answeredAt' => '2026-11-01T09:05:00Z',
+					'gpsAtAnswer' => ['source' => 'sensorless'],
+				],
 				'not an item',
 			],
 		];
 
-		$this->assertSame('inspectionChecklist/c-1', $carry->templateRef(schema: 'checklistResult', object: $result));
+		$this->assertSame(expected: 'inspectionChecklist/c-1', actual: $carry->templateRef(schema: 'checklistResult', object: $result));
 		$data = $carry->taskData(schema: 'checklistResult', object: $result, template: null);
 
-		$this->assertSame('case-9', $data['objectUuid']);
-		$this->assertSame('completed', $data['state']);
-		$this->assertSame('c-1', $data['templateId'], 'without a folded template the reference it held');
+		$this->assertSame(expected: 'case-9', actual: $data['objectUuid']);
+		$this->assertSame(expected: 'completed', actual: $data['state']);
+		$this->assertSame(expected: 'c-1', actual: $data['templateId'], message: 'without a folded template the reference it held');
 		$this->assertSame(
-			[
+			expected: [
 				['itemId' => 'q1', 'value' => 'ja'],
 				['itemId' => 'q2', 'value' => 'nee', 'comment' => 'lekkage', 'photos' => ['41'], 'gpsAtAnswer' => ['source' => 'sensorless']],
 			],
-			$data['responses']
+			actual: $data['responses']
 		);
-		$this->assertSame(['41'], $data['evidence']);
-		$this->assertSame('fi-1', $data['metadata']['inspection']);
-		$this->assertSame('2026-11-01T09:05:00Z', $data['metadata']['legacyCompletedAt']);
-		$this->assertSame('checklistResult/cr-1', $data['metadata']['legacyRef']);
+		$this->assertSame(expected: ['41'], actual: $data['evidence']);
+		$this->assertSame(expected: 'fi-1', actual: $data['metadata']['inspection']);
+		$this->assertSame(expected: '2026-11-01T09:05:00Z', actual: $data['metadata']['legacyCompletedAt']);
+		$this->assertSame(expected: 'checklistResult/cr-1', actual: $data['metadata']['legacyRef']);
 	}//end testAnOfflineLeafResultIsReadInTheSharedShape()
 
 	/**

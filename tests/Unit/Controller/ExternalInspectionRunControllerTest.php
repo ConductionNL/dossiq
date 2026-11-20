@@ -85,11 +85,11 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->request = $this->createMock(IRequest::class);
-		$this->session = $this->createMock(IUserSession::class);
-		$this->guard = $this->createMock(CaseAccessGuardInterface::class);
-		$this->runs = $this->createMock(ExternalInspectionRunInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
+		$this->session = $this->createMock(originalClassName: IUserSession::class);
+		$this->guard = $this->createMock(originalClassName: CaseAccessGuardInterface::class);
+		$this->runs = $this->createMock(originalClassName: ExternalInspectionRunInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -101,7 +101,7 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 		$this->session->method('getUser')->willReturn(null);
 		$this->runs->expects($this->never())->method('assign');
 
-		$this->expectException(OCSForbiddenException::class);
+		$this->expectException(exception: OCSForbiddenException::class);
 		$this->controller()->assign(id: 'case-1');
 	}//end testAnAnonymousCallerIsRefused()
 
@@ -118,7 +118,7 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 
 		$response = $this->controller()->assign(id: 'case-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testACallerWithoutAccessIsForbiddenBeforeTheBodyIsRead()
 
 	/**
@@ -129,11 +129,15 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 	public function testAMissingChecklistOrInspectorIsABadRequest(): void {
 		$this->signedIn();
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->request->method('getParams')->willReturnOnConsecutiveCalls(['checklistId' => 't-1'], ['inspectorRef' => 'sub-42'], ['checklistId' => ['t-1'], 'inspectorRef' => 'sub-42']);
+		$this->request->method('getParams')->willReturnOnConsecutiveCalls(
+			['checklistId' => 't-1'],
+			['inspectorRef' => 'sub-42'],
+			['checklistId' => ['t-1'], 'inspectorRef' => 'sub-42']
+		);
 		$this->runs->expects($this->never())->method('assign');
 
 		for ($i = 0; $i < 3; $i++) {
-			$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->assign(id: 'case-1')->getStatus());
+			$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $this->controller()->assign(id: 'case-1')->getStatus());
 		}
 	}//end testAMissingChecklistOrInspectorIsABadRequest()
 
@@ -153,8 +157,8 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 
 		$response = $this->controller()->assign(id: 'case-1');
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-		$this->assertSame(['id' => 'task-9', 'state' => 'active'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertSame(expected: ['id' => 'task-9', 'state' => 'active'], actual: $response->getData());
 	}//end testAPermittedCallerAssignsTheRun()
 
 	/**
@@ -167,18 +171,18 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->request->method('getParams')->willReturn(['checklistId' => 't-1', 'inspectorRef' => 'sub-42']);
 		$this->runs->method('assign')->willReturnOnConsecutiveCalls(
-			$this->throwException(new RuntimeException('Unknown checklist template: t-1')),
-			$this->throwException(new LogicException('boom'))
+			$this->throwException(exception: new RuntimeException('Unknown checklist template: t-1')),
+			$this->throwException(exception: new LogicException('boom'))
 		);
 		$this->logger->expects($this->once())->method('error');
 
 		$refused = $this->controller()->assign(id: 'case-1');
-		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $refused->getStatus());
-		$this->assertSame(['message' => 'Unknown checklist template: t-1'], $refused->getData());
+		$this->assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $refused->getStatus());
+		$this->assertSame(expected: ['message' => 'Unknown checklist template: t-1'], actual: $refused->getData());
 
 		$fault = $this->controller()->assign(id: 'case-1');
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $fault->getStatus());
-		$this->assertSame(['message' => 'Assigning the run failed'], $fault->getData());
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $fault->getStatus());
+		$this->assertSame(expected: ['message' => 'Assigning the run failed'], actual: $fault->getData());
 	}//end testFailuresAreAnswered()
 
 	/**
@@ -187,7 +191,7 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 	 * @return IUser The user.
 	 */
 	private function signedIn(): IUser {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('behandelaar');
 		$this->session->method('getUser')->willReturn($user);
 
@@ -200,6 +204,13 @@ final class ExternalInspectionRunControllerTest extends TestCase {
 	 * @return ExternalInspectionRunController The controller.
 	 */
 	private function controller(): ExternalInspectionRunController {
-		return new ExternalInspectionRunController('dossiq', $this->request, $this->session, $this->logger, $this->guard, $this->runs);
+		return new ExternalInspectionRunController(
+			appName: 'dossiq',
+			request: $this->request,
+			userSession: $this->session,
+			logger: $this->logger,
+			caseAccessGuard: $this->guard,
+			runs: $this->runs
+		);
 	}//end controller()
 }//end class

@@ -1160,7 +1160,7 @@ class PortalContributionProviderTest extends TestCase {
 		// the client sends no `case` and no `template` at all, and the status
 		// is the server's.
 		$actions = $contribution['actions'];
-		$this->assertSame(['submitChecklistRun', 'completeChecklistTask'], array_column($actions, 'id'));
+		$this->assertSame(expected: ['submitChecklistRun', 'completeChecklistTask'], actual: array_column($actions, 'id'));
 		$this->assertSame('update', $actions[0]['type']);
 		$this->assertSame('assignedInspectorRef', $actions[0]['scopeField']);
 		$this->assertNotContains('case', $actions[0]['fields']);
@@ -1172,12 +1172,12 @@ class PortalContributionProviderTest extends TestCase {
 		// with the task uuid preset under taskField. No flat-writer vocabulary,
 		// and nothing the client could use to name a case or a party.
 		$complete = $actions[1];
-		$this->assertSame('/index.php/apps/dossiq/api/portal/inspectie/checklist', $complete['endpoint']);
-		$this->assertSame('POST', $complete['method']);
-		$this->assertSame('taskId', $complete['taskField']);
-		$this->assertArrayNotHasKey('type', $complete);
-		$this->assertArrayNotHasKey('schema', $complete);
-		$this->assertSame(['responses', 'remarks'], $complete['fields']);
+		$this->assertSame(expected: '/index.php/apps/dossiq/api/portal/inspectie/checklist', actual: $complete['endpoint']);
+		$this->assertSame(expected: 'POST', actual: $complete['method']);
+		$this->assertSame(expected: 'taskId', actual: $complete['taskField']);
+		$this->assertArrayNotHasKey(key: 'type', array: $complete);
+		$this->assertArrayNotHasKey(key: 'schema', array: $complete);
+		$this->assertSame(expected: ['responses', 'remarks'], actual: $complete['fields']);
 	}
 
 	/**

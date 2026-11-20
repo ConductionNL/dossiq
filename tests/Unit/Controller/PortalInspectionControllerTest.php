@@ -74,10 +74,10 @@ final class PortalInspectionControllerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->verifier = $this->createMock(PortalAssertionVerifierInterface::class);
-		$this->runs = $this->createMock(ExternalInspectionRunInterface::class);
-		$this->throttler = $this->createMock(IThrottler::class);
-		$this->request = $this->createMock(IRequest::class);
+		$this->verifier = $this->createMock(originalClassName: PortalAssertionVerifierInterface::class);
+		$this->runs = $this->createMock(originalClassName: ExternalInspectionRunInterface::class);
+		$this->throttler = $this->createMock(originalClassName: IThrottler::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
 		$this->request->method('getHeader')->willReturn('jwt-token');
 		$this->request->method('getRemoteAddress')->willReturn('192.0.2.7');
 		$params = [
@@ -102,7 +102,7 @@ final class PortalInspectionControllerTest extends TestCase {
 
 		$response = $this->controller()->complete();
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testARejectedAssertionIsUnauthorized()
 
 	/**
@@ -116,8 +116,8 @@ final class PortalInspectionControllerTest extends TestCase {
 
 		$response = $this->controller()->complete();
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(['error' => 'forbidden'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'forbidden'], actual: $response->getData());
 	}//end testAnotherAudienceIsForbidden()
 
 	/**
@@ -134,8 +134,8 @@ final class PortalInspectionControllerTest extends TestCase {
 
 		$response = $this->controller()->complete();
 
-		$this->assertSame(404, $response->getStatus());
-		$this->assertSame(['error' => 'not_found'], $response->getData());
+		$this->assertSame(expected: 404, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'not_found'], actual: $response->getData());
 	}//end testTheCompletionCarriesTheClaimsAndTheWhitelistedFields()
 
 	/**
@@ -144,6 +144,13 @@ final class PortalInspectionControllerTest extends TestCase {
 	 * @return PortalInspectionController The controller.
 	 */
 	private function controller(): PortalInspectionController {
-		return new PortalInspectionController('dossiq', $this->request, $this->verifier, $this->runs, $this->throttler, $this->createMock(LoggerInterface::class));
+		return new PortalInspectionController(
+			appName: 'dossiq',
+			request: $this->request,
+			verifier: $this->verifier,
+			runs: $this->runs,
+			throttler: $this->throttler,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 	}//end controller()
 }//end class

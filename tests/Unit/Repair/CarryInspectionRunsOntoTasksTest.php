@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Repair\CarryInspectionRunsOntoTasks
  * @uses   \OCA\Dossiq\Service\Inspection\InspectionRunCarryOver
  * @uses   \OCA\Dossiq\Service\Inspection\InspectionAnswers
+ * @uses   \OCA\Dossiq\Service\Inspection\OfflineChecklistResult
  * @uses   \OCA\Dossiq\Service\ChecklistService
  * @uses   \OCA\Dossiq\Service\Support\ChecklistPayloadReader
  */
@@ -83,7 +84,7 @@ final class CarryInspectionRunsOntoTasksTest extends TestCase {
 	public function testAnOfflineResultIsCarriedOntoItsPlannedInspectionsCase(): void {
 		$tasks = self::taskLayer(refuse: '');
 		$store = self::store(
-			[
+			rows: [
 				'inspectionChecklistTemplate' => [['@self' => ['id' => 't-c'], 'name' => 'Brand', 'legacyRef' => 'inspectionChecklist/c-1', 'sections' => []]],
 				'fieldInspection' => [
 					['@self' => ['id' => 'fi-1'], 'caseRef' => 'case-9', 'inspectorRef' => 'inspecteur-b'],
@@ -101,20 +102,22 @@ final class CarryInspectionRunsOntoTasksTest extends TestCase {
 			]
 		);
 
-		$output = $this->createMock(IOutput::class);
-		$output->expects($this->once())->method('warning')->with('Inspection run checklistResult/cr-2 names no planned inspection with a case; not carried over.');
-		$output->expects($this->once())->method('info')->with($this->stringContains('1 carried, 0 already carried, 1 failed'));
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->expects($this->once())->method('warning')->with(
+			'Inspection run checklistResult/cr-2 names no planned inspection with a case; not carried over.'
+		);
+		$output->expects($this->once())->method('info')->with($this->stringContains(string: '1 carried, 0 already carried, 1 failed'));
 		$this->step(store: $store, tasks: $tasks)->run($output);
 
-		$this->assertCount(1, $tasks->imported);
+		$this->assertCount(expectedCount: 1, haystack: $tasks->imported);
 		$task = $tasks->imported[0];
-		$this->assertSame('case-9', $task['objectUuid']);
-		$this->assertSame('inspecteur-b', $task['assignee']);
-		$this->assertSame('t-c', $task['templateId'], 'the result found the template folded from its checklist');
-		$this->assertSame('checklistResult/cr-1', $task['metadata']['legacyRef']);
-		$this->assertSame('fi-1', $task['metadata']['inspection']);
-		$this->assertSame([['itemId' => 'q1', 'value' => 'nee', 'photos' => ['41']]], $task['responses']);
-		$this->assertSame(['41'], $task['evidence']);
+		$this->assertSame(expected: 'case-9', actual: $task['objectUuid']);
+		$this->assertSame(expected: 'inspecteur-b', actual: $task['assignee']);
+		$this->assertSame(expected: 't-c', actual: $task['templateId'], message: 'the result found the template folded from its checklist');
+		$this->assertSame(expected: 'checklistResult/cr-1', actual: $task['metadata']['legacyRef']);
+		$this->assertSame(expected: 'fi-1', actual: $task['metadata']['inspection']);
+		$this->assertSame(expected: [['itemId' => 'q1', 'value' => 'nee', 'photos' => ['41']]], actual: $task['responses']);
+		$this->assertSame(expected: ['41'], actual: $task['evidence']);
 	}//end testAnOfflineResultIsCarriedOntoItsPlannedInspectionsCase()
 
 	/**

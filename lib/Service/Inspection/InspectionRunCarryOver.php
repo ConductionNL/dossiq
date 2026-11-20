@@ -135,7 +135,7 @@ class InspectionRunCarryOver {
 	 */
 	public function taskData(string $schema, array $object, ?array $template): array {
 		if ($schema === self::OFFLINE_RESULT) {
-			$object = self::fromOfflineResult(object: $object);
+			$object = (new OfflineChecklistResult())->normalised(object: $object);
 		}
 
 		$source = self::SOURCES[$schema];
@@ -151,71 +151,6 @@ class InspectionRunCarryOver {
 
 		return array_merge($data, $this->performer(object: $object));
 	}//end taskData()
-
-	/**
-	 * An offline leaf result in the shape the other sources share.
-	 *
-	 * The leaf queued `{inspectionRef, checklistTemplateRef, items[]}` with each
-	 * item as `{questionId, answer, evidenceRefs, notes, answeredAt,
-	 * gpsAtAnswer}`. Its answers move onto `itemId`, `value`, `photos` and
-	 * `comment`; the planned inspection is kept as `inspection`; the latest
-	 * `answeredAt` is the moment it finished. The case is not on the row: the
-	 * caller sets `case` from the planned inspection.
-	 *
-	 * @param array<string, mixed> $object The `checklistResult` row.
-	 *
-	 * @return array<string, mixed> The row, normalised.
-	 *
-	 * @spec openspec/changes/inspection-checklists-onto-task/tasks.md
-	 */
-	public static function fromOfflineResult(array $object): array {
-		$items = [];
-		$answered = '';
-		$rows = [];
-		if (is_array($object['items'] ?? null) === true) {
-			$rows = $object['items'];
-		}
-
-		foreach ($rows as $raw) {
-			if (is_array($raw) === false) {
-				continue;
-			}
-
-			$item = [
-				'itemId' => (string)($raw['questionId'] ?? $raw['itemId'] ?? ''),
-				'value' => ($raw['answer'] ?? $raw['value'] ?? null),
-				'photos' => [],
-			];
-			if (is_array($raw['evidenceRefs'] ?? null) === true) {
-				$item['photos'] = $raw['evidenceRefs'];
-			}
-
-			if (trim((string)($raw['notes'] ?? '')) !== '') {
-				$item['comment'] = (string)$raw['notes'];
-			}
-
-			if (is_array($raw['gpsAtAnswer'] ?? null) === true) {
-				$item['gpsAtAnswer'] = $raw['gpsAtAnswer'];
-			}
-
-			$items[] = $item;
-			$at = (string)($raw['answeredAt'] ?? '');
-			if ($at > $answered) {
-				$answered = $at;
-			}
-		}//end foreach
-
-		$object['items'] = $items;
-		if (trim((string)($object['inspectionRef'] ?? '')) !== '' && trim((string)($object['inspection'] ?? '')) === '') {
-			$object['inspection'] = (string)$object['inspectionRef'];
-		}
-
-		if ($answered !== '' && trim((string)($object['completedAt'] ?? '')) === '') {
-			$object['completedAt'] = $answered;
-		}
-
-		return $object;
-	}//end fromOfflineResult()
 
 	/**
 	 * The fields every carried-over task has.
