@@ -41,7 +41,7 @@ const WIDGETS = '/ocs/v2.php/apps/dashboard/api/v1/widgets?format=json'
 const ITEMS = `/ocs/v2.php/apps/dashboard/api/v1/widget-items?format=json&widgets[]=${WIDGET}`
 
 /**
- * A request context signed in with basic credentials and no session.
+ * A request context logged in with basic credentials and no session.
  *
  * @param playwright The Playwright fixture.
  * @param baseURL    The instance.

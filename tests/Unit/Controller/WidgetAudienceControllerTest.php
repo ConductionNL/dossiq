@@ -62,7 +62,7 @@ class WidgetAudienceControllerTest extends TestCase {
 	/**
 	 * Build the controller for the given caller.
 	 *
-	 * @param string|null          $uid     The signed-in UID, or null.
+	 * @param string|null          $uid     The logged-in UID, or null.
 	 * @param bool                 $isAdmin Whether that user is an admin.
 	 * @param array<string, mixed> $params  The request parameters.
 	 *
