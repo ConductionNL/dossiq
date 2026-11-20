@@ -26,17 +26,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Dashboard\WidgetAudience;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Reads and stores the audience per contributed dashboard widget.
+ * Answers and stores the groups per dashboard widget, for an administrator only.
  *
  * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
  */
@@ -45,18 +48,18 @@ class WidgetAudienceController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param IRequest       $request      The request.
-	 * @param WidgetAudience $audience     Reads and stores the groups per widget.
-	 * @param IUserSession   $userSession  The caller.
-	 * @param IGroupManager  $groupManager Answers whether the caller is an admin.
+	 * @param IRequest       $request  The request.
+	 * @param WidgetAudience $audience Reads and stores the groups per widget.
+	 * @param IUserSession   $session  The caller.
+	 * @param IGroupManager  $groups   Answers whether the caller is an admin.
 	 *
 	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly WidgetAudience $audience,
-		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
+		private readonly IUserSession $session,
+		private readonly IGroupManager $groups,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -70,12 +73,9 @@ class WidgetAudienceController extends Controller {
 	 *
 	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function show(): JSONResponse {
-		if ($this->isAdmin() === false) {
-			return new JSONResponse(['errorCode' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		return new JSONResponse($this->body(audiences: $this->audience->all()), Http::STATUS_OK);
+		return $this->forAdmin(audiences: fn (): array => $this->audience->all());
 	}//end show()
 
 	/**
@@ -87,34 +87,28 @@ class WidgetAudienceController extends Controller {
 	 *
 	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function save(): JSONResponse {
-		if ($this->isAdmin() === false) {
-			return new JSONResponse(['errorCode' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$saved = $this->audience->save(audiences: $this->request->getParams());
-
-		return new JSONResponse($this->body(audiences: $saved), Http::STATUS_OK);
+		return $this->forAdmin(audiences: fn (): array => $this->audience->save(audiences: $this->request->getParams()));
 	}//end save()
 
 	/**
-	 * Whether the caller is a Nextcloud admin.
+	 * The audience as one comma-separated text per widget, the shape a settings
+	 * text field reads; 403 before anything is read or stored unless the caller
+	 * is a Nextcloud administrator.
 	 *
-	 * @return bool True for an admin.
+	 * @param Closure(): array<string, list<string>> $audiences Reads or stores the audience.
+	 *
+	 * @return JSONResponse The audience, or 403.
 	 */
-	private function isAdmin(): bool {
-		$user = $this->userSession->getUser();
-		return $user !== null && $this->groupManager->isAdmin($user->getUID()) === true;
-	}//end isAdmin()
+	private function forAdmin(Closure $audiences): JSONResponse {
+		$uid = $this->session->getUser()?->getUID();
+		if ($uid === null || $this->groups->isAdmin($uid) === false) {
+			return new JSONResponse(['errorCode' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
 
-	/**
-	 * The audience as one comma-separated text per widget, the shape a settings text field reads.
-	 *
-	 * @param array<string, list<string>> $audiences Group ids by widget id.
-	 *
-	 * @return array<string, string> Comma-separated group ids by widget id.
-	 */
-	private function body(array $audiences): array {
-		return array_map(static fn (array $groups): string => implode(', ', $groups), $audiences);
-	}//end body()
+		$texts = array_map(static fn (array $groups): string => implode(', ', $groups), $audiences());
+
+		return new JSONResponse($texts, Http::STATUS_OK);
+	}//end forAdmin()
 }//end class

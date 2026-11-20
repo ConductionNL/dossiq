@@ -1316,9 +1316,22 @@ export default {
 		menuStructureFields() {
 			return menuStructureFields(this.t.bind(this))
 		},
+
+		/**
+		 * The groups per contributed dashboard widget, one field each.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+		 */
 		widgetAudienceFields() {
 			return widgetAudienceFields(this.t.bind(this))
 		},
+
+		/**
+		 * Where the widget audience is read and saved.
+		 *
+		 * @return {string} The endpoint.
+		 */
 		widgetAudienceUrl() {
 			return WIDGET_AUDIENCE_URL
 		},

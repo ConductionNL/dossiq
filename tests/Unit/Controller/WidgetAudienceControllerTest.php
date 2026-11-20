@@ -56,7 +56,7 @@ class WidgetAudienceControllerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->audience = $this->createMock(WidgetAudience::class);
+		$this->audience = $this->createMock(originalClassName: WidgetAudience::class);
 	}//end setUp()
 
 	/**
@@ -69,26 +69,26 @@ class WidgetAudienceControllerTest extends TestCase {
 	 * @return WidgetAudienceController
 	 */
 	private function controller(?string $uid, bool $isAdmin, array $params = []): WidgetAudienceController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParams')->willReturn($params);
 
 		$user = null;
 		if ($uid !== null) {
-			$user = $this->createMock(IUser::class);
+			$user = $this->createMock(originalClassName: IUser::class);
 			$user->method('getUID')->willReturn($uid);
 		}
 
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$groups = $this->createMock(IGroupManager::class);
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
 		$groups->method('isAdmin')->willReturn($isAdmin);
 
 		return new WidgetAudienceController(
 			request: $request,
 			audience: $this->audience,
-			userSession: $session,
-			groupManager: $groups,
+			session: $session,
+			groups: $groups,
 		);
 	}//end controller()
 
@@ -103,8 +103,8 @@ class WidgetAudienceControllerTest extends TestCase {
 
 		foreach ([['anna', false], [null, false]] as [$uid, $isAdmin]) {
 			$controller = $this->controller(uid: $uid, isAdmin: $isAdmin, params: ['procest_start_case_widget' => 'kcc']);
-			$this->assertSame(Http::STATUS_FORBIDDEN, $controller->show()->getStatus());
-			$this->assertSame(Http::STATUS_FORBIDDEN, $controller->save()->getStatus());
+			$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->show()->getStatus());
+			$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->save()->getStatus());
 		}
 	}//end testANonAdminIsRefused()
 
@@ -123,10 +123,10 @@ class WidgetAudienceControllerTest extends TestCase {
 
 		$response = $this->controller(uid: 'admin', isAdmin: true)->show();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			['procest_deadline_alerts_widget' => 'vergunningen, toezicht', 'procest_start_case_widget' => ''],
-			$response->getData()
+			expected: ['procest_deadline_alerts_widget' => 'vergunningen, toezicht', 'procest_start_case_widget' => ''],
+			actual: $response->getData()
 		);
 	}//end testAnAdminReadsTheAudience()
 
@@ -143,7 +143,7 @@ class WidgetAudienceControllerTest extends TestCase {
 
 		$response = $this->controller(uid: 'admin', isAdmin: true, params: $params)->save();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['procest_deadline_alerts_widget' => 'vergunningen, toezicht'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['procest_deadline_alerts_widget' => 'vergunningen, toezicht'], actual: $response->getData());
 	}//end testAnAdminSaveStoresTheRequest()
 }//end class

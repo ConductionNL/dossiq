@@ -166,7 +166,11 @@ final class WidgetAudienceTest extends TestCase {
 		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') use (&$stored): string {
-				return $key === WidgetAudience::SETTING ? $stored : $default;
+				if ($key === WidgetAudience::SETTING) {
+					return $stored;
+				}
+
+				return $default;
 			}
 		);
 		$settings->expects($this->once())->method('setConfigValue')->willReturnCallback(
@@ -201,7 +205,11 @@ final class WidgetAudienceTest extends TestCase {
 		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') use (&$stored): string {
-				return $key === WidgetAudience::SETTING ? $stored : $default;
+				if ($key === WidgetAudience::SETTING) {
+					return $stored;
+				}
+
+				return $default;
 			}
 		);
 		$settings->method('setConfigValue')->willReturnCallback(
