@@ -24,5 +24,6 @@
 ## 4. Checks
 
 - [ ] 4.1 `tests/e2e/tender-case.spec.ts`: the three scenarios of REQ-TND-CASE-01.
+      Spec written (not run, live pass): the late bid with the closing date in the refusal, a bid on the closing day accepted, the Evaluation card ranked highest first, Publish answer walking a question to published, and the standstill refusal on the packaged flow (skips without the aanbesteding package).
 - [ ] 4.2 Live pass against DqAanbesteding and DqContracten.
 - [ ] 4.3 `openspec/parity/capabilities.json` row 2.54: built when 1 to 3 are live.
