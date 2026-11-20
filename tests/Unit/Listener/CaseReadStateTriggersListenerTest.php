@@ -47,8 +47,18 @@ final class CaseReadStateTriggersListenerTest extends TestCase {
 
 	private const FLOOR = ['status', 'assignee', 'deadline', 'result'];
 
+	/**
+	 * Names the case schema's id.
+	 *
+	 * @var SettingsServiceInterface&MockObject
+	 */
 	private SettingsServiceInterface&MockObject $settings;
 
+	/**
+	 * Reads the case's effective case type.
+	 *
+	 * @var CaseTypeResolverInterface&MockObject
+	 */
 	private CaseTypeResolverInterface&MockObject $caseTypes;
 
 	protected function setUp(): void {
