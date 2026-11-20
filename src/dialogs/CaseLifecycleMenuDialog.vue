@@ -28,8 +28,8 @@
   and the acts and their reasons wrap less (lifecycle-dialog-title-clears-the-
   close-button).
 
-  @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-  @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+  @spec openspec/specs/case-management/spec.md
+  @spec openspec/specs/template-library/spec.md
   @spec openspec/specs/case-management/spec.md#requirement-the-lifecycle-dialogs-title-stays-clear-of-its-close-button-req-cm-78
   @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 -->
@@ -160,6 +160,8 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import manifest from '../manifest.json'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
+import { loadOnMount } from '../mixins/loadOnMount.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { actForm } from '../utils/caseActInputs.js'
 import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
@@ -186,7 +188,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
  *
  * @param {object} entry A menu entry.
  * @return {string} The label.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function moveLabel(entry) {
 	const own = String(entry?.label ?? '')
@@ -367,21 +369,14 @@ export default {
 		NcLoadingIcon,
 	},
 
+	mixins: [caseDialogFromRoute, loadOnMount],
+
 	inject: {
 		/** The page's action dispatcher, to open an act's own dialog. */
 		cnDispatchAction: { default: null },
 	},
 
 	props: {
-		/**
-		 * The case to act on. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-
 		/** An act to open on directly, such as `archive`, when the case allows it. */
 		act: {
 			type: String,
@@ -432,22 +427,17 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The context line above the title.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		eyebrow() {
 			return caseEyebrow(this.menuMode ? t('dossiq', 'Next step') : this.label(this.chosen), this.kase)
-		},
-
-		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
 		/**
 		 * The chosen act's form: its input declarations and layout.
 		 *
 		 * @return {object} The form (`actForm`).
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		form() {
 			return actForm(this.chosen, {
@@ -463,7 +453,7 @@ export default {
 		 * case type's pause reasons and the act's result types.
 		 *
 		 * @return {object} The context.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		formContext() {
 			return { kase: this.kase, pauseReasons: this.pauseReasons, resultTypes: this.resultOptions }
@@ -474,7 +464,7 @@ export default {
 		 * and what it sends.
 		 *
 		 * @return {{complete: boolean, data: object}} The reading.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		answers() {
 			return readTransitionInputs(this.form.inputs, this.values, { context: this.formContext })
@@ -497,7 +487,7 @@ export default {
 		 * than opening on one act the manifest named (`act`).
 		 *
 		 * @return {boolean} True for the list.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		menuMode() {
 			return this.act === '' || this.chosen === null
@@ -508,7 +498,7 @@ export default {
 		 * A refused act carries its reason once, as the card's disabled reason.
 		 *
 		 * @return {Array<object>} CnChoiceCards options.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		choiceOptions() {
 			return this.entries.map((entry) => ({
@@ -525,7 +515,7 @@ export default {
 		 * The icon the chosen act's card shows, for its confirm button.
 		 *
 		 * @return {string} A registered icon name, '' when none is chosen.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		actIcon() {
 			return this.chosen === null ? '' : iconFor(this.chosen)
@@ -535,7 +525,7 @@ export default {
 		 * The chosen act's card, or null.
 		 *
 		 * @return {string|null} The card value.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		chosenKey() {
 			return this.chosen === null ? null : this.entryKey(this.chosen)
@@ -545,7 +535,7 @@ export default {
 		 * What the chosen act's inputs are drawn with.
 		 *
 		 * @return {object} CnTransitionInputFields props.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		fieldProps() {
 			return {
@@ -570,21 +560,11 @@ export default {
 		 * because the engine refuses the close without it.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canConfirm() {
 			return !this.busy && this.chosen !== null && this.answers.complete
 		},
-	},
-
-	/**
-	 * Read what the case allows before anything is on screen.
-	 *
-	 * @return {Promise<void>}
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
@@ -605,7 +585,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The label.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		label(entry) {
 			const label = ACT_LABELS.get(actId(entry))
@@ -617,7 +597,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The explainer, empty when the entry carries none.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		explainer(entry) {
 			const explainer = KIND_EXPLAINERS.get(entry?.kind) ?? ACT_EXPLAINERS.get(actId(entry))
@@ -635,7 +615,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The refusal, empty when the entry is not refused.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		refusalOn(entry) {
 			if (!entry?.disabled || !entry?.reason) {
@@ -655,7 +635,7 @@ export default {
 		 * a terminal status and the two would be indistinguishable.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (!this.targetCaseId) {
@@ -715,7 +695,7 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		async askForApproval(entry) {
 			this.busy = true
@@ -736,7 +716,7 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {string} The heading.
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		/**
 		 * The menu without the remedies this page has no dialog for: a remedy
@@ -762,7 +742,7 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {string} The names, or ''.
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		approvers(entry) {
 			return approversLine(entry)
@@ -771,7 +751,7 @@ export default {
 		/**
 		 * @param {object} entry A menu entry.
 		 * @return {string} The dialog title while that act is open.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		actTitle(entry) {
 			return actForm(entry).title || this.label(entry)
@@ -782,7 +762,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The value.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		entryKey(entry) {
 			return `${entry.kind}:${entry.id}`
@@ -793,7 +773,7 @@ export default {
 		 *
 		 * @param {string} key The card value.
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		chooseByKey(key) {
 			const entry = this.entries.find((candidate) => this.entryKey(candidate) === key)
@@ -807,7 +787,7 @@ export default {
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		choose(entry) {
 			if (entry.disabled) {
@@ -830,7 +810,7 @@ export default {
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {boolean} Whether a dialog of its own was opened.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		openOwnDialog(entry) {
 			const named = String(this.actDialogs?.[String(entry?.id ?? '')] ?? '')
@@ -850,7 +830,7 @@ export default {
 		 * Go back to the list, or close when already on it.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		back() {
 			if (this.chosen === null || this.menuMode) {
@@ -865,7 +845,7 @@ export default {
 		 * Post the act, and keep the form open on a refusal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -968,7 +948,7 @@ export default {
 		 *
 		 * @param {object} data The transition response body.
 		 * @return {void}
-		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		warnAboutFailedActions(data) {
 			const warning = failedActionsWarning(data)

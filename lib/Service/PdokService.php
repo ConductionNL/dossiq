@@ -45,7 +45,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/gis-integration/spec.md
- * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
  */
 
 declare(strict_types=1);
@@ -120,7 +120,7 @@ class PdokService {
 	 *
 	 * @return array<int, array<string,mixed>> Normalised suggestion list.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function searchAddress(string $query, array $filters = [], int $rows = 10): array {
 		$this->lastWarning = null;
@@ -134,6 +134,17 @@ class PdokService {
 			return $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
 		}
 
+		return $this->docsOf(response: $response);
+	}//end searchAddress()
+
+	/**
+	 * The result documents of a Locatieserver answer, leaving out anything that is not a row.
+	 *
+	 * @param array<string, mixed> $response The decoded answer.
+	 *
+	 * @return array<int, array<string, mixed>> The documents.
+	 */
+	private function docsOf(array $response): array {
 		$docs = (array)($response['response']['docs'] ?? []);
 		return array_values(
 			array_filter(
@@ -141,7 +152,7 @@ class PdokService {
 				static fn ($doc): bool => is_array($doc),
 			)
 		);
-	}//end searchAddress()
+	}//end docsOf()
 
 	/**
 	 * Look up a single Locatieserver result by id.
@@ -151,7 +162,7 @@ class PdokService {
 	 * @return array<string,mixed>|null The normalised address envelope,
 	 *                                  or null when not found / degraded.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function lookupAddress(string $id): ?array {
 		$this->lastWarning = null;

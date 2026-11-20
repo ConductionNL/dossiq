@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\FilledValue
  */
 class DerivedStatusTest extends TestCase {
 
@@ -229,4 +230,203 @@ class DerivedStatusTest extends TestCase {
 		self::assertCount(expectedCount: 1, haystack: $conditions);
 		self::assertSame(expected: 'fieldPresent', actual: $conditions[0]['kind']);
 	}//end testAnUnknownConditionKindIsDropped()
+
+	/**
+	 * A service over the given rows, for the shapes the store can answer.
+	 *
+	 * @param array<int, mixed> $rows The statusType rows the resolver answers.
+	 *
+	 * @return DerivedStatusService
+	 */
+	private function serviceOver(array $rows): DerivedStatusService {
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
+		$resolver->method('statusTypesFor')->willReturn($rows);
+
+		$declaration = new StatusDeclaration();
+
+		return new DerivedStatusService(
+			caseTypes: $resolver,
+			declaration: $declaration,
+			evaluator: new DerivedStatusEvaluator(declaration: $declaration),
+		);
+	}//end serviceOver()
+
+	/**
+	 * A case with no case type has no verdicts and asks the store nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testACaseWithoutACaseTypeHasNoVerdicts(): void {
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
+		$resolver->expects($this->never())->method('statusTypesFor');
+
+		$declaration = new StatusDeclaration();
+		$service = new DerivedStatusService(
+			caseTypes: $resolver,
+			declaration: $declaration,
+			evaluator: new DerivedStatusEvaluator(declaration: $declaration),
+		);
+
+		self::assertSame(expected: [], actual: $service->verdictsFor(case: ['status' => 'received']));
+		self::assertNull(actual: $service->statusFor(case: []));
+		self::assertNull(actual: $service->blockingReasonFor(case: []));
+	}//end testACaseWithoutACaseTypeHasNoVerdicts()
+
+	/**
+	 * Malformed rows are skipped, a uuid stands in for a missing id, and the
+	 * verdicts come back in declared order rather than store order.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testVerdictsSkipMalformedRowsAndFollowTheDeclaredOrder(): void {
+		$service = $this->serviceOver(
+			rows: [
+				'not-a-row',
+				[
+					'uuid' => 'late-uuid',
+					'title' => 'Late',
+					'order' => 5,
+					'derivedWhen' => [['kind' => 'fieldPresent', 'field' => 'b', 'label' => 'b']],
+				],
+				[
+					'name' => 'No id',
+					'order' => 1,
+					'derivedWhen' => [['kind' => 'fieldPresent', 'field' => 'a']],
+				],
+				[
+					'id' => 'early',
+					'name' => 'Early',
+					'order' => 2,
+					'derivedWhen' => [['kind' => 'fieldPresent', 'field' => 'a', 'label' => 'a']],
+				],
+			]
+		);
+
+		$verdicts = $service->verdictsFor(case: ['caseType' => 'ct', 'a' => 'set']);
+
+		self::assertSame(
+			expected: [
+				['statusId' => 'early', 'name' => 'Early', 'order' => 2, 'satisfied' => true, 'unmet' => []],
+				['statusId' => 'late-uuid', 'name' => 'Late', 'order' => 5, 'satisfied' => false, 'unmet' => ['b']],
+			],
+			actual: $verdicts,
+		);
+	}//end testVerdictsSkipMalformedRowsAndFollowTheDeclaredOrder()
+
+	/**
+	 * An empty argument, an unknown status and a malformed row all answer
+	 * "not derived", so the engine keeps offering the status.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testAnUnresolvableStatusIsNotDerived(): void {
+		$service = $this->serviceOver(rows: array_merge(['not-a-row'], $this->statusTypes()));
+
+		self::assertFalse(condition: $service->isDerivedStatus(caseTypeId: '', statusTypeId: 'complete'));
+		self::assertFalse(condition: $service->isDerivedStatus(caseTypeId: 'building-permit', statusTypeId: ''));
+		self::assertFalse(condition: $service->isDerivedStatus(caseTypeId: 'building-permit', statusTypeId: 'unknown'));
+		self::assertTrue(condition: $service->isDerivedStatus(caseTypeId: 'building-permit', statusTypeId: 'complete'));
+	}//end testAnUnresolvableStatusIsNotDerived()
+
+	/**
+	 * A case already sitting in the status that derives is not moved again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testACaseAlreadyInTheDerivedStatusIsNotMoved(): void {
+		$case = [
+			'caseType' => 'building-permit',
+			'status' => 'complete',
+			'aanvulling' => ['antwoord' => 'yes'],
+			'documents' => [['documentType' => 'consent'], ['documentType' => 'drawing']],
+		];
+
+		self::assertNull(actual: $this->service()->statusFor(case: $case));
+	}//end testACaseAlreadyInTheDerivedStatusIsNotMoved()
+
+	/**
+	 * With every derivation met there is nothing blocking; a derivation
+	 * earlier than where the case already is does not block it either.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testNothingBlocksWhenNoLaterDerivationIsUnmet(): void {
+		$complete = [
+			'caseType' => 'building-permit',
+			'status' => 'received',
+			'aanvulling' => ['antwoord' => 'yes'],
+			'documents' => [['documentType' => 'consent'], ['documentType' => 'drawing']],
+		];
+		self::assertNull(actual: $this->service()->blockingReasonFor(case: $complete));
+
+		$pastIt = [
+			'caseType' => 'building-permit',
+			'status' => 'decision',
+			'documents' => [],
+		];
+		self::assertNull(actual: $this->service()->blockingReasonFor(case: $pastIt));
+	}//end testNothingBlocksWhenNoLaterDerivationIsUnmet()
+
+	/**
+	 * A current status the case type does not know counts as the start, so
+	 * the earliest unmet derivation still blocks; malformed rows are skipped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testAnUnknownCurrentStatusIsReadAsTheStart(): void {
+		$service = $this->serviceOver(rows: array_merge(['not-a-row'], $this->statusTypes()));
+
+		$reason = $service->blockingReasonFor(
+			case: ['caseType' => 'building-permit', 'status' => 'retired-status', 'documents' => []],
+		);
+
+		self::assertSame(expected: 'complete', actual: $reason['statusId'] ?? null);
+		self::assertSame(
+			expected: ['the intake form', 'the signed consent form', 'the site drawing'],
+			actual: $reason['unmet'] ?? null,
+		);
+	}//end testAnUnknownCurrentStatusIsReadAsTheStart()
+
+	/**
+	 * A condition that is not an array, or a `derivedWhen` that is not a list,
+	 * declares nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testAMalformedConditionIsSkipped(): void {
+		$declaration = new StatusDeclaration();
+
+		self::assertSame(
+			expected: [],
+			actual: $declaration->derivedWhen(statusType: ['derivedWhen' => 'fieldPresent']),
+		);
+		self::assertSame(
+			expected: [
+				[
+					'kind' => 'fieldEquals',
+					'field' => 'outcome',
+					'value' => 'granted',
+					'documentType' => '',
+					'label' => '',
+				],
+			],
+			actual: $declaration->derivedWhen(
+				statusType: ['derivedWhen' => ['fieldPresent', ['kind' => 'fieldEquals', 'field' => 'outcome', 'value' => 'granted']]],
+			),
+		);
+	}//end testAMalformedConditionIsSkipped()
 }//end class

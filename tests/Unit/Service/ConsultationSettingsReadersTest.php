@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object store that keeps what is saved and answers searches by status.
@@ -83,7 +85,9 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->saved = $object;
 
 		return $object + ['id' => 'cn-new'];
@@ -99,7 +103,11 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		return $data + ['id' => $objectId];
 	}//end patchObject()
 }//end class

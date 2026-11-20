@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *  1. `case.roles[]` entries with `{userId, role}`.
  *  2. Membership in a Nextcloud group named after the role (lowercase).
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RoleGuard implements GuardEvaluatorInterface {
 	/**
@@ -80,8 +80,23 @@ class RoleGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Not logged in'), details: ['silent' => true]);
 		}
 
+		return $this->roleResult(case: $case, actor: ['userId' => $userId, 'allowed' => $allowed]);
+	}//end evaluate()
+
+	/**
+	 * Pass when the user holds an allowed role on the case or through a group.
+	 *
+	 * @param array<string, mixed>                          $case  Case object
+	 * @param array{userId: string, allowed: array<mixed>} $actor The current user UID and the allowed role identifiers
+	 *
+	 * @return GuardResult
+	 */
+	private function roleResult(array $case, array $actor): GuardResult {
+		$userId = $actor['userId'];
+		$allowed = $actor['allowed'];
+
 		// 1. Direct role assignment on case.roles[].
-		$directRole = $this->matchCaseRole(case: $case, userId: $userId, allowed: $allowed);
+		$directRole = $this->matchCaseRole(case: $case, actor: $actor);
 		if ($directRole !== null) {
 			return new GuardResult(passed: true, details: ['matchedRole' => $directRole]);
 		}
@@ -98,18 +113,19 @@ class RoleGuard implements GuardEvaluatorInterface {
 			failureMessage: $this->l10n->t('Insufficient permissions'),
 			details: ['silent' => true, 'allowedRoles' => array_values($allowed)],
 		);
-	}//end evaluate()
+	}//end roleResult()
 
 	/**
 	 * Find an allowed role assigned to the user directly on the case.
 	 *
-	 * @param array<string, mixed> $case Case object
-	 * @param string $userId Current user UID
-	 * @param array<int, mixed> $allowed Allowed role identifiers
+	 * @param array<string, mixed>                          $case  Case object
+	 * @param array{userId: string, allowed: array<mixed>} $actor The current user UID and the allowed role identifiers
 	 *
 	 * @return string|null The matched role, or null when no entry matches
 	 */
-	private function matchCaseRole(array $case, string $userId, array $allowed): ?string {
+	private function matchCaseRole(array $case, array $actor): ?string {
+		$userId = $actor['userId'];
+		$allowed = $actor['allowed'];
 		$caseRoles = $case['roles'] ?? ($case['participants'] ?? []);
 		if (is_array($caseRoles) === false) {
 			return null;

@@ -44,7 +44,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -52,17 +52,18 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * The answer, the silence, and what each does to the clock.
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class AanvullingsverzoekResolutionService {
+class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutionServiceInterface {
 
 	/**
 	 * Constructor.
@@ -95,7 +96,7 @@ class AanvullingsverzoekResolutionService {
 	 * @throws RefusedException When nothing is open, or completion is claimed
 	 *                          with items still outstanding.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function recordAnswer(
 		string $caseId,
@@ -106,15 +107,45 @@ class AanvullingsverzoekResolutionService {
 	): array {
 		$moment = ($when ?? new DateTimeImmutable());
 		$run = new AanvullingAnswerRun(caseId: $caseId, request: $this->openRequestFor(caseId: $caseId));
-		$run->moment = $moment;
-		$run->received = $received;
-		$run->userId = $userId;
+
+		$run = $this->answered(run: $run, answer: ['moment' => $moment, 'received' => $received, 'userId' => $userId]);
+
+		return $this->recordAs(run: $run, complete: $complete);
+	}//end recordAnswer()
+
+	/**
+	 * The run with what arrived marked on its missing items, and what is still outstanding.
+	 *
+	 * @param AanvullingAnswerRun  $run    The open request of the case.
+	 * @param array<string, mixed> $answer The `moment` it arrived, the `received` items and the `userId` who recorded it.
+	 *
+	 * @return AanvullingAnswerRun The run.
+	 */
+	private function answered(AanvullingAnswerRun $run, array $answer): AanvullingAnswerRun {
+		$run->moment = $answer['moment'];
+		$run->received = $answer['received'];
+		$run->userId = $answer['userId'];
 		$run->items = $this->markReceived(
 			items: (array)($run->request['missingItems'] ?? []),
-			received: $received,
-			moment: $moment
+			received: $answer['received'],
+			moment: $answer['moment']
 		);
 		$run->outstanding = $this->outstanding(items: $run->items);
+
+		return $run;
+	}//end answered()
+
+	/**
+	 * Record the answer as partial or as complete; complete is refused while items are outstanding.
+	 *
+	 * @param AanvullingAnswerRun $run      The answer being recorded.
+	 * @param boolean             $complete Whether the handler says it is complete.
+	 *
+	 * @return array<string, mixed> The recorded answer.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The handler's own answer to "is it complete?", passed on as asked.
+	 */
+	private function recordAs(AanvullingAnswerRun $run, bool $complete): array {
 		$this->refuseClosingWhileOutstanding(run: $run, complete: $complete);
 
 		if ($complete === false) {
@@ -122,7 +153,7 @@ class AanvullingsverzoekResolutionService {
 		}
 
 		return $this->recordFullAnswer(run: $run);
-	}//end recordAnswer()
+	}//end recordAs()
 
 	/**
 	 * The case's open request.
@@ -184,7 +215,7 @@ class AanvullingsverzoekResolutionService {
 		$this->logger->info(
 			'Dossiq: part of an aanvullingsverzoek arrived; the term stays suspended',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'case' => $run->caseId,
 				'outstanding' => count($run->outstanding),
 			]
@@ -216,7 +247,7 @@ class AanvullingsverzoekResolutionService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was answered in full and the term resumed',
-			['app' => Application::APP_ID, 'case' => $run->caseId]
+			['app' => AppIdentity::APP_ID, 'case' => $run->caseId]
 		);
 
 		return array_merge($run->request, $changes);
@@ -235,7 +266,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return boolean True when it has run out.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function hasRunOut(array $request, ?DateTimeImmutable $now = null): bool {
 		if ((string)($request['state'] ?? '') !== 'open') {
@@ -282,7 +313,7 @@ class AanvullingsverzoekResolutionService {
 	 * @return array<string, mixed>|null The expired request, or null when there
 	 *                                   was nothing open or it has not run out.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function expireIfRunOut(string $caseId, ?DateTimeImmutable $now = null): ?array {
 		$request = $this->requests->openFor(caseId: $caseId);
@@ -295,7 +326,7 @@ class AanvullingsverzoekResolutionService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek expired unanswered and stays on the file',
-			['app' => Application::APP_ID, 'case' => $caseId]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId]
 		);
 
 		return array_merge($request, ['state' => 'expired']);
@@ -315,7 +346,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return array<int, array<string, mixed>> The items.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function markReceived(array $items, array $received, DateTimeImmutable $moment): array {
 		$marker = new ItemArrivalMarker(received: $received, moment: $moment);
@@ -336,7 +367,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return array<int, string> What is still outstanding.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function outstanding(array $items): array {
 		$missing = [];

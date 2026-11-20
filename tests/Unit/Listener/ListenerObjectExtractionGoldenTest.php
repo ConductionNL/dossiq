@@ -129,6 +129,7 @@ class ExtractionArrayable {
  *
  * @covers \OCA\Dossiq\Listener\RoleMutationListener
  * @covers \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\Support\SerialisedObject
  */
 class ListenerObjectExtractionGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

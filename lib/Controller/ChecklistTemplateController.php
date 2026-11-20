@@ -25,8 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ChecklistTemplateStoreInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -49,7 +49,7 @@ class ChecklistTemplateController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ChecklistTemplateStore $templates The template catalogue
+	 * @param ChecklistTemplateStoreInterface $templates The template catalogue
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
@@ -57,7 +57,7 @@ class ChecklistTemplateController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ChecklistTemplateStore $templates,
+		private readonly ChecklistTemplateStoreInterface $templates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -103,22 +103,14 @@ class ChecklistTemplateController extends Controller {
 			// Same narrow arm as TaskChecklistController::submit(), for the same reason: a
 			// checklist OpenRegister refuses is the author's payload, not a
 			// server fault, and its message already names the property.
-			$this->logger->info(
-				'Rejected checklist template create: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->rejected(logPrefix: 'Rejected checklist template create: ', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to create checklist template: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => 'Failed to create checklist: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
+			return $this->failed(
+				logPrefix: 'Failed to create checklist template: ',
+				failure: [
+					'message' => 'Failed to create checklist: ',
+					'e' => $e,
+				]
 			);
 		}
 	}//end create()
@@ -146,22 +138,14 @@ class ChecklistTemplateController extends Controller {
 			// Same narrow arm as TaskChecklistController::submit(), for the same reason: a
 			// checklist OpenRegister refuses is the author's payload, not a
 			// server fault, and its message already names the property.
-			$this->logger->info(
-				'Rejected checklist template update for ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->rejected(logPrefix: 'Rejected checklist template update for ' . $id . ': ', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to update checklist template ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => 'Failed to update checklist: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
+			return $this->failed(
+				logPrefix: 'Failed to update checklist template ' . $id . ': ',
+				failure: [
+					'message' => 'Failed to update checklist: ',
+					'e' => $e,
+				]
 			);
 		}
 	}//end update()
@@ -257,4 +241,43 @@ class ChecklistTemplateController extends Controller {
 	public function destroyLegacyPath(string $id): JSONResponse {
 		return $this->destroy(id: $id);
 	}//end destroyLegacyPath()
+
+	/**
+	 * Log a checklist OpenRegister refused and answer its message as a 400.
+	 *
+	 * @param string    $logPrefix The log message, followed by the refusal's message.
+	 * @param Throwable $e         The refusal.
+	 *
+	 * @return JSONResponse
+	 */
+	private function rejected(string $logPrefix, Throwable $e): JSONResponse {
+		$this->logger->info(
+			$logPrefix . $e->getMessage(),
+			['app' => AppIdentity::APP_ID]
+		);
+		return new JSONResponse(
+			['message' => $e->getMessage()],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end rejected()
+
+	/**
+	 * Log a failed checklist write and answer it as a 500.
+	 *
+	 * @param string                               $logPrefix The log message, followed by the failure's message.
+	 * @param array{message: string, e: Throwable} $failure   `message` the answer, followed by the failure's message; `e` the failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function failed(string $logPrefix, array $failure): JSONResponse {
+		[$message, $e] = [$failure['message'], $failure['e']];
+		$this->logger->error(
+			$logPrefix . $e->getMessage(),
+			['app' => AppIdentity::APP_ID]
+		);
+		return new JSONResponse(
+			['message' => $message . $e->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end failed()
 }//end class

@@ -42,8 +42,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
+use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,8 +67,8 @@ class BezwaarObjectionController extends Controller {
 	 *
 	 * @param string              $appName     The app name.
 	 * @param IRequest            $request     The request.
-	 * @param BezwaarCreationHook $hook        Links the bezwaar to its primair besluit.
-	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
+	 * @param BezwaarCreationHookInterface $hook        Links the bezwaar to its primair besluit.
+	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession        $userSession The session.
 	 *
 	 * @return void
@@ -77,8 +78,8 @@ class BezwaarObjectionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BezwaarCreationHook $hook,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly BezwaarCreationHookInterface $hook,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -134,13 +135,9 @@ class BezwaarObjectionController extends Controller {
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
 	private function accessRefusal(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->accessGuard))->requireChangeAccess(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return null;

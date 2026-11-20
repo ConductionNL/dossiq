@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatImportServiceInterface;
 use OCA\Dossiq\Service\Mandaat\MandaatCsvParser;
 use OCA\Dossiq\Service\Mandaat\MandaatRepository;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -47,9 +48,9 @@ use RuntimeException;
  * or write goes through {@see MandaatRepository}; what stays here is the import
  * decision — new vs changed vs removed — and the approval state machine.
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
-class MandaatImportService {
+class MandaatImportService implements MandaatImportServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -86,38 +87,31 @@ class MandaatImportService {
 	 *
 	 * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
-	public function importFromCsv(
-		string $decisionNumber,
-		string $decisionName,
-		string $decideskUuid,
-		string $csvContents,
-	): array {
-		$rows = $this->csvParser->parse(csv: $csvContents);
-		if (count($rows) === 0) {
-			throw new RuntimeException('CSV is empty or missing data rows');
-		}
+	public function importFromCsv(string $decisionNumber, string $decisionName, string $decideskUuid, string $csvContents): array {
+		$rows = $this->parsedRows(csvContents: $csvContents);
 
 		// Resolve rol-name → rolId.
 		$resolved = $this->resolveRoleReferences(rows: $rows);
 
-		// Create the decision (concept). The schemaConfigKey stays
-		// 'mandaterings_besluit_schema': it is the app-config key the schema id
-		// is already stored under on existing installs, not a display name.
-		$decision = $this->repository->save(
-			schemaConfigKey: 'mandaterings_besluit_schema',
-			object: [
-				'decisionNumber' => $decisionNumber,
-				'decisionName' => $decisionName,
-				'status' => 'draft',
-				'decideskUuid' => $decideskUuid,
-			]
+		$decision = $this->saveDraftDecision(
+			decision: ['decisionNumber' => $decisionNumber, 'decisionName' => $decisionName, 'decideskUuid' => $decideskUuid]
 		);
 
-		$tally = new MandateImportTally();
-		$tally->decisionId = (string)$decision['id'];
-		$tally->prior = $this->priorMandatesOf(decisionNumber: $decisionNumber);
+		return $this->importAll(decision: ['saved' => $decision, 'number' => $decisionNumber], resolved: $resolved);
+	}//end importFromCsv()
+
+	/**
+	 * Import every resolved row against the new decision, and summarise.
+	 *
+	 * @param array{saved: array<string, mixed>, number: string} $decision The stored decision, and its identifier.
+	 * @param array<int, array<string, mixed>>                   $resolved The rows with their role references resolved.
+	 *
+	 * @return array<string, mixed> The import summary.
+	 */
+	private function importAll(array $decision, array $resolved): array {
+		$tally = $this->tallyFor(decision: $decision['saved'], decisionNumber: $decision['number']);
 
 		// Create one mandaat per CSV row.
 		foreach ($resolved as $row) {
@@ -125,7 +119,70 @@ class MandaatImportService {
 		}
 
 		return $this->importSummary(tally: $tally, resolved: $resolved);
-	}//end importFromCsv()
+	}//end importAll()
+
+	/**
+	 * The data rows of the CSV.
+	 *
+	 * @param string $csvContents The CSV payload (RFC 4180; first row is header).
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws RuntimeException When the CSV has no data rows.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function parsedRows(string $csvContents): array {
+		$rows = $this->csvParser->parse(csv: $csvContents);
+		if (count($rows) === 0) {
+			throw new RuntimeException('CSV is empty or missing data rows');
+		}
+
+		return $rows;
+	}//end parsedRows()
+
+	/**
+	 * Create the decision as a concept.
+	 *
+	 * @param array{decisionNumber: string, decisionName: string, decideskUuid: string} $decision Decision identifier, name and
+	 *                                                                                           source Decidesk decision id.
+	 *
+	 * @return array<string, mixed> The stored decision.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function saveDraftDecision(array $decision): array {
+		// Create the decision (concept). The schemaConfigKey stays
+		// 'mandaterings_besluit_schema': it is the app-config key the schema id
+		// is already stored under on existing installs, not a display name.
+		return $this->repository->save(
+			schemaConfigKey: 'mandaterings_besluit_schema',
+			object: [
+				'decisionNumber' => $decision['decisionNumber'],
+				'decisionName' => $decision['decisionName'],
+				'status' => 'draft',
+				'decideskUuid' => $decision['decideskUuid'],
+			]
+		);
+	}//end saveDraftDecision()
+
+	/**
+	 * A tally for the new decision, against the mandates of its prior version.
+	 *
+	 * @param array<string, mixed> $decision The stored decision.
+	 * @param string $decisionNumber Decision identifier.
+	 *
+	 * @return MandateImportTally The tally.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function tallyFor(array $decision, string $decisionNumber): MandateImportTally {
+		$tally = new MandateImportTally();
+		$tally->decisionId = (string)$decision['id'];
+		$tally->prior = $this->priorMandatesOf(decisionNumber: $decisionNumber);
+
+		return $tally;
+	}//end tallyFor()
 
 	/**
 	 * The mandates of the prior decision version with this number, for the diff.
@@ -274,7 +331,7 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed> The mandaat object payload.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function buildMandatePayload(array $row, string $decisionId): array {
 		return [
@@ -325,7 +382,7 @@ class MandaatImportService {
 	 *
 	 * @return array<int, string> Changed field names; empty when unchanged.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
@@ -373,7 +430,7 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function approveImport(string $decisionId): array {
 		$run = new MandateApproval();

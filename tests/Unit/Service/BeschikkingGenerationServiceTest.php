@@ -31,6 +31,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for BeschikkingGenerationService.
@@ -243,7 +244,9 @@ class BeschikkingGenerationServiceTest extends TestCase {
 			 *
 			 * @return array<string,mixed> The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved = $object;
 				return ['id' => 'bijlage-1'];
 			}
@@ -428,7 +431,9 @@ class BeschikkingGenerationServiceTest extends TestCase {
 			 *
 			 * @return ObjectEntity The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): ObjectEntity {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ObjectEntity {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($this->saved === null) {
 					throw new \RuntimeException('save refused');
 				}

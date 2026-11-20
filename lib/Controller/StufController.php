@@ -49,11 +49,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StufIntegriqBridgeInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCA\Dossiq\Service\Stuf\StufException;
-use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -72,9 +72,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
 
@@ -102,21 +100,21 @@ class StufController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param StufRegisterAccess $register The StUF endpoint and message rows.
-	 * @param StufIntegriqBridge $bridge Asks integriq to send and to record confirmations.
+	 * @param StufRegisterAccessInterface $register The StUF endpoint and message rows.
+	 * @param StufIntegriqBridgeInterface $bridge Asks integriq to send and to record confirmations.
 	 * @param IL10N $l10n The localization service.
 	 * @param LoggerInterface $logger The logger.
-	 * @param IntegrationStatusService $integrationStatus Records the StUF card's health.
+	 * @param IntegrationStatusServiceInterface $integrationStatus Records the StUF card's health.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly StufRegisterAccess $register,
-		private readonly StufIntegriqBridge $bridge,
+		private readonly StufRegisterAccessInterface $register,
+		private readonly StufIntegriqBridgeInterface $bridge,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
-		private readonly IntegrationStatusService $integrationStatus,
+		private readonly IntegrationStatusServiceInterface $integrationStatus,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -128,7 +126,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -151,7 +149,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
 	 */
@@ -167,7 +165,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -185,7 +183,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for persons(); behaviour covered by the persons() tests.
 	 */
@@ -220,10 +218,7 @@ class StufController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$endpoint = $this->register->findById(
-			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			id: $endpointId
-		);
+		$endpoint = $this->register->findById(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, id: $endpointId);
 		if ($endpoint === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
 		}
@@ -231,16 +226,27 @@ class StufController extends Controller {
 		try {
 			return new JSONResponse($this->bridge->vrijBericht(endpoint: $endpoint, name: $messageName, payload: $payload));
 		} catch (StufException $e) {
-			$status = Http::STATUS_BAD_REQUEST;
-			$code   = 'STUF_VALIDATION';
-			if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
-				$status = Http::STATUS_SERVICE_UNAVAILABLE;
-				$code   = 'INTEGRIQ_UNAVAILABLE';
-			}
-
-			return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+			return $this->outboundFailure(e: $e);
 		}
 	}//end outbound()
+
+	/**
+	 * Answer a failed outbound message: 503 when Integriq is unavailable, else 400.
+	 *
+	 * @param StufException $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function outboundFailure(StufException $e): JSONResponse {
+		$status = Http::STATUS_BAD_REQUEST;
+		$code   = 'STUF_VALIDATION';
+		if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+			$code   = 'INTEGRIQ_UNAVAILABLE';
+		}
+
+		return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+	}//end outboundFailure()
 
 	/**
 	 * Receive an async confirmation from the zaaksysteem and hand it to integriq.
@@ -327,7 +333,7 @@ class StufController extends Controller {
 		$sourceId = '';
 		if (preg_match(self::ZENDER_APPLICATION, $rawXml, $match) === 1) {
 			$endpoint = $this->register->findOne(
-				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+				schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
 				filters: ['recipientApplication' => trim($match[1])]
 			);
 			$sourceId = (string)($endpoint['integriqSource'] ?? '');
@@ -382,7 +388,7 @@ class StufController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function endpoints(): JSONResponse {
-		$items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
+		$items = $this->register->findAll(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: [], limit: 500);
 		$items = array_map(
 			callback: function (array $endpoint): array {
 				return $this->enrichEndpointWithHealth(endpoint: $endpoint);
@@ -487,7 +493,7 @@ class StufController extends Controller {
 		$limit = max(1, min(500, (int)$this->request->getParam(key: 'limit', default: 50)));
 		$filters = $this->messageFilters();
 
-		$items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
+		$items = $this->register->findAll(schema: StufRegisterAccessInterface::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
 		return new JSONResponse(['items' => $items, 'total' => count(value: $items), 'limit' => $limit]);
 	}//end messages()
 
@@ -525,7 +531,7 @@ class StufController extends Controller {
 		}
 
 		$recent = $this->register->findAll(
-			schema: StufRegisterAccess::SCHEMA_MESSAGE,
+			schema: StufRegisterAccessInterface::SCHEMA_MESSAGE,
 			filters: ['endpointId' => (string)($endpoint['id'] ?? '')],
 			limit: 5
 		);

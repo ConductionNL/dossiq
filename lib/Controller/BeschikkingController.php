@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -39,10 +39,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
+use OCA\Dossiq\Controller\Support\RequiresSignedInUid;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\BeschikkingService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\BeschikkingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -56,9 +57,12 @@ use Throwable;
 /**
  * Controller for beschikking lifecycle endpoints.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingController extends Controller {
+	use RequiresSignedInUid;
 	use TranslatesRefusals;
 
 	/**
@@ -66,18 +70,18 @@ class BeschikkingController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param BeschikkingService $decisionService The beschikking service.
+	 * @param BeschikkingServiceInterface $decisionService The beschikking service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $accessGuard Per-case mutation access, for issuing a successor.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case mutation access, for issuing a successor.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BeschikkingService $decisionService,
+		private readonly BeschikkingServiceInterface $decisionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -89,7 +93,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function create(): JSONResponse {
 		$uid = $this->requireUser();
@@ -99,17 +103,65 @@ class BeschikkingController extends Controller {
 
 		$body = (new JsonRequestBody())->read(request: $this->request);
 		$caseId = (string)($body['caseId'] ?? '');
+		$templateId = $this->templateIdOf(body: $body);
+
+		if ($caseId === '') {
+			return new JSONResponse(['error' => 'zaakId is required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$merged = $this->composeFieldsOf(body: $body);
+
+		return $this->composeDecision(caseId: $caseId, compose: ['templateId' => $templateId, 'merged' => $merged]);
+	}//end create()
+
+	/**
+	 * Compose a beschikking for a case and answer it, or the refusal or failure.
+	 *
+	 * @param string $caseId The case.
+	 * @param array{templateId: string|null, merged: array} $compose The template, or null, and the fields to set on
+	 *                                                              the beschikking.
+	 *
+	 * @return JSONResponse
+	 */
+	private function composeDecision(string $caseId, array $compose): JSONResponse {
+		try {
+			$result = $this->decisionService->compose($caseId, $compose['templateId'], $compose['merged']);
+			return new JSONResponse($result, Http::STATUS_CREATED);
+		} catch (RefusedException $e) {
+			// No number could be reserved (decision 167): a 503 the client may
+			// retry, not the 500 the catch-all below would answer.
+			return $this->refused(op: 'compose', e: $e);
+		} catch (\Throwable $e) {
+			return $this->fail(op: 'compose', e: $e);
+		}
+	}//end composeDecision()
+
+	/**
+	 * The template a compose request names, or null.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return string|null The template id.
+	 */
+	private function templateIdOf(array $body): ?string {
 		$templateId = null;
 		if (isset($body['templateId']) === true) {
 			$templateId = (string)$body['templateId'];
 		}
 
+		return $templateId;
+	}//end templateIdOf()
+
+	/**
+	 * The fields a compose request sets on the beschikking: the addressee overrides and the decision fields.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return array The fields to merge.
+	 */
+	private function composeFieldsOf(array $body): array {
 		$overrides = (array)($body['addressee'] ?? []);
 		$payload = (array)$body;
-
-		if ($caseId === '') {
-			return new JSONResponse(['error' => 'zaakId is required'], Http::STATUS_BAD_REQUEST);
-		}
 
 		$merged = [];
 		if ($overrides !== []) {
@@ -122,17 +174,8 @@ class BeschikkingController extends Controller {
 			}
 		}
 
-		try {
-			$result = $this->decisionService->compose($caseId, $templateId, $merged);
-			return new JSONResponse($result, Http::STATUS_CREATED);
-		} catch (RefusedException $e) {
-			// No number could be reserved (decision 167): a 503 the client may
-			// retry, not the 500 the catch-all below would answer.
-			return $this->refused(op: 'compose', e: $e);
-		} catch (\Throwable $e) {
-			return $this->fail(op: 'compose', e: $e);
-		}
-	}//end create()
+		return $merged;
+	}//end composeFieldsOf()
 
 	/**
 	 * Read a beschikking. [T06]
@@ -143,7 +186,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T06
 	 */
 	public function show(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -171,7 +214,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T11
 	 */
 	public function update(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -202,7 +245,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
 	 */
 	public function akkoord(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -225,7 +268,7 @@ class BeschikkingController extends Controller {
 	}//end akkoord()
 
 	/**
-	 * Sign the beschikking via the TSP. [T08]
+	 * Ask filinq to sign the beschikking. [T08]
 	 *
 	 * @param string $id The beschikking UUID.
 	 *
@@ -233,7 +276,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
 	public function onderteken(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -248,8 +291,9 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
+			// 202: filinq took the request; the decision is signed when filinq concludes it.
 			$result = $this->decisionService->onderteken($id, $tspProvider, $uid);
-			return new JSONResponse($result);
+			return new JSONResponse($result, Http::STATUS_ACCEPTED);
 		} catch (RefusedException $e) {
 			// The coordinator seat, and anything else that refuses with a rule
 			// rather than a sentinel. Caught BEFORE RuntimeException, which
@@ -272,7 +316,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
 	 */
 	public function verzend(string $id): JSONResponse {
 		$uid = $this->requireUser();
@@ -304,7 +348,7 @@ class BeschikkingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T10
 	 */
 	public function auditPakket(string $id): DataDownloadResponse|JSONResponse {
 		$uid = $this->requireUser();
@@ -349,6 +393,47 @@ class BeschikkingController extends Controller {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function successor(string $id): JSONResponse {
+		$refusal = $this->successorRefusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$body = $this->request->getParams();
+
+		try {
+			return $this->issueSuccessorOf(id: $id, body: $body);
+		} catch (RefusedException $refusal) {
+			return $this->refused(op: 'successor', e: $refusal);
+		} catch (Throwable $failure) {
+			return $this->successorFailure(failure: $failure, id: $id);
+		}
+	}//end successor()
+
+	/**
+	 * Log a failed successor and answer 500.
+	 *
+	 * @param Throwable $failure The failure.
+	 * @param string $id The original beschikking id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function successorFailure(Throwable $failure, string $id): JSONResponse {
+		$this->logger->error(
+			'BeschikkingController: successor failed',
+			['exception' => $failure->getMessage(), 'beschikkingId' => $id],
+		);
+
+		return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+	}//end successorFailure()
+
+	/**
+	 * Refuse a successor to an anonymous caller, for a beschikking that does not exist, or whose case the user may not change.
+	 *
+	 * @param string $id The original beschikking id.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the successor may be issued.
+	 */
+	private function successorRefusal(string $id): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -364,46 +449,34 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'You may not change this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		$body   = $this->request->getParams();
-		$reader = new JsonRequestBody();
-
-		try {
-			$successor = $this->decisionService->issueSuccessor(
-				originalId: $id,
-				kind: (string)($body['decisionType'] ?? ''),
-				// The successor's content as the handler sent it, and nothing
-				// else: the number, the pointers and the status are never read
-				// from the body. A blank template keeps the original's.
-				overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
-				templateId: $reader->textOrNull(body: $body, field: 'templateId'),
-			);
-
-			return new JSONResponse($successor, Http::STATUS_CREATED);
-		} catch (RefusedException $refusal) {
-			return $this->refused(op: 'successor', e: $refusal);
-		} catch (Throwable $failure) {
-			$this->logger->error(
-				'BeschikkingController: successor failed',
-				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
-			);
-
-			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-	}//end successor()
+		return null;
+	}//end successorRefusal()
 
 	/**
-	 * Resolve the current user UID or null.
+	 * Issue the successor of a beschikking from the request body.
 	 *
-	 * @return string|null
+	 * @param string $id The original beschikking id.
+	 * @param array $body The request parameters.
+	 *
+	 * @return JSONResponse The created successor.
+	 *
+	 * @throws RefusedException When the successor is refused.
+	 * @throws Throwable When issuing fails.
 	 */
-	private function requireUser(): ?string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
+	private function issueSuccessorOf(string $id, array $body): JSONResponse {
+		$reader = new JsonRequestBody();
+		$successor = $this->decisionService->issueSuccessor(
+			originalId: $id,
+			kind: (string)($body['decisionType'] ?? ''),
+			// The successor's content as the handler sent it, and nothing
+			// else: the number, the pointers and the status are never read
+			// from the body. A blank template keeps the original's.
+			overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
+			templateId: $reader->textOrNull(body: $body, field: 'templateId'),
+		);
 
-		return $user->getUID();
-	}//end requireUser()
+		return new JSONResponse($successor, Http::STATUS_CREATED);
+	}//end issueSuccessorOf()
 
 	/**
 	 * Map a domain RuntimeException to a JSONResponse with an appropriate status.
@@ -415,36 +488,54 @@ class BeschikkingController extends Controller {
 	 */
 	private function mapRuntime(string $op, RuntimeException $e): JSONResponse {
 		$code = $e->getMessage();
-		$status = match ($code) {
+		$status = $this->runtimeStatus(code: $code);
+
+		$message = $this->runtimeMessage(code: $code);
+
+		$this->logger->info('BeschikkingController: ' . $op . ' rejected', ['code' => $code]);
+		return new JSONResponse(['error' => $message], $status);
+	}//end mapRuntime()
+
+	/**
+	 * The HTTP status a domain refusal code answers with.
+	 *
+	 * @param string $code The refusal code.
+	 *
+	 * @return int The status.
+	 */
+	private function runtimeStatus(string $code): int {
+		return match ($code) {
 			'not_found' => Http::STATUS_NOT_FOUND,
 			'mandaat_insufficient' => Http::STATUS_FORBIDDEN,
 			'immutable' => Http::STATUS_CONFLICT,
 			'invalid_transition' => Http::STATUS_CONFLICT,
 			'zaakId_required' => Http::STATUS_BAD_REQUEST,
-			// LibreSign signing outcomes (libresign-besluit-signing).
-			'libresign_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
-			'libresign_signer_unresolvable' => Http::STATUS_UNPROCESSABLE_ENTITY,
-			'libresign_signing_pending' => Http::STATUS_ACCEPTED,
-			'libresign_signing_declined' => Http::STATUS_CONFLICT,
+			// Signing through filinq (signing-through-filinq).
+			'signing_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
+			'signing_in_progress' => Http::STATUS_CONFLICT,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
+	}//end runtimeStatus()
 
-		$message = match ($code) {
+	/**
+	 * The message a domain refusal code answers with.
+	 *
+	 * @param string $code The refusal code.
+	 *
+	 * @return string The message.
+	 */
+	private function runtimeMessage(string $code): string {
+		return match ($code) {
 			'not_found' => 'Beschikking not found',
 			'mandaat_insufficient' => 'Insufficient mandaat for this decision',
 			'immutable' => 'Beschikking is immutable in its current status',
 			'invalid_transition' => 'Transition not allowed from the current status',
 			'zaakId_required' => 'zaakId is required',
-			'libresign_unavailable' => 'LibreSign is not available; install and enable the LibreSign app to sign this beschikking',
-			'libresign_signer_unresolvable' => 'The signer could not be resolved to a Nextcloud account with a configured email address',
-			'libresign_signing_pending' => 'Signature request created; awaiting the signer to complete signing in LibreSign',
-			'libresign_signing_declined' => 'The signature request was declined or cancelled in LibreSign',
+			'signing_unavailable' => 'Signing is not available: filinq must be installed, and its signing provider must offer the configured signature level',
+			'signing_in_progress' => 'A signing request for this beschikking is open; wait until filinq concludes it',
 			default => 'Could not complete the request',
 		};
-
-		$this->logger->info('BeschikkingController: ' . $op . ' rejected', ['code' => $code]);
-		return new JSONResponse(['error' => $message], $status);
-	}//end mapRuntime()
+	}//end runtimeMessage()
 
 	/**
 	 * Log an unexpected failure and return a generic 500.

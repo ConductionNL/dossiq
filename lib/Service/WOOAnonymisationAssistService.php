@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -51,7 +51,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
@@ -61,9 +62,11 @@ use RuntimeException;
 /**
  * Service orchestrating LLM-assisted, human-reviewed redaction proposals.
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class WOOAnonymisationAssistService {
+class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInterface {
 	/**
 	 * Maximum accepted document text length (characters) — bounded to keep
 	 * latency/cost predictable and mirrors the cap Hermiq's endpoint itself
@@ -107,7 +110,7 @@ class WOOAnonymisationAssistService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function isLlmAssistAvailable(): bool {
 		return $this->hermiqClient->isAvailable();
@@ -135,7 +138,7 @@ class WOOAnonymisationAssistService {
 	 * @throws InvalidArgumentException (400) When `text` is empty or over the length cap.
 	 * @throws RuntimeException When the document has not yet been assessed (assess-first rule).
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function proposeSpans(string $caseId, string $documentRef, string $text, string $userId): array {
 		$this->validateText(text: $text);
@@ -173,7 +176,10 @@ class WOOAnonymisationAssistService {
 	private function pendingProposalFor(SpanProposalRequest $request, string $text): array {
 		$startTime = microtime(true);
 		$ruleSpans = $this->aiService->detectDeterministicPiiSpans(text: $text);
-		$proposal = $this->buildProposal(ruleSpans: $ruleSpans, text: $text, context: $this->documentContext(documentRef: $request->documentRef));
+		$proposal = $this->buildProposal(
+			ruleSpans: $ruleSpans,
+			ask: ['text' => $text, 'context' => $this->documentContext(documentRef: $request->documentRef)]
+		);
 		$request->responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 		$request->textLength = strlen($text);
 		$request->ruleSpanCount = count($ruleSpans);
@@ -194,7 +200,7 @@ class WOOAnonymisationAssistService {
 	 */
 	private function documentContext(string $documentRef): array {
 		return [
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'objectType' => 'document',
 			'objectRef' => $documentRef,
 		];
@@ -250,7 +256,7 @@ class WOOAnonymisationAssistService {
 	 * @throws InvalidArgumentException (400) On an invalid `decision`.
 	 * @throws RuntimeException When no `pending_review` proposal exists for this document.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function reviewProposal(
 		string $caseId,
@@ -471,8 +477,7 @@ class WOOAnonymisationAssistService {
 
 		return $this->buildProposal(
 			ruleSpans: $this->aiService->detectDeterministicPiiSpans(text: $text),
-			text: $text,
-			context: ['app' => Application::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]
+			ask: ['text' => $text, 'context' => ['app' => AppIdentity::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]]
 		);
 	}//end spansFor()
 
@@ -502,45 +507,80 @@ class WOOAnonymisationAssistService {
 	 * layered on top when available, fail-closed to rules-only on any
 	 * Hermiq failure.
 	 *
-	 * @param array<int, array<string, mixed>> $ruleSpans The deterministic rule-detected spans.
-	 * @param string $text The document text (forwarded to Hermiq).
-	 * @param array<string, mixed> $context `{app, objectType, objectRef}`.
+	 * @param array<int, array<string, mixed>>                   $ruleSpans The deterministic rule-detected spans.
+	 * @param array{text: string, context: array<string, mixed>} $ask       The document text (forwarded to Hermiq), and
+	 *                                                                      `{app, objectType, objectRef}`.
 	 *
 	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError?}`.
 	 */
-	private function buildProposal(array $ruleSpans, string $text, array $context): array {
+	private function buildProposal(array $ruleSpans, array $ask): array {
 		$taggedRuleSpans = $this->taggedAsRules(spans: $ruleSpans);
 
 		if ($this->hermiqClient->isAvailable() === false) {
-			return [
-				'spans' => $taggedRuleSpans,
-				'source' => 'rules_only',
-				'llmAvailable' => false,
-			];
+			return $this->rulesOnly(taggedRuleSpans: $taggedRuleSpans);
 		}
 
 		try {
-			$llmResult = $this->hermiqClient->detectPii(text: $text, context: $context);
+			$llmResult = $this->hermiqClient->detectPii(text: $ask['text'], context: $ask['context']);
 		} catch (HermiqAssistantException $e) {
-			$this->logger->warning(
-				'WOOAnonymisationAssistService: LLM-assisted detection failed, falling back to rules-only',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-
-			return [
-				'spans' => $taggedRuleSpans,
-				'source' => 'rules_only_fallback',
-				'llmAvailable' => true,
-				'llmError' => $e->getMessage(),
-			];
+			return $this->rulesOnlyFallback(taggedRuleSpans: $taggedRuleSpans, e: $e);
 		}
 
+		return $this->rulesPlusLlm(taggedRuleSpans: $taggedRuleSpans, llmSpans: $llmResult['spans']);
+	}//end buildProposal()
+
+	/**
+	 * The proposal when no LLM is available: the rule spans alone.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable}`.
+	 */
+	private function rulesOnly(array $taggedRuleSpans): array {
 		return [
-			'spans' => $this->mergeSpansRulesFloor(ruleSpans: $taggedRuleSpans, llmSpans: $llmResult['spans']),
+			'spans' => $taggedRuleSpans,
+			'source' => 'rules_only',
+			'llmAvailable' => false,
+		];
+	}//end rulesOnly()
+
+	/**
+	 * The proposal with the LLM spans merged over the rule floor.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 * @param mixed                            $llmSpans        The spans the LLM detected.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable}`.
+	 */
+	private function rulesPlusLlm(array $taggedRuleSpans, mixed $llmSpans): array {
+		return [
+			'spans' => $this->mergeSpansRulesFloor(ruleSpans: $taggedRuleSpans, llmSpans: $llmSpans),
 			'source' => 'rules_plus_llm',
 			'llmAvailable' => true,
 		];
-	}//end buildProposal()
+	}//end rulesPlusLlm()
+
+	/**
+	 * Log the failed LLM detection and answer with the rule spans alone.
+	 *
+	 * @param array<int, array<string, mixed>> $taggedRuleSpans The rule spans, tagged.
+	 * @param HermiqAssistantException         $e               Why the LLM detection failed.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError}`.
+	 */
+	private function rulesOnlyFallback(array $taggedRuleSpans, HermiqAssistantException $e): array {
+		$this->logger->warning(
+			'WOOAnonymisationAssistService: LLM-assisted detection failed, falling back to rules-only',
+			['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
+		);
+
+		return [
+			'spans' => $taggedRuleSpans,
+			'source' => 'rules_only_fallback',
+			'llmAvailable' => true,
+			'llmError' => $e->getMessage(),
+		];
+	}//end rulesOnlyFallback()
 
 	/**
 	 * The spans, each tagged as found by the rules.
@@ -575,7 +615,7 @@ class WOOAnonymisationAssistService {
 	 *
 	 * @return array<int, array<string, mixed>> The merged, start-sorted span list.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-3
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-3
 	 */
 	private function mergeSpansRulesFloor(array $ruleSpans, array $llmSpans): array {
 		$merged = $ruleSpans;

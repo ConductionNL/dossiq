@@ -37,7 +37,7 @@
  * own it, openregister emitting for a run and nextcloud-vue refetching on the
  * hint, and not to a poll on this page.
  *
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 
@@ -56,7 +56,7 @@ export const CASE_PAGE_ROUTE = 'CaseDetail'
  * @param {object|null} route The resolved route.
  *
  * @return {string} The case id, or ''.
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export function caseIdOfRoute(route) {
 	if (route?.name !== CASE_PAGE_ROUTE) {
@@ -74,12 +74,12 @@ export function caseIdOfRoute(route) {
  * for a case nobody is looking at, and it keeps refetching until the tab
  * closes.
  *
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export class CaseLiveSubscription {
 	/**
 	 * @param {object} store The object store (createObjectStore instance).
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	constructor(store) {
 		this.store = store
@@ -99,7 +99,7 @@ export class CaseLiveSubscription {
 	 * @param {string} caseId The case to subscribe to, or '' for none.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	async sync(caseId) {
 		if (typeof this.store?.subscribe !== 'function') {
@@ -130,7 +130,7 @@ export class CaseLiveSubscription {
 	 *
 	 * @param {string} caseId The case.
 	 * @return {boolean} True when there is nothing to do.
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	holdsOrAwaits(caseId) {
 		return (this.handle !== null && this.key === caseId)
@@ -143,7 +143,7 @@ export class CaseLiveSubscription {
 	 *
 	 * @param {string} caseId The case.
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	async subscribeTo(caseId) {
 		const epoch = this.epoch
@@ -172,7 +172,7 @@ export class CaseLiveSubscription {
 	 *
 	 * @param {unknown} err What the subscribe threw.
 	 * @return {void}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	forgetFailedSubscribe(err) {
 		this.handle = null
@@ -187,7 +187,7 @@ export class CaseLiveSubscription {
 	 *
 	 * @param {{handle: object, epoch: number}} answered The handle and the epoch it was asked in.
 	 * @return {void}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	keepHandle(answered) {
 		if (this.epoch !== answered.epoch) {
@@ -201,7 +201,7 @@ export class CaseLiveSubscription {
 	 * Drop the subscription, and invalidate any subscribe still in flight.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
 	release() {
 		this.epoch = this.epoch + 1
@@ -226,7 +226,7 @@ export class CaseLiveSubscription {
  * @param {() => object} storeFactory Resolves the object store, lazily.
  *
  * @return {CaseLiveSubscription} The subscription, so a caller can release it.
- * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+ * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 export function installCaseLiveUpdates(router, storeFactory) {
 	let subscription = null

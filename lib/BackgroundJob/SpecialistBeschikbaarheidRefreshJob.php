@@ -25,16 +25,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -48,7 +48,7 @@ use Throwable;
  * It runs as the background service account, because cron has no user and
  * OpenRegister refuses a write from nobody.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	use SearchesObjects;
@@ -62,14 +62,14 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param SettingsService $settingsService The settings service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the refresh writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
@@ -180,7 +180,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: specialist availability refresh could not read records (keeping cache): ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return null;
 		}
@@ -258,7 +258,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not age out stale specialist record: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 		}
 	}//end markAbsent()

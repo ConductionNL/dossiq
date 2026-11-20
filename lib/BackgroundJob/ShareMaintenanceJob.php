@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -52,7 +52,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 * Constructor for the ShareMaintenanceJob.
 	 *
 	 * @param ITimeFactory $time The time factory
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IAppManager $appManager The app manager
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger
@@ -61,7 +61,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
@@ -80,7 +80,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — required by parent
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function run($argument): void {
 		$objectService = $this->objectService();
@@ -112,7 +112,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @return object|null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function objectService(): ?object {
 		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
@@ -135,7 +135,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @return array{register: int, schema: int}|null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function shareFilters(): ?array {
 		$register = $this->settingsService->getConfigValue('register');

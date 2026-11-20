@@ -28,17 +28,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
-use OCA\Dossiq\Service\DispositionService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DispositionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -49,7 +49,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintDispositionController extends Controller {
 	/**
@@ -57,20 +57,20 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
-	 * @param DispositionService $dispositionService Disposition service
-	 * @param SettingsService $settingsService Settings service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param ComplaintServiceInterface $complaintService Complaint service
+	 * @param DispositionServiceInterface $dispositionService Disposition service
+	 * @param SettingsServiceInterface $settingsService Settings service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
-		private readonly DispositionService $dispositionService,
-		private readonly SettingsService $settingsService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly ComplaintServiceInterface $complaintService,
+		private readonly DispositionServiceInterface $dispositionService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -84,7 +84,7 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function getDisposition(string $id): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -108,7 +108,7 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function submitDisposition(string $id): JSONResponse {
 		$userId = $this->accessGuard->currentUid();
@@ -151,7 +151,7 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function approveDisposition(string $id): JSONResponse {
 		$userId = $this->accessGuard->currentUid();
@@ -186,7 +186,7 @@ class ComplaintDispositionController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function generateLetter(string $id): JSONResponse {
 		$userId = $this->accessGuard->currentUid();

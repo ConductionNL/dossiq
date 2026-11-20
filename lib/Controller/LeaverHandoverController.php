@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\People\LeaverHandoverService;
+use OCA\Dossiq\Kernel\Contracts\LeaverHandoverServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Previews and runs the handover of a leaver's work.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class LeaverHandoverController extends Controller {
 
@@ -59,19 +59,19 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @param string                $appName     The app name.
 	 * @param IRequest              $request     The request.
-	 * @param LeaverHandoverService $handover    The act itself.
+	 * @param LeaverHandoverServiceInterface $handover    The act itself.
 	 * @param IGroupManager         $groups      Administrator resolution.
 	 * @param IUserSession          $userSession The session.
 	 * @param LoggerInterface       $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly LeaverHandoverService $handover,
+		private readonly LeaverHandoverServiceInterface $handover,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -84,7 +84,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The preview.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function preview(): JSONResponse {
@@ -112,7 +112,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse What moved.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function execute(): JSONResponse {
@@ -141,7 +141,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	private function incomplete(): JSONResponse {
 		return new JSONResponse(

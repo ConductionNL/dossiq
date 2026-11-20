@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Portal\ApplicantPortalActs;
+use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -70,11 +70,11 @@ class PortalClientWriteListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ApplicantPortalActs $acts   Records the act and tells the assignee.
+	 * @param ApplicantPortalActsInterface $acts   Records the act and tells the assignee.
 	 * @param LoggerInterface     $logger Logger.
 	 */
 	public function __construct(
-		private readonly ApplicantPortalActs $acts,
+		private readonly ApplicantPortalActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -41,12 +41,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
+
 /**
  * Applies {@see RetiredNodeMap} to a flow's nodes and edges.
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
-class RetiredNodeRewriter {
+class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 
 	/**
 	 * Constructor.
@@ -247,7 +249,7 @@ class RetiredNodeRewriter {
 		$out = [];
 		foreach ($edges as $edge) {
 			if (is_array($edge) === true && in_array($first, $this->endpoints(value: ($edge['from'] ?? null)), true) === true) {
-				$edge['from'] = $this->swap(value: $edge['from'], from: $first, to: $last);
+				$edge['from'] = $this->swap(value: $edge['from'], replace: ['from' => $first, 'to' => $last]);
 			}
 
 			$out[] = $edge;
@@ -268,21 +270,20 @@ class RetiredNodeRewriter {
 	/**
 	 * Replace one node id in an edge endpoint, keeping the endpoint's shape.
 	 *
-	 * @param mixed  $value The endpoint: an id or a list of ids.
-	 * @param string $from  The id to replace.
-	 * @param string $to    Its replacement.
+	 * @param mixed                          $value   The endpoint: an id or a list of ids.
+	 * @param array{from: string, to: string} $replace The id to replace, and its replacement.
 	 *
 	 * @return mixed The endpoint.
 	 */
-	private function swap(mixed $value, string $from, string $to): mixed {
+	private function swap(mixed $value, array $replace): mixed {
 		if (is_array($value) === false) {
-			return $to;
+			return $replace['to'];
 		}
 
 		$swapped = [];
 		foreach ($value as $id) {
-			if ($id === $from) {
-				$id = $to;
+			if ($id === $replace['from']) {
+				$id = $replace['to'];
 			}
 
 			$swapped[] = $id;
@@ -301,38 +302,67 @@ class RetiredNodeRewriter {
 	 *         inbound edges were dropped because the step had no successor.
 	 */
 	private function bridge(array $edges, string $stepId): array {
-		$successors = $this->successorsOf(edges: $edges, stepId: $stepId);
+		$removed = new RemovedStep(stepId: $stepId, successors: $this->successorsOf(edges: $edges, stepId: $stepId));
 		$orphaned = false;
 		$out = [];
 
 		foreach ($edges as $edge) {
-			if (is_array($edge) === false) {
-				$out[] = $edge;
-				continue;
-			}
-
-			$edge = $this->withoutSource(edge: $edge, stepId: $stepId);
-			if ($edge === null) {
-				continue;
-			}
-
-			$targets = $this->endpoints(value: ($edge['to'] ?? null));
-			if (in_array($stepId, $targets, true) === false) {
-				$out[] = $edge;
-				continue;
-			}
-
-			$retargeted = array_values(array_unique(array_merge(array_diff($targets, [$stepId]), $successors)));
-			if ($retargeted === []) {
+			$bridged = $this->bridgedEdge(edge: $edge, removed: $removed);
+			if ($bridged === null) {
 				$orphaned = true;
 				continue;
 			}
 
-			array_push($out, ...$this->reshape(edge: $edge, targets: $retargeted));
-		}//end foreach
+			array_push($out, ...$bridged);
+		}
 
 		return ['edges' => $out, 'orphaned' => $orphaned];
 	}//end bridge()
+
+	/**
+	 * What one edge becomes once the step is removed.
+	 *
+	 * @param mixed       $edge    One edge.
+	 * @param RemovedStep $removed The step being removed and its successors.
+	 *
+	 * @return array<int, mixed>|null The edges it becomes ([] when dropped), or null when it was orphaned.
+	 */
+	private function bridgedEdge(mixed $edge, RemovedStep $removed): ?array {
+		if (is_array($edge) === false) {
+			return [$edge];
+		}
+
+		$edge = $this->withoutSource(edge: $edge, stepId: $removed->stepId);
+		if ($edge === null) {
+			return [];
+		}
+
+		return $this->retargeted(edge: $edge, removed: $removed);
+	}//end bridgedEdge()
+
+	/**
+	 * Point an edge into the step at the step's successors instead.
+	 *
+	 * @param array<string, mixed> $edge    One edge, no longer leaving the step.
+	 * @param RemovedStep          $removed The step being removed and its successors.
+	 *
+	 * @return array<int, mixed>|null The edges it becomes, or null when the step had no successor.
+	 */
+	private function retargeted(array $edge, RemovedStep $removed): ?array {
+		$stepId = $removed->stepId;
+		$successors = $removed->successors;
+		$targets = $this->endpoints(value: ($edge['to'] ?? null));
+		if (in_array($stepId, $targets, true) === false) {
+			return [$edge];
+		}
+
+		$retargeted = array_values(array_unique(array_merge(array_diff($targets, [$stepId]), $successors)));
+		if ($retargeted === []) {
+			return null;
+		}
+
+		return $this->reshape(edge: $edge, targets: $retargeted);
+	}//end retargeted()
 
 	/**
 	 * The edge without the removed step among its sources, or null when it left from that step alone.

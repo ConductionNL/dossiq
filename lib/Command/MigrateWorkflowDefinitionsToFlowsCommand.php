@@ -23,14 +23,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Workflow\WorkflowTemplateFlowMigrator;
+use OCA\Dossiq\Kernel\Contracts\WorkflowTemplateFlowMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -40,17 +40,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Project Dossiq workflow definitions onto OpenRegister flows.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param WorkflowTemplateFlowMigrator $migrator The migrator.
+	 * @param WorkflowTemplateFlowMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly WorkflowTemplateFlowMigrator $migrator,
+		private readonly WorkflowTemplateFlowMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();
@@ -65,7 +65,7 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:workflows:migrate-to-flows')
@@ -87,12 +87,10 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = new MigrationConsole();
-		$console->userManager = $this->userManager;
-		$console->output = $output;
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:workflows:migrate-to-flows';
 
 		return $console->run(

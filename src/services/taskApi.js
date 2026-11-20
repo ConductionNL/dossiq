@@ -71,13 +71,28 @@ export function normalizeCalDavTask(task) {
 function taskIdentity(task) {
 	return {
 		id: task.uid || task.id,
-		calendarId: task.calendarId || null,
-		taskUri: task.id || null,
+		calendarId: orNull(task.calendarId),
+		taskUri: orNull(task.id),
 		title: task.summary || '—',
 		reference: objectReference(task.objectUuid),
-		objectUuid: task.objectUuid || null,
+		objectUuid: orNull(task.objectUuid),
 	}
 }
+
+/**
+ * A task field as read from CalDAV, or null when it is empty.
+ *
+ * @param {string|null|undefined} value The field's value.
+ * @return {string|null} The value, or null when it is empty.
+ */
+function orNull(value) {
+	return value || null
+}
+
+/**
+ * The statuses of a task that is no longer open.
+ */
+const TERMINAL_STATUSES = ['completed', 'cancelled']
 
 /**
  * When the task is due, how many days it has left, and whether it is done.
@@ -87,19 +102,31 @@ function taskIdentity(task) {
  * @return {{deadline: string|null, daysText: string, isOverdue: boolean, isCompleted: boolean}} The timing fields.
  */
 function taskTiming(task) {
-	const due = task.due || null
-	const isCompleted = task.status === 'completed'
-	const isCancelled = task.status === 'cancelled'
-	const isTerminal = isCompleted || isCancelled
-	const diffDays = due && !isTerminal ? daysUntil(due) : null
+	const due = orNull(task.due)
+	const diffDays = daysLeft(due, task.status)
 	const isOverdue = diffDays !== null && diffDays < 0
 
 	return {
 		deadline: due,
 		daysText: diffDays === null ? '—' : daysText(diffDays),
 		isOverdue,
-		isCompleted,
+		isCompleted: task.status === 'completed',
 	}
+}
+
+/**
+ * The whole days an open task has left; null for a finished or cancelled
+ * task, or one without a due date.
+ *
+ * @param {string|null} due The due date.
+ * @param {string|undefined} status The task's CalDAV status.
+ * @return {number|null} The days, negative when it has passed.
+ */
+function daysLeft(due, status) {
+	if (!due || TERMINAL_STATUSES.includes(status)) {
+		return null
+	}
+	return daysUntil(due)
 }
 
 /**
@@ -203,12 +230,21 @@ export async function fetchTasksForCases(cases) {
 
 	const results = await Promise.allSettled(taskPromises)
 
+	return fulfilledTasks(results)
+}
+
+/**
+ * The tasks of every per-case fetch that came back with a list, in order.
+ *
+ * @param {PromiseSettledResult<object[]>[]} results The settled fetches.
+ * @return {object[]} The tasks.
+ */
+function fulfilledTasks(results) {
 	const allTasks = []
 	for (const result of results) {
 		if (result.status === 'fulfilled' && Array.isArray(result.value)) {
 			allTasks.push(...result.value)
 		}
 	}
-
 	return allTasks
 }

@@ -36,11 +36,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\CaseTransferService;
-use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessLinkServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -58,19 +58,19 @@ class CaseSharingController extends Controller {
 	 * Constructor for the CaseSharingController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param CaseSharingService $caseSharingService The sharing service
-	 * @param CaseTransferService $caseTransferService The transfer service
+	 * @param CaseSharingServiceInterface $caseSharingService The sharing service
+	 * @param CaseTransferServiceInterface $caseTransferService The transfer service
 	 * @param IUserSession $userSession The user session
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private CaseSharingService $caseSharingService,
-		private CaseTransferService $caseTransferService,
+		private CaseSharingServiceInterface $caseSharingService,
+		private CaseTransferServiceInterface $caseTransferService,
 		private IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -80,7 +80,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function createShare(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -95,11 +95,7 @@ class CaseSharingController extends Controller {
 		}
 
 		if ($this->request->getParam('shareType', 'token') === 'partner') {
-			return $this->partnerShare(
-				caseId: $caseId,
-				permissionLevel: (string)$this->request->getParam('permissionLevel', 'bekijken'),
-				createdBy: $user->getUID(),
-			);
+			return $this->partnerShare(caseId: $caseId, user: $user);
 		}
 
 		return $this->tokenShare(caseId: $caseId, user: $user);
@@ -151,7 +147,7 @@ class CaseSharingController extends Controller {
 			label: (string)$this->request->getParam('label', ''),
 			createdBy: $user->getUID(),
 			expiresAt: $this->request->getParam('expiresAt'),
-			capabilities: $this->asList(value: $this->request->getParam('capabilities'), fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
+			capabilities: $this->asList(value: $this->request->getParam('capabilities'), fallback: CaseAccessLinkServiceInterface::DEFAULT_CAPABILITIES),
 			password: $this->optionalText(value: $this->request->getParam('password')),
 			sharedDocuments: $this->asList(value: $this->request->getParam('sharedDocuments'), fallback: []),
 		);
@@ -166,15 +162,16 @@ class CaseSharingController extends Controller {
 	/**
 	 * Share a case with a partner organisation, or say why it did not leave.
 	 *
-	 * @param string $caseId          The case.
-	 * @param string $permissionLevel What the partner may do.
-	 * @param string $createdBy       Who is sharing it.
+	 * @param string $caseId The case.
+	 * @param IUser  $user   Who is sharing it.
 	 *
 	 * @return JSONResponse The share, or the refusal.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-partner-organisation-handover-is-out-of-scope-for-the-shares-leaf
 	 */
-	private function partnerShare(string $caseId, string $permissionLevel, string $createdBy): JSONResponse {
+	private function partnerShare(string $caseId, IUser $user): JSONResponse {
+		$permissionLevel = (string)$this->request->getParam('permissionLevel', 'bekijken');
+		$createdBy = $user->getUID();
 		$partnerId = $this->request->getParam('partnerId');
 		if (empty($partnerId) === true) {
 			return new JSONResponse(
@@ -258,7 +255,7 @@ class CaseSharingController extends Controller {
 	 */
 	private function refusedMint(array $share): JSONResponse {
 		$status = Http::STATUS_BAD_GATEWAY;
-		if (($share['reason'] ?? '') === CaseLinkShares::REASON_NOT_CONFIGURED) {
+		if (($share['reason'] ?? '') === CaseLinkSharesInterface::REASON_NOT_CONFIGURED) {
 			$status = Http::STATUS_SERVICE_UNAVAILABLE;
 		}
 
@@ -325,7 +322,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function revokeShare(string $shareId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -357,7 +354,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function initiateTransfer(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -392,7 +389,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse The transfer, or the 502 when it could not start.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function startTransfer(mixed $caseId, IUser $user): JSONResponse {
 		$transfer = $this->caseTransferService->initiateTransfer(
@@ -436,7 +433,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleTransfer(string $transferId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -467,7 +464,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The outcome, or null for any other action.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function decideTransfer(string $transferId, IUser $user): ?array {
 		return match ($this->request->getParam('action')) {
@@ -488,7 +485,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function transferAnswer(?array $result): JSONResponse {
 		if ($result === null) {

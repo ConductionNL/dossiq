@@ -107,6 +107,7 @@ class AwbScanObjectService {
  * Golden test for AwbProceedingScanner::scan.
  *
  * @covers \OCA\Dossiq\Command\Backfill\AwbProceedingScanner
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class AwbProceedingScannerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

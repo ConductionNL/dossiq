@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -33,15 +33,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Assembles a person's queue out of the declared sources.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class PersonalQueueService {
+class PersonalQueueService implements PersonalQueueServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -57,7 +58,7 @@ class PersonalQueueService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly QueueSourceCatalogue $catalogue,
@@ -76,7 +77,7 @@ class PersonalQueueService {
 	 *
 	 * @return array<string, mixed> The queue: items, groups, unavailable sources and the reader's view settings.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function forPerson(string $userId, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -151,7 +152,7 @@ class PersonalQueueService {
 
 		return [
 			'items' => $ordered,
-			'groups' => $this->group(items: $ordered, groupBy: $groupBy, closings: $run->closings),
+			'groups' => $this->group(items: $ordered, grouping: ['by' => $groupBy, 'closings' => $run->closings]),
 			'groupBy' => $groupBy,
 			'hiddenGroups' => $hidden,
 			'unavailable' => $run->unavailable,
@@ -185,7 +186,7 @@ class PersonalQueueService {
 	 *
 	 * @return bool TRUE when the item should not be shown.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function hasClosed(QueueItem $item, string $userId): bool {
 		if ($item->subject === []) {
@@ -202,15 +203,16 @@ class PersonalQueueService {
 	 * that lands in it, so the most pressing work is in the first group and
 	 * the reader does not have to scan four headings to find it.
 	 *
-	 * @param array<int, array<string, mixed>>  $items    The ordered items.
-	 * @param string                            $groupBy  One of QueueViewPreferences::GROUPINGS.
-	 * @param array<string, array<string, string>> $closings Source name to its label and closing sentence.
+	 * @param array<int, array<string, mixed>>                                    $items    The ordered items.
+	 * @param array{by: string, closings: array<string, array<string, string>>} $grouping One of QueueViewPreferences::GROUPINGS,
+	 *                                                                                    and source name to its label and closing sentence.
 	 *
 	 * @return array<int, array<string, mixed>> The groups, in queue order.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function group(array $items, string $groupBy, array $closings): array {
+	private function group(array $items, array $grouping): array {
+		['by' => $groupBy, 'closings' => $closings] = $grouping;
 		$groups = [];
 
 		foreach ($items as $item) {
@@ -238,7 +240,7 @@ class PersonalQueueService {
 	 *
 	 * @return string The group key.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function groupKeyOf(array $item, string $groupBy): string {
 		if ($groupBy === 'priority') {

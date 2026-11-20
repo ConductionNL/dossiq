@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use RuntimeException;
 
 /**
@@ -47,11 +47,11 @@ class PublicationSources {
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settingsService The case, decision, assessment and document schemas.
-	 * @param WooCaseDocuments|null $caseDocuments   Loads a case document with its file content.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments   Loads a case document with its file content.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooCaseDocumentsInterface $caseDocuments = null,
 	) {
 	}//end __construct()
 
@@ -116,20 +116,48 @@ class PublicationSources {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function delivery(object $objectService, string $register, string $caseId): array {
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		$documentSchema = $this->settingsService->getConfigValue('document_schema');
+		$location = [$objectService, $register];
+		$assessments = $this->assessmentsOf(location: $location, caseId: $caseId);
 
-		$assessments = [];
-		if (empty($assessmentSchema) === false) {
-			$assessments = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $assessmentSchema,
-				filters: ['caseRef' => $caseId, '_limit' => 500],
-			);
+		$documentLoader = $this->documentLoader(location: $location);
+
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
+	}//end delivery()
+
+	/**
+	 * The WOO assessments of a case, or none when no assessment schema is configured.
+	 *
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the dossiq register slug.
+	 * @param string                      $caseId   The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The assessments.
+	 */
+	private function assessmentsOf(array $location, string $caseId): array {
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if (empty($assessmentSchema) === true) {
+			return [];
 		}
 
-		$documentLoader = function (string $documentRef) use ($objectService, $register, $documentSchema): ?array {
+		return $this->searchObjectsAsArrays(
+			objectService: $location[0],
+			register: $location[1],
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, '_limit' => 500],
+		);
+	}//end assessmentsOf()
+
+	/**
+	 * Load one document by reference: the case upload's informatieobject, else the configured document schema's row.
+	 *
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the dossiq register slug.
+	 *
+	 * @return callable(string): (array<string, mixed>|null) The loader.
+	 */
+	private function documentLoader(array $location): callable {
+		[$objectService, $register] = $location;
+		$documentSchema = $this->settingsService->getConfigValue('document_schema');
+
+		return function (string $documentRef) use ($objectService, $register, $documentSchema): ?array {
 			// The informatieobject the case upload wrote, with its file read in.
 			if ($this->caseDocuments !== null) {
 				return $this->caseDocuments->load(documentId: $documentRef);
@@ -141,9 +169,7 @@ class PublicationSources {
 
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
-
-		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
-	}//end delivery()
+	}//end documentLoader()
 
 	/**
 	 * The disclosable documents and, beside each, what the delivered set records of it.
@@ -161,7 +187,7 @@ class PublicationSources {
 	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function collectDelivery(array $assessments, callable $documentLoader): array {
 		$documents = [];

@@ -30,6 +30,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\MandaatEscalatieService
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
  */
 class MandaatEscalatieServiceTest extends TestCase {
 

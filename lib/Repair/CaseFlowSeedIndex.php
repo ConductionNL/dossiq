@@ -32,8 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\DemoDataService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\SerialisedRows;
 use RuntimeException;
 use Throwable;
 
@@ -46,10 +47,10 @@ class CaseFlowSeedIndex {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService and reads the seed markers.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService and reads the seed markers.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 
@@ -69,7 +70,7 @@ class CaseFlowSeedIndex {
 	 * @spec openspec/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
 	 */
 	public function casesDue(array $data): bool {
-		if ($this->settingsService->getConfigValue(key: DemoDataService::DECIDED_KEY) !== DemoDataService::DECIDED_INSTALLED) {
+		if ($this->settingsService->getConfigValue(key: DemoDataServiceInterface::DECIDED_KEY) !== DemoDataServiceInterface::DECIDED_INSTALLED) {
 			return false;
 		}
 
@@ -111,18 +112,12 @@ class CaseFlowSeedIndex {
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function caseTypeBySlug(array $schemas, string $slug): ?array {
-		$rows = $this->rows(
+		return $this->firstRow(
 			query: [
 				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType'], 'slug' => $slug],
 				'_limit' => 5,
 			]
 		);
-
-		if ($rows === []) {
-			return null;
-		}
-
-		return $rows[0];
 	}//end caseTypeBySlug()
 
 	/**
@@ -136,20 +131,31 @@ class CaseFlowSeedIndex {
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTypeByTitle(array $schemas, string $title): ?array {
-		$rows = $this->rows(
+		return $this->firstRow(
 			query: [
 				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType']],
 				'title' => $title,
 				'_limit' => 5,
 			]
 		);
+	}//end caseTypeByTitle()
+
+	/**
+	 * The first row a query finds, or null.
+	 *
+	 * @param array<string,mixed> $query The query.
+	 *
+	 * @return array<string,mixed>|null The row, or null.
+	 */
+	private function firstRow(array $query): ?array {
+		$rows = $this->rows(query: $query);
 
 		if ($rows === []) {
 			return null;
 		}
 
 		return $rows[0];
-	}//end caseTypeByTitle()
+	}//end firstRow()
 
 	/**
 	 * The titles of cases already seeded for this case type.
@@ -227,17 +233,6 @@ class CaseFlowSeedIndex {
 			return [];
 		}
 
-		$out = [];
-		foreach ($value as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
+		return (new SerialisedRows())->arrays(rows: $value);
 	}//end normalise()
 }//end class

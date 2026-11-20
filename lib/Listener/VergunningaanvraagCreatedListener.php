@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -75,13 +75,13 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The application config service
-	 * @param DsoCaseService $dsoCaseService The DSO case service
+	 * @param DsoCaseServiceInterface $dsoCaseService The DSO case service
 	 * @param LoggerInterface $logger The logger
 	 * @param BackgroundServiceAccount $serviceAccount Writes when nobody is signed in
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
-		private readonly DsoCaseService $dsoCaseService,
+		private readonly DsoCaseServiceInterface $dsoCaseService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -129,7 +129,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		if (isset(self::$processedIds[$objectId]) === true) {
 			$this->logger->info(
 				'Dossiq DSO listener: skipping duplicate event for vergunningaanvraag ' . $objectId,
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return true;
 		}
@@ -158,7 +158,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			$this->logger->info(
 				'Dossiq DSO listener: zaak created for vergunningaanvraag',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'objectId' => $objectId,
 				]
 			);
@@ -182,7 +182,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		$this->logger->error(
 			'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $exception->getMessage(),
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'objectId' => $objectId,
 				'exception' => $exception->getMessage(),
 			]
@@ -208,7 +208,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		if ($objectId === '') {
 			$this->logger->warning(
 				'Dossiq DSO listener: event for vergunningaanvraag schema but no object id found',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return '';
 		}
@@ -234,7 +234,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		}
 
 		$configuredSchemaId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'dso_vergunningaanvraag_schema',
 			default: ''
 		);

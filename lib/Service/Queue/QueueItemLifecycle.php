@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Queue;
 /**
  * Decides whether a queue item still stands.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class QueueItemLifecycle {
 	/**
@@ -67,7 +67,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return string|null One of CLOSING_REASONS, or null when the item still stands.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closingReason(QueueItem $item, ?array $subject, string $userId): ?string {
 		if ($subject === null) {
@@ -78,7 +78,7 @@ class QueueItemLifecycle {
 			return 'done';
 		}
 
-		if ($this->isStillOwedBy(item: $item, subject: $subject, userId: $userId) === false) {
+		if ($this->isStillOwedBy(item: $item, claim: ['owner' => trim((string)($subject['assignee'] ?? '')), 'reader' => $userId]) === false) {
 			return 'taken-over';
 		}
 
@@ -94,7 +94,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return bool TRUE while the work is still waiting on them.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function stillStands(QueueItem $item, ?array $subject, string $userId): bool {
 		return ($this->closingReason(item: $item, subject: $subject, userId: $userId) === null);
@@ -112,7 +112,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return array{removed: bool, reason: string|null, offer: string|null} What the queue does.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function onRemoveRequested(QueueItem $item, ?array $subject, string $userId): array {
 		$reason = $this->closingReason(item: $item, subject: $subject, userId: $userId);
@@ -134,7 +134,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return bool TRUE when the subject is finished.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function isDone(array $subject): bool {
 		if (($subject['isFinalStatus'] ?? false) === true) {
@@ -159,16 +159,15 @@ class QueueItemLifecycle {
 	 * colleague, so the plain assignee comparison would close every covered
 	 * item the moment it appeared.
 	 *
-	 * @param QueueItem            $item    The item.
-	 * @param array<string, mixed> $subject The subject.
-	 * @param string               $userId  The person whose queue this is.
+	 * @param QueueItem                             $item  The item.
+	 * @param array{owner: string, reader: string} $claim The subject's trimmed assignee, and the person whose queue this is.
 	 *
 	 * @return bool TRUE when the work is still theirs.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function isStillOwedBy(QueueItem $item, array $subject, string $userId): bool {
-		$owner = trim((string)($subject['assignee'] ?? ''));
+	private function isStillOwedBy(QueueItem $item, array $claim): bool {
+		$owner = $claim['owner'];
 		if ($owner === '') {
 			// Nothing names an owner, so nothing says it was taken over. A
 			// mention is the everyday case: it names a reader, not an owner.
@@ -179,6 +178,6 @@ class QueueItemLifecycle {
 			return ($owner === $item->coveredFor);
 		}
 
-		return ($owner === $userId);
+		return ($owner === $claim['reader']);
 	}//end isStillOwedBy()
 }//end class

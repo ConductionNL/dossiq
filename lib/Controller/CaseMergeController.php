@@ -29,15 +29,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,9 +51,11 @@ use OCP\IUserSession;
 /**
  * Merge one case into another.
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+ * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
 class CaseMergeController extends Controller {
+	use AnswersSignedOutCallers;
+
 	/**
 	 * The status each refusal answers with.
 	 *
@@ -74,16 +77,16 @@ class CaseMergeController extends Controller {
 	 *
 	 * @param string           $appName         The app name.
 	 * @param IRequest         $request         The HTTP request.
-	 * @param CaseMergeService $mergeService    The rules, and the ask.
-	 * @param CaseAccessGuard  $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseMergeServiceInterface $mergeService    The rules, and the ask.
+	 * @param CaseAccessGuardInterface  $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession     $userSession     The current session.
 	 * @param IL10N            $l10n            The translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseMergeService $mergeService,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseMergeServiceInterface $mergeService,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
@@ -99,16 +102,13 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return JSONResponse The merge operation, or the rule that refused it.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	#[NoAdminRequired]
 	public function merge(string $caseId, string $into = '', string $reason = ''): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->mayChangeBoth(user: $user, cases: [$caseId, $into]) === false) {
@@ -144,7 +144,7 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function mayChangeBoth(IUser $user, array $cases): bool {
 		foreach ($cases as $subject) {
@@ -163,7 +163,7 @@ class CaseMergeController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function mergeRefused(string $rule): JSONResponse {
 		return new JSONResponse(

@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TakeBackWindowInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Routing\TakeBackWindow;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
@@ -76,15 +76,15 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService $settingsService Names the case schema and holds the object service.
-	 * @param TakeBackWindow  $window          Cancels the take-back timer.
+	 * @param SettingsServiceInterface $settingsService Names the case schema and holds the object service.
+	 * @param TakeBackWindowInterface  $window          Cancels the take-back timer.
 	 * @param IUserSession    $userSession     Who saved.
 	 * @param ITimeFactory    $time            Now.
 	 * @param LoggerInterface $logger          Logs a failed stamp.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TakeBackWindow $window,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TakeBackWindowInterface $window,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
@@ -108,7 +108,7 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 			}
 
 			$routing = $saved['routing'] ?? null;
-			if (is_array($routing) === false || $this->accepts(saved: $saved, routing: $routing, before: $this->previousObject(event: $event)) === false) {
+			if (is_array($routing) === false || $this->accepts(saved: $saved, before: $this->previousObject(event: $event)) === false) {
 				return;
 			}
 
@@ -121,13 +121,13 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 	/**
 	 * Whether this save is the routed person's first status move or edit.
 	 *
-	 * @param array<string, mixed>      $saved   The saved case.
-	 * @param array<string, mixed>      $routing Its routing record.
-	 * @param array<string, mixed>|null $before  The case before the save.
+	 * @param array<string, mixed>      $saved  The saved case, with its routing record as `routing`.
+	 * @param array<string, mixed>|null $before The case before the save.
 	 *
 	 * @return bool
 	 */
-	private function accepts(array $saved, array $routing, ?array $before): bool {
+	private function accepts(array $saved, ?array $before): bool {
+		$routing = $saved['routing'];
 		$routedTo = (string) ($routing['routedTo'] ?? '');
 		if ($routedTo === '' || trim((string) ($routing['acceptedAt'] ?? '')) !== '' || $before === null) {
 			return false;

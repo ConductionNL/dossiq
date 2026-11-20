@@ -28,10 +28,12 @@ use PHPUnit\Framework\TestCase;
  * Each package, and its record import over every shipped record of its procedure.
  *
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  */
 class SocialDomainCaseTypesTest extends TestCase {
 	use MakesCaseDateNormaliser;

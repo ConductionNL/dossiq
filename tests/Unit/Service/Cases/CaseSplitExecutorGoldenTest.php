@@ -41,6 +41,8 @@ use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for CaseSplitExecutor.
@@ -96,7 +98,11 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (in_array($schema, ($this->knobs['findThrows'] ?? []), true) === true) {
 					throw new RuntimeException('find failed on ' . $schema);
@@ -141,7 +147,10 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored row, or what the world answers.
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->calls[] = ['save', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				$key = $schema . '|' . ($uuid ?? 'new');
 				if (in_array($key, ($this->knobs['saveThrows'] ?? []), true) === true) {

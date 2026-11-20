@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
-use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCA\OpenRegister\Service\Flow\ICallFlowNode;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
@@ -47,7 +47,7 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-abstract class DossiqFlowNodeBase implements IFlowNode {
+abstract class DossiqFlowNodeBase implements ICallFlowNode {
 
 
     /**

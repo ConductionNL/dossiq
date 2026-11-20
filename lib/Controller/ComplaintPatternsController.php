@@ -28,10 +28,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
-use OCA\Dossiq\Service\Complaint\ComplaintPatterns;
-use OCA\Dossiq\Service\Complaint\ComplaintPatternsPdf;
+use OCA\Dossiq\Kernel\Contracts\ComplaintPatternsInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintPatternsPdfInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCA\Dossiq\Service\Complaint\QuarterPeriod;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,18 +60,18 @@ class ComplaintPatternsController extends Controller {
 	 * @param IRequest             $request     Request.
 	 * @param IUserSession         $userSession User session.
 	 * @param LoggerInterface      $logger      Logger.
-	 * @param ReportingAudience    $audience    Who may read a figure about every case.
-	 * @param ComplaintPatterns    $patterns    The patterns of a quarter.
-	 * @param ComplaintPatternsPdf $pdf         The patterns as a PDF report.
+	 * @param ReportingAudienceInterface    $audience    Who may read a figure about every case.
+	 * @param ComplaintPatternsInterface    $patterns    The patterns of a quarter.
+	 * @param ComplaintPatternsPdfInterface $pdf         The patterns as a PDF report.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ReportingAudience $audience,
-		private readonly ComplaintPatterns $patterns,
-		private readonly ComplaintPatternsPdf $pdf,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly ComplaintPatternsInterface $patterns,
+		private readonly ComplaintPatternsPdfInterface $pdf,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

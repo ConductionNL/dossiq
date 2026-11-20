@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionImportServiceInterface;
 use OCA\Dossiq\Service\CaseDefinition\PackageImport;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
@@ -46,9 +47,7 @@ use ZipArchive;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseDefinitionImportService {
-
-
+class CaseDefinitionImportService implements CaseDefinitionImportServiceInterface {
 
 	/**
 	 * The collections each component carries, in write order.
@@ -98,12 +97,11 @@ class CaseDefinitionImportService {
 	 *
 	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validatePackage(string $zipPath): array {
 		return $this->validator->validatePackage(zipPath: $zipPath);
 	}//end validatePackage()
-
 
 	/**
 	 * Import a case definition package.
@@ -115,7 +113,7 @@ class CaseDefinitionImportService {
 	 *
 	 * @throws \RuntimeException If import fails.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function importCaseDefinition(
 		string $zipPath,
@@ -333,35 +331,5 @@ class CaseDefinitionImportService {
 			'message' => $message,
 		];
 	}//end componentResult()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }//end class

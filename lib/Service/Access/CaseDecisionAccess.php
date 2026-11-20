@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDecisionAccessInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 
@@ -36,12 +37,7 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-decision-on-a-cases-file-is-changed-by-its-decider-or-a-supervisor-of-that-case-req-cra-006
  */
-class CaseDecisionAccess {
-
-	/**
-	 * The refusal reason handed to OpenRegister.
-	 */
-	public const REFUSAL = 'case-supervisor-required';
+class CaseDecisionAccess implements CaseDecisionAccessInterface {
 
 	/**
 	 * The field on a case document that holds the document.
@@ -140,13 +136,19 @@ class CaseDecisionAccess {
 			return [$case];
 		}
 
+		return $this->casesLinkedTo(objectUuid: $objectUuid);
+	}//end casesOf()
+
+	/**
+	 * The cases a document is linked to, each once, in link order.
+	 *
+	 * @param string $objectUuid The document's uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function casesLinkedTo(string $objectUuid): array {
 		$cases = [];
-		$links = $this->lookup->rowsOf(
-			schema: $this->settingsService->getConfigValue('case_document_schema'),
-			field: self::DOCUMENT_FIELD,
-			caseId: $objectUuid
-		);
-		foreach ($links as $link) {
+		foreach ($this->documentLinks(objectUuid: $objectUuid) as $link) {
 			$caseId = $this->caseTypes->referenceId(value: ($link[self::CASE_FIELD] ?? ''));
 			if ($caseId === '' || isset($cases[$caseId]) === true) {
 				continue;
@@ -159,5 +161,20 @@ class CaseDecisionAccess {
 		}
 
 		return array_values($cases);
-	}//end casesOf()
+	}//end casesLinkedTo()
+
+	/**
+	 * The case-document link rows of a document.
+	 *
+	 * @param string $objectUuid The document's uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The link rows.
+	 */
+	private function documentLinks(string $objectUuid): array {
+		return $this->lookup->rowsOf(
+			schema: $this->settingsService->getConfigValue('case_document_schema'),
+			field: self::DOCUMENT_FIELD,
+			caseId: $objectUuid
+		);
+	}//end documentLinks()
 }//end class

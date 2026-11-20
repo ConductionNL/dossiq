@@ -51,6 +51,7 @@
 
 <script>
 import { NcButton, NcDialog, NcSelect } from '@nextcloud/vue'
+import { caseShareDialog } from '../mixins/caseShareDialog.js'
 
 export default {
 	name: 'CreateShareDialog',
@@ -60,17 +61,9 @@ export default {
 		NcSelect,
 	},
 
+	mixins: [caseShareDialog],
+
 	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
-		caseId: {
-			type: String,
-			required: true,
-		},
-
 		partners: {
 			type: Array,
 			default: () => [],
@@ -80,7 +73,6 @@ export default {
 	emits: ['update:open', 'created'],
 	data() {
 		return {
-			saving: false,
 			form: {
 				permissionLevel: {
 					value: 'bekijken',
@@ -109,20 +101,15 @@ export default {
 		 * Emit a partner-organisation share payload. Public token links are
 		 * handled by the OR shares leaf, not here.
 		 *
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.2
 		 */
 		async createShare() {
-			this.saving = true
-			try {
-				this.$emit('created', {
-					caseId: this.caseId,
-					shareType: 'partner',
-					permissionLevel: this.form.permissionLevel?.value || 'bekijken',
-					partnerId: this.form.partnerId?.id,
-				})
-			} finally {
-				this.saving = false
-			}
+			this.emitWhileSaving('created', {
+				caseId: this.caseId,
+				shareType: 'partner',
+				permissionLevel: this.form.permissionLevel?.value || 'bekijken',
+				partnerId: this.form.partnerId?.id,
+			})
 		},
 	},
 }

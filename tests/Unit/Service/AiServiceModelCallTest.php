@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\AiService
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Ai\AiModelRequest
  */
 class AiServiceModelCallTest extends TestCase {
 

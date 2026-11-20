@@ -30,6 +30,8 @@ use OCA\Integriq\Event\DeliveryConcludedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins every find, save and log line of a concluded delivery.
@@ -108,7 +110,9 @@ class DeliveryConcludedListenerGoldenTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->trace->append(['find', $id, $register, $schema]);
 				if ($this->case === 'throw') {
 					throw new RuntimeException('store down');
@@ -124,7 +128,9 @@ class DeliveryConcludedListenerGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->trace->append(['save', $register, $schema, $object]);
 				if ($this->saveThrows === true) {
 					throw new RuntimeException('save refused');

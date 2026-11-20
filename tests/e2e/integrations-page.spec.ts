@@ -58,6 +58,8 @@ const SEEDED_KEYS = [
 	'pdok',
 	'berichtenbox',
 	'templates',
+	'smartdocuments',
+	'xential',
 ]
 
 /**
@@ -82,7 +84,7 @@ const UNAVAILABLE_KEYS = ['kvk']
 const DORMANT_KEYS = ['brp']
 
 /** Declared without a settings section. */
-const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
+const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates', 'smartdocuments', 'xential']
 
 /** Integriq's objects endpoint for dossiq's connection rows. */
 const CONNECTIONS_API =

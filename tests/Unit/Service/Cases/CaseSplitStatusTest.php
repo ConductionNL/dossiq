@@ -40,6 +40,9 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A split opens the second case the way OpenRegister lets a handler create
@@ -61,6 +64,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseSplitStatusTest extends TestCase {
 
@@ -139,12 +143,15 @@ class CaseSplitStatusTest extends TestCase {
 			 *
 			 * @return bool True when a row was removed.
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$register = $deletion->target->register ?? '';
+				$schema = $deletion->target->schema ?? '';
+				$uuid = $deletion->uuid ?? '';
 				if ($schema === 'case' && $this->mayDeleteCases === false) {
 					throw new RuntimeException("User 'jan' does not have permission to 'delete' objects in schema 'case'");
 				}
 
-				return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+				return parent::deleteObject(new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $schema)));
 			}
 
 			/**
@@ -161,14 +168,15 @@ class CaseSplitStatusTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($schema !== 'case') {
-					return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac);
+					return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac);
 				}
 
 				$this->rbac[] = $_rbac;
@@ -194,7 +202,7 @@ class CaseSplitStatusTest extends TestCase {
 					$object['status'] = $initial;
 				}
 
-				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac);
+				$saved = parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac);
 				$this->states[(string)$saved['id']][] = (string)($saved['status'] ?? '');
 
 				return $saved;

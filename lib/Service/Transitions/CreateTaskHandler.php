@@ -52,6 +52,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CreateTaskHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WorkingDayCalculator;
@@ -62,9 +63,9 @@ use Throwable;
 /**
  * Built-in handler for `createTask` automatic actions.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T08
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
-class CreateTaskHandler implements ActionHandlerInterface {
+class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInterface {
 	/**
 	 * Constructor.
 	 *
@@ -171,10 +172,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// available|active|completed|terminated|disabled). Writing 'open'
 			// produced an object no transition could advance.
 			'status' => 'available',
-			'assignee' => $this->resolveAssignee(actionConfig: $actionConfig, case: $action->case, title: $title),
+			'assignee' => $this->resolveAssignee(action: $action, title: $title),
 		];
 
-		$task = $this->withTeamAndStep(task: $task, actionConfig: $actionConfig, case: $action->case);
+		$task = $this->withTeamAndStep(task: $task, action: $action);
 
 		return $this->declared(task: $task, actionConfig: $actionConfig);
 	}//end taskFor()
@@ -233,15 +234,15 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	/**
 	 * The case's team and the status that asked for the task, when there are any.
 	 *
-	 * @param array<string, mixed> $task         The task being built.
-	 * @param array<string, mixed> $actionConfig The action.
-	 * @param array<string, mixed> $case         The case.
+	 * @param array<string, mixed> $task   The task being built.
+	 * @param TaskAction           $action The action and its case.
 	 *
 	 * @return array<string, mixed> The task.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function withTeamAndStep(array $task, array $actionConfig, array $case): array {
+	private function withTeamAndStep(array $task, TaskAction $action): array {
+		$actionConfig = $action->actionConfig;
 		// The team is not a second guess at the person: a case can carry a
 		// team, a personal assignee, or both, and the task schema has a
 		// field for each. Carrying the case's team over is what keeps a
@@ -250,7 +251,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 		// Read through the resolver, never a (string) cast: an expanded
 		// read of the old $ref casts to the literal "Array" and writes a
 		// team that resolves to nothing (one-team-model: a group id now).
-		$team = $this->assignees->resolveTeam(case: $case);
+		$team = $this->assignees->resolveTeam(case: $action->case);
 		if ($team !== '') {
 			$task['assigneeGroup'] = $team;
 		}
@@ -314,6 +315,20 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
 		}
 
+		return $this->takenResult(taken: $taken, onceKey: $onceKey);
+	}//end addedBefore()
+
+	/**
+	 * The result for what the engine said about a once-key, or null to go on.
+	 *
+	 * @param mixed  $taken   True when added before, false when not, anything else when unknown.
+	 * @param string $onceKey The task's once-key.
+	 *
+	 * @return ActionResult|null
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function takenResult(mixed $taken, string $onceKey): ActionResult|null {
 		if ($taken === false) {
 			return null;
 		}
@@ -328,7 +343,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 		);
 
 		return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
-	}//end addedBefore()
+	}//end takenResult()
 
 	/**
 	 * Apply the case type's per-task declaration to the task being created.
@@ -358,7 +373,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The task, with the declaration applied.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declared(array $task, array $actionConfig): array {
 		$declaration = ($actionConfig['declaration'] ?? null);
@@ -399,7 +414,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The metadata, empty when nothing is declared.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private static function declaredMetadata(array $declaration): array {
 		$metadata = [];
@@ -428,7 +443,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The ISO date-time, or '' when nothing declares one.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declaredDueDate(array $declaration, array $task): string {
 		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
@@ -507,16 +522,17 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * task and SAYS SO, which is a defined outcome rather than a silent empty
 	 * string.
 	 *
-	 * @param array<string, mixed> $actionConfig The action configuration.
-	 * @param array<string, mixed> $case         The case.
-	 * @param string               $title        The task title, for the log line.
+	 * @param TaskAction $action The action configuration and its case.
+	 * @param string     $title  The task title, for the log line.
 	 *
 	 * @return string The principal, or '' when nothing names one.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
+	private function resolveAssignee(TaskAction $action, string $title): string {
+		$actionConfig = $action->actionConfig;
+		$case = $action->case;
 		$assignee = $this->assignees->resolve(
 			primary: (string)($actionConfig['assignee'] ?? ''),
 			fallback: (string)($actionConfig['assigneeFallback'] ?? ''),

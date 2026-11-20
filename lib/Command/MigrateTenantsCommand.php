@@ -27,15 +27,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\SatelliteOrphanScanner;
-use OCA\Dossiq\Service\TenantMigrationService;
+use OCA\Dossiq\Kernel\Contracts\SatelliteOrphanScannerInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantMigrationServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -44,18 +44,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Migrate legacy dossiq `tenant` objects to OR Organisations.
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
 class MigrateTenantsCommand extends Command {
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param TenantMigrationService  $migrationService Tenant → Organisation migrator.
-	 * @param SatelliteOrphanScanner  $orphanScanner    Read-only audit of the five satellites.
+	 * @param TenantMigrationServiceInterface  $migrationService Tenant → Organisation migrator.
+	 * @param SatelliteOrphanScannerInterface  $orphanScanner    Read-only audit of the five satellites.
 	 */
 	public function __construct(
-		private readonly TenantMigrationService $migrationService,
-		private readonly SatelliteOrphanScanner $orphanScanner,
+		private readonly TenantMigrationServiceInterface $migrationService,
+		private readonly SatelliteOrphanScannerInterface $orphanScanner,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -65,7 +65,7 @@ class MigrateTenantsCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-tenants')
@@ -85,7 +85,7 @@ class MigrateTenantsCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
@@ -125,10 +125,10 @@ class MigrateTenantsCommand extends Command {
 	 */
 	private function modeFor(bool $dryRun): string {
 		if ($dryRun === true) {
-			return TenantMigrationService::MODE_PREVIEW;
+			return TenantMigrationServiceInterface::MODE_PREVIEW;
 		}
 
-		return TenantMigrationService::MODE_APPLY;
+		return TenantMigrationServiceInterface::MODE_APPLY;
 	}//end modeFor()
 
 	/**

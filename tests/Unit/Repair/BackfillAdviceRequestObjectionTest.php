@@ -22,6 +22,7 @@ use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Covers the backfill of `bacAdviceRequest.bezwaar`.
@@ -91,7 +92,11 @@ class BackfillAdviceRequestObjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->saves[] = ['uuid' => $objectId, 'object' => $data];
 
 				return $data;

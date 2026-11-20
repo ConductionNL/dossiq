@@ -45,8 +45,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
+use OCA\Dossiq\Service\Support\NormalisesObjectRows;
+use OCA\Dossiq\Service\Zgw\SchemaFilter;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
@@ -58,7 +61,9 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
-class KpiAggregationService {
+class KpiAggregationService implements KpiAggregationServiceInterface {
+	use NormalisesObjectRows;
+
 	/**
 	 * Upper bound on rows pulled for the metrics that must fold rows rather than
 	 * count them (the two breakdowns, and the processing-time average).
@@ -86,7 +91,7 @@ class KpiAggregationService {
 	 * belongs in no working list, count or report. A concept-zaak counted as
 	 * open work is a number a manager acts on for a case nobody has accepted.
 	 *
-	 * 🔴 0 AND NOT `false`. `countObjects()` documents it: a PHP bool reaches
+	 * 🔴 0 AND NOT `false`. `countCases()` documents it: a PHP bool reaches
 	 * PostgreSQL as a type it will not compare against the stored JSON and the
 	 * query throws.
 	 *
@@ -96,7 +101,7 @@ class KpiAggregationService {
 	 *
 	 * @var array<string, int>
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0, 'isDraft' => 0];
 
@@ -176,11 +181,10 @@ class KpiAggregationService {
 		$run->today = $run->now->format('Y-m-d');
 		$run->monthStart = $run->now->format('Y-m-01');
 		$run->monthEnd = $run->now->format('Y-m-t');
-		$run->closed = $this->closedThisMonth(ids: $ids, monthStart: $run->monthStart, monthEnd: $run->monthEnd);
+		$run->closed = $this->closedThisMonth(run: $run);
 		$run->openCases = $this->rows(
 			ids: $ids,
-			schema: $ids['case'],
-			filters: self::OPEN_WORK
+			query: new SchemaFilter(schema: $ids['case'], filters: self::OPEN_WORK)
 		);
 
 		return $run;
@@ -217,10 +221,9 @@ class KpiAggregationService {
 		$lastMonth = $run->now->modify('first day of last month');
 
 		return [
-			'myCompletedCount' => $this->myClosed(ids: $run->ids, userId: $run->userId, from: $run->monthStart, to: $run->monthEnd),
+			'myCompletedCount' => $this->myClosed(run: $run, from: $run->monthStart, to: $run->monthEnd),
 			'myCompletedLastMonth' => $this->myClosed(
-				ids: $run->ids,
-				userId: $run->userId,
+				run: $run,
 				from: $lastMonth->format('Y-m-d'),
 				to: $run->now->modify('last day of last month')->format('Y-m-d')
 			),
@@ -261,8 +264,8 @@ class KpiAggregationService {
 	 */
 	private function openWorkShape(KpiRun $run): array {
 		return [
-			'statusBreakdown' => $this->breakdown(rows: $run->openCases, field: 'status', label: 'status'),
-			'typeBreakdown' => $this->breakdown(rows: $run->openCases, field: 'caseType', label: 'type'),
+			'statusBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'status'), label: 'status'),
+			'typeBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'caseType'), label: 'type'),
 			'avgProcessingDays' => $this->averageProcessingDays(closed: $run->closed),
 			'slaCompliance' => $this->slaCompliance(closed: $run->closed),
 		];
@@ -276,13 +279,13 @@ class KpiAggregationService {
 	 * @return array<string, string> The titles; empty when the case type schema is not configured.
 	 */
 	private function caseTypeTitles(array $ids): array {
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 		if ($schema === '') {
 			return [];
 		}
 
 		$titles = [];
-		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
+		foreach ($this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])) as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
@@ -329,20 +332,7 @@ class KpiAggregationService {
 	}//end emptyKpis()
 
 	/**
-	 * Count cases matching a filter.
-	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param array $filters The filter criteria.
-	 *
-	 * @return int The count.
-	 */
-	private function countCases(array $ids, array $filters): int {
-		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
-	}//end countCases()
-
-
-	/**
-	 * Count objects of one schema, server-side.
+	 * Count cases matching a filter, server-side.
 	 *
 	 * 🔴 THE REGISTER AND SCHEMA GO INSIDE `filters`, NOT VIA setRegister(). With
 	 * only setRegister()/setSchema() the count IGNORES the filters entirely, and
@@ -353,13 +343,13 @@ class KpiAggregationService {
 	 * 🔴 BOOLEANS MUST BE 0/1, NOT true/false. A PHP bool reaches PostgreSQL as a
 	 * type it will not compare against the stored JSON and the query throws.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to count within.
+	 * @param array<string, string> $ids The register and schema ids; the cases are counted within `case`.
 	 * @param array $filters The filter criteria.
 	 *
 	 * @return int The count, or 0 when OpenRegister cannot answer.
 	 */
-	private function countObjects(array $ids, string $schema, array $filters): int {
+	private function countCases(array $ids, array $filters): int {
+		$schema = $ids['case'];
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return 0;
@@ -387,38 +377,43 @@ class KpiAggregationService {
 			);
 			return 0;
 		}
-	}//end countObjects()
+	}//end countCases()
 
 	/**
 	 * Fetch rows of one schema, bounded.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to read.
-	 * @param array $filters The filter criteria.
+	 * @param array<string, string> $ids   The register and schema ids.
+	 * @param SchemaFilter          $query The schema id to read and the filter criteria.
 	 *
 	 * @return array<int, array> The rows, as plain arrays.
 	 */
-	private function rows(array $ids, string $schema, array $filters): array {
+	private function rows(array $ids, SchemaFilter $query): array {
+		$schema = $query->schema;
+		$filters = $query->filters;
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters),
-					'limit' => self::FOLD_LIMIT,
-				]
-			);
+			$results = $objectService->findAll(['filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters), 'limit' => self::FOLD_LIMIT]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[KpiAggregationService] Read failed, reporting an empty set for this metric',
-				['schema' => $schema, 'exception' => $e->getMessage()]
-			);
+			$this->logger->warning('[KpiAggregationService] Read failed, reporting an empty set for this metric',
+				['schema' => $schema, 'exception' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->plainRows(results: $results);
+	}//end rows()
+
+	/**
+	 * The rows of a findAll answer, as plain arrays.
+	 *
+	 * @param mixed $results The findAll answer.
+	 *
+	 * @return array<int, array> The rows, as plain arrays.
+	 */
+	private function plainRows(mixed $results): array {
 		$found = ($results['results'] ?? $results);
 		if (is_array($found) === false) {
 			return [];
@@ -430,23 +425,22 @@ class KpiAggregationService {
 		}
 
 		return $rows;
-	}//end rows()
+	}//end plainRows()
 
 	/**
 	 * How many cases this user closed between two days, both included.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $userId The assignee.
+	 * @param KpiRun $run  The computation: the register and schema ids, and the assignee.
 	 * @param string $from The first day, Y-m-d.
-	 * @param string $to The last day, Y-m-d.
+	 * @param string $to   The last day, Y-m-d.
 	 *
 	 * @return int The count.
 	 */
-	private function myClosed(array $ids, string $userId, string $from, string $to): int {
+	private function myClosed(KpiRun $run, string $from, string $to): int {
 		return $this->countCases(
-			ids: $ids,
+			ids: $run->ids,
 			filters: [
-				'assignee' => $userId,
+				'assignee' => $run->userId,
 				'isFinalStatus' => 1,
 				'endDate' => ['gte' => $from, 'lte' => $to],
 			]
@@ -485,30 +479,29 @@ class KpiAggregationService {
 	/**
 	 * The cases that reached a final status during the current calendar month.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $monthStart First day of this month, as Y-m-d.
-	 * @param string $monthEnd Last day of this month, as Y-m-d.
+	 * @param KpiRun $run The computation: the register and schema ids, and this month's first and last day.
 	 *
 	 * @return array<int, array> The closed cases.
 	 */
-	private function closedThisMonth(array $ids, string $monthStart, string $monthEnd): array {
+	private function closedThisMonth(KpiRun $run): array {
 		return $this->rows(
-			ids: $ids,
-			schema: $ids['case'],
-			filters: ['endDate' => ['gte' => $monthStart, 'lte' => $monthEnd]]
+			ids: $run->ids,
+			query: new SchemaFilter(
+				schema: $run->ids['case'],
+				filters: ['endDate' => ['gte' => $run->monthStart, 'lte' => $run->monthEnd]]
+			)
 		);
 	}//end closedThisMonth()
 
 	/**
-	 * Group rows by one field, most frequent first.
+	 * How many rows carry each value of a field, most first; a row without it is not counted.
 	 *
-	 * @param array<int, array> $rows The rows to fold.
-	 * @param string $field The field to group on.
-	 * @param string $label The key the caller expects the value under.
+	 * @param array<int, array<string, mixed>> $rows  The rows.
+	 * @param string                           $field The field.
 	 *
-	 * @return array<int, array{count: integer}> The breakdown.
+	 * @return array<string, int> The count per value.
 	 */
-	private function breakdown(array $rows, string $field, string $label): array {
+	private static function countsBy(array $rows, string $field): array {
 		$counts = [];
 		foreach ($rows as $row) {
 			$value = (string)($row[$field] ?? '');
@@ -521,13 +514,25 @@ class KpiAggregationService {
 
 		arsort($counts);
 
+		return $counts;
+	}//end countsBy()
+
+	/**
+	 * The counts as rows, each value under the label.
+	 *
+	 * @param array<string, int> $counts The count per value.
+	 * @param string             $label  The key the value is given.
+	 *
+	 * @return array<int, array<string, mixed>> The breakdown.
+	 */
+	private static function labelled(array $counts, string $label): array {
 		$out = [];
 		foreach ($counts as $value => $count) {
 			$out[] = [$label => (string)$value, 'count' => $count];
 		}
 
 		return $out;
-	}//end breakdown()
+	}//end labelled()
 
 	/**
 	 * Mean days from start to end across the closed cases.
@@ -616,33 +621,6 @@ class KpiAggregationService {
 	}//end daysBetween()
 
 	/**
-	 * Normalise an OpenRegister object to a plain array.
-	 *
-	 * @param mixed $object The object entity or array.
-	 *
-	 * @return array The object's data.
-	 */
-	private function toArray(mixed $object): array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false) {
-			return [];
-		}
-
-		if (method_exists($object, 'getObject') === true) {
-			return (array)$object->getObject();
-		}
-
-		if (method_exists($object, 'jsonSerialize') === true) {
-			return (array)$object->jsonSerialize();
-		}
-
-		return [];
-	}//end toArray()
-
-	/**
 	 * The register and schema ids these metrics read.
 	 *
 	 * 🔴 `task_schema` IS DELIBERATELY ABSENT. It used to be required here,
@@ -654,8 +632,8 @@ class KpiAggregationService {
 	 */
 	private function ids(): ?array {
 		$ids = [
-			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
-			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
+			'register' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', ''),
+			'case' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {

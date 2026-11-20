@@ -47,17 +47,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DerivedStatusServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusDeclarationsInterface;
+use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
-use OCA\Dossiq\Service\Status\DerivedStatusService;
-use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Sets a case's status when the case type derives it.
@@ -67,6 +66,13 @@ use Throwable;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DerivedStatusListener implements IEventListener {
+	use ReadsCaseWrites;
+
+	/**
+	 * The check named in the log when a payload cannot be read.
+	 */
+	private const PAYLOAD_CHECK = 'the status derivation';
+
 
 	/**
 	 * The dwell bookkeeping a move settles, and the only keys of it this
@@ -89,16 +95,16 @@ class DerivedStatusListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settingsService Schema slug bridge.
-	 * @param DerivedStatusService $derived         Which status the case type derives.
-	 * @param StatusDeclarations   $declarations    The dwell bookkeeping a move carries.
+	 * @param SettingsServiceInterface      $settingsService Schema slug bridge.
+	 * @param DerivedStatusServiceInterface $derived         Which status the case type derives.
+	 * @param StatusDeclarationsInterface   $declarations    The dwell bookkeeping a move carries.
 	 * @param LoggerInterface      $logger          Structured logger.
 	 * @param DerivedStatusJournal|null $journal    Where a decided move waits for the save to land.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DerivedStatusService $derived,
-		private readonly StatusDeclarations $declarations,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DerivedStatusServiceInterface $derived,
+		private readonly StatusDeclarationsInterface $declarations,
 		private readonly LoggerInterface $logger,
 		private readonly ?DerivedStatusJournal $journal = null,
 	) {
@@ -150,12 +156,7 @@ class DerivedStatusListener implements IEventListener {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function casePayload(ObjectUpdatingEvent $event): ?array {
-		$payload = $this->payload(entity: $event->getNewObject());
-		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
-			return null;
-		}
-
-		return array_merge($payload, $event->getModifiedData());
+		return $this->caseAsSaved(event: $event, entity: $event->getNewObject());
 	}//end casePayload()
 
 	/**
@@ -218,37 +219,4 @@ class DerivedStatusListener implements IEventListener {
 			]
 		);
 	}//end recordMove()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: the status derivation could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `case` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return bool True when this is a case.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function isCaseSchema(array $object): bool {
-		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
-	}//end isCaseSchema()
 }//end class

@@ -27,15 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar
  */
 class CrossAppListenerRegistrarTest extends TestCase {
 
@@ -329,6 +329,7 @@ class CrossAppListenerRegistrarTest extends TestCase {
 			'portal withdrawal' => ['OCA\Dossiq\Listener\PortalClientWithdrawalListener', 'OCA\Portaliq\Event\PortalClientWithdrawalEvent'],
 			'portal contact channel' => ['OCA\Dossiq\Listener\PortalContactDetailsChangedListener', 'OCA\Portaliq\Event\PortalContactDetailsChangedEvent'],
 			'document generated' => ['OCA\Dossiq\Listener\DocumentGeneratedListener', 'OCA\Filinq\Event\DocumentGeneratedEvent'],
+			'signing concluded' => ['OCA\Dossiq\Listener\SigningConcludedListener', 'OCA\Filinq\Event\SigningConcludedEvent'],
 			'form submitted' => ['OCA\Dossiq\Listener\FormSubmittedListener', 'OCA\Forms\Events\FormSubmittedEvent'],
 		];
 	}//end crossAppEvents()

@@ -23,7 +23,7 @@
   the one that answers this fetch too. A handler who reached this dialog by
   hand sees the refusal, not the case.
 
-  @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -93,22 +93,15 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
+import { loadOnMount } from '../mixins/loadOnMount.js'
 
 export default {
 	name: 'CaseRawDataDialog',
 
 	components: { NcButton, CnDialog, ContentCopy, NcLoadingIcon },
 
-	props: {
-		/**
-		 * The case to show. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog, loadOnMount],
 
 	emits: ['close'],
 
@@ -124,21 +117,11 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The case this dialog reads.
-		 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
-	},
-
-	/**
-	 * Read the case as soon as the dialog is on screen.
-	 *
-	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
@@ -168,7 +151,7 @@ export default {
 		 * reader is here because something is already not adding up.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (!this.targetCaseId) {

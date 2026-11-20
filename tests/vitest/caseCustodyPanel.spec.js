@@ -428,3 +428,69 @@ describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
 		expect(wrapper.find('.case-custody__meta').text()).toContain(reasonKey)
 	})
 })
+
+describe('the Custody tab outside the happy path', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+		axios.get.mockImplementation((url) => {
+			if (String(url).endsWith('/takeovers')) {
+				return Promise.resolve({ data: { requests: [PENDING] } })
+			}
+
+			return Promise.resolve({ data: { holdings: HOLDINGS, open: HOLDINGS[1], total: 2 } })
+		})
+	})
+
+	it('reads nothing without a case, and stops loading', async () => {
+		const wrapper = await mountPanel('')
+
+		expect(axios.get).not.toHaveBeenCalled()
+		expect(wrapper.vm.loading).toBe(false)
+	})
+
+	it('keeps a refusal without a reason from being sent, and says why', async () => {
+		const wrapper = await mountPanel()
+		wrapper.vm.refusalReasons = { 't-1': '   ' }
+
+		await wrapper.vm.refuse(PENDING)
+
+		expect(axios.post).not.toHaveBeenCalled()
+		expect(wrapper.vm.error).toBe('Say why you are keeping the case, so the answer means something.')
+	})
+
+	it('sends a refusal with its trimmed reason', async () => {
+		axios.post.mockResolvedValue({ data: { ...PENDING, status: 'refused' } })
+		const wrapper = await mountPanel()
+		wrapper.vm.refusalReasons = { 't-1': '  Nog in behandeling  ' }
+
+		await wrapper.vm.refuse(PENDING)
+
+		expect(axios.post).toHaveBeenCalledTimes(1)
+		expect(String(axios.post.mock.calls[0][0])).toContain('/refuse')
+		expect(JSON.stringify(axios.post.mock.calls[0][1])).toContain('Nog in behandeling')
+		expect(JSON.stringify(axios.post.mock.calls[0][1])).not.toContain('  Nog')
+	})
+
+	it('shows a refused answer with the server message or a plain sentence, and stops answering', async () => {
+		const wrapper = await mountPanel()
+
+		axios.post.mockRejectedValueOnce({ response: { data: { message: 'The request was withdrawn.' } } })
+		await wrapper.vm.accept(PENDING)
+		expect(wrapper.vm.error).toBe('The request was withdrawn.')
+		expect(wrapper.vm.answering).toBe(false)
+
+		axios.post.mockRejectedValueOnce(new Error('offline'))
+		await wrapper.vm.accept(PENDING)
+		expect(wrapper.vm.error).toBe('We did not record the answer, so the case has not moved.')
+	})
+
+	it('writes no date for an empty value and an unreadable one as given', async () => {
+		const wrapper = await mountPanel()
+
+		expect(wrapper.vm.dateOf('')).toBe('')
+		expect(wrapper.vm.dateOf(null)).toBe('')
+		expect(wrapper.vm.dateOf('not a date')).toBe('not a date')
+		expect(wrapper.vm.momentOf('')).toBe('')
+		expect(wrapper.vm.momentOf('later')).toBe('later')
+	})
+})

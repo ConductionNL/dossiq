@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use RuntimeException;
 /**
  * Re-arming a case's running terms against another case type's definition.
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class TermRearm {
 
@@ -108,7 +108,7 @@ class TermRearm {
 	 *
 	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forDefinition(string $caseId, string $caseTypeSlug, string $reason): array {
 		$rebind  = new TermRebind(caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason);
@@ -194,7 +194,7 @@ class TermRearm {
 	 *
 	 * @return boolean True when the successor was created.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rearmOne(array $instance, TermRebind $rebind): bool {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -277,7 +277,7 @@ class TermRearm {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function replay(array $successor, array $carried): void {
 		$successorId = (string)($successor['id'] ?? '');
@@ -348,7 +348,7 @@ class TermRearm {
 	 *
 	 * @return string The moved date, or the calculated one when there is nothing to move.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function shifted(string $calculated, int $days): string {
 		if ($calculated === '' || $days === 0) {
@@ -377,7 +377,7 @@ class TermRearm {
 	 *
 	 * @return array<int, array<string, mixed>> The events, oldest first.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function carriedEvents(string $termInstanceId): array {
 		$store = $this->eventStore();

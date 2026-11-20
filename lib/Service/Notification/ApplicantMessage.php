@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Sends the message one declared moment owes the applicant, and says what happened.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class ApplicantMessage {
 
@@ -89,7 +89,7 @@ class ApplicantMessage {
 	 *
 	 * @return bool True when the message is declared and on.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function declares(array $caseType, string $moment): bool {
 		foreach ($this->moments->momentsFor(caseType: $caseType) as $declared) {
@@ -113,38 +113,61 @@ class ApplicantMessage {
 	 * @return array{sent: bool, reason: string, recipient: string, template: string, sentAt: string}
 	 *         What happened, for the caller to record.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
-	public function send(
-		array $case,
-		array $caseType,
-		string $moment,
-		string $template,
-		array $context = [],
-	): array {
+	public function send(array $case, array $caseType, string $moment, string $template, array $context = []): array {
 		if ($this->declares(caseType: $caseType, moment: $moment) === false) {
-			return $this->outcome(sent: false, reason: 'moment-not-declared');
+			return $this->outcome(fields: ['sent' => false, 'reason' => 'moment-not-declared']);
 		}
 
-		$notice = new ApplicantNotice();
-		$notice->case = $case;
-		$notice->moment = $moment;
-		$notice->template = $template;
-		$notice->context = $context;
-		$notice->recipient = $this->recipientOn(case: $case);
+		return $this->deliverNotice(
+			notice: $this->noticeFor(caseRow: $case, message: ['moment' => $moment, 'template' => $template, 'context' => $context])
+		);
+	}//end send()
+
+	/**
+	 * Place the notice on its term, send it and record it; a case without an address gets nothing.
+	 *
+	 * @param ApplicantNotice $notice The message for the case.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function deliverNotice(ApplicantNotice $notice): array {
 		if ($notice->recipient === '') {
 			return $this->noAddress(notice: $notice);
 		}
 
 		$this->placeOnTerm(notice: $notice);
 		if ($this->deliver(notice: $notice) === false) {
-			return $this->outcome(sent: false, reason: 'send-failed', recipient: $notice->recipient);
+			return $this->outcome(fields: ['sent' => false, 'reason' => 'send-failed', 'recipient' => $notice->recipient]);
 		}
 
 		$this->recordSent(notice: $notice);
 
 		return $this->sentOutcome(notice: $notice);
-	}//end send()
+	}//end deliverNotice()
+
+	/**
+	 * The notice for one moment of a case, addressed to the applicant on it.
+	 *
+	 * @param array<string, mixed>                                                 $caseRow The stored case.
+	 * @param array{moment: string, template: string, context: array<string, mixed>} $message The declared moment,
+	 *                                                                                      the template to render and
+	 *                                                                                      what the template needs
+	 *                                                                                      beside the case.
+	 *
+	 * @return ApplicantNotice
+	 */
+	private function noticeFor(array $caseRow, array $message): ApplicantNotice {
+		$notice = new ApplicantNotice();
+		$notice->case = $caseRow;
+		$notice->moment = $message['moment'];
+		$notice->template = $message['template'];
+		$notice->context = $message['context'];
+		$notice->recipient = $this->recipientOn(case: $caseRow);
+
+		return $notice;
+	}//end noticeFor()
 
 	/**
 	 * Name the case and the term instance the message goes under, and the moment it is sent.
@@ -169,11 +192,13 @@ class ApplicantMessage {
 	 */
 	private function sentOutcome(ApplicantNotice $notice): array {
 		return $this->outcome(
-			sent: true,
-			reason: '',
-			recipient: $notice->recipient,
-			template: $notice->template,
-			sentAt: $notice->sentAt,
+			fields: [
+				'sent' => true,
+				'reason' => '',
+				'recipient' => $notice->recipient,
+				'template' => $notice->template,
+				'sentAt' => $notice->sentAt,
+			]
 		);
 	}//end sentOutcome()
 
@@ -190,7 +215,7 @@ class ApplicantMessage {
 			['moment' => $notice->moment, 'template' => $notice->template],
 		);
 
-		return $this->outcome(sent: false, reason: 'no-address');
+		return $this->outcome(fields: ['sent' => false, 'reason' => 'no-address']);
 	}//end noAddress()
 
 	/**
@@ -268,27 +293,13 @@ class ApplicantMessage {
 	/**
 	 * One answer shape, so no caller has to interpret an absent key.
 	 *
-	 * @param bool   $sent      Whether the message went out.
-	 * @param string $reason    Why it did not, when it did not.
-	 * @param string $recipient Who it went to.
-	 * @param string $template  Which template was rendered.
-	 * @param string $sentAt    When, ISO 8601.
+	 * @param array<string, mixed> $fields Whether the message went out (`sent`), why it did not (`reason`), who it
+	 *                                     went to (`recipient`), which template was rendered (`template`) and when,
+	 *                                     ISO 8601 (`sentAt`); an absent one is ''.
 	 *
-	 * @return array{sent: bool, reason: string, recipient: string, template: string, sentAt: string} The answer.
+	 * @return array<string, mixed> The answer: sent, reason, recipient, template and sentAt.
 	 */
-	private function outcome(
-		bool $sent,
-		string $reason,
-		string $recipient = '',
-		string $template = '',
-		string $sentAt = '',
-	): array {
-		return [
-			'sent' => $sent,
-			'reason' => $reason,
-			'recipient' => $recipient,
-			'template' => $template,
-			'sentAt' => $sentAt,
-		];
+	private function outcome(array $fields): array {
+		return array_merge(['sent' => false, 'reason' => '', 'recipient' => '', 'template' => '', 'sentAt' => ''], $fields);
 	}//end outcome()
 }//end class

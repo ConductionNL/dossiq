@@ -111,10 +111,10 @@ describe('the dossiq copies are gone', () => {
 describe('the banner row', () => {
 	const stack = find(fullCase, 'case-banner-stack')
 
-	it('is one size-to-content row of four strips, above the panels', () => {
+	it('is one size-to-content row of five strips, above the panels', () => {
 		expect(stack.type).toBe('sections')
 		expect(stack.content.dividers).toBe(false)
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention', 'case-special-categories'])
 		const row = fullCase.config.layout.find((cell) => cell.widgetId === 'case-banner-stack')
 		const panels = fullCase.config.layout.find((cell) => cell.widgetId === 'case-panels')
 		expect(row.sizeToContent).toBe(true)
@@ -305,15 +305,11 @@ describe('the work instruction', () => {
 })
 
 describe('the Notes tab', () => {
-	it('is the library notes tab, with mentions and the push wired to dossiq', () => {
+	it('is the library notes tab, with mentions wired to dossiq and no note sent away', () => {
 		const notes = find(fullCase, 'case-notes-panel')
 		expect(notes).toMatchObject({ type: 'integration', integrationId: 'notes' })
 		expect(notes.props.mentionUrl).toBe('/apps/dossiq/api/notes/mention')
-		expect(notes.props.noteActions[0]).toMatchObject({
-			id: 'push-to-neighbouring-register',
-			label: 'Send to the neighbouring register',
-			endpoint: '/apps/dossiq/api/cases/{objectId}/notes/push',
-		})
+		expect(notes.props.noteActions).toBeUndefined()
 	})
 })
 

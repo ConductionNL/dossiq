@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SuspendTermHandlerInterface;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\TermijnService;
 use Psr\Log\LoggerInterface;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
  */
-class SuspendTermHandler implements ActionHandlerInterface {
+class SuspendTermHandler implements ActionHandlerInterface, SuspendTermHandlerInterface {
 
 	/**
 	 * Constructor.

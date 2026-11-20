@@ -24,17 +24,19 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
@@ -45,9 +47,9 @@ use OCP\IUserSession;
 /**
  * Resolves and authorizes consultation access for the controller layer.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
-class ConsultationAccessGuard {
+class ConsultationAccessGuard implements ConsultationAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *
@@ -147,7 +149,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return JSONResponse|null Null when a user is signed in, a 401 response otherwise.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requireUser(): ?JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -162,15 +164,10 @@ class ConsultationAccessGuard {
 	 *
 	 * @return string The current UID.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function currentUid(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end currentUid()
 
 	/**
@@ -183,7 +180,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return ConsultationAccess The denial response, or the resolved consultation.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function authorize(string $consultationId): ConsultationAccess {
 		$user = $this->userSession->getUser();
@@ -220,7 +217,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return bool True when the user is the aanvrager, the assignee or an admin.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	private function isPermitted(array $consultation, string $uid): bool {
 		if ($this->groupManager->isAdmin($uid) === true) {
@@ -240,7 +237,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return JSONResponse|null A 400 response on a cycle, null otherwise.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function dependencyCycleError(array $data): ?JSONResponse {
 		$dependsOn = $data['dependsOn'] ?? [];
@@ -267,7 +264,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return array<string, mixed> The decoded body, or an empty array.
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestBody(): array {
 		// 🔴 `getContent()` IS PROTECTED ON THE CONCRETE REQUEST, AND ABSENT

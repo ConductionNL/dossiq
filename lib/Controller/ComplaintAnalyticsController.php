@@ -25,16 +25,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\Complaint\EmployeeAlertAudience;
-use OCA\Dossiq\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\EmployeeAlertAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -44,7 +44,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintAnalyticsController extends Controller {
 	/**
@@ -63,18 +63,18 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintAnalyticsService $analyticsService Analytics service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
-	 * @param EmployeeAlertAudience $alertAudience Who may read the employee threshold alerts
+	 * @param ComplaintAnalyticsServiceInterface $analyticsService Analytics service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
+	 * @param EmployeeAlertAudienceInterface $alertAudience Who may read the employee threshold alerts
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintAnalyticsService $analyticsService,
-		private readonly ComplaintAccessGuard $accessGuard,
-		private readonly EmployeeAlertAudience $alertAudience,
+		private readonly ComplaintAnalyticsServiceInterface $analyticsService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
+		private readonly EmployeeAlertAudienceInterface $alertAudience,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -90,7 +90,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function analytics(): JSONResponse {
@@ -120,7 +120,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @return array<string, mixed> Frequency per dimension, the monthly trend and the average resolution.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function frequencyFigures(string $dateFrom, string $dateTo): array {
 		$figures = [];
@@ -144,7 +144,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function kpi(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {

@@ -44,7 +44,17 @@ export function rowId(row) {
 	if (!row || typeof row !== 'object') {
 		return ''
 	}
-	return String(row.id ?? row['@self']?.id ?? row.uuid ?? '')
+	return String(firstIdOf(row))
+}
+
+/**
+ * The first id an object row carries: its own, its `@self` one, its uuid.
+ *
+ * @param {object} row An object row.
+ * @return {string|number} The id as found, or the empty string.
+ */
+function firstIdOf(row) {
+	return row.id ?? row['@self']?.id ?? row.uuid ?? ''
 }
 
 /**
@@ -123,23 +133,19 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
 export function extensionNotice(body, translate) {
 	const t = translatorFor(translate)
 	const notice = body?.notice
-	if (!notice || typeof notice !== 'object') {
+	if (isMissingNotice(notice)) {
 		return null
 	}
 
-	if (String(notice.noticeStatus ?? '') === 'sent') {
+	if (noticeWasSent(notice)) {
 		return {
 			told: true,
 			text: t('The term is extended. The requester was told.'),
 		}
 	}
 
-	// The reasons dossiq writes itself are catalogue keys; a reason another
-	// sender wrote passes through t() unchanged.
-	const reason = String(notice.noticeReason ?? '').trim()
 	const text = t('The term is extended. The requester was not told.')
-
-	return { told: false, text: reason === '' ? text : text + ' ' + t(reason) }
+	return { told: false, text: text + noticeReasonSuffix(notice, t) }
 }
 
 /**
@@ -153,18 +159,51 @@ export function extensionNotice(body, translate) {
 export function archiveNotice(body, translate) {
 	const t = translatorFor(translate)
 	const notice = body?.notice
-	if (!notice || typeof notice !== 'object') {
+	if (isMissingNotice(notice)) {
 		return null
 	}
 
-	if (String(notice.noticeStatus ?? '') === 'sent') {
+	if (noticeWasSent(notice)) {
 		return { told: true, text: t('The case is archived. The requester was told.') }
 	}
 
-	const reason = String(notice.noticeReason ?? '').trim()
 	const text = t('The case is archived. The requester was not told.')
+	return { told: false, text: text + noticeReasonSuffix(notice, t) }
+}
 
-	return { told: false, text: reason === '' ? text : text + ' ' + t(reason) }
+/**
+ * Whether an answer's notice is absent or not an object.
+ *
+ * @param {object|null|undefined} notice The answer's `notice`.
+ * @return {boolean} True when there is no notice to speak of.
+ */
+function isMissingNotice(notice) {
+	return !notice || typeof notice !== 'object'
+}
+
+/**
+ * Whether a notice went out to the requester.
+ *
+ * @param {object} notice The answer's `notice`.
+ * @return {boolean} True when its status is `sent`.
+ */
+function noticeWasSent(notice) {
+	return String(notice.noticeStatus ?? '') === 'sent'
+}
+
+/**
+ * The reason a notice did not go out, as a suffix to the not-told sentence.
+ *
+ * The reasons dossiq writes itself are catalogue keys; a reason another
+ * sender wrote passes through t() unchanged.
+ *
+ * @param {object} notice The answer's `notice`.
+ * @param {(key: string) => string} t The translate function.
+ * @return {string} ' ' plus the translated reason, or '' when there is none.
+ */
+function noticeReasonSuffix(notice, t) {
+	const reason = String(notice.noticeReason ?? '').trim()
+	return reason === '' ? '' : ' ' + t(reason)
 }
 
 // The translated sentence per refusal code. Each entry calls t() itself
@@ -293,14 +332,31 @@ export function transitionBlockReason(transition) {
 	if (transition.guardsPassed !== false) {
 		return ''
 	}
+	const named = blockingGuardNames(transition)
+	return named.length > 0 ? named[0] : ''
+}
+
+/**
+ * The names of a transition's failed guards, the unnamed ones left out.
+ *
+ * @param {object} transition One entry of the available-transitions answer.
+ * @return {Array<string>} The names, in the engine's order.
+ */
+function blockingGuardNames(transition) {
 	const guards = Array.isArray(transition.failedGuards)
 		? transition.failedGuards
 		: []
-	const named = guards
-		.map((guard) => String(guard?.failureMessage ?? guard?.type ?? '').trim())
-		.filter(Boolean)
+	return guards.map(blockingGuardName).filter(Boolean)
+}
 
-	return named.length > 0 ? named[0] : ''
+/**
+ * A failed guard's name: its message, else its type.
+ *
+ * @param {object|null} guard One failed guard.
+ * @return {string} The trimmed name, or the empty string.
+ */
+function blockingGuardName(guard) {
+	return String(guard?.failureMessage ?? guard?.type ?? '').trim()
 }
 
 /**
@@ -343,12 +399,18 @@ export function findTransitionToStatus(transitions, toStatusId) {
 	if (wanted === '' || Array.isArray(transitions) === false) {
 		return null
 	}
-	return (
-		transitions.find(
-			(transition) =>
-				transition
-				&& typeof transition === 'object'
-				&& String(transition.toStatus ?? '') === wanted,
-		) ?? null
-	)
+	return transitions.find((transition) => landsOn(transition, wanted)) ?? null
+}
+
+/**
+ * Whether an offered transition ends on the wanted status.
+ *
+ * @param {object|null} transition One entry of the `transitions` answer.
+ * @param {string} wanted The statusType id, as a string.
+ * @return {boolean} True when it is an object whose `toStatus` matches.
+ */
+function landsOn(transition, wanted) {
+	return Boolean(transition)
+		&& typeof transition === 'object'
+		&& String(transition.toStatus ?? '') === wanted
 }

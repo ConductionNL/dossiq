@@ -41,7 +41,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -58,7 +59,7 @@ use Throwable;
 /**
  * Elapsed working time, on the engine's calendar when there is one.
  *
- * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class WorkingClock {
 	/**
@@ -157,7 +158,7 @@ class WorkingClock {
 	 *
 	 * @return string One of the CLOCK_* constants.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function clock(): string {
 		$this->resolve();
@@ -185,7 +186,7 @@ class WorkingClock {
 	 *
 	 * @return array{workingHours: float, wallHours: float} The two numbers.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function hoursBetween(DateTimeInterface $from, DateTimeInterface $to): array {
 		$wall = (($to->getTimestamp() - $from->getTimestamp()) / 3600.0);
@@ -213,9 +214,7 @@ class WorkingClock {
 		if ($this->calculator !== null && $this->calendar !== null) {
 			try {
 				return (float)$this->calculator->elapsedBusinessHours(
-					from: $from,
-					to: $to,
-					calendar: $this->calendar
+					new CalendarSpan(from: $from, to: $to, calendar: $this->calendar)
 				);
 			} catch (Throwable $e) {
 				// A calculator that refused this one interval has not stopped

@@ -37,6 +37,9 @@ use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Event\FlowEmailItem;
+use OCA\OpenRegister\Event\FlowEmailMessage;
+use OCA\OpenRegister\Event\FlowEmailOrigin;
 
 /**
  * @covers \OCA\Dossiq\Listener\FlowEmailSentListener
@@ -44,6 +47,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
  * @uses \OCA\Dossiq\Service\CaseEmailService
  * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
  */
 class FlowEmailSentListenerTest extends TestCase {
 
@@ -132,17 +136,9 @@ class FlowEmailSentListenerTest extends TestCase {
 	 */
 	private function event(string $recipient, string $kind, ?string $schema = '34'): FlowEmailSentEvent {
 		return new FlowEmailSentEvent(
-			register: '12',
-			schema: $schema,
-			objectUuid: 'case-1',
-			recipient: $recipient,
-			channelKind: $kind,
-			subject: 'Uw aanvraag',
-			body: 'Wij hebben uw aanvraag ontvangen.',
-			flowId: 'flow-1',
-			runId: 'run-1',
-			stepName: 'mail-indiener',
-			actingUser: 'jan'
+			item: new FlowEmailItem(register: '12', schema: $schema, objectUuid: 'case-1'),
+			message: new FlowEmailMessage(recipient: $recipient, channelKind: $kind, subject: 'Uw aanvraag', body: 'Wij hebben uw aanvraag ontvangen.'),
+			origin: new FlowEmailOrigin(flowId: 'flow-1', runId: 'run-1', stepName: 'mail-indiener', actingUser: 'jan')
 		);
 	}//end event()
 

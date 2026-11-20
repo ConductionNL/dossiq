@@ -41,10 +41,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Task\CaseTaskActions;
-use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
+use OCA\Dossiq\Kernel\Contracts\TaskAttachmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,7 +58,7 @@ use RuntimeException;
 /**
  * Complete, claim and attach to a task from the case it is on.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class CaseTaskController extends Controller {
 
@@ -77,21 +77,21 @@ class CaseTaskController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request     The HTTP request.
-	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
-	 * @param TaskAttachmentService $attachments Holds a file against an open task.
-	 * @param CaseAccessGuard       $caseAccess  Per-case authorization, fails closed.
+	 * @param CaseTaskActionsInterface       $tasks       Completes and claims a task, with dossiq's refusals in front.
+	 * @param TaskAttachmentServiceInterface $attachments Holds a file against an open task.
+	 * @param CaseAccessGuardInterface       $caseAccess  Per-case authorization, fails closed.
 	 * @param IUserSession          $userSession The current session.
 	 * @param LoggerInterface       $logger      The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTaskActions $tasks,
-		private readonly TaskAttachmentService $attachments,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseTaskActionsInterface $tasks,
+		private readonly TaskAttachmentServiceInterface $attachments,
+		private readonly CaseAccessGuardInterface $caseAccess,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse `{claim: bool}`.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function capabilities(): JSONResponse {
@@ -120,7 +120,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse What happened, or a refusal naming what was missing.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function complete(string $taskId): JSONResponse {
@@ -152,7 +152,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function claim(string $taskId): JSONResponse {
@@ -173,13 +173,12 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The files now held against that task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function attach(string $caseId, string $taskId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			write: true,
 			run: fn (): array => [
 				'held' => $this->attachments->bind(
 					caseId: $caseId,
@@ -204,13 +203,12 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The files still held against that task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function detach(string $caseId, string $taskId, string $fileId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			write: true,
 			run: fn (): array => [
 				'held' => $this->attachments->release(caseId: $caseId, taskId: $taskId, fileId: $fileId),
 			],
@@ -233,8 +231,33 @@ class CaseTaskController extends Controller {
 	 *                      task answers.
 	 */
 	private function onTask(string $taskId, callable $run): JSONResponse {
+		$task = $this->readTask(taskId: $taskId);
+		if ($task instanceof JSONResponse) {
+			return $task;
+		}
+
+		if ($task === null) {
+			return new JSONResponse(['message' => 'That task could not be found', 'error' => 'task_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$caseId = (string)($task['objectUuid'] ?? '');
+		if ($caseId === '') {
+			return new JSONResponse(['message' => 'That task is not on a case', 'error' => 'case_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->guarded(caseId: $caseId, run: static fn (): array => $run($task));
+	}//end onTask()
+
+	/**
+	 * Read a task, or the 503 when the engine cannot answer at all.
+	 *
+	 * @param string $taskId The task.
+	 *
+	 * @return array<string, mixed>|JSONResponse|null The task, null when it is missing, or the 503.
+	 */
+	private function readTask(string $taskId): array|JSONResponse|null {
 		try {
-			$task = $this->tasks->find(taskId: $taskId);
+			return $this->tasks->find(taskId: $taskId);
 		} catch (\Throwable $e) {
 			// The gateway answers null for a missing task and keeps its own
 			// failures, so reaching here means the ENGINE could not answer at
@@ -251,24 +274,7 @@ class CaseTaskController extends Controller {
 				Http::STATUS_SERVICE_UNAVAILABLE
 			);
 		}
-
-		if ($task === null) {
-			return new JSONResponse(
-				['message' => 'That task could not be found', 'error' => 'task_not_found'],
-				Http::STATUS_NOT_FOUND
-			);
-		}
-
-		$caseId = (string)($task['objectUuid'] ?? '');
-		if ($caseId === '') {
-			return new JSONResponse(
-				['message' => 'That task is not on a case', 'error' => 'case_not_found'],
-				Http::STATUS_NOT_FOUND
-			);
-		}
-
-		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($task));
-	}//end onTask()
+	}//end readTask()
 
 	/**
 	 * The signed-in user's uid.
@@ -287,18 +293,31 @@ class CaseTaskController extends Controller {
 	 * that name in both: the message for the person, the code for the client.
 	 *
 	 * @param string                                 $caseId The case UUID.
-	 * @param boolean                                $write  Whether the gesture writes.
 	 * @param callable(): array<string, mixed>       $run    The gesture.
 	 *
 	 * @return JSONResponse The gesture's answer, or a refusal.
 	 */
-	private function guarded(string $caseId, bool $write, callable $run): JSONResponse {
+	private function guarded(string $caseId, callable $run): JSONResponse {
+		$refused = $this->guardRefusal(caseId: $caseId, write: true);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		return $this->runGesture(caseId: $caseId, run: $run);
+	}//end guarded()
+
+	/**
+	 * The refusal when nobody is signed in or the user may not act on the case, else null.
+	 *
+	 * @param string  $caseId The case UUID.
+	 * @param boolean $write  Whether the gesture writes.
+	 *
+	 * @return JSONResponse|null The 401 or 403, or null when the gesture may run.
+	 */
+	private function guardRefusal(string $caseId, bool $write): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['message' => 'You are not signed in', 'error' => 'not_authenticated'],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return new JSONResponse(['message' => 'You are not signed in', 'error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if ($this->allowed(caseId: $caseId, user: $user, write: $write) === false) {
@@ -308,6 +327,18 @@ class CaseTaskController extends Controller {
 			);
 		}
 
+		return null;
+	}//end guardRefusal()
+
+	/**
+	 * Run an allowed gesture, turning its failures into refusals.
+	 *
+	 * @param string                           $caseId The case UUID.
+	 * @param callable(): array<string, mixed> $run    The gesture.
+	 *
+	 * @return JSONResponse The gesture's answer, or a refusal.
+	 */
+	private function runGesture(string $caseId, callable $run): JSONResponse {
 		try {
 			return new JSONResponse($run());
 		} catch (RuntimeException $e) {
@@ -318,12 +349,9 @@ class CaseTaskController extends Controller {
 				['exception' => $e->getMessage(), 'caseId' => $caseId],
 			);
 
-			return new JSONResponse(
-				['message' => 'That could not be done', 'error' => 'task_action_failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return new JSONResponse(['message' => 'That could not be done', 'error' => 'task_action_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
-	}//end guarded()
+	}//end runGesture()
 
 	/**
 	 * Turn a named refusal into a response that says what was missing.

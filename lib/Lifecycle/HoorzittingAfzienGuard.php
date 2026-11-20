@@ -36,7 +36,7 @@ use OCA\OpenRegister\Lifecycle\LifecycleGuardInterface;
  * Allows the bezwaar `hoorzitting_overslaan` transition only when the
  * belanghebbende has waived the right to be heard (AWB art. 7:3).
  *
- * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.2
+ * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.2
  */
 class HoorzittingAfzienGuard implements LifecycleGuardInterface {
 	/**
@@ -57,7 +57,7 @@ class HoorzittingAfzienGuard implements LifecycleGuardInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $action/$userId are mandated by the interface; this guard reads only the payload.
 	 * @SuppressWarnings(PHPMD.StaticAccess)          GuardResult has a private constructor upstream; see the note above.
 	 *
-	 * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.2
+	 * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.2
 	 */
 	public function check(array $object, string $action, string $userId): GuardResult {
 		$waived = ($object['hearingWaived'] ?? false);

@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Ai\AiAuditService;
-use OCA\Dossiq\Service\AiService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AiController extends Controller {
 	/**
@@ -72,23 +72,23 @@ class AiController extends Controller {
 	 * Constructor for AiController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param AiService $aiService The AI service
-	 * @param AiAuditService $auditService The AI oversight audit service
+	 * @param AiServiceInterface $aiService The AI service
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger interface
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private AiService $aiService,
-		private AiAuditService $auditService,
+		private AiServiceInterface $aiService,
+		private AiAuditServiceInterface $auditService,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -98,7 +98,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classify(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -126,7 +126,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extract(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -154,7 +154,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function ask(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -182,7 +182,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -216,24 +216,10 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->request->getParam('caseId', '');
-
-		if (empty($caseId) === true) {
-			return $this->badRequest(error: 'caseId is required');
-		}
-
-		$userId = $user->getUID();
-		$result = $this->aiService->suggestRouting($caseId, $userId);
-
-		return new JSONResponse($result);
+		return $this->caseSuggestion(suggest: fn (string $caseId, string $userId): array => $this->aiService->suggestRouting($caseId, $userId));
 	}//end suggestRouting()
 
 	/**
@@ -243,24 +229,10 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNext(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->request->getParam('caseId', '');
-
-		if (empty($caseId) === true) {
-			return $this->badRequest(error: 'caseId is required');
-		}
-
-		$userId = $user->getUID();
-		$result = $this->aiService->suggestNextStep($caseId, $userId);
-
-		return new JSONResponse($result);
+		return $this->caseSuggestion(suggest: fn (string $caseId, string $userId): array => $this->aiService->suggestNextStep($caseId, $userId));
 	}//end suggestNext()
 
 	/**
@@ -422,7 +394,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	public function auditIndex(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -456,7 +428,7 @@ class AiController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the trail may be read.
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	private function auditRefusal(string $caseId, IUser $user): ?JSONResponse {
 		if ($caseId === '') {
@@ -477,7 +449,7 @@ class AiController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	private function auditPage(string $caseId): JSONResponse {
 		$result = $this->auditService->listAuditEntries(
@@ -525,4 +497,26 @@ class AiController extends Controller {
 	private function badRequest(string $error): JSONResponse {
 		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
 	}//end badRequest()
+
+	/**
+	 * Answer a suggestion for the requested case, for a signed-in caller.
+	 *
+	 * @param callable(string, string): array<string, mixed> $suggest The suggestion, given the case id and the caller's uid.
+	 *
+	 * @return JSONResponse
+	 */
+	private function caseSuggestion(callable $suggest): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$caseId = $this->request->getParam('caseId', '');
+
+		if (empty($caseId) === true) {
+			return $this->badRequest(error: 'caseId is required');
+		}
+
+		return new JSONResponse($suggest($caseId, $user->getUID()));
+	}//end caseSuggestion()
 }//end class

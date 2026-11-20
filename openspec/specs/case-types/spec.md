@@ -24,7 +24,7 @@ CaseType
 └── subCaseTypes[]       — Allowed sub-case types
 ```
 
-**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`)
+**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`), OIO Sag og Dokument (Denmark)
 **Feature tier**: MVP (core type CRUD, statuses, deadlines, draft/published, validity), V1 (result types, role types, property definitions, document types, decision types, confidentiality, suspension/extension)
 
 ## Data Model
@@ -2059,13 +2059,14 @@ values, 8px 16px apart, without an inset of its own inside the card.
 
 ### Requirement: Status and result names are strong text, a status with its colour dot
 
-The Statussen and Resultaten tables SHALL draw their names as strong text without an underline, the Statussen names
-with a dot in the status colour, and the archival action in sentence case.
+The Statussen and Resultaten tables SHALL draw their names as links without an underline (14px, the link colour), the
+Statussen names with a dot in the status colour, and the archival action in sentence case.
 
 #### Scenario: DqZaaktypeStatussen
 
 - **WHEN** an administrator opens the Statussen tab
-- **THEN** "Ontvangen" has a blue dot and no underline, and a result's archival action reads "Vernietigen"
+- **THEN** "Ontvangen" has a blue dot and reads in the link colour without an underline, and a result's archival
+  action reads "Vernietigen"
 
 ### Requirement: The Rules tab is headed and adds a rule from the start
 
@@ -2206,6 +2207,125 @@ The app SHALL answer `GET /api/packages` with every shipped package, its version
 - **GIVEN** a package id that is not shipped
 - **WHEN** an administrator posts to `/api/packages/{id}/install`
 - **THEN** the response SHALL be 422 with the installer's message
+
+### Requirement: A case type's side history shows what people changed
+
+The side History card of a case type SHALL leave out the entries System wrote (refreshes, upgrades, example-set upkeep). The case type's All history tab SHALL keep every entry.
+
+#### Scenario: DqZaaktype after a window refresh
+- GIVEN Lars de Koning published version 4 and changed the variants, and the daily refresh saved the case type as System since
+- WHEN the case type opens on Fasen en taken
+- THEN its History card lists "Versie 4 gepubliceerd" and "Varianten gewijzigd" by Lars de Koning, and no System edit
+
+### Requirement: An adopted case type gets the fields it lacks and keeps the ones it has (REQ-CT-ADOPT-01)
+
+When a package adopts a case type the instance already holds, the installer SHALL add each case-type field the package ships that the stored row does not have (no such key, or null), with references pointed at this instance's ids. It SHALL NOT change a field the stored row has, an empty one included. The fields SHALL be written only after the install is recorded, so a failed install leaves the adopted row as it was. Other adopted rows (statuses, roles, results, flows) SHALL stay as they are.
+
+#### Scenario: A seeded case type gets the record import the package adds
+
+- **GIVEN** an instance holding the case type `wmo-melding` without `recordImports`, written by the register seed
+- **WHEN** the Wmo-melding package is installed or upgraded
+- **THEN** the stored case type SHALL carry the package's `recordImports`
+- **AND** its title and every other field it already had SHALL be unchanged
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+#### Scenario: A field the administrator emptied stays empty
+
+- **GIVEN** an adopted case type whose `description` is an empty string
+- **WHEN** a package that ships a description is installed
+- **THEN** the description SHALL stay empty
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+### Requirement: A package can ship example rows
+
+A shipped package MAY declare an `examples` part. Its `examples/*.json` files
+SHALL follow the seed file rules, and the installer SHALL write their rows
+with the package, after the seed rows, recorded in the shipped-set ledger
+like every other row.
+
+#### Scenario: Example rows install with the package
+- GIVEN an instance that loaded example data
+- AND a package that declares `examples` with one case row
+- WHEN the package is installed
+- THEN the case is written and recorded under the package
+
+#### Scenario: Dates are relative to the install day
+- GIVEN an example row whose `startDate` is `{{date:-3}}`
+- WHEN the package is installed
+- THEN the case's `startDate` is the date three days before the install day
+
+### Requirement: Example rows install only where example data is wanted
+
+The installer SHALL write a package's example rows only when the setup
+wizard's example data decision (`demo_data_decided`) is `installed`. On any
+other instance, never asked or "None" chosen, it SHALL install the package
+without them and log one line.
+
+#### Scenario: A production install gets no example case
+- GIVEN an instance whose operator chose "None" for example data
+- WHEN a package with an `examples` part is installed
+- THEN the case type is written and the example case is not
+
+#### Scenario: An instance with example data gets the example case
+- GIVEN an instance whose operator loaded example data
+- WHEN a package with an `examples` part is installed
+- THEN the example case is written with the package
+
+### Requirement: The Zuiddrecht set does not depend on an on-request package
+
+The Zuiddrecht example-set fragment SHALL NOT look up a case type or a role
+type that only an on-request package ships. Example data of such a case type
+SHALL ship with its package.
+
+#### Scenario: The set installs without the on-request packages
+- GIVEN an instance without bezwaar-beroep, jeugdwet and aanbesteding
+- WHEN the Zuiddrecht set is checked
+- THEN no lookup of dossiq's fragment refers to a key only those packages ship
+
+### Requirement: A rights row grants to the caller's own team
+
+A case type rights row SHALL accept department `$ownTeam`, granting its actions on the cases assigned to a team the caller is a member of, resolved when access is checked.
+
+#### Scenario: an intaker sees only their own team's cases
+
+- **GIVEN** case type Omgevingsvergunning regulier with a row Intaker, `$ownTeam`, read
+- **AND** user A, an Intaker in team Vergunningen
+- **WHEN** A lists cases
+- **THEN** A sees the Vergunningen cases of that type and none of team Toezicht
+- @e2e exclude {access is enforced in OpenRegister; covered by PHPUnit with the real permission handler}
+
+### Requirement: A rights row can be limited to statuses
+
+A rights row SHALL accept `statuses`. Its edit verbs SHALL apply only while the case is in one of them; its read verbs SHALL apply in every status.
+
+#### Scenario: an intaker edits in the first phase only
+
+- **GIVEN** a row Intaker, `$ownTeam`, read and update, statuses [Ontvangen]
+- **WHEN** A edits a case in Ontvangen and one in In behandeling
+- **THEN** the first edit succeeds and the second is refused
+- **AND** A still reads the case in In behandeling
+- @e2e exclude {covered by PHPUnit with the real permission handler}
+
+### Requirement: Documents have their own rights per role
+
+A rights row SHALL accept `documentActions` (`read`, `add`, `delete`), enforced on the case's files.
+
+#### Scenario: an inspector reads documents and adds none
+
+- **GIVEN** a row Toezichthouder, `*`, read, documents read
+- **WHEN** an inspector lists a case's files and then uploads one
+- **THEN** the files are listed and the upload is refused
+- @e2e exclude {enforced in OpenRegister's file access; covered by PHPUnit through its FilesController}
+
+### Requirement: The Overview reads decisions from the mandate register
+
+The Overview's Rights card SHALL show per role the decision right from the active mandates for this case type: the highest ceiling as "Tot € <amount>", "Onbeperkt" without a ceiling, "Nee" without a mandate. The tenant setup checklist SHALL mark "Mandaten ingesteld" when the organisation has an active mandate.
+
+#### Scenario: the permit case type's Rights card
+
+- **GIVEN** the rows above and an active mandate for Vergunningverlener with ceiling 5,000,000 cents for this case type
+- **THEN** the card reads Intaker · Eigen team · Fase 1 · Nee · Toevoegen; Vergunningverlener · Alle · Alle fasen · Tot € 50.000 · Alles; Toezichthouder · Alle · Nee · Nee · Lezen
+- @e2e exclude {projection covered by PHPUnit and the card by vitest; the board pixel pass checks the drawn card}
 
 ## UI References
 

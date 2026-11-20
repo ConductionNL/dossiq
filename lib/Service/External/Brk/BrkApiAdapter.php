@@ -33,7 +33,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -43,7 +43,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\External\Brk;
 
+use OCA\Dossiq\Service\External\HalResponseBody;
 use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Support\SendsHalHeaders;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use Psr\Log\LoggerInterface;
@@ -52,9 +54,11 @@ use Throwable;
 /**
  * Live Kadaster Haal Centraal BRK Bevragen API v2 adapter (test / live tiers).
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class BrkApiAdapter implements BrkAdapterInterface {
+	use SendsHalHeaders;
+
 	/**
 	 * Default base URL — Kadaster's `esd-eto-apikey` API-key test
 	 * environment for BRK Bevragen v2.
@@ -121,7 +125,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
 		string $municipalityCode,
@@ -130,6 +134,25 @@ class BrkApiAdapter implements BrkAdapterInterface {
 		?string $sequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
+		$query = $this->parcelQuery(parcel: [$municipalityCode, $section, $perceelnummer], sequenceNumber: $sequenceNumber);
+		$invalid = $this->invalidReason(query: $query);
+		if ($invalid !== null) {
+			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => $invalid]);
+		}
+
+		return $this->search(query: $query, context: $context);
+	}//end lookupByKadastraleAanduiding()
+
+	/**
+	 * The search query for a kadastrale aanduiding, with section and volgnummer in upper case.
+	 *
+	 * @param array{0: string, 1: string, 2: string} $parcel         Kadastrale gemeentecode, sectie and perceelnummer.
+	 * @param string|null                            $sequenceNumber Optional appartementsrecht volgnummer.
+	 *
+	 * @return array<string, string> The query.
+	 */
+	private function parcelQuery(array $parcel, ?string $sequenceNumber): array {
+		[$municipalityCode, $section, $perceelnummer] = $parcel;
 		$query = [
 			'kadastraleGemeenteCode' => $municipalityCode,
 			'sectie' => strtoupper($section),
@@ -139,13 +162,8 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			$query['appartementsrechtVolgnummer'] = strtoupper($sequenceNumber);
 		}
 
-		$invalid = $this->invalidReason(query: $query);
-		if ($invalid !== null) {
-			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => $invalid]);
-		}
-
-		return $this->search(query: $query, context: $context);
-	}//end lookupByKadastraleAanduiding()
+		return $query;
+	}//end parcelQuery()
 
 	/**
 	 * Why a kadastrale-aanduiding search query is malformed, checked in field order.
@@ -181,7 +199,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 				[
 					'timeout' => 10,
 					'query' => $query,
-					'headers' => $this->headers(),
+					'headers' => $this->halHeaders(integration: 'brk'),
 				]
 			);
 
@@ -234,17 +252,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function extractPercelen(string $body): array {
-		$data = json_decode($body, true);
-		if (is_array($data) === false) {
-			return [];
-		}
-
-		$embedded = ($data['_embedded'] ?? []);
-		if (is_array($embedded) === false) {
-			return [];
-		}
-
-		return (array)($embedded['kadastraalOnroerendeZaken'] ?? []);
+		return (new HalResponseBody())->embeddedList(body: $body, key: 'kadastraalOnroerendeZaken');
 	}//end extractPercelen()
 
 	/**
@@ -278,7 +286,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupObject(string $id, array $context = []): BrkLookupResult {
 		if ($id === '') {
@@ -288,35 +296,9 @@ class BrkApiAdapter implements BrkAdapterInterface {
 		$baseUrl = $this->mode->setting(integration: 'brk', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
 
 		try {
-			$response = $this->clientService->newClient()->get(
-				rtrim($baseUrl, '/') . '/kadastraalonroerendezaken/' . rawurlencode($id),
-				[
-					'timeout' => 10,
-					'headers' => $this->headers(),
-				]
-			);
+			$response = $this->fetchObject(url: rtrim($baseUrl, '/') . '/kadastraalonroerendezaken/' . rawurlencode($id));
 
-			$status = (int)$response->getStatusCode();
-			if ($status === 404) {
-				return new BrkLookupResult(lookupStatus: 'NOT_FOUND', parcel: [], dormant: false);
-			}
-
-			if ($status < 200 || $status >= 300) {
-				return $this->errorResult(status: $status, context: $context);
-			}
-
-			$data = json_decode((string)$response->getBody(), true);
-			$body = ($data['kadastraalOnroerendeZaak'] ?? $data);
-			if (is_array($body) === false || $body === []) {
-				return new BrkLookupResult(lookupStatus: 'NOT_FOUND', parcel: [], dormant: false);
-			}
-
-			return new BrkLookupResult(
-				lookupStatus: 'FOUND',
-				parcel: $this->mapper->map($body),
-				dormant: false,
-				extras: ['tier' => $this->mode->resolve(integration: 'brk', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
-			);
+			return $this->objectResult(response: $response, context: $context);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq BRK object lookup failed',
@@ -328,30 +310,68 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	}//end lookupObject()
 
 	/**
+	 * GET one object from the registry.
+	 *
+	 * @param string $url The object's URL.
+	 *
+	 * @return IResponse The answer.
+	 */
+	private function fetchObject(string $url): IResponse {
+		$client = $this->clientService->newClient();
+
+		return $client->get($url, ['timeout' => 10, 'headers' => $this->halHeaders(integration: 'brk')]);
+	}//end fetchObject()
+
+	/**
+	 * The result of an object lookup's answer.
+	 *
+	 * A 404 and an answer without an object are NOT_FOUND; any other status
+	 * outside 2xx is a LOOKUP_ERROR.
+	 *
+	 * @param IResponse            $response The answer.
+	 * @param array<string, mixed> $context  Caller context for the log.
+	 *
+	 * @return BrkLookupResult
+	 */
+	private function objectResult(IResponse $response, array $context): BrkLookupResult {
+		$object = (new HalResponseBody())->objectOf(response: $response, key: 'kadastraalOnroerendeZaak');
+		if (is_int($object) === true) {
+			return $this->errorResult(status: $object, context: $context);
+		}
+
+		if ($object === []) {
+			return new BrkLookupResult(lookupStatus: 'NOT_FOUND', parcel: [], dormant: false);
+		}
+
+		return $this->foundObject(object: $object);
+	}//end objectResult()
+
+	/**
+	 * The FOUND result for one object, with the tier it came from.
+	 *
+	 * @param array<string, mixed> $object The object as the registry answered it.
+	 *
+	 * @return BrkLookupResult
+	 */
+	private function foundObject(array $object): BrkLookupResult {
+		return new BrkLookupResult(
+			lookupStatus: 'FOUND',
+			parcel: $this->mapper->map($object),
+			dormant: false,
+			extras: ['tier' => $this->mode->resolve(integration: 'brk', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
+		);
+	}//end foundObject()
+
+	/**
 	 * A configured live adapter is not dormant.
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool {
 		return false;
 	}//end isDormant()
-
-	/**
-	 * Build the shared request headers.
-	 *
-	 * @return array<string,string>
-	 */
-	private function headers(): array {
-		$apiKey = $this->mode->setting(integration: 'brk', key: 'apiKey');
-		$headers = ['Accept' => 'application/hal+json'];
-		if ($apiKey !== '') {
-			$headers['X-Api-Key'] = $apiKey;
-		}
-
-		return $headers;
-	}//end headers()
 
 	/**
 	 * Build a LOOKUP_ERROR result for a non-2xx, non-404 HTTP status.

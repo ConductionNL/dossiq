@@ -6,7 +6,7 @@
  * given: lists that arrive as a JSON string or as an array, and a step's
  * config with a default for every field.
  *
- * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
  */
 
 /**

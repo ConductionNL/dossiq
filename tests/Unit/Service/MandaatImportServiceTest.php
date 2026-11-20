@@ -34,6 +34,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\MandaatImportService
  * @covers \OCA\Dossiq\Service\Mandaat\MandaatRepository
  * @covers \OCA\Dossiq\Service\Mandaat\MandaatCsvParser
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
  */
 class MandaatImportServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

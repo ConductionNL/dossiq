@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 final class RecordingTransferObjects {
 	/**
@@ -60,6 +61,7 @@ final class RecordingTransferObjects {
 	 * @return mixed
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		$this->log[] = ['objects.find' => ['id' => $id] + $args];
 		$found = ($this->behaviour['find'][(string)$id] ?? null);
 		if ($found === 'throw') {
@@ -82,7 +84,9 @@ final class RecordingTransferObjects {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, int $register, int $schema) {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->log[] = ['objects.saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		$idKey = ($this->behaviour['idKey'] ?? 'id');
 		if ($idKey !== 'none' && isset($object['id']) === false && isset($object['uuid']) === false) {

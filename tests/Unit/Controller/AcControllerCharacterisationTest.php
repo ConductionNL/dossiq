@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\AcController;
+use OCA\Dossiq\Controller\Support\ApplicatieRules;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -649,6 +650,28 @@ class AcControllerCharacterisationTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(['detail' => 'cannot save'], $response->getData());
 	}//end testCreateFailures()
+
+	/**
+	 * The uniqueness rule skips the applicatie being updated, and only that one.
+	 *
+	 * @return void
+	 */
+	public function testClientIdUniquenessSkipsTheApplicatieItself(): void {
+		$this->seedConsumers();
+		$l10n = $this->createMock(IL10N::class);
+		$rules = new ApplicatieRules($this->zgwService, $l10n);
+
+		$this->assertNull($rules->validateApplicatieBody(body: ['clientIds' => ['app-one']], excludeUuid: 'u-1'));
+		$this->assertNull($rules->validateApplicatieBody(body: ['clientIds' => ['extra-two', 'fresh']], excludeUuid: 'u-2'));
+		$this->assertSame(
+			'clientId "app-one" is already used by another applicatie.',
+			$rules->validateApplicatieBody(body: ['clientIds' => ['app-one']], excludeUuid: 'u-2')->getData()['invalidParams'][0]['reason']
+		);
+		$this->assertSame(
+			'clientId "extra-two" is already used by another applicatie.',
+			$rules->validateApplicatieBody(body: ['clientIds' => ['extra-two']], excludeUuid: null)->getData()['invalidParams'][0]['reason']
+		);
+	}//end testClientIdUniquenessSkipsTheApplicatieItself()
 
 	/**
 	 * Update refuses without ac.bijwerken and for an unknown uuid.

@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermEndRollInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermCalendarGuard;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -46,9 +47,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Rolls a term end onto the first ordinary day the calendar allows.
  *
- * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class TermEndRoll {
+class TermEndRoll implements TermEndRollInterface {
 	/**
 	 * Constructor.
 	 *
@@ -97,7 +98,7 @@ class TermEndRoll {
 	 *
 	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEnd(
 		DateTimeImmutable $date,
@@ -123,7 +124,7 @@ class TermEndRoll {
 	 *
 	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEndFor(
 		DateTimeImmutable $date,
@@ -155,7 +156,7 @@ class TermEndRoll {
 	 *
 	 * @return bool True when the end date rolls.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollEnabled(array $definitie): bool {
 		if (array_key_exists('rollToWorkingDay', $definitie) === false) {
@@ -178,7 +179,7 @@ class TermEndRoll {
 	 *
 	 * @return boolean True when both engine classes resolve.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function calendarAnswers(): bool {
 		return ($this->settingsService->getOpenRegisterClass(TermijnTimerService::CALENDAR_SERVICE_CLASS) !== null

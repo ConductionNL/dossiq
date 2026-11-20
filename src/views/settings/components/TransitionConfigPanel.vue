@@ -447,49 +447,14 @@ export default {
 }
 </script>
 
-<style scoped>
-.transition-config-panel {
-	position: fixed;
-	right: 0;
-	top: 0;
-	width: 400px;
-	height: 100%;
-	background: var(--color-main-background);
-	border-left: 1px solid var(--color-border);
-	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-	z-index: 100;
-	display: flex;
-	flex-direction: column;
-}
+<style scoped lang="scss">
+@use './_configPanel.scss' as panel;
 
-.transition-config-panel__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 12px 16px;
-	border-bottom: 1px solid var(--color-border);
-}
+@include panel.config-panel(transition-config-panel, 400px);
 
-.transition-config-panel__header h4 {
-	margin: 0;
-}
-
-.transition-config-panel__body {
-	padding: 16px;
-	flex: 1;
-	overflow-y: auto;
-}
-
-.transition-config-panel__field {
-	margin-bottom: 12px;
-}
-
-.transition-config-panel__field label {
-	display: block;
-	font-size: 12px;
-	font-weight: 600;
+.transition-config-panel__input,
+.transition-config-panel__select {
 	margin-bottom: 4px;
-	color: var(--color-text-maxcontrast);
 }
 
 .transition-config-panel__hint {
@@ -498,52 +463,11 @@ export default {
 	margin: 4px 0 0;
 }
 
-.transition-config-panel__input {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-	margin-bottom: 4px;
-}
-
-.transition-config-panel__textarea {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-	resize: vertical;
-}
-
-.transition-config-panel__select {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-	margin-bottom: 4px;
-}
-
 .transition-config-panel__role-check {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	padding: 4px 0;
-}
-
-.transition-config-panel__section {
-	margin-top: 20px;
-	padding-top: 16px;
-	border-top: 1px solid var(--color-border);
-}
-
-.transition-config-panel__section h5 {
-	font-size: 12px;
-	font-weight: 600;
-	text-transform: uppercase;
-	color: var(--color-text-maxcontrast);
-	margin: 0 0 8px 0;
 }
 
 .transition-config-panel__guard,

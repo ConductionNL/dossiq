@@ -32,14 +32,13 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -49,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Thin HTTP client for Hermiq's local structured PII-detection API.
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
  */
 class HermiqAnonymisationClient {
 	/**
@@ -87,7 +86,7 @@ class HermiqAnonymisationClient {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function isAvailable(): bool {
 		return $this->appManager->isEnabledForUser('hermiq');
@@ -106,7 +105,7 @@ class HermiqAnonymisationClient {
 	 *                                  response from Hermiq (reused — same coded-failure shape
 	 *                                  `HermiqAssistantClient` already throws).
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function detectPii(string $text, array $context): array {
 		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAnonymisationClient');

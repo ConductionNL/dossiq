@@ -23,9 +23,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\RecallSamplesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -36,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
  */
-class RecallSamples {
+class RecallSamples implements RecallSamplesInterface {
 
 	use SearchesObjects;
 
@@ -53,9 +56,9 @@ class RecallSamples {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The relevance of each document.
-	 * @param WooCaseDocuments $caseDocuments The documents on a case.
+	 * @param WooCaseDocumentsInterface $caseDocuments The documents on a case.
 	 * @param ReviewBatches $batches The batch the sample is judged in.
 	 * @param ReviewDepth $depth The seeded draw.
 	 * @param StoppingRules $rules The case's stopping rule.
@@ -66,9 +69,9 @@ class RecallSamples {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewBatches $batches,
 		private readonly ReviewDepth $depth,
 		private readonly StoppingRules $rules,
@@ -94,6 +97,73 @@ class RecallSamples {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 	 */
 	public function draw(string $caseId, int $size, string $assignee, string $userId, ?int $seed = null): array {
+		$this->assertAssigneeChosen(assignee: $assignee);
+		$row = $this->drawnSample(caseId: $caseId, request: ['size' => $size, 'seed' => $seed, 'userId' => $userId]);
+		$sample = $this->save(sample: $row);
+		$sample['batch'] = $this->sampleBatchId(sampleId: self::idOf(row: $sample), row: $row + ['assignee' => $assignee]);
+
+		return $this->save(sample: $sample);
+	}//end draw()
+
+	/**
+	 * Draw the sample from the case's null set, as the row to store.
+	 *
+	 * @param string               $caseId  The case UUID.
+	 * @param array<string, mixed> $request The sample size as `size`, the seed (or null) as `seed`, who draws it as `userId`.
+	 *
+	 * @return array<string, mixed> The unsaved sample.
+	 *
+	 * @throws RefusedException When the size does not fit the null set.
+	 */
+	private function drawnSample(string $caseId, array $request): array {
+		[$nullSet, $found] = $this->nullSetOf(caseId: $caseId);
+		$this->assertSampleSizeFits(size: $request['size'], nullSetSize: count($nullSet));
+
+		$seed = ($request['seed'] ?? random_int(1, PHP_INT_MAX));
+		$documents = $this->depth->drawSample(items: $nullSet, size: $request['size'], seed: $seed);
+
+		return [
+			'case' => $caseId,
+			'seed' => $seed,
+			'drawnBy' => $request['userId'],
+			'drawnAt' => date(DATE_ATOM),
+			'nullSetSize' => count($nullSet),
+			'found' => $found,
+			'documents' => $documents,
+			'judgements' => [],
+		];
+	}//end drawnSample()
+
+	/**
+	 * Hand a stored sample to its reviewer as a sample batch.
+	 *
+	 * @param string               $sampleId The stored sample's id.
+	 * @param array<string, mixed> $row      The drawn sample, with the reviewer as `assignee`.
+	 *
+	 * @return string The batch id.
+	 */
+	private function sampleBatchId(string $sampleId, array $row): string {
+		$batch = $this->batches->createSampleBatch(
+			caseId: $row['case'],
+			sampleId: $sampleId,
+			assignee: $row['assignee'],
+			documents: $row['documents'],
+			userId: $row['drawnBy']
+		);
+
+		return self::idOf(row: $batch);
+	}//end sampleBatchId()
+
+	/**
+	 * Refuse a sample without a reviewer, or with one not admitted to review.
+	 *
+	 * @param string $assignee The reviewer of the sample.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reviewer is chosen or the reviewer is not admitted.
+	 */
+	private function assertAssigneeChosen(string $assignee): void {
 		if ($assignee === '') {
 			throw new RefusedException(
 				rule: 'review-recall-assignee-unknown',
@@ -103,6 +173,16 @@ class RecallSamples {
 		}
 
 		$this->batches->assertReviewerAdmitted(assignee: $assignee);
+	}//end assertAssigneeChosen()
+
+	/**
+	 * The case's null set (documents not marked in scope) and the count found in scope.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{0: list<mixed>, 1: int} The null set and the in-scope count.
+	 */
+	private function nullSetOf(string $caseId): array {
 		$reviews = $this->reviews->forCase(caseId: $caseId);
 		$nullSet = [];
 		$found = 0;
@@ -115,41 +195,28 @@ class RecallSamples {
 			$nullSet[] = $ref;
 		}
 
-		if ($size < 1 || $size > count($nullSet)) {
+		return [$nullSet, $found];
+	}//end nullSetOf()
+
+	/**
+	 * Refuse a sample size that does not fit the null set.
+	 *
+	 * @param int $size        The sample size.
+	 * @param int $nullSetSize The number of documents in the null set.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the size is below 1 or above the null set.
+	 */
+	private function assertSampleSizeFits(int $size, int $nullSetSize): void {
+		if ($size < 1 || $size > $nullSetSize) {
 			throw new RefusedException(
 				rule: 'review-recall-size',
 				sentence: 'Choose a sample size between 1 and the number of documents set aside or not yet marked.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-
-		$seed = ($seed ?? random_int(1, PHP_INT_MAX));
-		$documents = $this->depth->drawSample(items: $nullSet, size: $size, seed: $seed);
-		$sample = $this->save(
-			sample: [
-				'case' => $caseId,
-				'seed' => $seed,
-				'drawnBy' => $userId,
-				'drawnAt' => date(DATE_ATOM),
-				'nullSetSize' => count($nullSet),
-				'found' => $found,
-				'documents' => $documents,
-				'judgements' => [],
-			]
-		);
-
-		$sampleId = self::idOf(row: $sample);
-		$batch = $this->batches->createSampleBatch(
-			caseId: $caseId,
-			sampleId: $sampleId,
-			assignee: $assignee,
-			documents: $documents,
-			userId: $userId
-		);
-		$sample['batch'] = self::idOf(row: $batch);
-
-		return $this->save(sample: $sample);
-	}//end draw()
+	}//end assertSampleSizeFits()
 
 	/**
 	 * Judge one sampled document in or out of scope, in the sample only; estimate when it was the last.
@@ -168,7 +235,47 @@ class RecallSamples {
 	 */
 	public function judge(string $caseId, string $sampleId, string $documentRef, bool $inScope, string $userId): array {
 		$sample = $this->find(caseId: $caseId, sampleId: $sampleId);
+		$judgement = ['documentRef' => $documentRef, 'inScope' => $inScope, 'caseId' => $caseId, 'userId' => $userId];
+
+		return $this->withProgress(sample: $this->save(sample: $this->withJudgement(sample: $sample, judgement: $judgement)));
+	}//end judge()
+
+	/**
+	 * The sample with one sampled document judged, completed with its estimate when it was the last.
+	 *
+	 * @param array<string, mixed> $sample    The open sample.
+	 * @param array<string, mixed> $judgement The sampled document as `documentRef`, whether it is in scope as `inScope`,
+	 *                                        the case UUID as `caseId` and who judges as `userId`.
+	 *
+	 * @return array<string, mixed> The sample with its judgements.
+	 *
+	 * @throws RefusedException When the document is not sampled or the sample is closed.
+	 */
+	private function withJudgement(array $sample, array $judgement): array {
 		$documents = array_map('strval', (array)($sample['documents'] ?? []));
+		$this->assertSampled(documents: $documents, documentRef: $judgement['documentRef']);
+		$this->assertOpen(sample: $sample);
+
+		$judgements = $this->judgementsWith(sample: $sample, documentRef: $judgement['documentRef'], inScope: $judgement['inScope']);
+		$sample['judgements'] = $judgements;
+		if (count(array_intersect($documents, array_map('strval', array_keys($judgements)))) === count($documents)) {
+			$sample = $this->complete(caseId: $judgement['caseId'], sample: $sample, userId: $judgement['userId']);
+		}
+
+		return $sample;
+	}//end withJudgement()
+
+	/**
+	 * Refuse a judgement of a document outside the sample.
+	 *
+	 * @param list<string> $documents The sampled documents.
+	 * @param string $documentRef The document to judge.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the document is not sampled.
+	 */
+	private function assertSampled(array $documents, string $documentRef): void {
 		if (in_array($documentRef, $documents, true) === false) {
 			throw new RefusedException(
 				rule: 'review-recall-document-unknown',
@@ -176,7 +283,18 @@ class RecallSamples {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end assertSampled()
 
+	/**
+	 * Refuse a judgement in a sample whose estimate is recorded.
+	 *
+	 * @param array<string, mixed> $sample The recall sample.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the sample is closed.
+	 */
+	private function assertOpen(array $sample): void {
 		if (isset($sample['estimatedAt']) === true && $sample['estimatedAt'] !== '') {
 			throw new RefusedException(
 				rule: 'review-recall-sample-closed',
@@ -184,20 +302,26 @@ class RecallSamples {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end assertOpen()
 
+	/**
+	 * The sample's judgements, with this document judged in or out of scope.
+	 *
+	 * @param array<string, mixed> $sample The recall sample.
+	 * @param string $documentRef The judged document.
+	 * @param bool $inScope Whether the document is about the request after all.
+	 *
+	 * @return array<string, string> The judgements by document.
+	 */
+	private function judgementsWith(array $sample, string $documentRef, bool $inScope): array {
 		$judgements = (array)($sample['judgements'] ?? []);
 		$judgements[$documentRef] = DocumentRelevance::OUT_OF_SCOPE;
 		if ($inScope === true) {
 			$judgements[$documentRef] = DocumentRelevance::IN_SCOPE;
 		}
 
-		$sample['judgements'] = $judgements;
-		if (count(array_intersect($documents, array_map('strval', array_keys($judgements)))) === count($documents)) {
-			$sample = $this->complete(caseId: $caseId, sample: $sample, userId: $userId);
-		}
-
-		return $this->withProgress(sample: $this->save(sample: $sample));
-	}//end judge()
+		return $judgements;
+	}//end judgementsWith()
 
 	/**
 	 * The case's samples, newest first, each with its progress.
@@ -253,28 +377,9 @@ class RecallSamples {
 	 */
 	private function complete(string $caseId, array $sample, string $userId): array {
 		$rule = $this->rules->forCase(caseId: $caseId);
-		$confidence = self::DEFAULT_CONFIDENCE;
-		if ($rule !== null) {
-			$confidence = (float)$rule['confidence'];
-		}
+		$confidence = $this->confidenceOf(rule: $rule);
 
-		$inScope = array_filter((array)$sample['judgements'], static fn (mixed $judgement): bool => $judgement === DocumentRelevance::IN_SCOPE);
-		$k = count($inScope);
-		$estimate = $this->estimator->estimate(
-			found: (int)($sample['found'] ?? 0),
-			nullSetSize: (int)($sample['nullSetSize'] ?? 0),
-			k: $k,
-			n: count((array)$sample['documents']),
-			confidence: $confidence,
-		);
-
-		$sample['k'] = $k;
-		$sample['confidence'] = $confidence;
-		$sample['elusionRate'] = round((float)$estimate['elusion'], 4);
-		$sample['elusionUpper'] = round((float)$estimate['elusionUpper'], 4);
-		$sample['recallEstimate'] = round((float)$estimate['estimate'], 4);
-		$sample['recallLowerBound'] = round((float)$estimate['lowerBound'], 4);
-		$sample['estimatedAt'] = date(DATE_ATOM);
+		$sample = $this->withEstimate(sample: $sample, confidence: $confidence);
 
 		$metAt = $this->met->record(caseId: $caseId, rule: $rule, sample: $sample, userId: $userId);
 		if ($metAt !== null) {
@@ -283,6 +388,63 @@ class RecallSamples {
 
 		return $sample;
 	}//end complete()
+
+	/**
+	 * The confidence the stopping rule asks for, or the default without one.
+	 *
+	 * @param array<string, mixed>|null $rule The case's stopping rule.
+	 *
+	 * @return float The confidence.
+	 */
+	private function confidenceOf(?array $rule): float {
+		$confidence = self::DEFAULT_CONFIDENCE;
+		if ($rule !== null) {
+			$confidence = (float)$rule['confidence'];
+		}
+
+		return $confidence;
+	}//end confidenceOf()
+
+	/**
+	 * The sample with its recall estimate.
+	 *
+	 * @param array<string, mixed> $sample     The fully judged sample.
+	 * @param float                $confidence The confidence.
+	 *
+	 * @return array<string, mixed> The sample with its estimate.
+	 */
+	private function withEstimate(array $sample, float $confidence): array {
+		$inScope = array_filter((array)$sample['judgements'], static fn (mixed $judgement): bool => $judgement === DocumentRelevance::IN_SCOPE);
+		$sample['k'] = count($inScope);
+		$sample['confidence'] = $confidence;
+		$estimate = $this->estimateOf(sample: $sample);
+
+		$sample['elusionRate'] = round((float)$estimate['elusion'], 4);
+		$sample['elusionUpper'] = round((float)$estimate['elusionUpper'], 4);
+		$sample['recallEstimate'] = round((float)$estimate['estimate'], 4);
+		$sample['recallLowerBound'] = round((float)$estimate['lowerBound'], 4);
+		$sample['estimatedAt'] = date(DATE_ATOM);
+
+		return $sample;
+	}//end withEstimate()
+
+	/**
+	 * The estimator's answer for a judged sample.
+	 *
+	 * @param array<string, mixed> $sample The fully judged sample, with how many sampled documents were in scope as `k`
+	 *                                     and the confidence.
+	 *
+	 * @return array<string, mixed> The estimate.
+	 */
+	private function estimateOf(array $sample): array {
+		return $this->estimator->estimate(
+			found: (int)($sample['found'] ?? 0),
+			nullSetSize: (int)($sample['nullSetSize'] ?? 0),
+			k: $sample['k'],
+			n: count((array)$sample['documents']),
+			confidence: $sample['confidence'],
+		);
+	}//end estimateOf()
 
 	/**
 	 * The sample of this case, or a refusal.
@@ -368,21 +530,36 @@ class RecallSamples {
 		try {
 			$saved = $objectService->saveObject(
 				object: $sample,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $schema
+						),
+					uuid: $uuid
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: a Recall sample could not be stored', ['exception' => $e->getMessage()]);
 			throw $this->unstored(previous: $e);
 		}
 
+		return $this->savedRow(saved: $saved);
+	}//end save()
+
+	/**
+	 * The stored sample as an array.
+	 *
+	 * @param mixed $saved What the ObjectService answered.
+	 *
+	 * @return array<string, mixed> The stored sample.
+	 */
+	private function savedRow(mixed $saved): array {
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			return (array)$saved->jsonSerialize();
 		}
 
 		return (array)$saved;
-	}//end save()
+	}//end savedRow()
 
 	/**
 	 * The refusal when the sample cannot be stored.

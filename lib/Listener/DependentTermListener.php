@@ -35,12 +35,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Term\DependentTermOffer;
-use OCA\Dossiq\Service\TermijnService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -64,15 +64,15 @@ class DependentTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Schema ids and the object service.
-	 * @param TermijnService     $terms           Reads the instance the event names.
-	 * @param DependentTermOffer $offers          Writes the offer.
+	 * @param SettingsServiceInterface    $settingsService Schema ids and the object service.
+	 * @param TermijnServiceInterface     $terms           Reads the instance the event names.
+	 * @param DependentTermOfferInterface $offers          Writes the offer.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $terms,
-		private readonly DependentTermOffer $offers,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $terms,
+		private readonly DependentTermOfferInterface $offers,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -93,31 +93,57 @@ class DependentTermListener implements IEventListener {
 				return;
 			}
 
-			if (in_array((string)($object['type'] ?? ''), DependentTermOffer::MOVING_EVENTS, true) === false) {
-				return;
-			}
-
-			$days = (int)($object['daysImpact'] ?? 0);
-			if ($days <= 0) {
-				return;
-			}
-
-			$caseId = $this->caseBehind(object: $object);
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->offers->offer(
-				sourceCaseId: $caseId,
-				sourceTitle: $this->titleOf(caseId: $caseId),
-				daysImpact: $days
-			);
+			$this->offerMovedTerm(object: $object);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a moved term could not be offered to its dependents: ' . $e->getMessage()
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Offer a term event that moved the term to the dependents of its case.
+	 *
+	 * @param array<string, mixed> $object The term event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 */
+	private function offerMovedTerm(array $object): void {
+		$days = $this->movedDays(object: $object);
+		if ($days <= 0) {
+			return;
+		}
+
+		$caseId = $this->caseBehind(object: $object);
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->offers->offer(
+			sourceCaseId: $caseId,
+			sourceTitle: $this->titleOf(caseId: $caseId),
+			daysImpact: $days
+		);
+	}//end offerMovedTerm()
+
+	/**
+	 * The days a moving term event moved the term by, 0 for any other event.
+	 *
+	 * @param array<string, mixed> $object The term event.
+	 *
+	 * @return int The days.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 */
+	private function movedDays(array $object): int {
+		if (in_array((string)($object['type'] ?? ''), DependentTermOfferInterface::MOVING_EVENTS, true) === false) {
+			return 0;
+		}
+
+		return (int)($object['daysImpact'] ?? 0);
+	}//end movedDays()
 
 	/**
 	 * The case the event's instance is bound to.

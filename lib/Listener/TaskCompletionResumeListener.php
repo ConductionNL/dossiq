@@ -95,7 +95,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof TaskTerminalEvent) === false) {
@@ -107,38 +107,62 @@ class TaskCompletionResumeListener implements IEventListener {
 			return;
 		}
 
+		$this->resume(task: $task);
+	}//end handle()
+
+	/**
+	 * Answer the run the completed task names, recording a refusal or failure.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function resume(array $task): void {
 		$runUuid = (string)$task['flowRun'];
 		$uid = $this->userSession->getUser()?->getUID();
 
 		try {
-			$this->signals->answerByUuid(
-				runUuid: $runUuid,
-				signal: new RunSignal(
-					payload: [
-						// A resume with no `decision` is a nudge, not an answer, and
-						// the awaiting node suspends again. Saying `completed`
-						// explicitly is what makes this an answer.
-						'decision' => 'completed',
-						'node' => (string)$task['flowNode'],
-						'taskId' => (string)($task['id'] ?? ''),
-						'completedBy' => (string)$uid,
-					],
-					actorUid: $uid,
-					// Addressing the node the task names makes the guard check THAT
-					// node's recorded assignee, so a run awaiting two steps never
-					// refuses this one for the other's audience.
-					nodeId: (string)$task['flowNode'],
-				)
-			);
+			$this->signals->answerByUuid(runUuid: $runUuid, signal: $this->completionSignal(task: $task, uid: $uid));
 		} catch (FlowSignalRefused $e) {
-			$this->recordRefusal(refusal: $e, runUuid: $runUuid, task: $task, uid: $uid);
+			$this->recordRefusal(refusal: $e, completion: ['runUuid' => $runUuid, 'task' => $task, 'uid' => $uid]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not resume flow run ' . $runUuid . ' after its task was completed',
 				['error' => $e->getMessage(), 'task' => ($task['id'] ?? null)]
 			);
 		}//end try
-	}//end handle()
+	}//end resume()
+
+	/**
+	 * The signal that answers the task's node as completed.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 * @param string|null          $uid  Who completed it.
+	 *
+	 * @return RunSignal The signal.
+	 *
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function completionSignal(array $task, ?string $uid): RunSignal {
+		return new RunSignal(
+			payload: [
+				// A resume with no `decision` is a nudge, not an answer, and
+				// the awaiting node suspends again. Saying `completed`
+				// explicitly is what makes this an answer.
+				'decision' => 'completed',
+				'node' => (string)$task['flowNode'],
+				'taskId' => (string)($task['id'] ?? ''),
+				'completedBy' => (string)$uid,
+			],
+			actorUid: $uid,
+			// Addressing the node the task names makes the guard check THAT
+			// node's recorded assignee, so a run awaiting two steps never
+			// refuses this one for the other's audience.
+			nodeId: (string)$task['flowNode'],
+		);
+	}//end completionSignal()
 
 	/**
 	 * Record a refusal at the loudness its reason deserves.
@@ -150,16 +174,16 @@ class TaskCompletionResumeListener implements IEventListener {
 	 * has nothing left to wake, and a run that is no longer suspended needed no
 	 * waking. Neither is the completer's fault, so neither is raised.
 	 *
-	 * @param FlowSignalRefused    $refusal The typed refusal.
-	 * @param string               $runUuid The run the task named.
-	 * @param array<string, mixed> $task    The completed task.
-	 * @param string|null          $uid     Who completed it.
+	 * @param FlowSignalRefused    $refusal    The typed refusal.
+	 * @param array<string, mixed> $completion The run the task named (`runUuid`), the completed task (`task`)
+	 *                                         and who completed it (`uid`).
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function recordRefusal(FlowSignalRefused $refusal, string $runUuid, array $task, ?string $uid): void {
+	private function recordRefusal(FlowSignalRefused $refusal, array $completion): void {
+		[$runUuid, $task, $uid] = [$completion['runUuid'], $completion['task'], $completion['uid']];
 		if ($refusal->getReason() === FlowSignalRefused::NOT_ASSIGNEE) {
 			$this->logger->warning(
 				'Dossiq: the engine refused to resume flow run ' . $runUuid

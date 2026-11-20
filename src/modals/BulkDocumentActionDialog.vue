@@ -112,12 +112,46 @@ import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { fileNodeDialog } from '../mixins/fileNodeDialog.js'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
+
+/**
+ * The gesture each named mode runs on the dialog; any other mode downloads the ZIP.
+ *
+ * @type {Map<string, function(object): Promise<void>>}
+ */
+const MODE_GESTURES = new Map([
+	['mark-final', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/status',
+		{ status: 'final' },
+	)],
+	['confidentiality', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/metadata',
+		{ metadata: { vertrouwelijkheidaanduiding: dialog.level } },
+	)],
+	['copy-to-case', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/copy',
+		{ targetCaseId: String(dialog.targetCase?.id ?? '') },
+	)],
+	['merge-pdf', (dialog) => dialog.mergePdf()],
+])
+
+/**
+ * The ZIP download, the dialog's gesture for every mode without its own.
+ *
+ * @param {object} dialog The dialog.
+ * @return {Promise<void>}
+ */
+function downloadZipGesture(dialog) {
+	return dialog.downloadZip()
+}
 
 export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
+
+	mixins: [caseDialogResolved, fileNodeDialog],
 
 	props: {
 		/**
@@ -144,34 +178,12 @@ export default {
 		},
 
 		/**
-		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
-		 * row action's props by CnFilesBrowser.
-		 */
-		fileId: {
-			type: [String, Number],
-			default: '',
-		},
-
-		/**
 		 * The Nextcloud file ids of the files ticked in the Files tab, handed
 		 * in by CnFilesBrowser's bulk bar.
 		 */
 		fileIds: {
 			type: Array,
 			default: () => [],
-		},
-
-		/** The clicked node's name, for the dialog's own sentence. */
-		fileName: {
-			type: String,
-			default: '',
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		// Only used by `zip`, which downloads scoped to one case.
-		caseId: {
-			type: String,
-			default: '',
 		},
 	},
 
@@ -198,19 +210,6 @@ export default {
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
-		},
-
-		/**
-		 * The case the `zip` mode downloads, resolved the same defensive way
-		 * as GenerateDocumentDialog / DocumentMetadataDialog: an
-		 * `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is.
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
@@ -261,23 +260,8 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async onConfirm() {
-			if (this.mode === 'mark-final')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/status',
-					{ status: 'final' },
-				)
-			if (this.mode === 'confidentiality')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/metadata',
-					{ metadata: { vertrouwelijkheidaanduiding: this.level } },
-				)
-			if (this.mode === 'copy-to-case')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/copy',
-					{ targetCaseId: String(this.targetCase?.id ?? '') },
-				)
-			if (this.mode === 'merge-pdf') return this.mergePdf()
-			return this.downloadZip()
+			const gesture = MODE_GESTURES.get(this.mode) ?? downloadZipGesture
+			return gesture(this)
 		},
 
 		/**

@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  *
  * @link https://conduction.nl
  */
@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Controller\Support\AllowsGroupMembers;
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -45,9 +46,11 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  */
 class AiAuditExportController extends Controller {
+	use AllowsGroupMembers;
+
 	/**
 	 * Groups that may export the AI audit trail (same gate as the
 	 * parafering audit export).
@@ -98,7 +101,7 @@ class AiAuditExportController extends Controller {
 	 * @param IRequest $request Incoming request
 	 * @param IUserSession $userSession Current user session
 	 * @param IGroupManager $groupManager Group manager (for RBAC check)
-	 * @param AiAuditService $auditService The AI oversight audit service (audit listing)
+	 * @param AiAuditServiceInterface $auditService The AI oversight audit service (audit listing)
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -106,7 +109,7 @@ class AiAuditExportController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly AiAuditService $auditService,
+		private readonly AiAuditServiceInterface $auditService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -194,24 +197,6 @@ class AiAuditExportController extends Controller {
 			contentType: 'text/csv',
 		);
 	}//end exportedEntries()
-
-	/**
-	 * Check whether the given user id belongs to an allowed group (or is an
-	 * NC admin, defensive default).
-	 *
-	 * @param string $uid The Nextcloud user id.
-	 *
-	 * @return bool
-	 */
-	private function isAllowed(string $uid): bool {
-		foreach (self::ALLOWED_GROUPS as $group) {
-			if ($this->groupManager->isInGroup($uid, $group) === true) {
-				return true;
-			}
-		}
-
-		return $this->groupManager->isAdmin($uid) === true;
-	}//end isAllowed()
 
 	/**
 	 * Collect audit entries across pages up to {@see self::MAX_EXPORT_ROWS}.

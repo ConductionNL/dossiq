@@ -22,14 +22,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseVoorbladServiceInterface;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,9 +39,9 @@ use Throwable;
 /**
  * Builds the KCC case-voorblad for an identified burger.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
-class CaseVoorbladService {
+class CaseVoorbladService implements CaseVoorbladServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -63,7 +65,7 @@ class CaseVoorbladService {
 	 *
 	 * @return array{burgerId: string, openZaken: array<int, mixed>, recenteContactmomenten: array<int, mixed>, suggestedTopic: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
 	 */
 	public function getCaseVoorblad(string $burgerId): array {
 		$maxCases = max(1, (int)$this->settingsService->getKccConfigValue('max_zaken_voorblad'));
@@ -106,7 +108,7 @@ class CaseVoorbladService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch zaken for voorblad: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return [];
 		}
@@ -237,18 +239,6 @@ class CaseVoorbladService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

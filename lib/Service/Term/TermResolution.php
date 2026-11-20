@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -44,15 +44,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
+use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 
 /**
  * Resolves a term definition for a case, and says which rule produced it.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
  */
-class TermResolution {
+class TermResolution implements TermResolutionInterface {
 	/**
 	 * The order, most specific first. It is a constant rather than a setting
 	 * because the point of the change is that there is ONE order and everybody
@@ -68,11 +70,20 @@ class TermResolution {
 	public const FALLBACK = 'caseType';
 
 	/**
+	 * What a resolution answers when the case type picked a second definition.
+	 */
+	public const PICKED = 'caseTypePick';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $terms The store of term definitions.
+	 * @param TermijnService             $terms        The store of term definitions.
+	 * @param TermDeclarationReader|null $declarations Reads the second statutory term a case type picks.
 	 */
-	public function __construct(private readonly TermijnService $terms) {
+	public function __construct(
+		private readonly TermijnService $terms,
+		private readonly ?TermDeclarationReader $declarations = null,
+	) {
 	}//end __construct()
 
 	/**
@@ -85,7 +96,12 @@ class TermResolution {
 	 * @return array{definition: array<string, mixed>, resolvedFrom: string, snapshot: array<string, mixed>}|null
 	 *         The resolution, or null when the case type declares no term at all.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+	 * The case type's own term is the definition it names in
+	 * `statutoryTermDefinition` (context `termDefinition`, or read off the case
+	 * type named by `caseTypeId`), else its general definition.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
 	 */
 	public function resolve(string $caseType, array $context, string $kind = TermKind::STATUTORY): ?array {
 		$candidates = $this->ofKind(rows: $this->terms->definitionsFor(caseType: $caseType), kind: $kind);
@@ -97,7 +113,9 @@ class TermResolution {
 		// names no organisation, service or priority. A definition that names
 		// one and did not match is NOT a fallback, because falling back to
 		// somebody else's agreed norm is worse than having none.
-		$chosen = (self::byScope(candidates: $candidates, context: $context) ?? self::general(candidates: $candidates));
+		$chosen = (self::byScope(candidates: $candidates, context: $context)
+			?? self::picked(candidates: $candidates, id: $this->pickOf(context: $context))
+			?? self::general(candidates: $candidates));
 		if ($chosen === null) {
 			return null;
 		}
@@ -171,7 +189,60 @@ class TermResolution {
 	}//end byScope()
 
 	/**
+	 * The id of the second term the case type picks: `termDefinition` in the
+	 * context, else read off the case type named by `caseTypeId`.
+	 *
+	 * A case type that cannot be read picks nothing: the case still gets its
+	 * general term, as it did before a case type could pick one, rather than
+	 * no term at all.
+	 *
+	 * @param array<string, mixed> $context The case's values.
+	 *
+	 * @return string The definition id, or ''.
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
+	 */
+	private function pickOf(array $context): string {
+		$named = trim((string)($context['termDefinition'] ?? ''));
+		$caseTypeId = trim((string)($context['caseTypeId'] ?? ''));
+		if ($named !== '' || $caseTypeId === '' || $this->declarations === null) {
+			return $named;
+		}
+
+		try {
+			return $this->declarations->forCaseType(caseTypeId: $caseTypeId)['statutoryTermDefinition'];
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end pickOf()
+
+	/**
+	 * The candidate the case type picked by id.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
+	 * @param string                           $id         The id the case type names; empty for none.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The pick and its rule.
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
+	 */
+	private static function picked(array $candidates, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		foreach ($candidates as $candidate) {
+			if ((string)($candidate['id'] ?? '') === $id) {
+				return ['definition' => $candidate, 'resolvedFrom' => self::PICKED];
+			}
+		}
+
+		return null;
+	}//end picked()
+
+	/**
 	 * The case type's own definition, naming no narrower scope.
+	 * A definition only a case type's pick applies is never its default.
 	 *
 	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
 	 *
@@ -179,7 +250,7 @@ class TermResolution {
 	 */
 	private static function general(array $candidates): ?array {
 		foreach ($candidates as $candidate) {
-			if (self::scopeOf(values: $candidate) === []) {
+			if (($candidate['pickedByCaseType'] ?? false) !== true && self::scopeOf(values: $candidate) === []) {
 				return ['definition' => $candidate, 'resolvedFrom' => self::FALLBACK];
 			}
 		}

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2

@@ -31,9 +31,11 @@ use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\DefinitionSeedRun
  */
 class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	private FakeTermijnObjectService $objects;
@@ -284,11 +286,14 @@ class FakeTermijnObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): array {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$id = (string)($uuid ?? $object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
 		$object['id'] = $id;
@@ -347,11 +352,14 @@ class RefusingTermijnObjectService extends FakeTermijnObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): array {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		throw new \RuntimeException("User 'Anonymous' does not have permission to 'create'");
 	}
 }

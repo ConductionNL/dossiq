@@ -13,8 +13,8 @@
   parent that cannot take a sub-case gets the reason instead of the form.
   After a create it refreshes the page and closes.
 
-  @spec openspec/changes/deelzaak-support/tasks.md#T08
-  @spec openspec/changes/deelzaak-support/tasks.md#T09
+  @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
+  @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T09
 -->
 <template>
 	<NcDialog
@@ -161,9 +161,9 @@ import {
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import logger from '../logger.js'
+import { modalForm } from '../mixins/modalForm.js'
 import { createSubCase } from '../services/deelzaakApi.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
-import { useObjectStore } from '../store/modules/object.js'
 import {
 	calculateDeadline,
 	DEFAULT_CASE_CONFIDENTIALITY,
@@ -424,6 +424,8 @@ export default {
 		AlertCircleOutline,
 	},
 
+	mixins: [modalForm],
+
 	props: {
 		/** Parent case UUID — will be set as `parentCase` on the new sub-case. */
 		parentCase: {
@@ -460,10 +462,6 @@ export default {
 	},
 
 	computed: {
-		objectStore() {
-			return useObjectStore()
-		},
-
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
@@ -480,7 +478,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 		 * Filter caseTypes to ONLY those listed on parentCaseType.subCaseTypes.
 		 */
 		effectiveParentCaseType() {
@@ -601,7 +599,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 		 * Submit creates a `case` with `parentCase` set, optionally pre-checked
 		 * via the backend `/api/deelzaken/validate` endpoint.
 		 */
@@ -619,23 +617,15 @@ export default {
 				this.saving = false
 			}
 		},
-
-
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
-			}
-		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use './_modalForm.scss' as form;
+
 .deelzaak-create {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 8px 4px;
+	@include form.form-stack;
 }
 
 .deelzaak-create__parent-context {
@@ -658,38 +648,14 @@ export default {
 	font-weight: 600;
 }
 
-.form-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
+@include form.form-group;
 
-.form-group label {
-	font-weight: 500;
-	color: var(--color-main-text);
-}
+@include form.form-group-label;
 
-.form-error {
-	color: var(--color-error);
-	font-size: 0.85rem;
-	margin: 0;
-}
-
-.form-error--server {
-	padding: 8px;
-	background: var(--color-error-hover);
-	border-radius: var(--border-radius);
-}
+@include form.form-errors;
 
 .deelzaak-create__textarea {
-	width: 100%;
-	resize: vertical;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-	font-family: inherit;
+	@include form.form-textarea;
 }
 
 .deelzaak-create__textarea:focus {

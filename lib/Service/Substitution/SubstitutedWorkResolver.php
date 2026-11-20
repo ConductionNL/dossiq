@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Substitution;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsFinalStatusIds;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
@@ -44,6 +45,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  */
 class SubstitutedWorkResolver {
 	use SearchesObjects;
+	use ReadsFinalStatusIds;
 
 	/**
 	 * Constructor.
@@ -265,7 +267,7 @@ class SubstitutedWorkResolver {
 	 *
 	 * @return string The end date (`Y-m-d`), or '' when the record has none.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function routedUntil(array $sub): string {
 		$effective = (string)($sub['_activeUntil'] ?? '');
@@ -303,37 +305,4 @@ class SubstitutedWorkResolver {
 
 		return false;
 	}//end caseInScope()
-
-	/**
-	 * Resolve the set of final statusType ids (closed/archived cases).
-	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 *
-	 * @return array<int, string> The final statusType ids.
-	 *
-	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-	 */
-	private function finalStatusIds(object $objectService, string $register): array {
-		$statusTypeSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
-		if ($statusTypeSchema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $statusTypeSchema);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($rows as $row) {
-			$isFinal = ($row['isFinal'] ?? false);
-			if ($isFinal === true || $isFinal === 'true' || $isFinal === 1) {
-				$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			}
-		}
-
-		return array_values(array_filter($ids));
-	}//end finalStatusIds()
 }//end class

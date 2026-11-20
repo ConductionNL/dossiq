@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -71,14 +71,14 @@ class BezwaarAdviceRequestController extends Controller {
 	 *
 	 * @param string                   $appName           The app name.
 	 * @param IRequest                 $request           The request.
-	 * @param AdvisoryCommitteeService $advisoryCommittee The advice request lifecycle.
+	 * @param AdvisoryCommitteeServiceInterface $advisoryCommittee The advice request lifecycle.
 	 * @param IUserSession             $userSession       The session.
 	 * @param IGroupManager            $groupManager      Whether the caller is in the committee or an administrator.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AdvisoryCommitteeService $advisoryCommittee,
+		private readonly AdvisoryCommitteeServiceInterface $advisoryCommittee,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {
@@ -143,11 +143,11 @@ class BezwaarAdviceRequestController extends Controller {
 			);
 		} catch (RuntimeException $refused) {
 			$code = Http::STATUS_BAD_REQUEST;
-			if ($refused->getCode() === AdvisoryCommitteeService::NOT_FOUND) {
+			if ($refused->getCode() === AdvisoryCommitteeServiceInterface::NOT_FOUND) {
 				$code = Http::STATUS_NOT_FOUND;
 			}
 
-			if ($refused->getCode() === AdvisoryCommitteeService::NOT_CHAIR) {
+			if ($refused->getCode() === AdvisoryCommitteeServiceInterface::NOT_CHAIR) {
 				$code = Http::STATUS_FORBIDDEN;
 			}
 

@@ -59,8 +59,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCP\IGroup;
+use OCA\Dossiq\Kernel\Contracts\ProvisionAssignedGroupsInterface;
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -71,106 +72,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class ProvisionAssignedGroups implements IRepairStep {
-
-	/**
-	 * Every group the shipped register data assigns steps to.
-	 *
-	 * This list is the provisioning counterpart of the literals in
-	 * lib/Settings/dossiq_register.json and lib/Settings/register.d/*.json;
-	 * ProvisionAssignedGroupsTest sweeps the shipped flows and fails when a
-	 * group is assigned there that this list does not provision, so the two
-	 * cannot drift apart silently. The sweep reads `assigneeFallback` as well
-	 * as `assignee`: a fallback nobody is a member of fails exactly as loudly
-	 * as a primary nobody is a member of, and it fails on the case the primary
-	 * was already unable to serve.
-	 *
-	 * `bezwaarcommissie` is the bezwaaradviescommissie's own group, kept
-	 * separate from `behandelaars` on purpose: Awb art. 7:13 requires the
-	 * advisory committee to be independent of the officials who handled the
-	 * case, so routing its two steps to the handlers would be worse than the
-	 * unassigned steps it replaces.
-	 *
-	 * 🔴 THE SECOND BLOCK IS GATES, NOT ASSIGNMENTS, and it was missing.
-	 * `AccessControlGroupsAreProvisionedTest` sweeps the group ids the CODE
-	 * gates access on, and measured 2026-09-05 that seven of the nine were
-	 * created by nothing at all. `IGroupManager::isInGroup()` cannot tell a
-	 * missing group from an empty one — both answer false, with no log line —
-	 * so each of those was a permanent silent denial for every non-admin, and
-	 * the feature behind it read as broken rather than restricted: process
-	 * mining, the AI audit export, the KCC citizen lookup, and the free-form
-	 * status transition.
-	 *
-	 * `procest-admin` keeps the pre-rename spelling deliberately; see the
-	 * FROZEN note on `TransitionAuthorizer::ADMIN_GROUP_ID`. Provisioning it is
-	 * not renaming it.
-	 *
-	 * Creating a group here never disturbs one an organisation already has:
-	 * `run()` skips any id that exists and seeds only the ones it just made, so
-	 * an instance with its own `beheerders` keeps that group and its members
-	 * untouched.
-	 *
-	 * @var array<int, string>
-	 */
-	public const ASSIGNED_GROUPS = [
-		// Assigned work by the shipped flows.
-		'behandelaars',
-		'bezwaarcommissie',
-		// Gated on by the access checks in lib/.
-		'procest-admin',
-		'beheerders',
-		'auditors',
-		'secretariaat',
-		'controllers',
-		'kcc',
-		'klantcontact',
-		// The employee complaint alert audience (EmployeeAlertAudience).
-		'hr-coordinators',
-		'department-heads',
-		// Assigned a notification role by the case schema's
-		// `authorization.roles` (register.d/66-notification-routing.json).
-		// `behandelaars` above already carries the behandelaar role. A role
-		// assigned a group the server does not have is not a quiet team: the
-		// resolver reports it and the dispatcher records `recipient-unresolved`
-		// on every firing, so an unprovisioned group here is a fault row per
-		// case rather than a missing notice. AuthorizationRolesAreProvisioned
-		// Test sweeps the shipped roles against this list.
-		'coordinatoren',
-		// Named by a field rule rather than by a flow step: a case type's
-		// `fieldRoleRules` hands these two the fields it takes off the
-		// handlers, and OpenRegister's property RBAC reads the membership.
-		// An authorization group the server does not have fails the other way
-		// round from an assignment group: nobody qualifies for the allow list,
-		// so the field is withheld from everyone who is not an administrator,
-		// and the person who lost it has nothing to look at. `dossiq-risk-
-		// assessment` (register.d/38-markers-and-assessments.json) has been in
-		// that state since it shipped and is provisioned here for the same
-		// reason.
-		'dossiq-coordinators',
-		'dossiq-quality',
-		'dossiq-risk-assessment',
-		// The extra permission on a BSN and on the special-category fields of
-		// the sociaal-domein schemas (sensitive-fields-declared, row 5.6). Same
-		// direction of failure as the three above: an authorization group the
-		// server does not have matches nobody, so the field is withheld from
-		// every reader who is not an administrator. The group is created EMPTY
-		// on purpose. Sensitive data should be readable by the people an
-		// administrator names, not by everybody who happened to be installed.
-		'dossiq-sensitive',
-		// The staff group the register level authorization grants
-		// (register.d/91-register-access.json, case-access-by-handling-team).
-		// A register closed to a group the server does not have is closed to
-		// everybody but administrators, so it is provisioned with the rest.
-		// Who else belongs in it is SeedStaffGroup's, once, on the upgrade.
-		'dossiq-medewerkers',
-		// The role groups of the admin data (register.d/92-admin-data-access.json):
-		// the privacy officers read and handle data breaches, the social-domain
-		// staff read and write indications and case meetings, and handle the
-		// re-integration case type's cases. Seeded with the administrators like the others; an
-		// administrator adds the officers and staff.
-		'dossiq-privacy',
-		'dossiq-sociaal-domein',
-	];
+class ProvisionAssignedGroups implements IRepairStep, ProvisionAssignedGroupsInterface {
 
 	/**
 	 * Constructor.
@@ -228,7 +130,7 @@ class ProvisionAssignedGroups implements IRepairStep {
 			$output->info('Dossiq: created group "' . $groupId . '" for shipped flow assignments.');
 			$this->logger->info('Dossiq: provisioned assigned group', ['group' => $groupId]);
 
-			$this->seedWithAdministrators(group: $group, groupId: $groupId, output: $output);
+			$this->seedWithAdministrators(minted: new MintedGroup(group: $group, groupId: $groupId), output: $output);
 		}
 	}//end run()
 
@@ -245,43 +147,19 @@ class ProvisionAssignedGroups implements IRepairStep {
 	 * complete work through is the shape of failure this whole step exists to
 	 * remove.
 	 *
-	 * @param IGroup $group The group that was just created.
-	 * @param string $groupId The group id, for messages.
-	 * @param IOutput $output Output sink.
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IOutput     $output Output sink.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function seedWithAdministrators(IGroup $group, string $groupId, IOutput $output): void {
-		$administrators = [];
-		$adminGroup = $this->groupManager->get('admin');
-		if ($adminGroup !== null) {
-			$administrators = $adminGroup->getUsers();
-		}
-
-		$added = [];
-		foreach ($administrators as $administrator) {
-			try {
-				$group->addUser($administrator);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not seed an administrator into the assigned group',
-					['group' => $groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
-
-			$added[] = $administrator->getUID();
-		}
+	private function seedWithAdministrators(MintedGroup $minted, IOutput $output): void {
+		$groupId = $minted->groupId;
+		$added = $this->addAdministrators(minted: $minted, administrators: $this->administrators());
 
 		if ($added === []) {
-			$output->warning(
-				'Dossiq: group "' . $groupId . '" was created but has no members, so the shipped flow\'s '
-				. 'task assigned to it cannot be completed by anyone. Add a member with: '
-				. 'occ group:adduser ' . $groupId . ' <user>'
-			);
-			$this->logger->warning('Dossiq: assigned group created empty', ['group' => $groupId]);
+			$this->reportEmptyGroup(groupId: $groupId, output: $output);
 			return;
 		}
 
@@ -294,4 +172,85 @@ class ProvisionAssignedGroups implements IRepairStep {
 			['group' => $groupId, 'users' => $added]
 		);
 	}//end seedWithAdministrators()
+
+	/**
+	 * The members of the admin group, or none when it does not exist.
+	 *
+	 * @return IUser[] The administrators.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function administrators(): array {
+		$administrators = [];
+		$adminGroup = $this->groupManager->get('admin');
+		if ($adminGroup !== null) {
+			$administrators = $adminGroup->getUsers();
+		}
+
+		return $administrators;
+	}//end administrators()
+
+	/**
+	 * Add each administrator to the group.
+	 *
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IUser[]     $administrators The administrators.
+	 *
+	 * @return string[] The uids that were added.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function addAdministrators(MintedGroup $minted, array $administrators): array {
+		$added = [];
+		foreach ($administrators as $administrator) {
+			if ($this->addAdministrator(minted: $minted, administrator: $administrator) === true) {
+				$added[] = $administrator->getUID();
+			}
+		}
+
+		return $added;
+	}//end addAdministrators()
+
+	/**
+	 * Add one administrator to the group, warning when the backend refuses.
+	 *
+	 * @param MintedGroup $minted The group that was just created, and its id for messages.
+	 * @param IUser       $administrator The administrator.
+	 *
+	 * @return boolean Whether the administrator was added.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function addAdministrator(MintedGroup $minted, IUser $administrator): bool {
+		try {
+			$minted->group->addUser($administrator);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not seed an administrator into the assigned group',
+				['group' => $minted->groupId, 'user' => $administrator->getUID(), 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return true;
+	}//end addAdministrator()
+
+	/**
+	 * Warn that the group was created without members.
+	 *
+	 * @param string $groupId The group id.
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reportEmptyGroup(string $groupId, IOutput $output): void {
+		$output->warning(
+			'Dossiq: group "' . $groupId . '" was created but has no members, so the shipped flow\'s '
+			. 'task assigned to it cannot be completed by anyone. Add a member with: '
+			. 'occ group:adduser ' . $groupId . ' <user>'
+		);
+		$this->logger->warning('Dossiq: assigned group created empty', ['group' => $groupId]);
+	}//end reportEmptyGroup()
 }//end class

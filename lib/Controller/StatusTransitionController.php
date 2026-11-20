@@ -39,8 +39,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -54,7 +54,7 @@ use RuntimeException;
 /**
  * Controller for status-transition engine endpoints.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T11
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T11
  */
 class StatusTransitionController extends Controller {
 	use TranslatesRefusals;
@@ -64,19 +64,19 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param StatusTransitionService $transitionEngine The engine service
+	 * @param StatusTransitionServiceInterface $transitionEngine The engine service
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 * @param IL10N|null $l10n The translator a refusal's sentence is written in; the app's own when left out
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly StatusTransitionService $transitionEngine,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly ?IL10N $l10n = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -94,17 +94,13 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function available(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Only PARTLY unguarded before this: the transition list itself is
 		// role-filtered inside the engine, but the case's current status was
 		// emitted unconditionally, so any authenticated user could read the
 		// status of any case.
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -280,7 +276,7 @@ class StatusTransitionController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function freeform(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -311,7 +307,7 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function executeFreeForm(string $caseId, array $body): JSONResponse {
 		$toStatusId = (string)($body['toStatusId'] ?? '');
@@ -343,7 +339,7 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @return JSONResponse 403 for a caller who is not an admin, 404 for an unknown case or case type, else 400.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function freeformRejected(RuntimeException $e): JSONResponse {
 		$code = $e->getMessage();
@@ -369,13 +365,9 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function history(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -392,6 +384,26 @@ class StatusTransitionController extends Controller {
 			);
 		}
 	}//end history()
+
+	/**
+	 * Refuse a caller who is not signed in or may not read the case.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may read the case.
+	 */
+	private function readRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end readRefusal()
 
 	/**
 	 * Decode a JSON request body safely.

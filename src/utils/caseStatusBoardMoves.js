@@ -11,7 +11,7 @@
  * case's own case type and hands it over as `value`, so these handlers only
  * deal in concrete statusType ids.
  *
- * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+ * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
  */
 
 import axios from '@nextcloud/axios'
@@ -129,7 +129,7 @@ async function postTransition(caseId, transition) {
  * @param {object} query The board's question.
  * @param {object} query.card The case row.
  * @return {Promise<Array<{key: string, allowed: boolean, reason: string}>>} One entry per target statusType id.
- * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+ * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
  */
 export async function caseStatusTargets({ card }) {
 	const caseId = card?.id ?? card?.['@self']?.id

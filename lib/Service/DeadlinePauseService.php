@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 
 declare(strict_types=1);
@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -40,9 +41,9 @@ use RuntimeException;
 /**
  * AWB 4:5 / 4:15 pause + resume on a TermijnInstance.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
-class DeadlinePauseService {
+class DeadlinePauseService implements DeadlinePauseServiceInterface {
 	/**
 	 * What a resume clears besides the end date. The reason and its counters
 	 * go with the pause. A resumed term that still read "chased twice" would
@@ -62,6 +63,13 @@ class DeadlinePauseService {
 		'lastChasedAt' => null,
 		'chaseEscalatedAt' => null,
 	];
+
+	/**
+	 * Why a term whose pause ran out resumed, on the timer and on the event.
+	 *
+	 * @var string
+	 */
+	public const EXPIRED_RESUME_REASON = 'Pauzetermijn verlopen zonder antwoord; termijn hervat';
 
 	/**
 	 * Constructor.
@@ -112,7 +120,7 @@ class DeadlinePauseService {
 	 * @throws RefusedException When the case type forbids the suspension, forbids it this
 	 *         long, or does not declare the reason named.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function registerPauze(
 		string $termInstanceId,
@@ -129,16 +137,32 @@ class DeadlinePauseService {
 		$run->durationDays = $durationDays;
 		$run->rationale = $rationale;
 		$run->documentLink = $documentLink;
-		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $durationDays);
+
+		return $this->pause(run: $run, pauseReason: $pauseReason);
+	}//end registerPauze()
+
+	/**
+	 * Pause the instance the run names, when its case type allows it, and record the event.
+	 *
+	 * @param PauseRegistrationRun $run         The instance, the duration, the rationale and the document link.
+	 * @param string               $pauseReason The declared suspension reason key, or ''.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @throws RefusedException When the case type forbids the suspension, forbids it this
+	 *         long, or does not declare the reason named.
+	 */
+	private function pause(PauseRegistrationRun $run, string $pauseReason): array {
+		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $run->durationDays);
 		$run->reason = $this->resolveReason(instance: $run->instance, key: $pauseReason);
 		$run->now = new DateTimeImmutable();
 
 		$patch = $this->suspendOnTheEngine(run: $run, patch: $this->pausePatch(run: $run));
-		$updated = $this->termService->updateTermijnInstance($termInstanceId, $patch);
+		$updated = $this->termService->updateTermijnInstance($run->termInstanceId, $patch);
 		$this->recordPauseEvent(run: $run);
 
 		return $updated ?? $run->instance;
-	}//end registerPauze()
+	}//end pause()
 
 	/**
 	 * The instance a pause can be registered on.
@@ -322,20 +346,34 @@ class DeadlinePauseService {
 			return $reason;
 		}
 
+		return $this->declaredRationale(caseId: $caseId, picked: ['key' => $pauseReason, 'reason' => $reason]);
+	}//end suspendRationale()
+
+	/**
+	 * The rationale for a picked reason the case type declares: the handler's text, else the reason's name.
+	 *
+	 * @param string                             $caseId Case UUID
+	 * @param array{key: string, reason: string} $picked The picked reason key, and the handler's text
+	 *
+	 * @return string The rationale.
+	 *
+	 * @throws RuntimeException `pause_reason_not_declared` for a key the case type does not declare.
+	 */
+	private function declaredRationale(string $caseId, array $picked): string {
 		foreach ($this->offeredReasons(caseId: $caseId) as $declared) {
-			if ($declared['key'] !== $pauseReason) {
+			if ($declared['key'] !== $picked['key']) {
 				continue;
 			}
 
-			if (trim($reason) === '') {
+			if (trim($picked['reason']) === '') {
 				return $declared['name'];
 			}
 
-			return $reason;
+			return $picked['reason'];
 		}
 
 		throw new RuntimeException('pause_reason_not_declared');
-	}//end suspendRationale()
+	}//end declaredRationale()
 
 	/**
 	 * Refuse a suspension the case type does not allow, or does not allow this
@@ -353,7 +391,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RefusedException When the case type forbids it, or forbids it this long.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function assertSuspensionAllowed(array $instance, int $durationDays): void {
 		if ($this->declarations === null) {
@@ -399,7 +437,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RefusedException When the case type declares reasons but not this one.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function resolveReason(array $instance, string $key): array {
 		$wanted = trim($key);
@@ -435,7 +473,7 @@ class DeadlinePauseService {
 	 *
 	 * @return array<int, int> The offsets, empty when nothing is chased.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function chaseOffsetsFor(array $reason, int $durationDays): array {
 		if ($this->schedule === null || $reason === []) {
@@ -459,7 +497,7 @@ class DeadlinePauseService {
 	 *
 	 * @throws RuntimeException When instance missing or not paused.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function resumeAfterPauze(string $termInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array {
 		$aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());
@@ -490,6 +528,63 @@ class DeadlinePauseService {
 
 		return $updated ?? $instance;
 	}//end resumeAfterPauze()
+
+	/**
+	 * Resume a term whose pause ran out without an answer (REQ-TERM-080).
+	 *
+	 * Every pause day was used, so the end date the pause pushed out stands:
+	 * nothing is pulled back, and the administered calendar still decides the
+	 * day it lands on. The engine timer resumes, the pause is cleared exactly
+	 * as a handler's resume clears it, and a `hervat` event records that the
+	 * term resumed because the pause ended. The event carries the notice, so
+	 * the notification rule on the event schema tells the handler the case and
+	 * the new end date.
+	 *
+	 * @param string                 $termInstanceId Instance id.
+	 * @param array<string, string>  $notice         Who to tell: `notify` (the
+	 *        handler's user id) and `caseTitle`. The new end date is added here.
+	 * @param DateTimeImmutable|null $moment         When the pause ran out (default now).
+	 *
+	 * @return array<string, mixed> The resumed instance.
+	 *
+	 * @throws RuntimeException When the instance is missing or no longer paused.
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	public function resumeAfterExpiry(string $termInstanceId, array $notice = [], ?DateTimeImmutable $moment = null): array {
+		$moment = ($moment ?? new DateTimeImmutable());
+		$instance = $this->pausedInstance(termInstanceId: $termInstanceId);
+		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $moment->format('Y-m-d')));
+		$newEnd = $this->resumedEnd(current: $current, unused: 0);
+
+		$this->timerService?->resumeBeslistermijn(instance: $instance, reason: self::EXPIRED_RESUME_REASON);
+		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
+
+		$this->recordExpiredResume(termInstanceId: $termInstanceId, event: ['moment' => $moment, 'notice' => (['endDate' => $newEnd] + $notice)]);
+
+		return $updated ?? $instance;
+	}//end resumeAfterExpiry()
+
+	/**
+	 * Record that the term resumed because its pause ran out.
+	 *
+	 * @param string                                                        $termInstanceId Instance id.
+	 * @param array{moment: DateTimeImmutable, notice: array<string, string>} $event          When the pause ran out, and who
+	 *                                                                                       to tell with the new end date.
+	 *
+	 * @return void
+	 */
+	private function recordExpiredResume(string $termInstanceId, array $event): void {
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
+			type: 'hervat',
+			basis: 'AWB 4:15',
+			rationale: self::EXPIRED_RESUME_REASON,
+			daysImpact: 0,
+			moment: $event['moment'],
+			notice: $event['notice'],
+		);
+	}//end recordExpiredResume()
 
 	/**
 	 * The instance a resume applies to.

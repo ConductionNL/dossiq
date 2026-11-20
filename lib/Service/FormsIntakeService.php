@@ -44,7 +44,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\FormsIntakeServiceInterface;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Service\Form\FormSubmission;
 use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Log\LoggerInterface;
@@ -70,7 +74,7 @@ use Throwable;
  *
  * @spec openspec/specs/leaf-integrations/spec.md
  */
-class FormsIntakeService {
+class FormsIntakeService implements FormsIntakeServiceInterface {
 
 	/**
 	 * The channel a case opened this way records.
@@ -226,6 +230,27 @@ class FormsIntakeService {
 			return null;
 		}
 
+		$rows = $this->rowsBoundTo(objectService: $objectService, register: $register, schema: $schema, formHash: $formHash);
+		if ($rows === null) {
+			return null;
+		}
+
+		return $this->firstBoundTo(rows: $rows, formHash: $formHash);
+	}//end caseTypeBoundTo()
+
+	/**
+	 * The case type rows the store answers for the form.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The case type schema id.
+	 * @param string $formHash      The form's hash.
+	 *
+	 * @return array<int, mixed>|null The rows, or null when the lookup failed.
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	private function rowsBoundTo(object $objectService, string $register, string $schema, string $formHash): ?array {
 		try {
 			// 🔴 A BARE KEY, NOT `filter[intakeFormRef]`. The objects endpoint
 			// reads a bare property name and answers the EMPTY SET for a
@@ -248,7 +273,20 @@ class FormsIntakeService {
 			return null;
 		}
 
-		$rows = $this->rowsOf(result: $rows);
+		return $this->rowsOf(result: $rows);
+	}//end rowsBoundTo()
+
+	/**
+	 * The first row that is bound to the form.
+	 *
+	 * @param array<int, mixed> $rows     The rows the store answered.
+	 * @param string            $formHash The form's hash.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when none is bound.
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	private function firstBoundTo(array $rows, string $formHash): ?array {
 		foreach ($rows as $row) {
 			$row = $this->arrayOf(row: $row);
 			// The filter is asked of the store and then CHECKED here. A store
@@ -261,7 +299,7 @@ class FormsIntakeService {
 		}
 
 		return null;
-	}//end caseTypeBoundTo()
+	}//end firstBoundTo()
 
 	/**
 	 * Write the case: through OpenRegister's form submit, or as a plain save without it.
@@ -299,8 +337,7 @@ class FormsIntakeService {
 
 		return $objectService->saveObject(
 			object: $object,
-			register: $destination['register'],
-			schema: $destination['schema'],
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $destination['register'], schema: $destination['schema']))
 		);
 	}//end write()
 
@@ -351,18 +388,7 @@ class FormsIntakeService {
 	 * @return array<string, mixed> The row as an array.
 	 */
 	private function arrayOf(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialised = $row->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $row);
 	}//end arrayOf()
 
 	/**

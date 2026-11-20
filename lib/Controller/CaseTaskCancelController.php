@@ -23,17 +23,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Notice\CaseActNotices;
-use OCA\Dossiq\Service\Task\CaseTaskActions;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActNoticesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Cancels a task from the case it is on.
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
 class CaseTaskCancelController extends Controller {
 
@@ -55,21 +55,21 @@ class CaseTaskCancelController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request     The request.
-	 * @param CaseTaskActions $tasks       Reads and cancels the task through the engine.
-	 * @param CaseAccessGuard $caseAccess  Write access on the task's case, failing closed.
-	 * @param CaseActNotices  $notices     The refusal notice.
+	 * @param CaseTaskActionsInterface $tasks       Reads and cancels the task through the engine.
+	 * @param CaseAccessGuardInterface $caseAccess  Write access on the task's case, failing closed.
+	 * @param CaseActNoticesInterface  $notices     The refusal notice.
 	 * @param IUserSession    $userSession The caller.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTaskActions $tasks,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly CaseActNotices $notices,
+		private readonly CaseTaskActionsInterface $tasks,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly CaseActNoticesInterface $notices,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -79,7 +79,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse `{ cancelled, task }`, or a refusal (409 with a notice when the engine refuses).
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	#[NoAdminRequired]
 	public function cancel(string $taskId): JSONResponse {
@@ -122,7 +122,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may cancel the task.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	private function refusalFor(?array $task, IUser $user): ?JSONResponse {
 		$caseId = (string)($task['objectUuid'] ?? '');
@@ -147,7 +147,7 @@ class CaseTaskCancelController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	private function engineRefused(array $task, RuntimeException $e): JSONResponse {
 		[, $why] = array_pad(explode(':', $e->getMessage(), 2), 2, '');

@@ -39,6 +39,7 @@ use RuntimeException;
  * Golden test for AcknowledgementDispatchJob::work.
  *
  * @covers \OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AcknowledgementDispatchJobGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

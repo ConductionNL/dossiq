@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Intake;
 /**
  * The state of one fan-out.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 final class FanOutRun {
 	/**

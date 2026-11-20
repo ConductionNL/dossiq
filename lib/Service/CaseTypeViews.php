@@ -30,34 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+
 /**
  * The view of the case list for one case type, and its menu entry.
  *
  * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
  */
-final class CaseTypeViews {
-
-	/**
-	 * The page the views filter.
-	 *
-	 * @var string
-	 */
-	public const PAGE = 'Cases';
-
-	/**
-	 * The manifest key a page declares its default views under.
-	 *
-	 * @var string
-	 */
-	public const DEFAULT_VIEWS_KEY = 'defaultSavedViews';
-
-	/**
-	 * The user preference (PreferencesController's `pref_` namespace) the
-	 * library keeps the views a user added to the menu under.
-	 *
-	 * @var string
-	 */
-	public const MENU_PREFERENCE = 'pref_cn_saved_view_menu';
+final class CaseTypeViews implements CaseTypeViewsInterface {
 
 	/**
 	 * The slug of the Woo requests view the Cases page ships for everybody.
@@ -98,7 +78,7 @@ final class CaseTypeViews {
 	 * title and placed under "More default views" (`secondary`). The Woo
 	 * request case type is left out: the page ships that view itself.
 	 *
-	 * @param array<int, array{id: string, title: string, icon?: string}> $caseTypes The pinned case types.
+	 * @param array<int, array{id: string, title: string, icon?: string, description?: string}> $caseTypes The pinned case types.
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>, icon?: string}>
 	 *
@@ -115,7 +95,7 @@ final class CaseTypeViews {
 			$view = [
 				'slug' => $this->slugFor(caseTypeId: $id),
 				'name' => (string)$caseType['title'],
-				'description' => (string)$caseType['title'],
+				'description' => $this->descriptionOf(caseType: $caseType),
 				'secondary' => true,
 				'filters' => ['caseType' => $id, 'statusHiddenInLists' => false, 'isDraft' => false],
 			];
@@ -160,7 +140,7 @@ final class CaseTypeViews {
 	 * under "More default views" (`secondary`) and described so the panel does
 	 * not show the case type's id while it resolves the filter.
 	 *
-	 * @param array<string, array{id: string, title: string}> $byIdentifier The instance's case types, by identifier.
+	 * @param array<string, array{id: string, title: string, description?: string}> $byIdentifier The instance's case types, by identifier.
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>}> The views.
 	 *
@@ -176,7 +156,7 @@ final class CaseTypeViews {
 
 			$description = $view['description'];
 			if ($description === '') {
-				$description = (string)$caseType['title'];
+				$description = $this->descriptionOf(caseType: $caseType);
 			}
 
 			$views[] = [
@@ -218,6 +198,25 @@ final class CaseTypeViews {
 			array_values($caseTypes)
 		);
 	}//end menuEntries()
+
+	/**
+	 * The line a case type's view shows under its name: the case type's own
+	 * description, or its title when it has none.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return string The description.
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	private function descriptionOf(array $caseType): string {
+		$description = ($caseType['description'] ?? '');
+		if (is_string($description) === true && trim($description) !== '') {
+			return trim($description);
+		}
+
+		return (string)$caseType['title'];
+	}//end descriptionOf()
 
 	/**
 	 * The icon a case type names, or '' when it names none.

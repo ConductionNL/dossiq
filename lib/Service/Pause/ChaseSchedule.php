@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 /**
  * The reminder schedule a pause reason declares (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see PauseReason} is a vocabulary of
  * constants and pure functions over an array, with nothing to inject.
@@ -85,7 +85,7 @@ class ChaseSchedule {
 	 *
 	 * @return DateTimeImmutable|null The day, or null when no further reminder is due.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function nextChaseOn(array $instance, array $reason): ?DateTimeImmutable {
 		if (PauseReason::chases(reason: $reason) === false) {
@@ -121,7 +121,7 @@ class ChaseSchedule {
 	 *
 	 * @return bool True when one should go out.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function chaseDue(array $instance, array $reason, ?DateTimeImmutable $now = null): bool {
 		$due = $this->nextChaseOn(instance: $instance, reason: $reason);
@@ -146,7 +146,7 @@ class ChaseSchedule {
 	 *
 	 * @return bool True when the handler should hear about it.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function escalationDue(array $instance, array $reason, ?DateTimeImmutable $now = null): bool {
 		if (PauseReason::chases(reason: $reason) === false) {
@@ -161,9 +161,23 @@ class ChaseSchedule {
 			return false;
 		}
 
+		$after = $this->escalationMoment(instance: $instance, reason: $reason);
+
+		return ($after !== null && $after->setTime(0, 0) <= ($now ?? new DateTimeImmutable())->setTime(0, 0));
+	}//end escalationDue()
+
+	/**
+	 * When the silence may be escalated: one interval after the last reminder, or null when none was sent.
+	 *
+	 * @param array<string, mixed> $instance The TermijnInstance row.
+	 * @param array<string, mixed> $reason   The normalised reason in force.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null without a last reminder.
+	 */
+	private function escalationMoment(array $instance, array $reason): ?DateTimeImmutable {
 		$last = $this->dates->tryParse(value: ($instance['lastChasedAt'] ?? null));
 		if ($last === null) {
-			return false;
+			return null;
 		}
 
 		$interval = (int)$reason['chaseIntervalDays'];
@@ -172,8 +186,8 @@ class ChaseSchedule {
 			$after = $this->calendar->addWorkingDays(start: $last, days: $interval);
 		}
 
-		return ($after->setTime(0, 0) <= ($now ?? new DateTimeImmutable())->setTime(0, 0));
-	}//end escalationDue()
+		return $after;
+	}//end escalationMoment()
 
 	/**
 	 * The engine rung offsets for one pause, in days before the pause ends.
@@ -189,7 +203,7 @@ class ChaseSchedule {
 	 *
 	 * @return array<int, int> The offsets, largest first, one per reminder in budget.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function rungOffsets(array $reason, int $durationDays): array {
 		if (PauseReason::chases(reason: $reason) === false || $durationDays <= 0) {
@@ -217,7 +231,7 @@ class ChaseSchedule {
 	 *
 	 * @return int The count, never negative.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function sent(array $instance): int {
 		return max(0, (int)($instance['chasesSent'] ?? 0));
@@ -252,7 +266,7 @@ class ChaseSchedule {
 	 *
 	 * @return string|null The ISO 8601 moment, null when there is no readable date.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function pauseStartMoment(string $date): ?string {
 		$parsed = $this->dates->tryParse(value: $date);

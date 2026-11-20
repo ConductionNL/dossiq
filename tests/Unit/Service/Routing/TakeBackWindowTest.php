@@ -126,4 +126,30 @@ class TakeBackWindowTest extends TestCase {
 			actual: $this->window(engine: $refusing)->arm(caseId: 'case-1', rule: ['takeBackAfter' => ['value' => 1, 'unit' => 'calendarDays']], routedTo: 'aad', routedAt: new DateTimeImmutable())
 		);
 	}//end testCancelAndAnEngineThatIsNotThere()
+
+	/**
+	 * An engine that disappears between the cancel and the arm leaves the window unavailable, unarmed.
+	 *
+	 * @return void
+	 */
+	public function testAnEngineGoneBeforeTheArmIsReportedUnavailable(): void {
+		$engine   = new FlowTimerEngineFake();
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->expects($this->exactly(2))
+			->method('getOpenRegisterClass')
+			->with(TakeBackWindow::ENGINE_CLASS)
+			->willReturnOnConsecutiveCalls($engine, null);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		$outcome = (new TakeBackWindow(settingsService: $settings, logger: $logger))->arm(
+			caseId: 'case-1',
+			rule: ['takeBackAfter' => ['value' => 1, 'unit' => 'calendarDays']],
+			routedTo: 'aad',
+			routedAt: new DateTimeImmutable('2026-10-12T09:00:00+02:00')
+		);
+
+		$this->assertSame(expected: TakeBackWindow::UNAVAILABLE, actual: $outcome);
+		$this->assertSame(expected: 'case-1:take-back', actual: $engine->calls['cancelForSubject'][0]['subjectUuid']);
+		$this->assertArrayNotHasKey(key: 'arm', array: $engine->calls);
+	}//end testAnEngineGoneBeforeTheArmIsReportedUnavailable()
 }//end class

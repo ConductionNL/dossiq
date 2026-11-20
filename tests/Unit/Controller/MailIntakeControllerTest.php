@@ -62,6 +62,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @uses \OCA\Dossiq\Controller\Support\IntakeRoleGate
  */
 final class MailIntakeControllerTest extends TestCase {
 

@@ -1,5 +1,7 @@
 # Tasks: case-recycle-window
 
+> **Superseded** by `cases-are-archival-no-delete` (Ruben, 17 November 2026): archival wins, cases are never deleted. Tasks 1.1 (delete into the recycle state) and 1.2 (the deleted lens) are withdrawn: the delete is refused with 403 `cases_are_archival` and the Deleted cases page is gone. 2.1 and 2.2 (restore and destroy) stay only for cases soft-deleted before the decision; 3.2 (the two clocks) stands.
+
 Tier: V1. Kind: code. Size M. Round 4 discovery cluster 39, candidates
 C-case-core-11 (matrix hole), C-access-and-privacy-65,
 C-access-and-privacy-50, C-documents-20 and C-access-and-privacy-14.

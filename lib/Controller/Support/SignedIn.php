@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCP\IUserSession;
 /**
  * Refuses a caller without a session.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 final class SignedIn {
 
@@ -45,7 +45,7 @@ final class SignedIn {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public static function refusal(IUserSession $session): ?JSONResponse {
 		if ($session->getUser() === null) {

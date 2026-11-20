@@ -34,11 +34,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionAuditServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionServiceInterface;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
-use OCA\Dossiq\Service\SubstitutionAuditService;
-use OCA\Dossiq\Service\SubstitutionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,23 +56,23 @@ class SubstitutionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SubstitutionService $substitutionService Substitution domain logic.
-	 * @param SubstitutionAuditService $auditService Capacity audit.
+	 * @param SubstitutionServiceInterface $substitutionService Substitution domain logic.
+	 * @param SubstitutionAuditServiceInterface $auditService Capacity audit.
 	 * @param SubstitutionAccessGuard $accessGuard Authorization + lookups.
-	 * @param CaseReassignmentService $reassignmentService Builds the caseload selection.
+	 * @param CaseReassignmentServiceInterface $reassignmentService Builds the caseload selection.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SubstitutionService $substitutionService,
-		private readonly SubstitutionAuditService $auditService,
+		private readonly SubstitutionServiceInterface $substitutionService,
+		private readonly SubstitutionAuditServiceInterface $auditService,
 		private readonly SubstitutionAccessGuard $accessGuard,
-		private readonly CaseReassignmentService $reassignmentService,
+		private readonly CaseReassignmentServiceInterface $reassignmentService,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -114,31 +114,75 @@ class SubstitutionController extends Controller {
 
 		$absentee = (string)$this->request->getParam('absentee', $actorId);
 
-		// Per-object guard: own absence, or coordinator acting for another.
-		if ($absentee !== $actorId && $this->accessGuard->isCoordinator(userId: $actorId) === false) {
-			return $this->accessGuard->forbidden(message: 'You may only register a substitution for yourself');
+		$refusal = $this->substitutionRefusal(absentee: $absentee, actorId: $actorId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
+		return $this->createSubstitutionOrFail(absentee: $absentee, actorId: $actorId);
+	}//end create()
+
+	/**
+	 * Create the substitution, answering an invalid request as 400 and a failure as 500.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse
+	 */
+	private function createSubstitutionOrFail(string $absentee, string $actorId): JSONResponse {
 		try {
-			$created = $this->substitutionService->create(
-				absentee: $absentee,
-				substitute: (string)$this->request->getParam('substitute', ''),
-				startDate: (string)$this->request->getParam('startDate', ''),
-				endDate: (string)$this->request->getParam('endDate', ''),
-				scope: (string)$this->request->getParam('scope', 'all'),
-				scopeRefs: (array)$this->request->getParam('scopeRefs', []),
-				reason: (string)$this->request->getParam('reason', 'verlof'),
-				createdBy: $actorId,
-				comment: (string)$this->request->getParam('comment', '')
-			);
-			return new JSONResponse($created, Http::STATUS_CREATED);
+			return $this->createSubstitution(absentee: $absentee, actorId: $actorId);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\Throwable $e) {
 			$this->logger->error('Substitution create failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
-	}//end create()
+	}//end createSubstitutionOrFail()
+
+	/**
+	 * Refuse registering another user's absence, unless the actor is a coordinator.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the actor may register it.
+	 */
+	private function substitutionRefusal(string $absentee, string $actorId): ?JSONResponse {
+		// Per-object guard: own absence, or coordinator acting for another.
+		if ($absentee !== $actorId && $this->accessGuard->isCoordinator(userId: $actorId) === false) {
+			return $this->accessGuard->forbidden(message: 'You may only register a substitution for yourself');
+		}
+
+		return null;
+	}//end substitutionRefusal()
+
+	/**
+	 * Create the substitution the request describes.
+	 *
+	 * @param string $absentee The absent user.
+	 * @param string $actorId The current user.
+	 *
+	 * @return JSONResponse The created substitution.
+	 *
+	 * @throws \InvalidArgumentException When the request is invalid.
+	 * @throws \Throwable When creating fails.
+	 */
+	private function createSubstitution(string $absentee, string $actorId): JSONResponse {
+		$created = $this->substitutionService->create(
+			absentee: $absentee,
+			substitute: (string)$this->request->getParam('substitute', ''),
+			startDate: (string)$this->request->getParam('startDate', ''),
+			endDate: (string)$this->request->getParam('endDate', ''),
+			scope: (string)$this->request->getParam('scope', 'all'),
+			scopeRefs: (array)$this->request->getParam('scopeRefs', []),
+			reason: (string)$this->request->getParam('reason', 'verlof'),
+			createdBy: $actorId,
+			comment: (string)$this->request->getParam('comment', '')
+		);
+		return new JSONResponse($created, Http::STATUS_CREATED);
+	}//end createSubstitution()
 
 	/**
 	 * Release a departed or absent handler's caseload, as one bulk job.
@@ -154,7 +198,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return JSONResponse The previewed job, and what happened to the tasks.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function releaseCaseload(): JSONResponse {
@@ -193,7 +237,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function coordinatorRefusal(string $actorId): ?JSONResponse {
 		if ($actorId === '') {
@@ -212,7 +256,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return array{caseType: string}|null
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseTypeFilter(): ?array {
 		$caseType = trim((string)$this->request->getParam('caseType', ''));

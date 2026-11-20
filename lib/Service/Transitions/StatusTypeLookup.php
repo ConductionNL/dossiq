@@ -36,9 +36,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -46,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class StatusTypeLookup {
+class StatusTypeLookup implements StatusTypeLookupInterface {
 	/**
 	 * Constructor.
 	 *
@@ -92,7 +94,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The public label, or '' when the status is not announced.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function announcedLabelOf(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
@@ -179,7 +181,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when this case type models no such role.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForRole(string $caseTypeId, string $role): string {
 		$wanted = strtolower(trim($role));
@@ -288,7 +290,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function rowsOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -322,7 +324,7 @@ class StatusTypeLookup {
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}

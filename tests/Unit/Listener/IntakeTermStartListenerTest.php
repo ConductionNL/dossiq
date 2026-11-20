@@ -58,6 +58,8 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the listener writes onto a new case.
@@ -74,6 +76,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/burger-notifications/spec.md
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class IntakeTermStartListenerTest extends TestCase {
 
@@ -580,7 +583,11 @@ class IntakeTermStartListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->saves->append($data);
 				return $data;
 			}//end patchObject()
@@ -595,7 +602,10 @@ class IntakeTermStartListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The payload.
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves->append(['WHOLE_OBJECT_SAVE' => $object]);
 				return $object;
 			}//end saveObject()

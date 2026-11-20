@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\ZaakdossierService
@@ -41,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\Dispatch
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class DocumentCorrespondentsWriteTest extends TestCase {
 	private const CONFIG = [
@@ -83,7 +87,9 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->rows[$id]) === false) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('not found: ' . $id);
 				}
@@ -127,7 +133,10 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['schema' => $schema, 'object' => $object];
 				$uuid = ($uuid ?? ('new-' . count($this->saves)));
 				unset($object['@self'], $object['id']);

@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\App\IAppManager;
 /**
  * The declaration, and a live reading of it.
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 final class Prerequisites {
 
@@ -164,7 +164,7 @@ final class Prerequisites {
 	 *
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
-	 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function check(

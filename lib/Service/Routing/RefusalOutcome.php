@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -63,9 +64,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
-class RefusalOutcome {
+class RefusalOutcome implements RefusalOutcomeInterface {
 
 	use RefusesWhenIndeterminate;
 	use SearchesObjects;
@@ -120,7 +121,7 @@ class RefusalOutcome {
 	 *
 	 * @return array{department: string, role: string} The destination, blank when undeclared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function destinationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -141,7 +142,7 @@ class RefusalOutcome {
 	 *
 	 * @return boolean True when a department and a role are declared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function canRefuse(array $caseType): bool {
 		$destination = $this->destinationFor(caseType: $caseType);
@@ -160,7 +161,7 @@ class RefusalOutcome {
 	 *
 	 * @throws RefusedException When there is no reason, no destination, or no readable case.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refuse(string $caseId, string $reason, string $refusedBy): array {
 		$why = $this->requiredReason(reason: $reason);
@@ -290,7 +291,7 @@ class RefusalOutcome {
 	 *
 	 * @return array<string, mixed> The refusal record, empty when it was not refused.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refusalOn(array $case): array {
 		$record = ($case[self::CASE_FIELD] ?? null);
@@ -338,7 +339,7 @@ class RefusalOutcome {
 	 *
 	 * @return string The Nextcloud group id, or '' when none resolves.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
 	 */
 	private function teamFor(array $destination): string {
@@ -379,7 +380,7 @@ class RefusalOutcome {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -401,6 +402,19 @@ class RefusalOutcome {
 
 		return $rows;
 	}//end roleRowsFor()
+
+	/**
+	 * Whether the object service, register and organisation role schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The organisation role schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
 
 	/**
 	 * Log that the team of a destination could not be resolved.

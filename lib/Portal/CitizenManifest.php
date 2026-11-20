@@ -35,14 +35,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\CitizenManifestInterface;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Woo\WooRequestIntake;
 
 /**
  * The resident's collections and actions, as declared data.
  *
  * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
  */
-class CitizenManifest {
+class CitizenManifest implements CitizenManifestInterface {
 
 	/**
 	 * The row action that answers a question of `vragenAanU`.
@@ -82,21 +84,6 @@ class CitizenManifest {
 	public const PROPOSABLE_CASE_FIELDS = ['title', 'description'];
 
 	/**
-	 * The field the requester's files travel under (portaliq row-action-carries-files).
-	 */
-	public const ANSWER_FILES_FIELD = 'bijlagen';
-
-	/**
-	 * At most this many files with one answer.
-	 */
-	public const ANSWER_FILES_MAX = 5;
-
-	/**
-	 * At most this many bytes per file (10 MiB).
-	 */
-	public const ANSWER_FILES_MAX_BYTES = 10485760;
-
-	/**
 	 * The case field holding the day the case's decision was sent (CaseRemedy::SENT_FIELD).
 	 */
 	public const DECISION_SENT_FIELD = 'decisionSentOn';
@@ -129,6 +116,22 @@ class CitizenManifest {
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
+	/**
+	 * Where each Woo answer lands on the case: the subject and the question
+	 * are the case's title and description, the rest is the request as sent.
+	 */
+	private const WOO_FIELD_MAP = [
+		'onderwerp' => 'title',
+		'omschrijving' => 'description',
+		'periodeVan' => 'wooRequest.periodeVan',
+		'periodeTot' => 'wooRequest.periodeTot',
+		'documentSoorten' => 'wooRequest.documentSoorten',
+		'toelichting' => 'wooRequest.toelichting',
+		'verzoekerNaam' => 'wooRequest.verzoekerNaam',
+		'verzoekerEmail' => 'wooRequest.verzoekerEmail',
+		'verzoekerType' => 'wooRequest.verzoekerType',
+	];
+
 	private const WOO_FIELDS = [
 		'onderwerp',
 		'omschrijving',
@@ -248,8 +251,8 @@ class CitizenManifest {
 	 * @return array<int, array<string, mixed>> The collections.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
-	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
-	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
 	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md#requirement-the-case-list-says-what-is-a-case-and-when-it-is-closed-req-portal-010
 	 */
 	public function collections(): array {
@@ -593,8 +596,8 @@ class CitizenManifest {
 	 * @return array<string, mixed> The action.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 */
 	private function startWooVerzoekAlgemeenAction(): array {
@@ -607,8 +610,18 @@ class CitizenManifest {
 			// page instead.
 			'summary' => 'Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).',
 			'audiences' => ['citizen', 'client'],
-			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
-			'method' => 'POST',
+			// A plain create, so the half-filled request is a draft of the case
+			// itself (decision 180, Ruben's a1). What the endpoint did on top of
+			// the write is the case type's own intake now (`portalIntake` on
+			// the Woo case type, CaseTypeIntakeListener), and the answers land
+			// where the case keeps them through `fieldMap` (portaliq
+			// create-action-field-map).
+			'type' => 'create',
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'case',
+			'scopeField' => 'portalSubject',
+			'defaults' => ['caseType' => WooRequestIntake::CASE_TYPE_ID, 'intakeChannel' => 'website'],
+			'fieldMap' => self::WOO_FIELD_MAP,
 			'minTrust' => 'low',
 			'fields' => self::WOO_FIELDS,
 			'requiredFields' => ['onderwerp'],
@@ -871,7 +884,7 @@ class CitizenManifest {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-bezwaar-objection-filing-within-legal-deadline
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function objectionAction(): ?array {
 		$caseType = trim((string)($this->caseTypes['createBezwaar'] ?? ''));
@@ -931,9 +944,9 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed>|null The action, or null when no case type is configured.
 	 *
-	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-klacht-complaint-filing-and-optional-subsidie-aanvragen
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function complaintAction(): ?array {
 		$caseType = trim((string)($this->caseTypes['createKlacht'] ?? ''));
@@ -981,7 +994,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseFiling(): array {
 		return [
@@ -1008,7 +1021,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function filingFieldConfigs(string $title, string $description): array {
 		return [
@@ -1026,7 +1039,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function contestedCaseRef(bool $required): array {
 		return [

@@ -48,7 +48,7 @@ const STATUS_ICONS = new Map([
  *
  * @param {string} status The case status.
  * @return {string} CSS variable reference.
- * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-map-component/tasks.md
  */
 export function statusColor(status) {
 	return STATUS_COLORS.get(status) ?? 'var(--color-text-maxcontrast)'
@@ -59,7 +59,7 @@ export function statusColor(status) {
  *
  * @param {string} status The case status.
  * @return {string} Icon glyph name.
- * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-map-component/tasks.md
  */
 export function statusIcon(status) {
 	return STATUS_ICONS.get(status) ?? 'map-marker'
@@ -173,7 +173,7 @@ function extractCoords(geometry) {
  *
  * @param {object} caseObj Case object from OpenRegister.
  * @return {object|null}   Marker descriptor or `null` if no geometry.
- * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-map-component/tasks.md
  */
 export function caseMarkerFormatter(caseObj) {
 	if (!caseObj || typeof caseObj !== 'object') {

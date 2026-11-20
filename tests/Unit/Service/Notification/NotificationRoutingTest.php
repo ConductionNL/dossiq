@@ -249,6 +249,126 @@ class NotificationRoutingTest extends TestCase {
 	}//end testAServiceWithoutTheLayeredReadIsTreatedAsAbsent()
 
 	/**
+	 * A layered read that answers something other than a list is no routing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testANonListAnswerReadsAsUnrouted(): void {
+		$odd = new class {
+			/**
+			 * A layered read that answers a non-list.
+			 *
+			 * @param string            $userId The person.
+			 * @param array<int,string> $scopes The scopes asked for.
+			 *
+			 * @return string Not a list.
+			 */
+			public function getEffectiveForUser(string $userId, array $scopes = []): string {
+				return 'enabled';
+			}
+		};
+		$routing = $this->routing(service: $odd);
+
+		$this->assertTrue(condition: $routing->isAvailable());
+		$this->assertNull(actual: $routing->effectiveFor(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestEnabledFor(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestDecidedBy(userId: 'alice'));
+	}//end testANonListAnswerReadsAsUnrouted()
+
+	/**
+	 * A layered read without the preference contract cannot store a switch.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
+	 */
+	public function testAReadOnlyServiceDoesNotStoreTheSwitch(): void {
+		$readOnly = new class {
+			/**
+			 * Overrides that reached this double.
+			 *
+			 * @var array<int, mixed>
+			 */
+			public array $writes = [];
+
+			/**
+			 * A layered read with nothing in it.
+			 *
+			 * @param string            $userId The person.
+			 * @param array<int,string> $scopes The scopes asked for.
+			 *
+			 * @return array<int, mixed> Nothing.
+			 */
+			public function getEffectiveForUser(string $userId, array $scopes = []): array {
+				return [];
+			}
+
+			/**
+			 * A write method outside the contract.
+			 *
+			 * @param mixed $write The write.
+			 *
+			 * @return void
+			 */
+			public function storeOverride(mixed $write): void {
+				$this->writes[] = $write;
+			}
+		};
+
+		$this->assertFalse(condition: $this->routing(service: $readOnly)->setDigestEnabled(userId: 'alice', enabled: true));
+		$this->assertSame(expected: [], actual: $readOnly->writes);
+	}//end testAReadOnlyServiceDoesNotStoreTheSwitch()
+
+	/**
+	 * Without an acting person nothing is stored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
+	 */
+	public function testNoSwitchIsStoredWithoutAPerson(): void {
+		$platform = $this->platform(entries: []);
+
+		$this->assertFalse(condition: $this->routing(service: $platform)->setDigestEnabled(userId: '', enabled: true));
+		$this->assertSame(expected: [], actual: $platform->writes);
+	}//end testNoSwitchIsStoredWithoutAPerson()
+
+	/**
+	 * When no layer holds the digest rule, nothing decided it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testNoDigestEntryMeansNothingDecided(): void {
+		$other = $this->digestEntry(enabled: true, source: 'user-override');
+		$other['notification'] = 'workDigestFailed';
+		$routing = $this->routing(service: $this->platform(entries: [$other]));
+
+		$this->assertNull(actual: $routing->digestDecidedBy(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestEnabledFor(userId: 'alice'));
+	}//end testNoDigestEntryMeansNothingDecided()
+
+	/**
+	 * An entry without source or scope is named as the schema default, globally.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testAnEntryWithoutLayerIsTheGlobalSchemaDefault(): void {
+		$bare = $this->digestEntry(enabled: true, source: 'x');
+		unset($bare['source'], $bare['scope']);
+
+		$this->assertSame(
+			expected: ['source' => 'schema-default', 'scope' => 'global'],
+			actual: $this->routing(service: $this->platform(entries: [$bare]))->digestDecidedBy(userId: 'alice')
+		);
+	}//end testAnEntryWithoutLayerIsTheGlobalSchemaDefault()
+
+	/**
 	 * The deciding layer comes back with the value.
 	 *
 	 * @return void

@@ -21,16 +21,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Intake\CaseCompleteness;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCompletenessInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Answers how complete the application of a case is.
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompletenessController extends Controller {
 
@@ -51,8 +51,8 @@ class CaseCompletenessController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest               $request       The request.
-	 * @param CaseAccessGuard        $caseAccess    Whether the caller may read the case.
-	 * @param CaseCompleteness       $completeness  Reads the case and ticks its items.
+	 * @param CaseAccessGuardInterface        $caseAccess    Whether the caller may read the case.
+	 * @param CaseCompletenessInterface       $completeness  Reads the case and ticks its items.
 	 * @param IUserSession           $userSession   The caller.
 	 * @param LoggerInterface        $logger        Logs a failed read.
 	 *
@@ -60,12 +60,12 @@ class CaseCompletenessController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly CaseCompleteness $completeness,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly CaseCompletenessInterface $completeness,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -75,7 +75,7 @@ class CaseCompletenessController extends Controller {
 	 *
 	 * @return JSONResponse `{ items, present, total, missing, verdict }`, `{ items: [] }` without a declared list, or a refusal.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {
@@ -98,7 +98,7 @@ class CaseCompletenessController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: completeness of case ' . $caseId . ' could not be read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return new JSONResponse(['message' => 'The completeness could not be read.'], Http::STATUS_SERVICE_UNAVAILABLE);

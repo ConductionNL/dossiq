@@ -35,17 +35,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentStateInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -58,7 +58,7 @@ use Throwable;
  * It runs as the background service account, because cron has no user and
  * OpenRegister refuses a write from nobody.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 class PaymentStateProjectionJob extends TimedJob {
 
@@ -79,16 +79,16 @@ class PaymentStateProjectionJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param CasePaymentReader $payments Reads the state from shillinq.
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param CasePaymentReaderInterface $payments Reads the state from shillinq.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that the apps are present.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly CasePaymentReader $payments,
-		private readonly SettingsService $settingsService,
+		private readonly CasePaymentReaderInterface $payments,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
@@ -104,7 +104,7 @@ class PaymentStateProjectionJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+	 * @spec openspec/specs/financial-integration/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
@@ -120,10 +120,10 @@ class PaymentStateProjectionJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	private function work(): void {
-		if ($this->appManager->isInstalled(CasePaymentReader::MONEY_APP) === false) {
+		if ($this->appManager->isInstalled(CasePaymentReaderInterface::MONEY_APP) === false) {
 			// No money app, so no money facts to project. Deliberately NOT a
 			// sweep that writes `notRequired` everywhere: an instance that
 			// disables shillinq for a week has not waived a single fee, and a
@@ -203,7 +203,7 @@ class PaymentStateProjectionJob extends TimedJob {
 		// replace the last state anybody knew with the news that the sweep had a
 		// bad hour, and the list would empty out every time shillinq restarted.
 		// The gate reads live, so nothing depends on this row being fresh.
-		if ($projection['paymentState'] === CasePaymentState::STALE) {
+		if ($projection['paymentState'] === CasePaymentStateInterface::STALE) {
 			return false;
 		}
 

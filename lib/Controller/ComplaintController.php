@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
@@ -32,8 +32,8 @@ namespace OCA\Dossiq\Controller;
 
 use Closure;
 use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -42,7 +42,7 @@ use OCP\IRequest;
 /**
  * Controller for the core complaint (klacht) lifecycle.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintController extends Controller {
 	/**
@@ -50,16 +50,16 @@ class ComplaintController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param ComplaintServiceInterface $complaintService Complaint service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly ComplaintServiceInterface $complaintService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -71,7 +71,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function index(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -97,7 +97,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function create(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -124,7 +124,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function show(string $id): JSONResponse {
 		$userId = $this->accessGuard->currentUid();
@@ -151,7 +151,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function update(string $id): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -173,7 +173,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function transition(string $id): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -197,7 +197,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function verdaging(string $id): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -221,7 +221,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function escalate(string $id): JSONResponse {
 		$refusal = $this->mutationGate()->refusal(id: $id);
@@ -239,7 +239,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function deadlineAlerts(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -256,7 +256,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @return ComplaintMutationGate
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function mutationGate(): ComplaintMutationGate {
 		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);
@@ -269,7 +269,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function changed(Closure $change): JSONResponse {
 		try {
@@ -287,7 +287,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	private function escalation(string $id, array $data): JSONResponse {
 		$caseId = $data['caseId'] ?? '';

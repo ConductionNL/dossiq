@@ -41,6 +41,8 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests the identity the letter record writes as.
@@ -223,10 +225,14 @@ class BerichtenboxServiceAccountTest extends TestCase {
 			static fn (array $config = []): array => $register->findAll(config: $config)
 		);
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], string|int|null $registerId = null, string|int|null $schema = null, ?string $uuid = null) use ($register): object {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($register): object {
+				$extend = $options->extend ?? [];
+				$registerId = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				// The mock hands the arguments on by position, in the
 				// contract's order: extend, register, schema, uuid.
-				$stored = $register->saveObject(object: $object, register: $registerId, schema: $schema, uuid: $uuid);
+				$stored = $register->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $registerId, schema: $schema), uuid: $uuid));
 				$entity = $this->createMock('OCA\\OpenRegister\\Contract\\ObjectEntityInterface');
 				$entity->method('jsonSerialize')->willReturn($stored);
 

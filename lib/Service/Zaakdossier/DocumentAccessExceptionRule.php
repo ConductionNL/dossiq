@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentAccessExceptionRuleInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -33,7 +34,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
  */
-class DocumentAccessExceptionRule {
+class DocumentAccessExceptionRule implements DocumentAccessExceptionRuleInterface {
 
 	/**
 	 * The property on the informatieobject.
@@ -115,23 +116,46 @@ class DocumentAccessExceptionRule {
 			return true;
 		}
 
+		return $this->admitsByGroupOrCase(user: $user, access: ['record' => $record, 'exception' => $exception]);
+	}//end admits()
+
+	/**
+	 * Whether the user is in a group the exception names, or handles a case the document is on.
+	 *
+	 * @param IUser                                                                  $user   The user.
+	 * @param array{record: array<string, mixed>, exception: array<string, mixed>} $access The document record, and its access exception.
+	 *
+	 * @return bool
+	 */
+	private function admitsByGroupOrCase(IUser $user, array $access): bool {
+		if (array_intersect(array_map('strval', $this->groupIdsOf(user: $user)), $access['exception']['groups']) !== []) {
+			return true;
+		}
+
+		$documentId = $this->idOf(record: $access['record']);
+		if ($documentId === '') {
+			return false;
+		}
+
+		return $this->handlesACaseOf(user: $user, documentId: $documentId);
+	}//end admitsByGroupOrCase()
+
+	/**
+	 * The user's group ids, none when they cannot be read.
+	 *
+	 * @param IUser $user The user.
+	 *
+	 * @return array<int, string>
+	 */
+	private function groupIdsOf(IUser $user): array {
 		try {
 			$groups = $this->groupManager->getUserGroupIds($user);
 		} catch (Throwable $e) {
 			$groups = [];
 		}
 
-		if (array_intersect(array_map('strval', $groups), $exception['groups']) !== []) {
-			return true;
-		}
-
-		$documentId = $this->idOf(record: $record);
-		if ($documentId === '') {
-			return false;
-		}
-
-		return $this->handlesACaseOf(user: $user, documentId: $documentId);
-	}//end admits()
+		return $groups;
+	}//end groupIdsOf()
 
 	/**
 	 * Whether a user may change one of the cases a document is on.

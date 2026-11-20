@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MandaatEscalatieServiceInterface;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -38,9 +39,9 @@ use RuntimeException;
 /**
  * Mandate escalation lifecycle.
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
-class MandaatEscalatieService {
+class MandaatEscalatieService implements MandaatEscalatieServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -72,15 +73,24 @@ class MandaatEscalatieService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function createEscalatie(string $caseId, string $decisionType, string $initiatorId, string $escalationReason): array {
 		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalationReason: $escalationReason);
-		$row = [
-			'caseId' => $caseId,
-			'decisionType' => $decisionType,
-			'initiatorId' => $initiatorId,
-			'escalationReason' => $escalationReason,
+		$asked = ['caseId' => $caseId, 'decisionType' => $decisionType, 'initiatorId' => $initiatorId, 'escalationReason' => $escalationReason];
+
+		return $this->saveCreated(row: $asked + $this->openTarget(path: $path));
+	}//end createEscalatie()
+
+	/**
+	 * Where an escalation goes, opened now.
+	 *
+	 * @param array<string, mixed> $path The escalation path, with its `mandaatId` and `userId`.
+	 *
+	 * @return array<string, mixed> The target mandate and user, the open status and the creation moment.
+	 */
+	private function openTarget(array $path): array {
+		return [
 			// Key = schema property (renamed). Value = an INTERNAL array key
 			// returned by resolveEscalationPath() in this same class, which is
 			// not a schema property and does not move here.
@@ -89,18 +99,27 @@ class MandaatEscalatieService {
 			'status' => 'open',
 			'createdAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
+	}//end openTarget()
 
+	/**
+	 * Save a new escalation and log that it was created.
+	 *
+	 * @param array<string, mixed> $row The escalation row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function saveCreated(array $row): array {
 		$saved = $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $row);
 		$this->logger->info(
 			'Mandaat escalation created',
 			[
-				'caseId' => $caseId,
-				'reason' => $escalationReason,
+				'caseId' => $row['caseId'],
+				'reason' => $row['escalationReason'],
 				'target' => $row['targetUserId'],
 			]
 		);
 		return $saved;
-	}//end createEscalatie()
+	}//end saveCreated()
 
 	/**
 	 * Resolve the next-higher mandate holder for a decision type.
@@ -116,7 +135,7 @@ class MandaatEscalatieService {
 	 *
 	 * @return array{mandaatId:string, userId:string}
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function resolveEscalatiePath(string $decisionType, string $escalationReason = ''): array {
 		$search = $this->escalationSearch();
@@ -224,6 +243,21 @@ class MandaatEscalatieService {
 			return $assigns;
 		}
 
+		$assigns = $this->searchRoleAssignments(search: $search, roleId: $roleId);
+
+		// Prefer primair toewijzing.
+		return $this->primairFirst(assigns: $assigns);
+	}//end roleAssignments()
+
+	/**
+	 * The assignments of one role as stored; none for a failed read.
+	 *
+	 * @param EscalationSearch $search Where to look.
+	 * @param string $roleId The role.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function searchRoleAssignments(EscalationSearch $search, string $roleId): array {
 		try {
 			$assigns = $this->searchObjectsAsArrays(
 				objectService: $search->objectService,
@@ -235,7 +269,17 @@ class MandaatEscalatieService {
 			$assigns = [];
 		}
 
-		// Prefer primair toewijzing.
+		return $assigns;
+	}//end searchRoleAssignments()
+
+	/**
+	 * The assignments ordered primair, observer, tijdelijk, then the rest.
+	 *
+	 * @param array<int, array<string, mixed>> $assigns The assignments.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function primairFirst(array $assigns): array {
 		usort(
 			$assigns,
 			static function (array $a, array $b): int {
@@ -251,7 +295,7 @@ class MandaatEscalatieService {
 		);
 
 		return $assigns;
-	}//end roleAssignments()
+	}//end primairFirst()
 
 	/**
 	 * Keep the mandaten that apply to a decision type, highest plafond first.
@@ -292,7 +336,7 @@ class MandaatEscalatieService {
 	 *
 	 * @throws RuntimeException When unauthorized or escalation missing.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function approveEscalatie(string $escalationId, string $mandaathouderUserId): array {
 		$escalation = $this->findEscalation(escalationId: $escalationId);
@@ -323,7 +367,7 @@ class MandaatEscalatieService {
 	 *
 	 * @throws RuntimeException When the escalation is missing.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function rejectEscalatie(string $escalationId, string $reason): array {
 		$escalation = $this->findEscalation(escalationId: $escalationId);
@@ -349,30 +393,61 @@ class MandaatEscalatieService {
 	 *
 	 * @return int Number of rerouted escalations.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function autoRerouteOnPersonnelChange(string $oldUserId, string $newUserId): int {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->escalationStore();
+		if ($store === null) {
 			return 0;
 		}
 
+		[$objectService, $register, $schema] = $store;
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['status' => 'open', 'targetUserId' => $oldUserId]
-			);
+			$filters = ['status' => 'open', 'targetUserId' => $oldUserId];
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (\Throwable $e) {
 			return 0;
 		}
 
+		$retargeted = array_map(
+			static function (array $row) use ($newUserId): array {
+				$row['targetUserId'] = $newUserId;
+				return $row;
+			},
+			$rows
+		);
+
+		return $this->rerouteRows(store: $store, rows: $retargeted);
+	}//end autoRerouteOnPersonnelChange()
+
+	/**
+	 * The object service, register and escalation schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The escalation store, or null.
+	 */
+	private function escalationStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end escalationStore()
+
+	/**
+	 * Point each escalation at the new user, counting the ones that saved.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The escalation store.
+	 * @param array<int, array<string, mixed>> $rows The open escalations, pointed at the new user.
+	 *
+	 * @return int Number of rerouted escalations.
+	 */
+	private function rerouteRows(array $store, array $rows): int {
+		[$objectService, $register, $schema] = $store;
 		$count = 0;
 		foreach ($rows as $row) {
-			$row['targetUserId'] = $newUserId;
 			try {
 				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
 				$count++;
@@ -382,7 +457,7 @@ class MandaatEscalatieService {
 		}
 
 		return $count;
-	}//end autoRerouteOnPersonnelChange()
+	}//end rerouteRows()
 
 	/**
 	 * Fetch a single escalation row by id.
@@ -392,13 +467,12 @@ class MandaatEscalatieService {
 	 * @return array<string, mixed>|null
 	 */
 	private function findEscalation(string $escalationId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->escalationStore();
+		if ($store === null) {
 			return null;
 		}
 
+		[$objectService, $register, $schema] = $store;
 		try {
 			return $this->findObjectAsArray(
 				objectService: $objectService,

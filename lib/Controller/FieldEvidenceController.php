@@ -39,20 +39,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\EvidenceMetadataService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\EvidenceMetadataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TranscriptionServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TranscriptionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,7 +66,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  */
 class FieldEvidenceController extends Controller {
 	use SearchesObjects;
@@ -75,25 +75,25 @@ class FieldEvidenceController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                $request       The request.
-	 * @param EvidenceMetadataService $metadata      Validates the capture and builds the record.
-	 * @param TranscriptionService    $transcription Queues a voice memo to be transcribed.
-	 * @param SettingsService         $settings      Register and schema resolution.
-	 * @param CaseAccessGuard         $accessGuard   Per-case authorization, failing closed.
+	 * @param EvidenceMetadataServiceInterface $metadata      Validates the capture and builds the record.
+	 * @param TranscriptionServiceInterface    $transcription Queues a voice memo to be transcribed.
+	 * @param SettingsServiceInterface         $settings      Register and schema resolution.
+	 * @param CaseAccessGuardInterface         $accessGuard   Per-case authorization, failing closed.
 	 * @param IUserSession            $userSession   The session.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly EvidenceMetadataService $metadata,
-		private readonly TranscriptionService $transcription,
-		private readonly SettingsService $settings,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly EvidenceMetadataServiceInterface $metadata,
+		private readonly TranscriptionServiceInterface $transcription,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -103,7 +103,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return JSONResponse The stored record, or the refusal.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	#[NoAdminRequired]
 	public function capture(string $inspectionRef): JSONResponse {
@@ -139,7 +139,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function unconfigured(): JSONResponse {
 		return new JSONResponse(
@@ -155,7 +155,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function inspectionOf(EvidenceCaptureRun $run): ?array {
 		return $this->findObjectAsArray(
@@ -174,7 +174,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return JSONResponse The stored record, or why it was not stored.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function fileEvidence(EvidenceCaptureRun $run, array $inspection): JSONResponse {
 		try {
@@ -203,7 +203,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return JSONResponse The record as the device should see it, or a 500.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function storeEvidence(EvidenceCaptureRun $run, array $payload): JSONResponse {
 		$stored = $this->saveObjectAsArray(
@@ -227,7 +227,7 @@ class FieldEvidenceController extends Controller {
 	 * @return EvidenceCaptureRun|null The capture, or null when the offline
 	 *                                 register has not been imported on this instance.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function evidenceScope(string $inspectionRef): ?EvidenceCaptureRun {
 		$objectService = $this->settings->getObjectService();
@@ -261,7 +261,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return bool True when the capture may be written.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function mayCapture(?array $inspection, string $caseId, IUser $user): bool {
 		if ($inspection === null || $caseId === '') {
@@ -283,7 +283,7 @@ class FieldEvidenceController extends Controller {
 	 *
 	 * @return array<string, mixed> The record as the device should see it.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
 	 */
 	private function queueTranscriptionIfSpoken(array $stored): array {
 		if (($stored['type'] ?? '') !== 'voice_memo') {
@@ -298,7 +298,7 @@ class FieldEvidenceController extends Controller {
 			// recorded at a site, and losing it because a machine cannot read
 			// it aloud is the wrong trade. It is answered with the reason, and
 			// somebody types the transcription.
-			$stored['transcriptionStatus'] = TranscriptionService::STATUS_FALLBACK;
+			$stored['transcriptionStatus'] = TranscriptionServiceInterface::STATUS_FALLBACK;
 			$stored['transcriptionNote'] = $e->getMessage();
 
 			return $stored;

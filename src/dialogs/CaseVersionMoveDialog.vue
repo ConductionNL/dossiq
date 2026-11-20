@@ -22,7 +22,7 @@
   ids, because "the case type changed" with nothing next to it sends the next
   person digging through the store.
 
-  @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<CnDialog
@@ -155,15 +155,12 @@
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-
-const PAGE_REFRESH = 'cn:page:refresh'
+import { caseTypeChangeDialog } from '../mixins/caseTypeChangeDialog.js'
 
 export default {
 	name: 'CaseVersionMoveDialog',
@@ -176,50 +173,17 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case to move. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTypeChangeDialog('version-move')],
 
 	emits: ['close'],
 
-	data() {
-		return {
-			current: {},
-			targets: [],
-			target: '',
-			preview: null,
-			reason: '',
-			error: '',
-			loading: true,
-			busy: false,
-		}
-	},
-
 	computed: {
-		/**
-		 * The case this dialog moves.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * The versions to choose from, as the picker reads them.
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
 			return this.targets.map((version) => ({
@@ -235,7 +199,7 @@ export default {
 		 *
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		statusLine() {
 			if (!this.preview?.status?.mapped) {
@@ -255,7 +219,7 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
 			return (
@@ -271,39 +235,15 @@ export default {
 		target: 'loadPreview',
 	},
 
-	async mounted() {
-		await this.loadOptions()
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * The versions this case could move to.
-		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-		 */
-		async loadOptions() {
-			this.loading = true
-			try {
-				const { data } = await axios.get(this.endpoint())
-				this.current = data?.current ?? {}
-				this.targets = Array.isArray(data?.targets) ? data.targets : []
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.loading = false
-			}
-		},
 
 		/**
 		 * What moving onto the chosen version would change.
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
 			this.preview = null
@@ -321,45 +261,17 @@ export default {
 		},
 
 		/**
-		 * Move the case, and keep the dialog open on a refusal.
+		 * What the change posts.
 		 *
-		 * @return {Promise<void>}
+		 * @return {object} The request body.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
-		async confirm() {
-			if (!this.canConfirm) {
-				return
+		confirmPayload() {
+			return {
+				target: this.target,
+				reason: this.reason.trim(),
 			}
-			this.busy = true
-			this.error = ''
-			try {
-				await axios.post(this.endpoint(), {
-					target: this.target,
-					reason: this.reason.trim(),
-				})
-				// Tell the whole page: the header, the stages widget and the
-				// attributes panel all read the case type.
-				emit(PAGE_REFRESH, {})
-				this.$emit('close')
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.busy = false
-			}
-		},
-
-		/**
-		 * The endpoint for this case.
-		 *
-		 * @return {string} The url.
-		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-		 */
-		endpoint() {
-			return generateUrl(
-				`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/version-move`,
-			)
 		},
 
 		/**
@@ -373,7 +285,7 @@ export default {
 		 * @param {object} e The axios error.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalOf(e) {
 			return (

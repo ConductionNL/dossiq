@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\RestrictedDocumentReadersInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use Throwable;
 
@@ -34,7 +35,7 @@ use Throwable;
  *
  * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-openregisters-own-api-applies-the-same-rule-to-the-record
  */
-class RestrictedDocumentReaders {
+class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 
 	/**
 	 * Constructor.
@@ -163,27 +164,69 @@ class RestrictedDocumentReaders {
 			return true;
 		}
 
+		$history = $this->copyHistory(copy: $copy, inherited: ['original' => $original, 'exception' => $exception, 'madeBy' => $madeBy]);
+		$this->saveCopy(copy: $copy, restriction: ['exception' => $exception, 'history' => $history]);
+
+		return true;
+	}//end inherit()
+
+	/**
+	 * The copy's exception history with the entry naming the original appended.
+	 *
+	 * @param array<string, mixed> $copy      The copy's record.
+	 * @param array<string, mixed> $inherited The original's record (`original`), its exception (`exception`)
+	 *                                        and who made the copy (`madeBy`).
+	 *
+	 * @return array<int|string, mixed> The history.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-copy-of-a-document-carries-its-exception
+	 */
+	private function copyHistory(array $copy, array $inherited): array {
+		$exception = $inherited['exception'];
 		$before = (new AccessExceptionValue())->exceptionOf(record: $copy);
+		$history = (array)($copy[AccessExceptionValue::HISTORY] ?? []);
+		$history[] = [
+			'action' => $this->historyAction(before: $before),
+			'by' => $inherited['madeBy'],
+			'at' => gmdate(DATE_ATOM),
+			'old' => $before,
+			'new' => $exception,
+			'reason' => 'Copied from ' . (string)($inherited['original']['id'] ?? '') . ': ' . $exception['reason'],
+		];
+
+		return $history;
+	}//end copyHistory()
+
+	/**
+	 * The history action: `set` when the copy had no exception, `change` when it had one.
+	 *
+	 * @param array<string, mixed>|null $before The copy's exception before.
+	 *
+	 * @return string The action.
+	 */
+	private function historyAction(?array $before): string {
 		$action = 'change';
 		if ($before === null) {
 			$action = 'set';
 		}
 
-		$history = (array)($copy[AccessExceptionValue::HISTORY] ?? []);
-		$history[] = [
-			'action' => $action,
-			'by' => $madeBy,
-			'at' => gmdate(DATE_ATOM),
-			'old' => $before,
-			'new' => $exception,
-			'reason' => 'Copied from ' . (string)($original['id'] ?? '') . ': ' . $exception['reason'],
-		];
-		$copy[AccessExceptionValue::PROPERTY] = $exception;
-		$copy[AccessExceptionValue::HISTORY] = array_values($history);
-		$this->save(record: $copy);
+		return $action;
+	}//end historyAction()
 
-		return true;
-	}//end inherit()
+	/**
+	 * Store the exception and its history on the copy's record.
+	 *
+	 * @param array<string, mixed> $copy        The copy's record.
+	 * @param array<string, mixed> $restriction The original's exception (`exception`), and the history with
+	 *                                          the copy entry (`history`).
+	 *
+	 * @return void
+	 */
+	private function saveCopy(array $copy, array $restriction): void {
+		$copy[AccessExceptionValue::PROPERTY] = $restriction['exception'];
+		$copy[AccessExceptionValue::HISTORY] = array_values($restriction['history']);
+		$this->save(record: $copy);
+	}//end saveCopy()
 
 	/**
 	 * Give a copy the exception of its original, named by id.

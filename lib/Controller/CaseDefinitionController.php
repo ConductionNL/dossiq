@@ -23,17 +23,17 @@
  * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  * @spec openspec/specs/case-types/spec.md
  * @spec openspec/specs/case-types/spec.md
- * @spec openspec/changes/zaaktype-copy/tasks.md#T06
- * @spec openspec/changes/zaaktype-copy/tasks.md#T07
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T07
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseDefinitionExportService;
-use OCA\Dossiq\Service\CaseDefinitionImportService;
-use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionExportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionImportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T06
  */
 class CaseDefinitionController extends Controller {
 	/**
@@ -56,17 +56,17 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
-	 * @param CaseDefinitionExportService $exportService The export service.
-	 * @param CaseDefinitionImportService $importService The import service.
-	 * @param CaseTypeCopyService $copyService The copy/guarded-delete service.
+	 * @param CaseDefinitionExportServiceInterface $exportService The export service.
+	 * @param CaseDefinitionImportServiceInterface $importService The import service.
+	 * @param CaseTypeCopyServiceInterface $copyService The copy/guarded-delete service.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseDefinitionExportService $exportService,
-		private readonly CaseDefinitionImportService $importService,
-		private readonly CaseTypeCopyService $copyService,
+		private readonly CaseDefinitionExportServiceInterface $exportService,
+		private readonly CaseDefinitionImportServiceInterface $importService,
+		private readonly CaseTypeCopyServiceInterface $copyService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -77,7 +77,7 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return DataDownloadResponse|JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function export(): DataDownloadResponse|JSONResponse {
@@ -106,7 +106,7 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validate(): JSONResponse {
@@ -127,7 +127,7 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function import(): JSONResponse {
@@ -265,7 +265,7 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function copy(string $id): JSONResponse {

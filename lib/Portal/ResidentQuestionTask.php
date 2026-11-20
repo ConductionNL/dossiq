@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
  */
-class ResidentQuestionTask {
+class ResidentQuestionTask implements ResidentQuestionTaskInterface {
 
 	/**
 	 * OpenRegister's task service, by name.
@@ -67,12 +68,12 @@ class ResidentQuestionTask {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container OpenRegister's task service is resolved from.
-	 * @param CaseDateNormaliser $dates     Reads a due date as a day in the administrator's time zone.
+	 * @param CaseDateNormaliserInterface $dates     Reads a due date as a day in the administrator's time zone.
 	 * @param LoggerInterface    $logger    Structured logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -143,8 +144,20 @@ class ResidentQuestionTask {
 			return false;
 		}
 
+		return $this->terminated(taskUuid: $taskUuid, settled: ['reason' => $reason, 'source' => $source]);
+	}//end close()
+
+	/**
+	 * End the portal task as moot on the engine; a refusal is logged.
+	 *
+	 * @param string                               $taskUuid The engine task's uuid.
+	 * @param array{reason: string, source: string} $settled  Why the question is settled, and what settled it.
+	 *
+	 * @return bool True when the engine closed it.
+	 */
+	private function terminated(string $taskUuid, array $settled): bool {
 		try {
-			$this->container->get(self::TASK_SERVICE)->terminateAsMoot(uuid: $taskUuid, reason: $reason, source: $source);
+			$this->container->get(self::TASK_SERVICE)->terminateAsMoot(uuid: $taskUuid, reason: $settled['reason'], source: $settled['source']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the question is settled, but its portal task could not be closed',
@@ -154,7 +167,7 @@ class ResidentQuestionTask {
 		}
 
 		return true;
-	}//end close()
+	}//end terminated()
 
 	/**
 	 * The external task OpenRegister writes for a question.

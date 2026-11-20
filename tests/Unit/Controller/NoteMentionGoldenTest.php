@@ -24,7 +24,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\NotesController;
 use OCA\Dossiq\Service\MentionNotificationService;
-use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
@@ -147,7 +146,6 @@ class NoteMentionGoldenTest extends TestCase {
 			mentionSvc: new MentionNotificationService($manager, $queue, $logger),
 			userSession: $session,
 			logger: $this->createMock(LoggerInterface::class),
-			notePush: $this->getMockBuilder(NotePush::class)->disableOriginalConstructor()->onlyMethods(['push'])->getMock(),
 			caseAccessGuard: $caseAccessGuard,
 			userManager: $userManager,
 		);

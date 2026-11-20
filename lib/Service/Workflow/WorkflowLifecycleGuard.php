@@ -40,8 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,13 +51,12 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class WorkflowLifecycleGuard {
+class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 
 	/**
 	 * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
 	 */
 	public const STATUS_DRAFT = 'draft';
-	public const STATUS_PUBLISHED = 'published';
 	public const STATUS_DEPRECATED = 'deprecated';
 
 	/**
@@ -71,22 +72,53 @@ class WorkflowLifecycleGuard {
 	/**
 	 * Constructor.
 	 *
+	 * The task-declaration validator is resolved from the container when a
+	 * publish first needs it, not injected. Injected, it closed a constructor
+	 * cycle: WorkflowDefinitionService needs this guard, the validator needs
+	 * TaskDeclarationReader, and the reader needs WorkflowDefinitionService.
+	 * PHP 8.4 absorbs that cycle with lazy objects; on PHP 8.3 with Nextcloud
+	 * 32 the container recursed until the stack ran out, so `app:enable dossiq`
+	 * failed outright. By the time a publish runs, WorkflowDefinitionService
+	 * already exists and the container hands the same instance back.
+	 *
 	 * @param WorkflowDefinitionRepository $repository The definition repository.
-	 * @param LoggerInterface $logger The logger.
-	 * @param TaskDeclarationValidator|null $taskDeclarations Publish-time check of the
-	 *                                                       per-task declaration blocks.
-	 * @param StepConfigCheck $stepConfigs Publish-time check of every step's `config`
-	 *                                     block (SLA, escalation, auto-actions).
+	 * @param LoggerInterface              $logger      The logger.
+	 * @param ContainerInterface|null      $container   Resolves the publish-time
+	 *                                                  task-declaration check; null
+	 *                                                  (as in unit tests) skips it.
+	 * @param StepConfigCheck              $stepConfigs Publish-time check of every step's `config`
+	 *                                                  block (SLA, escalation, auto-actions).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
 		private readonly LoggerInterface $logger,
-		private readonly ?TaskDeclarationValidator $taskDeclarations = null,
+		private readonly ?ContainerInterface $container = null,
 		private readonly StepConfigCheck $stepConfigs = new StepConfigCheck(),
 	) {
 	}//end __construct()
+
+	/**
+	 * The publish-time check of the per-task declaration blocks.
+	 *
+	 * Resolved on first use to keep the constructor free of the cycle described
+	 * on the constructor. A container that cannot build the validator throws:
+	 * publishing without the check it exists to run would be a silent pass.
+	 *
+	 * @return TaskDeclarationValidator|null The validator, or null without a container.
+	 */
+	private function taskDeclarationValidator(): ?TaskDeclarationValidator {
+		if ($this->container === null) {
+			return null;
+		}
+
+		if ($this->taskDeclarations === null) {
+			$this->taskDeclarations = $this->container->get(TaskDeclarationValidator::class);
+		}
+
+		return $this->taskDeclarations;
+	}//end taskDeclarationValidator()
 
 	/**
 	 * Why the last publish check refused, in the administrator's own words.
@@ -102,11 +134,18 @@ class WorkflowLifecycleGuard {
 	private array $lastRefusals = [];
 
 	/**
+	 * The task-declaration validator, once a publish has resolved it.
+	 *
+	 * @var TaskDeclarationValidator|null
+	 */
+	private ?TaskDeclarationValidator $taskDeclarations = null;
+
+	/**
 	 * The refusals of the most recent publish check, newest call only.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function lastRefusals(): array {
 		return $this->lastRefusals;
@@ -265,7 +304,7 @@ class WorkflowLifecycleGuard {
 		$this->logger->warning(
 			'Dossiq: case type has several active workflow definitions and no usable default route',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'caseType' => $caseTypeId,
 				'routes' => array_map(fn (array $row): string => $this->variantOf(row: $row), $active),
 				'chose' => $this->idOf(row: $active[0]),
@@ -341,7 +380,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() — definition is not a draft',
-			['app' => Application::APP_ID, 'id' => $draft->id]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id]
 		);
 		return false;
 	}//end isDraft()
@@ -366,7 +405,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() refused, a step configuration does not hold',
-			['app' => Application::APP_ID, 'id' => $draft->id, 'errors' => $this->lastStepConfigErrors]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id, 'errors' => $this->lastStepConfigErrors]
 		);
 		return false;
 	}//end stepConfigsHold()
@@ -387,7 +426,7 @@ class WorkflowLifecycleGuard {
 
 		$this->logger->warning(
 			'Dossiq: publish() — referential integrity failure',
-			['app' => Application::APP_ID, 'id' => $draft->id]
+			['app' => AppIdentity::APP_ID, 'id' => $draft->id]
 		);
 		return false;
 	}//end referencesOwnStatuses()
@@ -405,22 +444,23 @@ class WorkflowLifecycleGuard {
 	 *
 	 * @return boolean True when every task declaration resolves.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function taskDeclarationsResolve(array $definition, string $id): bool {
 		$this->lastRefusals = [];
-		if ($this->taskDeclarations === null) {
+		$validator          = $this->taskDeclarationValidator();
+		if ($validator === null) {
 			return true;
 		}
 
-		$this->lastRefusals = $this->taskDeclarations->refusalsFor(definition: $definition);
+		$this->lastRefusals = $validator->refusalsFor(definition: $definition);
 		if ($this->lastRefusals === []) {
 			return true;
 		}
 
 		$this->logger->warning(
 			'Dossiq: publish() — a task declaration names something that is not there',
-			['app' => Application::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
+			['app' => AppIdentity::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
 		);
 
 		return false;
@@ -442,7 +482,7 @@ class WorkflowLifecycleGuard {
 		if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
 			$this->logger->warning(
 				'Dossiq: deprecate() — definition is not published',
-				['app' => Application::APP_ID, 'id' => $id]
+				['app' => AppIdentity::APP_ID, 'id' => $id]
 			);
 			return false;
 		}
@@ -453,7 +493,7 @@ class WorkflowLifecycleGuard {
 		) {
 			$this->logger->warning(
 				'Dossiq: deprecate() — last published definition with open cases',
-				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+				['app' => AppIdentity::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
 			);
 			return false;
 		}

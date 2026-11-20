@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\BerichtenboxService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -36,7 +36,7 @@ use OCP\IUserSession;
 /**
  * Controller exposing Berichtenbox send/list/poll endpoints.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
 
@@ -61,17 +61,17 @@ class BerichtenboxController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
+	 * @param BerichtenboxServiceInterface $berichtenboxService The Berichtenbox service.
 	 * @param IUserSession $userSession The user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private BerichtenboxService $berichtenboxService,
+		private BerichtenboxServiceInterface $berichtenboxService,
 		private IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -81,7 +81,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function send(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -107,7 +107,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse The 200 with the message record, or the 400 the service's refusal answers with.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function dispatch(mixed $caseId, string $category): JSONResponse {
 		$result = $this->berichtenboxService->sendMessage(
@@ -135,7 +135,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse|null The 400 or 403, or null when the send may go ahead.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function sendRefusal(mixed $caseId, \OCP\IUser $user): ?JSONResponse {
 		if (empty($caseId) === true) {
@@ -165,7 +165,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse|null The 400, or null for a known category.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function categoryRefusal(string $category): ?JSONResponse {
 		if (in_array($category, self::CATEGORIES, true) === false) {
@@ -188,7 +188,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function notSent(array $result): JSONResponse {
 		$answer = ['success' => false, 'error' => $result['error']];
@@ -211,7 +211,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function messages(): JSONResponse {
 		$user = $this->userSession->getUser();

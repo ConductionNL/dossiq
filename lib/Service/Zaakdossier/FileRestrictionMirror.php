@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\OpenRegister\Files\Service\File\FileRestrictionRequest;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Throwable;
@@ -39,7 +40,7 @@ class FileRestrictionMirror {
 	/**
 	 * OpenRegister's service, resolved at call time: OpenRegister is an optional dependency.
 	 */
-	public const SERVICE = 'OCA\OpenRegister\Service\File\FileRestrictionService';
+	public const SERVICE = 'OCA\OpenRegister\Files\Service\File\FileRestrictionService';
 
 	/**
 	 * Constructor.
@@ -79,7 +80,7 @@ class FileRestrictionMirror {
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-every-path-that-returns-the-document-or-its-file-honours-the-exception
 	 */
 	public function restrict(int $fileId, array $users, array $groups, string $reason): void {
-		$this->requireService()->restrict($fileId, $users, $groups, $reason);
+		$this->requireService()->restrict(new FileRestrictionRequest(fileId: $fileId, users: $users, groups: $groups, reason: $reason));
 	}//end restrict()
 
 	/**

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -68,13 +68,13 @@ final class OpenCaseSweep {
 	/**
 	 * The sweep over the configured case register, or null without an object service, a register or a case schema.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 *
 	 * @return self|null
 	 *
 	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
-	public static function ofSettings(SettingsService $settingsService): ?self {
+	public static function ofSettings(SettingsServiceInterface $settingsService): ?self {
 		$objectService = $settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;

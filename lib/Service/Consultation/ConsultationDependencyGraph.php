@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Consultation;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationDependencyGraph {
 	/**
@@ -68,7 +68,7 @@ class ConsultationDependencyGraph {
 	 *
 	 * @return bool True if a cycle would be created
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function wouldCreateCycle(string $consultationId, array $dependsOn): bool {
 		// Quick self-reference check.
@@ -76,14 +76,9 @@ class ConsultationDependencyGraph {
 			return true;
 		}
 
-		$visited = [];
+		$walk = ['startId' => $consultationId, 'visited' => []];
 		foreach ($dependsOn as $depId) {
-			if ($this->hasCycleDfs(
-				startId: $consultationId,
-				currentId: $depId,
-				visited: $visited,
-			) === true
-			) {
+			if ($this->hasCycleDfs(currentId: $depId, walk: $walk) === true) {
 				return true;
 			}
 		}
@@ -94,22 +89,22 @@ class ConsultationDependencyGraph {
 	/**
 	 * Depth-first search helper for cycle detection in dependency graph.
 	 *
-	 * @param string $startId The original consultation ID (cycle target)
 	 * @param string $currentId The current node being visited
-	 * @param string[] $visited Already-visited node IDs (prevents re-traversal)
+	 * @param array{startId: string, visited: string[]} $walk The original consultation ID (cycle target) and the
+	 *                                                        already-visited node IDs (prevents re-traversal)
 	 *
 	 * @return bool True if startId is reachable from currentId (cycle detected)
 	 */
-	private function hasCycleDfs(string $startId, string $currentId, array &$visited): bool {
-		if ($currentId === $startId) {
+	private function hasCycleDfs(string $currentId, array &$walk): bool {
+		if ($currentId === $walk['startId']) {
 			return true;
 		}
 
-		if (in_array($currentId, $visited, true) === true) {
+		if (in_array($currentId, $walk['visited'], true) === true) {
 			return false;
 		}
 
-		$visited[] = $currentId;
+		$walk['visited'][] = $currentId;
 
 		$consultation = $this->repository->getConsultation(consultationId: $currentId);
 		if ($consultation === null) {
@@ -122,7 +117,7 @@ class ConsultationDependencyGraph {
 		}
 
 		foreach ($deps as $depId) {
-			if ($this->hasCycleDfs(startId: $startId, currentId: $depId, visited: $visited) === true) {
+			if ($this->hasCycleDfs(currentId: $depId, walk: $walk) === true) {
 				return true;
 			}
 		}

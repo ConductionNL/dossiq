@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\TaskEffectsInterface;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
@@ -45,9 +46,9 @@ use Throwable;
 /**
  * Reads, checks and runs the effects a task declared.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
-class TaskEffects {
+class TaskEffects implements TaskEffectsInterface {
 
 	/**
 	 * Where a task carries the effects dossiq declared on it.
@@ -85,9 +86,20 @@ class TaskEffects {
 	 *
 	 * @return array<int, array<string, mixed>> The effects; empty when it declares none.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function declaredOn(array $task): array {
+		return $this->typedEffects(effects: $this->rawEffects(task: $task));
+	}//end declaredOn()
+
+	/**
+	 * The effects list under the task's metadata, as stored.
+	 *
+	 * @param array<string, mixed> $task The task, as the engine answers it.
+	 *
+	 * @return array<mixed> The raw effects; empty when the metadata holds none.
+	 */
+	private function rawEffects(array $task): array {
 		$metadata = ($task['metadata'] ?? []);
 		if (is_array($metadata) === false) {
 			return [];
@@ -103,6 +115,17 @@ class TaskEffects {
 			return [];
 		}
 
+		return $effects;
+	}//end rawEffects()
+
+	/**
+	 * The effects that are arrays with a type, in declared order.
+	 *
+	 * @param array<mixed> $effects The raw effects.
+	 *
+	 * @return array<int, array<string, mixed>> The effects, each with a trimmed type.
+	 */
+	private function typedEffects(array $effects): array {
 		$declared = [];
 		foreach ($effects as $effect) {
 			if (is_array($effect) === false) {
@@ -119,7 +142,7 @@ class TaskEffects {
 		}
 
 		return $declared;
-	}//end declaredOn()
+	}//end typedEffects()
 
 	/**
 	 * The declared effects no handler answers to, by name.
@@ -132,7 +155,7 @@ class TaskEffects {
 	 *
 	 * @return array<int, string> The unresolvable types, in declared order.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function unresolved(array $effects): array {
 		$missing = [];
@@ -165,7 +188,7 @@ class TaskEffects {
 	 *
 	 * @return array<int, array{type: string, ran: bool, error: string}> One result per effect.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function run(array $effects, array $case, array $context): array {
 		$results = [];
@@ -249,7 +272,7 @@ class TaskEffects {
 	 *
 	 * @return bool True when the retired runner can run it.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	private function runsRetired(string $type): bool {
 		return $this->retired !== null && in_array($type, $this->retired->runnableTypes(), true) === true;

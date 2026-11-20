@@ -35,6 +35,7 @@ use Stringable;
  *
  * @covers \OCA\Dossiq\Service\InformationRequestService
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\InformationRequestRun
  */
 class InformationRequestAskFlowTest extends TestCase {
 	use BindsTermFixtures;

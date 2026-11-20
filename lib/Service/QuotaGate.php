@@ -27,9 +27,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
+use OCA\Dossiq\Kernel\Contracts\QuotaGateInterface;
 use OCP\IL10N;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-a-tenant-past-its-hard-quota-cannot-create-more-req-tq-enf-01
  */
-class QuotaGate {
+class QuotaGate implements QuotaGateInterface {
 	/**
 	 * The quota each counted schema consumes, by schema slug.
 	 *
@@ -169,20 +170,22 @@ class QuotaGate {
 			return;
 		}
 
-		$this->notifyAdmins(tenantId: $tenantId, quotaType: $quotaType, used: $result['currentUsage'], limit: $limit);
+		$this->notifyAdmins(
+			tenantId: $tenantId,
+			parameters: ['quotaType' => $quotaType, 'used' => $result['currentUsage'], 'limit' => $limit]
+		);
 	}//end record()
 
 	/**
 	 * Send the soft limit notice to every administrator of the tenant.
 	 *
-	 * @param string $tenantId  The tenant.
-	 * @param string $quotaType The quota type.
-	 * @param int    $used      Usage after the write.
-	 * @param int    $limit     The hard limit.
+	 * @param string                                          $tenantId   The tenant.
+	 * @param array{quotaType: string, used: int, limit: int} $parameters The quota type, usage after the write
+	 *                                                                    and the hard limit.
 	 *
 	 * @return void
 	 */
-	private function notifyAdmins(string $tenantId, string $quotaType, int $used, int $limit): void {
+	private function notifyAdmins(string $tenantId, array $parameters): void {
 		try {
 			$admins = $this->adminsOf(tenantId: $tenantId);
 		} catch (Throwable $e) {
@@ -193,13 +196,13 @@ class QuotaGate {
 		foreach ($admins as $userId) {
 			try {
 				$notification = $this->notifications->createNotification();
-				$notification->setApp(Application::APP_ID)
+				$notification->setApp(AppIdentity::APP_ID)
 					->setUser($userId)
 					->setDateTime(new DateTime())
 					->setObject('tenant', $tenantId)
 					->setSubject(
-						Notifier::SUBJECT_QUOTA_SOFT_LIMIT,
-						['quotaType' => $quotaType, 'used' => $used, 'limit' => $limit]
+						NotifierInterface::SUBJECT_QUOTA_SOFT_LIMIT,
+						$parameters
 					);
 				$this->notifications->notify($notification);
 			} catch (Throwable $e) {
@@ -227,7 +230,7 @@ class QuotaGate {
 		$rows = $objectService->findAll(
 			[
 				'filters' => [
-					'register' => Application::REGISTER_SLUG,
+					'register' => AppIdentity::REGISTER_SLUG,
 					'schema' => 'tenantUser',
 					'tenantRef' => $tenantId,
 					'role' => self::ADMIN_ROLE,

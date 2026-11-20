@@ -32,18 +32,22 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * The zaak-level effects of creating a status or a resultaat.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZrcStatusEffects {
+class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	use NormalisesObjectRows;
+	use FindsMappedObjects;
 
 	/**
 	 * A UUID anywhere in a URL or bare value.
@@ -153,37 +157,7 @@ class ZrcStatusEffects {
 	 */
 	public function applyStatusEffect(array $body, array $objectData): void {
 		try {
-			$final = $this->eindstatus->finalState(body: $body);
-			if ($final === 'none') {
-				return;
-			}
-
-			$caseUuid = $this->uuidOf(value: (string)($body['case'] ?? ''));
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
-			if ($caseUuid === null || $caseConfig === null) {
-				return;
-			}
-
-			$case = $this->find(uuid: $caseUuid, config: $caseConfig);
-			if ($case === null) {
-				return;
-			}
-
-			$caseData = $this->objectToArray(row: $case);
-			// Strip metadata that confuses saveObject on re-save.
-			unset($caseData['@self'], $caseData['organisation']);
-			$caseData = $this->withStringFields(caseData: $caseData);
-
-			if ($final === true) {
-				$this->closeCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig, body: $body, objectData: $objectData);
-			}
-
-			// 🔑 Only a status type that says FALSE reopens. A flag stored as
-			// 'false' or 0 is neither true nor false here and reopens nothing,
-			// exactly as before this moved out of the controller.
-			if ($final === false) {
-				$this->reopenCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
-			}
+			$this->applyFinalState(body: $body, objectData: $objectData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'handleEindstatusEffect failed: ' . $e->getMessage(),
@@ -191,6 +165,89 @@ class ZrcStatusEffects {
 			);
 		}//end try
 	}//end applyStatusEffect()
+
+	/**
+	 * Resolve the zaak a final or reopening status belongs to and move it.
+	 *
+	 * @param array $body       The status body as received.
+	 * @param array $objectData The stored status.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When resolving or saving the zaak fails.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function applyFinalState(array $body, array $objectData): void {
+		$final = $this->eindstatus->finalState(body: $body);
+		if ($final === 'none') {
+			return;
+		}
+
+		$loaded = $this->loadStatusCase(body: $body);
+		if ($loaded === null) {
+			return;
+		}
+
+		$this->moveCase(
+			final: $final,
+			loaded: $loaded,
+			submitted: ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
+		);
+	}//end applyFinalState()
+
+	/**
+	 * Close the zaak on a final status, reopen it on a status type that says false.
+	 *
+	 * @param bool|string|null                  $final     What the status type says about being final.
+	 * @param array{0: string, 1: array, 2: array} $loaded    The zaak uuid, its mapping and its data.
+	 * @param mixed                             $submitted The submitted status date, if any.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function moveCase(bool|string|null $final, array $loaded, mixed $submitted): void {
+		if ($final === true) {
+			$this->closeCase(loaded: $loaded, submitted: $submitted);
+		}
+
+		// 🔑 Only a status type that says FALSE reopens. A flag stored as
+		// 'false' or 0 is neither true nor false here and reopens nothing,
+		// exactly as before this moved out of the controller.
+		if ($final === false) {
+			$this->reopenCase(loaded: $loaded);
+		}
+	}//end moveCase()
+
+	/**
+	 * The zaak a status body names, ready to re-save: its uuid, its mapping and its data.
+	 *
+	 * @param array $body The status body as received.
+	 *
+	 * @return array{0: string, 1: array, 2: array}|null The zaak, or null when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function loadStatusCase(array $body): ?array {
+		$caseUuid = $this->uuidOf(value: (string)($body['case'] ?? ''));
+		$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
+		if ($caseUuid === null || $caseConfig === null) {
+			return null;
+		}
+
+		$case = $this->find(uuid: $caseUuid, config: $caseConfig);
+		if ($case === null) {
+			return null;
+		}
+
+		$caseData = $this->objectToArray(row: $case);
+		// Strip metadata that confuses saveObject on re-save.
+		unset($caseData['@self'], $caseData['organisation']);
+		$caseData = $this->withStringFields(caseData: $caseData);
+
+		return [$caseUuid, $caseConfig, $caseData];
+	}//end loadStatusCase()
 
 	/**
 	 * Derive the zaak's archiving parameters when a resultaat is created (zrc-021).
@@ -217,7 +274,7 @@ class ZrcStatusEffects {
 
 			$caseData = $this->deriveArchiveActionDate(caseData: $caseData, dateStatusGezet: $endDate);
 			$caseData = $this->withStringFields(caseData: $caseData);
-			$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+			$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'zrc-021: handleResultaatCreated failed: ' . $e->getMessage(),
@@ -251,17 +308,14 @@ class ZrcStatusEffects {
 	/**
 	 * Close the zaak on its eindstatus.
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak, ready to re-save.
-	 * @param array $caseConfig The case mapping.
-	 * @param array $body The status body.
-	 * @param array $objectData The stored status.
+	 * @param array{0: string, 1: array, 2: array} $loaded    The zaak uuid, its mapping and its data, ready to re-save.
+	 * @param mixed                                $submitted The datumStatusGezet of the status body, else of the stored status, else null.
 	 *
 	 * @return void
 	 */
-	private function closeCase(string $caseUuid, array $caseData, array $caseConfig, array $body, array $objectData): void {
+	private function closeCase(array $loaded, mixed $submitted): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		// Zrc-007a: the submitted datumStatusGezet, or today, through the one date write path.
-		$submitted = ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null));
 		$dateStatusGezet = $this->dates->todayAsCalendarDate();
 		if ($submitted !== null && $submitted !== '') {
 			$dateStatusGezet = $this->dates->toCalendarDate($submitted, 'datumStatusGezet');
@@ -270,7 +324,7 @@ class ZrcStatusEffects {
 		$caseData['endDate'] = $dateStatusGezet;
 		// Zrc-021: Derive archiefactiedatum from resultaat.resultaattype.brondatumArchiefprocedure.
 		$caseData = $this->deriveArchiveActionDate(caseData: $caseData, dateStatusGezet: $dateStatusGezet);
-		$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+		$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 
 		// Zrc-007b: Set indicatieGebruiksrecht on all related informatieobjecten.
 		$this->usageRights->settleOnClose(zaakUuid: $caseUuid);
@@ -279,13 +333,12 @@ class ZrcStatusEffects {
 	/**
 	 * Reopen a closed zaak on a non-eindstatus (zrc-008).
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak, ready to re-save.
-	 * @param array $caseConfig The case mapping.
+	 * @param array{0: string, 1: array, 2: array} $loaded The zaak uuid, its mapping and its data, ready to re-save.
 	 *
 	 * @return void
 	 */
-	private function reopenCase(string $caseUuid, array $caseData, array $caseConfig): void {
+	private function reopenCase(array $loaded): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		$existingEndDate = $caseData['endDate'] ?? null;
 		if ($existingEndDate === null || $existingEndDate === '') {
 			return;
@@ -294,7 +347,7 @@ class ZrcStatusEffects {
 		$caseData['endDate'] = null;
 		$caseData['archiveActionDate'] = null;
 		$caseData['archiveNomination'] = null;
-		$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+		$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 
 		$this->zgwService->getLogger()->info(
 			'zrc-008: Heropened zaak ' . $caseUuid . ' — cleared endDate, archiveActionDate, archiveNomination'
@@ -353,50 +406,22 @@ class ZrcStatusEffects {
 	/**
 	 * Re-save the zaak under its uuid.
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak.
-	 * @param array $caseConfig The case mapping.
+	 * @param array{0: string, 1: array, 2: array} $loaded The zaak uuid, its mapping and its data.
 	 *
 	 * @return void
 	 */
-	private function saveCase(string $caseUuid, array $caseData, array $caseConfig): void {
+	private function saveCase(array $loaded): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		$caseData['id'] = $caseUuid;
 		$this->zgwService->getObjectService()->saveObject(
-			register: $caseConfig['sourceRegister'],
-			schema: $caseConfig['sourceSchema'],
 			object: $caseData,
-			uuid: $caseUuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $caseConfig['sourceRegister'],
+						schema: $caseConfig['sourceSchema']
+					),
+				uuid: $caseUuid
+			)
 		);
 	}//end saveCase()
-
-	/**
-	 * Find one object of a mapped schema.
-	 *
-	 * @param string $uuid The object.
-	 * @param array $config The mapping.
-	 *
-	 * @return mixed The row, or null.
-	 */
-	private function find(string $uuid, array $config): mixed {
-		return $this->zgwService->getObjectService()->find(
-			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
-		);
-	}//end find()
-
-	/**
-	 * The first UUID in a value, or null.
-	 *
-	 * @param string $value A URL or bare uuid.
-	 *
-	 * @return string|null
-	 */
-	private function uuidOf(string $value): ?string {
-		if ($value === '' || preg_match(self::UUID_PATTERN, $value, $matches) !== 1) {
-			return null;
-		}
-
-		return $matches[1];
-	}//end uuidOf()
 }//end class

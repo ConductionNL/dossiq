@@ -14,7 +14,7 @@
   has no Talk, this panel says so instead of offering a button that cannot
   work, because a dead affordance costs a handler a click and a guess.
 
-  @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-conversations">
@@ -229,7 +229,7 @@ export default {
 		 * @param {object|null} value The case as loaded.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		applyCaseObject(value) {
 			if (!value) {
@@ -247,7 +247,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async loadAvailability() {
 			this.loading = true
@@ -268,7 +268,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async startConversation() {
 			if (!this.resolvedCaseId) {
@@ -293,7 +293,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async declareMajor() {
 			if (!this.resolvedCaseId) {
@@ -316,7 +316,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		openMajorChannel() {
 			if (this.majorChannelUrl) {
@@ -330,7 +330,7 @@ export default {
 		 * @param {object} record The conversation record on the case.
 		 * @return {string} The summary line.
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		recordSummary(record) {
 			return conversationSummary(record)
@@ -342,7 +342,7 @@ export default {
 		 * @param {object} record The conversation record on the case.
 		 * @return {boolean} True once it ended.
 		 *
-		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		isEnded(record) {
 			return conversationEnded(record)

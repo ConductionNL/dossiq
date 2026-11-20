@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Conversation;
 /**
  * The state of one capture filing, built and read by CaseCaptureService only.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 final class CaptureFiling {
 	/**

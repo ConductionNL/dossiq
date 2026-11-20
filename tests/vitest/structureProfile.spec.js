@@ -105,12 +105,12 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations (re-integration pathways is a Cases view, not a menu entry)', () => {
+	it('counts 38 entries: 12 main, 5 footer, 18 settings, 3 integrations (re-integration pathways is a Cases view, not a menu entry; there is no recycle bin)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(13)
+		expect(flat(menu)).toHaveLength(38)
+		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
@@ -362,11 +362,12 @@ describe('the simple profile', () => {
 		).toBe('Documentation')
 	})
 
-	it('moves the recycle bin and the mail intake log to settings', () => {
+	it('moves the mail intake log to settings, and has no recycle bin', () => {
 		const settings = section(built.menu, 'settings').map((entry) => entry.id)
+		// cases-are-archival-no-delete: a case is never deleted, so there is no recycle bin.
+		expect(settings).not.toContain('CasesDeletedMenu')
 		expect(settings).toEqual(
 			expect.arrayContaining([
-				'CasesDeletedMenu',
 				'MailIntakeLogMenu',
 				'DocumentReviewReportsMenu',
 			]),
@@ -491,10 +492,11 @@ describe('the simple profile', () => {
 	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
 	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
 	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
-	it('builds the same 74 pages as the full profile, so every route stays', () => {
+	// 74 -> 73: CasesDeleted retires; a case is never deleted (cases-are-archival-no-delete).
+	it('builds the same 73 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(74)
+		expect(built.pages).toHaveLength(73)
 	})
 })
 

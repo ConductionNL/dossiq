@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service;
 /**
  * What one request write writes, and where.
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 final class RequestWrite {
 	/**

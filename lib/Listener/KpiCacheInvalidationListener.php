@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -55,7 +55,7 @@ use Psr\Log\LoggerInterface;
  *      IUserSession::getUser() solely to key the per-user KPI cache version,
  *      never to gate access; writes no parallel audit or permission store.
  *
- * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+ * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T12
  */
 class KpiCacheInvalidationListener implements IEventListener {
 
@@ -90,7 +90,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
 	) {
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+		$this->cache = $cacheFactory->createLocal(AppIdentity::APP_ID);
 	}//end __construct()
 
 	/**
@@ -103,7 +103,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T12
 	 */
 	public function handle(Event $event): void {
 		$user = $this->userSession->getUser();
@@ -121,7 +121,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T12
 	 */
 	private function isObjectChange(Event $event): bool {
 		return ($event instanceof ObjectCreatedEvent) === true
@@ -136,7 +136,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T12
 	 */
 	private function bumpVersion(string $versionKey): void {
 		try {

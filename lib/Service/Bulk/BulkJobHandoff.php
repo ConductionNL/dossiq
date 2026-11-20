@@ -28,7 +28,9 @@ use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -47,9 +49,9 @@ use Throwable;
  * cases is a thing a coordinator has to explain (D-3). The action declares it
  * too, so an act handed over by any other caller is refused just the same.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class BulkJobHandoff {
+class BulkJobHandoff implements BulkJobHandoffInterface {
 
 	/**
 	 * OpenRegister's job service, resolved by name so dossiq stays installable
@@ -57,7 +59,7 @@ class BulkJobHandoff {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const JOB_SERVICE = 'OCA\OpenRegister\Service\BulkJob\BulkJobService';
 
@@ -76,7 +78,7 @@ class BulkJobHandoff {
 	 *
 	 * @var array<int, string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ACTIONS = [
 		TransitionCasesAction::ID,
@@ -95,7 +97,7 @@ class BulkJobHandoff {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -119,7 +121,7 @@ class BulkJobHandoff {
 	 * @throws MixedCaseTypeVersionsException When the selection spans case type versions.
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function create(
 		string $actionId,
@@ -134,21 +136,39 @@ class BulkJobHandoff {
 
 		$this->guardSelection(actionId: $actionId, selection: $selection);
 
+		return $this->createJob(
+			actionId: $actionId,
+			request: ['parameters' => $parameters, 'selection' => $selection, 'justification' => $justification, 'actorUid' => $actorUid]
+		);
+	}//end create()
+
+	/**
+	 * Create the previewed job in OpenRegister's bulk-job service, scoped to dossiq's case register and schema.
+	 *
+	 * @param string               $actionId The dossiq action to run.
+	 * @param array<string, mixed> $request  The action's `parameters`, the `selection`, the coordinator's
+	 *                                       `justification` and the `actorUid` doing it.
+	 *
+	 * @return array<string, mixed> The previewed job, as the job serialises itself.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function createJob(string $actionId, array $request): array {
 		$service = $this->jobService();
 		[$registerId, $schemaId] = $this->scope();
 
 		$job = $service->create(
 			actionId: $actionId,
-			parameters: $parameters,
-			selection: $selection,
-			justification: $justification,
-			actorUid: $actorUid,
+			parameters: $request['parameters'],
+			selection: $request['selection'],
+			justification: $request['justification'],
+			actorUid: $request['actorUid'],
 			registerId: $registerId,
 			schemaId: $schemaId,
 		);
 
 		return $this->asArray(job: $job);
-	}//end create()
+	}//end createJob()
 
 	/**
 	 * Start a rehearsed job. This is the call that writes.
@@ -165,7 +185,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function commit(array $job, ?string $justification = null): array {
 		$id = ($job['id'] ?? null);
@@ -212,7 +232,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws MixedCaseTypeVersionsException When the selection spans case type versions.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function guardSelection(string $actionId, array $selection): void {
 		$guarded = [SetCaseAttributeAction::ID, MoveCaseTypeVersionAction::ID];
@@ -239,7 +259,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When either cannot be resolved.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function scope(): array {
 		$registerId = $this->registerId(slug: (string)$this->settingsService->getConfigValue('register'));
@@ -262,7 +282,7 @@ class BulkJobHandoff {
 	 *
 	 * @return int The numeric id, or 0 when it cannot be resolved.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function registerId(string $slug): int {
 		$slug = trim($slug);
@@ -300,7 +320,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When OpenRegister is not installed or enabled.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function jobService(): object {
 		$service = $this->settingsService->getOpenRegisterClass(self::JOB_SERVICE);
@@ -318,21 +338,9 @@ class BulkJobHandoff {
 	 *
 	 * @return array<string, mixed> The job.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $job): array {
-		if (is_array($job) === true) {
-			return $job;
-		}
-
-		if (is_object($job) === true && method_exists($job, 'jsonSerialize') === true) {
-			$serialised = $job->jsonSerialize();
-
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $job);
 	}//end asArray()
 }//end class

@@ -152,7 +152,7 @@ final class StepConfigValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public static function validate(
 		array $step,
@@ -169,11 +169,26 @@ final class StepConfigValidator {
 			return [self::entryError(path: "steps[$stepIndex].config", code: 'malformed_config')];
 		}
 
+		return self::configErrors(
+			config: $config,
+			against: ['caseTypeSchema' => $caseTypeSchema, 'actionCatalog' => $actionCatalog, 'base' => "steps[$stepIndex].config"]
+		);
+	}//end validate()
+
+	/**
+	 * Every error a step's config carries: its sla, required fields, auto actions and escalation rules.
+	 *
+	 * @param array<string, mixed> $config  The step's config.
+	 * @param array<string, mixed> $against The linked caseType, the recognised action keys and the path prefix.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function configErrors(array $config, array $against): array {
 		$scope = new StepConfigScope();
 		$scope->config = $config;
-		$scope->caseTypeSchema = $caseTypeSchema;
-		$scope->actionCatalog = $actionCatalog;
-		$scope->base = "steps[$stepIndex].config";
+		$scope->caseTypeSchema = $against['caseTypeSchema'];
+		$scope->actionCatalog = $against['actionCatalog'];
+		$scope->base = $against['base'];
 
 		return array_merge(
 			self::validateSla(sla: ($config['sla'] ?? null), path: $scope->base . '.sla'),
@@ -181,7 +196,7 @@ final class StepConfigValidator {
 			self::validateAutoActions(scope: $scope),
 			self::escalationErrors(scope: $scope)
 		);
-	}//end validate()
+	}//end configErrors()
 
 	/**
 	 * The escalation rule's errors, read against the step's SLA and the case type's roles.
@@ -200,23 +215,6 @@ final class StepConfigValidator {
 	}//end escalationErrors()
 
 	/**
-	 * Build a structured error record.
-	 *
-	 * @param string $path The JSON-pointer-like path to the bad value.
-	 * @param string $code The stable error code (snake_case).
-	 * @param string $message An internal description (never user-facing).
-	 *
-	 * @return array{path: string, code: string, message: string}
-	 */
-	private static function error(string $path, string $code, string $message): array {
-		return [
-			'path' => $path,
-			'code' => $code,
-			'message' => $message,
-		];
-	}//end error()
-
-	/**
 	 * One error whose sentence is fixed by its code.
 	 *
 	 * @param string $path Dotted path to the offending field.
@@ -225,7 +223,7 @@ final class StepConfigValidator {
 	 * @return array{path: string, code: string, message: string}
 	 */
 	private static function entryError(string $path, string $code): array {
-		return self::error(path: $path, code: $code, message: self::MESSAGES[$code]);
+		return ['path' => $path, 'code' => $code, 'message' => self::MESSAGES[$code]];
 	}//end entryError()
 
 	/**
@@ -247,29 +245,58 @@ final class StepConfigValidator {
 			return [self::entryError(path: $path, code: 'malformed_sla')];
 		}
 
+		return array_merge(
+			self::slaValueErrors(sla: $sla, path: $path),
+			self::slaUnitErrors(sla: $sla, path: $path)
+		);
+	}//end validateSla()
+
+	/**
+	 * Validate `config.sla.value`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaValueErrors(array $sla, string $path): array {
 		$errors = [];
 
 		$value = ($sla['value'] ?? null);
 		if (is_int($value) === false || $value < 1 || $value > self::SLA_VALUE_MAX) {
-			$errors[] = self::error(
-				path: $path . '.value',
-				code: 'out_of_range',
-				message: 'sla.value must be a positive integer not greater than '
-				. self::SLA_VALUE_MAX
-			);
-		}
-
-		$unit = ($sla['unit'] ?? null);
-		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
-			$errors[] = self::error(
-				path: $path . '.unit',
-				code: 'unknown_sla_unit',
-				message: 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS)
-			);
+			$errors[] = [
+				'path' => $path . '.value',
+				'code' => 'out_of_range',
+				'message' => 'sla.value must be a positive integer not greater than '
+				. self::SLA_VALUE_MAX,
+			];
 		}
 
 		return $errors;
-	}//end validateSla()
+	}//end slaValueErrors()
+
+	/**
+	 * Validate `config.sla.unit`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaUnitErrors(array $sla, string $path): array {
+		$errors = [];
+
+		$unit = ($sla['unit'] ?? null);
+		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
+			$errors[] = [
+				'path' => $path . '.unit',
+				'code' => 'unknown_sla_unit',
+				'message' => 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS),
+			];
+		}
+
+		return $errors;
+	}//end slaUnitErrors()
 
 	/**
 	 * Validate `config.requiredFields`.
@@ -331,24 +358,63 @@ final class StepConfigValidator {
 			return [self::entryError(path: $path, code: 'malformed_auto_actions')];
 		}
 
+		return self::actionErrors(actions: $actions, where: ['path' => $path, 'actionCatalog' => $actionCatalog]);
+	}//end validateAutoActions()
+
+	/**
+	 * Validate each entry of `config.autoActions`.
+	 *
+	 * @param array<mixed> $actions The autoActions list.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The path prefix for any error and the
+	 *                                                                      known action keys.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function actionErrors(array $actions, array $where): array {
 		$errors = [];
 		foreach ($actions as $index => $action) {
-			if (is_array($action) === false) {
-				$errors[] = self::entryError(path: $path . "[$index]", code: 'malformed_action_ref');
-				continue;
+			$error = self::actionRefError(action: $action, where: ['path' => $where['path'] . "[$index]"] + $where);
+			if ($error !== null) {
+				$errors[] = $error;
 			}
-
-			$key = ($action['key'] ?? null);
-			if (is_string($key) === false || $key === '') {
-				$errors[] = self::entryError(path: $path . "[$index].key", code: 'malformed_action_key');
-				continue;
-			}
-
-			if (in_array($key, $actionCatalog, true) === false) {
-				$errors[] = self::entryError(path: $path . "[$index].key", code: 'unknown_action_key');
-			}
-		}//end foreach
+		}
 
 		return $errors;
-	}//end validateAutoActions()
+	}//end actionErrors()
+
+	/**
+	 * Validate one entry of `config.autoActions`.
+	 *
+	 * @param mixed $action The action reference.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The entry's path and the known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionRefError(mixed $action, array $where): ?array {
+		if (is_array($action) === false) {
+			return self::entryError(path: $where['path'], code: 'malformed_action_ref');
+		}
+
+		return self::actionKeyError(key: ($action['key'] ?? null), where: ['path' => $where['path'] . '.key'] + $where);
+	}//end actionRefError()
+
+	/**
+	 * Validate the key of one `config.autoActions` entry.
+	 *
+	 * @param mixed $key The action key.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The key's path and the known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionKeyError(mixed $key, array $where): ?array {
+		if (is_string($key) === false || $key === '') {
+			return self::entryError(path: $where['path'], code: 'malformed_action_key');
+		}
+
+		if (in_array($key, $where['actionCatalog'], true) === false) {
+			return self::entryError(path: $where['path'], code: 'unknown_action_key');
+		}
+
+		return null;
+	}//end actionKeyError()
 }//end class

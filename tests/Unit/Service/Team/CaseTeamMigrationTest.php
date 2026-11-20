@@ -27,12 +27,17 @@ use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The store holds cases and roles as they are stored; the group manager knows
  * a fixed set of groups. A second run reads what the first one patched.
  *
  * @covers \OCA\Dossiq\Service\Team\CaseTeamMigration
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamReference
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamSort
+ * @uses \OCA\Dossiq\Service\Team\CaseTeamStore
+ * @uses \OCA\Dossiq\Service\Team\TeamMigrationReport
  */
 class CaseTeamMigrationTest extends TestCase {
 
@@ -306,7 +311,11 @@ class CaseTeamMigrationTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the id is on the fail list.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('refused');
 				}

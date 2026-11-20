@@ -167,6 +167,29 @@ class RetiredNodeRewriterTest extends TestCase {
 	}//end testAReplacementRowRenamesTheStepAndKeepsItsConfig()
 
 	/**
+	 * A step whose replacement needs a translation is left in place, and
+	 * reported as unmappable, when no translator is available.
+	 *
+	 * @return void
+	 */
+	public function testATranslatedStepWithoutATranslatorIsLeftInPlace(): void {
+		$map = new RetiredNodeMap(
+			[
+				'dossiq.sendEmail' => ['replacement' => 'openregister.send-email', 'reason' => 'moved', 'translation' => RetiredNodeMap::EMAIL_TRANSITION],
+			]
+		);
+		$nodes = [['id' => 'm', 'type' => 'dossiq.sendEmail', 'config' => ['to' => 'a@example.org']]];
+		$edges = [['id' => 'e', 'from' => 'x', 'to' => 'm']];
+
+		$result = (new RetiredNodeRewriter($map))->rewrite(nodes: $nodes, edges: $edges);
+
+		self::assertSame($nodes, $result['nodes']);
+		self::assertSame($edges, $result['edges']);
+		self::assertSame('unmappable', $result['changes'][0]['outcome']);
+		self::assertStringEndsWith('; the step was left in place because no translator was available', $result['changes'][0]['reason']);
+	}//end testATranslatedStepWithoutATranslatorIsLeftInPlace()
+
+	/**
 	 * A graph without a retired step comes back unchanged, with no change rows.
 	 *
 	 * @return void

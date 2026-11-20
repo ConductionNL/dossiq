@@ -52,11 +52,11 @@ final class MoneyConfigKeys {
 	public const PAYOUT_SCHEMA = 'payout_schema';
 
 	/**
-	 * The HMAC secret the payout callback is signed with.
+	 * The config key holding the HMAC secret the payout callback is signed with.
 	 *
 	 * @var string
 	 */
-	public const PAYOUT_CALLBACK_SECRET = 'payout_callback_secret';
+	public const PAYOUT_CALLBACK_SECRET_KEY = 'payout_callback_secret';
 
 	/**
 	 * The schema of a notice of default that starts an accrual.
@@ -73,7 +73,7 @@ final class MoneyConfigKeys {
 	public const LEGACY_KEYS = [
 		self::ACCRUING_AMOUNT_SCHEMA => 'dwangsom_berekening_schema',
 		self::PAYOUT_SCHEMA => 'dwangsom_uitbetaling_schema',
-		self::PAYOUT_CALLBACK_SECRET => 'dwangsom_callback_secret',
+		self::PAYOUT_CALLBACK_SECRET_KEY => 'dwangsom_callback_secret',
 		self::NOTICE_OF_DEFAULT_SCHEMA => 'ingebrekestelling_schema',
 	];
 }//end class

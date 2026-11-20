@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CorrespondentDispatchGoldenTest extends TestCase {
 
@@ -47,7 +48,10 @@ class CorrespondentDispatchGoldenTest extends TestCase {
 				return in_array($key, $this->existing, true) ? [['id' => 'old']] : [];
 			}
 
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['save', $register, $schema, $object];
 				if (in_array($object['involvedParty'], $this->failSave, true) === true) {
 					throw new RuntimeException('save down');

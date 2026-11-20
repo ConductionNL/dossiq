@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service;
 /**
  * The store of one escalation path search; it never leaves the service that built it.
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
 final class EscalationSearch {
 

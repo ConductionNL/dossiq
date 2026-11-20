@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Contribution;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeContributionRegistryInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeContributionRegistry {
+class CaseTypeContributionRegistry implements CaseTypeContributionRegistryInterface {
 
 	/**
 	 * Convention FQCN a contributing app must expose.

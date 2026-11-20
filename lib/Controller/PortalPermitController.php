@@ -13,9 +13,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Service\Permit\PermitChangeRefused;
-use OCA\Dossiq\Service\Permit\PermitPlateChange;
+use OCA\Dossiq\Controller\Support\VerifiesPortalAssertions;
+use OCA\Dossiq\Kernel\Contracts\PermitChangeRefusedInterface;
+use OCA\Dossiq\Kernel\Contracts\PermitPlateChangeInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -26,7 +27,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * The portal's "Kenteken wijzigen": a resident asks for a new plate on a permit they hold.
@@ -39,6 +39,8 @@ use Throwable;
  * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalPermitController extends Controller {
+	use VerifiesPortalAssertions;
+
 	/**
 	 * The brute-force action a rejected assertion counts against.
 	 */
@@ -53,25 +55,25 @@ class PortalPermitController extends Controller {
 	 * The status each refusal answers with.
 	 */
 	private const STATUS = [
-		PermitChangeRefused::INVALID => Http::STATUS_BAD_REQUEST,
-		PermitChangeRefused::NOT_FOUND => Http::STATUS_NOT_FOUND,
-		PermitChangeRefused::NOT_ACTIVE => Http::STATUS_CONFLICT,
-		PermitChangeRefused::UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+		PermitChangeRefusedInterface::INVALID => Http::STATUS_BAD_REQUEST,
+		PermitChangeRefusedInterface::NOT_FOUND => Http::STATUS_NOT_FOUND,
+		PermitChangeRefusedInterface::NOT_ACTIVE => Http::STATUS_CONFLICT,
+		PermitChangeRefusedInterface::UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
 	];
 
 	/**
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param PermitPlateChange       $change    Opens the change case.
+	 * @param PortalAssertionVerifierInterface $verifier  Verifies portaliq's assertion.
+	 * @param PermitPlateChangeInterface       $change    Opens the change case.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
-		private readonly PermitPlateChange $change,
+		private readonly PortalAssertionVerifierInterface $verifier,
+		private readonly PermitPlateChangeInterface $change,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 	) {
@@ -90,14 +92,9 @@ class PortalPermitController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function changePlate(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$claims = $this->portalClaims();
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
 		try {
@@ -109,24 +106,11 @@ class PortalPermitController extends Controller {
 				),
 				Http::STATUS_CREATED
 			);
-		} catch (PermitChangeRefused $refused) {
+		} catch (PermitChangeRefusedInterface $refused) {
 			return new JSONResponse(
 				['error' => $refused->getReason(), 'message' => $refused->getDetail()],
 				(self::STATUS[$refused->getReason()] ?? Http::STATUS_BAD_REQUEST)
 			);
 		}
 	}//end changePlate()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalPermitController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

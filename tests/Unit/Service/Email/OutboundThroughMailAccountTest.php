@@ -56,18 +56,18 @@ use RuntimeException;
 require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
 
 /**
- * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway::sendMessage
+ * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @covers \OCA\Dossiq\Service\Email\OutboundCaseMail
  * @covers \OCA\Dossiq\Service\Email\OutboundState
  * @covers \OCA\Dossiq\Repair\RetireImapCredentials
  * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
- * @uses \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Email\OutboxSend
  */
 class OutboundThroughMailAccountTest extends TestCase {
 
@@ -92,10 +92,11 @@ class OutboundThroughMailAccountTest extends TestCase {
 	 * @param integer|null   $status    The status Mail's send chain leaves on the message, or null to throw on send.
 	 * @param boolean        $saveFails Whether saving to the outbox throws.
 	 * @param boolean        $installed Whether Mail is installed.
+	 * @param integer        $savedId   The id Mail gives the saved outbox row; 0 gives none.
 	 *
 	 * @return NextcloudMailGateway The gateway.
 	 */
-	private function gateway(?int $status, bool $saveFails = false, bool $installed = true): NextcloudMailGateway {
+	private function gateway(?int $status, bool $saveFails = false, bool $installed = true, int $savedId = 41): NextcloudMailGateway {
 		$this->outboxCalls = [];
 		$calls = &$this->outboxCalls;
 
@@ -129,13 +130,14 @@ class OutboundThroughMailAccountTest extends TestCase {
 			}
 		};
 
-		$outbox = new class ($status, $saveFails, $calls) {
+		$outbox = new class ($status, $saveFails, $calls, $savedId) {
 			/**
 			 * @param integer|null         $status    The status to leave.
 			 * @param boolean              $saveFails Whether save throws.
 			 * @param array<string, mixed> $calls     Where to record.
+			 * @param integer              $savedId   The id to give the saved row; 0 gives none.
 			 */
-			public function __construct(private ?int $status, private bool $saveFails, private array &$calls) {
+			public function __construct(private ?int $status, private bool $saveFails, private array &$calls, private int $savedId) {
 			}
 
 			/**
@@ -148,7 +150,9 @@ class OutboundThroughMailAccountTest extends TestCase {
 					throw new RuntimeException('database gone');
 				}
 
-				$message->setId(41);
+				if ($this->savedId !== 0) {
+					$message->setId($this->savedId);
+				}
 				$this->calls['save'] = ['message' => $message, 'to' => $to, 'cc' => $cc, 'bcc' => $bcc, 'attachments' => $attachments];
 
 				return $message;
@@ -240,6 +244,23 @@ class OutboundThroughMailAccountTest extends TestCase {
 		self::assertSame(OutboundState::SENT_NOT_FILED, $result['state']);
 		self::assertTrue(OutboundState::isSent($result['state']));
 	}//end testASentMessageThatCouldNotBeFiledSaysSo()
+
+	/**
+	 * A saved outbox row Mail gave no id is still sent; the result names no outbox row.
+	 *
+	 * @return void
+	 */
+	public function testASavedRowWithoutAnIdReportsNoOutboxRow(): void {
+		self::assertSame(
+			['state' => OutboundState::SENT, 'outboxId' => null],
+			$this->gateway(status: 12, savedId: 0)->sendMessage(7, $this->message())
+		);
+		self::assertTrue($this->outboxCalls['send']);
+		self::assertSame(
+			['state' => OutboundState::QUEUED, 'outboxId' => null],
+			$this->gateway(status: null, savedId: -3)->sendMessage(7, $this->message())
+		);
+	}//end testASavedRowWithoutAnIdReportsNoOutboxRow()
 
 	/**
 	 * An SMTP failure leaves the message in Mail's outbox: queued, never dropped.

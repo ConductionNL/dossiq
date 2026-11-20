@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\ArchiveProcedureField
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */

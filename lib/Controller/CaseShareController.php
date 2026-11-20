@@ -21,18 +21,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Notice\CaseActNotices;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
-use OCA\Dossiq\Service\Sharing\CaseShareList;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActNoticesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseShareListInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * The shares of one case.
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
  */
 class CaseShareController extends Controller {
 
@@ -51,23 +51,23 @@ class CaseShareController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request     The request.
-	 * @param CaseAccessGuard $caseAccess  Whether the caller may read the case.
-	 * @param CaseShareList   $shares      The share rows.
-	 * @param CaseLinkShares  $linkShares  Whether a link is the case's, and revokes it.
+	 * @param CaseAccessGuardInterface $caseAccess  Whether the caller may read the case.
+	 * @param CaseShareListInterface   $shares      The share rows.
+	 * @param CaseLinkSharesInterface  $linkShares  Whether a link is the case's, and revokes it.
 	 * @param IUserSession    $userSession The caller.
-	 * @param CaseActNotices  $notices     The refusal notice.
+	 * @param CaseActNoticesInterface  $notices     The refusal notice.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly CaseShareList $shares,
-		private readonly CaseLinkShares $linkShares,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly CaseShareListInterface $shares,
+		private readonly CaseLinkSharesInterface $linkShares,
 		private readonly IUserSession $userSession,
-		private readonly CaseActNotices $notices,
+		private readonly CaseActNoticesInterface $notices,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -77,7 +77,7 @@ class CaseShareController extends Controller {
 	 *
 	 * @return JSONResponse `{ results }`, or a refusal.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -104,7 +104,7 @@ class CaseShareController extends Controller {
 	 *
 	 * @return JSONResponse `{ revoked: true }`, or a refusal (409 with a notice when OpenRegister refuses).
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
 	 */
 	#[NoAdminRequired]
 	public function destroy(string $caseId, string $shareId): JSONResponse {

@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
 /**
  * Builds the from→to transition matrix and detects rework loops.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class TransitionMatrixBuilder {
 	/**
@@ -65,7 +65,7 @@ class TransitionMatrixBuilder {
 	 * @return array{matrix: array<int, array{from: string, fromName: string, to: string,
 	 *                toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
 		$tally = new TransitionTally();
@@ -152,7 +152,7 @@ class TransitionMatrixBuilder {
 	 *
 	 * @return array<int, array{from: string, to: string, isRework: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeCaseTransitions(array $sortedRecords): array {
 		$count = count($sortedRecords);
@@ -160,12 +160,38 @@ class TransitionMatrixBuilder {
 			return [];
 		}
 
+		$visited = $this->firstVisited(sortedRecords: $sortedRecords);
+
+		return $this->transitionsFrom(sortedRecords: $sortedRecords, visited: $visited);
+	}//end computeCaseTransitions()
+
+	/**
+	 * The statuses visited before the first transition: the case's first status.
+	 *
+	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function firstVisited(array $sortedRecords): array {
 		$visited = [];
 		$first = (string)($sortedRecords[0]['statusType'] ?? '');
 		if ($first !== '') {
 			$visited[$first] = true;
 		}
 
+		return $visited;
+	}//end firstVisited()
+
+	/**
+	 * Pair each status with the one before it, flagging a return to a visited status.
+	 *
+	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
+	 * @param array<string, bool>              $visited       The statuses visited so far.
+	 *
+	 * @return array<int, array{from: string, to: string, isRework: bool}>
+	 */
+	private function transitionsFrom(array $sortedRecords, array $visited): array {
+		$count = count($sortedRecords);
 		$transitions = [];
 		for ($i = 1; $i < $count; $i++) {
 			$from = (string)($sortedRecords[$i - 1]['statusType'] ?? '');
@@ -175,14 +201,10 @@ class TransitionMatrixBuilder {
 			}
 
 			$isRework = isset($visited[$to]);
-			$transitions[] = [
-				'from' => $from,
-				'to' => $to,
-				'isRework' => $isRework,
-			];
+			$transitions[] = ['from' => $from, 'to' => $to, 'isRework' => $isRework];
 			$visited[$to] = true;
 		}
 
 		return $transitions;
-	}//end computeCaseTransitions()
+	}//end transitionsFrom()
 }//end class

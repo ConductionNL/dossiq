@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -84,8 +84,7 @@ class RoleDelegationResolver {
 		foreach ($participants as $participant) {
 			$result[] = $this->resolveDelegate(
 				participant: $participant,
-				byUser: $byUser,
-				now: $now,
+				delegate: self::activeDelegate(role: ($byUser[$participant] ?? []), now: $now),
 			);
 		}
 
@@ -96,13 +95,11 @@ class RoleDelegationResolver {
 	 * Resolve one participant to its active delegate (single hop, cycle-safe).
 	 *
 	 * @param string $participant The original participant.
-	 * @param array<string, array<string, mixed>> $byUser Case roles indexed by participant.
-	 * @param DateTimeImmutable $now The evaluation moment.
+	 * @param string $delegate    The participant's delegate when an active window applies, else ''.
 	 *
 	 * @return string The delegate when an active window applies, else the participant.
 	 */
-	private function resolveDelegate(string $participant, array $byUser, DateTimeImmutable $now): string {
-		$delegate = self::activeDelegate(role: ($byUser[$participant] ?? []), now: $now);
+	private function resolveDelegate(string $participant, string $delegate): string {
 		if ($delegate === '') {
 			return $participant;
 		}
@@ -111,7 +108,7 @@ class RoleDelegationResolver {
 		if ($delegate === $participant) {
 			$this->logger->warning(
 				'Dossiq: delegation cycle detected',
-				['event' => 'RoleRoutingDelegationCycle', 'original' => $participant, 'delegate' => $delegate, 'app' => Application::APP_ID],
+				['event' => 'RoleRoutingDelegationCycle', 'original' => $participant, 'delegate' => $delegate, 'app' => AppIdentity::APP_ID],
 			);
 
 			return $participant;

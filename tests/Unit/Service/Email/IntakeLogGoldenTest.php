@@ -38,6 +38,9 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for IntakeLog.
@@ -88,15 +91,24 @@ class IntakeLogGoldenTest extends TestCase {
 				return $answer;
 			}
 
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				return $this->answer('saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]);
 			}
 
-			public function patchObject(string $objectId, array $data, string $register = '', string $schema = ''): mixed {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register ?? '';
+				$schema = $patch->target->schema ?? '';
 				return $this->answer('patchObject', ['objectId' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]);
 			}
 
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				return $this->answer('find', ['id' => $id, 'register' => $register, 'schema' => $schema]);
 			}
 

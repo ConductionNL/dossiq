@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * Golden test for DocumentReviewController::createBatch.
  *
  * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class ReviewBatchCreateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
