@@ -22,9 +22,17 @@ before reading the queue for a user outside the audience. Tests: `WidgetAudience
 
 ## 3. Administration
 
-- [ ] 3.1 Admin settings section listing each contributed widget with its groups, as manifest configuration over an admin-only endpoint; the write is refused for a non-administrator on the server (REQ-DWV-004). PHPUnit on the guard, Vitest on the section.
-- [ ] 3.2 `nl` and `en` strings.
+- [x] 3.1 Admin settings section listing each contributed widget with its groups, as manifest configuration over an admin-only endpoint; the write is refused for a non-administrator on the server (REQ-DWV-004). PHPUnit on the guard, Vitest on the section.
+- [x] 3.2 `nl` and `en` strings.
+
+Built 20 Nov 2026: the "Dashboard widgets" card on the System tab of the admin page
+(`section-widget-audience`, fields from `widgetAudienceFields()` in `src/views/settings/adminFields.js`)
+reads and saves `GET|PUT /api/settings/widget-audience` (`WidgetAudienceController`), one field per contributed
+widget under its title, group names separated by commas, empty for everybody. The controller carries no
+`NoAdminRequired` and checks the caller is an administrator in the body as well; `WidgetAudience::save()` stores
+only the widgets the app ships. Tests: `WidgetAudienceControllerTest` (guard, read, save), `WidgetAudienceTest`
+(save), `tests/vitest/widgetAudienceSection.spec.js`.
 
 ## 4. Proof
 
-- [ ] 4.1 Playwright: a widget declared for one group is absent from launchpad's add widget dialog and from a shared dashboard for a user outside it, and present for a member.
+- [ ] 4.1 Playwright (spec written, `tests/e2e/case-widgets-declare-who-may-see-them.spec.ts`; not run, live pass): a widget declared for one group is absent from launchpad's add widget dialog and from a shared dashboard for a user outside it, and present for a member.

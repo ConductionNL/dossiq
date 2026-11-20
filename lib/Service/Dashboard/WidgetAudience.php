@@ -101,6 +101,39 @@ class WidgetAudience {
 	}//end all()
 
 	/**
+	 * Store the audience of the shipped widgets, ignoring any id the app does not ship.
+	 *
+	 * Each value is read as a list of group ids; a comma-separated string is
+	 * split, so a single text field can carry the list. A widget left out of
+	 * the input keeps what it had.
+	 *
+	 * @param array<string, mixed> $audiences Group ids (list or comma-separated text) by widget id.
+	 *
+	 * @return array<string, list<string>> Every shipped widget with its groups after the save.
+	 *
+	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	 */
+	public function save(array $audiences): array {
+		$configured = $this->decoded(json: $this->settings->getConfigValue(key: self::SETTING, default: ''));
+		foreach (array_keys($this->shipped()) as $widgetId) {
+			if (array_key_exists($widgetId, $audiences) === false) {
+				continue;
+			}
+
+			$value = $audiences[$widgetId];
+			if (is_string($value) === true) {
+				$value = explode(',', $value);
+			}
+
+			$configured[(string)$widgetId] = $this->groupList(value: $value);
+		}
+
+		$this->settings->setConfigValue(key: self::SETTING, value: (string)json_encode($configured));
+
+		return $this->all();
+	}//end save()
+
+	/**
 	 * Whether a user may see a widget: always when it declares no group, else only as a member of one.
 	 *
 	 * @param string      $widgetId The widget id.
