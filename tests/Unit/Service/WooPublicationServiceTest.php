@@ -147,11 +147,11 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager = $this->createMock(IAppManager::class);
 
 		$this->service = new OutcomePublisher(
-			$this->settingsService,
-			$this->apiClient,
-			new WooCategoryMapper(),
-			$this->appManager,
-			$this->createMock(LoggerInterface::class),
+			settingsService: $this->settingsService,
+			apiClient: $this->apiClient,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $this->appManager,
+			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end setUp()
 
@@ -790,13 +790,13 @@ class WooPublicationServiceTest extends TestCase {
 		$this->apiClient->method('createPublication')->willReturn(['id' => 'pub-001']);
 
 		return new OutcomePublisher(
-			$this->settingsService,
-			$this->apiClient,
-			new WooCategoryMapper(),
-			$this->appManager,
-			$this->createMock(LoggerInterface::class),
-			null,
-			new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+			settingsService: $this->settingsService,
+			apiClient: $this->apiClient,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $this->appManager,
+			logger: $this->createMock(LoggerInterface::class),
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
 		);
 	}//end decidedCase()
 

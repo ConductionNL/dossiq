@@ -144,7 +144,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->deadlineService = $this->createMock(WOODeadlineService::class);
 		$this->decisionService = $this->createMock(WOODecisionService::class);
-		$this->publicationService = $this->createMock(OutcomePublisher::class);
+		$this->publicationService = $this->createMock(originalClassName: OutcomePublisher::class);
 		$this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 
 		$this->settingsService->method('getObjectService')->willReturn($this->objectService);

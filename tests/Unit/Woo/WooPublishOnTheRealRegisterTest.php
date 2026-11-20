@@ -207,14 +207,14 @@ class WooPublishOnTheRealRegisterTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnArgument(0);
 
 		$service = new OutcomePublisher(
-			$this->settings,
-			$client,
-			new WooCategoryMapper(),
-			$apps,
-			$this->createMock(LoggerInterface::class),
-			null,
-			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
-			$this->documents,
+			settingsService: $this->settings,
+			apiClient: $client,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $apps,
+			logger: $this->createMock(LoggerInterface::class),
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			caseDocuments: $this->documents,
 		);
 
 		$published = $service->publish(self::CASE);

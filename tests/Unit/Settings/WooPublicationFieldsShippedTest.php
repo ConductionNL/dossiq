@@ -206,7 +206,13 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$catalogi->method('attachDocument')->willReturn(['id' => 'ocdoc-001']);
 		$catalogi->expects($this->once())->method('updatePublication')->willReturn(['id' => 'pub-001']);
 
-		$service = new OutcomePublisher($settings, $catalogi, new WooCategoryMapper(), $apps, $this->createMock(LoggerInterface::class));
+		$service = new OutcomePublisher(
+			settingsService: $settings,
+			apiClient: $catalogi,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $apps,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
 		$published = $service->publish('case-001', 'decision-001');
 		$this->assertTrue($published['available'], 'the publish itself should succeed');

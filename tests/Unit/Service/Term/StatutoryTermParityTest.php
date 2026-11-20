@@ -402,7 +402,7 @@ class StatutoryTermParityTest extends TestCase {
 			assessmentService: $this->createMock(WOODocumentAssessmentService::class),
 			deadlineService: $deadlines,
 			decisionService: $this->createMock(WOODecisionService::class),
-			publicationService: $this->createMock(OutcomePublisher::class),
+			publicationService: $this->createMock(originalClassName: OutcomePublisher::class),
 			anonymisationAssist: $this->createMock(WOOAnonymisationAssistService::class),
 			userSession: $this->signedIn(),
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
