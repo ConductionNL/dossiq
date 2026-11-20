@@ -150,7 +150,7 @@ class WooCaseLedgerTest extends TestCase {
 
 	public function testAFailingCaseWriteIsLoggedNotThrown(): void {
 		$this->logger->expects($this->once())->method('warning')->with(
-			'WooPublicationService: the case could not show its publication state',
+			'OutcomePublisher: the case could not show its publication state',
 			['app' => 'dossiq', 'caseId' => 'case-1', 'error' => 'locked']
 		);
 
@@ -195,7 +195,7 @@ class WooCaseLedgerTest extends TestCase {
 		$sets->expects($this->once())->method('markWithdrawn')->with('case-1', 'pub-1')
 			->willThrowException(new RuntimeException('set gone'));
 		$this->logger->expects($this->once())->method('error')->with(
-			'WooPublicationService: the delivered set could not record the withdraw',
+			'OutcomePublisher: the delivered set could not record the withdraw',
 			['app' => 'dossiq', 'publicationId' => 'pub-1', 'error' => 'set gone']
 		);
 		$ledger = $this->ledger(null, null, $sets);
