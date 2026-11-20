@@ -6,4 +6,5 @@
 - [x] Implement
 - [x] Test: `tests/Unit/Listener/DeliberationStartGuardTest.php`, `tests/Unit/Controller/BezwaarAdviceRequestControllerTest.php`, `tests/Unit/Service/InternalWriteMarkerTest.php`
 - [x] Page: the advice request page's lifecycle action calls the endpoint (manifest, screens)
-- [ ] Live: on a seeded instance, an API write of `status: advice-issued` is refused and the advice request page still issues the advice
+- [x] Live: on a seeded instance, an API write of `status: advice-issued` is refused and the advice request page still issues the advice
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77, openregister main ce0543d6 and decidiq development e81adfb): tests/e2e/bezwaar-deliberation-guards.spec.ts passed: a plain write of advice-issued is refused with 'Only the advice transition', and Issue advice and Declare inadmissible on the page reach their outcome through the transition.
