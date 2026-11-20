@@ -211,9 +211,13 @@ class WooPublishOnTheRealRegisterTest extends TestCase {
 			apiClient: $client,
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $apps,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dossierReturn: null,
-			caseLedger: new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			caseLedger: new CasePublicationState(
+				settingsService: $this->settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				urlGenerator: $urls
+			),
 			caseDocuments: $this->documents,
 		);
 

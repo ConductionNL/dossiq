@@ -151,7 +151,7 @@ class WooPublicationServiceTest extends TestCase {
 			apiClient: $this->apiClient,
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $this->appManager,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end setUp()
 
@@ -794,9 +794,13 @@ class WooPublicationServiceTest extends TestCase {
 			apiClient: $this->apiClient,
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $this->appManager,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dossierReturn: null,
-			caseLedger: new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+			caseLedger: new CasePublicationState(
+				settingsService: $this->settingsService,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				withheldRecorder: $recorder
+			),
 		);
 	}//end decidedCase()
 
