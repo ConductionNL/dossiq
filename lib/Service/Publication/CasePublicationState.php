@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Dossiq case publication state
+ * Dossiq Woo case ledger
  *
  * The two things publishing reads and writes on the case itself
  * (woo-publish-decision-from-the-case D-1 and D-2): which decision on the case
  * is its Woo decision, and the publication state the case shows
- * (`wooPublicationStatus`, `wooPublicationUrl`; stored names, kept). Split
- * from the publication service so the publication flow reads on its own.
+ * (`wooPublicationStatus`, `wooPublicationUrl`). Split from
+ * OutcomePublisher so the publication flow reads on its own.
  *
- * @category Service
- * @package  OCA\Dossiq\Service\Publication
+ * @category Woo
+ * @package  OCA\Dossiq\Woo
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads the decision a case publishes and writes the case's publication state.
+ * Reads the case's Woo decision and writes the case's publication state.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
  */
@@ -140,7 +140,7 @@ class CasePublicationState {
 			$this->deliveredSets?->markWithdrawn(caseId: $caseId, publicationId: $publicationId);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'WooPublicationService: the delivered set could not record the withdraw',
+				'OutcomePublisher: the delivered set could not record the withdraw',
 				['app' => AppIdentity::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
 			);
 		}
@@ -164,7 +164,7 @@ class CasePublicationState {
 	}//end absolute()
 
 	/**
-	 * The case's one decision to publish: the decision on the case that carries a `wooSummary`.
+	 * The case's one Woo decision: the decision on the case that carries a `wooSummary`.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -274,7 +274,7 @@ class CasePublicationState {
 		} catch (Throwable $e) {
 			// The decision holds the truth; the case mirror is corrected by the next write.
 			$this->logger->warning(
-				'WooPublicationService: the case could not show its publication state',
+				'OutcomePublisher: the case could not show its publication state',
 				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}

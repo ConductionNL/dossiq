@@ -673,6 +673,7 @@ use OCA\Dossiq\Service\PlannedAction\PlannedActionService;
 use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
 use OCA\Dossiq\Service\ProcessMining\ReportRequest;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\Queue\DailyDigestComposer;
 use OCA\Dossiq\Service\Queue\DigestDispatcher;
@@ -1283,7 +1284,7 @@ final class ContractBindings {
 		$context->registerServiceAlias(WOODocumentAssessmentServiceInterface::class, WOODocumentAssessmentService::class);
 		$context->registerServiceAlias(WalkthroughCompletionInterface::class, WalkthroughCompletion::class);
 		$context->registerServiceAlias(WithheldListRecorderInterface::class, WithheldListRecorder::class);
-		$context->registerServiceAlias(WooPublicationServiceInterface::class, WooPublicationService::class);
+		$context->registerServiceAlias(WooPublicationServiceInterface::class, OutcomePublisher::class);
 		$context->registerServiceAlias(WorkQueueServiceInterface::class, WorkQueueService::class);
 		$context->registerServiceAlias(WorkflowDefinitionServiceInterface::class, WorkflowDefinitionService::class);
 		$context->registerServiceAlias(WorkflowLifecycleGuardInterface::class, WorkflowLifecycleGuard::class);

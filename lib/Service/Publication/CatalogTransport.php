@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,7 +48,7 @@ class CatalogTransport {
 	 * @param SettingsService       $settingsService The catalog register and publication schema.
 	 * @param OpenCatalogiApiClient $apiClient       Thin HTTP client to the catalog's register.
 	 * @param LoggerInterface       $logger          Logger.
-	 * @param CasePublicationState  $caseLedger      Writes the delivered set around the send.
+	 * @param CasePublicationState         $caseLedger      Writes the delivered set around the send.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -125,7 +126,7 @@ class CatalogTransport {
 	 * @return array{reason: string} Why the publication was not delivered.
 	 */
 	private function notDelivered(Throwable $error, array $context): array {
-		$this->logger->error('WooPublicationService::publish failed', $context);
+		$this->logger->error('OutcomePublisher::publish failed', $context);
 		$reason = 'opencatalogi_api_error';
 		if ($error->getMessage() === CasePublicationState::SET_NOT_WRITTEN) {
 			$reason = 'delivered_set_not_written';
@@ -155,7 +156,7 @@ class CatalogTransport {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'WooPublicationService::withdraw failed',
+				'OutcomePublisher::withdraw failed',
 				['app' => AppIdentity::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			return 'opencatalogi_api_error';

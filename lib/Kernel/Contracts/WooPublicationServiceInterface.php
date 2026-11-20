@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Contract of WooPublicationService
+ * Contract of OutcomePublisher
  *
- * The public surface of WooPublicationService that other components call, so they depend
+ * The public surface of OutcomePublisher that other components call, so they depend
  * on this contract instead of the implementation.
  *
  * @category  Kernel
@@ -25,7 +25,7 @@ namespace OCA\Dossiq\Kernel\Contracts;
 use RuntimeException;
 
 /**
- * Contract of WooPublicationService.
+ * Contract of OutcomePublisher.
  *
  * @category Kernel
  * @package  OCA\Dossiq\Kernel\Contracts

@@ -20,10 +20,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooDecisionNotice;
-use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
