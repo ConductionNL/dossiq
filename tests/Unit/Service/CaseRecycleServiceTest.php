@@ -534,13 +534,12 @@ class CaseRecycleServiceTest extends TestCase {
 			/**
 			 * A store that cannot be read.
 			 *
-			 * @param string $id       The uuid.
-			 * @param mixed  $register The register.
-			 * @param mixed  $schema   The schema.
+			 * @param string $id      The uuid.
+			 * @param mixed  $options The find options.
 			 *
 			 * @return array<string, mixed> Never.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, mixed $options = null): array {
 				throw new RuntimeException('store down');
 			}
 		};
@@ -582,13 +581,12 @@ class CaseRecycleServiceTest extends TestCase {
 			/**
 			 * A store that answers every find.
 			 *
-			 * @param string $id       The uuid.
-			 * @param mixed  $register The register.
-			 * @param mixed  $schema   The schema.
+			 * @param string $id      The uuid.
+			 * @param mixed  $options The find options.
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, mixed $options = null): array {
 				$this->asked[] = $id;
 				return ['title' => 'anything'];
 			}
