@@ -48,7 +48,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 declare(strict_types=1);
@@ -56,6 +56,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\OpenRegister\Search\Service\Quality\DedupRun;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -67,9 +69,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
-class DuplicatePolicy {
+class DuplicatePolicy implements DuplicatePolicyInterface {
 
 	/**
 	 * The case-type property holding the policy.
@@ -144,7 +146,7 @@ class DuplicatePolicy {
 	 *
 	 * @return string Either {@see self::POLICY_WARN} or {@see self::POLICY_BLOCK}.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function policyFor(array $caseType): string {
 		$declared = trim((string)($caseType[self::PROPERTY] ?? ''));
@@ -165,7 +167,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function overrideGroups(): array {
 		$annotation = $this->dedupAnnotation();
@@ -196,7 +198,7 @@ class DuplicatePolicy {
 	 *
 	 * @return boolean True when the account is in a declared override group.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function mayOverride(?IUser $user): bool {
 		if ($user === null) {
@@ -220,7 +222,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array{policy: string, mayOverride: bool, overrideGroups: array<int, string>}
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function declarationFor(array $caseType, ?IUser $user): array {
 		return [
@@ -237,7 +239,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, array<string, mixed>> Matches, strongest first.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function matchesFor(array $case): array {
 		$candidate = $this->candidateFrom(case: $case);
@@ -245,8 +247,7 @@ class DuplicatePolicy {
 		return $this->askDetection(
 			what: 'the duplicate check',
 			call: static fn (object $detection): mixed => $detection->checkCandidate(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				request: new DedupRun(register: self::REGISTER, schema: self::SCHEMA),
 				candidate: $candidate
 			)
 		);
@@ -266,7 +267,7 @@ class DuplicatePolicy {
 	 *
 	 * @throws RefusedException When the case type blocks and the account may not override.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function assertCreatable(array $case, array $caseType, ?IUser $user): void {
 		if ($this->policyFor(caseType: $caseType) !== self::POLICY_BLOCK) {
@@ -278,6 +279,22 @@ class DuplicatePolicy {
 			return;
 		}
 
+		$this->assertMayOverride(user: $user);
+		$this->assertReasonGiven(caseRow: $case);
+	}//end assertCreatable()
+
+	/**
+	 * Refuse a blocked duplicate when the account may not override.
+	 *
+	 * @param IUser|null $user The account filing the case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the account may not override.
+	 *
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
+	 */
+	private function assertMayOverride(IUser|null $user): void {
 		if ($this->mayOverride(user: $user) === false) {
 			throw new RefusedException(
 				rule: self::RULE_BLOCKED,
@@ -286,8 +303,21 @@ class DuplicatePolicy {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end assertMayOverride()
 
-		if (trim((string)($case[self::FIELD_REASON] ?? '')) === '') {
+	/**
+	 * Refuse an overriding duplicate that does not say why it is filed.
+	 *
+	 * @param array<string, mixed> $caseRow The case as it would be written.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When no reason is given.
+	 *
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
+	 */
+	private function assertReasonGiven(array $caseRow): void {
+		if (trim((string)($caseRow[self::FIELD_REASON] ?? '')) === '') {
 			throw new RefusedException(
 				rule: self::RULE_BLOCKED,
 				sentence: 'Say why this case is filed although one like it already exists. '
@@ -295,7 +325,7 @@ class DuplicatePolicy {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-	}//end assertCreatable()
+	}//end assertReasonGiven()
 
 	/**
 	 * The uuids of the matches, for the case field that records what it was
@@ -305,7 +335,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<int, string> The uuids, in the order they were scored.
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function uuidsOf(array $matches): array {
 		$uuids = [];

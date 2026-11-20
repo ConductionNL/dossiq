@@ -91,7 +91,7 @@ class AreaRouting {
 	public function resolve(array $rule, array $case, ?array $caseType = null): array {
 		$team = $this->teamFor(rule: $rule, case: $case);
 		if ($team === null) {
-			return $this->fallback(rule: $rule, case: $case, caseType: $caseType);
+			return $this->fallback(case: $case, roleType: $this->fallbackRoleType(rule: $rule, caseType: $caseType));
 		}
 
 		return [
@@ -180,22 +180,15 @@ class AreaRouting {
 	/**
 	 * Where a case that could not be placed goes, and what to say about it.
 	 *
-	 * @param array<string, mixed> $rule The routing rule.
-	 * @param array<string, mixed> $case The case.
-	 * @param array<string, mixed>|null $caseType The case type.
+	 * @param array<string, mixed> $case     The case.
+	 * @param string               $roleType The role type the case falls back to.
 	 *
 	 * @return array{roleType: string, team: string, fallbackUsed: bool, reason: string} The fallback.
 	 *
 	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
-	private function fallback(array $rule, array $case, ?array $caseType): array {
+	private function fallback(array $case, string $roleType): array {
 		$reason = self::fallbackReason(held: self::heldAreas(held: $case));
-
-		$declared = trim((string)($caseType[self::FALLBACK_ROLE_TYPE] ?? ''));
-		$roleType = (string)($rule['roleType'] ?? '');
-		if ($declared !== '') {
-			$roleType = $declared;
-		}
 
 		return [
 			// A case type that declares no fallback keeps the rule's own
@@ -208,6 +201,23 @@ class AreaRouting {
 			'reason' => $reason,
 		];
 	}//end fallback()
+
+	/**
+	 * The role type a case that could not be placed goes to: the case type's declared fallback, else the rule's own.
+	 *
+	 * @param array<string, mixed>      $rule     The routing rule.
+	 * @param array<string, mixed>|null $caseType The case type.
+	 *
+	 * @return string The role type.
+	 */
+	private function fallbackRoleType(array $rule, ?array $caseType): string {
+		$declared = trim((string)($caseType[self::FALLBACK_ROLE_TYPE] ?? ''));
+		if ($declared !== '') {
+			return $declared;
+		}
+
+		return (string)($rule['roleType'] ?? '');
+	}//end fallbackRoleType()
 
 	/**
 	 * The area values a case holds, in field order.

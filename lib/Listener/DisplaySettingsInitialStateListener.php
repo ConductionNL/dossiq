@@ -28,10 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Settings\SettingValueRules;
-use OCA\Dossiq\Service\SettingsService;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingValueRulesInterface;
+use OCA\Dossiq\Listener\Support\OwnPageRender;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -50,11 +49,11 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IInitialState   $initialState The initial state of the page.
-	 * @param SettingsService $settings     The app config reader.
+	 * @param SettingsServiceInterface $settings     The app config reader.
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 
@@ -68,15 +67,12 @@ class DisplaySettingsInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
-		) {
+		if ((new OwnPageRender())->matches(event: $event) === false) {
 			return;
 		}
 
 		$format = $this->settings->getConfigValue('date_format', self::DEFAULT_DATE_FORMAT);
-		if (in_array($format, SettingValueRules::CHOICES['date_format'], true) === false) {
+		if (in_array($format, SettingValueRulesInterface::CHOICES['date_format'], true) === false) {
 			$format = self::DEFAULT_DATE_FORMAT;
 		}
 

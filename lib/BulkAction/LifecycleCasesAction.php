@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\CaseLifecycleService;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -43,7 +43,7 @@ use Throwable;
  * and has no other way to reach it. The job's justification is the record; the
  * parameter is what the write reads.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -51,7 +51,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class LifecycleCasesAction implements BulkActionInterface {
+class LifecycleCasesAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -60,7 +60,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:lifecycle-cases';
 
@@ -73,7 +73,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @var array<string, string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const GESTURES = [
 		'suspend' => 'canSuspend',
@@ -84,15 +84,15 @@ class LifecycleCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseLifecycleService $lifecycle The suspend/resume/extend gestures.
+	 * @param CaseLifecycleServiceInterface $lifecycle The suspend/resume/extend gestures.
 	 * @param IL10N                $l10n      Localisation, for the label an operator reads.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseLifecycleService $lifecycle,
+		private readonly CaseLifecycleServiceInterface $lifecycle,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -102,7 +102,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -113,7 +113,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Suspend, resume or extend the term');
@@ -124,7 +124,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Applies one statutory lifecycle gesture to every selected case, with the reason recorded on each.');
@@ -135,7 +135,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return bool True.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -147,7 +147,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> No guards.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [];
@@ -162,7 +162,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When the gesture is unknown or the reason is empty.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		$gesture = trim((string)($parameters['gesture'] ?? ''));
@@ -185,7 +185,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The lifecycle service
 	 * reads the acting user from the session; the job runs as that user.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;
@@ -224,7 +224,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, string $gesture, array $parameters): BulkActionResult {
 		$reason = trim((string)($parameters['reason'] ?? ''));
@@ -259,7 +259,7 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The refusal code.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function refusalCode(string $gesture, array $state): string {
 		if (($state['isFinalStatus'] ?? false) === true && $gesture !== 'resume') {

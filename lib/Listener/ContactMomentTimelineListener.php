@@ -37,17 +37,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\CreatedCaseRecord;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Listener\Support\ReadsPayloadIdentifier;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -56,9 +57,10 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class ContactMomentTimelineListener implements IEventListener {
+	use ReadsPayloadIdentifier;
 
 	/**
 	 * The schema whose creates this listener answers to.
@@ -77,12 +79,12 @@ class ContactMomentTimelineListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTimeline             $timeline     The one seam that writes a timeline entry.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param CaseTimelineInterface             $timeline     The one seam that writes a timeline entry.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly CaseTimeline $timeline,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseTimelineInterface $timeline,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 
@@ -93,7 +95,7 @@ class ContactMomentTimelineListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
 		$payload = (new CreatedCaseRecord(slugResolver: $this->slugResolver, schema: self::SCHEMA))->of(event: $event);
@@ -105,7 +107,7 @@ class ContactMomentTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::CONTACTMOMENT,
+			kind: TimelineKindsInterface::CONTACTMOMENT,
 			message: $this->message(payload: $payload),
 			fields: [
 				'channel' => (string)($payload['notificationChannel'] ?? ''),
@@ -137,14 +139,14 @@ class ContactMomentTimelineListener implements IEventListener {
 	 *
 	 * @return string `internal` or `public`.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function visibility(array $payload): string {
 		if (in_array(($payload['visibleToApplicant'] ?? false), [true, 1, '1', 'true'], true) === true) {
-			return CaseTimeline::PUBLIC_ENTRY;
+			return CaseTimelineInterface::PUBLIC_ENTRY;
 		}
 
-		return CaseTimeline::INTERNAL;
+		return CaseTimelineInterface::INTERNAL;
 	}//end visibility()
 
 	/**
@@ -162,22 +164,6 @@ class ContactMomentTimelineListener implements IEventListener {
 
 		return $summary;
 	}//end message()
-
-	/**
-	 * The contactmoment's own id, so the full log is one hop away.
-	 *
-	 * @param array<string, mixed> $payload The stored record.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function identifier(array $payload): string {
-		$fromSelf = (string)($payload['@self']['id'] ?? '');
-		if ($fromSelf !== '') {
-			return $fromSelf;
-		}
-
-		return (string)($payload['id'] ?? '');
-	}//end identifier()
 
 	/**
 	 * The further cases the same contact belongs on.

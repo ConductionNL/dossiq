@@ -26,7 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 	/**
 	 * Configuration keys that contain secrets and must be redacted for non-admin callers.
 	 *
@@ -129,7 +130,7 @@ class SettingsService {
 	 * `publication`/`document`) so publishing works out of the box on a
 	 * default install; overridable per instance via getWooPublicationConfigValue().
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public const WOO_PUBLICATION_DEFAULTS = [
 		'woo_publication_register' => 'publication',
@@ -182,7 +183,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
@@ -242,7 +243,7 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
 		return $this->openRegister->objectService();
@@ -268,7 +269,7 @@ class SettingsService {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function getObjectGrantResolver(): ?object {
 		return $this->openRegister->objectGrantResolver();
@@ -293,7 +294,7 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
 		return $this->openRegister->fileService();
@@ -310,7 +311,7 @@ class SettingsService {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getOpenRegisterClass(string $class): ?object {
 		return $this->openRegister->classNamed(class: $class);
@@ -325,7 +326,7 @@ class SettingsService {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
 		return $this->import->loadConfiguration(force: $force);
@@ -340,17 +341,17 @@ class SettingsService {
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getSettings(): array {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
 			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
-				$config[$key.'Set'] = $this->appConfig->getValueString(Application::APP_ID, $key, '') !== '';
+				$config[$key.'Set'] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') !== '';
 				continue;
 			}
 
-			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$config[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return $config;
@@ -387,7 +388,7 @@ class SettingsService {
 	 *
 	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
@@ -406,7 +407,7 @@ class SettingsService {
 
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
-				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$data[$key]);
 			}
 		}
 
@@ -478,12 +479,12 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 
 		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
 		$legacy = (self::RENAMED_KEYS[$key] ?? null);
-		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(Application::APP_ID, $key) === false) {
-			$value = $this->appConfig->getValueString(Application::APP_ID, $legacy, $default);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, $default);
 		}
 
 		// LAST, and only when nothing local answered.
@@ -523,7 +524,7 @@ class SettingsService {
 	 *
 	 * @return string The schema id, or '' when decidiq or its schema is absent.
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
 	 */
 	private function decidiqDecisionSchemaId(): string {
 		if ($this->appManager->isInstalled(self::DECIDIQ_APP_ID) === false) {
@@ -567,7 +568,7 @@ class SettingsService {
 	 */
 	public function getKccConfigValue(string $key): string {
 		$default = (self::KCC_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -588,11 +589,11 @@ class SettingsService {
 	 *
 	 * @return string The configured value, or the documented default.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public function getWooPublicationConfigValue(string $key): string {
 		$default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, $default);
 		if ($value === '') {
 			return $default;
 		}
@@ -611,7 +612,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function setConfigValue(string $key, string $value): void {
-		$this->appConfig->setValueString(Application::APP_ID, $key, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $value);
 	}//end setConfigValue()
 
 	/**

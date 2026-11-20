@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Answers the clause a case's decisions print and binds the clock they start.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class CaseRemedy {
 
@@ -82,7 +82,7 @@ class CaseRemedy {
 	 *
 	 * @return string The clause, '' when the case type declares no remedy.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function clauseFor(string $caseId): string {
 		return $this->declaration->clauseFor(caseType: $this->caseTypeOf(caseId: $caseId));
@@ -95,7 +95,7 @@ class CaseRemedy {
 	 *
 	 * @return int The term in days.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
 	 */
 	public function termDaysFor(string $caseId): int {
 		return $this->declaration->termDaysFor(caseType: $this->caseTypeOf(caseId: $caseId));
@@ -128,7 +128,7 @@ class CaseRemedy {
 	 *
 	 * @return array<string, mixed>|null The bound instance, or null when nothing is declared.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
+	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-sending-a-decision-starts-the-remedy-term-req-dec-04
 	 */
 	public function bindTerm(string $caseId, string $decisionId, ?DateTimeImmutable $sentOn = null): ?array {
 		$days = $this->termDaysFor(caseId: $caseId);
@@ -159,7 +159,7 @@ class CaseRemedy {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function recordSent(string $caseId, DateTimeImmutable $sentOn): void {
 		$caseId = trim($caseId);

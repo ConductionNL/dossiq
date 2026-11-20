@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Flow;
 /**
  * Template rewrites for the retired-node translation.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredTemplateSyntax {
 
@@ -72,7 +72,7 @@ class RetiredTemplateSyntax {
 	 *
 	 * @throws UnmappableStep When a placeholder walks deeper than one field.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function forMessaging(string $template, string $what): string {
 		return (string)preg_replace_callback(
@@ -106,7 +106,7 @@ class RetiredTemplateSyntax {
 	 *
 	 * @throws UnmappableStep When the text holds Twig syntax dossiq printed literally.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function forDocument(string $template, string $what): string {
 		if (str_contains($template, '{%') === true || str_contains($template, '{#') === true) {
@@ -129,7 +129,7 @@ class RetiredTemplateSyntax {
 	 *
 	 * @return string The template in Integriq's flow-template syntax.
 	 *
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function forSourceCall(string $template): string {
 		return self::casePaths(template: $template, prefix: '');
@@ -171,7 +171,7 @@ class RetiredTemplateSyntax {
 	 *
 	 * @return string The template with every merge-field reference replaced.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function inlineMergeFields(string $template, array $mergeFields): string {
 		return (string)preg_replace_callback(
@@ -200,7 +200,7 @@ class RetiredTemplateSyntax {
 	 *
 	 * @throws UnmappableStep When there is no reference.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function recipientFromRef(string $ref): string {
 		if ($ref === '') {

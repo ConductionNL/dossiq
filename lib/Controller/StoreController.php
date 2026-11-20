@@ -40,16 +40,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\ReadsStringParams;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
-use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\AppHost\Service\GenericStoreService;
 use OCA\OpenRegister\AppHost\Service\StoreDescriptor;
@@ -69,13 +70,15 @@ use Throwable;
 /**
  * Store search, dossiq's own install, publish, and the registry connection settings.
  *
- * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the store's routes each reach
  *   their own engine collaborator (discovery, the publish guard, the registry
  *   write seam), and the canonical publish route has to be answered here.
  */
 class StoreController extends Controller {
+	use ReadsStringParams;
+
 	/**
 	 * Kebab-case slug pattern for a remote store item.
 	 */
@@ -122,7 +125,7 @@ class StoreController extends Controller {
 	 * @param IUserSession $userSession Current Nextcloud user session.
 	 * @param IAppConfig $appConfig App config store holding the registry connection.
 	 * @param GenericStoreService $storeService Engine-owned store discovery client.
-	 * @param ConfiguredRegistryService $registry Dossiq's configured object-write seam.
+	 * @param ConfiguredRegistryServiceInterface $registry Dossiq's configured object-write seam.
 	 * @param StoreActionAuthorizer|null $actionAuthorizer Decides who may publish (OpenRegister); absent, nobody may.
 	 *
 	 * @return void
@@ -133,10 +136,10 @@ class StoreController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IAppConfig $appConfig,
 		private readonly GenericStoreService $storeService,
-		private readonly ConfiguredRegistryService $registry,
+		private readonly ConfiguredRegistryServiceInterface $registry,
 		private readonly ?StoreActionAuthorizer $actionAuthorizer = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -144,11 +147,11 @@ class StoreController extends Controller {
 	 *
 	 * @return StoreDescriptor
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function descriptor(): StoreDescriptor {
 		return new StoreDescriptor(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			schema: 'case-type-template',
 			defaultRegister: 'dossiq',
 			cardFields: [
@@ -176,7 +179,7 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with `{outcome, cards}`; 401 for anonymous.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 *
 	 * @no-admin-idor-exempt Addresses no dossiq-owned object. The query and kind
 	 *   filter are forwarded to an EXTERNAL registry, so there is nothing of
@@ -199,7 +202,7 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with `{outcome, cards}`, also when the registry is unreachable.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function searchedCards(): JSONResponse {
 		try {
@@ -226,7 +229,7 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the unreachable outcome and no cards.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function searchFailed(Throwable $exception): JSONResponse {
 		$this->logger->error('Dossiq store: search failed: ' . $exception->getMessage());
@@ -235,22 +238,6 @@ class StoreController extends Controller {
 			statusCode: Http::STATUS_OK
 		);
 	}//end searchFailed()
-
-	/**
-	 * A request parameter when it is a string, else null.
-	 *
-	 * @param string $name The parameter.
-	 *
-	 * @return string|null
-	 */
-	private function stringParam(string $name): ?string {
-		$value = $this->request->getParam($name);
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		return $value;
-	}//end stringParam()
 
 	/**
 	 * Install one store item into this instance.
@@ -267,7 +254,7 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with a per-component report; 400 for a bad slug; 404 when unresolved.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function install(string $slug): JSONResponse {
@@ -305,7 +292,7 @@ class StoreController extends Controller {
 	 *
 	 * @return array<int, array<string, mixed>> The declared components, possibly empty.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function components(array $item): array {
 		$components = ($item['components'] ?? null);
@@ -335,7 +322,7 @@ class StoreController extends Controller {
 	 *
 	 * @return array{success: bool, components: array<int, array<string, string>>}
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function installComponents(array $components): array {
 		$report = [];
@@ -462,7 +449,7 @@ class StoreController extends Controller {
 	 *
 	 * @return array<string, mixed> The object with every identity key removed.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	private function asNewObject(array $object): array {
 		unset($object['id'], $object['uuid'], $object['@self']);
@@ -559,20 +546,20 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the connection, minus the token value.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function getSettings(): JSONResponse {
 		return new JSONResponse(
 			data: [
-				'registryUrl' => $this->appConfig->getValueString(Application::APP_ID, 'registry_url', ''),
+				'registryUrl' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'registry_url', ''),
 				'registryRegister' => $this->appConfig->getValueString(
-					Application::APP_ID,
+					AppIdentity::APP_ID,
 					'registry_register',
 					'dossiq'
 				),
 				'registryTokenSet' => trim(
-					$this->appConfig->getValueString(Application::APP_ID, 'registry_token', '')
+					$this->appConfig->getValueString(AppIdentity::APP_ID, 'registry_token', '')
 				) !== '',
 			],
 			statusCode: Http::STATUS_OK
@@ -589,30 +576,30 @@ class StoreController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the connection, minus the token value.
 	 *
-	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveSettings(): JSONResponse {
 		$url = $this->request->getParam('registryUrl');
 		if (is_string($url) === true) {
-			$this->appConfig->setValueString(Application::APP_ID, 'registry_url', trim($url));
+			$this->appConfig->setValueString(AppIdentity::APP_ID, 'registry_url', trim($url));
 		}
 
 		$register = $this->request->getParam('registryRegister');
 		if (is_string($register) === true && trim($register) !== '') {
-			$this->appConfig->setValueString(Application::APP_ID, 'registry_register', trim($register));
+			$this->appConfig->setValueString(AppIdentity::APP_ID, 'registry_register', trim($register));
 		}
 
 		$token = $this->request->getParam('registryToken');
 		if (is_string($token) === true && trim($token) !== '') {
-			$this->appConfig->setValueString(Application::APP_ID, 'registry_token', trim($token));
+			$this->appConfig->setValueString(AppIdentity::APP_ID, 'registry_token', trim($token));
 		}
 
 		// The Store card on the Integrations page reads what was just saved.
 		// The registry URL is the whole requirement: a registry with no address
 		// is a Store that resolves nothing, whatever else is filled in.
 		$this->registry->recordStoreStatus(
-			registryUrl: trim($this->appConfig->getValueString(Application::APP_ID, 'registry_url', ''))
+			registryUrl: trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'registry_url', ''))
 		);
 
 		return $this->getSettings();

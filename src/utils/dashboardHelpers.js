@@ -29,7 +29,7 @@ function todayString() {
  * @param {object[]} completedCases Cases completed this month
  * @param {object[]} myTasks Tasks assigned to current user (available/active)
  * @return {object} KPI values
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
@@ -99,7 +99,7 @@ function leadDays(c) {
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
  * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function aggregateByStatus(openCases, statusTypes) {
 	const orderMap = firstOrderByName(statusTypes)
@@ -185,26 +185,49 @@ function idsFor(idsMap, name) {
  * @param {object[]} cases All visible cases (with activity arrays)
  * @param {number} limit Max entries to return
  * @return {Array<{ date, type, description, user, caseIdentifier }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getRecentActivity(cases, limit = 10) {
 	const entries = []
 
 	for (const c of cases) {
-		if (!Array.isArray(c.activity)) continue
-		for (const entry of c.activity) {
-			entries.push({
-				date: entry.date,
-				type: entry.type,
-				description: entry.description,
-				user: entry.user || '—',
-				caseIdentifier: c.identifier || '—',
-			})
+		for (const entry of caseActivityEntries(c)) {
+			entries.push(entry)
 		}
 	}
 
 	entries.sort((a, b) => new Date(b.date) - new Date(a.date))
 	return entries.slice(0, limit)
+}
+
+/**
+ * One case's activity as feed entries, none when it carries no activity list.
+ *
+ * @param {object} c A case.
+ * @return {Array<object>} The entries, in the case's own order.
+ */
+function caseActivityEntries(c) {
+	if (!Array.isArray(c.activity)) {
+		return []
+	}
+	return c.activity.map((entry) => activityEntry(entry, c))
+}
+
+/**
+ * One activity entry as a feed row.
+ *
+ * @param {object} entry The activity entry.
+ * @param {object} c The case it belongs to.
+ * @return {object} `{ date, type, description, user, caseIdentifier }`.
+ */
+function activityEntry(entry, c) {
+	return {
+		date: entry.date,
+		type: entry.type,
+		description: entry.description,
+		user: entry.user || '—',
+		caseIdentifier: c.identifier || '—',
+	}
 }
 
 /**
@@ -214,7 +237,7 @@ export function getRecentActivity(cases, limit = 10) {
  * @param {object[]} tasks Tasks assigned to current user (available/active)
  * @param {number} limit Max items to return
  * @return {Array<{ type, id, title, reference, deadline, daysText, isOverdue, priority }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getMyWorkItems(cases, tasks, limit = 5) {
 	const items = [
@@ -255,18 +278,38 @@ function caseWorkItem(c) {
  */
 function taskWorkItem(task) {
 	const overdue = taskIsOverdue(task)
-	const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
+	const daysLeft = taskDaysLeft(task)
 
 	return {
 		type: 'task',
 		id: task.id,
 		title: task.title || '—',
-		reference: task.case ? `Case: ${task.case}` : '',
+		reference: taskReference(task),
 		deadline: task.dueDate || null,
 		daysText: daysLeftText(daysLeft),
 		isOverdue: overdue,
 		priority: task.priority || 'normal',
 	}
+}
+
+/**
+ * How many days a task has left, null for a task without a due date.
+ *
+ * @param {object} task A task.
+ * @return {number|null} The days left, negative when overdue.
+ */
+function taskDaysLeft(task) {
+	return task.dueDate ? getDaysRemaining(task.dueDate) : null
+}
+
+/**
+ * The case a task is on, as the work item's reference.
+ *
+ * @param {object} task A task.
+ * @return {string} `Case: <case>`, or '' when the task names no case.
+ */
+function taskReference(task) {
+	return task.case ? `Case: ${task.case}` : ''
 }
 
 /**
@@ -367,7 +410,7 @@ function endOfWeek() {
  * @param {object[]} cases Cases assigned to current user (non-final)
  * @param {object[]} normalizedTasks Already-normalized CalDAV task work items
  * @return {{ overdue: object[], dueThisWeek: object[], upcoming: object[], noDeadline: object[], totalCount: number }}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
 	const weekEnd = endOfWeek()
@@ -433,20 +476,42 @@ function urgencyGroup(item, weekEnd) {
  *
  * @param {string} dateString ISO date string
  * @return {string}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function formatRelativeTime(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
 	const now = new Date()
 	const diffMs = now - date
+	return withinADayWords(diffMs) ?? daysAgoWords(date, diffMs)
+}
+
+/**
+ * A moment less than a day ago, in minutes or hours.
+ *
+ * @param {number} diffMs How long ago, in milliseconds.
+ * @return {string|null} The words, or null when it is a day or more (or unreadable).
+ */
+function withinADayWords(diffMs) {
 	const diffMin = Math.floor(diffMs / 60000)
 	const diffHours = Math.floor(diffMs / 3600000)
-	const diffDays = Math.floor(diffMs / 86400000)
 
 	if (diffMin < 1) return t('dossiq', 'just now')
 	if (diffMin < 60) return t('dossiq', '{min} min ago', { min: diffMin })
 	if (diffHours < 24) return t('dossiq', '{hours} hours ago', { hours: diffHours })
+	return null
+}
+
+/**
+ * A moment a day or more ago: yesterday, some days ago, or its short date.
+ *
+ * @param {Date} date The moment.
+ * @param {number} diffMs How long ago, in milliseconds.
+ * @return {string} The words.
+ */
+function daysAgoWords(date, diffMs) {
+	const diffDays = Math.floor(diffMs / 86400000)
+
 	if (diffDays === 1) return t('dossiq', 'yesterday')
 	if (diffDays < 7) return t('dossiq', '{days} days ago', { days: diffDays })
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -467,16 +532,8 @@ export function formatRelativeTime(dateString) {
  * @spec openspec/specs/dashboard/spec.md
  */
 export function aggregateByType(openCases, caseTypes) {
-	const labelMap = new Map()
-	for (const ct of caseTypes) {
-		labelMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
-	}
-
-	const counts = new Map()
-	for (const c of openCases) {
-		const id = c.caseType || ''
-		counts.set(id, (counts.get(id) || 0) + 1)
-	}
+	const labelMap = caseTypeLabels(caseTypes)
+	const counts = countsByCaseType(openCases)
 
 	return Array.from(counts.entries())
 		.map(([type, count]) => ({
@@ -485,4 +542,33 @@ export function aggregateByType(openCases, caseTypes) {
 			count,
 		}))
 		.sort((a, b) => b.count - a.count)
+}
+
+/**
+ * Each case type's label by id: its title, else its name, else Unknown.
+ *
+ * @param {object[]} caseTypes All case types.
+ * @return {Map<string, string>} The labels.
+ */
+function caseTypeLabels(caseTypes) {
+	const labelMap = new Map()
+	for (const ct of caseTypes) {
+		labelMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
+	}
+	return labelMap
+}
+
+/**
+ * How many cases carry each case type id, '' for a case without one.
+ *
+ * @param {object[]} openCases The cases.
+ * @return {Map<string, number>} The counts, in first-seen order.
+ */
+function countsByCaseType(openCases) {
+	const counts = new Map()
+	for (const c of openCases) {
+		const id = c.caseType || ''
+		counts.set(id, (counts.get(id) || 0) + 1)
+	}
+	return counts
 }

@@ -47,7 +47,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -58,9 +59,9 @@ use RuntimeException;
 /**
  * Imports the generated demo dataset into OpenRegister on request.
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
-class DemoDataService {
+class DemoDataService implements DemoDataServiceInterface {
 	/**
 	 * App-relative path to the generated mock descriptor.
 	 *
@@ -99,7 +100,7 @@ class DemoDataService {
 	 *
 	 * @var string
 	 */
-	private const CONFIG_APP_ID = Application::APP_ID . '.demo';
+	private const CONFIG_APP_ID = AppIdentity::APP_ID . '.demo';
 
 	/**
 	 * App-config key listing the slugs of the curated example objects an
@@ -135,45 +136,11 @@ class DemoDataService {
 	 *
 	 * @return boolean True when the descriptor is present on disk.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isAvailable(): bool {
 		return is_file($this->descriptorPath()) === true;
 	}//end isAvailable()
-
-	/**
-	 * App-config key recording the setup wizard's example data decision:
-	 * `installed` when the operator loaded example data, `skipped` when they
-	 * chose none. Anything that plants example rows reads this switch.
-	 *
-	 * @var string
-	 */
-	public const DECIDED_KEY = 'demo_data_decided';
-
-	/**
-	 * The decision that opts this instance into example data.
-	 *
-	 * @var string
-	 */
-	public const DECIDED_INSTALLED = 'installed';
-
-	/**
-	 * The answer that means "plant nothing".
-	 *
-	 * 🔴 NOT THE ABSENCE OF AN ANSWER. An operator who declines has FINISHED the
-	 * step; a step that can never be marked done reopens the wizard over every
-	 * page (nextcloud-vue#806).
-	 *
-	 * @var string
-	 */
-	public const NONE_DATASET = 'none';
-
-	/**
-	 * The id of the dataset this app ships.
-	 *
-	 * @var string
-	 */
-	public const DEMO_DATASET = 'demo';
 
 	/**
 	 * Every answer the wizard's choice step may offer, declining included.
@@ -287,7 +254,7 @@ class DemoDataService {
 	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is
 	 *     absent, or nothing was stored and nothing was already present.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function install(): array {
 		$data = $this->withFragments(data: $this->readDescriptor());
@@ -299,7 +266,7 @@ class DemoDataService {
 		$result = $this->configurationService()->importFromApp(
 			appId: self::CONFIG_APP_ID,
 			data: $this->objectsOnly(data: $data),
-			version: $this->appManager->getAppVersion(Application::APP_ID),
+			version: $this->appManager->getAppVersion(AppIdentity::APP_ID),
 			force: true
 		);
 
@@ -413,7 +380,7 @@ class DemoDataService {
 	 * @return array{objects: integer, requested: integer, refused: integer, unchanged: integer,
 	 *     registers: integer, schemas: integer} The landing, next to the ask.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function readLanding(array $result, int $requested): array {
 		$skipped   = (array)($result['skipped'] ?? []);
@@ -437,7 +404,7 @@ class DemoDataService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function reportLanding(array $imported, int $requested): void {
 		$this->logger->info(
@@ -446,7 +413,7 @@ class DemoDataService {
 			. $imported['refused'] . ' refused, '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		if ($imported['objects'] >= $requested) {
@@ -460,7 +427,7 @@ class DemoDataService {
 			'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
 			. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
 			. 'left unchanged because an object of the same version already exists.',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 	}//end reportLanding()
 
@@ -503,7 +470,7 @@ class DemoDataService {
 	 *
 	 * @return array<string, mixed> The same descriptor with no register or schema definitions.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function objectsOnly(array $data): array {
 		unset($data['registers'], $data['schemas']);
@@ -546,7 +513,7 @@ class DemoDataService {
 			return [];
 		}
 
-		$loaded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
+		$loaded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
 
 		return array_values(array_filter((array)$loaded, 'is_string'));
 	}//end loadedFragments()
@@ -562,7 +529,7 @@ class DemoDataService {
 		}
 
 		$slugs = array_values(array_unique(array_merge($this->loadedFragments(), $this->fragments->slugs())));
-		$this->appConfig->setValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
 	}//end recordFragments()
 
 	/**
@@ -571,7 +538,7 @@ class DemoDataService {
 	 * @return string The path.
 	 */
 	private function descriptorPath(): string {
-		return $this->appManager->getAppPath(Application::APP_ID) . self::DESCRIPTOR;
+		return $this->appManager->getAppPath(AppIdentity::APP_ID) . self::DESCRIPTOR;
 	}//end descriptorPath()
 
 	/**

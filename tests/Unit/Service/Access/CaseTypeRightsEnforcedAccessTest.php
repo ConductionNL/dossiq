@@ -253,7 +253,16 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
 		}
 
-		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		// OpenRegister main takes the caller, its groups and the member-of
+		// resolver as one ConditionUserResolvers.
+		$usersClass = 'OCA\\OpenRegister\\Service\\ConditionUserResolvers';
+		if (class_exists(class: $usersClass) === true) {
+			$matcher = new $matcherClass(new $usersClass($session, $groups, $memberOf), $container, $evaluator, new NullLogger());
+		}
+
+		if (class_exists(class: $usersClass) === false) {
+			$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		}
 
 		$permissionClass = 'OCA\\OpenRegister\\Service\\Object\\PermissionHandler';
 		// OpenRegister takes the collaborators as four bundles once PermissionCallerServices exists.
@@ -308,6 +317,19 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		);
 
 		$rbacClass = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicRbacHandler';
+		// OpenRegister main takes the caller, the settings and the support services as three bundles.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (class_exists(class: $magic . 'MagicMapperIdentity') === true) {
+			return [
+				$permissions,
+				new $rbacClass(
+					new ($magic . 'MagicMapperIdentity')($session, $groups, $users),
+					new ($magic . 'MagicRbacSettings')($appConfig),
+					new ($magic . 'MagicRbacSupport')($matcher, $container, new NullLogger())
+				),
+			];
+		}
+
 		return [$permissions, new $rbacClass($session, $groups, $users, $appConfig, $matcher, $container, new NullLogger())];
 	}//end handlers()
 
@@ -374,7 +396,17 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$this->createMock('OCA\\OpenRegister\\Service\\DateTimeNormalizer'),
 			relatedRows: $this->createMock('OCA\\OpenRegister\\Service\\Query\\RelatedRowQueryApplier')
 		);
-		$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		// OpenRegister main asks for one WhereClauseRequest over a MagicReadTable.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (method_exists($search, 'buildWhereClause') === true) {
+			$conditions = $search->buildWhereClause(
+				request: new ($magic . 'WhereClauseRequest')(query: [], table: new ($magic . 'MagicReadTable')(schema: $this->caseSchema()))
+			);
+		}
+
+		if (method_exists($search, 'buildWhereClause') === false) {
+			$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		}
 
 		$pdo = new PDO('sqlite::memory:');
 		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

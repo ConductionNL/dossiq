@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 /**
  * What a DSO case goes through: the status change notifier, the intake case payload and the case journal.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 final class DsoCaseSteps {
 	/**

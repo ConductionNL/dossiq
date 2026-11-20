@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\FileSet\FileSetItemFiles;
-use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -53,18 +53,18 @@ class WooDeliveredSetController extends Controller {
 	 *
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
-	 * @param WooDeliveredSetVerifier $verifier    Recomputes the hashes.
-	 * @param CaseAccessGuard         $guard       Case read access.
+	 * @param WooDeliveredSetVerifierInterface $verifier    Recomputes the hashes.
+	 * @param CaseAccessGuardInterface         $guard       Case read access.
 	 * @param IUserSession            $userSession The caller.
-	 * @param FileSetItemFiles        $files       Reads both files of an item.
+	 * @param FileSetItemFilesInterface        $files       Reads both files of an item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooDeliveredSetVerifier $verifier,
-		private readonly CaseAccessGuard $guard,
+		private readonly WooDeliveredSetVerifierInterface $verifier,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
-		private readonly FileSetItemFiles $files,
+		private readonly FileSetItemFilesInterface $files,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -113,6 +113,18 @@ class WooDeliveredSetController extends Controller {
 			return $set;
 		}
 
+		return $this->describedItem(set: $set, index: $index);
+	}//end item()
+
+	/**
+	 * Name and type of both sides of one item of a readable set.
+	 *
+	 * @param array<string, mixed> $set   The set.
+	 * @param int                  $index The item's position.
+	 *
+	 * @return JSONResponse 200 with the sides; 404 for an unknown item; 503 when they cannot be read.
+	 */
+	private function describedItem(array $set, int $index): JSONResponse {
 		try {
 			$sides = $this->files->describe(set: $set, index: $index);
 		} catch (Throwable $e) {
@@ -124,7 +136,7 @@ class WooDeliveredSetController extends Controller {
 		}
 
 		return new JSONResponse($sides);
-	}//end item()
+	}//end describedItem()
 
 	/**
 	 * The bytes of one side of one item.
@@ -145,8 +157,20 @@ class WooDeliveredSetController extends Controller {
 			return $set;
 		}
 
+		return $this->download(set: $set, item: ['index' => $index, 'side' => $side]);
+	}//end file()
+
+	/**
+	 * The bytes of one side of one item of a readable set.
+	 *
+	 * @param array<string, mixed>              $set  The set.
+	 * @param array{index: int, side: string} $item The item's position and `original` or `delivered`.
+	 *
+	 * @return DataDownloadResponse|JSONResponse The file; 404 when there is nothing to read; 503 when it cannot be read.
+	 */
+	private function download(array $set, array $item): DataDownloadResponse|JSONResponse {
 		try {
-			$file = $this->files->read(set: $set, index: $index, side: $side);
+			$file = $this->files->read(set: $set, index: $item['index'], side: $item['side']);
 		} catch (Throwable $e) {
 			return new JSONResponse(['error' => 'unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -156,7 +180,7 @@ class WooDeliveredSetController extends Controller {
 		}
 
 		return new DataDownloadResponse($file['bytes'], $file['fileName'], $file['mimeType']);
-	}//end file()
+	}//end download()
 
 	/**
 	 * The set when the caller may read its case and it belongs to that case, else the refusal.

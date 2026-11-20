@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Kcc;
 /**
  * Static readings of routing rules and contact moments.
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 final class RoutingRuleOrder {
 
@@ -41,7 +41,7 @@ final class RoutingRuleOrder {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public static function enabledByPriority(array $rules): array {
 		$enabled = array_values(
@@ -73,7 +73,7 @@ final class RoutingRuleOrder {
 	 *
 	 * @return string One of 'bedrijf', 'burger', 'anoniem'.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public static function customerType(array $contactMoment): string {
 		$ref = trim((string)($contactMoment['customerRef'] ?? ''));

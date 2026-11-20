@@ -41,7 +41,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentGenerationServiceInterface;
 use OCA\Dossiq\Service\Actions\ActionResult;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class CaseDocumentGenerationService {
+class CaseDocumentGenerationService implements CaseDocumentGenerationServiceInterface {
 	/**
 	 * Filinq's request event, named by string: Filinq is optional at runtime.
 	 *
@@ -94,7 +95,7 @@ class CaseDocumentGenerationService {
 	 *                      named failure having created nothing.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function generate(string $caseId, string $templateId): ActionResult {
 		$template = $this->templating->templates->loadTemplate($templateId);
@@ -267,7 +268,7 @@ class CaseDocumentGenerationService {
 				],
 				'metadata' => $run->metadata,
 			],
-			requestingApp: Application::APP_ID
+			requestingApp: AppIdentity::APP_ID
 		);
 	}//end generationRequest()
 

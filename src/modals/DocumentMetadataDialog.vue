@@ -191,6 +191,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
 import { fetchCaseParties } from '../services/caseParties.js'
 import {
 	allowedFor,
@@ -204,7 +205,6 @@ import {
 	DEFAULT_DIRECTION,
 	DOCUMENT_DIRECTIONS,
 } from '../utils/dossierHelpers.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -221,7 +221,7 @@ import { resolveCaseId } from '../utils/resolveCaseId.js'
  * props. `caseId` is read the same defensive way: the prop when it does not
  * still hold the unresolved `@objectId` token, the route otherwise.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
@@ -236,16 +236,12 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialogResolved],
+
 	props: {
 		files: {
 			type: Array,
 			default: () => [],
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		caseId: {
-			type: String,
-			default: '',
 		},
 
 		/**
@@ -315,7 +311,7 @@ export default {
 		 * What the scanner recorded about this file, as a sentence.
 		 *
 		 * @return {string} The verdict.
-		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		scanLabel() {
 			return scanVerdictLabel(this.scanVerdict)
@@ -329,7 +325,7 @@ export default {
 		 * whether anyone has checked it.
 		 *
 		 * @return {string} The hash, with its algorithm, or a sentence.
-		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		hashLabel() {
 			const integrity = this.record?.integrity || {}
@@ -345,7 +341,7 @@ export default {
 		 * Dropdown options for the document type catalog.
 		 *
 		 * @return {Array} The type options.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		typeOptions() {
 			return this.types.map((type) => ({
@@ -361,24 +357,10 @@ export default {
 		 * with the bulk confidentiality-change dialog.
 		 *
 		 * @return {Array} The classification options.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
-		},
-
-		/**
-		 * The case this dialog files documents on.
-		 *
-		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is (mirrors
-		 * GenerateDocumentDialog.resolvedCaseId).
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
@@ -428,7 +410,7 @@ export default {
 		 * The parties of the case, each offered once.
 		 *
 		 * @return {Array} The picker options.
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		partyOptions() {
 			return buildPartyOptions(this.parties)
@@ -442,7 +424,7 @@ export default {
 		 * it disappear on save.
 		 *
 		 * @return {object} `{sender, recipients}`.
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		allowed() {
 			return allowedFor(this.selectedDirection)
@@ -452,7 +434,7 @@ export default {
 		 * What the empty sender picker says.
 		 *
 		 * @return {string} The placeholder.
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		senderPlaceholder() {
 			return this.partyOptions.length === 0
@@ -464,7 +446,7 @@ export default {
 		 * What the empty addressees picker says.
 		 *
 		 * @return {string} The placeholder.
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		recipientsPlaceholder() {
 			return this.partyOptions.length === 0
@@ -476,7 +458,7 @@ export default {
 		 * Whether the required fields are filled.
 		 *
 		 * @return {boolean} True when type and classification are selected.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		canSubmit() {
 			return this.selectedType !== '' && this.selectedClassification !== ''
@@ -499,7 +481,7 @@ export default {
 		 * When the type changes, default the classification from the type.
 		 *
 		 * @param {string} newType The newly selected type id.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		selectedType(newType) {
 			const match = this.typeOptions.find((option) => option.id === newType)
@@ -512,7 +494,7 @@ export default {
 		 * Pre-fill the title from the first filename when files change.
 		 *
 		 * @param {Array} files The new file list.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		files(files) {
 			if (files.length === 1 && this.title === '') {
@@ -546,7 +528,7 @@ export default {
 		 * Fetch the informatieobjecttype catalog for the type picker.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
 		 */
 		async fetchTypes() {
 			try {
@@ -571,7 +553,7 @@ export default {
 		 * what this change removes.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async loadParties() {
 			this.parties = await fetchCaseParties(this.resolvedCaseId)
@@ -586,7 +568,7 @@ export default {
 		 * runs from both rather than from whichever one happens to be slower.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		applyStoredCorrespondents() {
 			if (this.record === null) {
@@ -659,7 +641,7 @@ export default {
 		 * not a cleared file (company ADR-102).
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async loadScanVerdict() {
 			this.scanVerdict = null

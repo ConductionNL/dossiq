@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\FrozenRecord;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordSealInterface;
 
 /**
  * A SHA-256 over a canonical form of the sealed fields.
@@ -43,7 +44,7 @@ use DateTimeInterface;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class RecordSeal {
+class RecordSeal implements RecordSealInterface {
 
 	/**
 	 * The hash algorithm, stored with the seal so a later change of algorithm can still verify old seals.

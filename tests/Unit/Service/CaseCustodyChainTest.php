@@ -55,6 +55,10 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -254,6 +258,19 @@ class CaseCustodyChainTest extends TestCase {
 		self::assertSame([], $chain->holdings(caseId: 'case-1'));
 		self::assertNull($chain->openHoldingFor(caseId: 'case-1'));
 	}//end testAnEmptyChainAnswersNothingRatherThanGuessing()
+
+	/**
+	 * A blank case id answers no holdings and reads nothing, even when a stored holding names no case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testABlankCaseIdAnswersNoHoldings(): void {
+		$this->store->seed(schema: 'caseCustody', uuid: 'stray', row: ['caseId' => '', 'sequence' => 1, 'holder' => 'vergunningen']);
+
+		self::assertSame(expected: [], actual: $this->chain()->holdings(caseId: '   '));
+	}//end testABlankCaseIdAnswersNoHoldings()
 
 	/**
 	 * A move without a case is refused and writes nothing.

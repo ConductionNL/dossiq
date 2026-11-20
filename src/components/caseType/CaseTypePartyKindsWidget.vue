@@ -94,6 +94,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import {
 	declareCaseTypePartyKinds,
 	fetchCaseTypePartyKinds,
@@ -105,6 +106,8 @@ export default {
 	name: 'CaseTypePartyKindsWidget',
 
 	components: { CnOrderedListField, NcButton, NcEmptyContent, NcLoadingIcon },
+
+	mixins: [caseTypeWidget],
 
 	data() {
 		return {
@@ -121,11 +124,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04 */
 		editable() {
 			return this.available === true && this.source === 'pipelinq'

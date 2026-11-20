@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeStore;
 use Throwable;
@@ -46,14 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/burger-notifications/spec.md
  */
-class CaseReceiptDates {
-
-	/**
-	 * The case's start date.
-	 *
-	 * @var string
-	 */
-	public const START_DATE = 'startDate';
+class CaseReceiptDates implements CaseReceiptDatesInterface {
 
 	/**
 	 * Constructor.

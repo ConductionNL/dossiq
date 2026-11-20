@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\People\FileRequestService;
-use OCA\Dossiq\Service\People\PartyIndicatorReader;
-use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PartyIndicatorReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonLinkReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -34,21 +34,21 @@ class FileRequestController extends Controller {
 
 	/**
 	 * @param IRequest $request The request.
-	 * @param PersonLinkReader $people The people on the case.
-	 * @param FileRequestService $fileRequests Sends the request.
-	 * @param PartyIndicatorReader $indicators What the parties' indicators refuse.
-	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
+	 * @param PersonLinkReaderInterface $people The people on the case.
+	 * @param FileRequestServiceInterface $fileRequests Sends the request.
+	 * @param PartyIndicatorReaderInterface $indicators What the parties' indicators refuse.
+	 * @param CaseAccessGuardInterface $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PersonLinkReader $people,
-		private readonly FileRequestService $fileRequests,
-		private readonly PartyIndicatorReader $indicators,
-		private readonly CaseAccessGuard $access,
+		private readonly PersonLinkReaderInterface $people,
+		private readonly FileRequestServiceInterface $fileRequests,
+		private readonly PartyIndicatorReaderInterface $indicators,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -135,19 +135,31 @@ class FileRequestController extends Controller {
 			return new JSONResponse(['error' => 'Name the party to ask'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->sendRequest(caseId: $caseId, ask: ['personUid' => trim($personId), 'note' => trim($note), 'days' => $days]);
+	}//end create()
+
+	/**
+	 * Send the file request; a refused request answers with the status its code names.
+	 *
+	 * @param string                                          $caseId The case uuid.
+	 * @param array{personUid: string, note: string, days: int} $ask    Who is asked, for what, and for how long.
+	 *
+	 * @return JSONResponse The recipient and the request.
+	 */
+	private function sendRequest(string $caseId, array $ask): JSONResponse {
 		try {
 			$sent = $this->fileRequests->request(
 				caseId: $caseId,
-				personUid: trim($personId),
-				note: trim($note),
-				days: $days,
+				personUid: $ask['personUid'],
+				note: $ask['note'],
+				days: $ask['days'],
 			);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], $this->statusOf(code: (int)$e->getCode()));
 		}
 
 		return new JSONResponse($sent, Http::STATUS_CREATED);
-	}//end create()
+	}//end sendRequest()
 
 	/**
 	 * A service code as an HTTP status.

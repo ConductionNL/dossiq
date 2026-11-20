@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Subsidie;
 
+use OCA\Dossiq\Kernel\Contracts\VaststellingServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -46,9 +47,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class VaststellingService {
+class VaststellingService implements VaststellingServiceInterface {
 
 	use SearchesObjects;
 
@@ -74,7 +75,7 @@ class VaststellingService {
 	 *
 	 * @return bool True when an accountant declaration is required.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function accountantsverklaringVereist(float $grantedAmount, float $threshold): bool {
 		return $grantedAmount > $threshold;
@@ -89,7 +90,7 @@ class VaststellingService {
 	 *
 	 * @return float The final settled amount.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function computeVastgesteldBedrag(float $grantedAmount, float $actualCost): float {
 		$amount = min($grantedAmount, $actualCost);
@@ -105,7 +106,7 @@ class VaststellingService {
 	 *
 	 * @return float The overpayment (0.0 when none).
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function computeOverpayment(float $totalAdvances, float $determinedAmount): float {
 		$diff = ($totalAdvances - $determinedAmount);
@@ -124,7 +125,7 @@ class VaststellingService {
 	 *
 	 * @return bool True when a clawback is required.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function recoveryTrigger(float $totalAdvances, float $determinedAmount): bool {
 		return $this->computeOverpayment(totalAdvances: $totalAdvances, determinedAmount: $determinedAmount) > 0.0;

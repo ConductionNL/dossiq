@@ -33,24 +33,25 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PersonalStageServiceInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
 /**
  * Reads and writes one person's private stages.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class PersonalStageService {
+class PersonalStageService implements PersonalStageServiceInterface {
 	/**
 	 * The preference holding the map of case id to stage.
 	 *
@@ -84,7 +85,7 @@ class PersonalStageService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly IUserConfig $userConfig,
@@ -101,7 +102,7 @@ class PersonalStageService {
 	 *
 	 * @return string The stage, or an empty string when they set none.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function get(string $userId, string $caseId): string {
 		return (string)($this->all(userId: $userId)[$caseId] ?? '');
@@ -114,13 +115,13 @@ class PersonalStageService {
 	 *
 	 * @return array<string, string> Case id to stage.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
 	public function all(string $userId): array {
 		try {
-			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STAGES, '');
+			$raw = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_STAGES, '');
 		} catch (InvalidArgumentException $e) {
 			// Exactly what `getValueString` declares, and no more. A blanket
 			// `Throwable` here swallowed a programming error as readily as a
@@ -151,31 +152,67 @@ class PersonalStageService {
 	 *
 	 * @return string The stage now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function set(string $userId, string $caseId, string $stage): string {
+		$stage = self::clipped(stage: $stage);
+
+		$this->store(userId: $userId, stages: self::withStage(stages: $this->all(userId: $userId), entry: ['caseId' => $caseId, 'stage' => $stage]));
+
+		return $stage;
+	}//end set()
+
+	/**
+	 * The stage trimmed and cut to the longest a stage may be.
+	 *
+	 * @param string $stage The stage as given.
+	 *
+	 * @return string The stage as stored.
+	 */
+	private static function clipped(string $stage): string {
 		$stage = trim($stage);
 		if (mb_strlen($stage) > self::MAX_LENGTH) {
 			$stage = mb_substr($stage, 0, self::MAX_LENGTH);
 		}
 
-		$stages = $this->all(userId: $userId);
-		unset($stages[$caseId]);
-		if ($stage !== '') {
-			$stages[$caseId] = $stage;
+		return $stage;
+	}//end clipped()
+
+	/**
+	 * Store the reader's stages.
+	 *
+	 * @param string                $userId The reader.
+	 * @param array<string, string> $stages The stages, by case.
+	 *
+	 * @return void
+	 */
+	private function store(string $userId, array $stages): void {
+		$this->userConfig->setValueString(
+			$userId,
+			AppIdentity::APP_ID,
+			self::PREF_STAGES,
+			json_encode($stages, JSON_THROW_ON_ERROR)
+		);
+	}//end store()
+
+	/**
+	 * The stages with this case's stage moved to the end, or dropped when cleared, keeping the newest ones.
+	 *
+	 * @param array<string, string>                $stages The reader's stages, by case.
+	 * @param array{caseId: string, stage: string} $entry  The case and its stage, '' to clear it.
+	 *
+	 * @return array<string, string> The stages to store.
+	 */
+	private static function withStage(array $stages, array $entry): array {
+		unset($stages[$entry['caseId']]);
+		if ($entry['stage'] !== '') {
+			$stages[$entry['caseId']] = $entry['stage'];
 		}
 
 		if (count($stages) > self::MAX_STAGES) {
 			$stages = array_slice($stages, (count($stages) - self::MAX_STAGES), null, true);
 		}
 
-		$this->userConfig->setValueString(
-			$userId,
-			Application::APP_ID,
-			self::PREF_STAGES,
-			json_encode($stages, JSON_THROW_ON_ERROR)
-		);
-
-		return $stage;
-	}//end set()
+		return $stages;
+	}//end withStage()
 }//end class

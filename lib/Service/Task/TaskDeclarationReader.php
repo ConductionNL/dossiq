@@ -42,7 +42,7 @@ use Psr\Container\ContainerInterface;
 /**
  * Resolves the per-task declaration a case's workflow holds for one task.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class TaskDeclarationReader {
 
@@ -82,7 +82,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<int, array<string, mixed>> The steps, or an empty list.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function stepsForCase(string $caseId): array {
 		if (trim($caseId) === '') {
@@ -117,7 +117,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<string, mixed> The normalised declaration; the unconfigured default when none matches.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function forTask(string $caseId, string $statusTypeId, string $title): array {
 		$step = $this->matching(
@@ -145,23 +145,34 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<string, mixed>|null The step.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function matching(array $steps, string $statusTypeId, string $title): ?array {
-		$wanted = trim($title);
+		return $this->firstMatching(steps: $steps, wanted: ['title' => trim($title), 'statusTypeId' => trim($statusTypeId)]);
+	}//end matching()
+
+	/**
+	 * The first step with the title, declared on the status or on none.
+	 *
+	 * @param array<int, mixed>                          $steps  The declared steps.
+	 * @param array{title: string, statusTypeId: string} $wanted The trimmed title, and the trimmed status type id.
+	 *
+	 * @return array<string, mixed>|null The step, or null.
+	 */
+	private function firstMatching(array $steps, array $wanted): ?array {
 		foreach ($steps as $step) {
-			if (is_array($step) === false || $this->declaration->titleOf(step: $step) !== $wanted) {
+			if (is_array($step) === false || $this->declaration->titleOf(step: $step) !== $wanted['title']) {
 				continue;
 			}
 
 			$status = $this->declaration->statusOf(step: $step);
-			if ($status === '' || $status === trim($statusTypeId)) {
+			if ($status === '' || $status === $wanted['statusTypeId']) {
 				return $step;
 			}
 		}
 
 		return null;
-	}//end matching()
+	}//end firstMatching()
 
 	/**
 	 * A definition's steps, decoded.
@@ -173,7 +184,7 @@ class TaskDeclarationReader {
 	 *
 	 * @return array<int, array<string, mixed>> The steps.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function stepsOf(array $definition): array {
 		return $this->json->stepsOf(definition: $definition);

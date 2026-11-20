@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
@@ -52,7 +52,7 @@ export const FIELD_OVER = 'duplicateOverrideOf'
  * @param {boolean} state.mayOverride Whether this account may file anyway.
  * @return {Promise<{reason: string, over: Array<string>}|null>} The decision, or null.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export function askAboutDuplicates(state) {
 	return openDuplicateWarning({
@@ -95,7 +95,7 @@ export function askAboutDuplicates(state) {
  * @param {string} caseTypeId The chosen case type.
  * @return {Promise<{policy: string, mayOverride: boolean}>} The declaration.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function duplicatePolicyFor(caseTypeId) {
 	// fetchIntakeRequirements answers the normalised declaration already. A
@@ -139,7 +139,7 @@ async function withRequester(payload) {
  * @return {Promise<object>} The saved case.
  * @throws {Error} When the handler cancelled, so the dialog stays open.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function createCaseWithDuplicateCheck(payload, context) {
 	// 🔴 THE LIBRARY'S STORE, NOT DOSSIQ'S. `CnActionButtons` resolved

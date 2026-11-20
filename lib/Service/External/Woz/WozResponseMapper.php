@@ -28,7 +28,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -44,7 +44,7 @@ use OCA\Dossiq\Service\External\RegisterValues;
  * Normalizes Kadaster WOZ Bevragen wozobject fragments into the
  * Dossiq-internal DTO shape.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 final class WozResponseMapper {
 	/**
@@ -65,7 +65,7 @@ final class WozResponseMapper {
 	 *     addressDesignationId: string|null,
 	 * }
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
 		$values = new RegisterValues();
@@ -92,7 +92,7 @@ final class WozResponseMapper {
 	 *
 	 * @return array<int,array<string,mixed>> Normalized DTOs, same order.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
 		return (new RegisterValues())->mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
@@ -115,22 +115,7 @@ final class WozResponseMapper {
 		}
 
 		$sorted = $waarden;
-		usort(
-			$sorted,
-			static function (mixed $a, mixed $b): int {
-				$dateA = '';
-				if (is_array($a) === true) {
-					$dateA = (string)($a['waardepeildatum'] ?? '');
-				}
-
-				$dateB = '';
-				if (is_array($b) === true) {
-					$dateB = (string)($b['waardepeildatum'] ?? '');
-				}
-
-				return $dateB <=> $dateA;
-			}
-		);
+		usort($sorted, static fn (mixed $a, mixed $b): int => self::newerFirst(a: $a, b: $b));
 
 		$first = ($sorted[0] ?? []);
 		if (is_array($first) === true) {
@@ -139,4 +124,26 @@ final class WozResponseMapper {
 
 		return [];
 	}//end mostRecentWaarde()
+
+	/**
+	 * Order two `vastgesteldeWaarden[]` entries newest `waardepeildatum` first.
+	 *
+	 * @param mixed $a One entry.
+	 * @param mixed $b The other entry.
+	 *
+	 * @return int
+	 */
+	private static function newerFirst(mixed $a, mixed $b): int {
+		$dateA = '';
+		if (is_array($a) === true) {
+			$dateA = (string)($a['waardepeildatum'] ?? '');
+		}
+
+		$dateB = '';
+		if (is_array($b) === true) {
+			$dateB = (string)($b['waardepeildatum'] ?? '');
+		}
+
+		return $dateB <=> $dateA;
+	}//end newerFirst()
 }//end class

@@ -27,7 +27,7 @@
   ids, with every removed value. The number, the folder, the documents and the roles do not change: this
   is a change of blueprint, not a new case.
 
-  @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
   @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
@@ -130,15 +130,12 @@
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
-
-const PAGE_REFRESH = 'cn:page:refresh'
+import { caseTypeChangeDialog } from '../mixins/caseTypeChangeDialog.js'
 
 /** How long a typed answer settles before the server is asked again. */
 const PREVIEW_DEBOUNCE_MS = 300
@@ -154,50 +151,22 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case to rebind. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTypeChangeDialog('rebind')],
 
 	emits: ['close'],
 
 	data() {
 		return {
-			current: {},
-			targets: [],
-			target: '',
 			status: '',
-			preview: null,
 			answers: {},
 			remap: {},
 			dropConfirmed: false,
 			previewing: false,
 			previewSeq: 0,
-			reason: '',
-			error: '',
-			loading: true,
-			busy: false,
 		}
 	},
 
 	computed: {
-		/**
-		 * The case this dialog rebinds.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * The case types to choose from, as the picker reads them.
 		 *
@@ -208,7 +177,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
 			return this.targets.map((type) => ({
@@ -227,7 +196,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		statusOptions() {
 			return (this.preview?.statuses ?? []).map((entry) => ({
@@ -244,7 +213,7 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
@@ -295,32 +264,8 @@ export default {
 		clearTimeout(this.previewTimer)
 	},
 
-	async mounted() {
-		await this.loadOptions()
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * The case types this case could be rebound to.
-		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 */
-		async loadOptions() {
-			this.loading = true
-			try {
-				const { data } = await axios.get(this.endpoint())
-				this.current = data?.current ?? {}
-				this.targets = Array.isArray(data?.targets) ? data.targets : []
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.loading = false
-			}
-		},
 
 		/**
 		 * A new target clears the mapping that belonged to the old one.
@@ -331,7 +276,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async onTargetChange() {
@@ -362,7 +307,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
@@ -401,50 +346,21 @@ export default {
 		},
 
 		/**
-		 * Rebind the case, and keep the dialog open on a refusal.
+		 * What the change posts.
 		 *
-		 * @return {Promise<void>}
+		 * @return {object} The request body.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
-		async confirm() {
-			if (!this.canConfirm) {
-				return
+		confirmPayload() {
+			return {
+				target: this.target,
+				status: this.status,
+				reason: this.reason.trim(),
+				properties: this.answers,
+				remap: this.remap,
+				confirmDropped: this.droppedNames,
 			}
-			this.busy = true
-			this.error = ''
-			try {
-				await axios.post(this.endpoint(), {
-					target: this.target,
-					status: this.status,
-					reason: this.reason.trim(),
-					properties: this.answers,
-					remap: this.remap,
-					confirmDropped: this.droppedNames,
-				})
-				// Tell the whole page: the header, the stages widget and the
-				// attributes panel all read the case type.
-				emit(PAGE_REFRESH, {})
-				this.$emit('close')
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.busy = false
-			}
-		},
-
-		/**
-		 * The endpoint for this case.
-		 *
-		 * @return {string} The url.
-		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 */
-		endpoint() {
-			return generateUrl(
-				`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/rebind`,
-			)
 		},
 
 		/**
@@ -458,7 +374,7 @@ export default {
 		 * @param {object} e The axios error.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalOf(e) {
 			return (

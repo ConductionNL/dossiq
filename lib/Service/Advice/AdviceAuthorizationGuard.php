@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -92,18 +93,12 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertTransitionAuthorized(array $advice, string $to): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
-		if ($this->mayTransition(advice: $advice, to: $to, uid: $uid) === true) {
+		if ($this->mayTransition(advice: $advice, move: ['to' => $to, 'uid' => $uid]) === true) {
 			return;
 		}
 
@@ -133,14 +128,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertReminderAuthorized(array $advice): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
@@ -157,20 +146,42 @@ class AdviceAuthorizationGuard {
 	}//end assertReminderAuthorized()
 
 	/**
+	 * The caller's uid, or null for an administrator, who is always authorized.
+	 *
+	 * @return string|null The uid, null for an administrator.
+	 *
+	 * @throws RuntimeException When the caller is not authenticated.
+	 */
+	private function nonAdminCaller(): ?string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException('Not authenticated');
+		}
+
+		$uid = $user->getUID();
+
+		if ($this->groupManager->isAdmin($uid) === true) {
+			return null;
+		}
+
+		return $uid;
+	}//end nonAdminCaller()
+
+	/**
 	 * Whether a non-admin caller may perform the given advice transition.
 	 *
 	 * Returns false for `verlopen` (system-only) and for any unknown
 	 * status — the default is deny.
 	 *
 	 * @param array<string, mixed> $advice The current advice record.
-	 * @param string $to Target status.
-	 * @param string $uid The caller's user id.
+	 * @param array{to: string, uid: string} $move Target status and the caller's user id.
 	 *
 	 * @return bool True when the transition is allowed for this caller.
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function mayTransition(array $advice, string $to, string $uid): bool {
+	private function mayTransition(array $advice, array $move): bool {
+		['to' => $to, 'uid' => $uid] = $move;
 		$advisor = (string)($advice['advisor'] ?? '');
 		$isAdviseur = ($advisor !== '' && $advisor === $uid);
 
@@ -201,24 +212,7 @@ class AdviceAuthorizationGuard {
 			return false;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return false;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			return false;
-		}
-
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-
+		$case = $this->linkedCase(caseId: $caseId);
 		if ($case === null) {
 			return false;
 		}
@@ -227,4 +221,17 @@ class AdviceAuthorizationGuard {
 
 		return ($assignee !== '' && $assignee === $uid);
 	}//end isHandlerOfLinkedCase()
+
+	/**
+	 * Read the case an advice links to.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>|null The case, or null when OpenRegister, the config or the case is missing.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function linkedCase(string $caseId): array|null {
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'case_schema', id: $caseId);
+	}//end linkedCase()
 }//end class

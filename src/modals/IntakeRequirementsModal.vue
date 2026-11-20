@@ -16,7 +16,7 @@
 
   Modal isolation per ADR-004: lives in src/modals/.
 
-  @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+  @spec openspec/specs/semantic-case-intake/spec.md
 -->
 <template>
 	<NcModal
@@ -128,22 +128,22 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md */
+		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		read() {
 			return normaliseDeclaration(this.declaration)
 		},
 
-		/** @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md */
+		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		fields() {
 			return fieldsToAsk(this.declaration)
 		},
 
-		/** @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md */
+		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		schemeUnresolved() {
 			return this.read.classificationIsAccessRule && !this.read.schemeResolves
 		},
 
-		/** @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md */
+		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		canOpen() {
 			if (this.schemeUnresolved) {
 				return false
@@ -159,7 +159,7 @@ export default {
 		 *
 		 * @param {string} field The case field.
 		 * @return {string[]} The allowed values, empty when it is free text.
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		optionsFor(field) {
 			return optionsFor(field, this.declaration)
@@ -170,7 +170,7 @@ export default {
 		 *
 		 * @param {string} field The case field.
 		 * @return {string} The label, translated.
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		labelFor(field) {
 			// 🔴 EIGHT LITERAL `t()` CALLS (in FIELD_LABELS), NOT A MAP OF BARE
@@ -192,7 +192,7 @@ export default {
 		 * @param {string} field The case field.
 		 * @param {string|object} value The chosen value.
 		 * @return {void}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		setValue(field, value) {
 			const chosen =

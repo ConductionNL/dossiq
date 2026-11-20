@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\Cases\CaseNextStatus;
+use OCA\Dossiq\Kernel\Contracts\CaseNextStatusInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,14 +43,14 @@ class CaseNextStatusController extends Controller {
 	 *
 	 * @param string         $appName    The app name.
 	 * @param IRequest       $request    The request.
-	 * @param CaseNextStatus  $nextStatus  Reads the next status.
-	 * @param ReadableObjects $readable    Whether the caller may read the case.
+	 * @param CaseNextStatusInterface  $nextStatus  Reads the next status.
+	 * @param ReadableObjectsInterface $readable    Whether the caller may read the case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseNextStatus $nextStatus,
-		private readonly ReadableObjects $readable,
+		private readonly CaseNextStatusInterface $nextStatus,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

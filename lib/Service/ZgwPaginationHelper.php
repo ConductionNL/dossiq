@@ -63,7 +63,7 @@ class ZgwPaginationHelper {
 	 *
 	 * @return array ZGW-formatted paginated response
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function wrapResults(array $mappedObjects, int $totalCount, int $page, int $pageSize, string $baseUrl, array $queryParams): array {
 		$prefix = self::linkPrefix(baseUrl: $baseUrl, queryParams: $queryParams);

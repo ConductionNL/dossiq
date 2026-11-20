@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -49,7 +49,9 @@ use Throwable;
 /**
  * Counts a series' firings and reads the cases it opened.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PlannedSeriesLedger {
 
@@ -118,7 +120,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return integer The count including the firing just observed.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function firedCount(string $flowId, mixed $lastRunAt): int {
 		$stamp = '';
@@ -126,15 +128,15 @@ class PlannedSeriesLedger {
 			$stamp = $lastRunAt->format('Y-m-d H:i:s');
 		}
 
-		$seen = $this->appConfig->getValueString(Application::APP_ID, (self::SEEN_KEY . $flowId), '');
-		$fired = (int)$this->appConfig->getValueString(Application::APP_ID, (self::FIRED_KEY . $flowId), '0');
+		$seen = $this->appConfig->getValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), '');
+		$fired = (int)$this->appConfig->getValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), '0');
 		if ($seen === $stamp) {
 			return $fired;
 		}
 
 		$fired++;
-		$this->appConfig->setValueString(Application::APP_ID, (self::SEEN_KEY . $flowId), $stamp);
-		$this->appConfig->setValueString(Application::APP_ID, (self::FIRED_KEY . $flowId), (string)$fired);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), $stamp);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), (string)$fired);
 
 		return $fired;
 	}//end firedCount()
@@ -151,7 +153,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return array<int, array{id: string, title: string}> The occurrences.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function occurrencesOf(string $flowId, bool $single): array {
 		if ($single === true) {
@@ -171,39 +173,73 @@ class PlannedSeriesLedger {
 	 * @return array<int, mixed> The rows.
 	 */
 	private function rowsOf(string $flowId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$scope = $this->seriesScope();
+		if ($scope === null) {
 			return [];
 		}
 
 		try {
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'handoffSource' => (PlannedFollowUpDocument::SERIES_SOURCE . $flowId),
-					],
-					'limit' => self::PAGE,
-				],
-			);
+			$rows = $scope['objectService']->findAll($this->seriesQuery(scope: $scope, flowId: $flowId));
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'PlannedSeriesLedger: could not read the cases a series created',
-				['flow' => $flowId, 'exception' => $e->getMessage()]
+				'PlannedSeriesLedger: could not read the cases a series created', ['flow' => $flowId, 'exception' => $e->getMessage()]
 			);
 
 			return [];
 		}
 
+		return $this->resultsOf(rows: $rows);
+	}//end rowsOf()
+
+	/**
+	 * The object service, register and case schema, or null when one is missing.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The scope.
+	 */
+	private function seriesScope(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end seriesScope()
+
+	/**
+	 * The query for the cases one series opened.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $scope  The scope.
+	 * @param string                                                          $flowId The series flow's uuid.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function seriesQuery(array $scope, string $flowId): array {
+		return [
+			'filters' => [
+				'register' => $scope['register'],
+				'schema' => $scope['schema'],
+				'handoffSource' => (PlannedFollowUpDocument::SERIES_SOURCE . $flowId),
+			],
+			'limit' => self::PAGE,
+		];
+	}//end seriesQuery()
+
+	/**
+	 * The rows of a findAll() answer, paginated or not.
+	 *
+	 * @param mixed $rows The answer.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	private function resultsOf(mixed $rows): array {
 		if (is_array($rows) === true && isset($rows['results']) === true) {
 			return (array)$rows['results'];
 		}
 
 		return (array)$rows;
-	}//end rowsOf()
+	}//end resultsOf()
 
 	/**
 	 * The rows as `{id, title}` pairs, dropping anything with no id.
@@ -298,9 +334,26 @@ class PlannedSeriesLedger {
 	 *
 	 * @throws RuntimeException `flows_unavailable`, `case_not_found`, `stop_failed`.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function stopSeries(string $caseId, string $flowId, string $uid): array {
+		$service = $this->seriesFlowService(caseId: $caseId, flowId: $flowId);
+		$this->switchOff(service: $service, stop: ['flowId' => $flowId, 'notes' => sprintf('Series stopped by %s on %s.', $uid, date('Y-m-d'))]);
+
+		return ['id' => $flowId, 'stopped' => true];
+	}//end stopSeries()
+
+	/**
+	 * The flow service, once this case is known to own the series flow.
+	 *
+	 * @param string $caseId The case the series belongs to.
+	 * @param string $flowId The series flow's uuid.
+	 *
+	 * @return object The OpenRegister flow service.
+	 *
+	 * @throws RuntimeException `flows_unavailable`, `case_not_found`.
+	 */
+	private function seriesFlowService(string $caseId, string $flowId): object {
 		$service = $this->optional(name: self::FLOW_SERVICE);
 		if ($service === null) {
 			throw new RuntimeException('flows_unavailable');
@@ -311,25 +364,37 @@ class PlannedSeriesLedger {
 			throw new RuntimeException('case_not_found');
 		}
 
+		return $service;
+	}//end seriesFlowService()
+
+	/**
+	 * Switch the series flow off and write why to its notes.
+	 *
+	 * @param object                               $service The OpenRegister flow service.
+	 * @param array{flowId: string, notes: string} $stop    The series flow's uuid and the stop note.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException `stop_failed`.
+	 */
+	private function switchOff(object $service, array $stop): void {
 		try {
 			$service->save(
 				data: [
 					'enabled' => false,
-					'notes' => sprintf('Series stopped by %s on %s.', $uid, date('Y-m-d')),
+					'notes' => $stop['notes'],
 				],
-				uuid: $flowId
+				uuid: $stop['flowId']
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'PlannedSeriesLedger: could not stop a series',
-				['flow' => $flowId, 'exception' => $e->getMessage()]
+				['flow' => $stop['flowId'], 'exception' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('stop_failed');
 		}
-
-		return ['id' => $flowId, 'stopped' => true];
-	}//end stopSeries()
+	}//end switchOff()
 
 	/**
 	 * The series flow with this uuid among THIS case's planned flows, or null.
@@ -384,7 +449,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return integer How many flows were switched off.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function retireSpent(?DateTimeImmutable $today = null): int {
 		$service = $this->optional(name: self::FLOW_SERVICE);

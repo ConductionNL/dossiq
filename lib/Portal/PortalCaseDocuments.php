@@ -24,10 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -89,14 +89,14 @@ class PortalCaseDocuments {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService OpenRegister access and the configured register and schemas.
+	 * @param SettingsServiceInterface           $settingsService OpenRegister access and the configured register and schemas.
 	 * @param LoggerInterface           $logger          Logger.
 	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
 	 *
 	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,
 	) {

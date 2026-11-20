@@ -38,6 +38,8 @@ use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for CaseRelationService.
@@ -48,6 +50,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRelationServiceTest extends TestCase {
 
@@ -133,7 +141,9 @@ class CaseRelationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->store[$id] ?? null);
 			}//end find()
 
@@ -146,7 +156,9 @@ class CaseRelationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$id = (string)($object['id'] ?? '');
 				if ($id !== '') {
 					$this->store[$id] = $object;

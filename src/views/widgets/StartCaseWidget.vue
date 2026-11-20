@@ -62,8 +62,8 @@ import { NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
 import IntakeRequirementsModal from '../../modals/IntakeRequirementsModal.vue'
+import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { fetchIntakeRequirements } from '../../services/intakeTriageApi.js'
-import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { isCaseTypeUsable } from '../../utils/caseValidation.js'
 import { asksAnything, refusalSentence } from '../../utils/intakeRequirements.js'
@@ -78,6 +78,8 @@ export default {
 		InitiatorPickerModal,
 		IntakeRequirementsModal,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		// Declared on purpose. The mount script passes `title: widget.title`, and
@@ -104,13 +106,6 @@ export default {
 			pendingExtraFields: {},
 			refusal: '',
 		}
-	},
-
-	computed: {
-		/** @spec openspec/specs/signalering-widgets/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
 	},
 
 	/** @spec openspec/specs/signalering-widgets/spec.md */
@@ -215,7 +210,7 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @param {object} extraFields Additional case fields (the requester payload)
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async startWithRequirements(caseType, extraFields = {}) {
 			if (!caseType) {
@@ -237,7 +232,7 @@ export default {
 		 *
 		 * @param {object} answers The declared fields, as answered
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async onRequirementsAnswered(answers) {
 			const caseType = this.pendingRequirements
@@ -250,7 +245,7 @@ export default {
 		 * Close the requirements dialog without creating anything.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		cancelRequirements() {
 			this.pendingRequirements = null

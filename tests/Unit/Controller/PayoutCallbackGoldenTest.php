@@ -46,6 +46,8 @@ use RuntimeException;
  * Golden test for PayoutCallbackController's callback handling.
  *
  * @covers \OCA\Dossiq\Controller\PayoutCallbackController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Money\SignedPayoutCallback
  */
 class PayoutCallbackGoldenTest extends TestCase {
 	use MakesCaseDateNormaliser;

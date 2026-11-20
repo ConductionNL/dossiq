@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -47,13 +47,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use RuntimeException;
 
 /**
  * Builds and reads the flow behind one planned follow-up case, or one series.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedFollowUpDocument {
 
@@ -131,7 +131,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array<string, mixed> The flow document.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function build(
 		string $caseId,
@@ -169,7 +169,7 @@ class PlannedFollowUpDocument {
 		return [
 			'name' => 'Planned follow-up: ' . $followUp->title,
 			'description' => $this->describe(followUp: $followUp),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'applicationSlug' => self::PLANNED_SLUG,
 			'trigger' => 'schedule',
 			'cron' => $cron,
@@ -231,7 +231,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array<int, mixed> The nodes, with `handoffSource` on the create node.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function withSeriesSource(array $document, string $flowId): array {
 		$nodes = (array)($document['nodes'] ?? []);
@@ -289,7 +289,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @throws RuntimeException `invalid_recurrence` when the token is not one of ours.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function recurrenceOf(string $recurrence): string {
 		return $this->calendar->recurrenceOf(recurrence: $recurrence);
@@ -312,7 +312,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @throws RuntimeException `invalid_end` when both or neither shape is well formed.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function endOf(string $recurrence, string $until, int $count): array {
 		$date = trim($until);
@@ -322,6 +322,20 @@ class PlannedFollowUpDocument {
 			return ['until' => '', 'count' => 0];
 		}
 
+		return $this->boundedEnd(date: $date, count: $count);
+	}//end endOf()
+
+	/**
+	 * The end of a recurring series: a date or a count, never both.
+	 *
+	 * @param string  $date  The end date as `Y-m-d`, trimmed, or the empty string.
+	 * @param integer $count The number of occurrences, or 0.
+	 *
+	 * @return array{until: string, count: int} The end to store.
+	 *
+	 * @throws RuntimeException When both are given, the date does not parse, or the count is negative.
+	 */
+	private function boundedEnd(string $date, int $count): array {
 		if ($date !== '' && $count > 0) {
 			throw new RuntimeException('invalid_end');
 		}
@@ -339,7 +353,7 @@ class PlannedFollowUpDocument {
 		}
 
 		return ['until' => '', 'count' => $count];
-	}//end endOf()
+	}//end boundedEnd()
 
 	/**
 	 * What one planned flow says it will create, read off its own graph.
@@ -362,7 +376,7 @@ class PlannedFollowUpDocument {
 	 *     count: int
 	 * }|null The marker, or null when the graph is not one of ours.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function markerOf(array $nodes, ?DateTimeImmutable $from = null): ?array {
 		['create' => $create, 'cron' => $cron] = $this->readNodes(nodes: $nodes);
@@ -396,7 +410,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return array{recurrence: string, anchor: string, until: string, count: int} The series.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function seriesOf(array $nodes): array {
 		['create' => $create] = $this->readNodes(nodes: $nodes);
@@ -431,7 +445,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return DateTimeImmutable|null The next occurrence, or null when there is none.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function nextOccurrence(string $recurrence, DateTimeImmutable $anchor, DateTimeImmutable $from): ?DateTimeImmutable {
 		return $this->calendar->nextOccurrence(recurrence: $recurrence, anchor: $anchor, from: $from);
@@ -451,7 +465,7 @@ class PlannedFollowUpDocument {
 	 *
 	 * @return boolean Whether the flow may be switched off.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function isSpent(array $document, int $firedCount, DateTimeImmutable $today): bool {
 		$series = $this->seriesOf(nodes: (array)($document['nodes'] ?? []));
@@ -463,6 +477,18 @@ class PlannedFollowUpDocument {
 			return $firedCount >= $series['count'];
 		}
 
+		return $this->pastUntil(series: $series, today: $today);
+	}//end isSpent()
+
+	/**
+	 * Whether a series that ends on a date has no occurrence left on or before it.
+	 *
+	 * @param array<string, mixed> $series The series: its recurrence, anchor and end date.
+	 * @param DateTimeImmutable    $today  The day the sweep is running on.
+	 *
+	 * @return bool True when the series is spent.
+	 */
+	private function pastUntil(array $series, DateTimeImmutable $today): bool {
 		if ($series['until'] === '') {
 			return false;
 		}
@@ -480,7 +506,7 @@ class PlannedFollowUpDocument {
 		);
 
 		return $next === null || $next->format('Y-m-d') > $series['until'];
-	}//end isSpent()
+	}//end pastUntil()
 
 	/**
 	 * The create-node config and the schedule cron, from one node list.

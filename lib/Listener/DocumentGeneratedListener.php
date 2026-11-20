@@ -36,15 +36,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Support\CaseObjectReference;
-use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReferenceInterface;
+use OCA\Dossiq\Kernel\Contracts\GeneratedDocumentFilerInterface;
 use OCA\Filinq\Event\DocumentGeneratedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class DocumentGeneratedListener implements IEventListener {
 
@@ -71,13 +71,13 @@ class DocumentGeneratedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseObjectReference    $cases  Recognises a dossiq case.
-	 * @param GeneratedDocumentFiler $filer  Files the document on the case.
+	 * @param CaseObjectReferenceInterface    $cases  Recognises a dossiq case.
+	 * @param GeneratedDocumentFilerInterface $filer  Files the document on the case.
 	 * @param LoggerInterface        $logger Logger.
 	 */
 	public function __construct(
-		private readonly CaseObjectReference $cases,
-		private readonly GeneratedDocumentFiler $filer,
+		private readonly CaseObjectReferenceInterface $cases,
+		private readonly GeneratedDocumentFilerInterface $filer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -91,7 +91,7 @@ class DocumentGeneratedListener implements IEventListener {
 	 *
 	 * @throws RuntimeException When the document was meant for the case and could not be filed.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof DocumentGeneratedEvent) === false) {
@@ -138,7 +138,7 @@ class DocumentGeneratedListener implements IEventListener {
 	 * @return bool
 	 */
 	private function filesHere(array $metadata, array $object): bool {
-		return ($metadata[GeneratedDocumentFiler::FILED_BY_CALLER] ?? false) !== true
+		return ($metadata[GeneratedDocumentFilerInterface::FILED_BY_CALLER] ?? false) !== true
 			&& $this->filer->wantsFiling(metadata: $metadata) === true
 			&& $this->cases->isCase(register: $object['register'], schema: $object['schema']) === true;
 	}//end filesHere()

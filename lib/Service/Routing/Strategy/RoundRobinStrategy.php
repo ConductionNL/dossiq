@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCP\IAppConfig;
@@ -35,7 +35,7 @@ use OCP\IAppConfig;
 /**
  * Round-robin strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class RoundRobinStrategy implements RoutingStrategyInterface {
 	/**
@@ -76,6 +76,23 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 	 * @spec openspec/specs/role-based-step-routing/spec.md
 	 */
 	public function resolve(array $rule, array $case, array $roles): array {
+		$participants = $this->rotationFor(rule: $rule, roles: $roles);
+		if (count($participants) === 0) {
+			return [];
+		}
+
+		return [$this->nextInRotation(key: self::cursorKey(rule: $rule, case: $case), participants: $participants)];
+	}//end resolve()
+
+	/**
+	 * The rotation of the pool the rule targets, empty when it targets no role type.
+	 *
+	 * @param array<string, mixed> $rule  The routing rule: `roleType`, and `team` to narrow the pool.
+	 * @param array<int, mixed>    $roles The case's role rows.
+	 *
+	 * @return array<int, string> The participants in rotation order.
+	 */
+	private function rotationFor(array $rule, array $roles): array {
 		$target = (string)($rule['roleType'] ?? '');
 		if ($target === '') {
 			return [];
@@ -91,13 +108,8 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 		// participants UNCHANGED when nobody declared one. That identity is
 		// what makes an existing pool route exactly as it did yesterday
 		// (REQ-RTP-01).
-		$participants = $this->pool->rotation(members: $members);
-		if (count($participants) === 0) {
-			return [];
-		}
-
-		return [$this->nextInRotation(key: self::cursorKey(rule: $rule, case: $case), participants: $participants)];
-	}//end resolve()
+		return $this->pool->rotation(members: $members);
+	}//end rotationFor()
 
 	/**
 	 * The config key of the rotation cursor for one rule on one case type.
@@ -132,14 +144,14 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 	private function nextInRotation(string $key, array $participants): string {
 		$count = count($participants);
 		$cursor = (int)$this->appConfig->getValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			0,
 		);
 
 		$pick = $participants[$cursor % $count];
 		$this->appConfig->setValueInt(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			(($cursor + 1) % max($count, 1)),
 		);

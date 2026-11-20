@@ -23,14 +23,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCA\Dossiq\Kernel\Contracts\LhsMatrixDecisionTableMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -40,17 +40,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Project Dossiq workflow definitions onto OpenRegister flows.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class MigrateLhsToDecisionTablesCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param LhsMatrixDecisionTableMigrator $migrator The migrator.
+	 * @param LhsMatrixDecisionTableMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly LhsMatrixDecisionTableMigrator $migrator,
+		private readonly LhsMatrixDecisionTableMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();
@@ -65,7 +65,7 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:lhs:migrate-to-decision-tables')
@@ -89,12 +89,10 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = new MigrationConsole();
-		$console->userManager = $this->userManager;
-		$console->output = $output;
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:lhs:migrate-to-decision-tables';
 		$console->dryRunNote = ' (dry run, nothing was written)';
 		$console->rowSeparator = ': ';

@@ -34,6 +34,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * One run of the availability refresh.
@@ -41,6 +42,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob
  * @covers \OCA\Dossiq\BackgroundJob\AvailabilityRun
  * @covers \OCA\Dossiq\BackgroundJob\OpenRegisterObjects
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class SpecialistBeschikbaarheidRefreshJobWorkTest extends TestCase {
 	use MakesBackgroundServiceAccount;
@@ -155,7 +159,11 @@ class SpecialistBeschikbaarheidRefreshJobWorkTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($objectId === 'fails') {
 					throw new RuntimeException('locked');
 				}

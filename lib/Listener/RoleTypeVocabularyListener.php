@@ -24,8 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\People\CaseRoleVocabulary;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ResyncsRoleVocabulary;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
@@ -33,7 +34,6 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Re-syncs the case role vocabulary when a role type is created, changed or
@@ -50,6 +50,8 @@ use Throwable;
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
 class RoleTypeVocabularyListener implements IEventListener {
+	use ResyncsRoleVocabulary;
+
 	/**
 	 * The role type schema's slug, matched besides the configured id.
 	 */
@@ -58,13 +60,13 @@ class RoleTypeVocabularyListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The configured role type schema.
-	 * @param CaseRoleVocabulary $vocabulary      Writes the roles onto the case schema.
+	 * @param SettingsServiceInterface    $settingsService The configured role type schema.
+	 * @param CaseRoleVocabularyInterface $vocabulary      Writes the roles onto the case schema.
 	 * @param LoggerInterface    $logger          Says why a sync failed.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseRoleVocabulary $vocabulary,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseRoleVocabularyInterface $vocabulary,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -84,13 +86,7 @@ class RoleTypeVocabularyListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$this->vocabulary->sync();
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq people: the case role vocabulary was not re-synced after a role type change: ' . $e->getMessage()
-			);
-		}
+		$this->resyncVocabularyAfter(change: 'a role type change');
 	}//end handle()
 
 	/**

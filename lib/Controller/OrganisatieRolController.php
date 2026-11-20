@@ -40,9 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
-use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Controller\Support\BuildsRegistryWrites;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -61,12 +61,14 @@ use Throwable;
  * @spec openspec/specs/mandaat-matrix/spec.md
  */
 class OrganisatieRolController extends Controller {
+	use BuildsRegistryWrites;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param MandaatRegistryService $registry The registry service.
+	 * @param MandaatRegistryServiceInterface $registry The registry service.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
@@ -74,7 +76,7 @@ class OrganisatieRolController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MandaatRegistryService $registry,
+		private readonly MandaatRegistryServiceInterface $registry,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -92,7 +94,7 @@ class OrganisatieRolController extends Controller {
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function rollenIndex(): JSONResponse {
 		return new JSONResponse(
-			data: $this->registry->list(schemaConfigKey: MandaatRegistryService::SCHEMA_ROL),
+			data: $this->registry->list(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_ROL),
 			statusCode: Http::STATUS_OK
 		);
 	}//end rollenIndex()
@@ -108,7 +110,7 @@ class OrganisatieRolController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function rollenCreate(): JSONResponse {
-		return $this->writes()->create(schemaConfigKey: MandaatRegistryService::SCHEMA_ROL);
+		return $this->writes()->create(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_ROL);
 	}//end rollenCreate()
 
 	/**
@@ -124,7 +126,7 @@ class OrganisatieRolController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function rollenUpdate(string $id): JSONResponse {
-		return $this->writes()->update(schemaConfigKey: MandaatRegistryService::SCHEMA_ROL, id: $id);
+		return $this->writes()->update(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_ROL, id: $id);
 	}//end rollenUpdate()
 
 	/**
@@ -155,7 +157,7 @@ class OrganisatieRolController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to delete OrganisatieRol ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return new JSONResponse(
 				['message' => 'Failed to delete role: ' . $e->getMessage()],
@@ -176,7 +178,7 @@ class OrganisatieRolController extends Controller {
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function toewijzingenIndex(): JSONResponse {
 		return new JSONResponse(
-			data: $this->registry->list(schemaConfigKey: MandaatRegistryService::SCHEMA_TOEWIJZING),
+			data: $this->registry->list(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_TOEWIJZING),
 			statusCode: Http::STATUS_OK
 		);
 	}//end toewijzingenIndex()
@@ -192,7 +194,7 @@ class OrganisatieRolController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function toewijzingenCreate(): JSONResponse {
-		return $this->writes()->create(schemaConfigKey: MandaatRegistryService::SCHEMA_TOEWIJZING);
+		return $this->writes()->create(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_TOEWIJZING);
 	}//end toewijzingenCreate()
 
 	/**
@@ -212,21 +214,6 @@ class OrganisatieRolController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function toewijzingenUpdate(string $id): JSONResponse {
-		return $this->writes()->update(schemaConfigKey: MandaatRegistryService::SCHEMA_TOEWIJZING, id: $id);
+		return $this->writes()->update(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_TOEWIJZING, id: $id);
 	}//end toewijzingenUpdate()
-
-	/**
-	 * Writes registry objects from this request's body.
-	 *
-	 * @return RegistryObjectWrite
-	 *
-	 * @spec openspec/specs/mandaat-matrix/spec.md
-	 */
-	private function writes(): RegistryObjectWrite {
-		$writes = new RegistryObjectWrite();
-		$writes->registry = $this->registry;
-		$writes->request = $this->request;
-		$writes->logger = $this->logger;
-		return $writes;
-	}//end writes()
 }//end class

@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -51,26 +51,25 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseRebindServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\Cases\RebindMove;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
-use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding;
+use OCA\Dossiq\Service\Support\CaseRecordAccess;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Validate, migrate, write and re-arm: one case onto another case type.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseRebindService {
-
-	use RefusesWhenIndeterminate;
+class CaseRebindService implements CaseRebindServiceInterface {
 
 	/**
 	 * The one group that may rebind a running case (D-3).
@@ -84,6 +83,13 @@ class CaseRebindService {
 	 * @var string
 	 */
 	public const COORDINATOR_GROUP = CaseRebindGate::COORDINATOR_GROUP;
+
+	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
 
 	/**
 	 * Constructor.
@@ -111,6 +117,7 @@ class CaseRebindService {
 		private readonly LoggerInterface $logger,
 		private readonly TranslatedText $text,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -124,7 +131,7 @@ class CaseRebindService {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		return $this->gate->mayRebind(uid: $uid);
@@ -144,8 +151,8 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -180,9 +187,9 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
 		string $caseId,
@@ -194,13 +201,32 @@ class CaseRebindService {
 		$case = $this->readCase(caseId: $caseId);
 		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
 
+		$target = ['caseTypeId' => $targetCaseTypeId, 'statusId' => $targetStatusId, 'remap' => $remap, 'answers' => $properties];
+
+		return $this->previewOf(case: $case, target: $target);
+	}//end preview()
+
+	/**
+	 * The preview of rebinding a read case onto a target.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param array<string, mixed> $target The caseTypeId, statusId, remap and answers asked about.
+	 *
+	 * @return array<string, mixed> The statuses to choose from, the impact, and whether it can be done.
+	 *
+	 * @throws RefusedException When the target cannot be read, or a remap cannot be made.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function previewOf(array $case, array $target): array {
+		$targetCaseTypeId = $target['caseTypeId'];
 		$statuses = $this->statusChoices(caseTypeId: $targetCaseTypeId);
 		$impact = $this->impact->compute(
 			case: $case,
 			targetCaseTypeId: $targetCaseTypeId,
-			targetStatusId: $targetStatusId,
-			remap: $remap,
-			answers: $properties
+			targetStatusId: $target['statusId'],
+			remap: $target['remap'],
+			answers: $target['answers']
 		);
 
 		return [
@@ -214,9 +240,9 @@ class CaseRebindService {
 			// a coordinator deciding whether to rebind should read what happens
 			// to the run before pressing the button, not afterwards.
 			'run' => ['moved' => false, 'reason' => EngineRunMigration::RUN_NOT_MOVED],
-			'canRebind' => $this->canRebind(targetStatusId: $targetStatusId, impact: $impact),
+			'canRebind' => $this->canRebind(targetStatusId: $target['statusId'], impact: $impact),
 		];
-	}//end preview()
+	}//end previewOf()
 
 	/**
 	 * Rebind this case, in the order D-2 sets out.
@@ -234,7 +260,7 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
@@ -254,27 +280,61 @@ class CaseRebindService {
 			reason: $this->gate->assertMayRebind(actorUid: $actorUid, reason: $reason),
 		);
 
-		$case = $this->readCase(caseId: $caseId);
+		$asked = ['actorUid' => $actorUid, 'remap' => $remap, 'answers' => $properties, 'confirmDropped' => $confirmDropped];
+		$applied = $this->applyRebind(move: $move, applied: $this->assessRebind(move: $move, asked: $asked));
+
+		return $move->outcome(applied: $applied);
+	}//end rebind()
+
+	/**
+	 * Read the case, check the impact and move the engine run, before any write.
+	 *
+	 * @param RebindMove           $move  The rebind.
+	 * @param array<string, mixed> $asked The actorUid, remap, answers and confirmDropped the coordinator sent.
+	 *
+	 * @return array<string, mixed> The case, sourceId, actorUid, impact and run.
+	 *
+	 * @throws RefusedException When the rebind is refused.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function assessRebind(RebindMove $move, array $asked): array {
+		$case = $this->readCase(caseId: $move->caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
 		$impact = $this->checkedImpact(
 			move: $move,
-			asked: ['case' => $case, 'remap' => $remap, 'answers' => $properties, 'confirmDropped' => $confirmDropped]
+			asked: ['case' => $case, 'remap' => $asked['remap'], 'answers' => $asked['answers'], 'confirmDropped' => $asked['confirmDropped']]
 		);
 
 		// D-2 step 2, BEFORE any write: a run that refuses to move leaves a
 		// case whose blueprint and whose process disagree.
-		$run = $this->engine->migrate(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, actorUid: $actorUid);
+		$run = $this->engine->migrate(caseId: $move->caseId, targetCaseTypeId: $move->targetCaseTypeId, actorUid: $asked['actorUid']);
 
-		$applied = ['case' => $case, 'sourceId' => $sourceId, 'actorUid' => $actorUid, 'impact' => $impact, 'run' => $run];
-		$this->write(caseId: $caseId, case: $this->reboundCase(move: $move, applied: $applied));
+		return ['case' => $case, 'sourceId' => $sourceId, 'actorUid' => $asked['actorUid'], 'impact' => $impact, 'run' => $run];
+	}//end assessRebind()
+
+	/**
+	 * Write the rebound case, re-arm its terms and log the rebind.
+	 *
+	 * @param RebindMove           $move    The rebind.
+	 * @param array<string, mixed> $applied The case, sourceId, actorUid, impact and run.
+	 *
+	 * @return array<string, mixed> The applied rebind, with the re-armed terms.
+	 *
+	 * @throws RefusedException When a write fails.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function applyRebind(RebindMove $move, array $applied): array {
+		$this->write(caseId: $move->caseId, case: $this->reboundCase(move: $move, applied: $applied));
 
 		// THE SLUG, NOT THE UUID: {@see CaseRebindTerms::rearm()} keys the
 		// re-arm by the target's slug, because a uuid matches no definition.
-		$applied['terms'] = $this->terms->rearm(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, reason: $move->reason);
+		$applied['terms'] = $this->terms->rearm(caseId: $move->caseId, targetCaseTypeId: $move->targetCaseTypeId, reason: $move->reason);
 		$this->logRebound(move: $move, applied: $applied);
 
-		return $move->outcome(applied: $applied);
-	}//end rebind()
+		return $applied;
+	}//end applyRebind()
 
 	/**
 	 * The required fields the impact still has no valid answer for.
@@ -306,37 +366,10 @@ class CaseRebindService {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**
@@ -576,28 +609,7 @@ class CaseRebindService {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	private function readCase(string $caseId): array {
-		[$objectService, $register, $schema] = $this->scope();
-
-		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->refuseIndeterminate(
-				rule: 'case-unreadable',
-				sentence: 'This case could not be read, so it was not rebound.',
-				previous: $e,
-			);
-		}
-
-		$case = $this->store->asRow(value: $found);
-		if ($case === []) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->records()->read(caseId: $caseId);
 	}//end readCase()
 
 	/**
@@ -611,39 +623,15 @@ class CaseRebindService {
 	 * @throws RefusedException When the write fails.
 	 */
 	private function write(string $caseId, array $case): void {
-		[$objectService, $register, $schema] = $this->scope();
-
-		try {
-			$objectService->updateObject(objectId: $caseId, data: $case);
-		} catch (Throwable $e) {
-			$this->refuseIndeterminate(
-				rule: 'rebind-not-written',
-				sentence: 'The case was not rebound, because the change could not be saved.',
-				previous: $e,
-			);
-		}
+		$this->records()->write(caseId: $caseId, case: $case, rule: 'rebind-not-written');
 	}//end write()
 
 	/**
-	 * The object service and the case scope, or a refusal.
+	 * The case read and written back, refusing what cannot be done.
 	 *
-	 * @return array{0: object, 1: string, 2: string} The service, register and schema.
-	 *
-	 * @throws RefusedException When OpenRegister or the case schema is absent.
+	 * @return CaseRecordAccess
 	 */
-	private function scope(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RefusedException(
-				rule: 'case-store-unavailable',
-				sentence: 'The case register could not be reached, so nothing was rebound.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
-		return [$objectService, $register, $schema];
-	}//end scope()
+	private function records(): CaseRecordAccess {
+		return new CaseRecordAccess(settingsService: $this->settingsService, store: $this->store, done: 'rebound');
+	}//end records()
 }//end class

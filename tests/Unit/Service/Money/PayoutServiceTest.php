@@ -43,6 +43,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Money\PayoutRequester
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Money\MoneyStore
+ * @uses \OCA\Dossiq\Service\Money\PayoutCallback
  */
 class PayoutServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -32,6 +32,7 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Every config read, store call and log line of the two listeners, per world.
@@ -42,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Listener\ObjectionObject
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
@@ -222,6 +224,7 @@ class ObjectionGuardListenersGoldenTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function find(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->test->log[] = ['find' => $args];
 				return ['id' => 'b-1', 'status' => 'Handled', 'dwingendStatus' => false];
 			}
@@ -234,6 +237,7 @@ class ObjectionGuardListenersGoldenTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function patchObject(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->test->log[] = ['patchObject' => $args];
 				return ['id' => 'b-1'];
 			}

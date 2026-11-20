@@ -22,15 +22,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\KccContactMomentServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -42,9 +47,12 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag)      — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
-class ContactMomentService {
+class ContactMomentService implements KccContactMomentServiceInterface {
+
+	use ResolvesKccStore;
+
 	/**
 	 * Allowed channels for a contact moment.
 	 *
@@ -94,7 +102,7 @@ class ContactMomentService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function buildPayload(array $data, string $agentId): array {
 		return $this->payload->forCreate(data: $data, agentId: $agentId);
@@ -117,7 +125,10 @@ class ContactMomentService {
 
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info(
 			'Dossiq KCC: contact moment created',
@@ -149,17 +160,16 @@ class ContactMomentService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$existing = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
+			store: [$objectService, $register, $schema],
+			caller: ['id' => $id, 'agentId' => $agentId, 'isPrivileged' => $isPrivileged]
 		);
 
 		$update = $this->payload->merged(existing: $existing, data: $data);
 
-		$saved = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $update,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 
 		return $this->toArray(value: $saved);
 	}//end update()
@@ -176,7 +186,7 @@ class ContactMomentService {
 	 *
 	 * @return array<int, array<string, mixed>> The contact moments.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function list(array $filters, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -209,17 +219,13 @@ class ContactMomentService {
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function get(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
 		return $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
+			store: [$objectService, $register, $schema],
+			caller: ['id' => $id, 'agentId' => $agentId, 'isPrivileged' => $isPrivileged]
 		);
 	}//end get()
 
@@ -232,17 +238,13 @@ class ContactMomentService {
 	 *
 	 * @return array<int, array<string, mixed>> Related contact moments.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function related(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
 		$base = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
+			store: [$objectService, $register, $schema],
+			caller: ['id' => $id, 'agentId' => $agentId, 'isPrivileged' => $isPrivileged]
 		);
 
 		$customerRef = (string)($base['customerRef'] ?? '');
@@ -273,38 +275,24 @@ class ContactMomentService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('customer_contact_schema');
-
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('KCC contact schema is not configured');
-		}
-
-		return [$objectService, $register, $schema];
+		return $this->kccStore(schemaKey: 'customer_contact_schema', unconfigured: 'KCC contact schema is not configured');
 	}//end resolve()
 
 	/**
 	 * Find a contact moment by id and enforce ownership.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
-	 * @param string $id The contact moment id.
-	 * @param string $agentId The authenticated agent's user id.
-	 * @param bool $isPrivileged Whether ownership is bypassed.
+	 * @param array{0: object, 1: string, 2: string} $store  The ObjectService, the register id and the schema id.
+	 * @param array<string, mixed>                  $caller The contact moment id, the agent's user id as agentId, isPrivileged.
 	 *
 	 * @return array<string, mixed> The contact moment.
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
 	 */
-	private function findOwned(object $objectService, string $register, string $schema, string $id, string $agentId, bool $isPrivileged): array {
+	private function findOwned(array $store, array $caller): array {
+		[$objectService, $register, $schema] = $store;
+		$id = $caller['id'];
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Contact moment not found');
 		}
@@ -314,7 +302,7 @@ class ContactMomentService {
 			throw new OCSBadRequestException('Contact moment not found');
 		}
 
-		if ($isPrivileged === false && ((string)($arr['kccAgentRef'] ?? '')) !== $agentId) {
+		if ($caller['isPrivileged'] === false && ((string)($arr['kccAgentRef'] ?? '')) !== $caller['agentId']) {
 			// Do not disclose existence to non-owners.
 			throw new OCSBadRequestException('Contact moment not found');
 		}
@@ -330,19 +318,6 @@ class ContactMomentService {
 	 * @return array<string, mixed> The normalised array.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-
-			return [];
-		}
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

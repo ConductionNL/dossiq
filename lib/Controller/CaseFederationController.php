@@ -36,10 +36,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseCollaborationService;
-use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
+use OCA\Dossiq\Controller\Support\AnswersUnassignedCaller;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -48,6 +50,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
@@ -60,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 class CaseFederationController extends Controller {
+	use AnswersUnassignedCaller;
+	use AnswersFlaggedRefusals;
 
 	/**
 	 * Brute-force throttler action for rejected federation share tokens.
@@ -102,9 +107,9 @@ class CaseFederationController extends Controller {
 	 * Constructor for the CaseFederationController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param CaseSharingService $caseSharingService The sharing service
-	 * @param CaseTransferService $caseTransferService The transfer service
-	 * @param CaseCollaborationService $collabService The federated activity service
+	 * @param CaseSharingServiceInterface $caseSharingService The sharing service
+	 * @param CaseTransferServiceInterface $caseTransferService The transfer service
+	 * @param CaseCollaborationServiceInterface $collabService The federated activity service
 	 * @param IUserSession $userSession The user session
 	 * @param IThrottler $throttler The brute-force throttler counting rejected share tokens
 	 * @param LoggerInterface $logger The logger
@@ -113,14 +118,14 @@ class CaseFederationController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private CaseSharingService $caseSharingService,
-		private CaseTransferService $caseTransferService,
-		private CaseCollaborationService $collabService,
+		private CaseSharingServiceInterface $caseSharingService,
+		private CaseTransferServiceInterface $caseTransferService,
+		private CaseCollaborationServiceInterface $collabService,
 		private IUserSession $userSession,
 		private IThrottler $throttler,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -132,11 +137,12 @@ class CaseFederationController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
 	 */
 	public function createFederatedShare(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$wanted = $this->requestedShare();
@@ -153,6 +159,14 @@ class CaseFederationController extends Controller {
 			$wanted['permissionLevel'],
 			$user->getUID(),
 		);
+
+		if (isset($share['rule']) === true && $share['rule'] !== '') {
+			// A refused consent is this instance deciding, not upstream breaking.
+			return new JSONResponse(
+				['success' => false, 'error' => $share['error'], 'rule' => $share['rule']],
+				Http::STATUS_CONFLICT
+			);
+		}
 
 		if (isset($share['error']) === true) {
 			return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
@@ -195,10 +209,7 @@ class CaseFederationController extends Controller {
 
 		// C2: same case-access guard as the partner/token share paths.
 		if ($this->caseSharingService->canUserAccessCase($wanted['caseId'], $userId) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
 		return null;
@@ -216,17 +227,9 @@ class CaseFederationController extends Controller {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
 	 */
 	public function revokeFederatedShare(string $shareId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($shareId);
-		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->shareCaller(shareId: $shareId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$result = $this->caseSharingService->revokeFederatedShare($shareId, $user->getUID());
@@ -296,17 +299,9 @@ class CaseFederationController extends Controller {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#a-local-handler-posts-an-activity-entry
 	 */
 	public function postActivity(string $federatedShareId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($federatedShareId);
-		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->shareCaller(shareId: $federatedShareId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$message = (string)$this->request->getParam('message', '');
@@ -334,22 +329,39 @@ class CaseFederationController extends Controller {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#shared-activity-stream-is-async-append-only-scoped-to-one-federated-share
 	 */
 	public function listActivity(string $federatedShareId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($federatedShareId);
-		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->shareCaller(shareId: $federatedShareId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$entries = $this->collabService->listActivity($federatedShareId);
 		return new JSONResponse(['success' => true, 'entries' => $entries]);
 	}//end listActivity()
+
+	/**
+	 * The signed-in caller of a federated share endpoint, or the refusal.
+	 *
+	 * Nobody signed in is 401. A caller who may not reach the case the share
+	 * belongs to is 403; a share without a resolvable case is not checked
+	 * against a case.
+	 *
+	 * @param string $shareId The federated share.
+	 *
+	 * @return IUser|JSONResponse The caller, or the refusal.
+	 */
+	private function shareCaller(string $shareId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notAuthenticated();
+		}
+
+		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($shareId);
+		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
+			return $this->notAssigned();
+		}
+
+		return $user;
+	}//end shareCaller()
 
 	/**
 	 * Post a remote activity entry, authenticated via the federated share's

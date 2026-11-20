@@ -7,7 +7,7 @@
  * ingebrekestelling-receipt, dwangsom-payment and the rest of TEMPLATES) in
  * en/nl and hands them to {@see RequesterNoticeSender}, which puts each in the
  * requester's portal inbox, sends it as digital post or mails it through
- * {@see TermNoticeSender} (integriq first, each notice once), and records the
+ * {@see \OCA\Dossiq\Service\Termijn\TermNoticeSender} (integriq first, each notice once), and records the
  * delivery result on the case.
  *
  * It used to hand them to BerichtenboxRoutingService::routeToBerichtenbox(),
@@ -27,30 +27,29 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Term\TermNoticeSources;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
-
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Kernel\Contracts\TermijnNotificationServiceInterface;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
-use OCA\Dossiq\Service\Termijn\TermNoticeSender;
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
 /**
  * Burger notification template renderer + dispatcher.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
-class TermijnNotificationService {
+class TermijnNotificationService implements TermijnNotificationServiceInterface {
 	public const TEMPLATES = [
 		'ontvangstbevestiging',
 		'extension',
@@ -104,7 +103,7 @@ class TermijnNotificationService {
 	 *              wired (callers MAY fall back to synchronous send), or when
 	 *              the case type does not send this message.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function queueTermijnNotification(
 		string $type,
@@ -119,29 +118,54 @@ class TermijnNotificationService {
 
 		$this->refuseUnknownTemplate(type: $type);
 
-		// The case type decides which of these go out, and CaseTypeHandling is
-		// the one reader of that decision. An empty $caseType is a caller that
-		// has not resolved one, and it queues as it always did: silently
-		// dropping a statutory message because a parameter was not threaded
-		// through would be the worst possible reading of "not configured".
-		if ($caseType !== [] && (new CaseTypeHandling())->sends(caseType: $caseType, message: $type) === false) {
-			$this->logger->info(
-				'TermijnNotification not sent: the case type does not send it',
-				['type' => $type, 'instance' => $termInstanceId]
-			);
+		return $this->queueJob(
+			job: ['type' => $type, 'termijnInstanceId' => $termInstanceId, 'recipientUserId' => $recipientUserId, 'context' => $context],
+			caseType: $caseType
+		);
+	}//end queueTermijnNotification()
+
+	/**
+	 * Queue the dispatch job unless the case type withholds its message.
+	 *
+	 * @param array{type: string, termijnInstanceId: string, recipientUserId: string, context: array} $job      The dispatch job's arguments.
+	 * @param array<string, mixed>                                                                    $caseType The case type, or [].
+	 *
+	 * @return bool True when queued.
+	 */
+	private function queueJob(array $job, array $caseType): bool {
+		if ($this->caseTypeWithholds(job: $job, caseType: $caseType) === true) {
 			return false;
 		}
 
-		$this->enqueue(
-			job: [
-				'type' => $type,
-				'termijnInstanceId' => $termInstanceId,
-				'recipientUserId' => $recipientUserId,
-				'context' => $context,
-			]
+		$this->enqueue(job: $job);
+		return true;
+	}//end queueJob()
+
+	/**
+	 * Whether the case type does not send this job's message, logged when so.
+	 *
+	 * The case type decides which of these go out, and CaseTypeHandling is
+	 * the one reader of that decision. An empty $caseType is a caller that
+	 * has not resolved one, and it queues as it always did: silently
+	 * dropping a statutory message because a parameter was not threaded
+	 * through would be the worst possible reading of "not configured".
+	 *
+	 * @param array{type: string, termijnInstanceId: string, recipientUserId: string, context: array} $job      The dispatch job's arguments.
+	 * @param array<string, mixed>                                                                    $caseType The case type, or [].
+	 *
+	 * @return bool True when the message is not to be queued.
+	 */
+	private function caseTypeWithholds(array $job, array $caseType): bool {
+		if ($caseType === [] || (new CaseTypeHandling())->sends(caseType: $caseType, message: $job['type']) === true) {
+			return false;
+		}
+
+		$this->logger->info(
+			'TermijnNotification not sent: the case type does not send it',
+			['type' => $job['type'], 'instance' => $job['termijnInstanceId']]
 		);
 		return true;
-	}//end queueTermijnNotification()
+	}//end caseTypeWithholds()
 
 	/**
 	 * Add the dispatch job and log that it was queued.
@@ -173,10 +197,10 @@ class TermijnNotificationService {
 	 *         not-sent result. A throw rather than a returned `not-sent`, because every
 	 *         caller already treats it as "nothing went out" and a caller that forgets to
 	 *         read a status cannot record a notice nobody received as sent.
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-mailed-after-integriq-allows-it-req-term-070
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function sendTermijnNotification(
 		string $type,
@@ -192,7 +216,22 @@ class TermijnNotificationService {
 		$notice->termInstanceId = $termInstanceId;
 		$notice->recipientUserId = $recipientUserId;
 		$notice->context = $context;
-		$notice->instance = ($this->notices->termService->getTermijnInstance($termInstanceId) ?? []);
+
+		return $this->sendNotice(notice: $notice, requester: $requester);
+	}//end sendTermijnNotification()
+
+	/**
+	 * Render the notice, send it on its case and log it; throws when nothing was sent.
+	 *
+	 * @param TermNotice           $notice    The notice, with its type, instance id, recipient and context.
+	 * @param array<string, mixed> $requester The case row, when the caller has it, or [].
+	 *
+	 * @return array<string, mixed> Dispatched payload with the `dispatch` delivery result.
+	 *
+	 * @throws NoticeNotSentException When nothing was sent.
+	 */
+	private function sendNotice(TermNotice $notice, array $requester): array {
+		$notice->instance = ($this->notices->termService->getTermijnInstance($notice->termInstanceId) ?? []);
 
 		$payload = $this->noticePayload(notice: $notice);
 		$notice->case = $this->noticeCase(notice: $notice, requester: $requester);
@@ -210,7 +249,7 @@ class TermijnNotificationService {
 		$this->logDispatched(notice: $notice, dispatch: $dispatch);
 
 		return $payload;
-	}//end sendTermijnNotification()
+	}//end sendNotice()
 
 	/**
 	 * Refuse a template this service does not know.
@@ -378,7 +417,7 @@ class TermijnNotificationService {
 	 *
 	 * @return array{subject:string, body:string, locale:string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		return $this->notices->letters->render(type: $type, instance: $instance, context: $context);

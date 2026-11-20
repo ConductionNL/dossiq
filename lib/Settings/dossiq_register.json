@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.94"
+        "version": "0.20.99"
     },
     "x-openregister": {
         "type": "application",
@@ -113,6 +113,12 @@
                         "type": "string",
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
                         "title": "Processing deadline"
+                    },
+                    "statutoryTermDefinition": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Statutory term choice",
+                        "description": "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term."
                     },
                     "processingDeadlineDate": {
                         "type": "string",
@@ -694,7 +700,7 @@
                     },
                     "iv3TaskField": {
                         "type": "string",
-                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
                         "title": "IV3 Task Field"
                     },
                     "obligationKinds": {
@@ -745,6 +751,16 @@
                                     "minimum": 1,
                                     "title": "Term",
                                     "description": "How many working days the holder has, where the kind has a term of its own. An obligation past its term is reported as overdue and STAYS blocking: an unmet term does not release the case, it says the wait has gone on too long."
+                                },
+                                "whenUnmet": {
+                                    "type": "string",
+                                    "enum": [
+                                        "stay",
+                                        "withdraw"
+                                    ],
+                                    "default": "stay",
+                                    "title": "When it is not met",
+                                    "description": "What happens when the holder refuses, or the due date passes, for an obligation placed at intake. stay keeps it open and blocking, so a handler decides what the case does next. withdraw releases the case with the reason written on the obligation. Either way the case's intake obligation says refused or expired, so the resident sees it."
                                 }
                             }
                         }
@@ -890,6 +906,20 @@
                         "title": "Intake form",
                         "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
                         "visible": true
+                    },
+                    "portalIntake": {
+                        "type": "object",
+                        "title": "Intake of a received case",
+                        "description": "What dossiq does to a case of this type when it is received, whichever path wrote it: answersAt names the case field holding the answers as sent, origin is written there when they name none, copy fills an answer from the case field it landed on, party names the requester's party, properties fills the case's properties from answers named as this type's property definitions, and dossierAnswer names the answer that links the case to the resident's dossier. Empty does nothing.",
+                        "visible": false,
+                        "properties": {
+                            "answersAt": {"type": "string", "title": "Answers kept at"},
+                            "origin": {"type": "string", "title": "Origin"},
+                            "copy": {"type": "object", "title": "Answers copied from case fields", "additionalProperties": {"type": "string"}},
+                            "party": {"type": "boolean", "title": "Name the requester's party"},
+                            "properties": {"type": "boolean", "title": "Fill the property definitions"},
+                            "dossierAnswer": {"type": "string", "title": "Answer naming the dossier"}
+                        }
                     },
                     "intakeFormMapping": {
                         "type": "object",
@@ -3379,6 +3409,67 @@
                         "title": "Skipped phases",
                         "visible": false
                     },
+                    "intakeObligations": {
+                        "type": "array",
+                        "title": "Waiting on at intake",
+                        "description": "What the form that opened this case asked to wait on, such as a second signer. The submit writes each entry with state awaiting; dossiq places an obligation for it and keeps the state in step: signed when the holder settles it from the portal, refused when they decline, expired when the due date passes. The portal reads this to tell the applicant what the case waits on.",
+                        "visible": false,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "title": "Kind",
+                                    "description": "The obligation kind, as the case type lists it under obligationKinds."
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "title": "What is awaited",
+                                    "description": "What is awaited, in the words the applicant reads."
+                                },
+                                "holderName": {
+                                    "type": "string",
+                                    "title": "Holder",
+                                    "description": "The person the form named to do it."
+                                },
+                                "holderEmail": {
+                                    "type": "string",
+                                    "title": "Holder email",
+                                    "format": "email",
+                                    "description": "Where the portal sent that person the link."
+                                },
+                                "holderSubject": {
+                                    "type": "string",
+                                    "title": "Holder portal subject",
+                                    "maxLength": 255,
+                                    "description": "The pseudonymous portal subject of that person, never a BSN. Only this subject may sign or refuse the entry from the portal; an entry without one cannot be settled there."
+                                },
+                                "dueAt": {
+                                    "type": "string",
+                                    "title": "Due",
+                                    "format": "date",
+                                    "description": "The last day it can be done."
+                                },
+                                "state": {
+                                    "type": "string",
+                                    "title": "State",
+                                    "enum": [
+                                        "awaiting",
+                                        "signed",
+                                        "refused",
+                                        "expired"
+                                    ],
+                                    "description": "Where it stands."
+                                },
+                                "settledAt": {
+                                    "type": "string",
+                                    "title": "Settled at",
+                                    "format": "date-time",
+                                    "description": "When it was signed, refused or expired."
+                                }
+                            }
+                        }
+                    },
                     "heldUntil": {
                         "type": "string",
                         "format": "date",
@@ -4453,7 +4544,8 @@
                         "type": "boolean",
                         "title": "Received outside working hours",
                         "x-openregister": {
-                            "serverSet": true
+                            "serverSet": true,
+                            "confirmation": true
                         },
                         "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
                         "facetable": true
@@ -7419,15 +7511,14 @@
             "wmsLayer": {
                 "slug": "wmsLayer",
                 "icon": "LayersOutline",
-                "version": "1.0.0",
-                "title": "WMS/WFS Layer",
-                "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
+                "version": "1.1.0",
+                "title": "Map Layer",
+                "description": "Tenant-configurable overlay layer for case maps: an OGC WMS or WFS service, or an ArcGIS map service drawn from its cached tiles. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
                 "type": "object",
                 "required": [
                     "title",
                     "type",
-                    "url",
-                    "layerName"
+                    "url"
                 ],
                 "properties": {
                     "title": {
@@ -7440,9 +7531,10 @@
                         "type": "string",
                         "enum": [
                             "WMS",
-                            "WFS"
+                            "WFS",
+                            "ArcGIS"
                         ],
-                        "description": "OGC service type (WMS for raster overlays, WFS for vector features)",
+                        "description": "Service type: WMS for raster overlays, WFS for vector features, ArcGIS for an ArcGIS MapServer drawn from its cached tiles ({url}/tile/{z}/{y}/{x})",
                         "title": "Type"
                     },
                     "url": {
@@ -7453,7 +7545,7 @@
                     },
                     "layerName": {
                         "type": "string",
-                        "description": "WMS LAYERS parameter or WFS typeName",
+                        "description": "WMS LAYERS parameter or WFS typeName; required for WMS and WFS, unused for ArcGIS",
                         "title": "Layer Name"
                     },
                     "srs": {
@@ -7626,7 +7718,7 @@
             "obligation": {
                 "slug": "obligation",
                 "icon": "AccountArrowRightOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Obligation",
                 "description": "Something this case is waiting on somebody else to do. ONE mechanism rather than one service per kind: an obligation is placed on a person or a unit, it blocks what it declares it blocks while it is open, and meeting it releases the case. A new kind of obligation is a declaration on the case type, not a new class. The advice request is the first obligation of this kind and keeps its own behaviour; see openspec/changes/what-a-transition-declares.",
@@ -7774,6 +7866,25 @@
                         "maxLength": 255,
                         "description": "The engine task this obligation was placed as. OpenRegister owns the work inbox, so dossiq never builds a second one; this is the handle back to the task that carries the ask.",
                         "title": "Engine task"
+                    },
+                    "holderName": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The name of the person outside the organisation this was placed on, such as a second signer the applicant named on the form. Empty for an obligation placed on a user or a unit.",
+                        "title": "Holder"
+                    },
+                    "settledBySubject": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The pseudonymous portal subject of the person who settled this from the portal. Never a BSN.",
+                        "title": "Settled by (portal subject)",
+                        "visible": false
+                    },
+                    "settledTrust": {
+                        "type": "string",
+                        "maxLength": 32,
+                        "description": "The level of assurance the portal stated for that person's sign-in when they settled it.",
+                        "title": "Level of assurance at settling"
                     }
                 }
             },
@@ -10001,7 +10112,7 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
                 "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
@@ -10186,6 +10297,39 @@
                         },
                         "description": "Append-only custody-change audit trail",
                         "title": "Custody Audit Trail"
+                    },
+                    "senderActivity": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "act": {
+                                    "type": "string",
+                                    "enum": [
+                                        "document added",
+                                        "contact moment added",
+                                        "note added",
+                                        "task completed",
+                                        "status changed"
+                                    ],
+                                    "description": "What the receiver did on the case",
+                                    "title": "Act"
+                                },
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Who did it: the user id, or empty for the system",
+                                    "title": "Actor"
+                                },
+                                "recordedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the act was recorded",
+                                    "title": "Recorded at"
+                                }
+                            }
+                        },
+                        "description": "Each act recorded on the case after the transfer was accepted, so the sending organisation follows the case it handed over. Append-only; set on an accepted organisation transfer only.",
+                        "title": "Sender Activity"
                     }
                 }
             },
@@ -11095,16 +11239,17 @@
                         "type": "string",
                         "enum": [
                             "cases_per_month",
+                            "storage_mb",
                             "storage_gb",
                             "active_users",
                             "api_calls_per_hour"
                         ],
-                        "description": "Quota dimension",
+                        "description": "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade",
                         "title": "Quota Type"
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
+                        "description": "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there",
                         "title": "Limit"
                     },
                     "currentUsage": {
@@ -13825,8 +13970,8 @@
                     "slug": "tier-template-basic-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000000",
-                "quotaType": "storage_gb",
-                "limit": 10,
+                "quotaType": "storage_mb",
+                "limit": 10240,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 80,
                 "enforcement": "warn"
@@ -13877,8 +14022,8 @@
                     "slug": "tier-template-standard-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000001",
-                "quotaType": "storage_gb",
-                "limit": 100,
+                "quotaType": "storage_mb",
+                "limit": 102400,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 80,
                 "enforcement": "warn"
@@ -13929,7 +14074,7 @@
                     "slug": "tier-template-enterprise-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000002",
-                "quotaType": "storage_gb",
+                "quotaType": "storage_mb",
                 "limit": null,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 90,

@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\IDelegatedSettings;
 
@@ -85,7 +85,7 @@ class EmailSettings implements IDelegatedSettings {
 	 */
 	public function getForm(): TemplateResponse {
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/email',
 			[]
 		);
@@ -140,6 +140,6 @@ class EmailSettings implements IDelegatedSettings {
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getAuthorizedAppConfig(): array {
-		return [Application::APP_ID => self::MANAGED_KEYS];
+		return [AppIdentity::APP_ID => self::MANAGED_KEYS];
 	}//end getAuthorizedAppConfig()
 }//end class

@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -52,21 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */
-class IntakeTermStart {
-
-	/**
-	 * The property holding the moment the submission arrived.
-	 *
-	 * @var string
-	 */
-	public const RECEIVED_AT = 'receivedAt';
-
-	/**
-	 * The property holding the first working moment the term counts from.
-	 *
-	 * @var string
-	 */
-	public const TERM_STARTS_AT = 'termStartsAt';
+class IntakeTermStart implements IntakeTermStartInterface {
 
 	/**
 	 * The property holding whether the two differ.
@@ -155,7 +142,6 @@ class IntakeTermStart {
 
 		return $stamp;
 	}//end stampForCase()
-
 
 	/**
 	 * The moment a case's term starts: its `termStartsAt`.
@@ -281,29 +267,14 @@ class IntakeTermStart {
 	 * @return array{moment: DateTimeImmutable, dayOnly: bool} The receipt.
 	 */
 	private function receiptOf(array $case): array {
-		$candidates = [
-			(string)($case[self::RECEIVED_AT] ?? ''),
-			$this->receiptAnswerOf(case: $case),
-			(string)($case['registrationDate'] ?? ''),
-			(string)($case['requestedDate'] ?? ''),
-		];
-
-		$self = ($case['@self'] ?? []);
-		if (is_array($self) === true) {
-			$candidates[] = (string)($self['created'] ?? '');
-		}
-
-		foreach ($candidates as $candidate) {
+		foreach ($this->receiptCandidates(caseData: $case) as $candidate) {
 			$candidate = trim($candidate);
 			if ($candidate === '') {
 				continue;
 			}
 
 			try {
-				return [
-					'moment' => new DateTimeImmutable($candidate),
-					'dayOnly' => (preg_match('/^\d{4}-\d{2}-\d{2}$/', $candidate) === 1),
-				];
+				return $this->receiptFrom(candidate: $candidate);
 			} catch (Throwable $e) {
 				continue;
 			}
@@ -311,4 +282,43 @@ class IntakeTermStart {
 
 		return ['moment' => new DateTimeImmutable(), 'dayOnly' => false];
 	}//end receiptOf()
+
+	/**
+	 * The receipt candidates a case names, in order of preference.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return list<string> The candidates, untrimmed and possibly empty.
+	 */
+	private function receiptCandidates(array $caseData): array {
+		$candidates = [
+			(string)($caseData[self::RECEIVED_AT] ?? ''),
+			$this->receiptAnswerOf(case: $caseData),
+			(string)($caseData['registrationDate'] ?? ''),
+			(string)($caseData['requestedDate'] ?? ''),
+		];
+
+		$self = ($caseData['@self'] ?? []);
+		if (is_array($self) === true) {
+			$candidates[] = (string)($self['created'] ?? '');
+		}
+
+		return $candidates;
+	}//end receiptCandidates()
+
+	/**
+	 * The receipt one non-empty candidate names.
+	 *
+	 * @param string $candidate The trimmed candidate.
+	 *
+	 * @return array{moment: DateTimeImmutable, dayOnly: bool} The receipt.
+	 *
+	 * @throws Throwable When the candidate does not parse as a moment.
+	 */
+	private function receiptFrom(string $candidate): array {
+		return [
+			'moment' => new DateTimeImmutable($candidate),
+			'dayOnly' => (preg_match('/^\d{4}-\d{2}-\d{2}$/', $candidate) === 1),
+		];
+	}//end receiptFrom()
 }//end class

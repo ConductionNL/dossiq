@@ -33,7 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentIntegrityVerifierInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
  */
-class DocumentIntegrityVerifier {
+class DocumentIntegrityVerifier implements DocumentIntegrityVerifierInterface {
 
 	use SearchesObjects;
 
@@ -123,7 +124,7 @@ class DocumentIntegrityVerifier {
 	 * @return array<int, array<string, mixed>> The documents.
 	 */
 	private function nextBatch(array $store, int $batch): array {
-		$offset = $this->appConfig->getValueInt(Application::APP_ID, self::CURSOR_KEY, 0);
+		$offset = $this->appConfig->getValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, 0);
 		$rows   = $this->searchObjectsAsArraysUnscoped(
 			objectService: $store['objectService'],
 			register: $store['register'],
@@ -136,7 +137,7 @@ class DocumentIntegrityVerifier {
 			$next = 0;
 		}
 
-		$this->appConfig->setValueInt(Application::APP_ID, self::CURSOR_KEY, $next);
+		$this->appConfig->setValueInt(AppIdentity::APP_ID, self::CURSOR_KEY, $next);
 
 		return $rows;
 	}//end nextBatch()
@@ -149,7 +150,7 @@ class DocumentIntegrityVerifier {
 	 *
 	 * @return bool Whether the document was checked.
 	 *
-	 * @spec openspec/changes/a-document-without-a-checksum-gets-one/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
 	 */
 	private function verifyOne(array $store, array $row): bool {
 		$check = $this->checkOf(row: $row);

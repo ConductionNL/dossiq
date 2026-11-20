@@ -39,6 +39,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Registry\BagObjectReader
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Registry\IntegriqLeaf
  */
 class BagObjectReaderTest extends TestCase {
 	/**

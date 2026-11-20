@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DocumentCopierInterface;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
  */
-class DocumentCopier {
+class DocumentCopier implements DocumentCopierInterface {
 
 	/**
 	 * Constructor.

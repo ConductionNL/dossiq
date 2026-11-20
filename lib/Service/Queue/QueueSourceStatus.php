@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
+use OCA\Dossiq\Kernel\Contracts\QueueSourceStatusInterface;
 use OCP\IL10N;
 
 /**
@@ -37,7 +38,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
-class QueueSourceStatus {
+class QueueSourceStatus implements QueueSourceStatusInterface {
 	/**
 	 * The source that carries dossiq's own cases.
 	 */

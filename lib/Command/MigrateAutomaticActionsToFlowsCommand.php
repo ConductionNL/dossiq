@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
+use OCA\Dossiq\Kernel\Contracts\AutomaticActionFlowMigratorInterface;
 use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
@@ -46,11 +46,11 @@ class MigrateAutomaticActionsToFlowsCommand extends Command {
 	/**
 	 * Wire the command against the migrator.
 	 *
-	 * @param AutomaticActionFlowMigrator $migrator The migrator.
+	 * @param AutomaticActionFlowMigratorInterface $migrator The migrator.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly AutomaticActionFlowMigrator $migrator,
+		private readonly AutomaticActionFlowMigratorInterface $migrator,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();
@@ -91,9 +91,7 @@ class MigrateAutomaticActionsToFlowsCommand extends Command {
 	 * @spec openspec/changes/page-topology-cleanup/tasks.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = new MigrationConsole();
-		$console->userManager = $this->userManager;
-		$console->output = $output;
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:actions:migrate-to-flows';
 
 		return $console->run(

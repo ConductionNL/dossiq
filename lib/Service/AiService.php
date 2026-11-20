@@ -31,7 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
@@ -59,13 +60,11 @@ use RuntimeException;
  * recording a conversational assistant exchange, and reading the trail back —
  * lives in {@see \OCA\Dossiq\Service\Ai\AiAuditService}.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
- * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-ai-assistance/tasks.md
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
-class AiService {
+class AiService implements AiServiceInterface {
 	/**
 	 * Per operation: the label of its unavailable message, the log line and the
 	 * answer prefix of a failure, the result key recorded as confidence (null:
@@ -149,7 +148,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isEnabled(): bool {
 		return $this->flagEnabled(key: 'ai_enabled');
@@ -172,7 +171,7 @@ class AiService {
 	 */
 	private function flagEnabled(string $key, string $default = ''): bool {
 		return $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			$default
 		) === '1';
@@ -215,7 +214,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isFeatureEnabled(string $feature): bool {
 		if ($this->isEnabled() === false) {
@@ -260,7 +259,7 @@ class AiService {
 	 *
 	 * @return array Classification result with suggestion and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classifyDocument(string $caseId, string $documentId, string $userId): array {
 		return $this->operate(
@@ -282,7 +281,7 @@ class AiService {
 	 *
 	 * @return array Extraction result with field suggestions and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractData(string $caseId, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -304,7 +303,7 @@ class AiService {
 	 *
 	 * @return array Answer with source citations
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function askQuestion(string $caseId, string $question, string $userId): array {
 		// The one prompt carrying free text a person typed: the audit entry
@@ -329,7 +328,7 @@ class AiService {
 	 *
 	 * @return array Summary text
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -350,7 +349,7 @@ class AiService {
 	 *
 	 * @return array Routing suggestion with recommended case worker
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(string $caseId, string $userId): array {
 		return $this->operate(
@@ -371,7 +370,7 @@ class AiService {
 	 *
 	 * @return array Next-step suggestions
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNextStep(string $caseId, string $userId): array {
 		return $this->operate(
@@ -399,7 +398,7 @@ class AiService {
 	 * @return array{healthy: bool, status: string, model: string, message: string, responseTimeMs: int}
 	 *                                                                                                   Health check result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function testHealth(): array {
 		$startTime = microtime(true);
@@ -431,15 +430,15 @@ class AiService {
 	 *
 	 * @return array AI settings (without sensitive data like API keys)
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAiSettings(): array {
 		return [
 			'ai_enabled' => $this->isEnabled(),
-			'ai_model_type' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
-			'ai_model_url' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
-			'ai_model_name' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
-			'ai_api_key_set' => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
+			'ai_model_type' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_type', 'local'),
+			'ai_model_url' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_url', ''),
+			'ai_model_name' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_name', ''),
+			'ai_api_key_set' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_api_key', '') !== '',
 			'ai_feature_classification' => $this->flagEnabled(key: 'ai_feature_classification'),
 			'ai_feature_extraction' => $this->flagEnabled(key: 'ai_feature_extraction'),
 			'ai_feature_qa' => $this->flagEnabled(key: 'ai_feature_qa'),
@@ -478,7 +477,7 @@ class AiService {
 	 * @return array<int, array{start: int, end: int, category: string, text: string}>
 	 *                                                                                 Spans sorted by `start`, ascending.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
 	 */
 	public function detectDeterministicPiiSpans(string $text): array {
 		return $this->pii->detectSpans(text: $text);

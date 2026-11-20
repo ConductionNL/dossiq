@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
-use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -57,16 +57,16 @@ class WorkflowDefinitionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
-	 * @param WorkflowDefinitionService $service The workflow definition service
-	 * @param WorkflowLifecycleGuard $guard Holds why a publish was refused, so the
+	 * @param WorkflowDefinitionServiceInterface $service The workflow definition service
+	 * @param WorkflowLifecycleGuardInterface $guard Holds why a publish was refused, so the
 	 *                                      answer can name the task and what was missing
 	 */
 	public function __construct(
 		IRequest $request,
-		private WorkflowDefinitionService $service,
-		private readonly WorkflowLifecycleGuard $guard,
+		private WorkflowDefinitionServiceInterface $service,
+		private readonly WorkflowLifecycleGuardInterface $guard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -80,7 +80,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function publish(string $id): JSONResponse {
@@ -162,7 +162,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function deprecate(string $id): JSONResponse {
@@ -184,7 +184,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function cloneDefinition(string $id): JSONResponse {
@@ -208,7 +208,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function active(string $caseTypeId): JSONResponse {
@@ -231,7 +231,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function forCase(string $caseId): JSONResponse {

@@ -76,6 +76,112 @@ class DsoIntakeCheckTest extends TestCase {
 	}//end testPassesWhenSet()
 
 	/**
+	 * The warning without integriq says intake is off and how to turn it on, word for word.
+	 *
+	 * @return void
+	 */
+	public function testTheMissingIntegriqWarningIsExact(): void {
+		$result = $this->check(value: '', installed: [])->run();
+
+		$this->assertSame(
+			'DSO intake is off, so no DSO verzoek becomes a case. integriq is not installed. Install integriq and upgrade Dossiq to turn it on.',
+			$result->getDescription()
+		);
+	}//end testTheMissingIntegriqWarningIsExact()
+
+	/**
+	 * The warning with integriq but no schema names the key to set, word for word.
+	 *
+	 * @return void
+	 */
+	public function testTheEmptySchemaWarningIsExact(): void {
+		$result = $this->check(value: '', installed: ['integriq'])->run();
+
+		$this->assertSame(
+			'DSO intake is off, so no DSO verzoek becomes a case. No DSO intake schema is set. Set dso_vergunningaanvraag_schema to the id of integriq\'s dso_verzoek schema to turn it on.',
+			$result->getDescription()
+		);
+	}//end testTheEmptySchemaWarningIsExact()
+
+	/**
+	 * A set schema passes with the schema id in the sentence, whatever is installed.
+	 *
+	 * @return void
+	 */
+	public function testASetSchemaPassesEvenWithoutIntegriq(): void {
+		$result = $this->check(value: 'dso-schema-7', installed: [])->run();
+
+		$this->assertSame(SetupResult::SUCCESS, $result->getSeverity());
+		$this->assertSame('A DSO verzoek becomes a case. DSO intake reads schema dso-schema-7.', $result->getDescription());
+	}//end testASetSchemaPassesEvenWithoutIntegriq()
+
+	/**
+	 * The legacy openconnector app id counts as integriq being installed.
+	 *
+	 * @return void
+	 */
+	public function testTheLegacyAppIdCountsAsIntegriq(): void {
+		$result = $this->check(value: '', installed: ['openconnector'])->run();
+
+		$this->assertSame(SetupResult::WARNING, $result->getSeverity());
+		$this->assertStringContainsString('No DSO intake schema is set', (string)$result->getDescription());
+		$this->assertStringNotContainsString('integriq is not installed', (string)$result->getDescription());
+	}//end testTheLegacyAppIdCountsAsIntegriq()
+
+	/**
+	 * An app manager that throws for every id is read as integriq not installed.
+	 *
+	 * @return void
+	 */
+	public function testAnAppManagerThatThrowsMeansNotInstalled(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
+
+		$manager = $this->createMock(IAppManager::class);
+		$manager->expects($this->exactly(2))->method('isInstalled')->willThrowException(new \RuntimeException('no answer'));
+
+		$check = new DsoIntakeCheck(appConfig: $config, appManager: $manager, l10n: $this->l10n());
+
+		$result = $check->run();
+
+		$this->assertSame(SetupResult::WARNING, $result->getSeverity());
+		$this->assertStringContainsString('integriq is not installed', (string)$result->getDescription());
+	}//end testAnAppManagerThatThrowsMeansNotInstalled()
+
+	/**
+	 * The schema is read from this app's config, under the documented key, defaulting to empty.
+	 *
+	 * @return void
+	 */
+	public function testReadsTheSchemaKeyOfThisApp(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->expects($this->once())
+			->method('getValueString')
+			->with('dossiq', DsoIntakeCheck::KEY, '')
+			->willReturn('42');
+
+		$manager = $this->createMock(IAppManager::class);
+		$manager->expects($this->never())->method('isInstalled');
+
+		$check = new DsoIntakeCheck(appConfig: $config, appManager: $manager, l10n: $this->l10n());
+
+		$this->assertSame(SetupResult::SUCCESS, $check->run()->getSeverity());
+		$this->assertSame('dso_vergunningaanvraag_schema', DsoIntakeCheck::KEY);
+	}//end testReadsTheSchemaKeyOfThisApp()
+
+	/**
+	 * The check is a system check with a translated name.
+	 *
+	 * @return void
+	 */
+	public function testTheCheckIsASystemCheckWithATranslatedName(): void {
+		$check = $this->check(value: '', installed: []);
+
+		$this->assertSame('system', $check->getCategory());
+		$this->assertSame('Dossiq DSO intake', $check->getName());
+	}//end testTheCheckIsASystemCheckWithATranslatedName()
+
+	/**
 	 * Registered with Nextcloud.
 	 *
 	 * @return void
@@ -105,11 +211,20 @@ class DsoIntakeCheckTest extends TestCase {
 			fn (string $appId): bool => in_array($appId, $installed, true)
 		);
 
+		return new DsoIntakeCheck(appConfig: $config, appManager: $manager, l10n: $this->l10n());
+	}//end check()
+
+	/**
+	 * A localisation mock that substitutes its parameters.
+	 *
+	 * @return IL10N
+	 */
+	private function l10n(): IL10N {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(
 			fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
 		);
 
-		return new DsoIntakeCheck(appConfig: $config, appManager: $manager, l10n: $l10n);
-	}//end check()
+		return $l10n;
+	}//end l10n()
 }//end class

@@ -27,22 +27,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Conversation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * Declares a case major, and closes the channel that declaration opened.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class MajorCaseDeclaration {
+class MajorCaseDeclaration implements MajorCaseDeclarationInterface {
 
 	/**
 	 * What a major case's working channel is called when the case names itself
@@ -77,7 +78,7 @@ class MajorCaseDeclaration {
 	 * @return array{ok: bool, reason?: string, unresolved?: array<string>, channel?: array<string, mixed>, alreadyMajor?: bool}
 	 *         The channel, or a refusal naming its reason and the group that failed.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declareMajor(string $caseId, ?string $declaredBy = null): array {
 		$case = $this->cases->read(caseId: $caseId);
@@ -141,7 +142,7 @@ class MajorCaseDeclaration {
 
 		$this->logger->info(
 			'Case ' . $run->caseId . ' declared major, ' . count($run->responders) . ' responders pulled in',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return ['ok' => true, 'alreadyMajor' => false, 'channel' => $channel];
@@ -180,7 +181,7 @@ class MajorCaseDeclaration {
 	 * @return array{ok: bool, reason?: string, closed?: bool}
 	 *         Whether a channel was closed, or a refusal naming its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function closeMajorChannel(string $caseId): array {
 		$case = $this->cases->read(caseId: $caseId);
@@ -248,7 +249,7 @@ class MajorCaseDeclaration {
 	 *
 	 * @return array<string, mixed>|null The open channel, or null.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function openChannelOf(array $case): ?array {
 		$channel = ($case['majorChannel'] ?? []);
@@ -271,7 +272,7 @@ class MajorCaseDeclaration {
 	 *
 	 * @return array{id: string, url: string}|null The room, or null when Talk cannot give one.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function openChannel(array $case, array $moderators): ?array {
 		if ($this->broker->isAvailable() === false) {

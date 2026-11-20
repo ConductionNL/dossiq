@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 /**
  * Least-loaded strategy.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 class LeastLoadedStrategy implements RoutingStrategyInterface {
 	/**
@@ -82,16 +82,27 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 			raw: ($case['openTaskCountsByParticipant'] ?? [])
 		);
 
-		$team = trim((string)($rule['team'] ?? ''));
-		$members = $this->pool->membersOf(roles: $roles, roleType: $target, team: $team);
-
-		$bestParticipant = $this->leastLoaded(members: $members, counts: $counts);
+		$bestParticipant = $this->leastLoaded(members: $this->poolOf(rule: $rule, roles: $roles), counts: $counts);
 		if ($bestParticipant === null) {
 			return [];
 		}
 
 		return [$bestParticipant];
 	}//end resolve()
+
+	/**
+	 * The members of the pool the rule targets, narrowed to its team when it names one.
+	 *
+	 * @param array<string, mixed>             $rule  The routing rule, with its `roleType`.
+	 * @param array<int, array<string, mixed>> $roles Roles bound to the case.
+	 *
+	 * @return array<int, array<string, mixed>> The members.
+	 */
+	private function poolOf(array $rule, array $roles): array {
+		$team = trim((string)($rule['team'] ?? ''));
+
+		return $this->pool->membersOf(roles: $roles, roleType: (string)$rule['roleType'], team: $team);
+	}//end poolOf()
 
 	/**
 	 * The member with the lowest load per unit of weight, or null when nobody may take a case.

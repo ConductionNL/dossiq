@@ -28,14 +28,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Email\OutboundMailRules;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
-use OCA\Dossiq\Service\Email\OutboundCaseMail;
-use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Email\OutboundMailRules;
+use OCA\Dossiq\Service\Email\ReceivedEmail;
+use OCA\Dossiq\Service\Email\SentCaseMail;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
@@ -44,10 +45,10 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
  */
-class CaseEmailService {
+class CaseEmailService implements CaseEmailServiceInterface {
 
 	/**
 	 * Regex pattern for extracting case number from email subject.
@@ -109,8 +110,8 @@ class CaseEmailService {
 	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendEmail(
@@ -189,7 +190,7 @@ class CaseEmailService {
 
 		$this->logger->info(
 			'Case mail not sent: integriq said this person may not be sent it',
-			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'category' => $send->category, 'code' => $send->decision['code']]
+			['app' => AppIdentity::APP_ID, 'caseId' => $send->caseId, 'category' => $send->category, 'code' => $send->decision['code']]
 		);
 		throw new RecipientOptedOutException(reasonCode: $send->decision['code'], reason: $send->decision['reason']);
 	}//end assertNotOptedOut()
@@ -247,7 +248,7 @@ class CaseEmailService {
 	private function sentResult(CaseMailSend $send, string $messageId): array {
 		$this->logger->info(
 			'Email for case {caseId} handed to the Mail account: {state}',
-			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'state' => $send->state],
+			['app' => AppIdentity::APP_ID, 'caseId' => $send->caseId, 'state' => $send->state],
 		);
 
 		return [
@@ -277,7 +278,7 @@ class CaseEmailService {
 	 *
 	 * @return string The stored message id.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function recordSentEmail(
@@ -288,34 +289,62 @@ class CaseEmailService {
 		string $body,
 		string $delivery = 'sent',
 	): string {
-		// Record the sent email as a case document.
-		$messageId = $this->repository->recordSentEmail(
-			caseId: $caseId,
-			fromAddress: $fromAddress,
-			to: $to,
-			subject: $subject,
-			body: $body,
+		$mail = new SentCaseMail(
+			caseId: $caseId, fromAddress: $fromAddress, to: $to, subject: $subject, body: $body, delivery: $delivery
 		);
 
-		// PUBLIC: the recipient already has this message in their own inbox,
-		// so hiding its line from the timeline they are shown would only hide
-		// it from the person who has it.
+		return $this->recordSent(mail: $mail);
+	}//end recordSentEmail()
+
+	/**
+	 * Record a sent mail as a case document and put its line on the timeline.
+	 *
+	 * @param SentCaseMail $mail The mail.
+	 *
+	 * @return string The message id of the stored email record.
+	 */
+	private function recordSent(SentCaseMail $mail): string {
+		// Record the sent email as a case document.
+		$messageId = $this->repository->recordSentEmail(
+			caseId: $mail->caseId,
+			fromAddress: $mail->fromAddress,
+			to: $mail->to,
+			subject: $mail->subject,
+			body: $mail->body,
+		);
+
+		$this->recordMailOut(mail: $mail, messageId: (string)$messageId);
+
+		return (string)$messageId;
+	}//end recordSent()
+
+	/**
+	 * Put a sent mail's line on the case timeline.
+	 *
+	 * PUBLIC: the recipient already has this message in their own inbox,
+	 * so hiding its line from the timeline they are shown would only hide
+	 * it from the person who has it.
+	 *
+	 * @param SentCaseMail $mail      The mail.
+	 * @param string       $messageId The document it was recorded as.
+	 *
+	 * @return void
+	 */
+	private function recordMailOut(SentCaseMail $mail, string $messageId): void {
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $mail->caseId,
 			kind: TimelineKinds::MAIL_OUT,
-			message: $subject,
+			message: $mail->subject,
 			fields: [
-				'recipient' => $to,
-				'subject' => $subject,
-				'documentId' => (string)$messageId,
-				'delivery' => $delivery,
-				'sender' => $fromAddress,
+				'recipient' => $mail->to,
+				'subject' => $mail->subject,
+				'documentId' => $messageId,
+				'delivery' => $mail->delivery,
+				'sender' => $mail->fromAddress,
 			],
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
-
-		return (string)$messageId;
-	}//end recordSentEmail()
+	}//end recordMailOut()
 
 	/**
 	 * Assert that a recipient address is well-formed and allowed.
@@ -371,7 +400,7 @@ class CaseEmailService {
 		$this->logger->warning(
 			'Blocked email to a recipient outside the allow-list',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'to' => $send->recipient,
 				'caseId' => $send->caseId,
 				'allowlistEntries' => count($send->allowlistEntries),
@@ -396,17 +425,10 @@ class CaseEmailService {
 	 *
 	 * @throws \RuntimeException If template not found or sending fails
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function sendFromTemplate(
-		string $caseId,
-		string $templateId,
-		string $to,
-	): array {
-		$template = $this->repository->findTemplate(templateId: $templateId);
-		if ($template === null) {
-			throw new RuntimeException('Email template not found');
-		}
+	public function sendFromTemplate(string $caseId, string $templateId, string $to): array {
+		$template = $this->requireTemplate(templateId: $templateId);
 
 		// Load case data for variable resolution.
 		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
@@ -426,29 +448,61 @@ class CaseEmailService {
 		// `findUnresolvedVariables()` has been sitting beside this method since
 		// both were written, asked only by the preview endpoint. This is the
 		// send path asking it.
-		$unresolved = array_values(
-			array_unique(
-				array_merge(
-					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
-					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
-				)
-			)
-		);
+		$unresolved = $this->findUnresolvedVariables(template: $subjectPattern, data: $caseData);
+		$unresolved = array_values(array_unique(array_merge($unresolved, $this->findUnresolvedVariables(template: $bodyPattern, data: $caseData))));
 
 		if ($unresolved !== []) {
 			// A RuntimeException that is not the transport sentinel becomes a
 			// 400 carrying its message, which is what this is: caller-fixable,
 			// and the fix is to name a placeholder the case can answer.
-			throw new RuntimeException(
-				'Email not sent: the template names '
-				. implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $unresolved))
-				. ', which this case cannot fill.'
-			);
+			throw new RuntimeException('Email not sent: the template names ' . $this->placeholderList(names: $unresolved) . ', which this case cannot fill.');
 		}
 
 		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
 		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
 
+		$category = $this->templateCategory(template: $template);
+
+		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
+	}//end sendFromTemplate()
+
+	/**
+	 * Load an email template.
+	 *
+	 * @param string $templateId The email template UUID
+	 *
+	 * @return array<string, mixed> The template
+	 *
+	 * @throws \RuntimeException If the template is not found
+	 */
+	private function requireTemplate(string $templateId): array {
+		$template = $this->repository->findTemplate(templateId: $templateId);
+		if ($template === null) {
+			throw new RuntimeException('Email template not found');
+		}
+
+		return $template;
+	}//end requireTemplate()
+
+	/**
+	 * The placeholder names as the template writes them, comma-separated.
+	 *
+	 * @param array<int, string> $names The placeholder names.
+	 *
+	 * @return string The list.
+	 */
+	private function placeholderList(array $names): string {
+		return implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $names));
+	}//end placeholderList()
+
+	/**
+	 * The message category a template declares, defaulting to a case update.
+	 *
+	 * @param array<string, mixed> $template The email template
+	 *
+	 * @return string The message category
+	 */
+	private function templateCategory(array $template): string {
 		// The template says what it is; anything it does not say, or says
 		// wrongly, is a case-update and respects the opt-out. Never exempt
 		// by accident.
@@ -457,8 +511,8 @@ class CaseEmailService {
 			$category = CaseMailOptOut::CATEGORY_CASE_UPDATE;
 		}
 
-		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
-	}//end sendFromTemplate()
+		return $category;
+	}//end templateCategory()
 
 	/**
 	 * Resolve template variables in a string, HTML-escaping every value.
@@ -473,7 +527,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariables(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -494,7 +548,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariablesRaw(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -513,7 +567,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function substituteVariables(string $template, array $data, string $escaping): string {
 		return preg_replace_callback(
@@ -544,7 +598,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string> List of unresolved variable names
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function findUnresolvedVariables(string $template, array $data): array {
 		$unresolved = [];
@@ -566,7 +620,7 @@ class CaseEmailService {
 	 *
 	 * @return string|null The extracted case identifier or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractCaseNumber(string $subject): ?string {
 		if (preg_match(self::CASE_NUMBER_PATTERN, $subject, $matches) === 1) {
@@ -587,7 +641,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string, mixed> Processing result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function processInbound(
 		string $from,
@@ -596,44 +650,75 @@ class CaseEmailService {
 		string $body,
 		string $inReplyTo = '',
 	): array {
-		$caseNumber = $this->extractCaseNumber(subject: $subject);
+		return $this->receive(
+			email: new ReceivedEmail(from: $from, to: $to, subject: $subject, body: $body, inReplyTo: $inReplyTo)
+		);
+	}//end processInbound()
 
-		if ($caseNumber !== null) {
-			// Auto-link to case.
-			$caseId = $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
-			if ($caseId !== null) {
-				$messageId = $this->repository->recordReceivedEmail(
-					caseId: $caseId,
-					from: $from,
-					recipient: $to,
-					subject: $subject,
-					body: $body,
-					inReplyTo: $inReplyTo,
-				);
-
-				$this->logger->info(
-					'Inbound email auto-linked to case ' . $caseId,
-					['app' => Application::APP_ID],
-				);
-
-				return [
-					'linked' => true,
-					'caseId' => $caseId,
-					'messageId' => $messageId,
-					'method' => 'auto',
-				];
-			}//end if
-		}//end if
+	/**
+	 * Link a received email to the case its subject names, or answer it unlinked.
+	 *
+	 * @param ReceivedEmail $email The email.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function receive(ReceivedEmail $email): array {
+		$caseNumber = $this->extractCaseNumber(subject: $email->subject);
+		$caseId = $this->caseNamed(caseNumber: $caseNumber);
+		if ($caseId !== null) {
+			return $this->linkToCase(email: $email, caseId: $caseId);
+		}
 
 		// Could not auto-link; add to unlinked queue.
 		return [
 			'linked' => false,
 			'caseNumber' => $caseNumber,
-			'from' => $from,
-			'subject' => $subject,
+			'from' => $email->from,
+			'subject' => $email->subject,
 			'method' => 'unlinked',
 		];
-	}//end processInbound()
+	}//end receive()
+
+	/**
+	 * The case a case number names, or null when it names none or there is none.
+	 *
+	 * @param string|null $caseNumber The case number, or null when the subject named none.
+	 *
+	 * @return string|null The case id.
+	 */
+	private function caseNamed(?string $caseNumber): ?string {
+		if ($caseNumber === null) {
+			return null;
+		}
+
+		return $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
+	}//end caseNamed()
+
+	/**
+	 * Record a received email on its case, and log the auto-link.
+	 *
+	 * @param ReceivedEmail $email  The email.
+	 * @param string        $caseId The case it names.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function linkToCase(ReceivedEmail $email, string $caseId): array {
+		$messageId = $this->repository->recordReceivedEmail(
+			caseId: $caseId,
+			from: $email->from,
+			recipient: $email->to,
+			subject: $email->subject,
+			body: $email->body,
+			inReplyTo: $email->inReplyTo,
+		);
+
+		$this->logger->info(
+			'Inbound email auto-linked to case ' . $caseId,
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return ['linked' => true, 'caseId' => $caseId, 'messageId' => $messageId, 'method' => 'auto'];
+	}//end linkToCase()
 
 	/**
 	 * Get email templates for a case type.
@@ -642,7 +727,7 @@ class CaseEmailService {
 	 *
 	 * @return array<int, array<string, mixed>> List of templates
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTemplatesForCaseType(string $caseTypeId): array {
 		return $this->repository->findTemplatesForCaseType(caseTypeId: $caseTypeId);

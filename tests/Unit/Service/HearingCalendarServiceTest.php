@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\HearingCalendarService
  *
  * @uses \OCA\Dossiq\AppInfo\Application
+ * @uses \OCA\Dossiq\Service\HearingCalendarEvent
  */
 class HearingCalendarServiceTest extends TestCase {
 

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 
 declare(strict_types=1);
@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\OpenWorkloadAgeServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -57,9 +58,9 @@ use Psr\Log\LoggerInterface;
 /**
  * The age of the open workload, per status (REQ-TERM-069).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
-class OpenWorkloadAgeService {
+class OpenWorkloadAgeService implements OpenWorkloadAgeServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -98,7 +99,7 @@ class OpenWorkloadAgeService {
 	 *
 	 * @throws RefusedException When the open cases could not be read at all.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function report(?DateTimeImmutable $now = null): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);

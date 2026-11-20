@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SetStatusHandlerInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -70,7 +71,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class SetStatusHandler implements ActionHandlerInterface {
+class SetStatusHandler implements ActionHandlerInterface, SetStatusHandlerInterface {
 	/**
 	 * Constructor.
 	 *
@@ -220,7 +221,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The statusType UUID, or '' when neither direction resolves.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function resolve(StatusMove $move): string {
 		if ($move->role !== '') {
@@ -256,7 +257,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult A recorded skip, or a named failure.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function unresolved(StatusMove $move): ActionResult {
 		$context = ['caseType' => $move->caseTypeId, 'case' => ($move->case['id'] ?? null)];
@@ -281,7 +282,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult The recorded skip.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function skipped(StatusMove $move, array $context): ActionResult {
 		$this->logger->info(

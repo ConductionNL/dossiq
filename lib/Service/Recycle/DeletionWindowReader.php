@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * The published recovery window of one soft-deleted row.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class DeletionWindowReader {
 
@@ -89,7 +89,7 @@ class DeletionWindowReader {
 	 *
 	 * @return array<string, mixed>|null The window, or null when the row carries none.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function windowFor(object $entity): ?array {
 		$service = $this->settingsService->getOpenRegisterClass(class: self::WINDOW_SERVICE);
@@ -131,7 +131,7 @@ class DeletionWindowReader {
 	 * swallow an exception, which is the pattern the architecture guard
 	 * `ServiceCatchReturnsNullTest` counts.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function fromMarker(object $entity): ?array {
 		$marker = $this->marker(entity: $entity);
@@ -218,7 +218,7 @@ class DeletionWindowReader {
 	 *
 	 * @return array<string, mixed> The marker, or an empty array.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function marker(object $entity): array {
 		if (method_exists($entity, 'getDeleted') === false) {
@@ -240,7 +240,7 @@ class DeletionWindowReader {
 	 *
 	 * @return array<string, mixed> The payload.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function payload(object $entity): array {
 		if (method_exists($entity, 'getObject') === false) {
@@ -262,7 +262,7 @@ class DeletionWindowReader {
 	 *
 	 * @return bool True when soft-deleted.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isSoftDeleted(object $entity): bool {
 		if (method_exists($entity, 'isSoftDeleted') === true) {

@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTaskActionsInterface;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
 use RuntimeException;
 
@@ -56,9 +57,9 @@ use RuntimeException;
  * to the gateway for the next is where the two paths start disagreeing about
  * who may do what.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
-class CaseTaskActions {
+class CaseTaskActions implements CaseTaskActionsInterface {
 
 	/**
 	 * Constructor.
@@ -84,7 +85,7 @@ class CaseTaskActions {
 	 *
 	 * @return boolean True when a task can be claimed.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function engineAnswersClaim(): bool {
 		return $this->engineTasks->supportsClaim();
@@ -97,7 +98,7 @@ class CaseTaskActions {
 	 *
 	 * @return array<string, mixed>|null The task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function find(string $taskId): ?array {
 		return $this->engineTasks->find(taskId: $taskId);
@@ -117,7 +118,7 @@ class CaseTaskActions {
 	 *
 	 * @throws RuntimeException With the engine's own refusal.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function claim(string $taskId, string $actor): array {
 		if ($this->engineTasks->claim(taskId: $taskId, actor: $actor) === false) {
@@ -141,7 +142,7 @@ class CaseTaskActions {
 	 *                          `required_field:<field>`,
 	 *                          `unresolvable_effect:<type>`, `complete_failed`.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function complete(string $taskId, array $data, string $outcome, string $actor): array {
 		$task = $this->engineTasks->find(taskId: $taskId);
@@ -214,7 +215,7 @@ class CaseTaskActions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function titleOf(array $task): string {
 		$title = trim((string)($task['title'] ?? ''));
@@ -239,7 +240,7 @@ class CaseTaskActions {
 	 *
 	 * @throws RuntimeException `cancel_refused:<the engine's reason>`.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function cancel(string $taskId, string $reason, string $actor): array {
 		$reasonOrNull = null;
@@ -267,7 +268,7 @@ class CaseTaskActions {
 	 *
 	 * @return string The field's name, or '' when nothing required is missing.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public static function missingRequiredField(array $task, array $data): string {
 		foreach (self::requiredFields(task: $task) as $name) {
@@ -286,9 +287,25 @@ class CaseTaskActions {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private static function requiredFields(array $task): array {
+		$fields = self::formFields(task: $task);
+		if (is_array($fields) === false) {
+			return [];
+		}
+
+		return self::requiredNames(fields: $fields);
+	}//end requiredFields()
+
+	/**
+	 * The fields of the form the task's metadata carries.
+	 *
+	 * @param array<string, mixed> $task The engine task.
+	 *
+	 * @return mixed The fields, [] when the task carries no form.
+	 */
+	private static function formFields(array $task): mixed {
 		$metadata = ($task['metadata'] ?? []);
 		$form = [];
 		if (is_array($metadata) === true) {
@@ -300,10 +317,17 @@ class CaseTaskActions {
 			$fields = ($form['fields'] ?? []);
 		}
 
-		if (is_array($fields) === false) {
-			return [];
-		}
+		return $fields;
+	}//end formFields()
 
+	/**
+	 * The names of the required form fields.
+	 *
+	 * @param array<mixed> $fields The form fields.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function requiredNames(array $fields): array {
 		$required = [];
 		foreach ($fields as $field) {
 			if (is_array($field) === false || ($field['required'] ?? false) !== true) {
@@ -317,7 +341,7 @@ class CaseTaskActions {
 		}
 
 		return $required;
-	}//end requiredFields()
+	}//end requiredNames()
 
 	/**
 	 * Whether an answer is no answer at all.
@@ -330,7 +354,7 @@ class CaseTaskActions {
 	 *
 	 * @return boolean True when nothing was given.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private static function isBlank(mixed $answer): bool {
 		if ($answer === null || $answer === []) {

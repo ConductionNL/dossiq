@@ -468,7 +468,7 @@ export default {
 		step: {
 			/**
 			 * @param {object} newStep The new step.
-			 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+			 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 			 */
 			handler(newStep) {
 				this.localStep = { ...newStep }
@@ -489,18 +489,18 @@ export default {
 	methods: {
 		/**
 		 * @param {object} config The config.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseConfig(config) {
 			return parseStepConfig(config)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		buildConfigPayload() {
 			return stepConfigPayload(this.localConfig, this.escalationEnabled)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addRequiredField() {
 			this.localConfig.requiredFields.push('')
 			this.emitUpdate()
@@ -508,21 +508,21 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeRequiredField(index) {
 			this.localConfig.requiredFields.splice(index, 1)
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		onEscalationToggle() {
 			this.emitUpdate()
 		},
 
 		/**
 		 * @param {object} checklist The checklist.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseChecklist(checklist) {
 			return parseJsonList(checklist)
@@ -530,13 +530,13 @@ export default {
 
 		/**
 		 * @param {Array} actions The actions.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseActions(actions) {
 			return parseJsonList(actions)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		emitUpdate() {
 			const payload = {
 				...this.localStep,
@@ -552,7 +552,7 @@ export default {
 			this.$emit('update', payload)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addChecklistItem() {
 			this.localChecklist.push({
 				id: `check-${nextCheckId++}`,
@@ -564,7 +564,7 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeChecklistItem(index) {
 			this.localChecklist.splice(index, 1)
@@ -574,7 +574,7 @@ export default {
 		/**
 		 * @param {number} index Index of the row in the list.
 		 * @param {Event} event The originating DOM event.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDragStart(index, event) {
 			this.dragCheckIndex = index
@@ -584,7 +584,7 @@ export default {
 		/**
 		 * @param {number} targetIndex The target index.
 		 * @param {Event} event The originating DOM event.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDrop(targetIndex, event) {
 			if (
@@ -598,7 +598,7 @@ export default {
 			this.dragCheckIndex = null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md */
 		addAction() {
 			this.localActions.push({ type: 'createTask', title: '' })
 			this.emitUpdate()
@@ -606,7 +606,7 @@ export default {
 
 		/**
 		 * @param {number} index Index of the row in the list.
-		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeAction(index) {
 			this.localActions.splice(index, 1)
@@ -616,56 +616,19 @@ export default {
 }
 </script>
 
-<style scoped>
-.step-config-panel {
-	position: fixed;
-	right: 0;
-	top: 0;
-	width: 360px;
-	height: 100%;
-	background: var(--color-main-background);
-	border-left: 1px solid var(--color-border);
-	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-	z-index: 100;
-	display: flex;
-	flex-direction: column;
-	overflow-y: auto;
-}
+<style scoped lang="scss">
+@use './_configPanel.scss' as panel;
 
-.step-config-panel__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 12px 16px;
-	border-bottom: 1px solid var(--color-border);
+@include panel.config-panel(step-config-panel, 360px);
+
+.step-config-panel {
+	overflow-y: auto;
 }
 
 .step-config-panel__header-actions {
 	display: flex;
 	align-items: center;
 	gap: 4px;
-}
-
-.step-config-panel__header h4 {
-	margin: 0;
-}
-
-.step-config-panel__body {
-	padding: 16px;
-	flex: 1;
-	overflow-y: auto;
-}
-
-.step-config-panel__field {
-	margin-bottom: 12px;
-}
-
-.step-config-panel__field label {
-	display: block;
-	font-size: 12px;
-	font-weight: 600;
-	margin-bottom: 4px;
-	color: var(--color-text-maxcontrast);
 }
 
 .step-config-panel__field--row {
@@ -677,45 +640,6 @@ export default {
 .step-config-panel__field--row label {
 	display: inline;
 	margin-bottom: 0;
-}
-
-.step-config-panel__input {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-}
-
-.step-config-panel__textarea {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-	resize: vertical;
-}
-
-.step-config-panel__select {
-	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-}
-
-.step-config-panel__section {
-	margin-top: 20px;
-	padding-top: 16px;
-	border-top: 1px solid var(--color-border);
-}
-
-.step-config-panel__section h5 {
-	font-size: 12px;
-	font-weight: 600;
-	text-transform: uppercase;
-	color: var(--color-text-maxcontrast);
-	margin: 0 0 8px 0;
 }
 
 .step-config-panel__checklist-item {

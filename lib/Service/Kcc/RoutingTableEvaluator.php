@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use RuntimeException;
 /**
  * Compiles KCC routing rules into a shared-evaluator decision table and runs it.
  *
- * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class RoutingTableEvaluator {
 
@@ -113,7 +113,7 @@ class RoutingTableEvaluator {
 	 *                                     must surface loudly rather than
 	 *                                     read as "route to nobody".
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function route(array $rules, array $contactMoment, ?DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -125,8 +125,23 @@ class RoutingTableEvaluator {
 		}
 
 		$table = $this->decisionTable(compiled: $compiled);
-		$inputs = $this->deriveInputs(columns: $compiled['columns'], contactMoment: $contactMoment, now: $now);
+		$inputs = $this->deriveInputs(columns: $compiled['columns'], moment: ['contactMoment' => $contactMoment, 'now' => $now]);
 
+		return $this->routed(table: $table, inputs: $inputs);
+	}//end route()
+
+	/**
+	 * Evaluate the decision table and read the routing result off its outputs.
+	 *
+	 * @param array<string, mixed> $table  The compiled decision table.
+	 * @param array<string, mixed> $inputs The table's inputs.
+	 *
+	 * @return array<string, mixed>|null The routing result, or null when no rule matched.
+	 *
+	 * @throws RuntimeException When OpenRegister's evaluator is unavailable.
+	 * @throws DecisionEvaluationException When the compiled table cannot be evaluated.
+	 */
+	private function routed(array $table, array $inputs): ?array {
 		try {
 			$result = $this->engine()->evaluate(decisionTable: $table, inputs: $inputs);
 		} catch (DecisionEvaluationException $e) {
@@ -143,7 +158,7 @@ class RoutingTableEvaluator {
 			'assignedTeam' => ($result['outputs']['assignedTeam'] ?? ''),
 			'escalationTeam' => ($result['outputs']['escalationTeam'] ?? ''),
 		];
-	}//end route()
+	}//end routed()
 
 	/**
 	 * The inline FIRST-hit decision table of the compiled rules.
@@ -326,18 +341,18 @@ class RoutingTableEvaluator {
 	private function cellsOf(RuleConditions $gathered, array &$columns): array {
 		$cells = [];
 		foreach ($gathered->equalities as $column => $value) {
-			$this->ensureColumn(columns: $columns, name: $column, type: 'string', kind: $column);
+			$this->ensureColumn(columns: $columns, column: ['name' => $column, 'type' => 'string', 'kind' => $column, 'payload' => []]);
 			$cells[$column] = $this->quote(value: $value);
 		}
 
 		foreach ($gathered->booleans as $name => $spec) {
-			$this->ensureColumn(columns: $columns, name: $name, type: 'boolean', kind: $spec['kind'], payload: $spec);
+			$this->ensureColumn(columns: $columns, column: ['name' => $name, 'type' => 'boolean', 'kind' => $spec['kind'], 'payload' => $spec]);
 			$cells[$name] = 'true';
 		}
 
 		$timeCell = $this->timeCell(lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
 		if ($timeCell !== null) {
-			$this->ensureColumn(columns: $columns, name: 'minutesOfDay', type: 'number', kind: 'minutesOfDay');
+			$this->ensureColumn(columns: $columns, column: ['name' => 'minutesOfDay', 'type' => 'number', 'kind' => 'minutesOfDay', 'payload' => []]);
 			$cells['minutesOfDay'] = $timeCell;
 		}
 
@@ -369,7 +384,7 @@ class RoutingTableEvaluator {
 				$literal = strtolower($value);
 			}
 
-			return $this->recordEquality(equalities: $gathered->equalities, column: self::EQUALITY_COLUMNS[$type], value: $literal);
+			return $this->recordEquality(gathered: $gathered, equality: [self::EQUALITY_COLUMNS[$type], $literal]);
 		}
 
 		if ($type === 'keyword') {
@@ -385,7 +400,7 @@ class RoutingTableEvaluator {
 		}
 
 		if ($type === 'time_of_day') {
-			return $this->recordTimeWindow(value: $value, lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
+			return $this->recordTimeWindow(value: $value, gathered: $gathered);
 		}
 
 		// The legacy engine's default arm: an unknown type never matches.
@@ -399,18 +414,18 @@ class RoutingTableEvaluator {
 	 * never both hold — the legacy engine evaluated them as `false`, and one
 	 * table cell can carry only one literal, so the rule compiles to nothing.
 	 *
-	 * @param array<string, string> $equalities The rule's equality cells so far.
-	 * @param string $column The column name.
-	 * @param string $value The demanded value.
+	 * @param RuleConditions             $gathered The rule's conditions so far, with its equality cells.
+	 * @param array{0: string, 1: string} $equality The column name and the demanded value.
 	 *
 	 * @return bool False when the constraint is contradictory.
 	 */
-	private function recordEquality(array &$equalities, string $column, string $value): bool {
-		if (array_key_exists($column, $equalities) === true) {
-			return ($equalities[$column] === $value);
+	private function recordEquality(RuleConditions $gathered, array $equality): bool {
+		[$column, $value] = $equality;
+		if (array_key_exists($column, $gathered->equalities) === true) {
+			return ($gathered->equalities[$column] === $value);
 		}
 
-		$equalities[$column] = $value;
+		$gathered->equalities[$column] = $value;
 
 		return true;
 	}//end recordEquality()
@@ -421,13 +436,12 @@ class RoutingTableEvaluator {
 	 * Several time conditions intersect, like the legacy conjunction did:
 	 * every `after` raises the lower bound, every `before` lowers the upper.
 	 *
-	 * @param string $value The condition value.
-	 * @param int|null $lowerBound The inclusive lower bound, in minutes.
-	 * @param int|null $upperBound The exclusive upper bound, in minutes.
+	 * @param string         $value    The condition value.
+	 * @param RuleConditions $gathered The rule's conditions so far, with its inclusive lower and exclusive upper bound in minutes.
 	 *
 	 * @return bool False when the value is not a time-of-day expression.
 	 */
-	private function recordTimeWindow(string $value, ?int &$lowerBound, ?int &$upperBound): bool {
+	private function recordTimeWindow(string $value, RuleConditions $gathered): bool {
 		if (preg_match('/^(after|before)_(\d{1,2}):(\d{2})$/', $value, $matches) !== 1) {
 			// The legacy engine's timeOfDayMatches() answers false for a
 			// malformed window, so the rule can never match.
@@ -436,12 +450,12 @@ class RoutingTableEvaluator {
 
 		$boundary = ((int)$matches[2] * 60) + (int)$matches[3];
 		if ($matches[1] === 'after') {
-			$lowerBound = max($boundary, ($lowerBound ?? $boundary));
+			$gathered->lowerBound = max($boundary, ($gathered->lowerBound ?? $boundary));
 
 			return true;
 		}
 
-		$upperBound = min($boundary, ($upperBound ?? $boundary));
+		$gathered->upperBound = min($boundary, ($gathered->upperBound ?? $boundary));
 
 		return true;
 	}//end recordTimeWindow()
@@ -476,21 +490,19 @@ class RoutingTableEvaluator {
 	 * Declare a column once, keeping its derivation spec.
 	 *
 	 * @param array<int, array<string, mixed>> $columns The column list.
-	 * @param string $name The column name.
-	 * @param string $type The column's DMN type.
-	 * @param string $kind The derivation kind.
-	 * @param array<string, mixed> $payload Extra derivation data (needle/pattern).
+	 * @param array{name: string, type: string, kind: string, payload: array<string, mixed>} $column The column: its name,
+	 *        DMN type, derivation kind and extra derivation data (needle/pattern).
 	 *
 	 * @return void
 	 */
-	private function ensureColumn(array &$columns, string $name, string $type, string $kind, array $payload = []): void {
-		foreach ($columns as $column) {
-			if ($column['name'] === $name) {
+	private function ensureColumn(array &$columns, array $column): void {
+		foreach ($columns as $declared) {
+			if ($declared['name'] === $column['name']) {
 				return;
 			}
 		}
 
-		$columns[] = ['name' => $name, 'type' => $type, 'kind' => $kind, 'payload' => $payload];
+		$columns[] = $column;
 	}//end ensureColumn()
 
 	/**
@@ -500,13 +512,14 @@ class RoutingTableEvaluator {
 	 * keyword/regex predicates live HERE, and the shared engine only ever
 	 * sees their typed results — the humaniq#289 `derive` seam.
 	 *
-	 * @param array<int, array<string, mixed>> $columns The compiled columns.
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 * @param \DateTimeImmutable $now Reference time.
+	 * @param array<int, array<string, mixed>>                                   $columns The compiled columns.
+	 * @param array{contactMoment: array<string, mixed>, now: DateTimeImmutable} $moment  The contact moment and the reference time.
 	 *
 	 * @return array<string, mixed> Values keyed by column name.
 	 */
-	private function deriveInputs(array $columns, array $contactMoment, DateTimeImmutable $now): array {
+	private function deriveInputs(array $columns, array $moment): array {
+		$contactMoment = $moment['contactMoment'];
+		$now = $moment['now'];
 		$haystack = strtolower(
 			trim(
 				((string)($contactMoment['subject'] ?? '')) . ' ' . ((string)($contactMoment['summary'] ?? ''))

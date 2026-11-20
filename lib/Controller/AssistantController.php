@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Dossiq\Service\Assistant\CaseAssistantService;
-use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
-use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
-use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeAiFeaturesInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -61,26 +61,26 @@ class AssistantController extends Controller {
 	 *
 	 * @param string $appName The application name.
 	 * @param IRequest $request The request object.
-	 * @param CaseAssistantService $caseAssistantService Turn orchestration.
-	 * @param HermiqAssistantClient $hermiqClient Availability check for the UI gate.
+	 * @param CaseAssistantServiceInterface $caseAssistantService Turn orchestration.
+	 * @param HermiqAssistantClientInterface $hermiqClient Availability check for the UI gate.
 	 * @param IUserSession $userSession Resolves the requesting user.
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
-	 * @param CaseTypeAiFeatures|null $aiFeatures Reads what a case type declared.
-	 * @param HermiqAiFeatureClient|null $aiFeatureClient Reads where each declared feature runs.
+	 * @param CaseTypeAiFeaturesInterface|null $aiFeatures Reads what a case type declared.
+	 * @param HermiqAiFeatureClientInterface|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseAssistantService $caseAssistantService,
-		private readonly HermiqAssistantClient $hermiqClient,
+		private readonly CaseAssistantServiceInterface $caseAssistantService,
+		private readonly HermiqAssistantClientInterface $hermiqClient,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		// Nullable and last, so every existing construction of this controller
 		// keeps working; the container supplies both.
-		private readonly ?CaseTypeAiFeatures $aiFeatures = null,
-		private readonly ?HermiqAiFeatureClient $aiFeatureClient = null,
+		private readonly ?CaseTypeAiFeaturesInterface $aiFeatures = null,
+		private readonly ?HermiqAiFeatureClientInterface $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -147,7 +147,7 @@ class AssistantController extends Controller {
 		}
 
 		$caseType = (array)$this->request->getParam('caseType', []);
-		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeatures::SURFACE_CASE);
+		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeaturesInterface::SURFACE_CASE);
 
 		$declared = $this->aiFeatures->onSurface(caseType: $caseType, surface: $surface);
 		if ($declared === []) {
@@ -279,9 +279,9 @@ class AssistantController extends Controller {
 
 			return new JSONResponse($result);
 		} catch (HermiqAssistantException $e) {
-			return $this->mapFailure(statusCode: $e->getStatusCode(), message: $e->getMessage(), errorCode: $e->getErrorCode());
+			return $this->mapFailure(statusCode: $e->getStatusCode(), failure: ['message' => $e->getMessage(), 'errorCode' => $e->getErrorCode()]);
 		} catch (Exception $e) {
-			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), message: $e->getMessage(), errorCode: null);
+			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), failure: ['message' => $e->getMessage(), 'errorCode' => null]);
 		}//end try
 	}//end converse()
 
@@ -318,13 +318,34 @@ class AssistantController extends Controller {
 	 * level matching its severity (client 4xx as a warning without a stack
 	 * trace; 5xx at error).
 	 *
-	 * @param int $statusCode The HTTP status to return.
-	 * @param string $message The detail message.
-	 * @param string|null $errorCode A stable machine-readable code, when present.
+	 * @param int                                            $statusCode The HTTP status to return.
+	 * @param array{message: string, errorCode: string|null} $failure    The detail message, and a stable machine-readable
+	 *                                                                   code when present.
 	 *
 	 * @return JSONResponse
 	 */
-	private function mapFailure(int $statusCode, string $message, ?string $errorCode): JSONResponse {
+	private function mapFailure(int $statusCode, array $failure): JSONResponse {
+		$message = $failure['message'];
+		$errorCode = $failure['errorCode'];
+		$this->logFailure(statusCode: $statusCode, message: $message);
+
+		$data = ['error' => $this->errorTypeOf(statusCode: $statusCode), 'message' => $message];
+		if ($errorCode !== null) {
+			$data['errorCode'] = $errorCode;
+		}
+
+		return new JSONResponse($data, $statusCode);
+	}//end mapFailure()
+
+	/**
+	 * Log a failure at the level its status deserves: a client 4xx as a warning, a 5xx as an error.
+	 *
+	 * @param int    $statusCode The HTTP status.
+	 * @param string $message    The detail message.
+	 *
+	 * @return void
+	 */
+	private function logFailure(int $statusCode, string $message): void {
 		$level = 'error';
 		if ($statusCode < 500) {
 			// Client 4xx is expected user/caller error, not a server fault.
@@ -336,8 +357,17 @@ class AssistantController extends Controller {
 			'[AssistantController] Message not processed: ' . $message,
 			['statusCode' => $statusCode]
 		);
+	}//end logFailure()
 
-		$errorType = match ($statusCode) {
+	/**
+	 * The translated error a status answers with.
+	 *
+	 * @param int $statusCode The HTTP status.
+	 *
+	 * @return string The error.
+	 */
+	private function errorTypeOf(int $statusCode): string {
+		return match ($statusCode) {
 			400 => $this->l10n->t('Invalid request'),
 			401 => $this->l10n->t('Authentication required'),
 			403 => $this->l10n->t('Access denied'),
@@ -345,12 +375,5 @@ class AssistantController extends Controller {
 			422 => $this->l10n->t('Message blocked by the organisation\'s guardrail policy'),
 			default => $this->l10n->t('The case assistant is currently unavailable'),
 		};
-
-		$data = ['error' => $errorType, 'message' => $message];
-		if ($errorCode !== null) {
-			$data['errorCode'] = $errorCode;
-		}
-
-		return new JSONResponse($data, $statusCode);
-	}//end mapFailure()
+	}//end errorTypeOf()
 }//end class

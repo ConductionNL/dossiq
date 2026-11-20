@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermKind;
@@ -48,20 +49,9 @@ use Throwable;
  *
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
  */
-class CaseDeadlineMirror {
+class CaseDeadlineMirror implements CaseDeadlineMirrorInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The case property the write-back sets.
-	 *
-	 * NOT `deadline` itself. `deadline` is declared readOnly, and OpenRegister
-	 * refuses an update that changes a readOnly value, so a patch naming it
-	 * would be answered 422. This field is ordinary; changing it is what makes
-	 * the save happen, and the pre-persist listener then writes `deadline`
-	 * inside that save, after validation, where readOnly does not apply.
-	 */
-	public const FIELD = 'statutoryDeadline';
 
 	/**
 	 * Constructor.

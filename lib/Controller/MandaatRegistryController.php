@@ -43,8 +43,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
-use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Controller\Support\BuildsRegistryWrites;
+use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -61,12 +61,14 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/mandaat-matrix/spec.md
  */
 class MandaatRegistryController extends Controller {
+	use BuildsRegistryWrites;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param MandaatRegistryService $registry The registry service.
+	 * @param MandaatRegistryServiceInterface $registry The registry service.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
@@ -74,7 +76,7 @@ class MandaatRegistryController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MandaatRegistryService $registry,
+		private readonly MandaatRegistryServiceInterface $registry,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -92,7 +94,7 @@ class MandaatRegistryController extends Controller {
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function besluiten(): JSONResponse {
 		return new JSONResponse(
-			data: $this->registry->list(schemaConfigKey: MandaatRegistryService::SCHEMA_BESLUIT),
+			data: $this->registry->list(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_BESLUIT),
 			statusCode: Http::STATUS_OK
 		);
 	}//end besluiten()
@@ -108,7 +110,7 @@ class MandaatRegistryController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function mandatenCreate(): JSONResponse {
-		return $this->writes()->create(schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT);
+		return $this->writes()->create(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_MANDAAT);
 	}//end mandatenCreate()
 
 	/**
@@ -124,21 +126,6 @@ class MandaatRegistryController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function mandatenUpdate(string $id): JSONResponse {
-		return $this->writes()->update(schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT, id: $id);
+		return $this->writes()->update(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_MANDAAT, id: $id);
 	}//end mandatenUpdate()
-
-	/**
-	 * Writes registry objects from this request's body.
-	 *
-	 * @return RegistryObjectWrite
-	 *
-	 * @spec openspec/specs/mandaat-matrix/spec.md
-	 */
-	private function writes(): RegistryObjectWrite {
-		$writes = new RegistryObjectWrite();
-		$writes->registry = $this->registry;
-		$writes->request = $this->request;
-		$writes->logger = $this->logger;
-		return $writes;
-	}//end writes()
 }//end class

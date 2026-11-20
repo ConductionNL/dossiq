@@ -48,6 +48,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\MilestoneStallTimerFiredListener
  * @covers \OCA\Dossiq\Listener\TakeBackTimerFiredListener
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
+ * @uses \OCA\Dossiq\Listener\Support\TimerFire
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */

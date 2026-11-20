@@ -22,6 +22,9 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CaseFieldWriterTest extends TestCase {
 
@@ -47,14 +50,20 @@ class CaseFieldWriterTest extends TestCase {
 			/** @var string */
 			public string $patchedId = '';
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patchedId = $objectId;
 				$this->patched = $data;
 
 				return $data;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('saveObject must not be used while patchObject exists');
 			}
 		};
@@ -88,11 +97,18 @@ class CaseFieldWriterTest extends TestCase {
 				'besluitDocument' => 'Besluit op de aanvraag',
 			];
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->stored;
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->stored = $object;
 
 				return $object;
@@ -121,7 +137,11 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testEmptyChangesTouchNothing(): void {
 		$objectService = new class {
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				throw new RuntimeException('no write may happen for empty changes');
 			}
 		};
@@ -144,7 +164,11 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testASnapshotWithoutAnIdIsRefused(): void {
 		$objectService = new class {
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				return $data;
 			}
 		};
@@ -169,7 +193,11 @@ class CaseFieldWriterTest extends TestCase {
 			/** @var string */
 			public string $patchedId = '';
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patchedId = $objectId;
 
 				return $data;
@@ -193,7 +221,9 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testAServiceWithNoUsableSeamIsRefused(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return $object;
 			}
 		};
@@ -216,11 +246,17 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testAnUnreadableStoredCaseIsRefusedOnTheFallback(): void {
 		$objectService = new class {
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('nothing may be saved when the read found nothing');
 			}
 		};

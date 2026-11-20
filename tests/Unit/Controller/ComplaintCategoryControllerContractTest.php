@@ -49,6 +49,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal ObjectService surface for the ComplaintCategoryController tests.
@@ -70,7 +71,7 @@ interface ComplaintCategoryControllerObjectServiceStub {
 	 *
 	 * @return mixed The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -252,7 +253,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,
@@ -294,7 +298,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = $object;
 
 					return ['id' => 'cat-new', 'name' => $object['name']];
@@ -397,7 +404,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,

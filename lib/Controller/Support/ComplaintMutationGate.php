@@ -21,34 +21,34 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
 /**
  * Refuses a complaint write the caller may not make.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 final class ComplaintMutationGate {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param ComplaintAccessGuard $accessGuard      Shared complaint authorization guard.
-	 * @param ComplaintService     $complaintService Reads the complaint.
+	 * @param ComplaintAccessGuardInterface $accessGuard      Shared complaint authorization guard.
+	 * @param ComplaintServiceInterface     $complaintService Reads the complaint.
 	 */
 	public function __construct(
-		private readonly ComplaintAccessGuard $accessGuard,
-		private readonly ComplaintService $complaintService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
+		private readonly ComplaintServiceInterface $complaintService,
 	) {
 	}//end __construct()
 
@@ -63,9 +63,51 @@ final class ComplaintMutationGate {
 	 *
 	 * @return JSONResponse|null The 401 or 404, or null.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function refusal(string $id): ?JSONResponse {
+		$loaded = $this->loaded(id: $id);
+		if ($loaded instanceof JSONResponse) {
+			return $loaded;
+		}
+
+		$this->accessGuard->authorizeMutation(complaint: $loaded['complaint'], userId: $loaded['userId']);
+
+		return null;
+	}//end refusal()
+
+	/**
+	 * The complaint the caller may read, or the refusal.
+	 *
+	 * The session is checked first, then the complaint is read, then the
+	 * caller's right to read it is asserted; the guard throws its own
+	 * refusal for a caller who may not.
+	 *
+	 * @param string $id Complaint UUID.
+	 *
+	 * @return array<string, mixed>|JSONResponse The complaint, or the 401 or 404.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	public function readable(string $id): array|JSONResponse {
+		$loaded = $this->loaded(id: $id);
+		if ($loaded instanceof JSONResponse) {
+			return $loaded;
+		}
+
+		$this->accessGuard->authorizeAccess(complaint: $loaded['complaint'], userId: $loaded['userId']);
+
+		return $loaded['complaint'];
+	}//end readable()
+
+	/**
+	 * The signed-in caller and the stored complaint, or the 401 or 404.
+	 *
+	 * @param string $id Complaint UUID.
+	 *
+	 * @return array{userId: string, complaint: array<string, mixed>}|JSONResponse
+	 */
+	private function loaded(string $id): array|JSONResponse {
 		$userId = $this->accessGuard->currentUid();
 		if ($userId === '') {
 			return $this->accessGuard->notAuthenticated();
@@ -76,8 +118,6 @@ final class ComplaintMutationGate {
 			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
-
-		return null;
-	}//end refusal()
+		return ['userId' => $userId, 'complaint' => $complaint];
+	}//end loaded()
 }//end class

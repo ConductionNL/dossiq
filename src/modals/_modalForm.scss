@@ -1,0 +1,63 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V.
+// SPDX-License-Identifier: EUPL-1.2
+
+// The form inside the case modals: a column of label-over-field groups,
+// optional side-by-side rows, a free-text area and the error lines.
+
+@mixin form-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 8px 4px;
+}
+
+@mixin form-rows {
+	.form-row {
+		display: flex;
+		gap: 12px;
+	}
+
+	.form-row .form-group {
+		flex: 1;
+	}
+}
+
+@mixin form-group {
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+}
+
+@mixin form-group-label {
+	.form-group label {
+		font-weight: 500;
+		color: var(--color-main-text);
+	}
+}
+
+@mixin form-textarea {
+	width: 100%;
+	resize: vertical;
+	padding: 8px;
+	border: 2px solid var(--color-border-dark);
+	border-radius: var(--border-radius);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+	font-family: inherit;
+}
+
+@mixin form-errors {
+	.form-error {
+		color: var(--color-error);
+		font-size: 0.85rem;
+		margin: 0;
+	}
+
+	.form-error--server {
+		padding: 8px;
+		background: var(--color-error-hover);
+		border-radius: var(--border-radius);
+	}
+}

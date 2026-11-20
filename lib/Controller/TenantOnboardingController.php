@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 
 declare(strict_types=1);
@@ -23,9 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Tenant\OnboardingStepGuide;
-use OCA\Dossiq\Service\TenantOnboardingService;
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\OnboardingStepGuideInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -37,24 +38,26 @@ use OCP\IUserSession;
 /**
  * Onboarding REST controller.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 class TenantOnboardingController extends Controller {
+	use AnswersFlaggedRefusals;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request Request.
-	 * @param TenantOnboardingService $onboarding Onboarding service.
+	 * @param TenantOnboardingServiceInterface $onboarding Onboarding service.
 	 * @param IUserSession $userSession User session.
-	 * @param OnboardingStepGuide $guide What the checklist says under each step.
+	 * @param OnboardingStepGuideInterface $guide What the checklist says under each step.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly TenantOnboardingService $onboarding,
+		private readonly TenantOnboardingServiceInterface $onboarding,
 		private readonly IUserSession $userSession,
-		private readonly OnboardingStepGuide $guide,
+		private readonly OnboardingStepGuideInterface $guide,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -64,7 +67,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function progress(string $tenantId): JSONResponse {
@@ -84,13 +87,13 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function complete(string $tenantId, string $step): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		try {
@@ -117,7 +120,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function activate(string $tenantId): JSONResponse {
@@ -140,7 +143,7 @@ class TenantOnboardingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]

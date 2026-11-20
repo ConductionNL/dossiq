@@ -54,7 +54,10 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseStatusRecords
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -50,17 +50,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersNotOnTheCase;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Lifecycle\ArchiveRequesterNotice;
-use OCA\Dossiq\Service\Lifecycle\CaseActs;
-use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
+use OCA\Dossiq\Kernel\Contracts\ArchiveRequesterNoticeInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseActsOverviewInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -82,9 +84,10 @@ use Throwable;
  *  is registered in appinfo/routes.php, so dropping one would drop an endpoint
  *  rather than move code.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseActsController extends Controller {
+	use AnswersNotOnTheCase;
 
 	use TranslatesRefusals;
 
@@ -93,22 +96,22 @@ class CaseActsController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param CaseActs $acts Every act on a case, behind one collaborator.
-	 * @param CaseActsOverview $overview The read the menu is drawn from.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization, failing closed.
+	 * @param CaseActsInterface $acts Every act on a case, behind one collaborator.
+	 * @param CaseActsOverviewInterface $overview The read the menu is drawn from.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ArchiveRequesterNotice|null $archiveNotice Tells the requester an archived case is completed.
+	 * @param ArchiveRequesterNoticeInterface|null $archiveNotice Tells the requester an archived case is completed.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseActs $acts,
-		private readonly CaseActsOverview $overview,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseActsInterface $acts,
+		private readonly CaseActsOverviewInterface $overview,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ?ArchiveRequesterNotice $archiveNotice = null,
+		private readonly ?ArchiveRequesterNoticeInterface $archiveNotice = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -128,21 +131,14 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
 	 */
 	#[NoAdminRequired]
 	public function acts(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+		$user = $this->reader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$mayAct = $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
@@ -163,20 +159,13 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function archiveReadiness(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+		$user = $this->reader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answered(
@@ -184,6 +173,26 @@ class CaseActsController extends Controller {
 			run: fn (): array => $this->overview->archiveReadiness(caseId: $caseId),
 		);
 	}//end archiveReadiness()
+
+	/**
+	 * The signed-in caller who may read the case, or the refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The caller, or 401 for nobody signed in and 403 for a caller who may not read the case.
+	 */
+	private function reader(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->notOnTheCase();
+		}
+
+		return $user;
+	}//end reader()
 
 	/**
 	 * The overview as a reader who may not act sees it: every act listed, none allowed.
@@ -228,7 +237,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function finish(string $caseId): JSONResponse {
@@ -250,7 +259,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function abort(string $caseId): JSONResponse {
@@ -276,7 +285,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	#[NoAdminRequired]
@@ -328,7 +337,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function unarchive(string $caseId): JSONResponse {
@@ -348,7 +357,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function hold(string $caseId): JSONResponse {
@@ -369,7 +378,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function releaseHold(string $caseId): JSONResponse {
@@ -389,7 +398,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function draft(string $caseId): JSONResponse {
@@ -406,7 +415,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function promote(string $caseId): JSONResponse {
@@ -423,7 +432,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function incompleteness(string $caseId): JSONResponse {
@@ -449,7 +458,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function guarded(string $caseId, callable $run): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -458,10 +467,7 @@ class CaseActsController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+			return $this->notOnTheCase();
 		}
 
 		return $this->answered(caseId: $caseId, run: $run);
@@ -477,7 +483,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function answered(string $caseId, callable $run): JSONResponse {
 		try {

@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\ZipManifestBuilder
  *
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\DossierZipRun
  */
 class ZipManifestBuilderTest extends TestCase {
 

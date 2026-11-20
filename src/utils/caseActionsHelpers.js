@@ -24,6 +24,8 @@
  * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /**
  * The title a copy is proposed under.
  *
@@ -78,6 +80,17 @@ export function caseActionRefusal(error, translate) {
 }
 
 /**
+ * The sentence for a failed case-actions request, translated.
+ *
+ * @param {object} err The axios error.
+ * @return {string} The message.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActionRefusalOf(err) {
+	return caseActionRefusal(err?.response?.data ?? {}, (s) => t('dossiq', s))
+}
+
+/**
  * The earliest date a follow-up may be planned for: tomorrow.
  *
  * Today is excluded deliberately. A schedule trigger fires on a cron minute,
@@ -103,7 +116,7 @@ export function earliestFollowUpDate(now = new Date()) {
  *
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {Array<{id: string, label: string}>} The options.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function recurrenceOptions(translate) {
 	return [
@@ -120,7 +133,7 @@ export function recurrenceOptions(translate) {
  *
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {Array<{id: string, label: string}>} The options.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function endOptions(translate) {
 	return [
@@ -141,7 +154,7 @@ export function endOptions(translate) {
  * @param {object} plan The form state, `{caseType, date, title, recurrence, end, until, count}`.
  * @param {string} earliest The earliest allowed date, as `YYYY-MM-DD`.
  * @return {boolean} True when every field is present and the dates agree.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function isPlanComplete(plan, earliest) {
 	const read = plan || {}

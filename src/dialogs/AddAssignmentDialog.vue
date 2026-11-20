@@ -88,10 +88,12 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
+import { formEditor } from '../mixins/formEditor.js'
 
 export default {
 	name: 'AddAssignmentDialog',
 	components: { NcButton, NcDialog, NcSelect, NcTextField },
+	mixins: [formEditor],
 	props: {
 		roleOptions: { type: Array, default: () => [] },
 	},
@@ -111,7 +113,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'reguliere', label: t('dossiq', 'Regular assignment') },
@@ -120,12 +122,12 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return this.roleOptions.find((o) => o.id === this.form.roleId) || null
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
 				this.typeOptions.find((o) => o.id === this.form.allocationType)
@@ -136,26 +138,21 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
-		validate() {
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
+		formErrors() {
 			const errs = {}
 			if (!this.form.persoonId)
 				errs.persoonId = t('dossiq', 'Person is required')
 			if (!this.form.roleId) errs.roleId = t('dossiq', 'Role is required')
-			this.errors = errs
-			return Object.keys(errs).length === 0
-		},
-
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
-		save() {
-			if (!this.validate()) return
-			this.$emit('save', { ...this.form })
+			return errs
 		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .add-assignment {
 	min-width: 420px;
 	padding: 8px 4px;
@@ -165,22 +162,10 @@ export default {
 	margin-bottom: 12px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 
 .add-assignment__date {
-	width: 100%;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
+	@include editor.bordered-input;
 }
 
 .field-error {

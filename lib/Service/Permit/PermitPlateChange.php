@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Permit;
 
+use OCA\Dossiq\Kernel\Contracts\PermitPlateChangeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Throwable;
 
@@ -27,7 +28,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution/spec.md
  */
-class PermitPlateChange {
+class PermitPlateChange implements PermitPlateChangeInterface {
 	/**
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 */
@@ -62,14 +63,28 @@ class PermitPlateChange {
 			throw new PermitChangeRefused(PermitChangeRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
 		}
 
+		return $this->openOrRefuse(store: new PermitRegister(objectService: $objectService, register: $register), request: $request);
+	}//end request()
+
+	/**
+	 * Open the change, answering a register that cannot be read as a refusal.
+	 *
+	 * @param PermitRegister     $store   The object service and the dossiq register.
+	 * @param PlateChangeRequest $request The resident, the permit and the new plate.
+	 *
+	 * @return array<string, mixed> The opened change.
+	 *
+	 * @throws PermitChangeRefused When the change is refused or the register cannot be read.
+	 */
+	private function openOrRefuse(PermitRegister $store, PlateChangeRequest $request): array {
 		try {
-			return $this->openFor(store: new PermitRegister(objectService: $objectService, register: $register), request: $request);
+			return $this->openFor(store: $store, request: $request);
 		} catch (PermitChangeRefused $refused) {
 			throw $refused;
 		} catch (Throwable $e) {
 			throw new PermitChangeRefused(PermitChangeRefused::UNAVAILABLE, 'The register could not be read: ' . $e->getMessage());
 		}
-	}//end request()
+	}//end openOrRefuse()
 
 	/**
 	 * Check the permit and open the change case.

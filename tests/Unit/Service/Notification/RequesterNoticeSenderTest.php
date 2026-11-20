@@ -49,6 +49,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Termijn\TermNotice
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeRun
  */
 class RequesterNoticeSenderTest extends TestCase {
 	use MakesRealTermNoticeSender;

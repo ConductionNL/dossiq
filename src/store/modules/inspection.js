@@ -99,7 +99,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Active checklists
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		activeChecklists(state) {
 			return state.checklists.filter((c) => c.status === 'active')
@@ -110,7 +110,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {number} Number of completed reports
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		completedReportsCount(state) {
 			return state.reports.length
@@ -121,7 +121,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Reports with failed items
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		nonConformReports(state) {
 			return state.reports.filter(
@@ -234,7 +234,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} caseId  UUID of the parent case
 		 * @param {File}   file    The photo file
 		 * @return {Promise<string|null>} Nextcloud file ID
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		async uploadPhoto(caseId, file) {
 			try {
@@ -261,7 +261,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {number} failedCount Number of failed items
 		 * @param {string} reportId    UUID of the inspection report
 		 * @return {Promise<object|null>} Created task
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		async createFollowUpTask(caseId, failedCount, reportId) {
 			try {

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -32,13 +32,14 @@ namespace OCA\Dossiq\Service\Conversation;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
 /**
  * Reads a case and writes the conversation fields onto it.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseRecordStore {
 
@@ -61,26 +62,10 @@ class CaseRecordStore {
 	 *
 	 * @return array<string, mixed>|null The case.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function read(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'case_schema', id: $caseId);
 	}//end read()
 
 	/**
@@ -93,7 +78,7 @@ class CaseRecordStore {
 	 *
 	 * @throws RuntimeException When OpenRegister is not configured for cases.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function write(string $caseId, array $changes): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -123,7 +108,7 @@ class CaseRecordStore {
 	 *
 	 * @return array<int, array<string, mixed>> The records, newest last.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function conversationsOf(array $case): array {
 		$conversations = ($case['conversations'] ?? []);
@@ -142,7 +127,7 @@ class CaseRecordStore {
 	 *
 	 * @return string The room name.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roomNameFor(array $case, string $fallback): string {
 		$identifier = (string)($case['identifier'] ?? ($case['title'] ?? ''));
@@ -160,7 +145,7 @@ class CaseRecordStore {
 	 *
 	 * @return string The reference, empty when the case names none.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function caseTypeIdOf(array $case): string {
 		$caseType = ($case['caseType'] ?? '');
@@ -176,7 +161,7 @@ class CaseRecordStore {
 	 *
 	 * @return string An ISO 8601 timestamp.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function now(): string {
 		return (new DateTimeImmutable())->format(DateTimeImmutable::ATOM);

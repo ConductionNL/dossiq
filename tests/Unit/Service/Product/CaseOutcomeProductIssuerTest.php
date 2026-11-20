@@ -26,6 +26,8 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
@@ -78,7 +80,9 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if (isset($this->store[$schema][$id]) === false) {
 					throw new DoesNotExistException('none');
 				}
@@ -120,7 +124,10 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$id = ($uuid ?? ('new-' . count($this->saved)));
 				$this->saved[] = ['schema' => $schema, 'id' => $uuid, 'object' => $object];
 				$this->store[$schema][$id] = array_merge($object, ['id' => $id]);

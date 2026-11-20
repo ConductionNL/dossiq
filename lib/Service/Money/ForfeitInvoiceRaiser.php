@@ -36,8 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ForfeitInvoiceRaiserInterface;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-005)
  */
-class ForfeitInvoiceRaiser {
+class ForfeitInvoiceRaiser implements ForfeitInvoiceRaiserInterface {
 	use SearchesObjects;
 
 	/**
@@ -128,8 +129,11 @@ class ForfeitInvoiceRaiser {
 		$run = new ForfeitInvoiceRun();
 		$run->action = $action;
 		$run->caseId = (string)($action['case'] ?? '');
-		$run->openCase = $this->read(schemaKey: 'case_schema', id: $run->caseId, caseId: $run->caseId);
-		$run->caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($run->openCase['caseType'] ?? ''), caseId: $run->caseId);
+		$run->openCase = $this->read(object: ['schemaKey' => 'case_schema', 'id' => $run->caseId], caseId: $run->caseId);
+		$run->caseType = $this->read(
+			object: ['schemaKey' => 'case_type_schema', 'id' => (string)($run->openCase['caseType'] ?? '')],
+			caseId: $run->caseId
+		);
 
 		return $run;
 	}//end forfeitRun()
@@ -147,7 +151,7 @@ class ForfeitInvoiceRaiser {
 	private function requestInvoice(ForfeitInvoiceRun $run, object $leaf): string {
 		try {
 			$created = $leaf->createAsApp(
-				Application::APP_ID,
+				AppIdentity::APP_ID,
 				CasePaymentReader::CASE_REGISTER,
 				CasePaymentReader::CASE_SCHEMA,
 				$run->caseId,
@@ -206,18 +210,18 @@ class ForfeitInvoiceRaiser {
 	/**
 	 * One object by the schema a setting names, or [] when it is not configured or not held.
 	 *
-	 * @param string $schemaKey The setting that names the schema.
-	 * @param string $id The object id.
-	 * @param string $caseId The case the read is for.
+	 * @param array{schemaKey: string, id: string} $object The setting that names the schema, and the object id.
+	 * @param string                               $caseId The case the read is for.
 	 *
 	 * @return array<string, mixed> The object.
 	 *
 	 * @throws ForfeitInvoiceNotRaisedException When the store cannot be read.
 	 */
-	private function read(string $schemaKey, string $id, string $caseId): array {
+	private function read(array $object, string $caseId): array {
+		$id = $object['id'];
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
+		$schema = (string)$this->settingsService->getConfigValue($object['schemaKey']);
 		if ($objectService === null || $id === '' || $schema === '') {
 			return [];
 		}

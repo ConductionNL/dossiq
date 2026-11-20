@@ -152,10 +152,10 @@ class InspectionRunCarryOver {
 			'appId' => 'dossiq',
 			'objectUuid' => (string)($run->object['case'] ?? ''),
 			'state' => 'completed',
-			'outcome' => $this->outcome(object: $run->object, snapshot: $run->snapshot, answers: $run->answers),
+			'outcome' => $this->outcome(run: $run),
 			'responses' => $run->answers,
 			'evidence' => $this->evidence(object: $run->object, answers: $run->answers),
-			'templateId' => $this->templateId(schema: $run->schema, object: $run->object, template: $run->template),
+			'templateId' => $this->templateId(run: $run),
 			'metadata' => $this->metadata(schema: $run->schema, object: $run->object),
 		];
 	}//end baseFields()
@@ -241,19 +241,17 @@ class InspectionRunCarryOver {
 	/**
 	 * The stored outcome, or the rule's verdict when none was stored.
 	 *
-	 * @param array<string, mixed>             $object   The source object.
-	 * @param array<string, mixed>             $snapshot The template.
-	 * @param array<int, array<string, mixed>> $answers  The answers.
+	 * @param InspectionCarryOverRun $run The source run: its object, template and answers.
 	 *
 	 * @return string The outcome.
 	 */
-	private function outcome(array $object, array $snapshot, array $answers): string {
-		$stored = (string)($object['overallResult'] ?? $object['result'] ?? '');
+	private function outcome(InspectionCarryOverRun $run): string {
+		$stored = (string)($run->object['overallResult'] ?? $run->object['result'] ?? '');
 		if (in_array($stored, [InspectionAnswers::CONFORM, InspectionAnswers::NON_CONFORM, InspectionAnswers::PARTLY_CONFORM], true) === true) {
 			return $stored;
 		}
 
-		return $this->answers->outcome(snapshot: $snapshot, answers: $answers);
+		return $this->answers->outcome(snapshot: $run->snapshot, answers: $run->answers);
 	}//end outcome()
 
 	/**
@@ -275,13 +273,12 @@ class InspectionRunCarryOver {
 	/**
 	 * The template uuid: the found template's, else the reference the run held.
 	 *
-	 * @param string                    $schema   The source schema slug.
-	 * @param array<string, mixed>      $object   The source object.
-	 * @param array<string, mixed>|null $template The template found.
+	 * @param InspectionCarryOverRun $run The source run: its schema, object and the template found.
 	 *
 	 * @return string The uuid.
 	 */
-	private function templateId(string $schema, array $object, ?array $template): string {
+	private function templateId(InspectionCarryOverRun $run): string {
+		$template = $run->template;
 		$found = '';
 		if ($template !== null) {
 			$found = (string)($template['@self']['id'] ?? $template['id'] ?? '');
@@ -291,7 +288,7 @@ class InspectionRunCarryOver {
 			return $found;
 		}
 
-		return (string)($object[self::SOURCES[$schema]['checklist']] ?? '');
+		return (string)($run->object[self::SOURCES[$run->schema]['checklist']] ?? '');
 	}//end templateId()
 
 	/**

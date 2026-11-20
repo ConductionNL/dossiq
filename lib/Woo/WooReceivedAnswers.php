@@ -31,22 +31,26 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Woo\Support\ReadsScalarText;
 
 /**
  * Maps opencatalogi's Woo answer keys onto the request a Woo case keeps.
  *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
  */
-class WooReceivedAnswers {
+class WooReceivedAnswers implements WooReceivedAnswersInterface {
+
+	use ReadsScalarText;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 * @param CaseDateNormaliserInterface $dates The one reader of a date and the tenant's time zone.
 	 */
 	public function __construct(
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 	) {
 	}//end __construct()
 
@@ -64,18 +68,6 @@ class WooReceivedAnswers {
 		'post' => 'post',
 		'counter' => 'balie',
 		'phone' => 'phone',
-	];
-
-	/**
-	 * The six keys every answer of receive() carries, each a string.
-	 */
-	public const EMPTY_ANSWER = [
-		'outcome' => '',
-		'requestId' => '',
-		'reference' => '',
-		'dueAt' => '',
-		'message' => '',
-		'caseUrl' => '',
 	];
 
 	/**
@@ -199,19 +191,4 @@ class WooReceivedAnswers {
 
 		return rtrim(mb_substr($cut, 0, $space));
 	}//end subject()
-
-	/**
-	 * A scalar as trimmed text, anything else as ''.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_scalar($value) === false) {
-			return '';
-		}
-
-		return trim((string)$value);
-	}//end text()
 }//end class

@@ -22,6 +22,8 @@ use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Settling and checking indicatieGebruiksrecht on a zaak's documents.
@@ -38,6 +40,12 @@ class ZrcUsageRightsTest extends TestCase {
 
 	/** @var array<int, string> */
 	private array $unmapped = [];
+
+	private bool $failSaves = false;
+
+	private bool $failLinkSearch = false;
+
+	private ?LoggerInterface $logger = null;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -56,7 +64,9 @@ class ZrcUsageRightsTest extends TestCase {
 			public function __construct(private ZrcUsageRightsTest $test) {
 			}
 
-			public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed {
+			public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->test->rowsOf((string)$schema)[(string)$id] ?? null;
 			}
 
@@ -71,7 +81,10 @@ class ZrcUsageRightsTest extends TestCase {
 				return ['results' => array_values(array_filter($this->test->rowsOf($query['schema']), static fn (array $r): bool => ($r[$key] ?? null) === $value))];
 			}
 
-			public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+			public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->record($object);
 				return $object;
 			}
@@ -84,15 +97,23 @@ class ZrcUsageRightsTest extends TestCase {
 		$zgw = $this->createMock(ZgwService::class);
 		$zgw->method('getZgwMappingService')->willReturn($mappings);
 		$zgw->method('getObjectService')->willReturn($store);
-		$zgw->method('getLogger')->willReturn($this->createMock(LoggerInterface::class));
+		$zgw->method('getLogger')->willReturn($this->logger ?? $this->createMock(LoggerInterface::class));
 		return new ZrcUsageRights(zgwService: $zgw);
 	}
 
 	public function rowsOf(string $schema): array {
+		if ($this->failLinkSearch === true && $schema === '13') {
+			throw new \RuntimeException('search index offline');
+		}
+
 		return $this->rows[$schema] ?? [];
 	}
 
 	public function record(array $object): void {
+		if ($this->failSaves === true) {
+			throw new \RuntimeException('register read-only');
+		}
+
 		$this->saved[] = $object;
 	}
 
@@ -140,4 +161,48 @@ class ZrcUsageRightsTest extends TestCase {
 
 		$this->assertSame([], $this->saved);
 	}
-}//end class
+
+	public function testALinkWithoutADocumentUuidIsSkipped(): void {
+		$this->rows['13'] = [
+			'z1' => ['case' => self::CASE, 'document' => 'https://nc/documenten/not-a-uuid'],
+			'z2' => ['case' => self::CASE, 'document' => ''],
+		];
+
+		$this->assertNull($this->rights()->firstUnsetRefusal(self::CASE));
+		$this->rights()->settleOnClose(self::CASE);
+		$this->assertSame([], $this->saved);
+	}
+
+	public function testALinkNamingItsDocumentAsInformatieobjectIsFollowed(): void {
+		$this->rows['13'] = ['z1' => ['case' => self::CASE, 'informatieobject' => self::DOC]];
+
+		$this->assertSame('indicatiegebruiksrecht-unset', $this->rights()->firstUnsetRefusal(self::CASE)['code']);
+	}
+
+	public function testAFailedDocumentWriteIsLoggedPerDocumentAndTheCloseGoesOn(): void {
+		$this->failSaves = true;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('debug')
+			->with('zrc-007b: Could not update indicatieGebruiksrecht for doc ' . self::DOC . ': register read-only');
+		$logger->expects($this->never())->method('warning');
+		$this->logger = $logger;
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+	}
+
+	public function testAFailedLinkSearchOnCloseIsLoggedAndSwallowed(): void {
+		$this->failLinkSearch = true;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('warning')
+			->with('zrc-007b: Failed to set indicatieGebruiksrecht: search index offline');
+		$this->logger = $logger;
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+	}
+}

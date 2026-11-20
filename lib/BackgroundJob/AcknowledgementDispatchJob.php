@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\AcknowledgementService;
+use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementDispatchJob extends QueuedJob {
 
@@ -65,14 +65,14 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time            The time factory.
-	 * @param AcknowledgementService   $acknowledgement The acknowledgement of receipt.
+	 * @param AcknowledgementServiceInterface   $acknowledgement The acknowledgement of receipt.
 	 * @param IJobList                 $jobList         The job list, for the next attempt.
 	 * @param LoggerInterface          $logger          The logger.
 	 * @param BackgroundServiceAccount $serviceAccount  The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly AcknowledgementService $acknowledgement,
+		private readonly AcknowledgementServiceInterface $acknowledgement,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
@@ -87,7 +87,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	protected function run($argument): void {
 		try {
@@ -124,7 +124,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return array{caseId: string, attempt: int}|null
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function jobOf(mixed $argument): ?array {
 		if (is_array($argument) === false) {
@@ -151,19 +151,16 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function deliver(string $caseId, int $attempt): void {
+		$job = ['caseId' => $caseId, 'attempt' => $attempt];
 		try {
 			$this->acknowledgement->acknowledge(caseId: $caseId, attempt: $attempt);
 		} catch (RefusedException $e) {
-			$this->fail(caseId: $caseId, attempt: $attempt, sentence: $e->getSentence());
+			$this->fail(job: $job, sentence: $e->getSentence());
 		} catch (Throwable $e) {
-			$this->fail(
-				caseId: $caseId,
-				attempt: $attempt,
-				sentence: 'The acknowledgement of receipt could not be delivered.',
-			);
+			$this->fail(job: $job, sentence: 'The acknowledgement of receipt could not be delivered.');
 			$this->logger->error(
 				'Dossiq acknowledgement: delivery for case {case} threw',
 				['case' => $caseId, 'attempt' => $attempt, 'reason' => $e->getMessage()],
@@ -174,17 +171,16 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	/**
 	 * Record the failed attempt, and queue the next one when one is due.
 	 *
-	 * @param string  $caseId   The case UUID.
-	 * @param integer $attempt  Which attempt failed.
-	 * @param string  $sentence What went wrong, as one sentence.
+	 * @param array{caseId: string, attempt: int} $job      The case UUID, and which attempt failed.
+	 * @param string                              $sentence What went wrong, as one sentence.
 	 *
 	 * @return void
 	 */
-	private function fail(string $caseId, int $attempt, string $sentence): void {
+	private function fail(array $job, string $sentence): void {
 		$again = $this->acknowledgement->recordFailedAttempt(
-			caseId: $caseId,
+			caseId: $job['caseId'],
 			sentence: $sentence,
-			attempt: $attempt,
+			attempt: $job['attempt'],
 		);
 
 		if ($again === false) {
@@ -193,7 +189,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 
 		$this->jobList->add(
 			self::class,
-			['caseId' => $caseId, 'attempt' => ($attempt + 1)]
+			['caseId' => $job['caseId'], 'attempt' => ($job['attempt'] + 1)]
 		);
 	}//end fail()
 }//end class

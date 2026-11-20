@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Money\PaymentScheduleRaiser;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleRaiserInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -48,12 +48,12 @@ class RaiseDuePayments extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time           Time factory.
-	 * @param PaymentScheduleRaiser    $raiser         Raises the due instalments.
+	 * @param PaymentScheduleRaiserInterface    $raiser         Raises the due instalments.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PaymentScheduleRaiser $raiser,
+		private readonly PaymentScheduleRaiserInterface $raiser,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);

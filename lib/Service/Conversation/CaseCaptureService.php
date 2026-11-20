@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseCaptureServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -42,25 +43,11 @@ use RuntimeException;
 /**
  * Files a capture as a case document.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseCaptureService {
+class CaseCaptureService implements CaseCaptureServiceInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * Refusal reason: the file offered is not a capture.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_A_CAPTURE = 'not_a_capture';
-
-	/**
-	 * Refusal reason: the capture carries no name or no content.
-	 *
-	 * @var string
-	 */
-	public const REASON_EMPTY = 'capture_empty';
 
 	/**
 	 * The media a capture can be: what a recorder or a camera produces.
@@ -86,7 +73,7 @@ class CaseCaptureService {
 	 *
 	 * @return bool True when it is a capture.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isCapture(string $mimeType): bool {
 		foreach (self::CAPTURE_PREFIXES as $prefix) {
@@ -113,7 +100,7 @@ class CaseCaptureService {
 	 *
 	 * @throws RuntimeException When OpenRegister is not configured for documents.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function attachCapture(
 		string $caseId,
@@ -129,6 +116,19 @@ class CaseCaptureService {
 		$capture->taskId = $taskId;
 		$capture->author = $author;
 
+		return $this->attach(capture: $capture);
+	}//end attachCapture()
+
+	/**
+	 * Store the capture as a document and file it on its case, unless it is refused.
+	 *
+	 * @param CaptureFiling $capture The capture.
+	 *
+	 * @return array<string, mixed> `['ok' => true, 'document' => [...]]`, or an error envelope.
+	 *
+	 * @throws RuntimeException When OpenRegister is not configured for documents.
+	 */
+	private function attach(CaptureFiling $capture): array {
 		$refusal = $this->refusalFor(capture: $capture);
 		if ($refusal !== null) {
 			return $refusal;
@@ -140,7 +140,7 @@ class CaseCaptureService {
 		$document = $this->storeDocument(capture: $capture);
 
 		return ['ok' => true, 'document' => $this->fileOnCase(capture: $capture, document: $document)];
-	}//end attachCapture()
+	}//end attach()
 
 	/**
 	 * The refusal for an empty file or one a recorder did not produce; null when it is a capture.
@@ -236,7 +236,7 @@ class CaseCaptureService {
 	 *
 	 * @throws RuntimeException When OpenRegister is absent or not configured for documents.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function documentStore(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -268,7 +268,7 @@ class CaseCaptureService {
 	 *
 	 * @return string The description written onto the document.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function captureDescription(string $mimeType, ?string $taskId): string {
 		$kind = 'Opname';

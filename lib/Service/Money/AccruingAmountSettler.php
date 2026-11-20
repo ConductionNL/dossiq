@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AccruingAmountSettlerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/penalty-is-a-stored-calculation/specs/accruing-amount/spec.md
  */
-class AccruingAmountSettler {
+class AccruingAmountSettler implements AccruingAmountSettlerInterface {
 	use SearchesObjects;
 
 	/**
@@ -81,14 +82,27 @@ class AccruingAmountSettler {
 		string $amountField = 'cumulativeAmount',
 		string $lockField = 'definitiveAmount',
 	): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RuntimeException('The store for ' . $schemaConfigKey . ' is not configured');
-		}
+		return $this->settled(
+			store: $this->storeFor(schemaConfigKey: $schemaConfigKey),
+			settlement: ['id' => $id, 'status' => $status, 'stopAt' => $stopAt, 'amountField' => $amountField, 'lockField' => $lockField]
+		);
+	}//end settle()
 
-		$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+	/**
+	 * Stop the stored object's accrual, set its status and lock the accrued amount.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store      The object service, register and schema.
+	 * @param array<string, mixed>                   $settlement The object `id`, the `status` it moves to, the `stopAt`
+	 *                                                           moment (now when null), the `amountField` and the `lockField`.
+	 *
+	 * @return array<string, mixed>|null The settled object, or null when it does not exist.
+	 *
+	 * @throws RuntimeException When a save fails.
+	 */
+	private function settled(array $store, array $settlement): ?array {
+		[$objectService, $register, $schema] = $store;
+		$stopAt = $settlement['stopAt'];
+		$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $settlement['id']);
 		if ($row === null) {
 			return null;
 		}
@@ -97,12 +111,32 @@ class AccruingAmountSettler {
 			$row['stoppedOn'] = $this->dates->formatCalendarDate(($stopAt ?? $this->dates->now()));
 		}
 
-		$row['status'] = $status;
+		$row['status'] = $settlement['status'];
 		// OpenRegister re-materialises the stored calculations on this save,
 		// so the answer carries the amount accrued up to stoppedOn.
 		$stopped = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row) ?? $row);
-		$stopped[$lockField] = (int)($stopped[$amountField] ?? 0);
+		$stopped[$settlement['lockField']] = (int)($stopped[$settlement['amountField']] ?? 0);
 
 		return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $stopped) ?? $stopped);
-	}//end settle()
+	}//end settled()
+
+	/**
+	 * The object service, register and schema of the store a config key names.
+	 *
+	 * @param string $schemaConfigKey The app config key naming the schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
+	 *
+	 * @throws RuntimeException When the store is not configured.
+	 */
+	private function storeFor(string $schemaConfigKey): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
+		if ($objectService === null || $register === '' || $schema === '') {
+			throw new RuntimeException('The store for ' . $schemaConfigKey . ' is not configured');
+		}
+
+		return [$objectService, $register, $schema];
+	}//end storeFor()
 }//end class

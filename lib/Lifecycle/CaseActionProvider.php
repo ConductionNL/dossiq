@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
@@ -118,19 +118,19 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
-	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
-	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
+	 * @param StatusTransitionServiceInterface $transitionEngine The single reader of a case's available moves.
+	 * @param OpenRegisterGrantsGatewayInterface $grants The reader of OpenRegister's effective grants.
+	 * @param ExternalHomeInterface $externalHome Whether the work on this case happens in another application.
 	 * @param CaseActionList $actions The acts a case offers, and what blocks them.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly StatusTransitionService $transitionEngine,
-		private readonly OpenRegisterGrantsGateway $grants,
-		private readonly ExternalHome $externalHome,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
+		private readonly OpenRegisterGrantsGatewayInterface $grants,
+		private readonly ExternalHomeInterface $externalHome,
 		private readonly CaseActionList $actions,
 		private readonly LoggerInterface $logger,
 	) {
@@ -354,25 +354,39 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @throws LifecycleProviderException When the engine could not answer at all.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function execute(array $object, string $userId, string $action, array $data): array {
 		$caseId = $this->requiredCaseId(object: $object);
 		$caller = $this->callerOf(userId: $userId);
 		$this->refuseBlockedMove(object: $object, caseId: $caseId);
 
+		return $this->carriedOut(move: ['object' => $object, 'caseId' => $caseId, 'action' => $action, 'caller' => $caller], data: $data);
+	}//end execute()
+
+	/**
+	 * Make the move through the transition engine as the caller, classifying a failure.
+	 *
+	 * @param array<string, mixed> $move The case `object`, its `caseId`, the transition as `action` and the `caller`.
+	 * @param array<string, mixed> $data The action's inputs: the comment and the closing result.
+	 *
+	 * @return array<string, mixed> The engine's answer.
+	 *
+	 * @throws Throwable The classified failure.
+	 */
+	private function carriedOut(array $move, array $data): array {
 		try {
 			return $this->transitionEngine->execute(
-				caseId: $caseId,
-				transitionId: $action,
+				caseId: $move['caseId'],
+				transitionId: $move['action'],
 				comment: $this->textOf(data: $data, field: CaseActionList::COMMENT_INPUT),
-				userId: $caller,
+				userId: $move['caller'],
 				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
 			);
 		} catch (Throwable $e) {
-			throw $this->classify(failure: $e, object: $object, caseId: $caseId, action: $action);
+			throw $this->classify(failure: $e, move: ['object' => $move['object'], 'caseId' => $move['caseId'], 'action' => $move['action']]);
 		}
-	}//end execute()
+	}//end carriedOut()
 
 	/**
 	 * Refuse a move the list publishes blocked: work homed elsewhere, or leges unpaid.
@@ -419,15 +433,15 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * mapping is one expression a test can drive one row at a time.
 	 *
 	 * @param Throwable $failure What the engine threw.
-	 * @param array<string, mixed> $object The case payload OpenRegister handed over.
-	 * @param string $caseId The case UUID.
-	 * @param string $action The transition id that was asked for.
+	 * @param array{object: array<string, mixed>, caseId: string, action: string} $move The case payload OpenRegister
+	 *        handed over, the case UUID and the transition id that was asked for.
 	 *
 	 * @return Throwable The refusal unchanged, or the breakage/not-found type that wraps it.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function classify(Throwable $failure, array $object, string $caseId, string $action): Throwable {
+	private function classify(Throwable $failure, array $move): Throwable {
+		['object' => $object, 'caseId' => $caseId, 'action' => $action] = $move;
 		// A guard said no, and said why. Matched by type rather than by message
 		// so the failed-guard snapshots reach the client intact.
 		if ($failure instanceof GuardFailedException) {

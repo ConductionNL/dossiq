@@ -40,7 +40,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -48,38 +48,29 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Portal\ResidentQuestionTask;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\Dossiq\Woo\WooRequestIntake;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Asking the applicant, written down as a record that outlives the pause.
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class AanvullingsverzoekService {
+class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The schema the requests are objects of.
-	 */
-	public const SCHEMA = 'aanvullingsverzoek';
 
 	/**
 	 * A request for missing documents, the ordinary kind.
 	 */
 	public const KIND_DOCUMENTS = 'aanvulling';
-
-	/**
-	 * A request to make a Woo request more precise (Woo art. 4.1 lid 5).
-	 */
-	public const KIND_CLARIFICATION = 'verduidelijking';
 
 	/**
 	 * The states a request can be in, and the only one that is still waiting.
@@ -105,7 +96,7 @@ class AanvullingsverzoekService {
 	 *                                                   suspends as one act.
 	 * @param SettingsService           $settingsService The OpenRegister seam.
 	 * @param LoggerInterface           $logger          Structured logger.
-	 * @param ResidentQuestionTask|null $portalTask      Turns the request into a task in the resident's
+	 * @param ResidentQuestionTaskInterface|null $portalTask      Turns the request into a task in the resident's
 	 *                                                   portal (decision 169), or null in a test that is not about it.
 	 * @param DayCount                  $days            Counts the days between two moments.
 	 */
@@ -113,7 +104,7 @@ class AanvullingsverzoekService {
 		private readonly InformationRequestService $act,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly ?ResidentQuestionTask $portalTask = null,
+		private readonly ?ResidentQuestionTaskInterface $portalTask = null,
 		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
@@ -136,7 +127,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @throws RefusedException When the act refuses, or the record cannot be written.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function ask(
 		string $caseId,
@@ -162,7 +153,7 @@ class AanvullingsverzoekService {
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was sent and written down',
-			['app' => Application::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
 		);
 
 		return $written;
@@ -191,7 +182,7 @@ class AanvullingsverzoekService {
 
 		// A Woo request on any version of the case type: the first version by
 		// its fixed id, a later one by the identifier the chain shares.
-		$wooKeys = [WooRequestIntake::CASE_TYPE_ID, WooRequestIntake::CASE_TYPE_IDENTIFIER];
+		$wooKeys = [WooRequestIntakeInterface::CASE_TYPE_ID, WooRequestIntakeInterface::CASE_TYPE_IDENTIFIER];
 		if (in_array($this->caseTypeOf(caseId: $ask['caseId']), $wooKeys, true) === false) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-clarification-woo-only',
@@ -373,7 +364,7 @@ class AanvullingsverzoekService {
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'Dossiq: the portal task was raised, but the request could not remember it',
-				['app' => Application::APP_ID, 'request' => $id, 'task' => $task]
+				['app' => AppIdentity::APP_ID, 'request' => $id, 'task' => $task]
 			);
 			return $written;
 		}
@@ -401,7 +392,7 @@ class AanvullingsverzoekService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the case type could not be read for a request',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -452,7 +443,7 @@ class AanvullingsverzoekService {
 			// the safe half of the choice.
 			$this->logger->warning(
 				'Dossiq: the case portal subject could not be read, so the request is not shown in the portal',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 			return '';
 		}
@@ -467,7 +458,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return array<string, mixed>|null The request, or null.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function openFor(string $caseId): ?array {
 		foreach ($this->forCase(caseId: $caseId) as $request) {
@@ -486,7 +477,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return array<int, array<string, mixed>> The requests.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$caseId = trim($caseId);
@@ -541,7 +532,7 @@ class AanvullingsverzoekService {
 	private function unreadable(string $caseId, Throwable $e): RefusedException {
 		$this->logger->warning(
 			'Dossiq: the aanvullingsverzoeken on a case could not be read',
-			['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 		);
 
 		return new RefusedException(
@@ -559,7 +550,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return integer The days, 0 when the moment cannot be read.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function daysOpen(array $request, ?DateTimeImmutable $now = null): int {
 		$sent = trim((string)($request['requestedAt'] ?? ''));
@@ -591,7 +582,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function markCaseWaiting(string $caseId, ?string $since): void {
 		[$objectService, $register] = $this->openRegister();
@@ -618,7 +609,7 @@ class AanvullingsverzoekService {
 			// stands. The list is briefly stale; the requests are not.
 			$this->logger->warning(
 				'Dossiq: the waiting-on-applicant flag could not be written; the requests themselves are correct',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
 		}
 	}//end markCaseWaiting()
@@ -633,7 +624,7 @@ class AanvullingsverzoekService {
 	 *
 	 * @throws RefusedException When the write fails.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function write(array $request, string $id = ''): array {
 		[$objectService, $register] = $this->openRegister();
@@ -716,7 +707,7 @@ class AanvullingsverzoekService {
 	private function notWritten(Throwable $e): RefusedException {
 		$this->logger->error(
 			'Dossiq: an aanvullingsverzoek could not be written',
-			['app' => Application::APP_ID, 'error' => $e->getMessage()]
+			['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 		);
 
 		return new RefusedException(

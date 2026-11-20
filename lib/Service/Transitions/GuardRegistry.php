@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Registry of guard evaluators keyed by guard type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T06
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T06
  */
 class GuardRegistry {
 
@@ -72,6 +72,13 @@ class GuardRegistry {
 	 * Whether a case's documents are gathered, or gathered and every one assessed.
 	 */
 	public const DOCUMENT_ASSESSMENT = 'documentAssessment';
+
+	/**
+	 * Whether a date on the case, plus any days of waiting, has been reached.
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	public const DATE_REACHED = 'dateReached';
 
 	/**
 	 * Registered evaluators keyed by guard type.
@@ -120,6 +127,7 @@ class GuardRegistry {
 			self::APPROVAL_GATE => $statusEntry->approvalGuard,
 			self::DOCUMENT_ASSESSMENT => $statusEntry->documentAssessment,
 			self::STATUS_ENTRY_REQUIREMENTS => $statusEntry->entryRequirements,
+			self::DATE_REACHED => $caseContent->dateReached,
 		];
 		$this->evaluators += array_filter($optional, static fn (?GuardEvaluatorInterface $guard): bool => $guard !== null);
 	}//end __construct()
@@ -135,7 +143,7 @@ class GuardRegistry {
 	 *
 	 * @return bool True when the type is registered
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function knows(string $type): bool {
 		return isset($this->evaluators[$type]);

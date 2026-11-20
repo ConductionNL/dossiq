@@ -28,6 +28,7 @@ use ZipArchive;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageValidator
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
  */
 class PackageValidatorResultTest extends TestCase {
 

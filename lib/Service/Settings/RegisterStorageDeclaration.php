@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Settings;
  * hand-kept list of eighty drifts the first time one is forgotten. A schema
  * the monolith or a fragment declares explicitly is left as declared.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class RegisterStorageDeclaration {
 
@@ -54,7 +54,7 @@ class RegisterStorageDeclaration {
 	 *
 	 * @return array<string, mixed> The configuration, with every schema declared.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function declare(array $config, string $registerSlug = 'dossiq'): array {
 		$register = $config['components']['registers'][$registerSlug] ?? null;
@@ -102,7 +102,7 @@ class RegisterStorageDeclaration {
 	 *
 	 * @return array<string, mixed> The declaration for every schema.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function withEverySchema(array $schemas, array $declared): array {
 		foreach ($schemas as $slug) {

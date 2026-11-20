@@ -21,7 +21,7 @@ const APP_DEFAULT_LOCALE = 'nl'
  *
  * @return {string} BCP 47 language code (e.g., 'nl', 'en', 'de')
  */
-/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 export function getUserLocale() {
 	if (typeof OC !== 'undefined' && typeof OC.getLanguage === 'function') {
 		const lang = OC.getLanguage()
@@ -46,7 +46,7 @@ export function getUserLocale() {
  * @param {string} [locale] The preferred locale (defaults to user's locale)
  * @param {string} [fallbackLocale] The fallback locale (defaults to app default 'nl')
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveTranslatable(value, locale, fallbackLocale) {
 	// Null/undefined -> empty string
@@ -146,7 +146,7 @@ function firstAvailable(value) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveField(obj, field, locale) {
 	if (!obj || typeof obj !== 'object') {
@@ -162,7 +162,7 @@ export function resolveField(obj, field, locale) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {string} The resolved text
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveText(obj, field, locale) {
 	return resolveField(obj, field, locale).text

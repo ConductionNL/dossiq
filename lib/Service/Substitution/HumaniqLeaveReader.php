@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+ * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Answers whether a handler is on approved leave on a given day, per humaniq.
  *
- * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+ * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 class HumaniqLeaveReader {
 	use SearchesObjects;
@@ -135,7 +135,7 @@ class HumaniqLeaveReader {
 	 *
 	 * @return array<string, string>|null `['startDate' => ..., 'endDate' => ...]`, or null.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function approvedLeaveCovering(string $userId, string $day): ?array {
 		$userId = trim($userId);
@@ -162,7 +162,7 @@ class HumaniqLeaveReader {
 	 *
 	 * @return array<string, string>|null The covering period, or null.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function readLeave(string $userId, string $day): ?array {
 		if ($this->humaniqAbsent() === true) {
@@ -286,7 +286,7 @@ class HumaniqLeaveReader {
 	 *
 	 * @return array<string, string>|null The covering period, or null.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function covering(array $requests, string $day): ?array {
 		foreach ($requests as $request) {

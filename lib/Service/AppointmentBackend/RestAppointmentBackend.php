@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
  * Booking and cancelling are the same call for every vendor; only the auth
  * header and the name in the error log differ.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 abstract class RestAppointmentBackend implements AppointmentBackendInterface {
 	/**
@@ -71,7 +71,7 @@ abstract class RestAppointmentBackend implements AppointmentBackendInterface {
 	 *
 	 * @return array<string, mixed> Booking result from the vendor, or error payload.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function bookAppointment(array $data): array {
 		try {
@@ -98,7 +98,7 @@ abstract class RestAppointmentBackend implements AppointmentBackendInterface {
 	 *
 	 * @return bool True on success, false on API error.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancelAppointment(string $externalId): bool {
 		try {

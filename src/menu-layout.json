@@ -82,7 +82,6 @@
 		"EndOfDayMenu": "WorkGroup",
 		"MyWork": "WorkGroup",
 		"Cases": "WorkGroup",
-		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
 		"CaseObjectsMenu": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
@@ -95,7 +94,6 @@
 	],
 	"settingsSection": [
 		"WmsLayersMenu",
-		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
 		"IntegrationsMenu"
 	],

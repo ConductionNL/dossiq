@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use JsonSerializable;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionServiceInterface;
 use OCA\Dossiq\Service\Substitution\HumaniqLeaveReader;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class SubstitutionService {
+class SubstitutionService implements SubstitutionServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -251,7 +252,7 @@ class SubstitutionService {
 	 *
 	 * @return array<int, array<string, mixed>> The active substitution records.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function getActiveSubstitutionsFor(string $userId, ?DateTimeImmutable $date = null): array {
 		$userId = trim($userId);
@@ -301,8 +302,7 @@ class SubstitutionService {
 		foreach ($rows as $row) {
 			$resolved = $this->activeRowOn(
 				row: $row,
-				refDay: $refDay,
-				objectService: $objectService
+				asOf: ['refDay' => $refDay, 'objectService' => $objectService]
 			);
 			if ($resolved !== null) {
 				$active[] = $resolved;
@@ -327,19 +327,16 @@ class SubstitutionService {
 	 * Applies the lazy-expiry side effect: a row past its typed end with no
 	 * leave to extend it is best-effort persisted as `ended` and excluded.
 	 *
-	 * @param array<string, mixed> $row The substitution row.
-	 * @param string $refDay Reference day (Y-m-d).
-	 * @param object $objectService The ObjectService.
+	 * @param array<string, mixed>                         $row  The substitution row.
+	 * @param array{refDay: string, objectService: object} $asOf Reference day (Y-m-d), and the ObjectService that
+	 *                                                           persists a lazy expiry.
 	 *
 	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function activeRowOn(
-		array $row,
-		string $refDay,
-		object $objectService,
-	): ?array {
+	private function activeRowOn(array $row, array $asOf): ?array {
+		$refDay = $asOf['refDay'];
 		$status = (string)($row['status'] ?? '');
 		// `revoked` and the lazily persisted `ended` both land here: a
 		// substitution that is not active routes nothing, and leave does not
@@ -351,21 +348,37 @@ class SubstitutionService {
 		// The leave, when humaniq knows of one, sets the period outright. It is
 		// read before the typed dates are applied, because the case it exists
 		// for is exactly the one the typed dates would have excluded.
-		$leave = $this->leaveReader->approvedLeaveCovering(
-			userId: (string)($row['absentee'] ?? ''),
-			day: $refDay
-		);
+		$leave = $this->leaveReader->approvedLeaveCovering(userId: (string)($row['absentee'] ?? ''), day: $refDay);
 		if ($leave !== null) {
 			$row['_activeUntil'] = $leave['endDate'];
 
 			return $row;
 		}
 
+		return $this->unexpiredRow(row: $row, asOf: $asOf);
+	}//end activeRowOn()
+
+	/**
+	 * The row once it has started, or null when it is past its typed end.
+	 *
+	 * Applies the lazy-expiry side effect: a row past its typed end is
+	 * best-effort persisted as `ended` and excluded.
+	 *
+	 * @param array<string, mixed>                         $row  The substitution row.
+	 * @param array{refDay: string, objectService: object} $asOf Reference day (Y-m-d), and the ObjectService that
+	 *                                                           persists a lazy expiry.
+	 *
+	 * @return array<string, mixed>|null The applicable row, or null.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function unexpiredRow(array $row, array $asOf): ?array {
+		$refDay = $asOf['refDay'];
 		// Lazy expiry: past endDate and no leave behind it -> ended, excluded.
 		$end = (string)($row['endDate'] ?? '');
 		if ($end !== '' && $refDay > $end) {
 			$this->markEnded(
-				objectService: $objectService,
+				objectService: $asOf['objectService'],
 				row: $row
 			);
 
@@ -373,7 +386,7 @@ class SubstitutionService {
 		}
 
 		return $this->startedRow(row: $row, refDay: $refDay);
-	}//end activeRowOn()
+	}//end unexpiredRow()
 
 	/**
 	 * The row with its typed end as `_activeUntil`, or null before its typed start.

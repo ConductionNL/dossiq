@@ -32,11 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsSavedEntity;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -48,15 +47,17 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
  */
 class TermInstanceMovesCaseDeadlineListener implements IEventListener {
+	use ReadsSavedEntity;
+
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Names the term instance schema.
-	 * @param CaseDeadlineMirror $mirror          Follows a statutory term onto its case.
+	 * @param SettingsServiceInterface    $settingsService Names the term instance schema.
+	 * @param CaseDeadlineMirrorInterface $mirror          Follows a statutory term onto its case.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDeadlineMirror $mirror,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDeadlineMirrorInterface $mirror,
 	) {
 	}//end __construct()
 
@@ -70,20 +71,12 @@ class TermInstanceMovesCaseDeadlineListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function handle(Event $event): void {
-		$entity = null;
-		if ($event instanceof ObjectCreatedEvent === true) {
-			$entity = $event->getObject();
-		}
-
-		if ($event instanceof ObjectUpdatedEvent === true) {
-			$entity = $event->getNewObject();
-		}
-
+		$entity = $this->savedEntity(event: $event);
 		if ($entity === null || $this->isTermInstance(entity: $entity) === false) {
 			return;
 		}
 
-		$this->mirror->followInstance(instance: (array)($entity->getObject() ?? []));
+		$this->mirror->followInstance(instance: (array)$entity->getObject());
 	}//end handle()
 
 	/**

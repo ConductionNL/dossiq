@@ -39,6 +39,7 @@ use OCP\Notification\INotification;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A stand-in for OpenRegister's object service that knows a fixed set of cases.
@@ -68,7 +69,9 @@ class FakePortalCaseStore {
 	 *
 	 * @return object|null The entity, or null.
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): ?object {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->askedIn = [$register, $schema];
 
 		if (isset($this->cases[$id]) === false) {

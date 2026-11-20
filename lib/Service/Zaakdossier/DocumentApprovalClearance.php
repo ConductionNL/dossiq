@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
-class DocumentApprovalClearance {
+class DocumentApprovalClearance implements DocumentApprovalClearanceInterface {
 
 	/**
 	 * The clearance answer for a document nobody routed, and for an instance
@@ -177,24 +178,7 @@ class DocumentApprovalClearance {
 				continue;
 			}
 
-			$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
-			$step = trim((string)($entry['stageName'] ?? ''));
-			$actor = trim((string)($entry['actor'] ?? ''));
-
-			$part = $route;
-			if ($part === '') {
-				$part = 'an approval route';
-			}
-
-			if ($step !== '') {
-				$part .= ', step "' . $step . '"';
-			}
-
-			if ($actor !== '') {
-				$part .= ', waiting on ' . $actor;
-			}
-
-			$parts[] = $part;
+			$parts[] = $this->waitingPart(entry: $entry);
 		}
 
 		if ($parts === []) {
@@ -203,4 +187,34 @@ class DocumentApprovalClearance {
 
 		return implode('; ', $parts);
 	}//end describe()
+
+	/**
+	 * One waiting entry as a phrase: the route, the step and who it waits on.
+	 *
+	 * @param array<string, mixed> $entry The waiting entry.
+	 *
+	 * @return string The phrase.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	private function waitingPart(array $entry): string {
+		$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
+		$step = trim((string)($entry['stageName'] ?? ''));
+		$actor = trim((string)($entry['actor'] ?? ''));
+
+		$part = $route;
+		if ($part === '') {
+			$part = 'an approval route';
+		}
+
+		if ($step !== '') {
+			$part .= ', step "' . $step . '"';
+		}
+
+		if ($actor !== '') {
+			$part .= ', waiting on ' . $actor;
+		}
+
+		return $part;
+	}//end waitingPart()
 }//end class

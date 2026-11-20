@@ -32,17 +32,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\AcknowledgementService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -59,7 +59,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementController extends Controller {
 
@@ -67,21 +67,21 @@ class AcknowledgementController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest               $request         The HTTP request.
-	 * @param AcknowledgementService $acknowledgement The acknowledgement of receipt.
-	 * @param CaseAccessGuard        $caseAccessGuard Per-case authorization (fails closed).
+	 * @param AcknowledgementServiceInterface $acknowledgement The acknowledgement of receipt.
+	 * @param CaseAccessGuardInterface        $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession           $userSession     The current session.
 	 * @param IL10N                  $l10n            The translations.
 	 * @param LoggerInterface        $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly AcknowledgementService $acknowledgement,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly AcknowledgementServiceInterface $acknowledgement,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -91,7 +91,7 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function duty(string $caseId): JSONResponse {
@@ -129,7 +129,7 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`, or the refusal.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
 	public function recordMet(string $caseId): JSONResponse {

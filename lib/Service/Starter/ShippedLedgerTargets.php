@@ -141,10 +141,25 @@ class ShippedLedgerTargets {
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function row(string $ledgerKey, string $targetSchema, string $targetObject): ?array {
-		foreach ($this->valuesFor(targetSchema: $targetSchema) as $target) {
+		return $this->firstRow(
+			ledgerKey: $ledgerKey,
+			wanted: ['schemas' => $this->valuesFor(targetSchema: $targetSchema), 'targetObject' => $targetObject]
+		);
+	}//end row()
+
+	/**
+	 * The first ledger row for the target object under any of the schema's values.
+	 *
+	 * @param string               $ledgerKey The ledger's config key.
+	 * @param array<string, mixed> $wanted    The target schema's `schemas` values and the `targetObject`.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 */
+	private function firstRow(string $ledgerKey, array $wanted): ?array {
+		foreach ($wanted['schemas'] as $target) {
 			$rows = $this->store->rows(
 				configKey: $ledgerKey,
-				filters: ['targetSchema' => $target, 'targetObject' => $targetObject, '_limit' => 1],
+				filters: ['targetSchema' => $target, 'targetObject' => $wanted['targetObject'], '_limit' => 1],
 			);
 			if ($rows !== null && $rows !== []) {
 				return $rows[0];
@@ -152,5 +167,5 @@ class ShippedLedgerTargets {
 		}
 
 		return null;
-	}//end row()
+	}//end firstRow()
 }//end class

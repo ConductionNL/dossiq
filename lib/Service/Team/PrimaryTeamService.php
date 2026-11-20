@@ -28,7 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Team;
 
+use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -40,8 +42,9 @@ use Throwable;
  *
  * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
-class PrimaryTeamService {
+class PrimaryTeamService implements PrimaryTeamServiceInterface {
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * The most roles read to place a user; an organisation's role tree is far smaller.
@@ -340,12 +343,12 @@ class PrimaryTeamService {
 	 * @throws Throwable When the store is there but the roles cannot be read.
 	 */
 	private function roles(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'organisatie_rol_schema');
+		if ($source === null) {
 			return [];
 		}
+
+		[$objectService, $register, $schema] = $source;
 
 		try {
 			return $this->searchObjectsAsArrays(

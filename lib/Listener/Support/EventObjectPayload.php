@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Support;
 
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\EventDispatcher\Event;
 
 /**
@@ -92,19 +93,6 @@ final class EventObjectPayload {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public static function fromValue(mixed $object): ?array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
-			return null;
-		}
-
-		$serialized = $object->jsonSerialize();
-		if (is_array($serialized) === true) {
-			return $serialized;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $object);
 	}//end fromValue()
 }//end class

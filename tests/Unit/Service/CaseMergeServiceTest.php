@@ -31,6 +31,8 @@ use OCA\OpenRegister\Kernel\Contracts\ObjectMergerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The dossiq half of a merge: the rows move, the old case points at the
@@ -393,11 +395,14 @@ final class FakeMergeObjectService {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = null,
-		bool $files = false,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		?ObjectFindOptions $options = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): ?array {
+		$_extend = $options?->extend;
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
 		return ($this->rows[(string)$schema][(string)$id] ?? null);
 	}//end find()
 
@@ -412,11 +417,14 @@ final class FakeMergeObjectService {
 	 * @return array<string, mixed>|null The stored row.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): ?array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$key = (string)$schema;
 		if (isset($this->rows[$key][$objectId]) === false) {
 			return null;

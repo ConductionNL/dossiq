@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnNotificationService
@@ -60,6 +61,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses   \OCA\Dossiq\Service\CaseNumberReader
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class TermijnNotificationServiceTest extends TestCase {
 	use MakesRealTermNoticeSender;
@@ -275,7 +277,9 @@ class TermijnNotificationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->cases[$id]) === false) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('no case ' . $id);
 				}

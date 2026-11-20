@@ -76,6 +76,29 @@ final class PreSaveCheck {
 	}//end inspect()
 
 	/**
+	 * Run the inspection on the object being saved and the stored object it replaces.
+	 *
+	 * A create replaces nothing, so its inspection gets null for the previous object.
+	 *
+	 * @param Event   $event   The dispatched event.
+	 * @param Closure $inspect Called with the pre-persist event, the object being saved and the previous object.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function inspectWithPrevious(Event $event, Closure $inspect): void {
+		if ($event instanceof ObjectCreatingEvent === true) {
+			$inspect($event, $event->getObject(), null);
+			return;
+		}
+
+		if ($event instanceof ObjectUpdatingEvent === true) {
+			$inspect($event, $event->getNewObject(), $event->getOldObject());
+		}
+	}//end inspectWithPrevious()
+
+	/**
 	 * The payload, or null when it cannot be read.
 	 *
 	 * @param ObjectEntity $entity The object being saved.

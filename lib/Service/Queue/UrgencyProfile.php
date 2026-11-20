@@ -58,6 +58,16 @@ final class UrgencyProfile {
 	public const MAX_RESIDENT_WAIT_WEIGHT = 50.0;
 
 	/**
+	 * The default, the upper bound and whether a whole number of days is read, per setting.
+	 */
+	private const CRITICAL_RANGE = ['default' => self::DEFAULT_CRITICAL_DAYS, 'max' => self::MAX_CRITICAL_DAYS, 'whole' => true];
+	private const WARNING_RANGE = ['default' => self::DEFAULT_WARNING_DAYS, 'max' => self::MAX_WARNING_DAYS, 'whole' => true];
+	private const PRIORITY_RANGE = ['default' => self::DEFAULT_PRIORITY_WEIGHT, 'max' => self::MAX_PRIORITY_WEIGHT, 'whole' => false];
+	private const IDLE_RANGE = ['default' => self::DEFAULT_IDLE_WEIGHT, 'max' => self::MAX_IDLE_WEIGHT, 'whole' => false];
+	private const IN_SIGHT_RANGE = ['default' => self::DEFAULT_IN_SIGHT_DAYS, 'max' => self::MAX_IN_SIGHT_DAYS, 'whole' => true];
+	private const RESIDENT_WAIT_RANGE = ['default' => self::DEFAULT_RESIDENT_WAIT_WEIGHT, 'max' => self::MAX_RESIDENT_WAIT_WEIGHT, 'whole' => false];
+
+	/**
 	 * The critical threshold, in working days left.
 	 *
 	 * @var int
@@ -122,13 +132,13 @@ final class UrgencyProfile {
 		mixed $priorityWeight = self::DEFAULT_PRIORITY_WEIGHT,
 		mixed $idleWeight = self::DEFAULT_IDLE_WEIGHT,
 	) {
-		$critical = (int)self::bounded(raw: $criticalDays, default: self::DEFAULT_CRITICAL_DAYS, max: self::MAX_CRITICAL_DAYS, whole: true);
-		$warning = (int)self::bounded(raw: $warningDays, default: self::DEFAULT_WARNING_DAYS, max: self::MAX_WARNING_DAYS, whole: true);
+		$critical = (int)self::bounded(raw: $criticalDays, range: self::CRITICAL_RANGE);
+		$warning = (int)self::bounded(raw: $warningDays, range: self::WARNING_RANGE);
 
 		$this->criticalDays = $critical;
 		$this->warningDays = max($warning, $critical);
-		$this->priorityWeight = self::bounded(raw: $priorityWeight, default: self::DEFAULT_PRIORITY_WEIGHT, max: self::MAX_PRIORITY_WEIGHT, whole: false);
-		$this->idleWeight = self::bounded(raw: $idleWeight, default: self::DEFAULT_IDLE_WEIGHT, max: self::MAX_IDLE_WEIGHT, whole: false);
+		$this->priorityWeight = self::bounded(raw: $priorityWeight, range: self::PRIORITY_RANGE);
+		$this->idleWeight = self::bounded(raw: $idleWeight, range: self::IDLE_RANGE);
 		$this->inSight = max(self::DEFAULT_IN_SIGHT_DAYS, $this->warningDays);
 	}//end __construct()
 
@@ -145,14 +155,9 @@ final class UrgencyProfile {
 	 */
 	public function withQueueExtras(mixed $inSightDays, mixed $residentWaitWeight): self {
 		$copy = clone $this;
-		$inSight = (int)self::bounded(raw: $inSightDays, default: self::DEFAULT_IN_SIGHT_DAYS, max: self::MAX_IN_SIGHT_DAYS, whole: true);
+		$inSight = (int)self::bounded(raw: $inSightDays, range: self::IN_SIGHT_RANGE);
 		$copy->inSight = max($inSight, $this->warningDays);
-		$copy->residentWait = self::bounded(
-			raw: $residentWaitWeight,
-			default: self::DEFAULT_RESIDENT_WAIT_WEIGHT,
-			max: self::MAX_RESIDENT_WAIT_WEIGHT,
-			whole: false
-		);
+		$copy->residentWait = self::bounded(raw: $residentWaitWeight, range: self::RESIDENT_WAIT_RANGE);
 
 		return $copy;
 	}//end withQueueExtras()
@@ -254,14 +259,15 @@ final class UrgencyProfile {
 	/**
 	 * Read one raw value into its bounds.
 	 *
-	 * @param mixed $raw     The stored value.
-	 * @param float $default The default when it does not parse.
-	 * @param float $max     The upper bound; the lower bound is 0.
-	 * @param bool  $whole   Whether the value is a whole number of days.
+	 * @param mixed                                                  $raw   The stored value.
+	 * @param array{default: int|float, max: int|float, whole: bool} $range The default when it does not parse, the
+	 *                                                                    upper bound (the lower bound is 0) and
+	 *                                                                    whether the value is a whole number of days.
 	 *
 	 * @return float The bounded value.
 	 */
-	private static function bounded(mixed $raw, float $default, float $max, bool $whole): float {
+	private static function bounded(mixed $raw, array $range): float {
+		$default = (float)$range['default'];
 		if (self::isSet(raw: $raw) === false) {
 			return $default;
 		}
@@ -275,10 +281,10 @@ final class UrgencyProfile {
 			return $default;
 		}
 
-		if ($whole === true) {
+		if ($range['whole'] === true) {
 			$value = floor($value);
 		}
 
-		return min(max($value, 0.0), $max);
+		return min(max($value, 0.0), (float)$range['max']);
 	}//end bounded()
 }//end class

@@ -50,6 +50,7 @@ interface DsoGoldenJsonRequest extends IRequest {
  * Every DSO case mutation matches its recording.
  *
  * @covers \OCA\Dossiq\Controller\DsoController
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */

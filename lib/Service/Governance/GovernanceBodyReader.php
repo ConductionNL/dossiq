@@ -143,7 +143,7 @@ class GovernanceBodyReader {
 
 		$reference = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 		$bodyId = trim((string)($row['governanceBodyId'] ?? ''));
-		if ($reference === '' && $bodyId === '') {
+		if ($this->namesABody(reference: $reference, bodyId: $bodyId) === false) {
 			return null;
 		}
 
@@ -158,12 +158,35 @@ class GovernanceBodyReader {
 			return null;
 		}
 
+		return $this->bodyFrom(event: $event);
+	}//end ask()
+
+	/**
+	 * The governance body a handled state event found, null when nobody answered or it was not found.
+	 *
+	 * @param object $event The dispatched state event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function bodyFrom(object $event): ?array {
 		if ($event->isHandled() === false || $event->isFound() === false) {
 			return null;
 		}
 
 		return $event->getGovernanceBody();
-	}//end ask()
+	}//end bodyFrom()
+
+	/**
+	 * Whether the row names a governance body to ask for, by its reference or its body id.
+	 *
+	 * @param string $reference The row's id.
+	 * @param string $bodyId    The row's governanceBodyId.
+	 *
+	 * @return bool
+	 */
+	private function namesABody(string $reference, string $bodyId): bool {
+		return $reference !== '' || $bodyId !== '';
+	}//end namesABody()
 
 	/**
 	 * Rebuild the local roster fields from decidiq's members: one chair, one

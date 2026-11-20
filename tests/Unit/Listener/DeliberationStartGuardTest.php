@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar;
 use OCA\Dossiq\Listener\DeliberationStartGuard;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
@@ -41,12 +41,15 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Writes and creates of an advice request, through the listeners the app registers on OpenRegister's pre-save events.
  *
  * @covers \OCA\Dossiq\Listener\DeliberationStartGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
@@ -54,6 +57,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker
  * @uses \OCA\Dossiq\Service\InternalWriteMarker
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
  */
 class DeliberationStartGuardTest extends TestCase {
 	use MakesBezwaarAuditTrail;
@@ -548,21 +554,24 @@ class DeliberationStartGuardTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$uuid = ['bacadvicerequest-req-1' => 'req-1'][(string) $id] ?? $id;
 
 				return parent::find(
 					id: $uuid,
-					_extend: $_extend,
-					files: $files,
-					register: $register,
-					schema: $schema,
+					options: new ObjectFindOptions(
+						register: $register,
+						schema: $schema,
+						extend: $_extend,
+						files: $files
+					),
 					_rbac: $_rbac,
 					_multitenancy: $_multitenancy
 				);
@@ -582,17 +591,18 @@ class DeliberationStartGuardTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($this->beforeSave !== null) {
 					($this->beforeSave)($this->row(schema: (string) $schema, uuid: (string) $uuid), $object);
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac, _multitenancy: $_multitenancy);
 			}
 		};
 		$this->store = $guarded;
@@ -830,7 +840,7 @@ class DeliberationStartGuardTest extends TestCase {
 			);
 		}
 
-		$this->store->saveObject(object: $row, register: 'dossiq', schema: 'bacAdviceRequest', uuid: 'req-1');
+		$this->store->saveObject(object: $row, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bacAdviceRequest'), uuid: 'req-1'));
 		return null;
 	}//end saveUnlessRefused()
 

@@ -125,6 +125,13 @@ class Organisation {
 	private ?int $bandwidthQuota = null;
 
 	/**
+	 * The user limit, present on OCA\OpenRegister\Db\Organisation since openregister#4800.
+	 *
+	 * @var integer|null
+	 */
+	private ?int $userQuota = null;
+
+	/**
 	 * @var string|null
 	 */
 	private ?string $description = null;
@@ -358,6 +365,22 @@ class Organisation {
 	 */
 	public function setBandwidthQuota(?int $bandwidthQuota): void {
 		$this->bandwidthQuota = $bandwidthQuota;
+	}
+
+	/**
+	 * @return integer|null The user quota.
+	 */
+	public function getUserQuota(): ?int {
+		return $this->userQuota;
+	}
+
+	/**
+	 * @param integer|null $userQuota The user quota.
+	 *
+	 * @return void
+	 */
+	public function setUserQuota(?int $userQuota): void {
+		$this->userQuota = $userQuota;
 	}
 
 	/**

@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 /**
  * Shapes the per case type dwell statistics into the page's matrix and list.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class PhaseSummary {
 
@@ -57,7 +57,7 @@ class PhaseSummary {
 	 *
 	 * @return array{phaseDays: array{mean: array<string, mixed>, median: array<string, mixed>}, stuck: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function forPage(array $caseTypes): array {
 		return [
@@ -82,7 +82,7 @@ class PhaseSummary {
 	 *
 	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|string>}>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
 		$phases = array_map(fn (array $report): array => $this->phaseDays(report: $report, measure: $measure), $caseTypes);
@@ -280,30 +280,59 @@ class PhaseSummary {
 	 *
 	 * @return array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, level: string}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function stuck(array $caseTypes, int $limit=5): array {
 		$candidates = [];
 		foreach ($caseTypes as $report) {
-			$top = ($report['bottlenecks'][0] ?? null);
-			if (is_array($top) === false) {
-				continue;
+			$candidate = $this->candidateOf(report: $report);
+			if ($candidate !== null) {
+				$candidates[] = $candidate;
 			}
-
-			$candidates[] = [
-				'id' => (string)($report['id'] ?? '') . ':' . (string)($top['statusId'] ?? ''),
-				'caseType' => (string)($report['title'] ?? ''),
-				'phase' => (string)($top['statusName'] ?? ''),
-				'days' => (int)round(((float)($top['medianHours'] ?? 0)) / self::HOURS_PER_DAY),
-				'visits' => (int)($top['visitCount'] ?? 0),
-				'score' => (float)($top['score'] ?? 0),
-			];
 		}
 
 		usort($candidates, static fn (array $left, array $right): int => ($right['score'] <=> $left['score']));
 
+		return $this->levelled(rows: array_slice($candidates, 0, $limit));
+	}//end stuck()
+
+	/**
+	 * A case type's highest ranked bottleneck as a candidate, or null when it has none.
+	 *
+	 * @param array<string, mixed> $report The case type's report.
+	 *
+	 * @return array{id: string, caseType: string, phase: string, days: int, visits: int, score: float}|null The candidate.
+	 *
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function candidateOf(array $report): ?array {
+		$top = ($report['bottlenecks'][0] ?? null);
+		if (is_array($top) === false) {
+			return null;
+		}
+
+		return [
+			'id' => (string)($report['id'] ?? '') . ':' . (string)($top['statusId'] ?? ''),
+			'caseType' => (string)($report['title'] ?? ''),
+			'phase' => (string)($top['statusName'] ?? ''),
+			'days' => (int)round(((float)($top['medianHours'] ?? 0)) / self::HOURS_PER_DAY),
+			'visits' => (int)($top['visitCount'] ?? 0),
+			'score' => (float)($top['score'] ?? 0),
+		];
+	}//end candidateOf()
+
+	/**
+	 * The ranked candidates without their score, the first marked `bottleneck` and the rest `watch`.
+	 *
+	 * @param array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, score: float}> $rows The ranked candidates.
+	 *
+	 * @return array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, level: string}>
+	 *
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function levelled(array $rows): array {
 		$out = [];
-		foreach (array_slice($candidates, 0, $limit) as $index => $row) {
+		foreach ($rows as $index => $row) {
 			unset($row['score']);
 			$row['level'] = 'watch';
 			if ($index === 0) {
@@ -314,5 +343,5 @@ class PhaseSummary {
 		}
 
 		return $out;
-	}//end stuck()
+	}//end levelled()
 }//end class

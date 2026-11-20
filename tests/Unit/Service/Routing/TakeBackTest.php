@@ -37,6 +37,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * A case store with the PATCH seam.
@@ -66,7 +68,9 @@ class TakeBackCaseStore {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return ($this->cases[$id] ?? null);
 	}//end find()
 
@@ -80,7 +84,11 @@ class TakeBackCaseStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register = '', string $schema = ''): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register ?? '';
+		$schema = $patch->target->schema ?? '';
 		$this->patches[]        = $data;
 		$this->cases[$objectId] = array_merge(($this->cases[$objectId] ?? []), $data);
 
@@ -316,6 +324,19 @@ class TakeBackTest extends TestCase {
 		$this->assertSame(expected: CaseRouter::NOT_DUE, actual: $router->takeBack(caseId: 'case-404', routedTo: 'aad', routedAt: ''));
 		$this->assertSame(expected: [], actual: $this->store->patches);
 	}//end testACaseThatMovedOnIsNotTakenBack()
+
+	/**
+	 * A case whose routing record is not a record is not taken back, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutARoutingRecordIsNotTakenBack(): void {
+		$this->store->cases['case-1'] = ['id' => 'case-1', 'assignee' => 'aad', 'routing' => 'aad'];
+		$this->resolver->expects($this->never())->method('resolve');
+
+		$this->assertSame(expected: CaseRouter::NOT_DUE, actual: $this->router()->takeBack(caseId: 'case-1', routedTo: 'aad', routedAt: ''));
+		$this->assertSame(expected: [], actual: $this->store->patches);
+	}//end testACaseWithoutARoutingRecordIsNotTakenBack()
 
 	/**
 	 * A pool with nobody else keeps the case with its holder, and says so.

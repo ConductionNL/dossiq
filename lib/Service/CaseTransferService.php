@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCA\Dossiq\Service\CaseTransfer\TransferStore;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class CaseTransferService {
+class CaseTransferService implements CaseTransferServiceInterface {
 	/**
 	 * Constructor for the CaseTransferService.
 	 *
@@ -105,20 +106,31 @@ class CaseTransferService {
 		string $initiatedBy = '',
 		?string $remoteCloudId = null,
 	): array {
+		return $this->initiate(
+			request: [
+				'caseId' => $caseId,
+				'sourceOrganization' => $sourceOrganization,
+				'targetOrganization' => $targetOrganization,
+				'reason' => $reason,
+				'requestedDate' => $requestedDate,
+				'initiatedBy' => $initiatedBy,
+				'remoteCloudId' => $remoteCloudId,
+			]
+		);
+	}//end initiateTransfer()
+
+	/**
+	 * Initiate one transfer, once OpenRegister is there and consent allows the hand-off.
+	 *
+	 * @param array<string, mixed> $request The transfer being initiated.
+	 *
+	 * @return array The created (or existing, when idempotent) transfer request data
+	 */
+	private function initiate(array $request): array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
 		}
-
-		$request = [
-			'caseId' => $caseId,
-			'sourceOrganization' => $sourceOrganization,
-			'targetOrganization' => $targetOrganization,
-			'reason' => $reason,
-			'requestedDate' => $requestedDate,
-			'initiatedBy' => $initiatedBy,
-			'remoteCloudId' => $remoteCloudId,
-		];
 
 		// 🔴 THE CONSENT IS A PRECONDITION, NOT A WARNING (D-5). It runs before
 		// the idempotency lookup on purpose: a refused hand-off must not leave
@@ -130,7 +142,7 @@ class CaseTransferService {
 		}
 
 		return $this->createTransfer(store: $this->store(objectService: $objectService), request: $request);
-	}//end initiateTransfer()
+	}//end initiate()
 
 	/**
 	 * Why consent stops this hand-off, or null when it may go ahead.
@@ -599,7 +611,6 @@ class CaseTransferService {
 		return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
 	}//end resolveFederatedTransferShare()
 
-
 	/**
 	 * Hand a case to another team inside this organisation.
 	 *
@@ -618,7 +629,7 @@ class CaseTransferService {
 	 *
 	 * @return array The transfer record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The declaration Awb 2:3
 	 * hangs on, stored on the record. See InternalHandover::initiate().
@@ -638,19 +649,31 @@ class CaseTransferService {
 			doorzending: $doorzending,
 		);
 
-		// One door, one chain. The internal handover moves the case on
-		// initiate — the receiving team owns it before anybody accepts — so
-		// the holding opens here rather than on the answer.
-		$this->custody->move(
-			caseId: $caseId,
-			organisationUnit: $targetTeam,
-			handler: '',
-			reason: $reason,
-			movedBy: $initiatedBy,
-		);
+		$this->openTeamHolding(handover: ['caseId' => $caseId, 'targetTeam' => $targetTeam, 'reason' => $reason, 'initiatedBy' => $initiatedBy]);
 
 		return $record;
 	}//end handToTeam()
+
+	/**
+	 * Open the receiving team's holding of the case.
+	 *
+	 * One door, one chain. The internal handover moves the case on
+	 * initiate — the receiving team owns it before anybody accepts — so
+	 * the holding opens here rather than on the answer.
+	 *
+	 * @param array<string, string> $handover The case, the receiving team, why it moves and who handed it on.
+	 *
+	 * @return void
+	 */
+	private function openTeamHolding(array $handover): void {
+		$this->custody->move(
+			caseId: $handover['caseId'],
+			organisationUnit: $handover['targetTeam'],
+			handler: '',
+			reason: $handover['reason'],
+			movedBy: $handover['initiatedBy'],
+		);
+	}//end openTeamHolding()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.
@@ -660,7 +683,7 @@ class CaseTransferService {
 	 *
 	 * @return array The settled record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function acceptHandover(string $transferId, string $acceptedBy): array {
 		return $this->internal->accept(transferId: $transferId, acceptedBy: $acceptedBy);
@@ -675,7 +698,7 @@ class CaseTransferService {
 	 *
 	 * @return array The settled record.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function refuseHandover(string $transferId, string $reason, string $refusedBy): array {
 		return $this->internal->refuse(transferId: $transferId, reason: $reason, refusedBy: $refusedBy);
@@ -688,7 +711,7 @@ class CaseTransferService {
 	 *
 	 * @return array The outstanding handovers.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function outstandingHandovers(string $team): array {
 		return $this->internal->outstandingFor(team: $team);

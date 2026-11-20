@@ -30,6 +30,8 @@ namespace OCA\Dossiq\Service\Import;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -106,16 +108,34 @@ class RecordImportStore {
 		try {
 			$saved = $objectService->saveObject(
 				object: $mapped['case'],
-				register: $register,
-				schema: $this->settingsService->getConfigValue('case_schema'),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $register,
+						schema: $this->settingsService->getConfigValue('case_schema')
+					)),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('RecordImportStore: the case could not be written', ['error' => $e->getMessage()]);
 			return '';
 		}
 
+		$caseId = $this->savedId(saved: $saved);
+		if ($caseId !== '' && $mapped['result'] !== '') {
+			$this->writeResult(objectService: $objectService, result: ['register' => $register, 'case' => $caseId, 'resultType' => $mapped['result']]);
+		}
+
+		return $caseId;
+	}//end writeCase()
+
+	/**
+	 * The uuid of a saved case: its getUuid(), else the id its array form carries.
+	 *
+	 * @param mixed $saved What saveObject answered.
+	 *
+	 * @return string The case id, or '' when it carries none.
+	 */
+	private function savedId(mixed $saved): string {
 		$caseId = '';
 		if (is_object($saved) === true && method_exists($saved, 'getUuid') === true) {
 			$caseId = (string)$saved->getUuid();
@@ -125,31 +145,29 @@ class RecordImportStore {
 			$caseId = $this->idOf(row: ($this->objectToArrayOrNull(value: $saved) ?? []));
 		}
 
-		if ($caseId !== '' && $mapped['result'] !== '') {
-			$this->writeResult(objectService: $objectService, register: $register, caseId: $caseId, resultType: $mapped['result']);
-		}
-
 		return $caseId;
-	}//end writeCase()
+	}//end savedId()
 
 	/**
 	 * The result a closed record ended with. A refusal is logged; the case stands.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseId        The case.
-	 * @param string $resultType    The result type uuid.
+	 * @param object                                                  $objectService The OpenRegister ObjectService.
+	 * @param array{register: string, case: string, resultType: string} $result        The dossiq register, the case and
+	 *                                                                                 the result type uuid.
 	 *
 	 * @return void
 	 */
-	private function writeResult(object $objectService, string $register, string $caseId, string $resultType): void {
+	private function writeResult(object $objectService, array $result): void {
+		$caseId = $result['case'];
 		try {
 			$objectService->saveObject(
-				object: ['case' => $caseId, 'resultType' => $resultType],
-				register: $register,
-				schema: $this->settingsService->getConfigValue('result_schema'),
+				object: ['case' => $caseId, 'resultType' => $result['resultType']],
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $result['register'],
+						schema: $this->settingsService->getConfigValue('result_schema')
+					)),
 				_rbac: false,
-				_multitenancy: false,
+				_multitenancy: false
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the result of a closed record could not be written', ['case' => $caseId, 'error' => $e->getMessage()]);
@@ -232,6 +250,18 @@ class RecordImportStore {
 			return null;
 		}
 
+		return $this->bySource(cases: $cases, matchField: $matchField);
+	}//end casesBySource()
+
+	/**
+	 * Case ids keyed by the source id each case holds in the match field.
+	 *
+	 * @param array<int, array<string, mixed>> $cases      The case type's cases.
+	 * @param string                           $matchField The path the source id is read from.
+	 *
+	 * @return array<string, string>
+	 */
+	private function bySource(array $cases, string $matchField): array {
 		$bySource = [];
 		foreach ($cases as $case) {
 			$sourceId = trim((string)$this->mapping->read(case: $case, path: $matchField));
@@ -241,7 +271,7 @@ class RecordImportStore {
 		}
 
 		return $bySource;
-	}//end casesBySource()
+	}//end bySource()
 
 	/**
 	 * The case type, by uuid or identifier.
@@ -345,8 +375,7 @@ class RecordImportStore {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function listAll(object $objectService, string $register, string $schema, array $filters): array {
-		$rows = [];
-		$seen = [];
+		$collected = ['rows' => [], 'seen' => []];
 		$offset = 0;
 		do {
 			$page = $this->searchObjectsAsArraysUnscoped(
@@ -355,23 +384,40 @@ class RecordImportStore {
 				schema: $schema,
 				filters: $filters + ['_limit' => self::PAGE, '_offset' => $offset]
 			);
-			foreach ($page as $row) {
-				$id = $this->idOf(row: $row);
-				if ($id !== '' && isset($seen[$id]) === true) {
-					// A store that ignores the offset answers the same page again.
-					return $rows;
-				}
-
-				$seen[$id] = true;
-				$rows[] = $row;
+			if ($this->absorb(page: $page, collected: $collected) === false) {
+				return $collected['rows'];
 			}
 
 			$offset += self::PAGE;
 			$full = (count($page) >= self::PAGE);
 		} while ($full === true);
 
-		return $rows;
+		return $collected['rows'];
 	}//end listAll()
+
+	/**
+	 * Add one page's rows to what was collected; false when the page repeats a row already seen.
+	 *
+	 * @param array<int, array<string, mixed>>                                 $page      The page.
+	 * @param array{rows: array<int, array<string, mixed>>, seen: array<string, bool>} $collected The rows so far and the
+	 *                                                                                  ids seen, extended in place.
+	 *
+	 * @return bool True when every row was new.
+	 */
+	private function absorb(array $page, array &$collected): bool {
+		foreach ($page as $row) {
+			$id = $this->idOf(row: $row);
+			if ($id !== '' && isset($collected['seen'][$id]) === true) {
+				// A store that ignores the offset answers the same page again.
+				return false;
+			}
+
+			$collected['seen'][$id] = true;
+			$collected['rows'][] = $row;
+		}
+
+		return true;
+	}//end absorb()
 
 	/**
 	 * A row's uuid, wherever the store put it.

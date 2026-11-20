@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,10 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -55,9 +58,11 @@ use Throwable;
 /**
  * Open the second case, move what the plan names, record what left.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CaseSplitExecutor {
+class CaseSplitExecutor implements CaseSplitExecutorInterface {
 
 	use SearchesObjects;
 
@@ -125,7 +130,7 @@ class CaseSplitExecutor {
 	 * @param LoggerInterface  $logger          Records every split and every refusal.
 	 * @param CaseSplitStore   $store           Where a split reads and writes.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseSplitPolicy $policy,
@@ -152,17 +157,74 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read, the case type refuses, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function split(string $caseId, string $title, array $chosen, string $actor): array {
 		$caseId = trim($caseId);
 		$case = $this->store->requireCase(caseId: $caseId);
-		$this->refuseSelection(chosen: $chosen, caseType: $this->caseTypeOf(case: $case));
-		$selection = $this->selectionOf(caseId: $caseId, chosen: $chosen);
+		$selection = $this->allowedSelection(caseId: $caseId, caseData: $case, chosen: $chosen);
 
 		$newCase = $this->openSecondCase(source: $case, title: $title, actor: $actor);
 		$newId = $this->store->uuidOf(row: $newCase);
 		$planned = $this->plan->forSelection(sourceId: $caseId, newId: $newId, chosen: $selection['rows']);
+		$moved = $this->carryOut(planned: $planned, selection: $selection, newId: $newId);
+
+		$split = $this->splitOf(caseId: $caseId, newCase: $newCase, newId: $newId, references: $planned['references']);
+		$note = $this->recordOnOriginal(case: $case, split: $split);
+		$this->logSplit(caseId: $caseId, newId: $newId, counts: [count($moved), count($planned['refused']), count($selection['onBoth'])]);
+
+		return ['case' => $newCase, 'moved' => $moved, 'refused' => $planned['refused'], 'note' => $note];
+	}//end split()
+
+	/**
+	 * Log a split with how much moved, was refused and stayed on both.
+	 *
+	 * @param string                        $caseId The case that was split.
+	 * @param string                        $newId  The new case.
+	 * @param array{0: int, 1: int, 2: int} $counts The moved, refused and on-both counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function logSplit(string $caseId, string $newId, array $counts): void {
+		$this->logger->info(
+			'Dossiq split: a case was divided',
+			['case' => $caseId, 'into' => $newId, 'moved' => $counts[0], 'refused' => $counts[1], 'onBoth' => $counts[2]],
+		);
+	}//end logSplit()
+
+	/**
+	 * The selection to split off, after refusing one the case type forbids.
+	 *
+	 * @param string                            $caseId   The case being split.
+	 * @param array<string, mixed>              $caseData The case.
+	 * @param array<string, array<int, string>> $chosen   The ids the handler picked.
+	 *
+	 * @return array<string, mixed> The selection (`rows`, `onBoth`).
+	 *
+	 * @throws RefusedException When the case type refuses the selection.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function allowedSelection(string $caseId, array $caseData, array $chosen): array {
+		$this->refuseSelection(chosen: $chosen, caseType: $this->caseTypeOf(case: $caseData));
+
+		return $this->selectionOf(caseId: $caseId, chosen: $chosen);
+	}//end allowedSelection()
+
+	/**
+	 * Apply the planned moves and duplicate what stays on both cases.
+	 *
+	 * @param array<string, mixed> $planned   The plan (`moves`).
+	 * @param array<string, mixed> $selection The selection (`rows`, `onBoth`).
+	 * @param string               $newId     The new case.
+	 *
+	 * @return array<int, array<string, mixed>> The moves that were carried out.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function carryOut(array $planned, array $selection, string $newId): array {
 		$moved = array_values(
 			array_filter($planned['moves'], fn (array $move): bool => $this->apply(move: $move, rows: $selection['rows']))
 		);
@@ -170,20 +232,29 @@ class CaseSplitExecutor {
 			$this->duplicateOnto(item: $item, toId: $newId);
 		}
 
-		$split = [
+		return $moved;
+	}//end carryOut()
+
+	/**
+	 * The split as the original records it.
+	 *
+	 * @param string                           $caseId     The case that was split.
+	 * @param array<string, mixed>             $newCase    The new case.
+	 * @param string                           $newId      The new case's uuid.
+	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
+	 *
+	 * @return array<string, string|array<mixed>> caseId, newId, newNumber and references.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function splitOf(string $caseId, array $newCase, string $newId, array $references): array {
+		return [
 			'caseId' => $caseId,
 			'newId' => $newId,
 			'newNumber' => trim((string)($newCase['identifier'] ?? $newId)),
-			'references' => $planned['references'],
+			'references' => $references,
 		];
-		$note = $this->recordOnOriginal(case: $case, split: $split);
-		$this->logger->info(
-			'Dossiq split: a case was divided',
-			['case' => $caseId, 'into' => $newId, 'moved' => count($moved), 'refused' => count($planned['refused']), 'onBoth' => count($selection['onBoth'])],
-		);
-
-		return ['case' => $newCase, 'moved' => $moved, 'refused' => $planned['refused'], 'note' => $note];
-	}//end split()
+	}//end splitOf()
 
 	/**
 	 * Refuse a selection the case type forbids, or that cannot be carried out.
@@ -195,7 +266,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException Carrying the policy's own sentence.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	private function refuseSelection(array $chosen, ?array $caseType): void {
 		$selected = array_values(
@@ -365,9 +436,13 @@ class CaseSplitExecutor {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema']),
-				uuid: $move['id'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $register,
+							schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema'])
+						),
+					uuid: $move['id']
+				)
 			);
 
 			return true;
@@ -401,8 +476,10 @@ class CaseSplitExecutor {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema']),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $register,
+						schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema'])
+					))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -423,7 +500,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the write is refused.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
 		$this->store->refuseUnreachableStatus(source: $source);
@@ -471,7 +548,6 @@ class CaseSplitExecutor {
 			);
 		}
 	}//end takeOverStatus()
-
 
 	/**
 	 * The second case's fields, taken from the first.
@@ -577,23 +653,36 @@ class CaseSplitExecutor {
 		);
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
+		$this->saveOriginal(payload: $payload, caseId: $split['caseId']);
+
+		return $note;
+	}//end recordOnOriginal()
+
+	/**
+	 * Save the original with what left it; a failed write is logged, not thrown.
+	 *
+	 * @param array<string, mixed> $payload The original, without its ids.
+	 * @param string               $caseId  The original's uuid.
+	 *
+	 * @return void
+	 */
+	private function saveOriginal(array $payload, string $caseId): void {
 		try {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: 'case_schema'),
-				uuid: $split['caseId'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->store->schema(key: 'case_schema')),
+					uuid: $caseId
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq split: the reference to what moved could not be written',
-				['case' => $split['caseId'], 'exception' => $e->getMessage()],
+				['case' => $caseId, 'exception' => $e->getMessage()],
 			);
 		}
-
-		return $note;
-	}//end recordOnOriginal()
+	}//end saveOriginal()
 
 	/**
 	 * The original's earlier moved items followed by these, stamped now.
@@ -633,7 +722,6 @@ class CaseSplitExecutor {
 		return $ids;
 	}//end idsFor()
 
-
 	/**
 	 * Which parts a split may divide on this case.
 	 *
@@ -656,7 +744,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	public function divisibleParts(string $caseId): array {
 		$case = $this->store->requireCase(caseId: trim($caseId));
@@ -695,7 +783,5 @@ class CaseSplitExecutor {
 			return null;
 		}
 	}//end caseTypeOf()
-
-
 
 }//end class

@@ -16,7 +16,7 @@
  * per-user cursor over `mail_messages`, a batch cap, the leaf resolved through
  * the container, a `getLinkedEmails` pre-check before `linkEmail`, and a refusal
  * on an unconfigured register. Only the recognizer is new, and it lives in
- * {@see CaseNumberRecognizer}, the seam design decision D6 wants kept clean so
+ * {@see \OCA\Dossiq\Service\Email\CaseNumberRecognizer}, the seam design decision D6 wants kept clean so
  * the core can later move into the leaf.
  *
  * 🔴 THE WHOLE BATCH RUNS AS THE MAILBOX OWNER. A case number in a subject is
@@ -49,18 +49,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Email\MailMatchSources;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseMailLeaf;
-use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
+use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
@@ -70,16 +70,9 @@ use Throwable;
 /**
  * Automatic, idempotent attachment of Nextcloud Mail messages to cases.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
-class CaseEmailMatchService {
-
-	/**
-	 * Instance toggle. Anything but an explicit yes means off.
-	 *
-	 * @var string
-	 */
-	public const INSTANCE_TOGGLE_KEY = 'email_case_matching_enabled';
+class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 
 	/**
 	 * Most messages one run reads for one user.
@@ -120,7 +113,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return bool True only for an explicit yes.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function isInstanceEnabled(): bool {
 		$value = strtolower(trim($this->settingsService->getConfigValue(self::INSTANCE_TOGGLE_KEY, 'no')));
@@ -135,7 +128,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return array{linked: int, scanned: int} What the run did.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function runForUser(string $userId): array {
 		$run = $this->openRun(userId: $userId);
@@ -269,7 +262,7 @@ class CaseEmailMatchService {
 		if ($this->matching->messages->ownsAccount(accountId: $run->accountId, userId: $run->owner->getUID()) === false) {
 			$this->logger->warning(
 				'Dossiq: email case matching refused, the configured Mail account is not the user\'s own',
-				['app' => Application::APP_ID, 'userId' => $run->owner->getUID(), 'accountId' => $run->accountId]
+				['app' => AppIdentity::APP_ID, 'userId' => $run->owner->getUID(), 'accountId' => $run->accountId]
 			);
 			return 'account_not_owned';
 		}
@@ -297,7 +290,7 @@ class CaseEmailMatchService {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Dossiq: app-config "register" or "case_schema" is not configured; email case matching is refused, not run unscoped',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return 'register_unconfigured';
 		}
@@ -326,7 +319,7 @@ class CaseEmailMatchService {
 			// process is: OpenRegister then scopes it to every organisation.
 			$this->logger->warning(
 				'Dossiq: OpenRegister has no runAs(); email case matching is refused rather than resolving cases outside the mailbox owner\'s scope',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return 'scope_unavailable';
 		}
@@ -424,7 +417,7 @@ class CaseEmailMatchService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: email case matching failed on one message, continuing with the batch: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'messageId' => $run->message['id']]
+				['app' => AppIdentity::APP_ID, 'messageId' => $run->message['id']]
 			);
 			return false;
 		}
@@ -470,7 +463,7 @@ class CaseEmailMatchService {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: the email leaf refused a case link: ' . $e->getMessage(),
-					['app' => Application::APP_ID, 'case' => $case['identifier'], 'messageId' => $run->message['id']]
+					['app' => AppIdentity::APP_ID, 'case' => $case['identifier'], 'messageId' => $run->message['id']]
 				);
 			}
 		}
@@ -511,7 +504,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The same cases, on their survivors.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
 	 */
 	private function onSurvivors(array $cases): array {
 		$resolved = [];

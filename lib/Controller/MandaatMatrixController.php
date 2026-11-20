@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-09-tests-and-docs/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-09-tests-and-docs/tasks.md
  */
 
 declare(strict_types=1);
@@ -34,11 +34,11 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\MandaatCheckService;
-use OCA\Dossiq\Service\MandaatEscalatieService;
-use OCA\Dossiq\Service\MandaatGebruikService;
-use OCA\Dossiq\Service\MandaatImportService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MandaatEscalatieServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MandaatGebruikServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MandaatImportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -81,22 +81,22 @@ class MandaatMatrixController extends Controller {
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param IUserSession $userSession User session (for current user id).
-	 * @param MandaatCheckService $check Check service.
-	 * @param MandaatEscalatieService $escalation Escalation service.
-	 * @param MandaatGebruikService $gebruik Audit log service.
-	 * @param MandaatImportService $import Import service.
-	 * @param SettingsService $settings Settings (OpenRegister access).
+	 * @param MandaatCheckServiceInterface $check Check service.
+	 * @param MandaatEscalatieServiceInterface $escalation Escalation service.
+	 * @param MandaatGebruikServiceInterface $gebruik Audit log service.
+	 * @param MandaatImportServiceInterface $import Import service.
+	 * @param SettingsServiceInterface $settings Settings (OpenRegister access).
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly MandaatCheckService $check,
-		private readonly MandaatEscalatieService $escalation,
-		private readonly MandaatGebruikService $gebruik,
-		private readonly MandaatImportService $import,
-		private readonly SettingsService $settings,
+		private readonly MandaatCheckServiceInterface $check,
+		private readonly MandaatEscalatieServiceInterface $escalation,
+		private readonly MandaatGebruikServiceInterface $gebruik,
+		private readonly MandaatImportServiceInterface $import,
+		private readonly SettingsServiceInterface $settings,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -123,7 +123,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function probe(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -261,7 +261,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function importPreview(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -301,7 +301,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function importApprove(string $importId): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -337,7 +337,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateCreate(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -374,7 +374,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateApprove(string $id): JSONResponse {
 		$userId = $this->currentUserId();
@@ -395,7 +395,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function escalateReject(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -426,7 +426,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function auditTrail(string $caseId): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -446,7 +446,7 @@ class MandaatMatrixController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-08-user-ui/tasks.md
 	 */
 	public function applicable(string $caseId): JSONResponse {
 		$denied = $this->ensureAuthenticated();

@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * Hand a bulk act on cases over to the job.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BulkJobHandoffController extends Controller {
 
@@ -55,18 +55,18 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param BulkJobHandoff  $handoff     The hand-off to OpenRegister's job.
+	 * @param BulkJobHandoffInterface  $handoff     The hand-off to OpenRegister's job.
 	 * @param IUserSession    $userSession The user session.
 	 * @param LoggerInterface $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BulkJobHandoff $handoff,
+		private readonly BulkJobHandoffInterface $handoff,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -83,7 +83,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The previewed job, or the refusal.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function create(): JSONResponse {
@@ -181,7 +181,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The 422.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function versionRefusal(MixedCaseTypeVersionsException $exception): JSONResponse {
 		return new JSONResponse(
@@ -209,7 +209,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return array<string, int> The same map, safe to serialise as an object.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private static function byVersion(array $counts): array {
 		$byVersion = [];
@@ -233,7 +233,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The 422, or a 503 when OpenRegister is simply absent.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function engineRefusal(RuntimeException $exception, string $action): JSONResponse {
 		if (method_exists($exception, 'getReason') === false) {
@@ -273,7 +273,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return array<string, mixed> The parameter.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function arrayParam(string $name): array {
 		$value = $this->request->getParam($name, []);

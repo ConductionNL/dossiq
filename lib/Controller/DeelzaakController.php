@@ -20,16 +20,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DeelzaakService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DeelzaakServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,17 +47,17 @@ class DeelzaakController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param DeelzaakService $deelzaakService Backend service.
+	 * @param DeelzaakServiceInterface $deelzaakService Backend service.
 	 * @param IUserSession $userSession Current user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly DeelzaakService $deelzaakService,
+		private readonly DeelzaakServiceInterface $deelzaakService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -72,13 +72,9 @@ class DeelzaakController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function list(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return new JSONResponse(
@@ -100,16 +96,12 @@ class DeelzaakController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function parent(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Authorised on the CHILD case the caller names, not on the parent it
 		// resolves to: the parent is the answer, so guarding on it would be
 		// circular and would still let an unrelated caller walk the hierarchy.
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$parent = $this->deelzaakService->getParentCase(childCaseUuid: $caseId);
@@ -129,7 +121,7 @@ class DeelzaakController extends Controller {
 	 *
 	 * @return JSONResponse Map keyed by parent UUID.
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 	 */
 	public function counts(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -217,28 +209,56 @@ class DeelzaakController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$parent = (string)$this->request->getParam('parentCaseUuid', '');
-		$child  = (string)$this->request->getParam('childCaseTypeId', '');
-		$object = $this->request->getParam('object', []);
-		if ($parent === '' || $child === '' || is_array($object) === false) {
-			return new JSONResponse(
-				['message' => 'parentCaseUuid, childCaseTypeId and object are required'],
-				Http::STATUS_BAD_REQUEST
-			);
+		$params = $this->createParams();
+		if ($params === null) {
+			return new JSONResponse(['message' => 'parentCaseUuid, childCaseTypeId and object are required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		[$parent, $child, $object] = $params;
 		if ($this->mayReadParent(parent: $parent, user: $user) === false) {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$result = $this->deelzaakService->createSubCase(
-			parentCaseUuid: $parent,
-			childCaseTypeId: $child,
-			childData: $object,
-		);
+		$result = $this->deelzaakService->createSubCase(parentCaseUuid: $parent, childCaseTypeId: $child, childData: $object);
 
 		return $this->answered(result: $result, okStatus: Http::STATUS_CREATED);
 	}//end create()
+
+	/**
+	 * The parent case, the child case type and the object the request names.
+	 *
+	 * @return array{0: string, 1: string, 2: array}|null The three, or null when one is missing.
+	 */
+	private function createParams(): array|null {
+		$parent = (string)$this->request->getParam('parentCaseUuid', '');
+		$child  = (string)$this->request->getParam('childCaseTypeId', '');
+		$object = $this->request->getParam('object', []);
+		if ($parent === '' || $child === '' || is_array($object) === false) {
+			return null;
+		}
+
+		return [$parent, $child, $object];
+	}//end createParams()
+
+	/**
+	 * Refuse a caller who is not signed in or may not read the case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may read the case.
+	 */
+	private function readRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end readRefusal()
 
 	/**
 	 * Whether the caller may read the parent a sub-case would hang off.

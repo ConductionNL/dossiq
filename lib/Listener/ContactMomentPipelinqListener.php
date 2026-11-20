@@ -42,9 +42,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ContactMomentBridgeInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\CreatedCaseRecord;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -67,13 +67,13 @@ class ContactMomentPipelinqListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContactMomentBridge      $bridge       Appends the moment to pipelinq.
-	 * @param ObjectSchemaSlugResolver $slugResolver Which schema a created object is.
+	 * @param ContactMomentBridgeInterface      $bridge       Appends the moment to pipelinq.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Which schema a created object is.
 	 * @param LoggerInterface          $logger       Where an unexpected failure goes.
 	 */
 	public function __construct(
-		private readonly ContactMomentBridge $bridge,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ContactMomentBridgeInterface $bridge,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

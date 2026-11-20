@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCA\Dossiq\Service\Status\StatusDeclaration;
 /**
  * One declared pause reason, normalised (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 final class PauseReason {
 	/**
@@ -123,7 +123,7 @@ final class PauseReason {
 	 *               countsWorkingDays: bool, chaseText: string, escalateTo: string,
 	 *               defaultDays: int|null}
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public static function normalise(array $row): array {
 		$category = trim((string)($row['category'] ?? ''));
@@ -182,7 +182,7 @@ final class PauseReason {
 	 *
 	 * @return bool True when reminders go out for it.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public static function chases(array $reason): bool {
 		return ((int)($reason['chaseIntervalDays'] ?? 0) > 0

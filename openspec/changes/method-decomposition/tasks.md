@@ -114,6 +114,9 @@ baseline-uncovered violations in *untouched* files; zero new ones introduced).
 
 ### AcController Decomposition (5 suppressions)
 
+Built 2026-11-13 (partial, branch quality/build-method-decomposition): the consumer lookups moved out of `AcController` into `lib/Controller/Support/ApplicatieDirectory.php` (requested clientId, token client_id for the refusal message, list by primary then extra clientId), beside the earlier `ApplicatieRules` and `ApplicatieRepresentation`. The controller's three class-level PHPMD suppressions (ExcessiveClassComplexity, CyclomaticComplexity, NPathComplexity) are gone with PHPMD green. Behaviour pinned by the unchanged `AcControllerCharacterisationTest` (35 tests, mapper call order included); new `ApplicatieDirectoryTest`. 038 to 040 stay open: there is no autorisatie-creation or scope-validation handler yet.
+
+
 - [ ] **TASK-DECOMP-038**: Extract `AcController/AutorisatieHandler.php` with scope validation, client verification, autorisatie creation (REQ-DECOMP-09a)
 - [ ] **TASK-DECOMP-039**: Create `ScopeValidator` with scope format, existence, combination rules (REQ-DECOMP-09c)
 - [ ] **TASK-DECOMP-040**: Update AcController to delegate to handler
@@ -528,3 +531,169 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Seen, not changed: the publish routes run no business rule, so the CT-02b publish guard
         (`ZgwBusinessRulesService::guardCaseTypePublish`) does not run on them, and they check no
         ZGW scope (the contract test says so).
+  - [x] 8j `DeadlineReportingService` (1: ExcessiveClassComplexity 74 against 50) and
+        `AiService` (1: its ExcessiveClassComplexity suppression was stale; PHPMD reports nothing
+        without it). The service held three reports. The annual payout statement moved to
+        `Reporting/AnnualPayoutStatement` (`forYear()`, the read, the year filter, the rows, the
+        warnings and the summary; 15), and the dashboard KPI counters to
+        `Termijn/TermDashboardFigures::tally()` (12), which already computed the dashboard's
+        running figures and stays at 43. The service reads the instances, builds the quarterly
+        report and keeps `generateDwangsomAuditReport()` and `getTermijnKpi()` as they were; it
+        adds each statement row's generic key names itself, as before. Measured after: 48, no
+        CouplingBetweenObjects finding (13 would have been one, so the statement replaced the
+        `PayoutReader` constructor parameter instead of joining it; the container wires the
+        reader into the statement). One test built the service with `payouts:` and now passes
+        the statement; no assertion changed.
+        Characterisation, green on the old code first: `DeadlineReportingServiceTest` (23, the
+        statement's whole shape, the year filter, the finance app's payouts, every KPI case),
+        `StatutoryTermParityTest`, `DeadlineReportingControllerContractTest` and
+        `ReportingToolsTest` (61 in all), unchanged and green after.
+        Own tests: `tests/Unit/Service/Reporting/AnnualPayoutStatementTest` (2) and
+        `tests/Unit/Service/Termijn/TermDashboardFiguresTallyTest` (2); breaking the year filter
+        or the overrun count turns them red (checked).
+  - [x] 8k `EngineTaskGateway` (1: ExcessiveClassComplexity). The gateway keeps every call to the
+        engine (mirror, reassign, find, claim, complete, cancel, the key lookup and the lazy
+        resolution). The two translations that call nothing leave as pure classes it builds, so
+        its constructor and the container are unchanged: `Task/EngineTaskPayload` (what the
+        engine is sent: the key, the copied fields, the candidates, the declaration and the
+        decoded checklist) and `Task/EngineTaskRow` (an engine task read back in the register's
+        vocabulary, each optional column asked for before its getter is called). Bodies moved
+        unchanged; `toEnginePayload()` and `find()` delegate. The frozen key prefix is the
+        gateway's public `SOURCE_KEY_PREFIX`, which `sourceKey()` and the payload both read.
+        TooManyPublicMethods stays, for the reason its docblock gives (one seam onto the engine).
+        Characterisation: `EngineTaskGatewayTest` (17, payload in its order, every miss of a
+        find, the magic columns of an Entity), green on the old class first and unchanged after
+        but for two `@uses` lines in each file that builds the gateway.
+        Own tests: `tests/Unit/Service/Task/EngineTaskPayloadTest` (4) and `EngineTaskRowTest`
+        (3); breaking the once-key precedence or the date format turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8l `CasePlanProjectionService` (1: ExcessiveClassComplexity 103 against 50; its
+        TooManyMethods finding, 34 against 25, goes too). The service keeps the reads (caseType,
+        published caseModel), the plan creation and its three public conversion methods,
+        which now delegate. The conversion leaves as pure classes the service builds, so its
+        constructor and the container are unchanged: `SentryConverter` (one sentry, its on- and
+        if-part and a criteria list, through the closed tables; the three table constants
+        live here and the service keeps them as aliases), `CaseModelConverter` (the flat
+        planItems list into the nested tree, every structural refusal) and
+        `CaseModelSearchHits` (the first plain row of a lookup, planItems decoded from JSON
+        text). Bodies moved unchanged, refusal messages included. phpmd: zero findings on the
+        four files.
+        Characterisation: `CasePlanProjectionServiceTest` (34), `CasePlanModelLookupTest` (3),
+        `CmmnRetirementTest`, `CasePlanDrain`, `CasePlanProjectionListenerTest`,
+        `BackgroundReadsRunAsSystemTest` and `tests/Unit/Architecture`, green on the old class
+        first and unchanged after but for `@uses` lines.
+        Own tests: `SentryConverterTest` (5), `CaseModelConverterTest` (5) and
+        `CaseModelSearchHitsTest` (2); breaking the sentry position, the `required` flag or the
+        undecodable-text fallback turns them red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8m `ZtcCrossReferenceEnricher` (1: ExcessiveClassComplexity 52 against 50). Turning a
+        stored uuid list (an array or a JSON string) into Catalogi URLs moved to the new
+        `Zgw/ZtcStoredUuidUrls` (`urls()`, with `storedIds()` and `prefixedUrls()`); the enricher
+        builds it in its constructor, so its constructor, interface and container binding are
+        unchanged, and the swallowing catch in `enrichBesluittype()` stays where the allowlist has it.
+        Characterisation: the existing `ZtcCrossReferenceTest` (8), `ZtcRelatedTypeLookupTest` and
+        `ZtcWriteGateGoldenTest`, green before and after. Own test: `ZtcStoredUuidUrlsTest` (2).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8n Six stale suppressions (PHPMD reports nothing without them, measured one at a time
+        against `phpmd.xml`): CouplingBetweenObjects on `StufController`, `PauseChaseService` and
+        `IntakeRequirementsListener`, ExcessiveParameterList on `InboundMailIntake` and on
+        `AcknowledgementService::__construct`, and TooManyMethods on `DeadlineReportingService`
+        (after 8j moved the payout statement out). Docblocks only; no code moved. phpmd, phpcs and
+        `tests/Unit/Architecture` green on the six files. The other 98 complexity-type suppressions
+        in `lib/` still report their rule when lifted, so they need a split, not a deletion.
+  - [x] 8o `CaseTypeRightsByRole` (1: ExcessiveClassComplexity 50 against 50). The Decide column
+        (which mandates hold for this case type, per role, and the highest ceiling worded) is
+        the new `CaseType/RoleMandateCeilings` (`byRole()`, with `forCaseType()` and `ceiling()`;
+        bodies moved unchanged). The service builds it in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 4 tests added to
+        `CaseTypeRightsByRoleTest` (14 in all) for the case-type scoping by id, slug and
+        identifier, the register query, the ceiling cell and an unreadable register across roles.
+        Unchanged and green after but for one `@uses` line.
+        Own test: `tests/Unit/Service/CaseType/RoleMandateCeilingsTest` (4); taking the lowest
+        ceiling instead of the highest turns 9 tests red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8p `MenuCaseTypesService` (1: ExcessiveClassComplexity 50 against 50). Reading one stored
+        case type row as a menu entry (its uuid from `uuid`, `id` or `@self.id`, the title in the
+        reader's language, the identifier, the trimmed icon, the handling teams, and the public
+        shape the menu is sent) is the new `CaseType/CaseTypeMenuEntry` (`uuidOf()`, `entry()`,
+        `publicRow()`; bodies moved unchanged, `publicRow()` no longer static so no StaticAccess
+        finding replaces the one removed). The service keeps the reads, the team filter, the
+        superseded-version folding and the user's choice; it builds the entry reader in its
+        constructor, so its constructor, interface and container binding are unchanged.
+        phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `MenuCaseTypesServiceTest` (16 in all) for the icon, the uuid precedence with the first
+        row of a uuid winning, and `byIdentifier()`. Unchanged and green after but for one
+        `@uses` line. Own test: `tests/Unit/Service/CaseType/CaseTypeMenuEntryTest` (3);
+        dropping the integer-id branch turns it red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8q Three more stale ExcessiveClassComplexity suppressions (PHPMD reports nothing for the
+        rule without them, measured one at a time against `phpmd.xml`): `CaseCopyService`,
+        `WOOAssessmentController` and `Review/ReviewBatches`. Docblocks only; no code moved.
+        `ReviewBatches` keeps its CouplingBetweenObjects finding (14), which development already
+        reports with or without this change.
+  - [x] 8r `ComplaintService` (1: ExcessiveClassComplexity 50 against 50). Sorting the active
+        complaints by their handling deadline (overdue, within the window) and the redacted overdue
+        list an assistant sees (REQ-MCP-203, the allowlist and the acknowledgement flag) moved to the
+        new `Complaint/ComplaintDeadlineAlerts` (`grouped()`, `overdueRows()`; bodies moved
+        unchanged). It replaced the `DayCount` constructor parameter, which only it used, so the
+        service's CouplingBetweenObjects stays at 14 (development already reports it); the service
+        builds it over its own date path when the container does not pass one. Public methods and
+        the `#[McpTool]` attribute are unchanged.
+        Characterisation, green on the single class first (own commit): 2 tests added to
+        `ComplaintServiceTest` (25 in all) for the acknowledgement flag of every non-late row and an
+        unreadable deadline. Own test: `tests/Unit/Service/Complaint/ComplaintDeadlineAlertsTest`
+        (3); narrowing the window to `<` turns 2 tests red (checked).
+  - [x] 8s `ProcessMiningService` (1: ExcessiveClassComplexity 50 against 50). Grouping the status
+        records by case, the fallback to a case's own status history (with its holder) and the time
+        order moved to the new `ProcessMining/CaseStatusRecords` (`byCase()`; bodies moved
+        unchanged). The service builds it in its constructor over its own date path, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation: the existing `ProcessMiningServiceTest` (history fallback, holder, full
+        payload) and `ProcessMiningServiceGoldenTest`, green before and unchanged after but for one
+        `@uses` line each. Own test: `tests/Unit/Service/ProcessMining/CaseStatusRecordsTest` (3);
+        reversing the time order turns 4 tests red (checked).
+  - [x] 8t `TemplateLibraryService` (1: ExcessiveClassComplexity 50 against 50). What the library
+        lists for one template (id, title, description, category, version, file, fills and notes)
+        moved to the new `TemplateLibrary/TemplateMetadata` (`entry()`, with `fills()` and
+        `notes()`; bodies moved unchanged). It reads no file; the service still reads and decodes
+        the files, warns about invalid ones and builds the entry reader in its constructor, so its
+        constructor, interface and container binding are unchanged.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `TemplateLibraryDirectoryTest` (4 in all) for trimmed notes, dropped blanks and non-strings,
+        and fills that are not a list. Own test: `tests/Unit/Service/TemplateLibrary/TemplateMetadataTest`
+        (2); keeping notes untrimmed turns 2 tests red (checked).
+  - [x] 8u `LhsMatrixDecisionTableMigrator` (1: ExcessiveClassComplexity 50 against 50). Turning the
+        cells of a matrix into decision rules (one per cell, none when a cell is off its axes) moved
+        to the new `Vth/LhsMatrixCells` (`rules()`, with `isOnAxes()` and `ruleFor()`; bodies moved
+        unchanged). The migrator builds it in its constructor, so its constructor, interface and
+        container binding are unchanged.
+        Characterisation: the existing `LhsMatrixDecisionTableMigratorTest` (each cell a rule, the
+        cell off its axis, the whole projected table) and `...FailuresTest`, green before and
+        unchanged after but for one `@uses` line each. Own test:
+        `tests/Unit/Service/Vth/LhsMatrixCellsTest` (2); a loose axis comparison turns it red
+        (checked).
+  - [x] 8v `Scoring/FormulaScorer` (1: ExcessiveClassComplexity 51 against 50). Splitting an
+        expression into its tokens moved to the new `Scoring/FormulaTokens` (`split()`; was the
+        private static `tokenise()`). Its `elseif`/`else` became early `continue`s, which also clears
+        the ElseExpression finding development reports on the old method; same tokens in the same
+        order. The scorer builds the tokeniser in a new argument-free constructor, so every
+        `new FormulaScorer()` keeps working and the grammar, limits and refusal messages are
+        unchanged.
+        Characterisation: the existing `FormulaScorerTest` (8 tests, 17 cases including every
+        refusal of the grammar), green before and unchanged after but for one `@uses` line. Own
+        test: `tests/Unit/Service/Scoring/FormulaTokensTest` (3); giving a name the `num` kind turns
+        12 tests red (checked).
+  - [x] 8w `Import/RecordCaseMapping` (1: ExcessiveClassComplexity 51 against 50). Putting a raw source
+        value in the shape its field declares (JSON, boolean, date, moment, integer, number, a listed
+        value with its default and refusal, collapsed text cut at a word) moved to the new
+        `Import/RecordFieldShape` (`shaped()`, with `textOf()`, `typed()`, `listed()`, `cut()` and
+        `TRUE_WORDS`; bodies moved unchanged). The mapping keeps reading, the required check, the
+        statuses, terms and the payload paths, and builds the shaper over its own date path and
+        values in its constructor, so its constructor and every caller are unchanged.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `RecordCaseMappingShapesTest` (6 in all) for the cut at a word and the hard cut, the listed
+        value, its default and its refusal message, and dates, moments (written in the tenant's
+        zone) and integers. Own test: `tests/Unit/Service/Import/RecordFieldShapeTest` (3);
+        cutting one character short of the space turns 3 tests red (checked).

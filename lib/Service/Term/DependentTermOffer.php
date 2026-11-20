@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
@@ -54,17 +55,11 @@ use Throwable;
  *
  * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
-class DependentTermOffer {
+class DependentTermOffer implements DependentTermOfferInterface {
 	/**
 	 * The kind of task this service writes, and the only kind it settles.
 	 */
 	public const TASK_KIND = 'term-follow';
-
-	/**
-	 * The term events that move a date and therefore make an offer. A start,
-	 * a completion and a notification move nothing, so they make none.
-	 */
-	public const MOVING_EVENTS = ['verleng', 'pauze'];
 
 	/**
 	 * How many waiting cases one moved term will write tasks for (ADR-058).
@@ -206,16 +201,26 @@ class DependentTermOffer {
 			return 0;
 		}
 
-		$move    = new TermMove(sourceCaseId: $sourceCaseId, sourceTitle: $sourceTitle, daysImpact: $daysImpact);
+		return $this->offerToDependents(move: new TermMove(sourceCaseId: $sourceCaseId, sourceTitle: $sourceTitle, daysImpact: $daysImpact));
+	}//end offer()
+
+	/**
+	 * Offer the move to every case that depends on the source case.
+	 *
+	 * @param TermMove $move The source case, its title and the days its term moved.
+	 *
+	 * @return int How many offers were written.
+	 */
+	private function offerToDependents(TermMove $move): int {
 		$written = 0;
-		foreach ($this->dependentsOf(sourceCaseId: $sourceCaseId) as $dependent) {
+		foreach ($this->dependentsOf(sourceCaseId: $move->sourceCaseId) as $dependent) {
 			if ($this->offerTo(move: $move, dependent: $dependent) === true) {
 				$written++;
 			}
 		}
 
 		return $written;
-	}//end offer()
+	}//end offerToDependents()
 
 	/**
 	 * Offer the move to one waiting case, when that case has a running term.

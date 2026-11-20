@@ -89,10 +89,12 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
+import { formEditor } from '../mixins/formEditor.js'
 
 export default {
 	name: 'RolEditorDialog',
 	components: { NcButton, NcDialog, NcSelect, NcTextField },
+	mixins: [formEditor],
 	props: {
 		role: { type: Object, default: null },
 		parentOptions: { type: Array, default: () => [] },
@@ -114,12 +116,12 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.role ? t('dossiq', 'Edit role') : t('dossiq', 'New role')
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'bestuurder', label: t('dossiq', 'Director') },
@@ -130,7 +132,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
 				this.typeOptions.find((o) => o.id === this.form.type)
@@ -138,7 +140,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		selectedParent() {
 			return (
 				this.parentOptions.find((o) => o.id === this.form.parentRole)
@@ -149,24 +151,19 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
-		validate() {
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
+		formErrors() {
 			const errs = {}
 			if (!this.form.name) errs.name = t('dossiq', 'Naam is required')
-			this.errors = errs
-			return Object.keys(errs).length === 0
-		},
-
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
-		save() {
-			if (!this.validate()) return
-			this.$emit('save', { ...this.form })
+			return errs
 		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .role-editor {
 	padding: 8px 4px;
 	min-width: 420px;
@@ -176,14 +173,5 @@ export default {
 	margin-bottom: 12px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 </style>

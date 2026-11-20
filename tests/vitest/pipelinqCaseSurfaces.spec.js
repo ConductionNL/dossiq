@@ -321,4 +321,41 @@ describe('the case type party kinds', () => {
 			wrapper.find('[data-testid="case-type-party-kinds-source"]').text(),
 		).toContain('Pipelinq is not installed')
 	})
+
+
+	it('reads nothing when the route carries no case type id', async () => {
+		axios.get.mockResolvedValue({ data: {} })
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('') } },
+		})
+		await flushPromises()
+
+		expect(axios.get).not.toHaveBeenCalled()
+		expect(wrapper.vm.loading).toBe(false)
+	})
+
+	it('shows the failed state when the kinds cannot be read', async () => {
+		axios.get.mockRejectedValue(new Error('down'))
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('ct-1') } },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.failed).toBe(true)
+	})
+
+	it('shows the refusal sentence when the save is refused', async () => {
+		axios.get.mockResolvedValue({
+			data: { source: 'pipelinq', available: true, kinds: [{ code: 'aanvrager', label: 'Aanvrager' }], accepted: ['aanvrager'] },
+		})
+		axios.put.mockRejectedValue({ response: { data: { error: 'Pipelinq refused the party kinds.' } } })
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('ct-1') } },
+		})
+		await flushPromises()
+
+		await wrapper.vm.save()
+
+		expect(wrapper.vm.error).toBe('Pipelinq refused the party kinds.')
+	})
 })

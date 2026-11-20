@@ -43,6 +43,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
 use ReflectionMethod;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Golden test for DsoCaseService.
@@ -52,6 +53,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class DsoCaseServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -89,6 +91,8 @@ class DsoCaseServiceGoldenTest extends TestCase {
 
 						$named[$param->getName()] = ($value instanceof \JsonSerializable ? $value->jsonSerialize() : $value);
 					}
+
+					$named = LegacyObjectArgs::flatten(args: $named);
 
 					$short = substr($class, (strrpos($class, '\\') + 1));
 					$this->calls[] = [$short . '::' . $method, $named];

@@ -49,10 +49,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
+use OCA\Dossiq\Listener\Support\AnswersAsServiceAccount;
 use OCA\Dossiq\Listener\Support\EventGetters;
-use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -66,6 +66,7 @@ use Throwable;
  * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 class IntakeMessageRoutedListener implements IEventListener {
+	use AnswersAsServiceAccount;
 
 	/**
 	 * The integriq event this listener is registered for.
@@ -79,12 +80,12 @@ class IntakeMessageRoutedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ChannelIntake            $intake         Decides whether a message opens a case.
+	 * @param ChannelIntakeInterface            $intake         Decides whether a message opens a case.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly ChannelIntake $intake,
+		private readonly ChannelIntakeInterface $intake,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -100,17 +101,13 @@ class IntakeMessageRoutedListener implements IEventListener {
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function handle(Event $event): void {
-		try {
-			// Integriq raises this from its own background work, with nobody
-			// signed in, and OpenRegister refuses a write from nobody. A
-			// signed-in caller keeps writing as themselves.
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// written; the slot stays empty, so integriq holds the message as
-			// unanswered.
-			return;
-		}
+		// Integriq raises this from its own background work, with nobody
+		// signed in, and OpenRegister refuses a write from nobody. A
+		// signed-in caller keeps writing as themselves.
+		// Without the service account nothing is
+		// written; the slot stays empty, so integriq holds the message as
+		// unanswered.
+		$this->answerAsServiceAccount(answer: fn () => $this->answer(event: $event));
 	}//end handle()
 
 	/**
@@ -129,24 +126,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 
 		try {
 			$targetSchema = (string)$event->getTargetSchema();
-			if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
-				// Another app's rule. Answering it would take the message away
-				// from whoever it was addressed to.
-				return;
-			}
-
-			$getters = new EventGetters();
-			$caseId = $this->intake->caseFor(
-				message: $getters->arrayFrom(event: $event, method: 'getMessage'),
-				targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
-				ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
-			);
-
-			if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
-				return;
-			}
-
-			$event->setCreatedRef($caseId);
+			$this->answerCase(event: $event, targetSchema: $targetSchema);
 		} catch (Throwable $e) {
 			// The slot stays empty, so integriq holds the message. That is the
 			// same outcome as before this listener existed, and it is the right
@@ -158,4 +138,37 @@ class IntakeMessageRoutedListener implements IEventListener {
 			);
 		}
 	}//end answer()
+
+	/**
+	 * Create or find the case a routed message is for, and write it into the event.
+	 *
+	 * @param Event  $event        The integriq event.
+	 * @param string $targetSchema The schema the routing rule targets.
+	 *
+	 * @return void
+	 *
+	 * @throws Throwable When the intake cannot handle the message.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function answerCase(Event $event, string $targetSchema): void {
+		if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
+			// Another app's rule. Answering it would take the message away
+			// from whoever it was addressed to.
+			return;
+		}
+
+		$getters = new EventGetters();
+		$caseId = $this->intake->caseFor(
+			message: $getters->arrayFrom(event: $event, method: 'getMessage'),
+			targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
+			ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
+		);
+
+		if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
+			return;
+		}
+
+		$event->setCreatedRef($caseId);
+	}//end answerCase()
 }//end class
