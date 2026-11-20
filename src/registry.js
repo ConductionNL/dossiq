@@ -70,6 +70,7 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import AdviceRequestDialog from './dialogs/AdviceRequestDialog.vue'
 import AdviceResponseDialog from './dialogs/AdviceResponseDialog.vue'
+import AnswerPublishDialog from './dialogs/AnswerPublishDialog.vue'
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
@@ -429,6 +430,14 @@ const registry = {
 		component: DecisionTableAdviceDialog,
 		propsSchema: {},
 		_note: "CaseDetail `advice-from-decision-table` header action, board DqHandhaving (REQ-LHS-CASE-01). Reads the inputs and outcomes of the decision table the case type names from /api/decision-advice/case/{caseId}/form, asks /api/decision-advice/recommend (the server stores the advice on the case) and records acceptance or a deviation with a reason through /api/decision-advice/override, which refuses a deviation without one. Named for what it does, not for a procedure: the case type's configuration decides which table it asks.",
+	},
+
+	// @spec openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management/spec.md#requirement-a-tender-is-worked-end-to-end-on-its-case-page-req-tnd-case-01
+	AnswerPublishDialog: {
+		kind: 'modal',
+		component: AnswerPublishDialog,
+		propsSchema: {},
+		_note: "CaseDetail `tender-answer-publish` header action, board DqAanbesteding (REQ-TND-CASE-01). Lists the open questions that point at the case, stores the answer on the chosen one and walks the question's own lifecycle through OpenRegister's transition endpoint (`answer`, then `publish`), then stamps `publishedAt`. The schema and the case field are props, so the dialog serves any question schema with that lifecycle.",
 	},
 
 	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01

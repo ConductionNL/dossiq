@@ -93,6 +93,7 @@ import CloudUploadOutline from 'vue-material-design-icons/CloudUploadOutline.vue
 import CodeJson from 'vue-material-design-icons/CodeJson.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import CogOutline from 'vue-material-design-icons/CogOutline.vue'
+import CommentCheckOutline from 'vue-material-design-icons/CommentCheckOutline.vue'
 import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
 import CommentQuestionOutline from 'vue-material-design-icons/CommentQuestionOutline.vue'
 import CommentTextOutline from 'vue-material-design-icons/CommentTextOutline.vue'
@@ -333,6 +334,7 @@ export default {
 	CodeJson,
 	Cog,
 	CogOutline,
+	CommentCheckOutline,
 	CommentOutline,
 	CommentQuestionOutline,
 	CommentTextOutline,
