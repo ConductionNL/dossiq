@@ -172,6 +172,80 @@ class CaseArchiveReadinessTest extends TestCase {
 	}//end testNoDocumentsAreAllFinalAndAnUnreadableStoreIsUnknown()
 
 	/**
+	 * A decision store that cannot be read leaves the decision date out but
+	 * still counts the decisions the case names.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDecisionStoreLeavesTheDateOut(): void {
+		$broken = $this->createMock(originalClassName: SettingsService::class);
+		$broken->method('getObjectService')->willReturn(
+			new class {
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<int, mixed> Never returns.
+				 */
+				public function searchObjects(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjects()
+
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function searchObjectsPaginated(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjectsPaginated()
+
+				/**
+				 * @param mixed ...$arguments Any query.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function buildSearchQuery(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end buildSearchQuery()
+			}
+		);
+		$broken->method('getConfigValue')->willReturn('configured');
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $broken,
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
+		);
+
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1', 'd-2']]));
+
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 2], actual: $checklist['decision']);
+	}//end testAnUnreadableDecisionStoreLeavesTheDateOut()
+
+	/**
+	 * Without a configured document store the documents item says it does not
+	 * know, and no decision date is looked up.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredDocumentStoreIsUnknown(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('');
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $settings,
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
+		);
+
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1']]));
+
+		$this->assertSame(expected: ['id' => 'documents', 'met' => null], actual: $checklist['documents']);
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 1], actual: $checklist['decision']);
+	}//end testAnUnconfiguredDocumentStoreIsUnknown()
+
+	/**
 	 * The decision item carries the date of the latest decision.
 	 *
 	 * @return void

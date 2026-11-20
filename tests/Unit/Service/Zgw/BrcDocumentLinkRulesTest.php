@@ -161,4 +161,26 @@ class BrcDocumentLinkRulesTest extends TestCase {
 		$this->assertTrue($result['valid']);
 		$this->assertSame(self::TEXT, $result['enrichedBody']['natureRelationshipDisplay']);
 	}//end testWithoutContextOnlyTheRelationTextIsAdded()
+
+	/**
+	 * A stored reference that holds no uuid is not looked up, and skips brc-008.
+	 *
+	 * The besluittype allows only another type, so a check that did run would refuse; the
+	 * documenttype and the besluittype behind a uuid-less reference are never read.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceWithoutAUuidIsNotLookedUpAndSkipsTheTypeCheck(): void {
+		$references = [
+			'documentType' => [self::DOCUMENT . '@schema:document_schema', 'documentType', self::DOCTYPE . '@schema:document_type_schema'],
+			'decisionType' => [self::BESLUIT . '@schema:decision_schema', 'decisionType', self::TYPE . '@schema:decision_type_schema'],
+		];
+		foreach ($references as $name => [$holder, $field, $unread]) {
+			$objects = $this->world(allowed: ['Notitie']);
+			$objects[$holder][$field] = 'https://ztc.example.com/typen/zonder-uuid';
+			$objects[$unread] = new \RuntimeException($unread . ' must not be read');
+
+			$this->assertTrue(condition: $this->link(objects: $objects)['valid'], message: $name);
+		}
+	}//end testAReferenceWithoutAUuidIsNotLookedUpAndSkipsTheTypeCheck()
 }//end class
