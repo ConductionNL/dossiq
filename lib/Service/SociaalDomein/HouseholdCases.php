@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\SociaalDomein;
 
 use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
 
 /**
@@ -214,7 +215,7 @@ class HouseholdCases implements HouseholdCasesInterface {
 			'caseId'        => (string)$case['id'],
 			'identifier'    => (string)($case['identifier'] ?? ''),
 			'title'         => (string)($case['title'] ?? ''),
-			'caseTypeTitle' => (string)($caseType['title'] ?? ''),
+			'caseTypeTitle' => (new LanguageMapText())->textOf(value: ($caseType['title'] ?? null)),
 			'statusLabel'   => (string)($case['statusPublicLabel'] ?? ''),
 			'statusRole'    => (string)($case['statusRole'] ?? ''),
 			'access'        => 'full',

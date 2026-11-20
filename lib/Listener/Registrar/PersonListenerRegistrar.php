@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Registrar;
 
+use OCA\Dossiq\Listener\CaseReadStateTriggersListener;
 use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
 use OCA\Dossiq\Listener\RoleTypeVocabularyListener;
@@ -72,5 +73,9 @@ class PersonListenerRegistrar {
 
 		// A register import rewrites the case schema's link roles to the generic ones; this puts the role types back.
 		$context->registerEventListener(event: SchemaUpdatedEvent::class, listener: CaseSchemaVocabularyListener::class);
+
+		// A case's type narrows which changes make it unread (unread-state-on-the-case 3.1b).
+		// By name: the event exists only on an OpenRegister with the per-object read-state hook.
+		$context->registerEventListener(event: CaseReadStateTriggersListener::EVENT, listener: CaseReadStateTriggersListener::class);
 	}//end register()
 }//end class

@@ -41,6 +41,7 @@ import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamS
 import { useObjectStore } from './store/modules/object.js'
 import { withConfigLabels } from './utils/configLabels.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
+import { DOSSIQ_FIELD_INSPECTION_CONFIG } from './utils/fieldInspectionConfig.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
@@ -135,31 +136,23 @@ function tryLoadTranslations() {
 // `register()` throws synchronously in dev, aborting this whole script before
 // the app ever mounts. Unregister the generic entry first so dossiq's mapping
 // always wins regardless of bootstrap order. The mapping mirrors
-// `DailySyncService` exactly (fieldInspection / inspectionChecklist /
-// checklistResult, filtered by inspectorRef + scheduledAt).
+// `DailySyncService` for the planning (fieldInspection, filtered by
+// inspectorRef + scheduledAt). Templates and results follow
+// inspection-checklists-onto-task 4.2b: the leaf reads the one template schema
+// (`inspectionChecklistTemplate`, items inside ordered sections) and replays a
+// finished checklist as ONE POST to dossiq's own result endpoint, which stores
+// it as a completed inspection task after the photo and required gates. It no
+// longer writes `checklistResult` objects.
 //
 // @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+// @spec openspec/changes/inspection-checklists-onto-task/tasks.md
 const sharedIntegrationRegistry = getSharedRegistry()
 if (sharedIntegrationRegistry.has('field-inspection')) {
 	sharedIntegrationRegistry.unregister('field-inspection')
 }
 registerIntegration({
 	...fieldInspectionIntegration,
-	offlineConfig: {
-		// Schema holding today's planned inspections.
-		plannedSchema: 'fieldInspection',
-		// Schema holding the checklist templates referenced by planned items.
-		referenceSchema: 'inspectionChecklist',
-		// Property on a planned item that references its checklist template.
-		templateRefField: 'checklistTemplateRef',
-		// Schema the completed checklist result is written back to.
-		resultSchema: 'checklistResult',
-		// Planning filter: assignee uid property + the scheduled-date field.
-		assigneeField: 'inspectorRef',
-		dateField: 'scheduledAt',
-		// Property on a planned item used as its display title.
-		titleField: 'caseRef',
-	},
+	offlineConfig: DOSSIQ_FIELD_INSPECTION_CONFIG,
 })
 
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\DeletionWindowReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\OpenRegister\Db\AuditTrail;
 use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
@@ -519,6 +520,90 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$this->service()->restore(caseId: 'case-live');
 	}//end testALiveCaseCannotBeRestored()
+
+	/**
+	 * The live case behind the retention clocks is read when everything to read it with is there.
+	 *
+	 * @return void
+	 */
+	public function testTheLiveCaseIsReadWhenItCanBe(): void {
+		$register = new InMemoryRegister();
+		$register->seed('case', 'case-1', ['title' => 'Dakkapel']);
+		$failing = new class {
+
+			/**
+			 * A store that cannot be read.
+			 *
+			 * @param string $id      The uuid.
+			 * @param mixed  $options The find options.
+			 *
+			 * @return array<string, mixed> Never.
+			 */
+			public function find(string $id, mixed $options = null): array {
+				throw new RuntimeException('store down');
+			}
+		};
+
+		$warnings = [];
+		$service = function (?object $objects, array $config) use (&$warnings): CaseRecycleService {
+			$settings = $this->createMock(originalClassName: SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+			$logger = $this->createMock(originalClassName: LoggerInterface::class);
+			$logger->method('warning')->willReturnCallback(
+				static function (string $message, array $context) use (&$warnings): void {
+					$warnings[] = [$message, $context];
+				}
+			);
+
+			return new CaseRecycleService(
+				settingsService: $settings,
+				windowReader: new DeletionWindowReader(settingsService: $settings, logger: $logger),
+				userSession: $this->userSession,
+				logger: $logger
+			);
+		};
+		$config = ['register' => 'dossiq', 'case_schema' => 'case'];
+
+		$this->assertSame(expected: 'Dakkapel', actual: $service($register, $config)->liveCase(caseId: 'case-1')['title']);
+		$this->assertNull(actual: $service($register, $config)->liveCase(caseId: 'case-2'));
+		$answering = new class {
+
+			/**
+			 * The finds asked.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * A store that answers every find.
+			 *
+			 * @param string $id      The uuid.
+			 * @param mixed  $options The find options.
+			 *
+			 * @return array<string, mixed> The row.
+			 */
+			public function find(string $id, mixed $options = null): array {
+				$this->asked[] = $id;
+				return ['title' => 'anything'];
+			}
+		};
+		$this->assertNull(actual: $service($answering, $config)->liveCase(caseId: ''));
+		$this->assertNull(actual: $service(null, $config)->liveCase(caseId: 'case-1'));
+		$this->assertNull(actual: $service($answering, ['register' => 'dossiq'])->liveCase(caseId: 'case-1'));
+		$this->assertNull(actual: $service($answering, ['case_schema' => 'case'])->liveCase(caseId: 'case-1'));
+		$this->assertSame(expected: [], actual: $answering->asked);
+		$this->assertSame(expected: [], actual: $warnings);
+
+		$this->assertNull(actual: $service($failing, $config)->liveCase(caseId: 'case-1'));
+		$this->assertSame(
+			expected: [['Dossiq: the case behind the retention clocks could not be read', ['caseId' => 'case-1', 'error' => 'store down']]],
+			actual: $warnings
+		);
+	}//end testTheLiveCaseIsReadWhenItCanBe()
 
 	/**
 	 * Only a soft-deleted case is found as deleted: a miss, another schema and an empty id are not.

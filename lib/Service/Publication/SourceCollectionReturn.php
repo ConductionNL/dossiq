@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq source collection return
+ * Dossiq Woo dossier return
  *
  * BRINGS A PUBLISHED DECISION BACK TO THE DOSSIER THE REQUEST CAME FROM (hydra
  * woo-citizen-journey C6, journey step J5.5). A Woo request started from a
@@ -19,8 +19,8 @@
  * publish {@see self::tellTheResident()} has WooDecisionNotice write them a
  * message that says the decision is published and links to it.
  *
- * @category Service
- * @package  OCA\Dossiq\Service\Publication
+ * @category Woo
+ * @package  OCA\Dossiq\Woo
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -41,8 +41,8 @@ namespace OCA\Dossiq\Service\Publication;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCA\Dossiq\Woo\WooDecisionNotice;
+use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Appends a published decision to the collection the request was started from, once.
+ * Appends a published Woo decision to its source dossier, once.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
  */
