@@ -203,7 +203,8 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		$definitions = [];
 		foreach (($this->readJson('/../../../lib/Settings/termijnbewaking_seed_data.json')['termijnDefinities'] ?? []) as $definition) {
 			$slug = trim((string)($definition['caseType'] ?? ''));
-			if ($slug === '') {
+			// A term a case type has to pick is not its default term.
+			if ($slug === '' || ($definition['pickedByCaseType'] ?? false) === true) {
 				continue;
 			}
 
