@@ -374,6 +374,7 @@ export default {
 		 *
 		 * @param {object} e The failure.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		async recoverProgress(e) {
 			if (e?.response?.status === 404) {
@@ -437,6 +438,7 @@ export default {
 		 * not return it inline: ready once every step is completed.
 		 *
 		 * @return {{ready: boolean, missing: Array<string>}} The readiness.
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		derivedGoLive() {
 			const ready = this.completedSteps === this.totalSteps
