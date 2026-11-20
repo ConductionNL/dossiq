@@ -1,10 +1,10 @@
 <?php
 
 /**
- * The decision types the Woo category mapper recognises, by name and by uuid.
+ * A decision type the publication category cannot read falls back to the whole default.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\WooPublication
+ * @package  OCA\Dossiq\Tests\Unit\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,17 +18,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\WooPublication;
+namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The seeded decision type's uuid, and decision types that are not strings.
  *
- * @covers \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @covers \OCA\Dossiq\Service\Publication\PublicationCategory
  */
-class WooCategoryMapperDecisionTypeTest extends TestCase {
+class PublicationCategoryDecisionTypeTest extends TestCase {
 
 	private const INFOCAT014 = [
 		'code' => 'infocat014',
@@ -37,14 +37,14 @@ class WooCategoryMapperDecisionTypeTest extends TestCase {
 	];
 
 	/**
-	 * A decision that carries the seeded WOO-besluit type by uuid gets the whole category.
+	 * Without a readable decision type, the seeded WOO-besluit type by uuid gets the whole default category.
 	 *
 	 * @return void
 	 */
 	public function testTheSeededDecisionTypeUuidMapsToInfocat014(): void {
 		$this->assertSame(
 			self::INFOCAT014,
-			(new WooCategoryMapper())->forDecision(['decisionType' => '3c0f5a00-0000-4000-a000-00000000d001', 'title' => 'Besluit'])
+			(new PublicationCategory())->forDecision(['decisionType' => '3c0f5a00-0000-4000-a000-00000000d001', 'title' => 'Besluit'])
 		);
 	}//end testTheSeededDecisionTypeUuidMapsToInfocat014()
 
@@ -54,7 +54,7 @@ class WooCategoryMapperDecisionTypeTest extends TestCase {
 	 * @return void
 	 */
 	public function testLookupsAreExactAndFallBackToTheWholeDefault(): void {
-		$mapper = new WooCategoryMapper();
+		$mapper = new PublicationCategory();
 
 		foreach (['woo-besluit', ' WOO-besluit', '3C0F5A00-0000-4000-A000-00000000D001'] as $decisionType) {
 			$this->assertSame(self::INFOCAT014, $mapper->forDecision(['decisionType' => $decisionType]), $decisionType);
@@ -67,7 +67,7 @@ class WooCategoryMapperDecisionTypeTest extends TestCase {
 	 * @return void
 	 */
 	public function testANonStringDecisionTypeResolvesToTheDefault(): void {
-		$mapper = new WooCategoryMapper();
+		$mapper = new PublicationCategory();
 
 		$this->assertSame(self::INFOCAT014, $mapper->forDecision(['decisionType' => null]));
 		$this->assertSame(self::INFOCAT014, $mapper->forDecision(['decisionType' => 14]));

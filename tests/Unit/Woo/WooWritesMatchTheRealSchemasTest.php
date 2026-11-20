@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
@@ -64,7 +64,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
@@ -259,7 +259,7 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$service = new OutcomePublisher(
 			settingsService: $this->settings,
 			apiClient: $client,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dossierReturn: null,

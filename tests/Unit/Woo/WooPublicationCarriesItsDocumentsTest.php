@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -52,7 +52,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Support\FindsFilesById
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses   \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses   \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses   \OCA\Dossiq\Service\Publication\CatalogTransport
@@ -257,7 +257,7 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 		return new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $client,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
 			logger: $logger,
 			dossierReturn: null,
