@@ -974,6 +974,11 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 	 * minTrust is `low` (Portaliq's password edge) pending an inspector identity
 	 * broker.
 	 *
+	 * A run given to an external inspector is now an OpenRegister portal task
+	 * (inspection-checklists-onto-task 4.3): it shows in their portal task
+	 * list, and `completeChecklistTask` completes it. The two collections and
+	 * `submitChecklistRun` stay until the run schemas retire (task 5).
+	 *
 	 * @return array<string, mixed> The inspector manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
@@ -982,7 +987,7 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 		$contribution = [
 			'label' => self::INSPECTOR_GROUP,
 			'collections' => $this->inspectorCollections(),
-			'actions' => [$this->submitChecklistRunAction()],
+			'actions' => [$this->submitChecklistRunAction(), ChecklistTaskAction::DEFINITION],
 			'notifications' => [],
 		];
 		$contribution['pages'] = $this->pages->forCollections(

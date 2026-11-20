@@ -24,6 +24,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Inspection\InspectionRunCarryOver
  *
  * @uses \OCA\Dossiq\Service\Inspection\InspectionAnswers
+ * @uses \OCA\Dossiq\Service\Inspection\OfflineChecklistResult
  * @uses \OCA\Dossiq\Service\ChecklistService
  */
 class InspectionRunShapeTest extends TestCase {
