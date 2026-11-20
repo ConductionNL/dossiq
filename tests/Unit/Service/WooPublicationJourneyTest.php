@@ -23,7 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Service\Publication\CasePublicationState;
@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
@@ -126,7 +126,7 @@ class WooPublicationJourneyTest extends TestCase {
 		$this->service = new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $this->client,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
 			logger: $this->createMock(LoggerInterface::class),
 			dossierReturn: $this->return,

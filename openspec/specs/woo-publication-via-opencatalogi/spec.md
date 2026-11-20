@@ -19,7 +19,7 @@ informatiecategorie and including only disclosable documents.
 
 #### Scenario: Decision maps to the Woo-verzoeken-en-besluiten informatiecategorie
 - **GIVEN** a WOO decision with `decisionType` "WOO-besluit"
-- **WHEN** `WooCategoryMapper::forDecision()` is called
+- **WHEN** `PublicationCategory::forDecision()` is called
 - **THEN** it MUST return category code `infocat014` with label
   "Woo-verzoeken en -besluiten" and the TOOI URI
   `https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532`
@@ -27,7 +27,7 @@ informatiecategorie and including only disclosable documents.
 #### Scenario: Unmapped decision type falls back to the Woo category
 - **GIVEN** a decision whose `decisionType` has no explicit entry in the
   category mapping table
-- **WHEN** `WooCategoryMapper::forDecision()` is called
+- **WHEN** `PublicationCategory::forDecision()` is called
 - **THEN** it MUST still return the `infocat014` entry rather than throwing or
   returning null
 
