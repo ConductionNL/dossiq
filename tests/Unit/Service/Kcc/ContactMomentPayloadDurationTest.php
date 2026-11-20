@@ -93,8 +93,8 @@ class ContactMomentPayloadDurationTest extends TestCase {
 			['endedAt' => '2026-10-12T08:05:00Z']
 		);
 
-		self::assertSame('2026-10-12T08:05:00Z', $update['endedAt']);
-		self::assertSame(300, $update['durationSeconds']);
+		self::assertSame(expected: '2026-10-12T08:05:00Z', actual: $update['endedAt']);
+		self::assertSame(expected: 300, actual: $update['durationSeconds']);
 	}//end testAnUpdateMeasuresFromTheStoredStart()
 
 	/**
@@ -109,8 +109,8 @@ class ContactMomentPayloadDurationTest extends TestCase {
 			['endedAt' => 'half past eight']
 		);
 
-		self::assertSame('half past eight', $update['endedAt']);
-		self::assertSame(0, $update['durationSeconds']);
+		self::assertSame(expected: 'half past eight', actual: $update['endedAt']);
+		self::assertSame(expected: 0, actual: $update['durationSeconds']);
 	}//end testAnUpdateWithAnUnreadableEndKeepsItWithAZeroDuration()
 
 	/**
@@ -124,7 +124,7 @@ class ContactMomentPayloadDurationTest extends TestCase {
 			['endedAt' => '2026-10-12T08:05:00Z']
 		);
 
-		self::assertSame(0, $update['durationSeconds']);
+		self::assertSame(expected: 0, actual: $update['durationSeconds']);
 	}//end testAnUnreadableStoredStartGivesAZeroDuration()
 
 	/**
@@ -135,7 +135,7 @@ class ContactMomentPayloadDurationTest extends TestCase {
 	public function testAnUpdateWithoutAStoredStartTakesNoEnd(): void {
 		$update = $this->payload()->merged(['outcome' => 'open'], ['endedAt' => '2026-10-12T08:05:00Z']);
 
-		self::assertArrayNotHasKey('endedAt', $update);
-		self::assertArrayNotHasKey('durationSeconds', $update);
+		self::assertArrayNotHasKey(key: 'endedAt', array: $update);
+		self::assertArrayNotHasKey(key: 'durationSeconds', array: $update);
 	}//end testAnUpdateWithoutAStoredStartTakesNoEnd()
 }//end class

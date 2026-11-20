@@ -43,10 +43,10 @@ final class ThroughputBucketsTest extends TestCase {
 		$buckets = new ThroughputBuckets();
 		$day     = new DateTimeImmutable('2026-08-18');
 
-		self::assertSame('2026-08', $buckets->bucketOf(day: $day, granularity: 'month'));
-		self::assertSame('2026-Q3', $buckets->bucketOf(day: $day, granularity: 'quarter'));
-		self::assertSame('2026', $buckets->bucketOf(day: $day, granularity: 'year'));
-		self::assertSame('2026-W34', $buckets->bucketOf(day: $day, granularity: 'week'));
+		self::assertSame(expected: '2026-08', actual: $buckets->bucketOf(day: $day, granularity: 'month'));
+		self::assertSame(expected: '2026-Q3', actual: $buckets->bucketOf(day: $day, granularity: 'quarter'));
+		self::assertSame(expected: '2026', actual: $buckets->bucketOf(day: $day, granularity: 'year'));
+		self::assertSame(expected: '2026-W34', actual: $buckets->bucketOf(day: $day, granularity: 'week'));
 	}//end testBucketOfNamesEachGranularity()
 
 	/**
@@ -57,9 +57,9 @@ final class ThroughputBucketsTest extends TestCase {
 	public function testQuarterBoundaries(): void {
 		$buckets = new ThroughputBuckets();
 
-		self::assertSame('2026-Q1', $buckets->bucketOf(day: new DateTimeImmutable('2026-03-31'), granularity: 'quarter'));
-		self::assertSame('2026-Q2', $buckets->bucketOf(day: new DateTimeImmutable('2026-04-01'), granularity: 'quarter'));
-		self::assertSame('2026-Q4', $buckets->bucketOf(day: new DateTimeImmutable('2026-12-31'), granularity: 'quarter'));
+		self::assertSame(expected: '2026-Q1', actual: $buckets->bucketOf(day: new DateTimeImmutable(datetime: '2026-03-31'), granularity: 'quarter'));
+		self::assertSame(expected: '2026-Q2', actual: $buckets->bucketOf(day: new DateTimeImmutable(datetime: '2026-04-01'), granularity: 'quarter'));
+		self::assertSame(expected: '2026-Q4', actual: $buckets->bucketOf(day: new DateTimeImmutable(datetime: '2026-12-31'), granularity: 'quarter'));
 	}//end testQuarterBoundaries()
 
 	/**
@@ -70,7 +70,7 @@ final class ThroughputBucketsTest extends TestCase {
 	public function testUnknownGranularityFallsBackToMonth(): void {
 		$buckets = new ThroughputBuckets();
 
-		self::assertSame('2026-01', $buckets->bucketOf(day: new DateTimeImmutable('2026-01-05'), granularity: 'decade'));
+		self::assertSame(expected: '2026-01', actual: $buckets->bucketOf(day: new DateTimeImmutable(datetime: '2026-01-05'), granularity: 'decade'));
 	}//end testUnknownGranularityFallsBackToMonth()
 
 	/**
@@ -81,7 +81,7 @@ final class ThroughputBucketsTest extends TestCase {
 	public function testWeekUsesTheIsoWeekYear(): void {
 		$buckets = new ThroughputBuckets();
 
-		self::assertSame('2026-W53', $buckets->bucketOf(day: new DateTimeImmutable('2027-01-01'), granularity: 'week'));
+		self::assertSame(expected: '2026-W53', actual: $buckets->bucketOf(day: new DateTimeImmutable(datetime: '2027-01-01'), granularity: 'week'));
 	}//end testWeekUsesTheIsoWeekYear()
 
 	/**
@@ -96,7 +96,7 @@ final class ThroughputBucketsTest extends TestCase {
 			granularity: 'month'
 		);
 
-		self::assertSame(['2026-01' => [], '2026-02' => [], '2026-03' => []], $buckets);
+		self::assertSame(expected: ['2026-01' => [], '2026-02' => [], '2026-03' => []], actual: $buckets);
 	}//end testEmptyBucketsPerMonth()
 
 	/**
@@ -111,7 +111,7 @@ final class ThroughputBucketsTest extends TestCase {
 			granularity: 'quarter'
 		);
 
-		self::assertSame(['2026-Q1', '2026-Q2', '2026-Q3'], array_keys($buckets));
+		self::assertSame(expected: ['2026-Q1', '2026-Q2', '2026-Q3'], actual: array_keys($buckets));
 	}//end testEmptyBucketsPerQuarterCollapseMonths()
 
 	/**
@@ -126,7 +126,7 @@ final class ThroughputBucketsTest extends TestCase {
 			granularity: 'week'
 		);
 
-		self::assertSame(['2026-W32', '2026-W33', '2026-W34'], array_keys($buckets));
+		self::assertSame(expected: ['2026-W32', '2026-W33', '2026-W34'], actual: array_keys($buckets));
 	}//end testEmptyBucketsPerWeekIncludeToday()
 
 	/**
@@ -141,6 +141,6 @@ final class ThroughputBucketsTest extends TestCase {
 			granularity: 'year'
 		);
 
-		self::assertSame(['2026' => []], $buckets);
+		self::assertSame(expected: ['2026' => []], actual: $buckets);
 	}//end testStartAfterTodayYieldsOnlyTodaysGroup()
 }//end class

@@ -95,8 +95,14 @@ class TriageConditionsTest extends TestCase {
 		$this->assertFalse($conditions->matches(conditions: ['senderDomain' => 'example.org'], facts: self::facts()));
 		$this->assertFalse($conditions->matches(conditions: ['dateTo' => '2024-12-31'], facts: self::facts()));
 		$this->assertFalse($conditions->matches(conditions: [], facts: self::facts()), 'no condition matches nothing');
-		$this->assertTrue($conditions->matches(conditions: ['mimeType' => 'Message/RFC822'], facts: self::facts()), 'a full mime type matches exactly, regardless of case');
-		$this->assertFalse($conditions->matches(conditions: ['mimeType' => 'message/rfc'], facts: self::facts()), 'a full mime type is no prefix');
+		$this->assertTrue(
+			condition: $conditions->matches(conditions: ['mimeType' => 'Message/RFC822'], facts: self::facts()),
+			message: 'a full mime type matches exactly, regardless of case'
+		);
+		$this->assertFalse(
+			condition: $conditions->matches(conditions: ['mimeType' => 'message/rfc'], facts: self::facts()),
+			message: 'a full mime type is no prefix'
+		);
 	}//end testEveryConditionMustHold()
 
 	/**

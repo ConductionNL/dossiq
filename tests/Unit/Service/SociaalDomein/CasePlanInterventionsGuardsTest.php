@@ -59,7 +59,7 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 	 */
 	private function interventions(): CasePlanInterventions {
 		$this->objects ??= new FakeSociaalDomeinObjects();
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
 
@@ -78,8 +78,8 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 		$this->objects = new FakeSociaalDomeinObjects();
 		$this->objects->broken = true;
 
-		self::assertSame([], $this->interventions()->ofPlan(planId: '  '));
-		self::assertSame([], $this->objects->scopes);
+		self::assertSame(expected: [], actual: $this->interventions()->ofPlan(planId: '  '));
+		self::assertSame(expected: [], actual: $this->objects->scopes);
 	}//end testABlankPlanListsNothing()
 
 	/**
@@ -95,10 +95,10 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 
 		$rows = array_column($this->interventions()->ofPlan(planId: 'plan-1'), null, 'id');
 
-		self::assertTrue($rows['past']['overdue']);
-		self::assertFalse($rows['future']['overdue']);
-		self::assertFalse($rows['done']['overdue']);
-		self::assertNull($rows['past']['providerParty']);
+		self::assertTrue(condition: $rows['past']['overdue']);
+		self::assertFalse(condition: $rows['future']['overdue']);
+		self::assertFalse(condition: $rows['done']['overdue']);
+		self::assertNull(actual: $rows['past']['providerParty']);
 	}//end testOverdueDefaultsToToday()
 
 	/**
@@ -111,13 +111,13 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 
 		try {
 			$this->interventions()->save(intervention: ['plan' => ' ', 'title' => 'Opvoedondersteuning']);
-			self::fail('An intervention without a plan was saved.');
+			self::fail(message: 'An intervention without a plan was saved.');
 		} catch (RefusedException $e) {
-			self::assertSame('intervention-needs-a-plan', $e->getRule());
-			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+			self::assertSame(expected: 'intervention-needs-a-plan', actual: $e->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $e->getStatus());
 		}
 
-		self::assertSame([], $this->objects->store);
+		self::assertSame(expected: [], actual: $this->objects->store);
 	}//end testAnInterventionNeedsAPlan()
 
 	/**
@@ -130,13 +130,13 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 
 		try {
 			$this->interventions()->save(intervention: ['plan' => 'plan-1', 'title' => '']);
-			self::fail('An intervention without a title was saved.');
+			self::fail(message: 'An intervention without a title was saved.');
 		} catch (RefusedException $e) {
-			self::assertSame('intervention-needs-a-title', $e->getRule());
-			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+			self::assertSame(expected: 'intervention-needs-a-title', actual: $e->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $e->getStatus());
 		}
 
-		self::assertSame([], $this->objects->store);
+		self::assertSame(expected: [], actual: $this->objects->store);
 	}//end testAnInterventionNeedsATitle()
 
 	/**
@@ -148,11 +148,15 @@ final class CasePlanInterventionsGuardsTest extends TestCase {
 		$this->objects = new FakeSociaalDomeinObjects();
 		$service = $this->interventions();
 
-		$unknown = $service->save(intervention: ['plan' => 'plan-1', 'title' => 'Budgetcoaching', 'provider' => 'user:buurtteam-zuid', 'state' => 'paused']);
-		$stopped = $service->save(intervention: ['plan' => 'plan-1', 'title' => 'Huiswerkbegeleiding', 'provider' => 'user:buurtteam-zuid', 'state' => 'stopped']);
+		$unknown = $service->save(
+			intervention: ['plan' => 'plan-1', 'title' => 'Budgetcoaching', 'provider' => 'user:buurtteam-zuid', 'state' => 'paused']
+		);
+		$stopped = $service->save(
+			intervention: ['plan' => 'plan-1', 'title' => 'Huiswerkbegeleiding', 'provider' => 'user:buurtteam-zuid', 'state' => 'stopped']
+		);
 
-		self::assertSame('planned', $unknown['state']);
-		self::assertSame('', $unknown['migratedFrom']);
-		self::assertSame('stopped', $stopped['state']);
+		self::assertSame(expected: 'planned', actual: $unknown['state']);
+		self::assertSame(expected: '', actual: $unknown['migratedFrom']);
+		self::assertSame(expected: 'stopped', actual: $stopped['state']);
 	}//end testAnUnknownStateIsStoredAsPlanned()
 }//end class

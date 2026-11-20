@@ -96,8 +96,8 @@ class StufControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->outbound();
 
-		self::assertSame(400, $response->getStatus());
-		self::assertSame(['error' => 'endpointId and berichtNaam are required'], $response->getData());
+		self::assertSame(expected: 400, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'endpointId and berichtNaam are required'], actual: $response->getData());
 	}//end testOutboundWithoutTheRequiredFieldsIsA400()
 
 	/**
@@ -112,8 +112,8 @@ class StufControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->outbound();
 
-		self::assertSame(404, $response->getStatus());
-		self::assertSame(['error' => 'Endpoint not found'], $response->getData());
+		self::assertSame(expected: 404, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'Endpoint not found'], actual: $response->getData());
 	}//end testOutboundToAnUnknownEndpointIsA404()
 
 	/**
@@ -131,8 +131,8 @@ class StufControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->outbound();
 
-		self::assertSame(200, $response->getStatus());
-		self::assertSame(['status' => 'sent', 'messageId' => 'm-1'], $response->getData());
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertSame(expected: ['status' => 'sent', 'messageId' => 'm-1'], actual: $response->getData());
 	}//end testOutboundSendsThroughIntegriq()
 
 	/**
@@ -143,12 +143,12 @@ class StufControllerCoverageTest extends TestCase {
 	public function testOutboundRefusedByIntegriqIsA400(): void {
 		$this->params = ['endpointId' => 'ep-1', 'berichtNaam' => 'ping'];
 		$this->register->method('findById')->willReturn(['id' => 'ep-1']);
-		$this->bridge->method('vrijBericht')->willThrowException(new StufException('No integriq source', 0));
+		$this->bridge->method('vrijBericht')->willThrowException(new StufException(message: 'No integriq source', code: 0));
 
 		$response = $this->controller()->outbound();
 
-		self::assertSame(400, $response->getStatus());
-		self::assertSame(['error' => 'No integriq source', 'errorCode' => 'STUF_VALIDATION'], $response->getData());
+		self::assertSame(expected: 400, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'No integriq source', 'errorCode' => 'STUF_VALIDATION'], actual: $response->getData());
 	}//end testOutboundRefusedByIntegriqIsA400()
 
 	/**
@@ -159,12 +159,12 @@ class StufControllerCoverageTest extends TestCase {
 	public function testOutboundWithIntegriqAwayIsA503(): void {
 		$this->params = ['endpointId' => 'ep-1', 'berichtNaam' => 'ping'];
 		$this->register->method('findById')->willReturn(['id' => 'ep-1']);
-		$this->bridge->method('vrijBericht')->willThrowException(new StufException('Integriq is unavailable', 503));
+		$this->bridge->method('vrijBericht')->willThrowException(new StufException(message: 'Integriq is unavailable', code: 503));
 
 		$response = $this->controller()->outbound();
 
-		self::assertSame(503, $response->getStatus());
-		self::assertSame(['error' => 'Integriq is unavailable', 'errorCode' => 'INTEGRIQ_UNAVAILABLE'], $response->getData());
+		self::assertSame(expected: 503, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'Integriq is unavailable', 'errorCode' => 'INTEGRIQ_UNAVAILABLE'], actual: $response->getData());
 	}//end testOutboundWithIntegriqAwayIsA503()
 
 	/**
@@ -181,8 +181,8 @@ class StufControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->messages();
 
-		self::assertSame(200, $response->getStatus());
-		self::assertSame(['items' => $rows, 'total' => 2, 'limit' => 500], $response->getData());
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertSame(expected: ['items' => $rows, 'total' => 2, 'limit' => 500], actual: $response->getData());
 	}//end testMessagesPassesTheFiltersAndClampsTheLimit()
 
 	/**
@@ -203,9 +203,9 @@ class StufControllerCoverageTest extends TestCase {
 		$this->params = ['limit' => '-3'];
 		$second = $this->controller()->messages();
 
-		self::assertSame([['stufMessage', [], 50], ['stufMessage', [], 1]], $seen);
-		self::assertSame(['items' => [], 'total' => 0, 'limit' => 50], $first->getData());
-		self::assertSame(['items' => [], 'total' => 0, 'limit' => 1], $second->getData());
+		self::assertSame(expected: [['stufMessage', [], 50], ['stufMessage', [], 1]], actual: $seen);
+		self::assertSame(expected: ['items' => [], 'total' => 0, 'limit' => 50], actual: $first->getData());
+		self::assertSame(expected: ['items' => [], 'total' => 0, 'limit' => 1], actual: $second->getData());
 	}//end testMessagesDefaultsAndLowerBound()
 
 	/**
@@ -237,9 +237,9 @@ class StufControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->inbound();
 
-		self::assertSame($expected, $response->getStatus());
-		self::assertSame('<Fo03/>', $response->render());
-		self::assertSame('text/xml; charset=utf-8', $response->getHeaders()['Content-Type']);
+		self::assertSame(expected: $expected, actual: $response->getStatus());
+		self::assertSame(expected: '<Fo03/>', actual: $response->render());
+		self::assertSame(expected: 'text/xml; charset=utf-8', actual: $response->getHeaders()['Content-Type']);
 	}//end testInboundMapsIntegriqsStatus()
 
 	/**
@@ -252,15 +252,15 @@ class StufControllerCoverageTest extends TestCase {
 			->willReturn(['statusCode' => 200, 'body' => '<Bv03/>']);
 
 		$controller = new StufController(
-			$this->request,
-			$this->register,
-			$this->bridge,
-			$this->l10n(),
-			$this->createMock(originalClassName: LoggerInterface::class),
-			$this->createMock(originalClassName: IntegrationStatusServiceInterface::class),
+			request: $this->request,
+			register: $this->register,
+			bridge: $this->bridge,
+			l10n: $this->l10n(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			integrationStatus: $this->createMock(originalClassName: IntegrationStatusServiceInterface::class),
 		);
 
-		self::assertSame(200, $controller->inbound()->getStatus());
+		self::assertSame(expected: 200, actual: $controller->inbound()->getStatus());
 	}//end testTheRealBodyReaderForwardsAnEmptyBody()
 
 	/**

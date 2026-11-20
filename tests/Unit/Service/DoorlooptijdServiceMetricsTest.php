@@ -93,7 +93,7 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 		$this->register->seed(schema: 'case', uuid: 'c2', row: ['caseType' => 't2']);
 		$this->register->seed(schema: 'case', uuid: 'c3', row: ['caseType' => 't1']);
 
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 		$this->settings->method('getObjectService')->willReturn($this->register);
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
@@ -103,10 +103,10 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 			]
 		);
 
-		$this->enricher = $this->createMock(CaseEnricher::class);
-		$this->compliance = $this->createMock(DeadlineComplianceCalculator::class);
-		$this->throughput = $this->createMock(CaseTypeThroughputCalculator::class);
-		$this->norms = $this->createMock(NormAverage::class);
+		$this->enricher = $this->createMock(originalClassName: CaseEnricher::class);
+		$this->compliance = $this->createMock(originalClassName: DeadlineComplianceCalculator::class);
+		$this->throughput = $this->createMock(originalClassName: CaseTypeThroughputCalculator::class);
+		$this->norms = $this->createMock(originalClassName: NormAverage::class);
 	}//end setUp()
 
 	/**
@@ -144,20 +144,22 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 		$enriched = [['id' => 'e1']];
 		$this->enricher->expects($this->once())->method('enrichCases')
 			->with(
-				$this->callback(fn (array $cases): bool => self::ids($cases) === ['c1', 'c2', 'c3']),
-				$this->callback(fn (array $types): bool => self::ids($types) === ['t1', 't2'])
+				$this->callback(callback: fn (array $cases): bool => self::ids(rows: $cases) === ['c1', 'c2', 'c3']),
+				$this->callback(callback: fn (array $types): bool => self::ids(rows: $types) === ['t1', 't2'])
 			)
 			->willReturn($enriched);
 		$this->compliance->expects($this->once())->method('computeKpi')->with($enriched, 5)->willReturn(['kpi' => 1]);
 		$this->compliance->expects($this->once())->method('computeMonthlyCompliance')->with($enriched, '12m')->willReturn(['m' => 1]);
 		$this->compliance->expects($this->once())->method('buildCaseList')->with($enriched, 5)->willReturn(['list']);
-		$this->compliance->expects($this->once())->method('computeSummary')->with($enriched, '12m', null, 'month')->willReturn(['total' => 3, 'normDays' => 99]);
+		$this->compliance->expects($this->once())->method('computeSummary')->with($enriched, '12m', null, 'month')->willReturn(
+			['total' => 3, 'normDays' => 99]
+		);
 		$this->throughput->method('computeCaseTypeBreakdown')->willReturn(['breakdown']);
 		$this->throughput->method('computeWithinNormByCaseType')->willReturn(['t1' => 50]);
 		$this->norms->expects($this->once())->method('averageOf')->with($enriched)->willReturn(28);
 
 		$this->assertSame(
-			[
+			expected: [
 				'kpi' => ['kpi' => 1],
 				'compliance' => ['m' => 1],
 				'caseTypeBreakdown' => ['breakdown'],
@@ -168,7 +170,7 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 					'withinNormByCaseType' => ['t1' => 50],
 				],
 			],
-			$this->service()->getMetrics(params: [])
+			actual: $this->service()->getMetrics(params: [])
 		);
 	}//end testMetricsWithDefaults()
 
@@ -179,7 +181,7 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 	 */
 	public function testMetricsHonourTheirParameters(): void {
 		$this->enricher->expects($this->once())->method('enrichCases')
-			->with($this->callback(fn (array $cases): bool => self::ids($cases) === ['c1', 'c3']), $this->anything())
+			->with($this->callback(callback: fn (array $cases): bool => self::ids(rows: $cases) === ['c1', 'c3']), $this->anything())
 			->willReturn([]);
 		$this->compliance->expects($this->once())->method('computeKpi')->with([], 0)->willReturn([]);
 		$this->compliance->expects($this->once())->method('computeMonthlyCompliance')->with([], '6m')->willReturn([]);
@@ -200,7 +202,7 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 	 */
 	public function testMetricsIgnoreNonStringParameters(): void {
 		$this->enricher->expects($this->once())->method('enrichCases')
-			->with($this->callback(fn (array $cases): bool => count($cases) === 3), $this->anything())
+			->with($this->callback(callback: fn (array $cases): bool => count($cases) === 3), $this->anything())
 			->willReturn([]);
 		$this->compliance->expects($this->once())->method('computeKpi')->with([], 10)->willReturn([]);
 		$this->compliance->expects($this->once())->method('computeSummary')->with([], '12m', null, 'month')->willReturn([]);
@@ -218,12 +220,12 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnconfiguredRegisterLoadsNothing(): void {
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 		$this->settings->method('getObjectService')->willReturn(null);
 		$this->enricher->expects($this->once())->method('enrichCases')->with([], [])->willReturn([]);
 		$this->throughput->expects($this->once())->method('computeMonthlyByCaseType')->with([], [], 12)->willReturn([]);
 
-		$this->assertSame([], $this->service()->getMonthlyRows(params: []));
+		$this->assertSame(expected: [], actual: $this->service()->getMonthlyRows(params: []));
 	}//end testUnconfiguredRegisterLoadsNothing()
 
 	/**
@@ -236,7 +238,7 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 		$filtered = [];
 		$this->throughput->method('computeMonthlyByCaseType')->willReturnCallback(
 			function (array $cases, array $caseTypes, int $months) use (&$filtered, &$monthsSeen): array {
-				$filtered[] = self::ids($cases);
+				$filtered[] = self::ids(rows: $cases);
 				$monthsSeen[] = $months;
 				return ['rows'];
 			}
@@ -244,13 +246,13 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 		$monthsSeen = [];
 		$service = $this->service();
 
-		$this->assertSame(['rows'], $service->getMonthlyRows(params: ['caseType' => 't2', 'period' => '6m']));
+		$this->assertSame(expected: ['rows'], actual: $service->getMonthlyRows(params: ['caseType' => 't2', 'period' => '6m']));
 		$service->getMonthlyRows(params: ['period' => '0m']);
 		$service->getMonthlyRows(params: ['period' => '120m']);
 		$service->getMonthlyRows(params: ['period' => '1y', 'caseType' => '']);
 
-		$this->assertSame([6, 1, 36, 12], $monthsSeen);
-		$this->assertSame([['c2'], ['c1', 'c2', 'c3'], ['c1', 'c2', 'c3'], ['c1', 'c2', 'c3']], $filtered);
+		$this->assertSame(expected: [6, 1, 36, 12], actual: $monthsSeen);
+		$this->assertSame(expected: [['c2'], ['c1', 'c2', 'c3'], ['c1', 'c2', 'c3'], ['c1', 'c2', 'c3']], actual: $filtered);
 	}//end testMonthlyRowsReadTheirPeriod()
 
 	/**
@@ -269,10 +271,10 @@ class DoorlooptijdServiceMetricsTest extends TestCase {
 
 		$service = $this->service();
 
-		$this->assertSame(['kpi'], $service->computeKpi(cases: $cases, atRiskDays: 3));
-		$this->assertSame(['monthly'], $service->computeMonthlyCompliance(cases: $cases, period: '3m'));
-		$this->assertSame(['list'], $service->buildCaseList(cases: $cases, atRiskDays: 4));
-		$this->assertSame(['breakdown'], $service->computeCaseTypeBreakdown(cases: $cases, caseTypes: $types));
-		$this->assertSame(['enriched'], $service->enrichCases(cases: $cases, caseTypes: $types));
+		$this->assertSame(expected: ['kpi'], actual: $service->computeKpi(cases: $cases, atRiskDays: 3));
+		$this->assertSame(expected: ['monthly'], actual: $service->computeMonthlyCompliance(cases: $cases, period: '3m'));
+		$this->assertSame(expected: ['list'], actual: $service->buildCaseList(cases: $cases, atRiskDays: 4));
+		$this->assertSame(expected: ['breakdown'], actual: $service->computeCaseTypeBreakdown(cases: $cases, caseTypes: $types));
+		$this->assertSame(expected: ['enriched'], actual: $service->enrichCases(cases: $cases, caseTypes: $types));
 	}//end testPassThroughsDelegate()
 }//end class

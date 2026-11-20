@@ -110,13 +110,13 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->store         = $this->createMock(SociaalDomeinStoreInterface::class);
-		$this->goals         = $this->createMock(CasePlanGoalsInterface::class);
-		$this->interventions = $this->createMock(CasePlanInterventionsInterface::class);
-		$this->review        = $this->createMock(CasePlanReviewInterface::class);
-		$this->existence     = $this->createMock(CrossDomainExistenceInterface::class);
-		$this->planAccess    = $this->createMock(FamilyPlanAccessInterface::class);
-		$this->logger        = $this->createMock(LoggerInterface::class);
+		$this->store         = $this->createMock(originalClassName: SociaalDomeinStoreInterface::class);
+		$this->goals         = $this->createMock(originalClassName: CasePlanGoalsInterface::class);
+		$this->interventions = $this->createMock(originalClassName: CasePlanInterventionsInterface::class);
+		$this->review        = $this->createMock(originalClassName: CasePlanReviewInterface::class);
+		$this->existence     = $this->createMock(originalClassName: CrossDomainExistenceInterface::class);
+		$this->planAccess    = $this->createMock(originalClassName: FamilyPlanAccessInterface::class);
+		$this->logger        = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -127,7 +127,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 	 * @return SociaalDomeinPlanController The controller.
 	 */
 	private function controller(array $params = []): SociaalDomeinPlanController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
@@ -167,10 +167,10 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	private static function assertBroke($response): void {
-		self::assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
 		self::assertSame(
-			['message' => 'That did not work.', 'error' => 'sociaal-domein-failed'],
-			$response->getData()
+			expected: ['message' => 'That did not work.', 'error' => 'sociaal-domein-failed'],
+			actual: $response->getData()
 		);
 	}//end assertBroke()
 
@@ -184,12 +184,12 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	private static function assertRefused($response, string $rule, int $status): void {
-		self::assertSame($status, $response->getStatus());
+		self::assertSame(expected: $status, actual: $response->getStatus());
 		$data = $response->getData();
-		self::assertSame($rule, $data['error']);
-		self::assertSame(str_replace('-', '_', $rule), $data['code']);
-		self::assertIsString($data['message']);
-		self::assertNotSame('', $data['message']);
+		self::assertSame(expected: $rule, actual: $data['error']);
+		self::assertSame(expected: str_replace('-', '_', $rule), actual: $data['code']);
+		self::assertIsString(actual: $data['message']);
+		self::assertNotSame(expected: '', actual: $data['message']);
 	}//end assertRefused()
 
 	/**
@@ -206,8 +206,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->plan(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		self::assertSame(['error' => 'Family plan not found'], $response->getData());
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		self::assertSame(expected: ['error' => 'Family plan not found'], actual: $response->getData());
 	}//end testPlanThatIsGoneIsNotFound()
 
 	/**
@@ -225,10 +225,10 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->plan(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		self::assertSame(
-			['planId' => self::PLAN_ID, 'plan' => $plan, 'goals' => [['id' => 'g1']], 'interventions' => [], 'dueForReview' => true],
-			$response->getData()
+			expected: ['planId' => self::PLAN_ID, 'plan' => $plan, 'goals' => [['id' => 'g1']], 'interventions' => [], 'dueForReview' => true],
+			actual: $response->getData()
 		);
 	}//end testPlanAnswersItsPayload()
 
@@ -248,7 +248,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->plan(planId: self::PLAN_ID);
 
-		self::assertRefused($response, 'register-unreadable', RefusedException::STATUS_INDETERMINATE);
+		self::assertRefused(response: $response, rule: 'register-unreadable', status: RefusedException::STATUS_INDETERMINATE);
 	}//end testPlanTranslatesARefusal()
 
 	/**
@@ -261,7 +261,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->store->method('read')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan');
 
-		self::assertBroke($this->controller()->plan(planId: self::PLAN_ID));
+		self::assertBroke(response: $this->controller()->plan(planId: self::PLAN_ID));
 	}//end testPlanAnswersAFailureAsA500()
 
 	/**
@@ -278,7 +278,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			['rule' => 'case-closed', 'status' => RefusedException::STATUS_FORBIDDEN]
 		);
 
-		self::assertRefused($this->controller()->planOfCase(caseId: 'case-1'), 'case-closed', Http::STATUS_FORBIDDEN);
+		self::assertRefused(response: $this->controller()->planOfCase(caseId: 'case-1'), rule: 'case-closed', status: Http::STATUS_FORBIDDEN);
 	}//end testPlanOfCaseTranslatesARefusal()
 
 	/**
@@ -293,7 +293,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan-of-case');
 
-		self::assertBroke($this->controller()->planOfCase(caseId: 'case-1'));
+		self::assertBroke(response: $this->controller()->planOfCase(caseId: 'case-1'));
 	}//end testPlanOfCaseAnswersAFailureAsA500()
 
 	/**
@@ -307,11 +307,13 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			->willReturn(Http::STATUS_OK);
 		$this->goals->expects($this->once())->method('save')
 			->with(['id' => 'g-1', 'plan' => self::PLAN_ID, 'title' => 'Sleeps', 'metWhen' => '', 'state' => 'open'])
-			->willThrowException(new RefusedException(rule: 'goal-title-required', sentence: 'A goal needs a title.', status: RefusedException::STATUS_UNPROCESSABLE));
+			->willThrowException(
+				new RefusedException(rule: 'goal-title-required', sentence: 'A goal needs a title.', status: RefusedException::STATUS_UNPROCESSABLE)
+			);
 
 		$response = $this->controller(params: ['id' => ' g-1 ', 'title' => 'Sleeps'])->saveGoal(planId: self::PLAN_ID);
 
-		self::assertRefused($response, 'goal-title-required', RefusedException::STATUS_UNPROCESSABLE);
+		self::assertRefused(response: $response, rule: 'goal-title-required', status: RefusedException::STATUS_UNPROCESSABLE);
 	}//end testSaveGoalTranslatesARefusal()
 
 	/**
@@ -324,7 +326,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->goals->method('save')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan-goal');
 
-		self::assertBroke($this->controller()->saveGoal(planId: self::PLAN_ID));
+		self::assertBroke(response: $this->controller()->saveGoal(planId: self::PLAN_ID));
 	}//end testSaveGoalAnswersAFailureAsA500()
 
 	/**
@@ -340,8 +342,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(params: ['state' => 'met', 'observation' => 'Sleeps through'])->closeGoal(goalId: 'g-1');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['id' => 'g-1', 'state' => 'met'], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['id' => 'g-1', 'state' => 'met'], actual: $response->getData());
 	}//end testCloseGoalPassesStateAndObservation()
 
 	/**
@@ -356,9 +358,9 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		);
 
 		self::assertRefused(
-			$this->controller(params: ['state' => 'met'])->closeGoal(goalId: 'g-1'),
-			'goal-met-without-observation',
-			RefusedException::STATUS_UNPROCESSABLE
+			response: $this->controller(params: ['state' => 'met'])->closeGoal(goalId: 'g-1'),
+			rule: 'goal-met-without-observation',
+			status: RefusedException::STATUS_UNPROCESSABLE
 		);
 	}//end testCloseGoalTranslatesARefusal()
 
@@ -372,7 +374,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->goals->method('close')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan-goal-close');
 
-		self::assertBroke($this->controller()->closeGoal(goalId: 'g-1'));
+		self::assertBroke(response: $this->controller()->closeGoal(goalId: 'g-1'));
 	}//end testCloseGoalAnswersAFailureAsA500()
 
 	/**
@@ -406,8 +408,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			params: ['goal' => ' g-1', 'title' => 'Parenting support', 'provider' => 'p-1', 'providerName' => 'Zorgaanbieder', 'startDate' => '2026-11-01']
 		)->saveIntervention(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['id' => 'i-1'], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['id' => 'i-1'], actual: $response->getData());
 	}//end testSaveInterventionSavesTheRequestedIntervention()
 
 	/**
@@ -422,8 +424,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(params: ['goal' => 'elsewhere'])->saveIntervention(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		self::assertSame(['message' => 'not_found'], $response->getData());
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		self::assertSame(expected: ['message' => 'not_found'], actual: $response->getData());
 	}//end testSaveInterventionForAGoalOffThePlanIsRefused()
 
 	/**
@@ -439,9 +441,9 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		);
 
 		self::assertRefused(
-			$this->controller()->saveIntervention(planId: self::PLAN_ID),
-			'intervention-provider-required',
-			RefusedException::STATUS_UNPROCESSABLE
+			response: $this->controller()->saveIntervention(planId: self::PLAN_ID),
+			rule: 'intervention-provider-required',
+			status: RefusedException::STATUS_UNPROCESSABLE
 		);
 	}//end testSaveInterventionTranslatesARefusal()
 
@@ -456,7 +458,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->interventions->method('save')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan-intervention');
 
-		self::assertBroke($this->controller()->saveIntervention(planId: self::PLAN_ID));
+		self::assertBroke(response: $this->controller()->saveIntervention(planId: self::PLAN_ID));
 	}//end testSaveInterventionAnswersAFailureAsA500()
 
 	/**
@@ -474,8 +476,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$response = $this->controller(params: ['changes' => ['goal added'], 'nextReviewDate' => '2027-05-01'])
 			->recordReview(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['id' => self::PLAN_ID, 'reviewed' => true], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['id' => self::PLAN_ID, 'reviewed' => true], actual: $response->getData());
 	}//end testRecordReviewRecordsWhoAndWhat()
 
 	/**
@@ -492,7 +494,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(params: ['changes' => 'not a list'])->recordReview(planId: self::PLAN_ID);
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 	}//end testRecordReviewDropsChangesThatAreNotAList()
 
 	/**
@@ -508,9 +510,9 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		);
 
 		self::assertRefused(
-			$this->controller()->recordReview(planId: self::PLAN_ID),
-			'review-date-in-past',
-			RefusedException::STATUS_UNPROCESSABLE
+			response: $this->controller()->recordReview(planId: self::PLAN_ID),
+			rule: 'review-date-in-past',
+			status: RefusedException::STATUS_UNPROCESSABLE
 		);
 	}//end testRecordReviewTranslatesARefusal()
 
@@ -525,7 +527,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->review->method('record')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'case-plan-review');
 
-		self::assertBroke($this->controller()->recordReview(planId: self::PLAN_ID));
+		self::assertBroke(response: $this->controller()->recordReview(planId: self::PLAN_ID));
 	}//end testRecordReviewAnswersAFailureAsA500()
 
 	/**
@@ -539,10 +541,10 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(params: ['bsn' => '999993653'])->lookUp();
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 		self::assertSame(
-			['message' => 'Sign in before looking a person up.', 'error' => 'not-signed-in'],
-			$response->getData()
+			expected: ['message' => 'Sign in before looking a person up.', 'error' => 'not-signed-in'],
+			actual: $response->getData()
 		);
 	}//end testLookUpWithoutASessionIsRefused()
 
@@ -559,8 +561,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(params: ['bsn' => '999993653', 'domain' => 'jeugd', 'ground' => 'safety'])->lookUp();
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['found' => ['wmo' => true]], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['found' => ['wmo' => true]], actual: $response->getData());
 	}//end testLookUpAnswersWhatWasFound()
 
 	/**
@@ -574,7 +576,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			new RefusedException(rule: 'lookup-ground-required', sentence: 'Choose a ground first.', status: RefusedException::STATUS_FORBIDDEN)
 		);
 
-		self::assertRefused($this->controller()->lookUp(), 'lookup-ground-required', Http::STATUS_FORBIDDEN);
+		self::assertRefused(response: $this->controller()->lookUp(), rule: 'lookup-ground-required', status: Http::STATUS_FORBIDDEN);
 	}//end testLookUpTranslatesARefusal()
 
 	/**
@@ -587,7 +589,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->existence->method('lookUp')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'cross-domain-lookup');
 
-		self::assertBroke($this->controller()->lookUp());
+		self::assertBroke(response: $this->controller()->lookUp());
 	}//end testLookUpAnswersAFailureAsA500()
 
 	/**
@@ -602,8 +604,8 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->lookupsAbout(bsn: '999993653');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['lookups' => [['ground' => 'safety', 'requester' => 'consulent']]], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['lookups' => [['ground' => 'safety', 'requester' => 'consulent']]], actual: $response->getData());
 	}//end testLookupsAboutAnswersTheLookups()
 
 	/**
@@ -616,7 +618,7 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 			new RefusedException(rule: 'lookups-not-yours', sentence: 'You may not see these.', status: RefusedException::STATUS_FORBIDDEN)
 		);
 
-		self::assertRefused($this->controller()->lookupsAbout(bsn: '999993653'), 'lookups-not-yours', Http::STATUS_FORBIDDEN);
+		self::assertRefused(response: $this->controller()->lookupsAbout(bsn: '999993653'), rule: 'lookups-not-yours', status: Http::STATUS_FORBIDDEN);
 	}//end testLookupsAboutTranslatesARefusal()
 
 	/**
@@ -628,6 +630,6 @@ final class SociaalDomeinPlanControllerCoverageTest extends TestCase {
 		$this->existence->method('lookupsAbout')->willThrowException(new RuntimeException('register down'));
 		$this->expectBrokeLog(op: 'cross-domain-lookups-about');
 
-		self::assertBroke($this->controller()->lookupsAbout(bsn: '999993653'));
+		self::assertBroke(response: $this->controller()->lookupsAbout(bsn: '999993653'));
 	}//end testLookupsAboutAnswersAFailureAsA500()
 }//end class

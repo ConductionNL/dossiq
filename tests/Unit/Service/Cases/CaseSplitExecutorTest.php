@@ -368,10 +368,10 @@ class CaseSplitExecutorTest extends TestCase {
 		);
 
 		$newId = (string)$answer['case']['id'];
-		self::assertSame([['part' => 'documents', 'id' => 'doc-1', 'changes' => ['case' => $newId]]], $answer['moved']);
-		self::assertSame(['doc-1'], $this->idsOn(schema: 'caseDocument', caseId: $newId));
-		self::assertSame(['doc-2', 'doc-3', 'doc-4'], $this->idsOn(schema: 'caseDocument', caseId: 'case-1'));
-		self::assertSame(['role-1', 'role-2'], $this->idsOn(schema: 'role', caseId: 'case-1'));
+		self::assertSame(expected: [['part' => 'documents', 'id' => 'doc-1', 'changes' => ['case' => $newId]]], actual: $answer['moved']);
+		self::assertSame(expected: ['doc-1'], actual: $this->idsOn(schema: 'caseDocument', caseId: $newId));
+		self::assertSame(expected: ['doc-2', 'doc-3', 'doc-4'], actual: $this->idsOn(schema: 'caseDocument', caseId: 'case-1'));
+		self::assertSame(expected: ['role-1', 'role-2'], actual: $this->idsOn(schema: 'role', caseId: 'case-1'));
 	}//end testAPlannedMoveOutsideTheSelectionIsNotCarriedOut()
 
 	/**

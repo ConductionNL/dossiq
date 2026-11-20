@@ -158,9 +158,9 @@ class DateReachedGuardTest extends TestCase {
 		$case   = ['properties' => ['skip', ['name' => 'gunning', 'value' => '2026-01-01'], ['value' => '2026-02-01']]];
 		$result = $this->evaluate(config: ['field' => 'sluiting'], case: $case);
 
-		self::assertFalse($result->passed);
-		self::assertSame('Date missing: sluiting', $result->failureMessage);
-		self::assertSame(['field' => 'sluiting'], $result->details);
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Date missing: sluiting', actual: $result->failureMessage);
+		self::assertSame(expected: ['field' => 'sluiting'], actual: $result->details);
 	}//end testPropertiesNamingOnlyOtherFieldsAreRefused()
 
 	/**

@@ -64,9 +64,9 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->caseIds = $this->createMock(DocumentCaseIds::class);
-		$this->store   = $this->createMock(DocumentRecordStore::class);
-		$this->files   = $this->createMock(FileRestrictionMirror::class);
+		$this->caseIds = $this->createMock(originalClassName: DocumentCaseIds::class);
+		$this->store   = $this->createMock(originalClassName: DocumentRecordStore::class);
+		$this->files   = $this->createMock(originalClassName: FileRestrictionMirror::class);
 	}//end setUp()
 
 	/**
@@ -75,7 +75,7 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 	 * @return RestrictedDocumentReaders The service.
 	 */
 	private function readers(): RestrictedDocumentReaders {
-		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account = $this->createMock(originalClassName: BackgroundServiceAccount::class);
 		$account->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 
 		return new RestrictedDocumentReaders(
@@ -108,10 +108,13 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 		$this->caseIds->expects(self::never())->method('caseIdsOf');
 
 		$unrestricted = ['restricted' => false, 'accessUsers' => [], 'accessGroups' => [], 'accessHandlers' => []];
-		self::assertSame(['id' => 'd', 'title' => 'x'] + $unrestricted, $this->readers()->withReaders(record: ['id' => 'd', 'title' => 'x']));
+		self::assertSame(
+			expected: ['id' => 'd', 'title' => 'x'] + $unrestricted,
+			actual: $this->readers()->withReaders(record: ['id' => 'd', 'title' => 'x'])
+		);
 
 		$nobody = ['id' => 'd', AccessExceptionValue::PROPERTY => ['users' => [' '], 'groups' => []]];
-		self::assertSame($nobody + $unrestricted, $this->readers()->withReaders(record: $nobody));
+		self::assertSame(expected: $nobody + $unrestricted, actual: $this->readers()->withReaders(record: $nobody));
 	}//end testARecordWithoutAnExceptionIsNotRestricted()
 
 	/**
@@ -131,10 +134,10 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 
 		$result = $this->readers()->withReaders(record: self::restricted(id: 'd', users: ['bob', 'carol']));
 
-		self::assertTrue($result['restricted']);
-		self::assertSame(['bob', 'carol', 'alice'], $result['accessUsers']);
-		self::assertSame(['g'], $result['accessGroups']);
-		self::assertSame(['alice', 'bob'], $result['accessHandlers']);
+		self::assertTrue(condition: $result['restricted']);
+		self::assertSame(expected: ['bob', 'carol', 'alice'], actual: $result['accessUsers']);
+		self::assertSame(expected: ['g'], actual: $result['accessGroups']);
+		self::assertSame(expected: ['alice', 'bob'], actual: $result['accessHandlers']);
 	}//end testTheHandlersOfItsCasesAreAddedOnce()
 
 	/**
@@ -155,11 +158,11 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 		);
 
 		$result = $this->readers()->withReaders(record: self::restricted(id: 'd', users: ['bob']));
-		self::assertSame(['bob'], $result['accessUsers']);
-		self::assertSame([], $result['accessHandlers']);
+		self::assertSame(expected: ['bob'], actual: $result['accessUsers']);
+		self::assertSame(expected: [], actual: $result['accessHandlers']);
 
 		$withoutId = $this->readers()->withReaders(record: [AccessExceptionValue::PROPERTY => ['users' => ['bob'], 'groups' => []]]);
-		self::assertSame([], $withoutId['accessHandlers']);
+		self::assertSame(expected: [], actual: $withoutId['accessHandlers']);
 	}//end testHandlersThatCannotBeReadAreLeftOut()
 
 	/**
@@ -174,16 +177,28 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 		$this->store->method('findRecord')->willReturnCallback(
 			static fn (string $recordId = '', int $fileId = 0): ?array => match ($recordId) {
 				'open' => ['id' => 'open', 'restricted' => false],
-				'same' => self::restricted(id: 'same', users: ['bob'], extra: ['restricted' => true, 'accessUsers' => ['bob', 'alice'], 'accessHandlers' => ['alice']]),
-				'stale' => self::restricted(id: 'stale', users: ['bob'], extra: ['restricted' => true, 'accessUsers' => ['bob', 'old'], 'accessHandlers' => ['old']]),
+				'same' => self::restricted(
+					id: 'same',
+					users: ['bob'],
+					extra: ['restricted' => true, 'accessUsers' => ['bob', 'alice'], 'accessHandlers' => ['alice']]
+				),
+				'stale' => self::restricted(
+					id: 'stale',
+					users: ['bob'],
+					extra: ['restricted' => true, 'accessUsers' => ['bob', 'old'], 'accessHandlers' => ['old']]
+				),
 				default => null,
 			}
 		);
 		$this->store->expects(self::once())->method('saveRecord')->with(
-			self::callback(static fn (array $record): bool => $record['id'] === 'stale' && $record['accessUsers'] === ['bob', 'alice'] && $record['accessHandlers'] === ['alice'])
+			self::callback(
+				callback: static fn (array $record): bool => $record['id'] === 'stale'
+					&& $record['accessUsers'] === ['bob', 'alice']
+					&& $record['accessHandlers'] === ['alice']
+			)
 		)->willReturn('stale');
 
-		self::assertSame(1, $this->readers()->refreshCase(caseId: 'case-1'));
+		self::assertSame(expected: 1, actual: $this->readers()->refreshCase(caseId: 'case-1'));
 	}//end testARefreshRewritesOnlyRestrictedDocumentsWhoseReadersChanged()
 
 	/**
@@ -195,6 +210,6 @@ class RestrictedDocumentReadersEdgesTest extends TestCase {
 		$this->store->expects(self::once())->method('findRecord')->with('orig')->willReturn(null);
 		$this->files->expects(self::never())->method('restrict');
 
-		self::assertFalse($this->readers()->inheritFromId(originalId: 'orig', fileId: 9, madeBy: 'alice'));
+		self::assertFalse(condition: $this->readers()->inheritFromId(originalId: 'orig', fileId: 9, madeBy: 'alice'));
 	}//end testAnOriginalThatIsGoneIsNotInherited()
 }//end class

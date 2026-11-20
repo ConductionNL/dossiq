@@ -62,8 +62,13 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 	 *
 	 * @return CopyMessageAttachmentsIntoMessageFolders The step.
 	 */
-	private function step(?object $objects, DocumentRecordStoreInterface $store, IRootFolder $rootFolder, LoggerInterface $logger): CopyMessageAttachmentsIntoMessageFolders {
-		$settings = $this->createMock(SettingsService::class);
+	private function step(
+		?object $objects,
+		DocumentRecordStoreInterface $store,
+		IRootFolder $rootFolder,
+		LoggerInterface $logger
+	): CopyMessageAttachmentsIntoMessageFolders {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ([
@@ -71,7 +76,7 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 				'portaal_bericht_schema' => 'portaalBericht',
 			][$key] ?? $default)
 		);
-		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default)
 		);
@@ -82,10 +87,10 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 			}
 		);
 
-		$folder = $this->createMock(Folder::class);
+		$folder = $this->createMock(originalClassName: Folder::class);
 		$folder->method('getPath')->willReturn('/system/files/Open Registers/dossiq/msg-1');
 		$folder->method('nodeExists')->willReturn(false);
-		$projection = $this->createMock(DocumentProjectionServiceInterface::class);
+		$projection = $this->createMock(originalClassName: DocumentProjectionServiceInterface::class);
 		$projection->method('folderOf')->willReturn($folder);
 
 		return new CopyMessageAttachmentsIntoMessageFolders(
@@ -132,16 +137,21 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterNothingIsCopiedAndTheKeyStaysUnset(): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')
 			->with('Dossiq portal messages: OpenRegister unavailable; attachments stay where they are.');
-		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder = $this->createMock(originalClassName: IRootFolder::class);
 		$rootFolder->expects($this->never())->method('getById');
 
-		$this->step(null, $this->createMock(DocumentRecordStoreInterface::class), $rootFolder, $this->createMock(LoggerInterface::class))
+		$this->step(
+			objects: null,
+			store: $this->createMock(originalClassName: DocumentRecordStoreInterface::class),
+			rootFolder: $rootFolder,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		)
 			->run($output);
 
-		$this->assertArrayNotHasKey(CopyMessageAttachmentsIntoMessageFolders::DONE_KEY, $this->config);
+		$this->assertArrayNotHasKey(key: CopyMessageAttachmentsIntoMessageFolders::DONE_KEY, array: $this->config);
 	}//end testWithoutOpenRegisterNothingIsCopiedAndTheKeyStaysUnset()
 
 	/**
@@ -152,50 +162,50 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnresolvableAndUncopyableAttachmentsAreNamedAndTheRunCompletes(): void {
-		$store = $this->createMock(DocumentRecordStoreInterface::class);
+		$store = $this->createMock(originalClassName: DocumentRecordStoreInterface::class);
 		$store->method('findRecord')->willThrowException(new RuntimeException('record schema missing'));
 
-		$file = $this->createMock(File::class);
+		$file = $this->createMock(originalClassName: File::class);
 		$file->method('getName')->willReturn('besluit.pdf');
 		$file->expects($this->once())->method('copy')
 			->with('/system/files/Open Registers/dossiq/msg-1/besluit.pdf')
 			->willThrowException(new RuntimeException('quota exceeded'));
 
-		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder = $this->createMock(originalClassName: IRootFolder::class);
 		$rootFolder->method('getById')->willReturnCallback(
 			fn (int $id): array => match ($id) {
-				7 => [$this->createMock(Folder::class)],
+				7 => [$this->createMock(originalClassName: Folder::class)],
 				8 => [$file],
 				default => [],
 			}
 		);
 
 		$warnings = [];
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->method('warning')->willReturnCallback(
 			static function (string $message) use (&$warnings): void {
 				$warnings[] = $message;
 			}
 		);
 
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')->with(
 			'Dossiq portal messages: copied 0 file(s) into their message, left 0 already there, 3 named in the log.'
 		);
 
-		$this->step($this->objects(['rec-1', '7', '8']), $store, $rootFolder, $logger)->run($output);
+		$this->step(objects: $this->objects(attachments: ['rec-1', '7', '8']), store: $store, rootFolder: $rootFolder, logger: $logger)->run($output);
 
 		$this->assertSame(
-			[
+			expected: [
 				'Dossiq portal messages: attachment rec-1 of msg-1 has no file; it was not copied',
 				'Dossiq portal messages: attachment 7 of msg-1 has no file; it was not copied',
 				'Dossiq portal messages: besluit.pdf could not be copied into msg-1: quota exceeded',
 			],
-			$warnings
+			actual: $warnings
 		);
 		$this->assertSame(
-			CopyMessageAttachmentsIntoMessageFolders::DONE_VERSION,
-			$this->config[CopyMessageAttachmentsIntoMessageFolders::DONE_KEY]
+			expected: CopyMessageAttachmentsIntoMessageFolders::DONE_VERSION,
+			actual: $this->config[CopyMessageAttachmentsIntoMessageFolders::DONE_KEY]
 		);
 	}//end testUnresolvableAndUncopyableAttachmentsAreNamedAndTheRunCompletes()
 
@@ -206,12 +216,12 @@ class CopyMessageAttachmentsIntoMessageFoldersEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertSame(
-			'Copy the attachments of every Dossiq portal message into the message folder',
-			$this->step(
-				null,
-				$this->createMock(DocumentRecordStoreInterface::class),
-				$this->createMock(IRootFolder::class),
-				$this->createMock(LoggerInterface::class)
+			expected: 'Copy the attachments of every Dossiq portal message into the message folder',
+			actual: $this->step(
+				objects: null,
+				store: $this->createMock(originalClassName: DocumentRecordStoreInterface::class),
+				rootFolder: $this->createMock(originalClassName: IRootFolder::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
 			)->getName()
 		);
 	}//end testTheStepNamesItself()

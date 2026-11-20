@@ -60,7 +60,7 @@ class SubsidieCofinancieringIntakeTest extends TestCase {
 	 * @return SubsidieService
 	 */
 	private function service(): SubsidieService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => match ($key) {
@@ -103,7 +103,7 @@ class SubsidieCofinancieringIntakeTest extends TestCase {
 				'coFinancingList' => json_encode([['partij' => 'Provincie', 'bedrag' => 3000]]),
 				'budget' => [['kostenpost' => 'Personeel', 'bedrag' => 10000]],
 			]);
-			$this->fail('Expected the application to be refused.');
+			$this->fail(message: 'Expected the application to be refused.');
 		} catch (OCSBadRequestException $e) {
 			$this->assertSame(
 				expected: 'De cofinanciering sluit niet aan op het projecttotaal (COFIN_SUM_MISMATCH)',

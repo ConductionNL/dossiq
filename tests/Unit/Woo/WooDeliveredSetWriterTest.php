@@ -297,6 +297,18 @@ class WooDeliveredSetWriterTest extends TestCase {
 			/** @var list<string> */
 			public array $names = [];
 
+			/**
+			 * Stand-in for addFile().
+			 *
+			 * @param string $objectEntity The object entity.
+			 * @param string $fileName The file name.
+			 * @param mixed $content The content.
+			 * @param bool $share The share.
+			 * @param array $tags The tags.
+			 * @param mixed ...$rest The rest.
+			 *
+			 * @return object
+			 */
 			public function addFile(string $objectEntity, string $fileName, mixed $content, bool $share = false, array $tags = [], mixed ...$rest): object {
 				$this->names[] = $fileName;
 				if ($fileName === '002-broken.pdf') {
@@ -306,13 +318,13 @@ class WooDeliveredSetWriterTest extends TestCase {
 				return new \stdClass();
 			}//end addFile()
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getFileService')->willReturn($files);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq'][$key] ?? $default)
 		);
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error')->with(
 			'Dossiq: could not keep a delivered file in the set folder',
 			['error' => 'disk full']
@@ -320,12 +332,26 @@ class WooDeliveredSetWriterTest extends TestCase {
 		$writer = new WooDeliveredSetWriter(settings: $settings, logger: $logger);
 
 		$result = $writer->deliver(caseId: 'case-1', decisionId: 'dec-1', delivered: [
-			['assessment' => 'as-1', 'classification' => 'openbaar', 'deliveredRef' => 'doc-1', 'originalRef' => 'doc-1', 'fileName' => '  ', 'content' => base64_encode('a')],
-			['assessment' => 'as-2', 'classification' => 'openbaar', 'deliveredRef' => 'doc-2', 'originalRef' => 'doc-2', 'fileName' => 'broken.pdf', 'content' => base64_encode('b')],
+			[
+				'assessment' => 'as-1',
+				'classification' => 'openbaar',
+				'deliveredRef' => 'doc-1',
+				'originalRef' => 'doc-1',
+				'fileName' => '  ',
+				'content' => base64_encode('a'),
+			],
+			[
+				'assessment' => 'as-2',
+				'classification' => 'openbaar',
+				'deliveredRef' => 'doc-2',
+				'originalRef' => 'doc-2',
+				'fileName' => 'broken.pdf',
+				'content' => base64_encode('b'),
+			],
 		], send: static fn (): string => 'pub-1');
 
-		$this->assertSame(['001-document-1', '002-broken.pdf'], $files->names);
-		$this->assertSame('frozen', $this->store->row(schema: 'wooDeliveredSet', uuid: $result['setId'])['status']);
+		$this->assertSame(expected: ['001-document-1', '002-broken.pdf'], actual: $files->names);
+		$this->assertSame(expected: 'frozen', actual: $this->store->row(schema: 'wooDeliveredSet', uuid: $result['setId'])['status']);
 	}//end testAnUnnamedFileGetsItsPositionAndAFailedKeepIsOnlyLogged()
 
 	/**
@@ -344,13 +370,13 @@ class WooDeliveredSetWriterTest extends TestCase {
 
 		$writer->markWithdrawn(caseId: 'case-1', publicationId: 'pub-2');
 
-		$this->assertEmpty($this->store->row(schema: 'wooDeliveredSet', uuid: $firstId)['withdrawnAt'] ?? null);
+		$this->assertEmpty(actual: $this->store->row(schema: 'wooDeliveredSet', uuid: $firstId)['withdrawnAt'] ?? null);
 		$stamp = $this->store->row(schema: 'wooDeliveredSet', uuid: $secondId)['withdrawnAt'];
-		$this->assertNotEmpty($stamp);
+		$this->assertNotEmpty(actual: $stamp);
 
 		$writes = $this->store->writes;
 		$writer->markWithdrawn(caseId: 'case-1', publicationId: 'pub-2');
-		$this->assertSame($writes, $this->store->writes);
-		$this->assertSame($stamp, $this->store->row(schema: 'wooDeliveredSet', uuid: $secondId)['withdrawnAt']);
+		$this->assertSame(expected: $writes, actual: $this->store->writes);
+		$this->assertSame(expected: $stamp, actual: $this->store->row(schema: 'wooDeliveredSet', uuid: $secondId)['withdrawnAt']);
 	}//end testAWithdrawStampsOnlyItsOwnPublicationAndOnlyOnce()
 }//end class

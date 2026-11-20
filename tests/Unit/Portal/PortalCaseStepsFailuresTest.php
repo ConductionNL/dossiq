@@ -56,7 +56,7 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 * @return SettingsService
 	 */
 	private function settings(?ObjectServiceInterface $objects): SettingsService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(fn (string $key): string => ($this->config[$key] ?? ''));
 		return $settings;
@@ -70,11 +70,11 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 * @return ObjectServiceInterface
 	 */
 	private function objects(?array $case): ObjectServiceInterface {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		$entity = null;
 		if ($case !== null) {
-			$entity = $this->createMock(ObjectEntityInterface::class);
+			$entity = $this->createMock(originalClassName: ObjectEntityInterface::class);
 			$entity->method('jsonSerialize')->willReturn($case);
 		}
 
@@ -89,11 +89,17 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoObjectServiceOrCaseIdAnswersNothing(): void {
-		$this->assertSame([], (new PortalCaseSteps($this->settings(null), new NullLogger()))->forCase(self::CASE_ID));
+		$this->assertSame(
+			expected: [],
+			actual: (new PortalCaseSteps(settingsService: $this->settings(objects: null), logger: new NullLogger()))->forCase(self::CASE_ID)
+		);
 
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->expects($this->never())->method('runAsSystem');
-		$this->assertSame([], (new PortalCaseSteps($this->settings($objects), new NullLogger()))->forCase(''));
+		$this->assertSame(
+			expected: [],
+			actual: (new PortalCaseSteps(settingsService: $this->settings(objects: $objects), logger: new NullLogger()))->forCase('')
+		);
 	}//end testNoObjectServiceOrCaseIdAnswersNothing()
 
 	/**
@@ -103,11 +109,14 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 */
 	public function testAnUnconfiguredSchemaAnswersNothing(): void {
 		$this->config['status_type_schema'] = '';
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		$objects->expects($this->never())->method('find');
 
-		$this->assertSame([], (new PortalCaseSteps($this->settings($objects), new NullLogger()))->forCase(self::CASE_ID));
+		$this->assertSame(
+			expected: [],
+			actual: (new PortalCaseSteps(settingsService: $this->settings(objects: $objects), logger: new NullLogger()))->forCase(self::CASE_ID)
+		);
 	}//end testAnUnconfiguredSchemaAnswersNothing()
 
 	/**
@@ -116,10 +125,20 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMissingCaseOrCaseTypeAnswersNothing(): void {
-		$this->assertSame([], (new PortalCaseSteps($this->settings($this->objects(null)), new NullLogger()))->forCase(self::CASE_ID));
 		$this->assertSame(
-			[],
-			(new PortalCaseSteps($this->settings($this->objects(['id' => self::CASE_ID, 'caseType' => '  '])), new NullLogger()))->forCase(self::CASE_ID)
+			expected: [],
+			actual: (
+				new PortalCaseSteps(settingsService: $this->settings(objects: $this->objects(case: null)), logger: new NullLogger())
+			)->forCase(self::CASE_ID)
+		);
+		$this->assertSame(
+			expected: [],
+			actual: (
+				new PortalCaseSteps(
+					settingsService: $this->settings(objects: $this->objects(case: ['id' => self::CASE_ID, 'caseType' => '  '])),
+					logger: new NullLogger()
+				)
+			)->forCase(self::CASE_ID)
 		);
 	}//end testAMissingCaseOrCaseTypeAnswersNothing()
 
@@ -129,16 +148,19 @@ class PortalCaseStepsFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailingReadIsLoggedAndAnswersNothing(): void {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		$objects->method('find')->willThrowException(new RuntimeException('store down'));
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the public steps of a case could not be read',
 			['case' => self::CASE_ID, 'error' => 'store down']
 		);
 
-		$this->assertSame([], (new PortalCaseSteps($this->settings($objects), $logger))->forCase(self::CASE_ID));
+		$this->assertSame(
+			expected: [],
+			actual: (new PortalCaseSteps(settingsService: $this->settings(objects: $objects), logger: $logger))->forCase(self::CASE_ID)
+		);
 	}//end testAFailingReadIsLoggedAndAnswersNothing()
 }//end class

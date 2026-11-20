@@ -41,8 +41,8 @@ class FlowMigrationSummaryTest extends TestCase {
 	 */
 	public function testEmptySummaryCarriesTheNote(): void {
 		$this->assertSame(
-			['total' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => [], 'note' => 'OpenRegister is not installed'],
-			FlowMigrationSummary::empty(note: 'OpenRegister is not installed')
+			expected: ['total' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => [], 'note' => 'OpenRegister is not installed'],
+			actual: FlowMigrationSummary::empty(note: 'OpenRegister is not installed')
 		);
 	}//end testEmptySummaryCarriesTheNote()
 
@@ -52,6 +52,6 @@ class FlowMigrationSummaryTest extends TestCase {
 	 * @return void
 	 */
 	public function testEmptySummaryForARunAboutToStart(): void {
-		$this->assertSame('', FlowMigrationSummary::empty(note: '')['note']);
+		$this->assertSame(expected: '', actual: FlowMigrationSummary::empty(note: '')['note']);
 	}//end testEmptySummaryForARunAboutToStart()
 }//end class

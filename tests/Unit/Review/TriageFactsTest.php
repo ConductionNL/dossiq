@@ -117,10 +117,12 @@ class TriageFactsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMissingOrUnreadableDateReadsEmpty(): void {
-		$facts = $this->facts(extra: ['undated-1' => ['mimeType' => 'text/plain'], 'garbled-1' => ['mimeType' => 'text/plain', 'creatiedatum' => 'not a date']]);
+		$facts = $this->facts(
+			extra: ['undated-1' => ['mimeType' => 'text/plain'], 'garbled-1' => ['mimeType' => 'text/plain', 'creatiedatum' => 'not a date']]
+		);
 
-		$this->assertSame('', $facts->forDocument(caseId: 'case-x', documentId: 'undated-1')['date']);
-		$this->assertSame('', $facts->forDocument(caseId: 'case-x', documentId: 'garbled-1')['date']);
+		$this->assertSame(expected: '', actual: $facts->forDocument(caseId: 'case-x', documentId: 'undated-1')['date']);
+		$this->assertSame(expected: '', actual: $facts->forDocument(caseId: 'case-x', documentId: 'garbled-1')['date']);
 	}//end testAMissingOrUnreadableDateReadsEmpty()
 
 	/**

@@ -51,12 +51,12 @@ class ApprovalGateDeclarationTest extends TestCase {
 		];
 
 		$this->assertSame(
-			[
+			expected: [
 				['act' => 'close', 'decisionType' => 'dt-close', 'label' => 'Sluiten'],
 				['act' => 'reopen', 'decisionType' => 'dt-reopen', 'label' => 'dt-reopen'],
 				['act' => 'extend', 'decisionType' => 'dt-extend', 'label' => 'dt-extend'],
 			],
-			ApprovalGateDeclaration::declaredOn(caseType: $caseType)
+			actual: ApprovalGateDeclaration::declaredOn(caseType: $caseType)
 		);
 	}//end testDeclaredOnKeepsEnabledRowsWithAnAct()
 
@@ -69,8 +69,8 @@ class ApprovalGateDeclarationTest extends TestCase {
 		$caseType = [ApprovalGateDeclaration::DECLARATION => '[{"act":"close","decisionType":"dt-1","label":"Close"}]'];
 
 		$this->assertSame(
-			[['act' => 'close', 'decisionType' => 'dt-1', 'label' => 'Close']],
-			ApprovalGateDeclaration::declaredOn(caseType: $caseType)
+			expected: [['act' => 'close', 'decisionType' => 'dt-1', 'label' => 'Close']],
+			actual: ApprovalGateDeclaration::declaredOn(caseType: $caseType)
 		);
 	}//end testDeclaredOnReadsAJsonString()
 
@@ -80,9 +80,9 @@ class ApprovalGateDeclarationTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoDeclarationGatesNothing(): void {
-		$this->assertSame([], ApprovalGateDeclaration::declaredOn(caseType: []));
-		$this->assertSame([], ApprovalGateDeclaration::declaredOn(caseType: [ApprovalGateDeclaration::DECLARATION => 42]));
-		$this->assertSame([], ApprovalGateDeclaration::gateFor(caseType: [], act: 'close'));
+		$this->assertSame(expected: [], actual: ApprovalGateDeclaration::declaredOn(caseType: []));
+		$this->assertSame(expected: [], actual: ApprovalGateDeclaration::declaredOn(caseType: [ApprovalGateDeclaration::DECLARATION => 42]));
+		$this->assertSame(expected: [], actual: ApprovalGateDeclaration::gateFor(caseType: [], act: 'close'));
 	}//end testNoDeclarationGatesNothing()
 
 	/**
@@ -93,7 +93,7 @@ class ApprovalGateDeclarationTest extends TestCase {
 	public function testAnUngatedActHasNoGate(): void {
 		$caseType = [ApprovalGateDeclaration::DECLARATION => [['act' => 'close', 'decisionType' => 'dt-1']]];
 
-		$this->assertSame([], ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'reopen'));
+		$this->assertSame(expected: [], actual: ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'reopen'));
 	}//end testAnUngatedActHasNoGate()
 
 	/**
@@ -110,9 +110,9 @@ class ApprovalGateDeclarationTest extends TestCase {
 			],
 		];
 
-		$this->assertSame('dec-close', ApprovalGateDeclaration::referenceFor(case: $case, act: 'close'));
-		$this->assertSame('', ApprovalGateDeclaration::referenceFor(case: $case, act: 'archive'));
-		$this->assertSame('', ApprovalGateDeclaration::referenceFor(case: [], act: 'close'));
+		$this->assertSame(expected: 'dec-close', actual: ApprovalGateDeclaration::referenceFor(case: $case, act: 'close'));
+		$this->assertSame(expected: '', actual: ApprovalGateDeclaration::referenceFor(case: $case, act: 'archive'));
+		$this->assertSame(expected: '', actual: ApprovalGateDeclaration::referenceFor(case: [], act: 'close'));
 	}//end testReferenceForReturnsTheDecisionOfThatAct()
 
 	/**
@@ -123,7 +123,7 @@ class ApprovalGateDeclarationTest extends TestCase {
 	public function testAReferenceRowWithoutADecisionAnswersEmpty(): void {
 		$case = [ApprovalGateDeclaration::REFERENCES => [['act' => 'close']]];
 
-		$this->assertSame('', ApprovalGateDeclaration::referenceFor(case: $case, act: 'close'));
+		$this->assertSame(expected: '', actual: ApprovalGateDeclaration::referenceFor(case: $case, act: 'close'));
 	}//end testAReferenceRowWithoutADecisionAnswersEmpty()
 
 	/**
@@ -142,12 +142,12 @@ class ApprovalGateDeclarationTest extends TestCase {
 		];
 
 		$this->assertSame(
-			[
+			expected: [
 				['act' => 'reopen', 'decisionRef' => 'dec-reopen', 'raisedAt' => '2026-01-02'],
 				['act' => 'extend', 'decisionRef' => '', 'raisedAt' => ''],
 				['act' => 'close', 'decisionRef' => 'dec-new', 'raisedAt' => '2026-03-04'],
 			],
-			ApprovalGateDeclaration::withReference(case: $case, act: ' close ', decisionRef: ' dec-new ', raisedAt: ' 2026-03-04 ')
+			actual: ApprovalGateDeclaration::withReference(case: $case, act: ' close ', decisionRef: ' dec-new ', raisedAt: ' 2026-03-04 ')
 		);
 	}//end testWithReferenceReplacesTheActsOldReference()
 
@@ -160,8 +160,8 @@ class ApprovalGateDeclarationTest extends TestCase {
 		$case = [ApprovalGateDeclaration::REFERENCES => '[{"act":"close","decisionRef":"dec-1","raisedAt":"2026-01-01"}]'];
 
 		$this->assertSame(
-			[['act' => 'close', 'decisionRef' => 'dec-1', 'raisedAt' => '2026-01-01']],
-			ApprovalGateDeclaration::withReference(case: $case, act: '  ', decisionRef: 'dec-2', raisedAt: '2026-02-02')
+			expected: [['act' => 'close', 'decisionRef' => 'dec-1', 'raisedAt' => '2026-01-01']],
+			actual: ApprovalGateDeclaration::withReference(case: $case, act: '  ', decisionRef: 'dec-2', raisedAt: '2026-02-02')
 		);
 	}//end testWithReferenceForABlankActAddsNothing()
 }//end class

@@ -54,7 +54,7 @@ class PortalPagesTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				[
 					'id' => 'zaken',
 					'label' => 'Zaken',
@@ -75,7 +75,7 @@ class PortalPagesTest extends TestCase {
 					],
 				],
 			],
-			$pages
+			actual: $pages
 		);
 	}//end testEveryListableCollectionGetsAPageInTheGroup()
 
@@ -87,7 +87,7 @@ class PortalPagesTest extends TestCase {
 	public function testACollectionWithoutALabelIsNamedByItsId(): void {
 		$pages = (new PortalPages())->forCollections([['id' => 'notes']], [], 'G');
 
-		$this->assertSame('notes', $pages[0]['label']);
+		$this->assertSame(expected: 'notes', actual: $pages[0]['label']);
 	}//end testACollectionWithoutALabelIsNamedByItsId()
 
 	/**
@@ -103,13 +103,13 @@ class PortalPagesTest extends TestCase {
 			]
 		);
 
-		$this->assertSame([['type' => 'tasks']], $pages[0]['blocks']);
+		$this->assertSame(expected: [['type' => 'tasks']], actual: $pages[0]['blocks']);
 		$this->assertSame(
-			[
+			expected: [
 				['type' => 'detail', 'collection' => 'mijnZaken'],
 				['type' => 'citizenCase', 'collection' => 'mijnZaken'],
 			],
-			$pages[1]['blocks']
+			actual: $pages[1]['blocks']
 		);
 	}//end testOnlyTheCasePageMountsTheCaseScreen()
 }//end class

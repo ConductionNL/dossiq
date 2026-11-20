@@ -52,18 +52,81 @@ use RuntimeException;
  * Parameter names match the real service: the controller passes named arguments.
  */
 interface DrcCoverageObjectServiceStub {
+	/**
+	 * Stand-in for find().
+	 *
+	 * @param mixed $id The id.
+	 * @param ?ObjectFindOptions $options The options.
+	 * @param bool $_rbac The rbac.
+	 * @param bool $_multitenancy The multitenancy.
+	 *
+	 * @return mixed
+	 */
 	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
+	/**
+	 * Stand-in for buildSearchQuery().
+	 *
+	 * @param array $requestParams The request params.
+	 * @param mixed $register The register.
+	 * @param mixed $schema The schema.
+	 *
+	 * @return array
+	 */
 	public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array;
 
+	/**
+	 * Stand-in for searchObjectsPaginated().
+	 *
+	 * @param array $query The query.
+	 *
+	 * @return array
+	 */
 	public function searchObjectsPaginated(array $query): array;
 
-	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
+	/**
+	 * Stand-in for saveObject().
+	 *
+	 * @param array $object The object.
+	 * @param ObjectSaveOptions $options The options.
+	 * @param bool $_rbac The rbac.
+	 * @param bool $_multitenancy The multitenancy.
+	 *
+	 * @return mixed
+	 */
+	public function saveObject(
+		array $object,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
+	): mixed;
 
+	/**
+	 * Stand-in for deleteObject().
+	 *
+	 * @param ObjectDeletion $deletion The deletion.
+	 *
+	 * @return mixed
+	 */
 	public function deleteObject(ObjectDeletion $deletion): mixed;
 
+	/**
+	 * Stand-in for lockObject().
+	 *
+	 * @param LockRequest $request The request.
+	 * @param bool $advisory The advisory.
+	 *
+	 * @return mixed
+	 */
 	public function lockObject(LockRequest $request, bool $advisory = false): mixed;
 
+	/**
+	 * Stand-in for unlockObject().
+	 *
+	 * @param UnlockRequest $request The request.
+	 *
+	 * @return mixed
+	 */
 	public function unlockObject(UnlockRequest $request): mixed;
 }//end interface
 
@@ -71,6 +134,13 @@ interface DrcCoverageObjectServiceStub {
  * The same surface with OpenRegister's dedicated lock table.
  */
 interface DrcCoverageLockInfoObjectServiceStub extends DrcCoverageObjectServiceStub {
+	/**
+	 * Stand-in for getLockInfo().
+	 *
+	 * @param string $uuid The uuid.
+	 *
+	 * @return array
+	 */
 	public function getLockInfo(string $uuid): array;
 }//end interface
 
@@ -102,20 +172,47 @@ final class DrcCoverageInputStream {
 	 */
 	private int $position = 0;
 
+	/**
+	 * Stand-in for stream_open().
+	 *
+	 * @param string $path The path.
+	 * @param string $mode The mode.
+	 * @param int $options The options.
+	 * @param ?string $openedPath The opened path.
+	 *
+	 * @return bool
+	 */
 	public function stream_open(string $path, string $mode, int $options, ?string &$openedPath): bool {
 		return $path === 'php://input';
 	}
 
+	/**
+	 * Stand-in for stream_read().
+	 *
+	 * @param int $count The count.
+	 *
+	 * @return string
+	 */
 	public function stream_read(int $count): string {
 		$chunk = substr(self::$body, $this->position, $count);
 		$this->position += strlen($chunk);
 		return $chunk;
 	}
 
+	/**
+	 * Stand-in for stream_eof().
+	 *
+	 * @return bool
+	 */
 	public function stream_eof(): bool {
 		return $this->position >= strlen(self::$body);
 	}
 
+	/**
+	 * Stand-in for stream_stat().
+	 *
+	 * @return array
+	 */
 	public function stream_stat(): array {
 		return [];
 	}
@@ -169,9 +266,9 @@ class DrcControllerCoverageTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->logger = $this->createMock(LoggerInterface::class);
-		$this->docs = $this->createMock(ZgwDocumentService::class);
-		$this->rules = $this->createMock(ZgwBusinessRulesService::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$this->docs = $this->createMock(originalClassName: ZgwDocumentService::class);
+		$this->rules = $this->createMock(originalClassName: ZgwBusinessRulesService::class);
 	}//end setUp()
 
 	/**
@@ -184,7 +281,7 @@ class DrcControllerCoverageTest extends TestCase {
 	 * @return ZgwService&MockObject
 	 */
 	private function zgw(?object $objects, array|callable|null $mapping = self::MAPPING, bool $scoped = true): ZgwService {
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->method('validateJwtAuth')->willReturn(null);
 		$zgw->method('consumerHasScope')->willReturn($scoped);
 		$zgw->method('getLogger')->willReturn($this->logger);
@@ -209,12 +306,12 @@ class DrcControllerCoverageTest extends TestCase {
 	 * @return DrcController
 	 */
 	private function controller(ZgwService $zgw, array $params = []): DrcController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParams')->willReturn($params);
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, mixed $default = null): mixed => $params[$key] ?? $default
 		);
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(
 			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
 		);
@@ -231,10 +328,10 @@ class DrcControllerCoverageTest extends TestCase {
 	 */
 	private function objects(bool $withLockInfo = false): DrcCoverageObjectServiceStub {
 		if ($withLockInfo === true) {
-			return $this->createMock(DrcCoverageLockInfoObjectServiceStub::class);
+			return $this->createMock(originalClassName: DrcCoverageLockInfoObjectServiceStub::class);
 		}
 
-		return $this->createMock(DrcCoverageObjectServiceStub::class);
+		return $this->createMock(originalClassName: DrcCoverageObjectServiceStub::class);
 	}//end objects()
 
 	/**
@@ -279,8 +376,8 @@ class DrcControllerCoverageTest extends TestCase {
 		];
 
 		foreach ($cases as $scope => $response) {
-			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-			$this->assertSame('Scope ' . $scope . ' is required for this operation.', $response->getData()['detail']);
+			$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+			$this->assertSame(expected: 'Scope ' . $scope . ' is required for this operation.', actual: $response->getData()['detail']);
 		}
 	}//end testEveryWriteWithoutItsScopeIsRefused()
 
@@ -294,15 +391,15 @@ class DrcControllerCoverageTest extends TestCase {
 		$created = new JSONResponse(data: ['url' => 'x'], statusCode: Http::STATUS_CREATED);
 		$updated = new JSONResponse(data: ['url' => 'y']);
 		$zgw->expects($this->once())->method('handleCreate')
-			->with($this->isInstanceOf(IRequest::class), 'documenten', 'objectinformatieobjecten')
+			->with($this->isInstanceOf(className: IRequest::class), 'documenten', 'objectinformatieobjecten')
 			->willReturn($created);
 		$zgw->expects($this->once())->method('handleUpdate')
-			->with($this->isInstanceOf(IRequest::class), 'documenten', 'verzendingen', self::UUID, false)
+			->with($this->isInstanceOf(className: IRequest::class), 'documenten', 'verzendingen', self::UUID, false)
 			->willReturn($updated);
 		$controller = $this->controller(zgw: $zgw);
 
-		$this->assertSame($created, $controller->create(resource: 'objectinformatieobjecten'));
-		$this->assertSame($updated, $controller->update(resource: 'verzendingen', uuid: self::UUID));
+		$this->assertSame(expected: $created, actual: $controller->create(resource: 'objectinformatieobjecten'));
+		$this->assertSame(expected: $updated, actual: $controller->update(resource: 'verzendingen', uuid: self::UUID));
 	}//end testOtherResourcesUseTheGenericCreateAndUpdate()
 
 	// ------------------------------------------------------------------
@@ -317,12 +414,12 @@ class DrcControllerCoverageTest extends TestCase {
 	public function testCreatingAGebruiksrechtMarksItsDocument(): void {
 		$objects = $this->objects();
 		$objects->expects($this->once())->method('find')
-			->with(self::UUID, $this->callback(static fn (ObjectFindOptions $o): bool => $o->register === '1' && $o->schema === '15'))
+			->with(self::UUID, $this->callback(callback: static fn (ObjectFindOptions $o): bool => $o->register === '1' && $o->schema === '15'))
 			->willReturn(['id' => self::UUID, '@self' => ['id' => self::UUID], 'organisation' => 'org', 'title' => 'Besluit']);
 		$objects->expects($this->once())->method('saveObject')
 			->with(
 				['title' => 'Besluit', 'usageRightsIndication' => true],
-				$this->callback(static fn (ObjectSaveOptions $o): bool => $o->uuid === self::UUID && $o->target->schema === '15')
+				$this->callback(callback: static fn (ObjectSaveOptions $o): bool => $o->uuid === self::UUID && $o->target->schema === '15')
 			)
 			->willReturnArgument(0);
 		$zgw = $this->zgw(objects: $objects);
@@ -331,10 +428,10 @@ class DrcControllerCoverageTest extends TestCase {
 			statusCode: Http::STATUS_CREATED
 		);
 		$zgw->expects($this->once())->method('handleCreate')
-			->with($this->isInstanceOf(IRequest::class), 'documenten', 'gebruiksrechten')
+			->with($this->isInstanceOf(className: IRequest::class), 'documenten', 'gebruiksrechten')
 			->willReturn($created);
 
-		$this->assertSame($created, $this->controller(zgw: $zgw)->create(resource: 'gebruiksrechten'));
+		$this->assertSame(expected: $created, actual: $this->controller(zgw: $zgw)->create(resource: 'gebruiksrechten'));
 	}//end testCreatingAGebruiksrechtMarksItsDocument()
 
 	/**
@@ -368,11 +465,20 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects = $this->objects();
 		$objects->expects($this->never())->method('find');
 		$objects->expects($this->never())->method('saveObject');
-		$zgw = $this->zgw(objects: ($wired === true ? $objects : null), mapping: ($withMapping === true ? self::MAPPING : null));
+		$zgw = $this->zgw(
+			objects: match ($wired) {
+				true => $objects,
+				default => null,
+			},
+			mapping: match ($withMapping) {
+				true => self::MAPPING,
+				default => null,
+			}
+		);
 		$created = new JSONResponse(data: $data, statusCode: Http::STATUS_CREATED);
 		$zgw->method('handleCreate')->willReturn($created);
 
-		$this->assertSame($created, $this->controller(zgw: $zgw)->create(resource: 'gebruiksrechten'));
+		$this->assertSame(expected: $created, actual: $this->controller(zgw: $zgw)->create(resource: 'gebruiksrechten'));
 	}//end testAGebruiksrechtCreateThatCannotMarkItsDocumentWritesNothing()
 
 	/**
@@ -392,7 +498,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->create(resource: 'gebruiksrechten');
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
 	}//end testAFailedIndicationWriteOnCreateIsAWarning()
 
 	/**
@@ -430,13 +536,22 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$objects->expects($this->never())->method('buildSearchQuery');
 		$objects->expects($this->never())->method('saveObject');
-		$zgw = $this->zgw(objects: ($wired === true ? $objects : null), mapping: ($withMapping === true ? self::MAPPING : null));
+		$zgw = $this->zgw(
+			objects: match ($wired) {
+				true => $objects,
+				default => null,
+			},
+			mapping: match ($withMapping) {
+				true => self::MAPPING,
+				default => null,
+			}
+		);
 		$deleted = new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		$zgw->expects($this->once())->method('handleDestroy')
-			->with($this->isInstanceOf(IRequest::class), 'documenten', 'gebruiksrechten', self::GR_UUID)
+			->with($this->isInstanceOf(className: IRequest::class), 'documenten', 'gebruiksrechten', self::GR_UUID)
 			->willReturn($deleted);
 
-		$this->assertSame($deleted, $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID));
+		$this->assertSame(expected: $deleted, actual: $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID));
 	}//end testDeletingAGebruiksrechtWithoutAResolvableDocumentOnlyDeletes()
 
 	/**
@@ -449,13 +564,16 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects = $this->objects();
 		$objects->method('find')->willReturn(['document' => 'https://drc.example/eio/' . self::UUID]);
 		$objects->expects($this->never())->method('buildSearchQuery');
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->method('validateJwtAuth')->willReturn(null);
 		$zgw->method('consumerHasScope')->willReturn(true);
 		$zgw->method('getObjectService')->willReturnOnConsecutiveCalls($objects, null);
 		$zgw->method('loadMappingConfig')->willReturn(self::MAPPING);
 		$zgw->method('handleDestroy')->willReturn(new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
-		$this->assertSame(Http::STATUS_NO_CONTENT, $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID)->getStatus());
+		$this->assertSame(
+			expected: Http::STATUS_NO_CONTENT,
+			actual: $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID)->getStatus()
+		);
 
 		// The gebruiksrechten mapping answers the lookup, then is gone for the count.
 		$calls = 0;
@@ -463,12 +581,18 @@ class DrcControllerCoverageTest extends TestCase {
 			objects: $objects,
 			mapping: static function () use (&$calls): ?array {
 				$calls++;
-				return $calls === 1 ? self::MAPPING : null;
+				return match ($calls) {
+					1 => self::MAPPING,
+					default => null,
+				};
 			}
 		);
 		$zgw->method('handleDestroy')->willReturn(new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
-		$this->assertSame(Http::STATUS_NO_CONTENT, $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID)->getStatus());
-		$this->assertSame(2, $calls);
+		$this->assertSame(
+			expected: Http::STATUS_NO_CONTENT,
+			actual: $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID)->getStatus()
+		);
+		$this->assertSame(expected: 2, actual: $calls);
 	}//end testTheIndicationCheckStopsWithoutObjectServiceOrMapping()
 
 	/**
@@ -488,7 +612,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testAFailingCountOfRemainingGebruiksrechtenIsAWarning()
 
 	/**
@@ -519,7 +643,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->destroy(resource: 'gebruiksrechten', uuid: self::GR_UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testAFailedClearOfTheIndicationIsAWarning()
 
 	// ------------------------------------------------------------------
@@ -535,11 +659,11 @@ class DrcControllerCoverageTest extends TestCase {
 		$zgw = $this->zgw(objects: null);
 		$deleted = new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		$zgw->expects($this->once())->method('handleDestroy')
-			->with($this->isInstanceOf(IRequest::class), 'documenten', 'enkelvoudiginformatieobjecten', self::UUID)
+			->with($this->isInstanceOf(className: IRequest::class), 'documenten', 'enkelvoudiginformatieobjecten', self::UUID)
 			->willReturn($deleted);
 		$zgw->expects($this->never())->method('getDocumentService');
 
-		$this->assertSame($deleted, $this->controller(zgw: $zgw)->destroy(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID));
+		$this->assertSame(expected: $deleted, actual: $this->controller(zgw: $zgw)->destroy(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID));
 	}//end testDeletingAnEioWithoutOpenRegisterOnlyDeletes()
 
 	/**
@@ -553,7 +677,10 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects->expects($this->never())->method('buildSearchQuery');
 		$zgw = $this->zgw(
 			objects: $objects,
-			mapping: static fn (string $api, string $resource): ?array => $resource === 'enkelvoudiginformatieobjecten' ? self::MAPPING : null
+			mapping: static fn (string $api, string $resource): ?array => match ($resource) {
+				'enkelvoudiginformatieobjecten' => self::MAPPING,
+				default => null,
+			}
 		);
 		$zgw->method('handleDestroy')->willReturn(new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
 		$failure = new RuntimeException('disk full');
@@ -563,7 +690,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->destroy(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testAFailedFileCleanupAfterDeleteIsAWarning()
 
 	/**
@@ -592,7 +719,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->destroy(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testAnUnsearchableGebruiksrechtenMappingIsLoggedOnCascade()
 
 	/**
@@ -609,7 +736,10 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects->expects($this->never())->method('deleteObject');
 		$zgw = $this->zgw(
 			objects: $objects,
-			mapping: static fn (string $api, string $resource): ?array => in_array($resource, ['enkelvoudiginformatieobjecten', 'gebruiksrechten'], true) ? self::MAPPING : null
+			mapping: static fn (string $api, string $resource): ?array => match ($resource) {
+				'enkelvoudiginformatieobjecten', 'gebruiksrechten' => self::MAPPING,
+				default => null,
+			}
 		);
 		$zgw->method('handleDestroy')->willReturn(new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
 		$this->logger->expects($this->once())->method('warning')
@@ -617,7 +747,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->destroy(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testAFailingCascadeIsAWarning()
 
 	// ------------------------------------------------------------------
@@ -633,14 +763,14 @@ class DrcControllerCoverageTest extends TestCase {
 		$unavailable = new JSONResponse(data: ['detail' => 'unavailable'], statusCode: Http::STATUS_SERVICE_UNAVAILABLE);
 		$zgw = $this->zgw(objects: null);
 		$zgw->method('unavailableResponse')->willReturn($unavailable);
-		$this->assertSame($unavailable, $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten'));
+		$this->assertSame(expected: $unavailable, actual: $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten'));
 
 		$notMapped = new JSONResponse(data: ['detail' => 'no mapping'], statusCode: Http::STATUS_NOT_FOUND);
 		$zgw = $this->zgw(objects: $this->objects(), mapping: null);
 		$zgw->expects($this->once())->method('mappingNotFoundResponse')
 			->with('documenten', 'enkelvoudiginformatieobjecten')
 			->willReturn($notMapped);
-		$this->assertSame($notMapped, $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten'));
+		$this->assertSame(expected: $notMapped, actual: $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten'));
 	}//end testEioCreateWithoutObjectServiceOrMapping()
 
 	/**
@@ -662,8 +792,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['invalidParams' => [['name' => 'titel']]], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['invalidParams' => [['name' => 'titel']]], actual: $response->getData());
 	}//end testEioCreateRefusedByTheRulesAnswersTheValidationError()
 
 	/**
@@ -680,8 +810,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'body unreadable'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'body unreadable'], actual: $response->getData());
 	}//end testEioCreateFailureIsALogged400()
 
 	/**
@@ -707,8 +837,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->create(resource: 'enkelvoudiginformatieobjecten');
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-		$this->assertSame(['titel' => 'Brief', 'bestandsdelen' => []], $response->getData());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertSame(expected: ['titel' => 'Brief', 'bestandsdelen' => []], actual: $response->getData());
 	}//end testEioCreateStoresInhoudUnderTheDefaultNameWhenTheFileNameIsEmpty()
 
 	// ------------------------------------------------------------------
@@ -748,7 +878,7 @@ class DrcControllerCoverageTest extends TestCase {
 	public function testShowAddsTheBestandsdelenOfAPendingUpload(mixed $fileParts, array $expected): void {
 		$objects = $this->objects();
 		$objects->expects($this->once())->method('find')
-			->with(self::UUID, $this->isInstanceOf(ObjectFindOptions::class))
+			->with(self::UUID, $this->isInstanceOf(className: ObjectFindOptions::class))
 			->willReturn(['id' => self::UUID, 'fileParts' => $fileParts]);
 		$zgw = $this->zgw(objects: $objects);
 		$zgw->method('handleShow')->willReturn(new JSONResponse(data: ['titel' => 'Brief']));
@@ -756,8 +886,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->show(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['titel' => 'Brief', 'bestandsdelen' => $expected], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['titel' => 'Brief', 'bestandsdelen' => $expected], actual: $response->getData());
 	}//end testShowAddsTheBestandsdelenOfAPendingUpload()
 
 	/**
@@ -771,14 +901,14 @@ class DrcControllerCoverageTest extends TestCase {
 		$zgw = $this->zgw(objects: $objects, mapping: null);
 		$zgw->method('handleShow')->willReturn(new JSONResponse(data: ['titel' => 'Brief']));
 		$response = $this->controller(zgw: $zgw)->show(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
-		$this->assertSame(['titel' => 'Brief'], $response->getData());
+		$this->assertSame(expected: ['titel' => 'Brief'], actual: $response->getData());
 
 		$objects = $this->objects();
 		$objects->expects($this->once())->method('find')->willReturn(['fileParts' => '']);
 		$zgw = $this->zgw(objects: $objects);
 		$zgw->method('handleShow')->willReturn(new JSONResponse(data: 'plain'));
 		$response = $this->controller(zgw: $zgw)->show(resource: 'enkelvoudiginformatieobjecten', uuid: self::UUID);
-		$this->assertSame('plain', $response->getData());
+		$this->assertSame(expected: 'plain', actual: $response->getData());
 	}//end testShowLeavesTheResponseWithoutMappingOrArrayBody()
 
 	// ------------------------------------------------------------------
@@ -794,7 +924,7 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects = $this->objects();
 		$objects->method('find')->willReturn(['id' => self::UUID, 'fileName' => 'brief.pdf', 'format' => 'application/pdf']);
 		$zgw = $this->zgw(objects: $objects);
-		$mappings = $this->createMock(ZgwMappingService::class);
+		$mappings = $this->createMock(originalClassName: ZgwMappingService::class);
 		$mappings->method('getMapping')->with('enkelvoudiginformatieobject')->willReturn(self::MAPPING);
 		$zgw->method('getZgwMappingService')->willReturn($mappings);
 		$this->docs->method('fileExists')->with(self::UUID, 'brief.pdf')->willReturn(true);
@@ -802,10 +932,10 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->download(uuid: self::UUID);
 
-		$this->assertInstanceOf(DataDownloadResponse::class, $response);
-		$this->assertSame('%PDF-1.7', $response->render());
-		$this->assertSame('application/pdf', $response->getHeaders()['Content-Type']);
-		$this->assertStringContainsString('brief.pdf', $response->getHeaders()['Content-Disposition']);
+		$this->assertInstanceOf(expected: DataDownloadResponse::class, actual: $response);
+		$this->assertSame(expected: '%PDF-1.7', actual: $response->render());
+		$this->assertSame(expected: 'application/pdf', actual: $response->getHeaders()['Content-Type']);
+		$this->assertStringContainsString(needle: 'brief.pdf', haystack: $response->getHeaders()['Content-Disposition']);
 	}//end testDownloadStreamsTheStoredFile()
 
 	/**
@@ -818,7 +948,7 @@ class DrcControllerCoverageTest extends TestCase {
 		$failure = new RuntimeException('db secret');
 		$objects->method('find')->willThrowException($failure);
 		$zgw = $this->zgw(objects: $objects);
-		$mappings = $this->createMock(ZgwMappingService::class);
+		$mappings = $this->createMock(originalClassName: ZgwMappingService::class);
 		$mappings->method('getMapping')->willReturn(self::MAPPING);
 		$zgw->method('getZgwMappingService')->willReturn($mappings);
 		$this->logger->expects($this->once())->method('error')
@@ -826,8 +956,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->download(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		$this->assertSame(['detail' => 'Not found'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'Not found'], actual: $response->getData());
 	}//end testAFailingDownloadIsALogged404()
 
 	// ------------------------------------------------------------------
@@ -843,15 +973,15 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects = $this->objects();
 		$objects->expects($this->never())->method('find');
 		$objects->expects($this->once())->method('lockObject')
-			->with($this->callback(static fn (LockRequest $r): bool => $r->identifier === self::UUID))
+			->with($this->callback(callback: static fn (LockRequest $r): bool => $r->identifier === self::UUID))
 			->willThrowException(new RuntimeException('no user session'));
 		$objects->expects($this->never())->method('saveObject');
 		$zgw = $this->zgw(objects: $objects, mapping: null);
 
 		$response = $this->controller(zgw: $zgw)->lock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'no user session'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'no user session'], actual: $response->getData());
 	}//end testALockWithoutMappingThatFailsAnswersTheCause()
 
 	/**
@@ -861,7 +991,7 @@ class DrcControllerCoverageTest extends TestCase {
 	 */
 	public function testALockIdThatCannotBeStoredIsAWarning(): void {
 		$objects = $this->objects();
-		$objects->expects($this->exactly(2))->method('find')->willThrowException(new RuntimeException('unreadable'));
+		$objects->expects($this->exactly(count: 2))->method('find')->willThrowException(new RuntimeException(message: 'unreadable'));
 		$objects->expects($this->once())->method('lockObject');
 		$objects->expects($this->never())->method('saveObject');
 		$zgw = $this->zgw(objects: $objects);
@@ -870,8 +1000,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->lock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $response->getData()['lock']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertMatchesRegularExpression(pattern: '/^[0-9a-f]{32}$/', string: $response->getData()['lock']);
 	}//end testALockIdThatCannotBeStoredIsAWarning()
 
 	/**
@@ -887,8 +1017,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $this->zgw(objects: $objects))->lock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'Document is already locked.'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'Document is already locked.'], actual: $response->getData());
 	}//end testALockTableThatThrowsFallsBackToTheDataBlob()
 
 	// ------------------------------------------------------------------
@@ -909,11 +1039,11 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->unlock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
 		$detail = 'Forced unlocking is not allowed without the correct scope.';
 		$this->assertSame(
-			['detail' => $detail, 'invalidParams' => [['name' => 'nonFieldErrors', 'code' => 'incorrect-lock-id', 'reason' => $detail]]],
-			$response->getData()
+			expected: ['detail' => $detail, 'invalidParams' => [['name' => 'nonFieldErrors', 'code' => 'incorrect-lock-id', 'reason' => $detail]]],
+			actual: $response->getData()
 		);
 	}//end testAnUnlockWithoutLockIdOrForcingScopeIsRefused()
 
@@ -926,7 +1056,7 @@ class DrcControllerCoverageTest extends TestCase {
 		$objects = $this->objects(withLockInfo: true);
 		$objects->method('getLockInfo')->willReturn(['lock_id' => 'L1']);
 		$objects->expects($this->once())->method('unlockObject')
-			->with($this->callback(static fn (UnlockRequest $r): bool => $r->identifier === self::UUID))
+			->with($this->callback(callback: static fn (UnlockRequest $r): bool => $r->identifier === self::UUID))
 			->willThrowException(new RuntimeException('no user session'));
 		$objects->expects($this->never())->method('saveObject');
 		$calls = 0;
@@ -934,15 +1064,18 @@ class DrcControllerCoverageTest extends TestCase {
 			objects: $objects,
 			mapping: static function () use (&$calls): ?array {
 				$calls++;
-				return $calls === 1 ? self::MAPPING : null;
+				return match ($calls) {
+					1 => self::MAPPING,
+					default => null,
+				};
 			}
 		);
 		$zgw->method('getRequestBody')->willReturn(['lock' => 'L1']);
 
 		$response = $this->controller(zgw: $zgw)->unlock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'no user session'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'no user session'], actual: $response->getData());
 	}//end testAFailingUnlockWithoutMappingForTheFallbackAnswersTheCause()
 
 	/**
@@ -964,8 +1097,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->unlock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'document unreadable'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'document unreadable'], actual: $response->getData());
 	}//end testAFailingUnlockFallbackIsALogged400()
 
 	/**
@@ -986,7 +1119,7 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $zgw)->unlock(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NO_CONTENT, actual: $response->getStatus());
 	}//end testALockIdThatCannotBeClearedIsAWarning()
 
 	// ------------------------------------------------------------------
@@ -1007,8 +1140,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $this->zgw(objects: $objects))->uploadChunk(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'document gone'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'document gone'], actual: $response->getData());
 	}//end testAFailingChunkUploadIsALogged400()
 
 	/**
@@ -1023,8 +1156,8 @@ class DrcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller(zgw: $this->zgw(objects: $objects), params: ['sequenceNumber' => '1'])->uploadChunk(uuid: self::UUID);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'Invalid chunk configuration.'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'Invalid chunk configuration.'], actual: $response->getData());
 	}//end testAPendingUploadOfZeroPartsIsRefused()
 
 	/**
@@ -1041,12 +1174,12 @@ class DrcControllerCoverageTest extends TestCase {
 		$this->docs->expects($this->never())->method('mergeChunks');
 		$controller = $this->controller(zgw: $this->zgw(objects: $objects), params: ['sequenceNumber' => '2']);
 
-		$response = $this->withInput('chunk-two', static fn () => $controller->uploadChunk(uuid: self::UUID));
+		$response = $this->withInput(body: 'chunk-two', call: static fn () => $controller->uploadChunk(uuid: self::UUID));
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			['sequenceNumber' => 2, 'size' => 9, 'uploadComplete' => false, 'uploadedParts' => 2, 'totalParts' => 3],
-			$response->getData()
+			expected: ['sequenceNumber' => 2, 'size' => 9, 'uploadComplete' => false, 'uploadedParts' => 2, 'totalParts' => 3],
+			actual: $response->getData()
 		);
 	}//end testAChunkThatIsNotTheLastAnswersItsProgress()
 
@@ -1058,12 +1191,19 @@ class DrcControllerCoverageTest extends TestCase {
 	public function testTheLastChunkMergesTheFileAndStampsTheDocument(): void {
 		$objects = $this->objects();
 		$objects->method('find')->willReturn(
-			['id' => self::UUID, '@self' => ['id' => self::UUID], 'organisation' => 'org', 'title' => 'Groot', 'fileName' => 'groot.bin', 'fileParts' => ['pending' => true, 'totalParts' => 2]]
+			[
+				'id' => self::UUID,
+				'@self' => ['id' => self::UUID],
+				'organisation' => 'org',
+				'title' => 'Groot',
+				'fileName' => 'groot.bin',
+				'fileParts' => ['pending' => true, 'totalParts' => 2],
+			]
 		);
 		$objects->expects($this->once())->method('saveObject')
 			->with(
 				['title' => 'Groot', 'fileName' => 'groot.bin', 'fileParts' => '', 'fileSize' => 123, 'fileId' => 55],
-				$this->callback(static fn (ObjectSaveOptions $o): bool => $o->uuid === self::UUID && $o->target->register === '1')
+				$this->callback(callback: static fn (ObjectSaveOptions $o): bool => $o->uuid === self::UUID && $o->target->register === '1')
 			)
 			->willReturnArgument(0);
 		$this->docs->method('storeChunk')->willReturn(23);
@@ -1072,12 +1212,12 @@ class DrcControllerCoverageTest extends TestCase {
 		$this->docs->expects($this->once())->method('getFileId')->with(self::UUID, 'groot.bin')->willReturn(55);
 		$controller = $this->controller(zgw: $this->zgw(objects: $objects), params: ['sequenceNumber' => '2']);
 
-		$response = $this->withInput('last', static fn () => $controller->uploadChunk(uuid: self::UUID));
+		$response = $this->withInput(body: 'last', call: static fn () => $controller->uploadChunk(uuid: self::UUID));
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			['sequenceNumber' => 2, 'size' => 23, 'uploadComplete' => true, 'bestandsomvang' => 123, 'uploadedParts' => 2, 'totalParts' => 2],
-			$response->getData()
+			expected: ['sequenceNumber' => 2, 'size' => 23, 'uploadComplete' => true, 'bestandsomvang' => 123, 'uploadedParts' => 2, 'totalParts' => 2],
+			actual: $response->getData()
 		);
 	}//end testTheLastChunkMergesTheFileAndStampsTheDocument()
 }//end class

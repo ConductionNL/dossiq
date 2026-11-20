@@ -50,7 +50,7 @@ final class CarryRenamedSettingKeysEdgesTest extends TestCase {
 		$failing = array_key_first($pairs);
 		$written = [];
 
-		$config = $this->createMock(IAppConfig::class);
+		$config = $this->createMock(originalClassName: IAppConfig::class);
 		$config->method('hasKey')->willReturnCallback(
 			static fn (string $app, string $key): bool => in_array($key, $pairs, true)
 		);
@@ -68,13 +68,13 @@ final class CarryRenamedSettingKeysEdgesTest extends TestCase {
 			}
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: could not carry setting {legacy} onto {current}; the old key is still read',
 			['legacy' => $pairs[$failing], 'current' => $failing, 'error' => 'database is read-only']
 		);
 
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')
 			->with('Carried ' . (count($pairs) - 1) . ' renamed setting(s) onto their current keys.');
 
@@ -83,8 +83,8 @@ final class CarryRenamedSettingKeysEdgesTest extends TestCase {
 		$expected = $pairs;
 		unset($expected[$failing]);
 		$this->assertSame(
-			array_map(static fn (string $legacy): string => 'value-of-' . $legacy, $expected),
-			$written
+			expected: array_map(static fn (string $legacy): string => 'value-of-' . $legacy, $expected),
+			actual: $written
 		);
 	}//end testAFailingCopyIsLoggedAndTheOtherKeysAreStillCarried()
 
@@ -95,10 +95,10 @@ final class CarryRenamedSettingKeysEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$step = new CarryRenamedSettingKeys(
-			appConfig: $this->createMock(IAppConfig::class),
-			logger: $this->createMock(LoggerInterface::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
-		$this->assertSame('Carry renamed settings onto their current keys', $step->getName());
+		$this->assertSame(expected: 'Carry renamed settings onto their current keys', actual: $step->getName());
 	}//end testTheStepNamesItself()
 }//end class

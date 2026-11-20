@@ -78,10 +78,10 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->users   = $this->createMock(IUserManager::class);
-		$this->groups  = $this->createMock(IGroupManager::class);
-		$this->files   = $this->createMock(FileRestrictionMirror::class);
-		$this->readers = $this->createMock(RestrictedDocumentReaders::class);
+		$this->users   = $this->createMock(originalClassName: IUserManager::class);
+		$this->groups  = $this->createMock(originalClassName: IGroupManager::class);
+		$this->files   = $this->createMock(originalClassName: FileRestrictionMirror::class);
+		$this->readers = $this->createMock(originalClassName: RestrictedDocumentReaders::class);
 	}//end setUp()
 
 	/**
@@ -91,8 +91,8 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 	 */
 	private function writer(): DocumentAccessExceptionWriter {
 		$rule = new DocumentAccessExceptionRule(
-			caseIds: $this->createMock(DocumentCaseIds::class),
-			cases: $this->createMock(CaseAccessGuard::class),
+			caseIds: $this->createMock(originalClassName: DocumentCaseIds::class),
+			cases: $this->createMock(originalClassName: CaseAccessGuard::class),
 			groupManager: $this->groups,
 		);
 
@@ -102,7 +102,7 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 			readers: $this->readers,
 			userManager: $this->users,
 			groupManager: $this->groups,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end writer()
 
@@ -112,7 +112,7 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 	 * @return IUser&MockObject The user.
 	 */
 	private function user(): IUser&MockObject {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('handler');
 		return $user;
 	}//end user()
@@ -123,7 +123,7 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheExceptionAskedForIsCleanedAndKept(): void {
-		$this->users->expects(self::exactly(2))->method('userExists')
+		$this->users->expects(self::exactly(count: 2))->method('userExists')
 			->willReturnCallback(static fn (string $uid): bool => in_array($uid, ['u1', '5'], true));
 		$this->groups->expects(self::once())->method('groupExists')->with('g1')->willReturn(true);
 
@@ -131,7 +131,7 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 			input: ['users' => [' u1 ', 'u1', '', 5, ['nested']], 'groups' => 'g1', 'reason' => "  privacy  \n"]
 		);
 
-		self::assertSame(['users' => ['u1', '5'], 'groups' => ['g1'], 'reason' => 'privacy'], $result);
+		self::assertSame(expected: ['users' => ['u1', '5'], 'groups' => ['g1'], 'reason' => 'privacy'], actual: $result);
 	}//end testTheExceptionAskedForIsCleanedAndKept()
 
 	/**
@@ -143,8 +143,8 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 		$this->users->expects(self::never())->method('userExists');
 		$this->groups->expects(self::never())->method('groupExists');
 
-		$this->expectException(InvalidArgumentException::class);
-		$this->expectExceptionMessage('Name at least one person or group');
+		$this->expectException(exception: InvalidArgumentException::class);
+		$this->expectExceptionMessage(message: 'Name at least one person or group');
 
 		$this->writer()->validated(input: ['users' => ['  ', ''], 'reason' => 'why']);
 	}//end testAnExceptionNamingNobodyIsRefused()
@@ -160,9 +160,9 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 		foreach ([['users' => ['u1']], ['users' => ['u1'], 'reason' => "   \t"]] as $input) {
 			try {
 				$this->writer()->validated(input: $input);
-				self::fail('An exception without a reason was accepted');
+				self::fail(message: 'An exception without a reason was accepted');
 			} catch (InvalidArgumentException $e) {
-				self::assertSame('Give a reason for the exception', $e->getMessage());
+				self::assertSame(expected: 'Give a reason for the exception', actual: $e->getMessage());
 			}
 		}
 	}//end testAnExceptionWithoutAReasonIsRefused()
@@ -176,8 +176,8 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 		$this->users->method('userExists')->willReturnCallback(static fn (string $uid): bool => $uid === 'u1');
 		$this->groups->expects(self::never())->method('groupExists');
 
-		$this->expectException(InvalidArgumentException::class);
-		$this->expectExceptionMessage('Unknown person: ghost');
+		$this->expectException(exception: InvalidArgumentException::class);
+		$this->expectExceptionMessage(message: 'Unknown person: ghost');
 
 		$this->writer()->validated(input: ['users' => ['u1', 'ghost'], 'groups' => ['g1'], 'reason' => 'why']);
 	}//end testAnUnknownPersonIsRefused()
@@ -190,8 +190,8 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 	public function testAnUnknownGroupIsRefused(): void {
 		$this->groups->method('groupExists')->willReturnCallback(static fn (string $gid): bool => $gid === 'g1');
 
-		$this->expectException(InvalidArgumentException::class);
-		$this->expectExceptionMessage('Unknown group: nobody');
+		$this->expectException(exception: InvalidArgumentException::class);
+		$this->expectExceptionMessage(message: 'Unknown group: nobody');
 
 		$this->writer()->validated(input: ['groups' => ['g1', 'nobody'], 'reason' => 'why']);
 	}//end testAnUnknownGroupIsRefused()
@@ -212,10 +212,10 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 				record: ['id' => 'doc-1'],
 				exception: ['users' => ['u1'], 'groups' => [], 'reason' => 'why']
 			);
-			self::fail('A failed save was not reported');
+			self::fail(message: 'A failed save was not reported');
 		} catch (RuntimeException $e) {
-			self::assertSame('The access exception could not be saved', $e->getMessage());
-			self::assertSame('store down', $e->getPrevious()?->getMessage());
+			self::assertSame(expected: 'The access exception could not be saved', actual: $e->getMessage());
+			self::assertSame(expected: 'store down', actual: $e->getPrevious()?->getMessage());
 		}
 	}//end testAFailedSaveOfARecordWithoutAFileTouchesNoFile()
 
@@ -245,10 +245,10 @@ class DocumentAccessExceptionWriterValidationTest extends TestCase {
 			exception: ['users' => ['u1'], 'groups' => [], 'reason' => 'why']
 		);
 
-		self::assertCount(1, $saved[0][AccessExceptionValue::HISTORY]);
-		self::assertSame('set', $saved[0][AccessExceptionValue::HISTORY][0]['action']);
-		self::assertSame('handler', $saved[0][AccessExceptionValue::HISTORY][0]['by']);
-		self::assertSame([0, 1], array_keys($saved[1][AccessExceptionValue::HISTORY]));
-		self::assertSame(['action' => 'set'], $saved[1][AccessExceptionValue::HISTORY][0]);
+		self::assertCount(expectedCount: 1, haystack: $saved[0][AccessExceptionValue::HISTORY]);
+		self::assertSame(expected: 'set', actual: $saved[0][AccessExceptionValue::HISTORY][0]['action']);
+		self::assertSame(expected: 'handler', actual: $saved[0][AccessExceptionValue::HISTORY][0]['by']);
+		self::assertSame(expected: [0, 1], actual: array_keys($saved[1][AccessExceptionValue::HISTORY]));
+		self::assertSame(expected: ['action' => 'set'], actual: $saved[1][AccessExceptionValue::HISTORY][0]);
 	}//end testAHistoryThatIsNotAListStartsAfresh()
 }//end class

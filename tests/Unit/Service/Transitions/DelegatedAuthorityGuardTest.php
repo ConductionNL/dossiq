@@ -173,8 +173,8 @@ class DelegatedAuthorityGuardTest extends TestCase {
 			userId: 'bob'
 		);
 
-		self::assertTrue($result->passed);
-		self::assertSame([['actor' => 'bob', 'act' => 'sign-fixture-letter', 'amount' => null]], $this->asked);
+		self::assertTrue(condition: $result->passed);
+		self::assertSame(expected: [['actor' => 'bob', 'act' => 'sign-fixture-letter', 'amount' => null]], actual: $this->asked);
 	}//end testABlankActorFieldFallsBackToTheCurrentUser()
 
 	/**

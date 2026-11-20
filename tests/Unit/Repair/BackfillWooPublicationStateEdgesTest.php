@@ -84,13 +84,13 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	 */
 	private function step(?LoggerInterface $logger = null): BackfillWooPublicationState {
 		$keys = ['register' => 'dossiq', 'decision_schema' => 'decision', 'case_schema' => 'case'];
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($keys[$key] ?? $default)
 		);
 
-		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default)
 		);
@@ -104,7 +104,7 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 		return new BackfillWooPublicationState(
 			settingsService: $settings,
 			appConfig: $appConfig,
-			logger: $logger ?? $this->createMock(LoggerInterface::class),
+			logger: $logger ?? $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end step()
 
@@ -116,7 +116,7 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	 * @return void
 	 */
 	private function runStep(BackfillWooPublicationState $step): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(function (string $line): void {
 			$this->said[] = $line;
 		});
@@ -132,19 +132,19 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	 */
 	public function testAnUnreadableDecisionPageLeavesTheBackfillUnmarked(): void {
 		$this->store->missingSchemas = ['decision'];
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the Woo publication state backfill could not read the decisions',
-			$this->callback(static fn (array $context): bool => $context['app'] === 'dossiq' && str_contains($context['error'], 'decision'))
+			$this->callback(callback: static fn (array $context): bool => $context['app'] === 'dossiq' && str_contains($context['error'], 'decision'))
 		);
 
-		$this->runStep($this->step(logger: $logger));
+		$this->runStep(step: $this->step(logger: $logger));
 
 		$this->assertSame(
-			['Woo publication state backfill: 0 cases updated, 0 already right, 0 without their case, 0 failed.'],
-			$this->said
+			expected: ['Woo publication state backfill: 0 cases updated, 0 already right, 0 without their case, 0 failed.'],
+			actual: $this->said
 		);
-		$this->assertArrayNotHasKey(BackfillWooPublicationState::CONFIG_KEY, $this->config);
+		$this->assertArrayNotHasKey(key: BackfillWooPublicationState::CONFIG_KEY, array: $this->config);
 	}//end testAnUnreadableDecisionPageLeavesTheBackfillUnmarked()
 
 	/**
@@ -156,14 +156,14 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	public function testADecisionWithoutItsCaseCountsAsMissing(): void {
 		$this->store->seed(schema: 'decision', uuid: 'd-1', row: ['case' => 'gone', 'wooSummary' => ['openbaar' => 1]]);
 
-		$this->runStep($this->step());
+		$this->runStep(step: $this->step());
 
-		$this->assertSame(0, $this->store->writes);
+		$this->assertSame(expected: 0, actual: $this->store->writes);
 		$this->assertSame(
-			['Woo publication state backfill: 0 cases updated, 0 already right, 1 without their case, 0 failed.'],
-			$this->said
+			expected: ['Woo publication state backfill: 0 cases updated, 0 already right, 1 without their case, 0 failed.'],
+			actual: $this->said
 		);
-		$this->assertSame(BackfillWooPublicationState::VERSION, $this->config[BackfillWooPublicationState::CONFIG_KEY]);
+		$this->assertSame(expected: BackfillWooPublicationState::VERSION, actual: $this->config[BackfillWooPublicationState::CONFIG_KEY]);
 	}//end testADecisionWithoutItsCaseCountsAsMissing()
 
 	/**
@@ -177,19 +177,19 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 		$this->store->seed(schema: 'decision', uuid: 'd-1', row: ['case' => 'c-1', 'wooSummary' => ['openbaar' => 1]]);
 		$this->store->refusedSchemas = ['case'];
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the Woo publication state backfill could not write a case',
 			['app' => 'dossiq', 'caseId' => 'c-1', 'error' => 'Save refused for case']
 		);
 
-		$this->runStep($this->step(logger: $logger));
+		$this->runStep(step: $this->step(logger: $logger));
 
 		$this->assertSame(
-			['Woo publication state backfill: 0 cases updated, 0 already right, 0 without their case, 1 failed.'],
-			$this->said
+			expected: ['Woo publication state backfill: 0 cases updated, 0 already right, 0 without their case, 1 failed.'],
+			actual: $this->said
 		);
-		$this->assertArrayNotHasKey(BackfillWooPublicationState::CONFIG_KEY, $this->config);
+		$this->assertArrayNotHasKey(key: BackfillWooPublicationState::CONFIG_KEY, array: $this->config);
 	}//end testAFailingWriteIsCountedAndLeavesTheBackfillUnmarked()
 
 	/**
@@ -202,12 +202,16 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 		$step = $this->step();
 
 		$this->assertSame(
-			['wooPublicationStatus' => 'published', 'wooPublicationUrl' => '/apps/opencatalogi/publications/p-1'],
-			$step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published', 'publicationUrl' => '/apps/opencatalogi/publications/p-1']])
+			expected: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => '/apps/opencatalogi/publications/p-1'],
+			actual: $step->stateFor(
+				['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published', 'publicationUrl' => '/apps/opencatalogi/publications/p-1']]
+			)
 		);
 		$this->assertSame(
-			['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 'https://elders.example/p-1'],
-			$step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published', 'publicationUrl' => 'https://elders.example/p-1']])
+			expected: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 'https://elders.example/p-1'],
+			actual: $step->stateFor(
+				['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published', 'publicationUrl' => 'https://elders.example/p-1']]
+			)
 		);
 	}//end testWithoutAUrlGeneratorThePathIsKeptAsStored()
 
@@ -220,9 +224,15 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	public function testMalformedOrIncompletePublicationsReadAsReady(): void {
 		$step = $this->step();
 
-		$this->assertSame(['wooPublicationStatus' => 'ready'], $step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => 'published']));
-		$this->assertSame(['wooPublicationStatus' => 'ready'], $step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published']]));
-		$this->assertSame([], $step->stateFor(['wooSummary' => [], 'wooPublication' => ['status' => 'published']]));
+		$this->assertSame(
+			expected: ['wooPublicationStatus' => 'ready'],
+			actual: $step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => 'published'])
+		);
+		$this->assertSame(
+			expected: ['wooPublicationStatus' => 'ready'],
+			actual: $step->stateFor(['wooSummary' => ['openbaar' => 1], 'wooPublication' => ['status' => 'published']])
+		);
+		$this->assertSame(expected: [], actual: $step->stateFor(['wooSummary' => [], 'wooPublication' => ['status' => 'published']]));
 	}//end testMalformedOrIncompletePublicationsReadAsReady()
 
 	/**
@@ -231,6 +241,6 @@ class BackfillWooPublicationStateEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheStepNamesItself(): void {
-		$this->assertSame('Show the Woo publication state on existing Woo cases', $this->step()->getName());
+		$this->assertSame(expected: 'Show the Woo publication state on existing Woo cases', actual: $this->step()->getName());
 	}//end testTheStepNamesItself()
 }//end class

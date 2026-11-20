@@ -39,14 +39,14 @@ class TermTimerFieldsTest extends TestCase {
 		$subject = (new TermTimerFields())->subject(instance: ['id' => 'inst-1', 'case' => 'case-9'], label: 'Beslistermijn');
 
 		$this->assertSame(
-			[
+			expected: [
 				'subjectType' => 'object',
 				'subjectUuid' => 'inst-1',
 				'appId' => 'dossiq',
 				'title' => 'Beslistermijn case-9',
 				'purpose' => 'due',
 			],
-			$subject
+			actual: $subject
 		);
 	}//end testSubjectNamesTheInstanceAndTitlesItByTheCase()
 
@@ -58,11 +58,11 @@ class TermTimerFieldsTest extends TestCase {
 	public function testSubjectFallsBackToTheInstanceIdForTheTitle(): void {
 		$fields = new TermTimerFields();
 
-		$this->assertSame('Hersteltermijn inst-2', $fields->subject(instance: ['id' => 'inst-2'], label: 'Hersteltermijn')['title']);
+		$this->assertSame(expected: 'Hersteltermijn inst-2', actual: $fields->subject(instance: ['id' => 'inst-2'], label: 'Hersteltermijn')['title']);
 
 		$empty = $fields->subject(instance: [], label: 'X');
-		$this->assertSame('', $empty['subjectUuid']);
-		$this->assertSame('X ', $empty['title']);
+		$this->assertSame(expected: '', actual: $empty['subjectUuid']);
+		$this->assertSame(expected: 'X ', actual: $empty['title']);
 	}//end testSubjectFallsBackToTheInstanceIdForTheTitle()
 
 	/**
@@ -74,18 +74,18 @@ class TermTimerFieldsTest extends TestCase {
 		$fields = new TermTimerFields();
 
 		$this->assertSame(
-			[
+			expected: [
 				'source' => TermijnTimerService::METADATA_SOURCE,
 				'kind' => 'pause',
 				'termijnInstanceId' => '42',
 				'caseId' => 'case-1',
 			],
-			$fields->metadata(instance: ['id' => 42, 'case' => 'case-1'], kind: 'pause')
+			actual: $fields->metadata(instance: ['id' => 42, 'case' => 'case-1'], kind: 'pause')
 		);
 
 		$this->assertSame(
-			['source' => TermijnTimerService::METADATA_SOURCE, 'kind' => 'due', 'termijnInstanceId' => '', 'caseId' => ''],
-			$fields->metadata(instance: [], kind: 'due')
+			expected: ['source' => TermijnTimerService::METADATA_SOURCE, 'kind' => 'due', 'termijnInstanceId' => '', 'caseId' => ''],
+			actual: $fields->metadata(instance: [], kind: 'due')
 		);
 	}//end testMetadataCarriesSourceKindAndIds()
 
@@ -97,13 +97,13 @@ class TermTimerFieldsTest extends TestCase {
 	public function testPauseRulesWithoutRemindersHoldOnlyTheExpiry(): void {
 		$rules = (new TermTimerFields())->pauseRules(offsets: []);
 
-		$this->assertCount(1, $rules);
-		$this->assertSame('slaBreached', $rules[0]['trigger']);
-		$this->assertSame(0, $rules[0]['offset']);
-		$this->assertSame(['handler'], $rules[0]['notifyRole']);
-		$this->assertSame('high', $rules[0]['priority']);
-		$this->assertSame('pauze-verlopen', $rules[0]['message']);
-		$this->assertFalse($rules[0]['openIncident']);
+		$this->assertCount(expectedCount: 1, haystack: $rules);
+		$this->assertSame(expected: 'slaBreached', actual: $rules[0]['trigger']);
+		$this->assertSame(expected: 0, actual: $rules[0]['offset']);
+		$this->assertSame(expected: ['handler'], actual: $rules[0]['notifyRole']);
+		$this->assertSame(expected: 'high', actual: $rules[0]['priority']);
+		$this->assertSame(expected: 'pauze-verlopen', actual: $rules[0]['message']);
+		$this->assertFalse(condition: $rules[0]['openIncident']);
 	}//end testPauseRulesWithoutRemindersHoldOnlyTheExpiry()
 
 	/**
@@ -114,11 +114,11 @@ class TermTimerFieldsTest extends TestCase {
 	public function testPauseRulesAddOneReminderPerPositiveOffset(): void {
 		$rules = (new TermTimerFields())->pauseRules(offsets: [7, 0, -3, 2]);
 
-		$this->assertCount(3, $rules);
-		$this->assertSame('pauze-verlopen', $rules[0]['message']);
+		$this->assertCount(expectedCount: 3, haystack: $rules);
+		$this->assertSame(expected: 'pauze-verlopen', actual: $rules[0]['message']);
 
 		$this->assertSame(
-			[
+			expected: [
 				'trigger' => 'preBreach',
 				'offset' => 7,
 				'offsetUnit' => 'calendarDays',
@@ -128,9 +128,9 @@ class TermTimerFieldsTest extends TestCase {
 				'message' => 'pauze-chase',
 				'openIncident' => false,
 			],
-			$rules[1]
+			actual: $rules[1]
 		);
-		$this->assertSame(2, $rules[2]['offset']);
-		$this->assertSame('pauze-chase', $rules[2]['message']);
+		$this->assertSame(expected: 2, actual: $rules[2]['offset']);
+		$this->assertSame(expected: 'pauze-chase', actual: $rules[2]['message']);
 	}//end testPauseRulesAddOneReminderPerPositiveOffset()
 }//end class

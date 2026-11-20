@@ -43,7 +43,7 @@ class CaseSeatReconcilerTest extends TestCase {
 	 * @return CaseSeats The mock.
 	 */
 	private function seats(string $handler, string $coordinator): CaseSeats {
-		$seats = $this->createMock(CaseSeats::class);
+		$seats = $this->createMock(originalClassName: CaseSeats::class);
 		$seats->method('seatsOf')->willReturn(['handler' => $handler, 'coordinator' => $coordinator]);
 
 		return $seats;
@@ -58,7 +58,7 @@ class CaseSeatReconcilerTest extends TestCase {
 	 * @return TeamDirectory The mock.
 	 */
 	private function directory(string $team, array $members): TeamDirectory {
-		$teams = $this->createMock(TeamDirectory::class);
+		$teams = $this->createMock(originalClassName: TeamDirectory::class);
 		$teams->method('holds')->willReturnCallback(
 			static fn (string $uid, string $group): bool => $group === $team && in_array($uid, $members, true)
 		);
@@ -103,7 +103,7 @@ class CaseSeatReconcilerTest extends TestCase {
 		);
 		$this->assertSame(expected: ['emptied' => [], 'changes' => []], actual: $kept->plan(case: [], team: 'vergunningen'));
 
-		$teams = $this->createMock(TeamDirectory::class);
+		$teams = $this->createMock(originalClassName: TeamDirectory::class);
 		$teams->expects($this->never())->method('holds');
 		$empty = new CaseSeatReconciler(seats: $this->seats(handler: '', coordinator: ''), teams: $teams);
 		$this->assertSame(expected: ['emptied' => [], 'changes' => []], actual: $empty->plan(case: [], team: 'vergunningen'));
@@ -123,7 +123,10 @@ class CaseSeatReconcilerTest extends TestCase {
 		$plan = $reconciler->plan(case: [], team: 'vergunningen');
 
 		$this->assertSame(expected: [], actual: $plan['changes']);
-		$this->assertSame(expected: [['seat' => CaseSeats::COORDINATOR, 'holder' => 'bert', 'reason' => CaseSeatReconciler::NOT_IN_RECEIVING_TEAM]], actual: $plan['emptied']);
+		$this->assertSame(
+			expected: [['seat' => CaseSeats::COORDINATOR, 'holder' => 'bert', 'reason' => CaseSeatReconciler::NOT_IN_RECEIVING_TEAM]],
+			actual: $plan['emptied']
+		);
 	}//end testOnlyTheCoordinatorOutsideTheTeamAsksForNoCaseChange()
 
 	/**
@@ -132,10 +135,10 @@ class CaseSeatReconcilerTest extends TestCase {
 	 * @return void
 	 */
 	public function testApplyClearsOnlyTheCoordinator(): void {
-		$seats = $this->createMock(CaseSeats::class);
+		$seats = $this->createMock(originalClassName: CaseSeats::class);
 		$seats->expects($this->once())->method('clearCoordinator')->with('zaak-1')->willReturn('');
 
-		(new CaseSeatReconciler(seats: $seats, teams: $this->createMock(TeamDirectory::class)))->apply(
+		(new CaseSeatReconciler(seats: $seats, teams: $this->createMock(originalClassName: TeamDirectory::class)))->apply(
 			caseId: 'zaak-1',
 			emptied: [
 				['seat' => CaseSeats::HANDLER, 'holder' => 'anna', 'reason' => CaseSeatReconciler::NOT_IN_RECEIVING_TEAM],
@@ -150,10 +153,10 @@ class CaseSeatReconcilerTest extends TestCase {
 	 * @return void
 	 */
 	public function testApplyWithoutACaseIdClearsNothing(): void {
-		$seats = $this->createMock(CaseSeats::class);
+		$seats = $this->createMock(originalClassName: CaseSeats::class);
 		$seats->expects($this->never())->method('clearCoordinator');
 
-		(new CaseSeatReconciler(seats: $seats, teams: $this->createMock(TeamDirectory::class)))->apply(
+		(new CaseSeatReconciler(seats: $seats, teams: $this->createMock(originalClassName: TeamDirectory::class)))->apply(
 			caseId: '',
 			emptied: [['seat' => CaseSeats::COORDINATOR, 'holder' => 'bert', 'reason' => CaseSeatReconciler::NOT_IN_RECEIVING_TEAM]]
 		);

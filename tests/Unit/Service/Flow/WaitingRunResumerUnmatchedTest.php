@@ -56,13 +56,13 @@ class WaitingRunResumerUnmatchedTest extends TestCase {
 			}//end getContext()
 		};
 
-		$mapper = $this->createMock(FlowRunMapper::class);
+		$mapper = $this->createMock(originalClassName: FlowRunMapper::class);
 		$mapper->expects(self::once())->method('findSuspendedBySubject')
 			->with('case-1')
 			->willReturn([$other, $noContext, $unreadable]);
-		$runner = $this->createMock(FlowRunService::class);
+		$runner = $this->createMock(originalClassName: FlowRunService::class);
 		$runner->expects(self::never())->method('signal');
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::never())->method('warning');
 		$logger->expects(self::never())->method('error');
 
@@ -76,11 +76,11 @@ class WaitingRunResumerUnmatchedTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutSuspendedRunsSignalsNothing(): void {
-		$mapper = $this->createMock(FlowRunMapper::class);
+		$mapper = $this->createMock(originalClassName: FlowRunMapper::class);
 		$mapper->expects(self::once())->method('findSuspendedBySubject')->willReturn([]);
-		$runner = $this->createMock(FlowRunService::class);
+		$runner = $this->createMock(originalClassName: FlowRunService::class);
 		$runner->expects(self::never())->method('signal');
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::never())->method('warning');
 
 		(new WaitingRunResumer(logger: $logger, runs: $mapper, runner: $runner))

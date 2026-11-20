@@ -50,7 +50,7 @@ final class ZtcChangeTest extends TestCase {
 	 * @return string|null
 	 */
 	private function refusal(string $resource, string $action, array $body = []): ?string {
-		$rules = new ZtcConceptRules(results: new ZgwRuleResults(logger: $this->createMock(LoggerInterface::class)));
+		$rules = new ZtcConceptRules(results: new ZgwRuleResults(logger: $this->createMock(originalClassName: LoggerInterface::class)));
 
 		return $rules->checkConceptProtection(
 			resource: $resource,
@@ -67,12 +67,15 @@ final class ZtcChangeTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheResourceReachesTheRule(): void {
-		$this->assertNull($this->refusal(resource: 'roltypen', action: 'create'));
+		$this->assertNull(actual: $this->refusal(resource: 'roltypen', action: 'create'));
 		$this->assertSame(
-			'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.',
-			$this->refusal(resource: 'resultaattypen', action: 'create')
+			expected: 'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.',
+			actual: $this->refusal(resource: 'resultaattypen', action: 'create')
 		);
-		$this->assertStringContainsString('een besluittype met concept=false', (string)$this->refusal(resource: 'besluittypen', action: 'destroy'));
+		$this->assertStringContainsString(
+			needle: 'een besluittype met concept=false',
+			haystack: (string)$this->refusal(resource: 'besluittypen', action: 'destroy')
+		);
 	}//end testTheResourceReachesTheRule()
 
 	/**
@@ -81,11 +84,11 @@ final class ZtcChangeTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheActionReachesTheRule(): void {
-		$this->assertNull($this->refusal(resource: 'statustypen', action: 'create'));
-		$this->assertNotNull($this->refusal(resource: 'statustypen', action: 'patch'));
+		$this->assertNull(actual: $this->refusal(resource: 'statustypen', action: 'create'));
+		$this->assertNotNull(actual: $this->refusal(resource: 'statustypen', action: 'patch'));
 		$this->assertNotSame(
-			$this->refusal(resource: 'zaaktypen', action: 'update'),
-			$this->refusal(resource: 'zaaktypen', action: 'destroy')
+			expected: $this->refusal(resource: 'zaaktypen', action: 'update'),
+			actual: $this->refusal(resource: 'zaaktypen', action: 'destroy')
 		);
 	}//end testTheActionReachesTheRule()
 
@@ -95,7 +98,7 @@ final class ZtcChangeTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheBodyReachesTheRule(): void {
-		$this->assertNull($this->refusal(resource: 'zaaktypen', action: 'patch', body: ['endValidity' => '2026-12-31']));
-		$this->assertNotNull($this->refusal(resource: 'zaaktypen', action: 'patch', body: ['endValidity' => '2026-12-31', 'title' => 'x']));
+		$this->assertNull(actual: $this->refusal(resource: 'zaaktypen', action: 'patch', body: ['endValidity' => '2026-12-31']));
+		$this->assertNotNull(actual: $this->refusal(resource: 'zaaktypen', action: 'patch', body: ['endValidity' => '2026-12-31', 'title' => 'x']));
 	}//end testTheBodyReachesTheRule()
 }//end class

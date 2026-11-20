@@ -69,12 +69,12 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$resolver = $this->createMock(ObjectSchemaSlugResolverInterface::class);
+		$resolver = $this->createMock(originalClassName: ObjectSchemaSlugResolverInterface::class);
 		$resolver->method('resolveFromPayload')->willReturnCallback(
 			static fn (array $payload): string => (string)($payload['@self']['schema'] ?? '')
 		);
-		$this->subscriptions = $this->createMock(RequesterRegistrySubscriptionInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->subscriptions = $this->createMock(originalClassName: RequesterRegistrySubscriptionInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->listener = new RequesterRegistrySubscriptionListener(
 			slugResolver: $resolver,
 			subscriptions: $this->subscriptions,
@@ -106,7 +106,7 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 	public function testACreatedCaseSubscribesItsRequester(): void {
 		$this->subscriptions->expects($this->once())->method('subscribe')->with('person-1')->willReturn([]);
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('case', ['requester' => ' person-1 '])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'case', data: ['requester' => ' person-1 '])));
 	}//end testACreatedCaseSubscribesItsRequester()
 
 	/**
@@ -117,7 +117,7 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 	public function testAnObjectReferenceIsReadByItsId(): void {
 		$this->subscriptions->expects($this->once())->method('subscribe')->with('company-9')->willReturn([]);
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('case', ['requester' => ['id' => 'company-9']])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'case', data: ['requester' => ['id' => 'company-9']])));
 	}//end testAnObjectReferenceIsReadByItsId()
 
 	/**
@@ -130,8 +130,8 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 
 		$this->listener->handle(
 			new ObjectUpdatedEvent(
-				$this->entity('case', ['requester' => 'person-2']),
-				$this->entity('case', ['requester' => 'person-1'])
+				$this->entity(schema: 'case', data: ['requester' => 'person-2']),
+				$this->entity(schema: 'case', data: ['requester' => 'person-1'])
 			)
 		);
 	}//end testAnUpdateWithANewRequesterSubscribesIt()
@@ -146,8 +146,8 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 
 		$this->listener->handle(
 			new ObjectUpdatedEvent(
-				$this->entity('case', ['requester' => 'person-1', 'title' => 'New']),
-				$this->entity('case', ['requester' => ['uuid' => 'person-1'], 'title' => 'Old'])
+				$this->entity(schema: 'case', data: ['requester' => 'person-1', 'title' => 'New']),
+				$this->entity(schema: 'case', data: ['requester' => ['uuid' => 'person-1'], 'title' => 'Old'])
 			)
 		);
 	}//end testAnUpdateKeepingTheRequesterDoesNothing()
@@ -160,7 +160,7 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 	public function testAnUpdateWithoutAnOldObjectSubscribes(): void {
 		$this->subscriptions->expects($this->once())->method('subscribe')->with('person-1')->willReturn([]);
 
-		$this->listener->handle(new ObjectUpdatedEvent($this->entity('case', ['requester' => 'person-1']), null));
+		$this->listener->handle(new ObjectUpdatedEvent(newObject: $this->entity(schema: 'case', data: ['requester' => 'person-1']), oldObject: null));
 	}//end testAnUpdateWithoutAnOldObjectSubscribes()
 
 	/**
@@ -171,10 +171,10 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 	public function testNothingHappensWithoutACaseRequester(): void {
 		$this->subscriptions->expects($this->never())->method('subscribe');
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('case', ['title' => 'No requester'])));
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('case', ['requester' => 42])));
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('contactMoment', ['requester' => 'person-1'])));
-		$this->listener->handle(new ObjectCreatingEvent($this->entity('case', ['requester' => 'person-1'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'case', data: ['title' => 'No requester'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'case', data: ['requester' => 42])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'contactMoment', data: ['requester' => 'person-1'])));
+		$this->listener->handle(new ObjectCreatingEvent(object: $this->entity(schema: 'case', data: ['requester' => 'person-1'])));
 	}//end testNothingHappensWithoutACaseRequester()
 
 	/**
@@ -189,6 +189,6 @@ class RequesterRegistrySubscriptionListenerTest extends TestCase {
 			['error' => 'BRP down']
 		);
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('case', ['requester' => 'person-1'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'case', data: ['requester' => 'person-1'])));
 	}//end testAFailingSubscriptionIsLogged()
 }//end class

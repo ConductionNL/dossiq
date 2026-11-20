@@ -95,7 +95,7 @@ class ZtcControllerCoverageTest extends TestCase {
 		$this->zgw->method('validateJwtAuth')->with($this->request)->willReturn($refusal);
 		$this->zgw->expects(self::never())->method('handleIndex');
 
-		self::assertSame($refusal, $this->controller()->index(resource: 'zaaktypen'));
+		self::assertSame(expected: $refusal, actual: $this->controller()->index(resource: 'zaaktypen'));
 	}//end testIndexAnswersTheJwtRefusal()
 
 	/**
@@ -108,14 +108,14 @@ class ZtcControllerCoverageTest extends TestCase {
 		$noResults = new JSONResponse(data: ['count' => 0], statusCode: 200);
 		$scalarResults = new JSONResponse(data: ['results' => 'x'], statusCode: 200);
 		$this->zgw->method('validateJwtAuth')->willReturn(null);
-		$this->zgw->expects(self::exactly(3))->method('handleIndex')
+		$this->zgw->expects(self::exactly(count: 3))->method('handleIndex')
 			->with($this->request, 'catalogi', 'statustypen')
 			->willReturnOnConsecutiveCalls($failed, $noResults, $scalarResults);
 
 		$controller = $this->controller();
-		self::assertSame($failed, $controller->index(resource: 'statustypen'));
-		self::assertSame($noResults, $controller->index(resource: 'statustypen'));
-		self::assertSame($scalarResults, $controller->index(resource: 'statustypen'));
+		self::assertSame(expected: $failed, actual: $controller->index(resource: 'statustypen'));
+		self::assertSame(expected: $noResults, actual: $controller->index(resource: 'statustypen'));
+		self::assertSame(expected: $scalarResults, actual: $controller->index(resource: 'statustypen'));
 	}//end testIndexPassesAFailureAndANonPageThrough()
 
 	/**
@@ -125,7 +125,10 @@ class ZtcControllerCoverageTest extends TestCase {
 	 */
 	public function testIndexFiltersByValidityDate(): void {
 		$this->request->method('getParam')->willReturnCallback(
-			static fn (string $key): ?string => $key === 'datumGeldigheid' ? '2024-06-01' : null
+			static fn (string $key): ?string => match ($key) {
+				'datumGeldigheid' => '2024-06-01',
+				default => null,
+			}
 		);
 		$valid = ['url' => 'a', 'startValidity' => '2024-01-01', 'endValidity' => '2024-12-31'];
 		$notYet = ['url' => 'b', 'startValidity' => '2024-07-01'];
@@ -137,8 +140,8 @@ class ZtcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->index(resource: 'statustypen');
 
-		self::assertSame(200, $response->getStatus());
-		self::assertSame(['count' => 1, 'next' => null, 'results' => [$valid]], $response->getData());
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertSame(expected: ['count' => 1, 'next' => null, 'results' => [$valid]], actual: $response->getData());
 	}//end testIndexFiltersByValidityDate()
 
 	/**
@@ -159,12 +162,12 @@ class ZtcControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->index(resource: 'zaaktypen');
 
-		self::assertSame(200, $response->getStatus());
+		self::assertSame(expected: 200, actual: $response->getStatus());
 		self::assertSame(
-			['count' => 2, 'results' => [['url' => 'zt', 'besluittypen' => []], ['url' => 'zt-2']]],
-			$response->getData()
+			expected: ['count' => 2, 'results' => [['url' => 'zt', 'besluittypen' => []], ['url' => 'zt-2']]],
+			actual: $response->getData()
 		);
-		self::assertSame([[self::DRAFT_BT, 'r-1', 's-bt']], $store->finds);
+		self::assertSame(expected: [[self::DRAFT_BT, 'r-1', 's-bt']], actual: $store->finds);
 	}//end testIndexDropsReferencesToUnpublishedTypes()
 
 	/**
@@ -189,8 +192,8 @@ class ZtcControllerCoverageTest extends TestCase {
 			->with($this->request, 'catalogi', 'zaaktype-informatieobjecttypen', null, true, true)
 			->willReturn($answer);
 
-		self::assertSame($answer, $this->controller()->create(resource: 'zaaktype-informatieobjecttypen'));
-		self::assertSame([['name' => 'Bijlage', '_limit' => 1]], $store->searches);
+		self::assertSame(expected: $answer, actual: $this->controller()->create(resource: 'zaaktype-informatieobjecttypen'));
+		self::assertSame(expected: [['name' => 'Bijlage', '_limit' => 1]], actual: $store->searches);
 	}//end testCreatingAZiotResolvesTheInformatieobjecttypeByName()
 
 	/**
@@ -210,9 +213,9 @@ class ZtcControllerCoverageTest extends TestCase {
 		$controller = $this->controller();
 		$response = $controller->create(resource: 'zaaktypen');
 
-		self::assertNotSame($created, $response);
-		self::assertSame([201, ['url' => 'zt', 'omschrijving' => 'A']], [$response->getStatus(), $response->getData()]);
-		self::assertSame($refused, $controller->create(resource: 'zaaktypen'));
+		self::assertNotSame(expected: $created, actual: $response);
+		self::assertSame(expected: [201, ['url' => 'zt', 'omschrijving' => 'A']], actual: [$response->getStatus(), $response->getData()]);
+		self::assertSame(expected: $refused, actual: $controller->create(resource: 'zaaktypen'));
 	}//end testACreatedZaaktypeIsReAnsweredAndARefusalPassesThrough()
 
 	/**
@@ -232,8 +235,8 @@ class ZtcControllerCoverageTest extends TestCase {
 		$this->zgw->expects(self::once())->method('handleUpdate')
 			->with($this->request, 'catalogi', 'statustypen', 'st-1', true, false)->willReturn($answer);
 
-		self::assertSame($answer, $this->controller()->patch(resource: 'statustypen', uuid: 'st-1'));
-		self::assertSame([['st-1', 'r-1', 's-st']], $store->finds);
+		self::assertSame(expected: $answer, actual: $this->controller()->patch(resource: 'statustypen', uuid: 'st-1'));
+		self::assertSame(expected: [['st-1', 'r-1', 's-st']], actual: $store->finds);
 	}//end testAnUpdateReadsTheParentDraftFromTheStoredObject()
 
 	/**
@@ -250,7 +253,7 @@ class ZtcControllerCoverageTest extends TestCase {
 		$this->zgw->expects(self::once())->method('handleDestroy')
 			->with($this->request, 'catalogi', 'statustypen', 'gone', null)->willReturn($answer);
 
-		self::assertSame($answer, $this->controller()->destroy(resource: 'statustypen', uuid: 'gone'));
+		self::assertSame(expected: $answer, actual: $this->controller()->destroy(resource: 'statustypen', uuid: 'gone'));
 	}//end testAnUnreadableStoredObjectLeavesTheParentDraftUnknown()
 
 	/**
@@ -268,8 +271,8 @@ class ZtcControllerCoverageTest extends TestCase {
 			->with($this->request, 'catalogi', 'zaaktypen', 'zt-1', 'a-1')->willReturn($entry);
 
 		$controller = $this->controller();
-		self::assertSame($list, $controller->audittrailIndex(resource: 'zaaktypen', uuid: 'zt-1'));
-		self::assertSame($entry, $controller->audittrailShow(resource: 'zaaktypen', uuid: 'zt-1', auditUuid: 'a-1'));
+		self::assertSame(expected: $list, actual: $controller->audittrailIndex(resource: 'zaaktypen', uuid: 'zt-1'));
+		self::assertSame(expected: $entry, actual: $controller->audittrailShow(resource: 'zaaktypen', uuid: 'zt-1', auditUuid: 'a-1'));
 	}//end testTheAuditTrailReachesTheStore()
 
 	/**
@@ -284,8 +287,8 @@ class ZtcControllerCoverageTest extends TestCase {
 		$this->zgw->expects(self::never())->method('handleAudittrailShow');
 
 		$controller = $this->controller();
-		self::assertSame($refusal, $controller->audittrailIndex(resource: 'zaaktypen', uuid: 'zt-1'));
-		self::assertSame($refusal, $controller->audittrailShow(resource: 'zaaktypen', uuid: 'zt-1', auditUuid: 'a-1'));
+		self::assertSame(expected: $refusal, actual: $controller->audittrailIndex(resource: 'zaaktypen', uuid: 'zt-1'));
+		self::assertSame(expected: $refusal, actual: $controller->audittrailShow(resource: 'zaaktypen', uuid: 'zt-1', auditUuid: 'a-1'));
 	}//end testTheAuditTrailAnswersTheJwtRefusal()
 
 	/**

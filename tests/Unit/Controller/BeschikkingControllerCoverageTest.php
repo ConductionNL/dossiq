@@ -89,22 +89,22 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->service = $this->createMock(BeschikkingServiceInterface::class);
+		$this->service = $this->createMock(originalClassName: BeschikkingServiceInterface::class);
 		// The shipped OCP IRequest stub omits getContent(); add it so the JSON body is mockable.
-		$this->request = $this->getMockBuilder(IRequest::class)
+		$this->request = $this->getMockBuilder(className: IRequest::class)
 			->disableOriginalConstructor()
 			->addMethods(['getContent'])
 			->getMockForAbstractClass();
-		$this->userSession = $this->createMock(IUserSession::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$this->controller = new BeschikkingController(
-			'dossiq',
-			$this->request,
-			$this->service,
-			$this->userSession,
-			$this->logger,
-			$this->createMock(CaseAccessGuardInterface::class),
+			appName: 'dossiq',
+			request: $this->request,
+			decisionService: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			accessGuard: $this->createMock(originalClassName: CaseAccessGuardInterface::class),
 		);
 	}//end setUp()
 
@@ -116,7 +116,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	private function authenticate(string $uid = 'tester'): void {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn($uid);
 		$this->userSession->method('getUser')->willReturn($user);
 	}//end authenticate()
@@ -129,8 +129,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	private function assertGeneric500(JSONResponse $response): void {
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
-		$this->assertSame(['error' => 'Could not complete the request'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Could not complete the request'], actual: $response->getData());
 	}//end assertGeneric500()
 
 	/**
@@ -155,8 +155,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		];
 
 		foreach ($responses as $response) {
-			$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-			$this->assertSame(['error' => 'Not authenticated'], $response->getData());
+			$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
+			$this->assertSame(expected: ['error' => 'Not authenticated'], actual: $response->getData());
 		}
 	}//end testEveryEndpointRefusesAnAnonymousCaller()
 
@@ -185,8 +185,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 
 		$response = $this->controller->create();
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-		$this->assertSame(['id' => 'besch-9'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertSame(expected: ['id' => 'besch-9'], actual: $response->getData());
 	}//end testCreatePassesTemplateAddresseeAndDecisionFields()
 
 	/**
@@ -201,7 +201,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->logger->expects($this->once())->method('error')
 			->with('BeschikkingController: compose failed', ['exception' => 'secret detail']);
 
-		$this->assertGeneric500($this->controller->create());
+		$this->assertGeneric500(response: $this->controller->create());
 	}//end testCreateFailureIsAGeneric500()
 
 	/**
@@ -215,7 +215,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->logger->expects($this->once())->method('error')
 			->with('BeschikkingController: show failed', ['exception' => 'boom']);
 
-		$this->assertGeneric500($this->controller->show('besch-1'));
+		$this->assertGeneric500(response: $this->controller->show('besch-1'));
 	}//end testShowFailureIsAGeneric500()
 
 	/**
@@ -228,7 +228,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->request->method('getContent')->willReturn('{"rationale":"x"}');
 		$this->service->method('updateFields')->willThrowException(new \TypeError('bad'));
 
-		$this->assertGeneric500($this->controller->update('besch-1'));
+		$this->assertGeneric500(response: $this->controller->update('besch-1'));
 	}//end testUpdateFailureIsAGeneric500()
 
 	/**
@@ -245,8 +245,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 
 		$response = $this->controller->update('besch-1');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['error' => 'zaakId is required'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'zaakId is required'], actual: $response->getData());
 	}//end testUpdateMapsZaakIdRequiredToA400()
 
 	/**
@@ -255,15 +255,15 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testAkkoordApprovesAsTheSignedInUser(): void {
-		$this->authenticate('mandaathouder');
+		$this->authenticate(uid: 'mandaathouder');
 		$this->service->expects($this->once())->method('akkoord')
 			->with('besch-1', 'mandaathouder')
 			->willReturn(['id' => 'besch-1', 'currentStatus' => 'akkoord']);
 
 		$response = $this->controller->akkoord('besch-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('akkoord', $response->getData()['currentStatus']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: 'akkoord', actual: $response->getData()['currentStatus']);
 	}//end testAkkoordApprovesAsTheSignedInUser()
 
 	/**
@@ -279,8 +279,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 
 		$response = $this->controller->akkoord('besch-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(['message' => '', 'error' => 'four-eyes', 'code' => 'four_eyes'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: ['message' => '', 'error' => 'four-eyes', 'code' => 'four_eyes'], actual: $response->getData());
 	}//end testAkkoordRefusalCarriesItsStatus()
 
 	/**
@@ -292,7 +292,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->authenticate();
 		$this->service->method('akkoord')->willThrowException(new \Error('x'));
 
-		$this->assertGeneric500($this->controller->akkoord('besch-1'));
+		$this->assertGeneric500(response: $this->controller->akkoord('besch-1'));
 	}//end testAkkoordFailureIsAGeneric500()
 
 	/**
@@ -301,7 +301,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testOndertekenRefusalIsNotMappedAsRuntime(): void {
-		$this->authenticate('signer');
+		$this->authenticate(uid: 'signer');
 		$this->request->method('getContent')->willReturn('{"tspProvider":"tsp-a"}');
 		$this->service->expects($this->once())->method('onderteken')
 			->with('besch-1', 'tsp-a', 'signer')
@@ -309,8 +309,8 @@ class BeschikkingControllerCoverageTest extends TestCase {
 
 		$response = $this->controller->onderteken('besch-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame('coordinator-seat', $response->getData()['error']);
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: 'coordinator-seat', actual: $response->getData()['error']);
 	}//end testOndertekenRefusalIsNotMappedAsRuntime()
 
 	/**
@@ -323,7 +323,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->request->method('getContent')->willReturn('{"tspProvider":"tsp-a"}');
 		$this->service->method('onderteken')->willThrowException(new \Error('x'));
 
-		$this->assertGeneric500($this->controller->onderteken('besch-1'));
+		$this->assertGeneric500(response: $this->controller->onderteken('besch-1'));
 	}//end testOndertekenFailureIsAGeneric500()
 
 	/**
@@ -332,15 +332,15 @@ class BeschikkingControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testVerzendSendsAsTheSignedInUser(): void {
-		$this->authenticate('sender');
+		$this->authenticate(uid: 'sender');
 		$this->service->expects($this->once())->method('verzend')
 			->with('besch-1', 'sender')
 			->willReturn(['id' => 'besch-1', 'currentStatus' => 'verzonden']);
 
 		$response = $this->controller->verzend('besch-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('verzonden', $response->getData()['currentStatus']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: 'verzonden', actual: $response->getData()['currentStatus']);
 	}//end testVerzendSendsAsTheSignedInUser()
 
 	/**
@@ -352,7 +352,7 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->authenticate();
 		$this->service->method('verzend')->willThrowException(new RuntimeException('something_else'));
 
-		$this->assertGeneric500($this->controller->verzend('besch-1'));
+		$this->assertGeneric500(response: $this->controller->verzend('besch-1'));
 	}//end testVerzendUnknownRuntimeCodeIsA500()
 
 	/**
@@ -366,6 +366,6 @@ class BeschikkingControllerCoverageTest extends TestCase {
 		$this->logger->expects($this->once())->method('error')
 			->with('BeschikkingController: verzend failed', ['exception' => 'kaput']);
 
-		$this->assertGeneric500($this->controller->verzend('besch-1'));
+		$this->assertGeneric500(response: $this->controller->verzend('besch-1'));
 	}//end testVerzendFailureIsAGeneric500()
 }//end class

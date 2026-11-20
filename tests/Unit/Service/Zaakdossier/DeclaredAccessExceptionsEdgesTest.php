@@ -62,7 +62,7 @@ class DeclaredAccessExceptionsEdgesTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->saved   = [];
-		$this->readers = $this->createMock(RestrictedDocumentReaders::class);
+		$this->readers = $this->createMock(originalClassName: RestrictedDocumentReaders::class);
 		$this->readers->method('withReaders')->willReturnCallback(
 			static function (array $record): array {
 				$exception = (array)($record[AccessExceptionValue::PROPERTY] ?? []);
@@ -81,7 +81,7 @@ class DeclaredAccessExceptionsEdgesTest extends TestCase {
 				return (string)$record['id'];
 			}
 		);
-		$this->files = $this->createMock(FileRestrictionMirror::class);
+		$this->files = $this->createMock(originalClassName: FileRestrictionMirror::class);
 	}//end setUp()
 
 	/**
@@ -113,15 +113,15 @@ class DeclaredAccessExceptionsEdgesTest extends TestCase {
 		];
 		$this->files->expects(self::never())->method('restrict');
 
-		self::assertTrue($this->service()->apply(record: $record, before: $record));
-		self::assertCount(1, $this->saved);
-		self::assertSame($history, $this->saved[0][AccessExceptionValue::HISTORY]);
+		self::assertTrue(condition: $this->service()->apply(record: $record, before: $record));
+		self::assertCount(expectedCount: 1, haystack: $this->saved);
+		self::assertSame(expected: $history, actual: $this->saved[0][AccessExceptionValue::HISTORY]);
 
 		// Once the readers match, the same record is left alone.
 		$this->saved = [];
 		$record['accessUsers'] = ['pieter'];
-		self::assertFalse($this->service()->apply(record: $record, before: $record));
-		self::assertSame([], $this->saved);
+		self::assertFalse(condition: $this->service()->apply(record: $record, before: $record));
+		self::assertSame(expected: [], actual: $this->saved);
 	}//end testARecordedExceptionWithStaleReadersIsSavedAgain()
 
 	/**
@@ -138,17 +138,17 @@ class DeclaredAccessExceptionsEdgesTest extends TestCase {
 		];
 
 		$before = time();
-		self::assertTrue($this->service()->apply(record: $record, before: null));
+		self::assertTrue(condition: $this->service()->apply(record: $record, before: null));
 		$after = time();
 
 		$history = $this->saved[0][AccessExceptionValue::HISTORY];
-		self::assertCount(1, $history);
-		self::assertSame('set', $history[0]['action']);
-		self::assertSame('', $history[0]['by']);
-		self::assertNull($history[0]['old']);
-		self::assertSame('prijzen', $history[0]['reason']);
+		self::assertCount(expectedCount: 1, haystack: $history);
+		self::assertSame(expected: 'set', actual: $history[0]['action']);
+		self::assertSame(expected: '', actual: $history[0]['by']);
+		self::assertNull(actual: $history[0]['old']);
+		self::assertSame(expected: 'prijzen', actual: $history[0]['reason']);
 		$at = strtotime($history[0]['at']);
-		self::assertGreaterThanOrEqual($before, $at);
-		self::assertLessThanOrEqual($after, $at);
+		self::assertGreaterThanOrEqual(expected: $before, actual: $at);
+		self::assertLessThanOrEqual(expected: $after, actual: $at);
 	}//end testAnUndatedExceptionIsRecordedNowOverAHistoryThatIsNotAList()
 }//end class

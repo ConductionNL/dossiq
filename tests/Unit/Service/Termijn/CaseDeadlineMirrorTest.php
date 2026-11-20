@@ -338,9 +338,9 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 */
 	public function testACaseSchemaGoneBeforeTheWriteWritesNothing(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
-		$this->instance('t1', ['endDateCurrent' => '2026-11-12']);
+		$this->instance(id: 't1', fields: ['endDateCurrent' => '2026-11-12']);
 		$caseSchemaReads = 0;
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key) use (&$caseSchemaReads): string {
@@ -361,7 +361,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 				};
 			}
 		);
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::never())->method('warning');
 		$mirror = new CaseDeadlineMirror(
 			settingsService: $settings,
@@ -369,9 +369,9 @@ class CaseDeadlineMirrorTest extends TestCase {
 			logger: $logger,
 		);
 
-		self::assertFalse($mirror->follow('case-1'));
-		self::assertSame(2, $caseSchemaReads, 'The case schema is read once for the read and once for the write.');
-		self::assertArrayNotHasKey(CaseDeadlineMirror::FIELD, $this->objects->get('case', 'case-1'));
+		self::assertFalse(condition: $mirror->follow('case-1'));
+		self::assertSame(expected: 2, actual: $caseSchemaReads, message: 'The case schema is read once for the read and once for the write.');
+		self::assertArrayNotHasKey(key: CaseDeadlineMirror::FIELD, array: $this->objects->get('case', 'case-1'));
 	}//end testACaseSchemaGoneBeforeTheWriteWritesNothing()
 	/**
 	 * Settings over a given object service.

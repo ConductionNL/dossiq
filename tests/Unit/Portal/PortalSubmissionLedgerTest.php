@@ -57,7 +57,7 @@ class PortalSubmissionLedgerTest extends TestCase {
 	 * @return PortalSubmissionLedger
 	 */
 	private function plainLedger(): PortalSubmissionLedger {
-		$cache = $this->createMock(ICache::class);
+		$cache = $this->createMock(originalClassName: ICache::class);
 		$cache->method('get')->willReturnCallback(fn ($key) => ($this->values[$key] ?? null));
 		$cache->method('set')->willReturnCallback(function ($key, $value, $ttl = 0): bool {
 			$this->values[$key] = $value;
@@ -69,10 +69,10 @@ class PortalSubmissionLedgerTest extends TestCase {
 			return true;
 		});
 
-		$factory = $this->createMock(ICacheFactory::class);
+		$factory = $this->createMock(originalClassName: ICacheFactory::class);
 		$factory->expects($this->once())->method('createDistributed')->with('dossiq_portal_submission')->willReturn($cache);
 
-		return new PortalSubmissionLedger($factory);
+		return new PortalSubmissionLedger(cacheFactory: $factory);
 	}//end plainLedger()
 
 	/**
@@ -83,11 +83,11 @@ class PortalSubmissionLedgerTest extends TestCase {
 	public function testOnlyAPlainTokenIsAKey(): void {
 		$ledger = $this->plainLedger();
 
-		$this->assertSame(self::KEY, $ledger->keyOf('  ' . self::KEY . ' '));
-		$this->assertSame('', $ledger->keyOf('too-short'));
-		$this->assertSame('', $ledger->keyOf('abcdefghijklmnop qrst'));
-		$this->assertSame('', $ledger->keyOf(str_repeat('a', 129)));
-		$this->assertSame(str_repeat('a', 128), $ledger->keyOf(str_repeat('a', 128)));
+		$this->assertSame(expected: self::KEY, actual: $ledger->keyOf('  ' . self::KEY . ' '));
+		$this->assertSame(expected: '', actual: $ledger->keyOf('too-short'));
+		$this->assertSame(expected: '', actual: $ledger->keyOf('abcdefghijklmnop qrst'));
+		$this->assertSame(expected: '', actual: $ledger->keyOf(str_repeat('a', 129)));
+		$this->assertSame(expected: str_repeat('a', 128), actual: $ledger->keyOf(str_repeat('a', 128)));
 	}//end testOnlyAPlainTokenIsAKey()
 
 	/**
@@ -98,10 +98,10 @@ class PortalSubmissionLedgerTest extends TestCase {
 	public function testAPlainCacheClaimsOnceAndThenReportsProcessing(): void {
 		$ledger = $this->plainLedger();
 
-		$this->assertSame(['state' => 'claimed'], $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
-		$this->assertSame([['processing', 300]], $this->sets);
-		$this->assertSame(['state' => 'processing'], $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
-		$this->assertCount(1, $this->sets, 'a held claim is not written again');
+		$this->assertSame(expected: ['state' => 'claimed'], actual: $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
+		$this->assertSame(expected: [['processing', 300]], actual: $this->sets);
+		$this->assertSame(expected: ['state' => 'processing'], actual: $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
+		$this->assertCount(expectedCount: 1, haystack: $this->sets, message: 'a held claim is not written again');
 	}//end testAPlainCacheClaimsOnceAndThenReportsProcessing()
 
 	/**
@@ -114,10 +114,10 @@ class PortalSubmissionLedgerTest extends TestCase {
 		$ledger->claim('woo-verzoek', 'subject-a', self::KEY);
 		$ledger->remember('woo-verzoek', 'subject-a', self::KEY, ['caseId' => 'case-1', 'number' => 'W-1']);
 
-		$this->assertSame(['{"caseId":"case-1","number":"W-1"}', 86400], $this->sets[1]);
+		$this->assertSame(expected: ['{"caseId":"case-1","number":"W-1"}', 86400], actual: $this->sets[1]);
 		$this->assertSame(
-			['state' => 'answered', 'answer' => ['caseId' => 'case-1', 'number' => 'W-1']],
-			$ledger->claim('woo-verzoek', 'subject-a', self::KEY)
+			expected: ['state' => 'answered', 'answer' => ['caseId' => 'case-1', 'number' => 'W-1']],
+			actual: $ledger->claim('woo-verzoek', 'subject-a', self::KEY)
 		);
 	}//end testARememberedAnswerIsReturnedToTheResend()
 
@@ -130,8 +130,8 @@ class PortalSubmissionLedgerTest extends TestCase {
 		$ledger = $this->plainLedger();
 		$ledger->claim('woo-verzoek', 'subject-a', self::KEY);
 
-		$this->assertSame(['state' => 'claimed'], $ledger->claim('woo-verzoek', 'subject-b', self::KEY));
-		$this->assertSame(['state' => 'claimed'], $ledger->claim('klacht', 'subject-a', self::KEY));
+		$this->assertSame(expected: ['state' => 'claimed'], actual: $ledger->claim('woo-verzoek', 'subject-b', self::KEY));
+		$this->assertSame(expected: ['state' => 'claimed'], actual: $ledger->claim('klacht', 'subject-a', self::KEY));
 	}//end testAnotherResidentOrActionIsAFirstSend()
 
 	/**
@@ -144,8 +144,8 @@ class PortalSubmissionLedgerTest extends TestCase {
 		$ledger->claim('woo-verzoek', 'subject-a', self::KEY);
 		$ledger->release('woo-verzoek', 'subject-a', self::KEY);
 
-		$this->assertSame([], $this->values);
-		$this->assertSame(['state' => 'claimed'], $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
+		$this->assertSame(expected: [], actual: $this->values);
+		$this->assertSame(expected: ['state' => 'claimed'], actual: $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
 	}//end testAReleasedKeyIsClaimedAgain()
 
 	/**
@@ -159,7 +159,7 @@ class PortalSubmissionLedgerTest extends TestCase {
 		$entry = array_key_first($this->values);
 		$this->values[$entry] = 'not json';
 
-		$this->assertSame(['state' => 'processing'], $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
+		$this->assertSame(expected: ['state' => 'processing'], actual: $ledger->claim('woo-verzoek', 'subject-a', self::KEY));
 	}//end testAnUnreadableHeldValueIsStillProcessing()
 
 	/**
@@ -168,14 +168,17 @@ class PortalSubmissionLedgerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAClaimThatExpiredBetweenTheReadsIsClaimedAnew(): void {
-		$cache = $this->createMock(IMemcache::class);
-		$cache->expects($this->once())->method('add')->with($this->isType('string'), 'processing', 300)->willReturn(false);
+		$cache = $this->createMock(originalClassName: IMemcache::class);
+		$cache->expects($this->once())->method('add')->with($this->isType(type: 'string'), 'processing', 300)->willReturn(false);
 		$cache->expects($this->once())->method('get')->willReturn(null);
-		$cache->expects($this->once())->method('set')->with($this->isType('string'), 'processing', 300)->willReturn(true);
+		$cache->expects($this->once())->method('set')->with($this->isType(type: 'string'), 'processing', 300)->willReturn(true);
 
-		$factory = $this->createMock(ICacheFactory::class);
+		$factory = $this->createMock(originalClassName: ICacheFactory::class);
 		$factory->method('createDistributed')->willReturn($cache);
 
-		$this->assertSame(['state' => 'claimed'], (new PortalSubmissionLedger($factory))->claim('woo-verzoek', 'subject-a', self::KEY));
+		$this->assertSame(
+			expected: ['state' => 'claimed'],
+			actual: (new PortalSubmissionLedger(cacheFactory: $factory))->claim('woo-verzoek', 'subject-a', self::KEY)
+		);
 	}//end testAClaimThatExpiredBetweenTheReadsIsClaimedAnew()
 }//end class

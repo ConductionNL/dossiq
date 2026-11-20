@@ -135,14 +135,17 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	 * @return RewriteWooPublicationSummaries
 	 */
 	private function step(?object $store, array $config, string $publication, ?LoggerInterface $logger = null): RewriteWooPublicationSummaries {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
 		);
 		$settings->method('getWooPublicationConfigValue')->willReturn($publication);
 
-		return new RewriteWooPublicationSummaries($settings, $logger ?? $this->createMock(LoggerInterface::class));
+		return new RewriteWooPublicationSummaries(
+			settingsService: $settings,
+			logger: $logger ?? $this->createMock(originalClassName: LoggerInterface::class)
+		);
 	}//end step()
 
 	/**
@@ -152,7 +155,7 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	 */
 	private function repairOutput(): IOutput {
 		$this->said = [];
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(function (string $line): void {
 			$this->said[] = $line;
 		});
@@ -166,9 +169,9 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterItSkips(): void {
-		$this->step(null, [], 'publication')->run($this->repairOutput());
+		$this->step(store: null, config: [], publication: 'publication')->run($this->repairOutput());
 
-		$this->assertSame(['OpenRegister unavailable, skipping the Woo summary rewrite.'], $this->said);
+		$this->assertSame(expected: ['OpenRegister unavailable, skipping the Woo summary rewrite.'], actual: $this->said);
 	}//end testWithoutOpenRegisterItSkips()
 
 	/**
@@ -179,16 +182,16 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	public function testUnconfiguredTargetsAreSkippedByName(): void {
 		$store = $this->store();
 
-		$this->step($store, [], '')->run($this->repairOutput());
+		$this->step(store: $store, config: [], publication: '')->run($this->repairOutput());
 
 		$this->assertSame(
-			[
+			expected: [
 				'Woo summary rewrite: publications not configured, skipped.',
 				'Woo summary rewrite: decisions not configured, skipped.',
 			],
-			$this->said
+			actual: $this->said
 		);
-		$this->assertSame([], $store->patches);
+		$this->assertSame(expected: [], actual: $store->patches);
 	}//end testUnconfiguredTargetsAreSkippedByName()
 
 	/**
@@ -200,7 +203,7 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	 */
 	public function testAnUnreadableTargetIsSkippedAndAnUnreadableTitleFallsBack(): void {
 		$store = $this->store();
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('info')->with(
 			'Dossiq: the Woo summary rewrite could not read a case title',
 			['app' => 'dossiq', 'case' => 'b9e5d911-16ef-4cbc-9d6d-659b5585e1f7', 'error' => 'case table is locked']
@@ -210,16 +213,21 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 			['app' => 'dossiq', 'error' => 'decision table is locked']
 		);
 
-		$this->step($store, ['register' => '23', 'case_schema' => '5', 'decision_schema' => '7'], 'publication', $logger)
+		$this->step(
+			store: $store,
+			config: ['register' => '23', 'case_schema' => '5', 'decision_schema' => '7'],
+			publication: 'publication',
+			logger: $logger
+		)
 			->run($this->repairOutput());
 
-		$this->assertSame([['id' => 'pub-1', 'data' => ['summary' => 'Besluit op een Woo-verzoek']]], $store->patches);
+		$this->assertSame(expected: [['id' => 'pub-1', 'data' => ['summary' => 'Besluit op een Woo-verzoek']]], actual: $store->patches);
 		$this->assertSame(
-			[
+			expected: [
 				'Woo summary rewrite, publications: 1 rewritten, 0 failed.',
 				'Woo summary rewrite: decisions could not be read, skipped.',
 			],
-			$this->said
+			actual: $this->said
 		);
 	}//end testAnUnreadableTargetIsSkippedAndAnUnreadableTitleFallsBack()
 
@@ -230,8 +238,8 @@ class RewriteWooPublicationSummariesEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertSame(
-			'Rewrite the old "WOO besluit voor zaak <uuid>" summary on Woo decisions and publications',
-			$this->step(null, [], '')->getName()
+			expected: 'Rewrite the old "WOO besluit voor zaak <uuid>" summary on Woo decisions and publications',
+			actual: $this->step(store: null, config: [], publication: '')->getName()
 		);
 	}//end testTheStepNamesItself()
 }//end class

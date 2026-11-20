@@ -143,7 +143,7 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 		$this->settings->method('getObjectService')->willReturn($this->objects);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($config[$key] ?? '')
@@ -161,7 +161,7 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 		return new PlannedActionService(
 			settingsService: $this->settings,
 			chain: new PlannedActionChain(workingDays: new WorkingDayCalculator()),
-			logger: ($logger ?? $this->createMock(LoggerInterface::class)),
+			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
 		);
 	}//end service()
 
@@ -185,8 +185,8 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 
 		$rows = $this->service()->ownedBy(userId: 'anna');
 
-		self::assertSame(['c', 'a'], array_column($rows, 'id'));
-		self::assertSame(['owner' => 'anna', '_limit' => 100], $this->objects->searches[0]['filters']);
+		self::assertSame(expected: ['c', 'a'], actual: array_column($rows, 'id'));
+		self::assertSame(expected: ['owner' => 'anna', '_limit' => 100], actual: $this->objects->searches[0]['filters']);
 	}//end testOwnedByRechecksTheOwnerAndSortsByDate()
 
 	/**
@@ -198,9 +198,9 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 		$this->givenRegister(bySchema: ['plannedAction' => [['id' => 'a', 'owner' => '']]]);
 		$service = $this->service();
 
-		self::assertSame([], $service->ownedBy(userId: ''));
-		self::assertSame([], $service->plannedOn(caseId: ''));
-		self::assertSame([], $this->objects->searches);
+		self::assertSame(expected: [], actual: $service->ownedBy(userId: ''));
+		self::assertSame(expected: [], actual: $service->plannedOn(caseId: ''));
+		self::assertSame(expected: [], actual: $this->objects->searches);
 	}//end testEmptyIdsReadNothing()
 
 	/**
@@ -219,14 +219,16 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 		);
 		$service = $this->service();
 
-		self::assertSame(['x'], array_column($service->ownedBy(userId: 'anna'), 'id'));
-		self::assertNull($service->complete(action: ['id' => 'x', 'actionType' => 'unknown'], completedOn: new DateTimeImmutable('2026-09-01')));
+		self::assertSame(expected: ['x'], actual: array_column($service->ownedBy(userId: 'anna'), 'id'));
+		self::assertNull(
+			actual: $service->complete(action: ['id' => 'x', 'actionType' => 'unknown'], completedOn: new DateTimeImmutable(datetime: '2026-09-01'))
+		);
 
-		self::assertSame('customTypes', $this->objects->searches[1]['schema']);
-		self::assertSame('customActions', $this->objects->saves[0]['schema']);
-		self::assertSame('x', $this->objects->saves[0]['uuid']);
-		self::assertSame('completed', $this->objects->saves[0]['object']['state']);
-		self::assertStringStartsWith('2026-09-01T00:00:00', $this->objects->saves[0]['object']['completedAt']);
+		self::assertSame(expected: 'customTypes', actual: $this->objects->searches[1]['schema']);
+		self::assertSame(expected: 'customActions', actual: $this->objects->saves[0]['schema']);
+		self::assertSame(expected: 'x', actual: $this->objects->saves[0]['uuid']);
+		self::assertSame(expected: 'completed', actual: $this->objects->saves[0]['object']['state']);
+		self::assertStringStartsWith(prefix: '2026-09-01T00:00:00', string: $this->objects->saves[0]['object']['completedAt']);
 	}//end testConfiguredSchemasAreUsed()
 
 	/**
@@ -246,8 +248,8 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 			]
 		);
 
-		self::assertSame(['confirm'], array_keys($this->service()->typesFor(caseTypeId: 'ct-1')));
-		self::assertSame(['call', 'confirm'], array_keys($this->service()->typesFor(caseTypeId: '')));
+		self::assertSame(expected: ['confirm'], actual: array_keys($this->service()->typesFor(caseTypeId: 'ct-1')));
+		self::assertSame(expected: ['call', 'confirm'], actual: array_keys($this->service()->typesFor(caseTypeId: '')));
 	}//end testTypesWithoutIdentifierAreDropped()
 
 	/**
@@ -258,12 +260,12 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 	public function testAFailingReadIsLoggedAndAnswersNothing(): void {
 		$this->givenRegister(bySchema: []);
 		$this->objects->readsFail = true;
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::once())
 			->method('warning')
 			->with('Dossiq PlannedActionService: could not read plannedAction: register down', ['app' => 'dossiq']);
 
-		self::assertSame([], $this->service(logger: $logger)->plannedOn(caseId: 'c1'));
+		self::assertSame(expected: [], actual: $this->service(logger: $logger)->plannedOn(caseId: 'c1'));
 	}//end testAFailingReadIsLoggedAndAnswersNothing()
 
 	/**
@@ -281,8 +283,8 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 			]
 		);
 		$this->objects->writesFail = true;
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects(self::exactly(2))
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects(self::exactly(count: 2))
 			->method('warning')
 			->with('Dossiq PlannedActionService: could not write a planned action: disk full', ['app' => 'dossiq']);
 
@@ -291,7 +293,7 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 			completedOn: new DateTimeImmutable('2026-09-01')
 		);
 
-		self::assertNull($next);
+		self::assertNull(actual: $next);
 	}//end testAFailingWriteIsLoggedAndAnswersNull()
 
 	/**
@@ -305,7 +307,7 @@ final class PlannedActionServiceEdgesTest extends TestCase {
 			config: []
 		);
 
-		self::assertNull($this->service()->complete(action: ['id' => 'a1', 'actionType' => 'confirm']));
-		self::assertSame([], $this->objects->saves);
+		self::assertNull(actual: $this->service()->complete(action: ['id' => 'a1', 'actionType' => 'confirm']));
+		self::assertSame(expected: [], actual: $this->objects->saves);
 	}//end testNoRegisterWritesNothing()
 }//end class

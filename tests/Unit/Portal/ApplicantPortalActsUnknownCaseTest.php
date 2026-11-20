@@ -54,16 +54,21 @@ class ApplicantPortalActsUnknownCaseTest extends TestCase {
 	 * @return ApplicantPortalActs
 	 */
 	private function acts(ObjectServiceInterface $objects): ApplicantPortalActs {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(fn (string $key): string => ($this->config[$key] ?? ''));
 
-		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline = $this->createMock(originalClassName: CaseTimeline::class);
 		$timeline->expects($this->never())->method('record');
-		$notifications = $this->createMock(INotificationManager::class);
+		$notifications = $this->createMock(originalClassName: INotificationManager::class);
 		$notifications->expects($this->never())->method('notify');
 
-		return new ApplicantPortalActs($settings, $timeline, $notifications, $this->createMock(LoggerInterface::class));
+		return new ApplicantPortalActs(
+			settings: $settings,
+			timeline: $timeline,
+			notificationManager: $notifications,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 	}//end acts()
 
 	/**
@@ -72,11 +77,11 @@ class ApplicantPortalActsUnknownCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlankCaseIdRecordsNothing(): void {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->expects($this->never())->method('find');
 
-		$this->assertFalse($this->acts($objects)->recordWithdrawal(' ', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
-		$this->assertFalse($this->acts($objects)->recordWrite('', 'amendment', ['title'], '2026-05-01T10:00:00Z'));
+		$this->assertFalse(condition: $this->acts(objects: $objects)->recordWithdrawal(' ', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
+		$this->assertFalse(condition: $this->acts(objects: $objects)->recordWrite('', 'amendment', ['title'], '2026-05-01T10:00:00Z'));
 	}//end testABlankCaseIdRecordsNothing()
 
 	/**
@@ -86,10 +91,10 @@ class ApplicantPortalActsUnknownCaseTest extends TestCase {
 	 */
 	public function testAnUnconfiguredSchemaRecordsNothing(): void {
 		$this->config['case_schema'] = '';
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->expects($this->never())->method('find');
 
-		$this->assertFalse($this->acts($objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
+		$this->assertFalse(condition: $this->acts(objects: $objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
 	}//end testAnUnconfiguredSchemaRecordsNothing()
 
 	/**
@@ -98,19 +103,19 @@ class ApplicantPortalActsUnknownCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseThatDoesNotReadAsAnArrayRecordsNothing(): void {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->expects($this->once())->method('find')
 			->with(
 				'case-1',
-				$this->callback(static fn (ObjectFindOptions $options): bool => $options->register === '7' && $options->schema === '12')
+				$this->callback(callback: static fn (ObjectFindOptions $options): bool => $options->register === '7' && $options->schema === '12')
 			)
 			->willReturn(null);
-		$this->assertFalse($this->acts($objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
+		$this->assertFalse(condition: $this->acts(objects: $objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
 
-		$entity = $this->createMock(ObjectEntityInterface::class);
+		$entity = $this->createMock(originalClassName: ObjectEntityInterface::class);
 		$entity->method('jsonSerialize')->willReturn('not an array');
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('find')->willReturn($entity);
-		$this->assertFalse($this->acts($objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
+		$this->assertFalse(condition: $this->acts(objects: $objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
 	}//end testACaseThatDoesNotReadAsAnArrayRecordsNothing()
 }//end class

@@ -51,8 +51,18 @@ class PaymentScheduleRaiserTest extends TestCase {
 	/** @var LoggerInterface&MockObject */
 	private LoggerInterface $logger;
 
+	/**
+	 * The raiser.
+	 *
+	 * @var PaymentScheduleRaiser
+	 */
 	private PaymentScheduleRaiser $raiser;
 
+	/**
+	 * Build the subject and its collaborators.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->objects = new class {
 			/** @var array<int, mixed> */
@@ -64,22 +74,37 @@ class PaymentScheduleRaiserTest extends TestCase {
 			/** @var list<array{object: array<string, mixed>, options: ObjectSaveOptions}> */
 			public array $saves = [];
 
+			/**
+			 * Stand-in for findAll().
+			 *
+			 * @param array $config The config.
+			 *
+			 * @return array
+			 */
 			public function findAll(array $config): array {
 				$this->findCalls[] = $config;
 				return array_slice($this->rows, (int)$config['offset'], (int)$config['limit']);
 			}
 
+			/**
+			 * Stand-in for saveObject().
+			 *
+			 * @param array $object The object.
+			 * @param ObjectSaveOptions $options The options.
+			 *
+			 * @return array
+			 */
 			public function saveObject(array $object, ObjectSaveOptions $options): array {
 				$this->saves[] = ['object' => $object, 'options' => $options];
 				return $object;
 			}
 		};
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 
-		$this->payouts = $this->createMock(PayoutRequester::class);
-		$this->logger  = $this->createMock(LoggerInterface::class);
+		$this->payouts = $this->createMock(originalClassName: PayoutRequester::class);
+		$this->logger  = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->raiser  = new PaymentScheduleRaiser(settings: $settings, payouts: $this->payouts, logger: $this->logger);
 	}
 
@@ -101,19 +126,29 @@ class PaymentScheduleRaiserTest extends TestCase {
 		];
 	}
 
+	/**
+	 * Returns zero without an object service.
+	 *
+	 * @return void
+	 */
 	public function testReturnsZeroWithoutAnObjectService(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$this->payouts->expects($this->never())->method('request');
 
 		$raiser = new PaymentScheduleRaiser(settings: $settings, payouts: $this->payouts, logger: $this->logger);
 
-		$this->assertSame(0, $raiser->raiseDue(new DateTimeImmutable('2026-05-01')));
+		$this->assertSame(expected: 0, actual: $raiser->raiseDue(new DateTimeImmutable(datetime: '2026-05-01')));
 	}
 
+	/**
+	 * Raises a due instalment with the finance payload and saves its payable id.
+	 *
+	 * @return void
+	 */
 	public function testRaisesADueInstalmentWithTheFinancePayloadAndSavesItsPayableId(): void {
 		$this->objects->rows = [
-			$this->decision([
+			$this->decision(instalments: [
 				['dueOn' => '2026-04-30T00:00:00Z', 'amountCents' => 125000, 'label' => 'Voorschot 1'],
 			]),
 		];
@@ -132,39 +167,49 @@ class PaymentScheduleRaiserTest extends TestCase {
 			])
 			->willReturn(['payableId' => 'pay-9', 'state' => 'open']);
 
-		$this->assertSame(1, $this->raiser->raiseDue(new DateTimeImmutable('2026-05-01')));
+		$this->assertSame(expected: 1, actual: $this->raiser->raiseDue(new DateTimeImmutable(datetime: '2026-05-01')));
 
-		$this->assertCount(1, $this->objects->saves);
+		$this->assertCount(expectedCount: 1, haystack: $this->objects->saves);
 		$saved = $this->objects->saves[0];
-		$this->assertSame('pay-9', $saved['object']['paymentSchedule']['instalments'][0]['payableId']);
-		$this->assertSame('2026-05-01', $saved['object']['paymentSchedule']['instalments'][0]['raisedAt']);
-		$this->assertSame('dossiq', $saved['options']->target->register);
-		$this->assertSame(PaymentScheduleRaiser::DECISION_SCHEMA, $saved['options']->target->schema);
-		$this->assertSame('d-1', $saved['options']->uuid);
+		$this->assertSame(expected: 'pay-9', actual: $saved['object']['paymentSchedule']['instalments'][0]['payableId']);
+		$this->assertSame(expected: '2026-05-01', actual: $saved['object']['paymentSchedule']['instalments'][0]['raisedAt']);
+		$this->assertSame(expected: 'dossiq', actual: $saved['options']->target->register);
+		$this->assertSame(expected: PaymentScheduleRaiser::DECISION_SCHEMA, actual: $saved['options']->target->schema);
+		$this->assertSame(expected: 'd-1', actual: $saved['options']->uuid);
 		$this->assertSame(
-			['filters' => ['register' => 'dossiq', 'schema' => 'beschikking'], 'limit' => 200, 'offset' => 0],
-			$this->objects->findCalls[0]
+			expected: ['filters' => ['register' => 'dossiq', 'schema' => 'beschikking'], 'limit' => 200, 'offset' => 0],
+			actual: $this->objects->findCalls[0]
 		);
 	}
 
+	/**
+	 * An instalment due today is raised.
+	 *
+	 * @return void
+	 */
 	public function testAnInstalmentDueTodayIsRaised(): void {
 		$this->payouts->expects($this->once())->method('request')->willReturn(['payableId' => 'p', 'state' => 'open']);
 
 		$raised = $this->raiser->raiseForDecision(
 			objectService: $this->objects,
-			decision: $this->decision([['dueOn' => '2026-05-01', 'amountCents' => 1]]),
+			decision: $this->decision(instalments: [['dueOn' => '2026-05-01', 'amountCents' => 1]]),
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame(1, $raised);
+		$this->assertSame(expected: 1, actual: $raised);
 	}
 
+	/**
+	 * Skips instalments that are not due raised empty or conditional.
+	 *
+	 * @return void
+	 */
 	public function testSkipsInstalmentsThatAreNotDueRaisedEmptyOrConditional(): void {
 		$this->payouts->expects($this->never())->method('request');
 
 		$raised = $this->raiser->raiseForDecision(
 			objectService: $this->objects,
-			decision: $this->decision([
+			decision: $this->decision(instalments: [
 				['dueOn' => '2026-05-02', 'amountCents' => 100],
 				['dueOn' => '', 'amountCents' => 100],
 				['dueOn' => '2026-01-01', 'amountCents' => 100, 'payableId' => 'already'],
@@ -175,37 +220,47 @@ class PaymentScheduleRaiserTest extends TestCase {
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame(0, $raised);
-		$this->assertSame([], $this->objects->saves);
+		$this->assertSame(expected: 0, actual: $raised);
+		$this->assertSame(expected: [], actual: $this->objects->saves);
 	}
 
+	/**
+	 * A met condition lets the instalment be raised with its position.
+	 *
+	 * @return void
+	 */
 	public function testAMetConditionLetsTheInstalmentBeRaisedWithItsPosition(): void {
 		$this->payouts->expects($this->once())
 			->method('request')
-			->with($this->callback(static fn (array $p): bool => $p['reference'] === 'BES-d-1-2' && $p['amountCents'] === 500))
+			->with($this->callback(callback: static fn (array $p): bool => $p['reference'] === 'BES-d-1-2' && $p['amountCents'] === 500))
 			->willReturn(['payableId' => 'pay-2', 'state' => 'open']);
 
 		$raised = $this->raiser->raiseForDecision(
 			objectService: $this->objects,
-			decision: $this->decision([
+			decision: $this->decision(instalments: [
 				['dueOn' => '2026-01-01', 'amountCents' => 100, 'payableId' => 'pay-1'],
 				['dueOn' => '2026-01-01', 'amountCents' => 500, 'condition' => 'report approved', 'conditionMet' => true],
 			]),
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame(1, $raised);
+		$this->assertSame(expected: 1, actual: $raised);
 		$instalments = $this->objects->saves[0]['object']['paymentSchedule']['instalments'];
-		$this->assertSame('pay-1', $instalments[0]['payableId']);
-		$this->assertArrayNotHasKey('raisedAt', $instalments[0]);
-		$this->assertSame('pay-2', $instalments[1]['payableId']);
+		$this->assertSame(expected: 'pay-1', actual: $instalments[0]['payableId']);
+		$this->assertArrayNotHasKey(key: 'raisedAt', array: $instalments[0]);
+		$this->assertSame(expected: 'pay-2', actual: $instalments[1]['payableId']);
 	}
 
+	/**
+	 * A refused instalment is logged and stays open while others are raised.
+	 *
+	 * @return void
+	 */
 	public function testARefusedInstalmentIsLoggedAndStaysOpenWhileOthersAreRaised(): void {
-		$this->payouts->expects($this->exactly(2))
+		$this->payouts->expects($this->exactly(count: 2))
 			->method('request')
 			->willReturnOnConsecutiveCalls(
-				$this->throwException(new RuntimeException('iban rejected')),
+				$this->throwException(exception: new RuntimeException(message: 'iban rejected')),
 				['payableId' => 'pay-b', 'state' => 'open'],
 			);
 		$this->logger->expects($this->once())
@@ -217,37 +272,47 @@ class PaymentScheduleRaiserTest extends TestCase {
 
 		$raised = $this->raiser->raiseForDecision(
 			objectService: $this->objects,
-			decision: $this->decision([
+			decision: $this->decision(instalments: [
 				['dueOn' => '2026-01-01', 'amountCents' => 100],
 				['dueOn' => '2026-01-02', 'amountCents' => 200],
 			]),
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame(1, $raised);
+		$this->assertSame(expected: 1, actual: $raised);
 		$instalments = $this->objects->saves[0]['object']['paymentSchedule']['instalments'];
-		$this->assertArrayNotHasKey('payableId', $instalments[0]);
-		$this->assertSame('pay-b', $instalments[1]['payableId']);
+		$this->assertArrayNotHasKey(key: 'payableId', array: $instalments[0]);
+		$this->assertSame(expected: 'pay-b', actual: $instalments[1]['payableId']);
 	}
 
+	/**
+	 * Nothing is saved when finance raises nothing.
+	 *
+	 * @return void
+	 */
 	public function testNothingIsSavedWhenFinanceRaisesNothing(): void {
 		$this->payouts->method('request')->willReturn(null);
 
 		$raised = $this->raiser->raiseForDecision(
 			objectService: $this->objects,
-			decision: $this->decision([['dueOn' => '2026-01-01', 'amountCents' => 100]]),
+			decision: $this->decision(instalments: [['dueOn' => '2026-01-01', 'amountCents' => 100]]),
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame(0, $raised);
-		$this->assertSame([], $this->objects->saves);
+		$this->assertSame(expected: 0, actual: $raised);
+		$this->assertSame(expected: [], actual: $this->objects->saves);
 	}
 
+	/**
+	 * Falls back to uuid and id when the decision has no reference.
+	 *
+	 * @return void
+	 */
 	public function testFallsBackToUuidAndIdWhenTheDecisionHasNoReference(): void {
 		$this->payouts->expects($this->once())
 			->method('request')
 			->with($this->callback(
-				static fn (array $p): bool => $p['reference'] === 'u-7-1'
+				callback: static fn (array $p): bool => $p['reference'] === 'u-7-1'
 					&& $p['correlationId'] === 'u-7'
 					&& $p['payeeName'] === ''
 					&& $p['iban'] === ''
@@ -261,31 +326,41 @@ class PaymentScheduleRaiserTest extends TestCase {
 			today: new DateTimeImmutable('2026-05-01'),
 		);
 
-		$this->assertSame('u-7', $this->objects->saves[0]['options']->uuid);
+		$this->assertSame(expected: 'u-7', actual: $this->objects->saves[0]['options']->uuid);
 	}
 
+	/**
+	 * Pages through every decision and skips those without instalments.
+	 *
+	 * @return void
+	 */
 	public function testPagesThroughEveryDecisionAndSkipsThoseWithoutInstalments(): void {
 		$rows = [];
 		for ($i = 0; $i < 200; $i++) {
 			$rows[] = ['id' => 'empty-' . $i, 'paymentSchedule' => ['instalments' => []]];
 		}
 
-		$rows[] = $this->decision([['dueOn' => '2026-01-01', 'amountCents' => 100]], 'd-201');
+		$rows[] = $this->decision(instalments: [['dueOn' => '2026-01-01', 'amountCents' => 100]], id: 'd-201');
 		$rows[] = ['id' => 'no-schedule'];
 		$this->objects->rows = $rows;
 
 		$this->payouts->expects($this->once())->method('request')->willReturn(['payableId' => 'p', 'state' => 'open']);
 
-		$this->assertSame(1, $this->raiser->raiseDue(new DateTimeImmutable('2026-05-01')));
-		$this->assertSame([0, 200], array_column($this->objects->findCalls, 'offset'));
-		$this->assertSame('d-201', $this->objects->saves[0]['options']->uuid);
+		$this->assertSame(expected: 1, actual: $this->raiser->raiseDue(new DateTimeImmutable(datetime: '2026-05-01')));
+		$this->assertSame(expected: [0, 200], actual: array_column($this->objects->findCalls, 'offset'));
+		$this->assertSame(expected: 'd-201', actual: $this->objects->saves[0]['options']->uuid);
 	}
 
+	/**
+	 * A full last page triggers one more empty read.
+	 *
+	 * @return void
+	 */
 	public function testAFullLastPageTriggersOneMoreEmptyRead(): void {
 		$this->objects->rows = array_fill(0, 200, ['id' => 'x']);
 		$this->payouts->expects($this->never())->method('request');
 
-		$this->assertSame(0, $this->raiser->raiseDue(new DateTimeImmutable('2026-05-01')));
-		$this->assertSame([0, 200], array_column($this->objects->findCalls, 'offset'));
+		$this->assertSame(expected: 0, actual: $this->raiser->raiseDue(new DateTimeImmutable(datetime: '2026-05-01')));
+		$this->assertSame(expected: [0, 200], actual: array_column($this->objects->findCalls, 'offset'));
 	}
 }

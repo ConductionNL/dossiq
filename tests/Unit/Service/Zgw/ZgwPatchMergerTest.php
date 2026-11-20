@@ -154,7 +154,7 @@ class ZgwPatchMergerTest extends TestCase {
 			mappingConfig: self::MAPPING
 		);
 
-		$this->assertSame(['productsOrServices' => ['https://p/2', 'https://p/3'], 'title' => 7], $merged);
+		$this->assertSame(expected: ['productsOrServices' => ['https://p/2', 'https://p/3'], 'title' => 7], actual: $merged);
 
 	}//end testPatchedNonStringValueIsKeptAsItIs()
 }//end class

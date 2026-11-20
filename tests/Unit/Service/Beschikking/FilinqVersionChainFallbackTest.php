@@ -55,7 +55,7 @@ class FilinqVersionChainFallbackTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -78,7 +78,7 @@ class FilinqVersionChainFallbackTest extends TestCase {
 				return ['id' => $id, '@self' => ['version' => '0.0.6']];
 			}
 		};
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static fn (string $id): object => match ($id) {
 				'OCA\Filinq\Service\TemplateService' => $templates,
@@ -89,11 +89,11 @@ class FilinqVersionChainFallbackTest extends TestCase {
 		);
 
 		return new FilinqTemplateEngineAdapter(
-			$container,
-			$this->createMock(SettingsService::class),
-			$this->createMock(IUserSession::class),
-			$this->logger,
-			$this->createMock(DecisionTemplateEngine::class)
+			container: $container,
+			settings: $this->createMock(originalClassName: SettingsService::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			logger: $this->logger,
+			engines: $this->createMock(originalClassName: DecisionTemplateEngine::class)
 		);
 	}//end adapter()
 
@@ -150,8 +150,8 @@ class FilinqVersionChainFallbackTest extends TestCase {
 
 		$resolved = $this->adapter(versions: $versions)->resolveVersion('tpl-abc', 'not a date');
 
-		$this->assertSame(['templateId' => 'tpl-abc', 'version' => '0.0.6', 'effectiveDate' => 'not a date'], $resolved);
-		$this->assertSame(0, $versions->calls);
+		$this->assertSame(expected: ['templateId' => 'tpl-abc', 'version' => '0.0.6', 'effectiveDate' => 'not a date'], actual: $resolved);
+		$this->assertSame(expected: 0, actual: $versions->calls);
 	}//end testAnUnreadableEffectiveDateSkipsTheChain()
 
 	/**
@@ -168,8 +168,8 @@ class FilinqVersionChainFallbackTest extends TestCase {
 
 		$resolved = $this->adapter(versions: $versions)->resolveVersion('tpl-abc', '2026-03-15');
 
-		$this->assertSame('0.0.6', $resolved['version']);
-		$this->assertSame(1, $versions->calls);
+		$this->assertSame(expected: '0.0.6', actual: $resolved['version']);
+		$this->assertSame(expected: 1, actual: $versions->calls);
 	}//end testAnUnlistableChainIsLoggedAndFallsBack()
 
 	/**
@@ -178,6 +178,9 @@ class FilinqVersionChainFallbackTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReadableChainAnswersFirst(): void {
-		$this->assertSame('v9', $this->adapter(versions: $this->versions(fails: false))->resolveVersion('tpl-abc', '2026-03-15')['version']);
+		$this->assertSame(
+			expected: 'v9',
+			actual: $this->adapter(versions: $this->versions(fails: false))->resolveVersion('tpl-abc', '2026-03-15')['version']
+		);
 	}//end testAReadableChainAnswersFirst()
 }//end class

@@ -43,8 +43,8 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 			'intakeDestinations' => [['department' => 'legacy']],
 		];
 
-		$this->assertSame('vergunningen', (new CaseTypeHandling())->defaultGroup(caseType: $caseType));
-		$this->assertSame(['vergunningen'], (new CaseTypeHandling())->teams(caseType: $caseType));
+		$this->assertSame(expected: 'vergunningen', actual: (new CaseTypeHandling())->defaultGroup(caseType: $caseType));
+		$this->assertSame(expected: ['vergunningen'], actual: (new CaseTypeHandling())->teams(caseType: $caseType));
 	}//end testADeclaredDefaultGroupWinsOverTheLegacyDestination()
 
 	/**
@@ -55,8 +55,8 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 	public function testADeclaredIntakeScreenIsReturned(): void {
 		$caseType = [CaseTypeHandling::PROPERTY => ['intakeScreen' => 'short-form']];
 
-		$this->assertSame('short-form', (new CaseTypeHandling())->intakeScreen(caseType: $caseType));
-		$this->assertSame('short-form', (new CaseTypeHandling())->block(caseType: $caseType)['intakeScreen']);
+		$this->assertSame(expected: 'short-form', actual: (new CaseTypeHandling())->intakeScreen(caseType: $caseType));
+		$this->assertSame(expected: 'short-form', actual: (new CaseTypeHandling())->block(caseType: $caseType)['intakeScreen']);
 	}//end testADeclaredIntakeScreenIsReturned()
 
 	/**
@@ -75,7 +75,7 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 			],
 		];
 
-		$this->assertSame(['7', 'alpha', 'zeta'], (new CaseTypeHandling())->unreadSwitches(caseType: $caseType));
+		$this->assertSame(expected: ['7', 'alpha', 'zeta'], actual: (new CaseTypeHandling())->unreadSwitches(caseType: $caseType));
 	}//end testUnreadSwitchesAreNamedSorted()
 
 	/**
@@ -86,8 +86,11 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 	public function testNoBlockHasNoUnreadSwitches(): void {
 		$handling = new CaseTypeHandling();
 
-		$this->assertSame([], $handling->unreadSwitches(caseType: []));
-		$this->assertSame([], $handling->unreadSwitches(caseType: [CaseTypeHandling::PROPERTY => 'defaultGroup']));
-		$this->assertSame([], $handling->unreadSwitches(caseType: [CaseTypeHandling::PROPERTY => array_fill_keys(CaseTypeHandling::READ_SWITCHES, '')]));
+		$this->assertSame(expected: [], actual: $handling->unreadSwitches(caseType: []));
+		$this->assertSame(expected: [], actual: $handling->unreadSwitches(caseType: [CaseTypeHandling::PROPERTY => 'defaultGroup']));
+		$this->assertSame(
+			expected: [],
+			actual: $handling->unreadSwitches(caseType: [CaseTypeHandling::PROPERTY => array_fill_keys(CaseTypeHandling::READ_SWITCHES, '')])
+		);
 	}//end testNoBlockHasNoUnreadSwitches()
 }//end class

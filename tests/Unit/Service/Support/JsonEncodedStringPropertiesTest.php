@@ -174,8 +174,12 @@ class JsonEncodedStringPropertiesTest extends TestCase {
 			schemaSlug: 'case',
 		);
 
-		self::assertSame($unencodable, $payload['statusHistory'], 'An unencodable value must not be replaced by false or an empty string.');
-		self::assertSame('["intake"]', $payload['skippedPhases'], 'The other properties are still re-encoded.');
+		self::assertSame(
+			expected: $unencodable,
+			actual: $payload['statusHistory'],
+			message: 'An unencodable value must not be replaced by false or an empty string.'
+		);
+		self::assertSame(expected: '["intake"]', actual: $payload['skippedPhases'], message: 'The other properties are still re-encoded.');
 	}//end testAValueThatCannotBeEncodedIsLeftAsItIs()
 
 }//end class

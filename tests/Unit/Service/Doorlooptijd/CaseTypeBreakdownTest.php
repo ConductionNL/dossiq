@@ -70,7 +70,7 @@ final class CaseTypeBreakdownTest extends TestCase {
 	 * @return WorkingClock
 	 */
 	private function degradedClock(): WorkingClock {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willThrowException(new \RuntimeException('no engine'));
 
 		return new WorkingClock(container: $container, days: new WorkingDayCalculator());
@@ -82,10 +82,10 @@ final class CaseTypeBreakdownTest extends TestCase {
 	 * @return void
 	 */
 	public function testClockNamesWhatTheHoursWereReadOn(): void {
-		self::assertSame(WorkingClock::CLOCK_WALL, (new CaseTypeThroughputCalculator())->clock());
+		self::assertSame(expected: WorkingClock::CLOCK_WALL, actual: (new CaseTypeThroughputCalculator())->clock());
 		self::assertSame(
-			WorkingClock::CLOCK_DAYS_TIMES_EIGHT,
-			(new CaseTypeThroughputCalculator(clock: $this->degradedClock()))->clock()
+			expected: WorkingClock::CLOCK_DAYS_TIMES_EIGHT,
+			actual: (new CaseTypeThroughputCalculator(clock: $this->degradedClock()))->clock()
 		);
 	}//end testClockNamesWhatTheHoursWereReadOn()
 
@@ -114,12 +114,12 @@ final class CaseTypeBreakdownTest extends TestCase {
 		$rows = (new CaseTypeThroughputCalculator())->computeCaseTypeBreakdown(cases: $cases, caseTypes: $caseTypes);
 
 		self::assertSame(
-			[
+			expected: [
 				['id' => 'ct-slow', 'title' => 'Environmental permit', 'avgDays' => 40, 'avgWorkingHours' => 320.0, 'count' => 1],
 				['id' => 'ct-untitled', 'title' => 'ct-untitled', 'avgDays' => 10, 'avgWorkingHours' => 80.0, 'count' => 1],
 				['id' => 'ct-fast', 'title' => 'Parkeervergunning', 'avgDays' => 3, 'avgWorkingHours' => 20.0, 'count' => 2],
 			],
-			$rows
+			actual: $rows
 		);
 	}//end testBreakdownAveragesClosedCasesPerTypeSlowestFirst()
 
@@ -141,10 +141,10 @@ final class CaseTypeBreakdownTest extends TestCase {
 			->computeCaseTypeBreakdown(cases: $cases, caseTypes: []);
 		$byId = array_column($rows, null, 'id');
 
-		self::assertSame(28.0, $byId['ct-1']['avgWorkingHours']);
-		self::assertSame(4, $byId['ct-1']['avgDays']);
-		self::assertSame(40.0, $byId['ct-2']['avgWorkingHours']);
-		self::assertSame(0.0, $byId['ct-3']['avgWorkingHours']);
+		self::assertSame(expected: 28.0, actual: $byId['ct-1']['avgWorkingHours']);
+		self::assertSame(expected: 4, actual: $byId['ct-1']['avgDays']);
+		self::assertSame(expected: 40.0, actual: $byId['ct-2']['avgWorkingHours']);
+		self::assertSame(expected: 0.0, actual: $byId['ct-3']['avgWorkingHours']);
 	}//end testBreakdownMeasuresWorkingHoursOnTheClock()
 
 	/**
@@ -160,6 +160,6 @@ final class CaseTypeBreakdownTest extends TestCase {
 
 		$result = (new CaseTypeThroughputCalculator())->computeWithinNormByCaseType(cases: $cases, caseTypes: []);
 
-		self::assertSame(['ct-1'], $result['labels']);
+		self::assertSame(expected: ['ct-1'], actual: $result['labels']);
 	}//end testWithinNormSkipsCasesWithoutType()
 }//end class

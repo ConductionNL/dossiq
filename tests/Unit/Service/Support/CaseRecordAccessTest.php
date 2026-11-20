@@ -175,11 +175,11 @@ final class CaseRecordAccessTest extends TestCase {
 		$records = $this->records(objectService: $store);
 
 		$case = $records->read(caseId: 'c1');
-		self::assertSame(['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'intake'], $case);
-		self::assertSame([['c1', 'reg', 'case']], $store->finds);
+		self::assertSame(expected: ['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'intake'], actual: $case);
+		self::assertSame(expected: [['c1', 'reg', 'case']], actual: $store->finds);
 
 		$case['status'] = 'behandeling';
 		$records->write(caseId: 'c1', case: $case, rule: 'move-not-written');
-		self::assertSame([['c1', ['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'behandeling']]], $store->writes);
+		self::assertSame(expected: [['c1', ['id' => 'c1', 'title' => 'Bouwvergunning', 'status' => 'behandeling']]], actual: $store->writes);
 	}//end testAFoundCaseIsReadAndWrittenBack()
 }//end class

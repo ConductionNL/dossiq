@@ -54,7 +54,7 @@ final class ZtcHelperFactoryTest extends TestCase {
 	 * @return ZgwService
 	 */
 	private function zgwAskedOnce(): ZgwService {
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->expects($this->once())->method('getObjectService')->willReturn(null);
 		$zgw->expects($this->never())->method('loadMappingConfig');
 
@@ -72,7 +72,7 @@ final class ZtcHelperFactoryTest extends TestCase {
 
 		$resolver = (new ZtcHelperFactory())->ztcTypeNameResolver(zgwService: $zgw);
 
-		$this->assertInstanceOf(ZtcTypeNameResolver::class, $resolver);
+		$this->assertInstanceOf(expected: ZtcTypeNameResolver::class, actual: $resolver);
 		$resolver->resolveInformatieobjecttype(body: ['informatieobjecttype' => 'Brief']);
 	}//end testTheTypeNameResolverAsksTheGivenService()
 
@@ -84,8 +84,11 @@ final class ZtcHelperFactoryTest extends TestCase {
 	public function testTheEnricherAsksTheGivenService(): void {
 		$enricher = (new ZtcHelperFactory())->ztcCrossReferenceEnricher(zgwService: $this->zgwAskedOnce());
 
-		$this->assertInstanceOf(ZtcCrossReferenceEnricher::class, $enricher);
-		$this->assertSame(['uuid' => 'zt-1'], $enricher->enrich(resource: 'zaaktypen', data: ['uuid' => 'zt-1'], baseUrl: 'https://nc/catalogi/v1'));
+		$this->assertInstanceOf(expected: ZtcCrossReferenceEnricher::class, actual: $enricher);
+		$this->assertSame(
+			expected: ['uuid' => 'zt-1'],
+			actual: $enricher->enrich(resource: 'zaaktypen', data: ['uuid' => 'zt-1'], baseUrl: 'https://nc/catalogi/v1')
+		);
 	}//end testTheEnricherAsksTheGivenService()
 
 	/**
@@ -97,10 +100,14 @@ final class ZtcHelperFactoryTest extends TestCase {
 		$filter = (new ZtcHelperFactory())->ztcUrlValidityFilter(zgwService: $this->zgwAskedOnce());
 		$data = ['informatieobjecttypen' => ['https://nc/catalogi/v1/informatieobjecttypen/x']];
 
-		$this->assertInstanceOf(ZtcUrlValidityFilter::class, $filter);
+		$this->assertInstanceOf(expected: ZtcUrlValidityFilter::class, actual: $filter);
 		$this->assertSame(
-			$data,
-			$filter->filter(fieldConfigs: ['informatieobjecttypen' => ['schemaKey' => 'document_type_schema', 'nested' => false]], data: $data, today: '2026-06-15')
+			expected: $data,
+			actual: $filter->filter(
+				fieldConfigs: ['informatieobjecttypen' => ['schemaKey' => 'document_type_schema', 'nested' => false]],
+				data: $data,
+				today: '2026-06-15'
+			)
 		);
 	}//end testTheValidityFilterAsksTheGivenService()
 
@@ -110,15 +117,15 @@ final class ZtcHelperFactoryTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRuleResultsLogOnTheGivenLogger(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error')->with(
-			$this->stringContains('could not be checked'),
+			$this->stringContains(string: 'could not be checked'),
 			['rule' => 'zrc-007', 'object' => 'zaak z', 'cause' => 'down']
 		);
 
 		$results = (new ZtcHelperFactory())->zgwRuleResults(logger: $logger);
 
-		$this->assertInstanceOf(ZgwRuleResults::class, $results);
-		$this->assertSame(503, $results->notVerified(rule: 'zrc-007', object: 'zaak z', cause: 'down')['status']);
+		$this->assertInstanceOf(expected: ZgwRuleResults::class, actual: $results);
+		$this->assertSame(expected: 503, actual: $results->notVerified(rule: 'zrc-007', object: 'zaak z', cause: 'down')['status']);
 	}//end testTheRuleResultsLogOnTheGivenLogger()
 }//end class

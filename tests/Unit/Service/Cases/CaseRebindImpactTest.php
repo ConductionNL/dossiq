@@ -345,13 +345,13 @@ class CaseRebindImpactTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutACaseTypeReadsNoSourceDefinitions(): void {
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->expects($this->once())
 			->method('propertyDefinitionsFor')
 			->with('ct-dst')
 			->willReturn([['id' => 'dst-boomsoort', 'name' => 'boomsoort']]);
 
-		$store = new CaseTypeStore($this->createMock(SettingsService::class));
+		$store = new CaseTypeStore(settingsService: $this->createMock(originalClassName: SettingsService::class));
 		$impact = new CaseRebindImpact(
 			store: $store,
 			resolver: $resolver,
@@ -365,8 +365,8 @@ class CaseRebindImpactTest extends TestCase {
 			targetStatusId: '',
 		);
 
-		self::assertSame(['boomsoort'], array_column($computed['ported'], 'target'));
-		self::assertSame([], $computed['dropped']);
-		self::assertTrue($computed['complete']);
+		self::assertSame(expected: ['boomsoort'], actual: array_column($computed['ported'], 'target'));
+		self::assertSame(expected: [], actual: $computed['dropped']);
+		self::assertTrue(condition: $computed['complete']);
 	}//end testACaseWithoutACaseTypeReadsNoSourceDefinitions()
 }//end class

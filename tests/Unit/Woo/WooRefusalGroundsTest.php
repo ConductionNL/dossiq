@@ -132,12 +132,12 @@ class WooRefusalGroundsTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterTheListThrows(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$grounds = new WooRefusalGrounds(settingsService: $settings, logger: new NullLogger());
 
-		$this->expectException(WooRefusalGroundsUnavailable::class);
-		$this->expectExceptionMessage('OpenRegister is not available');
+		$this->expectException(exception: WooRefusalGroundsUnavailable::class);
+		$this->expectExceptionMessage(message: 'OpenRegister is not available');
 		$grounds->listWithRetired();
 	}//end testWithoutOpenRegisterTheListThrows()
 
@@ -155,8 +155,8 @@ class WooRefusalGroundsTest extends TestCase {
 
 		$codes = array_column($this->grounds(store: $store)->listWithRetired(), 'code');
 
-		$this->assertCount($count, $codes);
-		$this->assertNotContains('', $codes);
-		$this->assertNull($this->grounds(store: $store)->byCode(code: ' '));
+		$this->assertCount(expectedCount: $count, haystack: $codes);
+		$this->assertNotContains(needle: '', haystack: $codes);
+		$this->assertNull(actual: $this->grounds(store: $store)->byCode(code: ' '));
 	}//end testARowWithoutACodeIsLeftOut()
 }//end class

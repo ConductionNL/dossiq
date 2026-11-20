@@ -70,15 +70,41 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 			public function __construct(private array $finds, private array &$calls) {
 			}
 
+			/**
+			 * Stand-in for find().
+			 *
+			 * @param mixed $id The id.
+			 * @param ?ObjectFindOptions $options The options.
+			 * @param bool $_rbac The rbac.
+			 * @param bool $_multitenancy The multitenancy.
+			 *
+			 * @return mixed
+			 */
 			public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
 				$this->calls[] = 'find ' . $options?->schema . ' ' . $id;
 				return $this->finds[$options?->schema . ':' . $id] ?? throw new \RuntimeException('not found');
 			}
 
+			/**
+			 * Stand-in for buildSearchQuery().
+			 *
+			 * @param array $requestParams The request params.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 *
+			 * @return array
+			 */
 			public function buildSearchQuery(array $requestParams, string $register, string $schema): array {
 				return ['schema' => $schema, 'params' => $requestParams];
 			}
 
+			/**
+			 * Stand-in for searchObjectsPaginated().
+			 *
+			 * @param array $query The query.
+			 *
+			 * @return array
+			 */
 			public function searchObjectsPaginated(array $query): array {
 				$this->calls[] = 'search ' . $query['schema'] . ' ' . (string)array_key_first($query['params']);
 				return ['results' => []];
@@ -95,10 +121,16 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 	 * @return ZgwService
 	 */
 	private function zgw(object $objectService, array $unmapped = []): ZgwService {
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->method('getObjectService')->willReturn($objectService);
 		$zgw->method('loadMappingConfig')->willReturnCallback(
-			static fn (string $api, string $resource): ?array => in_array($resource, $unmapped, true) ? null : ['sourceRegister' => 'r', 'sourceSchema' => $resource]
+			static fn (string $api, string $resource): ?array => match (in_array($resource, $unmapped, true)) {
+				true => null,
+				default => [
+					'sourceRegister' => 'r',
+					'sourceSchema' => $resource,
+				],
+			}
 		);
 
 		return $zgw;
@@ -116,8 +148,8 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 		$enriched = (new ZtcCrossReferenceEnricher(zgwService: $this->zgw(objectService: $objects, unmapped: ['besluittypen'])))
 			->enrich(resource: 'besluittypen', data: $data, baseUrl: self::BASE);
 
-		$this->assertSame($data, $enriched);
-		$this->assertSame([], $this->calls);
+		$this->assertSame(expected: $data, actual: $enriched);
+		$this->assertSame(expected: [], actual: $this->calls);
 	}//end testAnUnmappedBesluittypeIsReturnedUnread()
 
 	/**
@@ -133,7 +165,7 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 			->enrich(resource: 'zaaktypen', data: ['uuid' => self::ZT], baseUrl: self::BASE);
 
 		$this->assertSame(
-			[
+			expected: [
 				'uuid' => self::ZT,
 				'deelzaaktypen' => [],
 				'gerelateerdeZaaktypen' => [],
@@ -144,10 +176,10 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 				'resultaattypen' => [],
 				'roltypen' => [],
 			],
-			$enriched
+			actual: $enriched
 		);
 		$this->assertSame(
-			[
+			expected: [
 				'find zaaktypen ' . self::ZT,
 				'search zaaktype-informatieobjecttypen caseType',
 				'search besluittypen caseType',
@@ -156,8 +188,8 @@ class ZtcCrossReferenceEnricherEdgesTest extends TestCase {
 				'search resultaattypen caseType',
 				'search roltypen caseType',
 			],
-			$this->calls,
-			'the zaaktype is read once and no identifier search for related zaaktypen runs'
+			actual: $this->calls,
+			message: 'the zaaktype is read once and no identifier search for related zaaktypen runs'
 		);
 	}//end testAZaaktypeThatStoresNoListsGetsEmptyListsAndNoRelatedLookup()
 }//end class

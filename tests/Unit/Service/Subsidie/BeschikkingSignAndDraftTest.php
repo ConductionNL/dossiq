@@ -120,7 +120,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return SettingsService The mock.
 	 */
 	private function settings(object $objectService): SettingsService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => match ($key) {
@@ -150,13 +150,13 @@ class BeschikkingSignAndDraftTest extends TestCase {
 		?StaatssteunClassifier $classifier = null,
 	): BeschikkingService {
 		$settings = $this->settings(objectService: $objectService);
-		$logger ??= $this->createMock(LoggerInterface::class);
-		$session = $this->createMock(IUserSession::class);
+		$logger ??= $this->createMock(originalClassName: LoggerInterface::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		return new BeschikkingService(
 			settingsService: $settings,
-			subsidyService: new SubsidieService($settings, $logger),
+			subsidyService: new SubsidieService(settingsService: $settings, logger: $logger),
 			userSession: $session,
 			logger: $logger,
 			stateAid: ($classifier ?? new StaatssteunClassifier()),
@@ -171,7 +171,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return IUser The mock.
 	 */
 	private function user(string $uid): IUser {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn($uid);
 
 		return $user;
@@ -187,7 +187,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 
 		try {
 			$this->service(objectService: $store)->sign(decisionId: 'b-1');
-			$this->fail('Expected the signature to be refused.');
+			$this->fail(message: 'Expected the signature to be refused.');
 		} catch (OCSBadRequestException $e) {
 			$this->assertSame(expected: 'Authenticatie vereist om te ondertekenen', actual: $e->getMessage());
 		}
@@ -215,7 +215,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 		$this->assertSame(expected: 'jdevries', actual: $patch->data['signedBy']);
 		$signedOn = DateTimeImmutable::createFromFormat(DateTimeImmutable::ATOM, $patch->data['signedOn']);
 		$this->assertNotFalse(condition: $signedOn);
-		$this->assertGreaterThanOrEqual($before->getTimestamp(), $signedOn->getTimestamp());
+		$this->assertGreaterThanOrEqual(expected: $before->getTimestamp(), actual: $signedOn->getTimestamp());
 		$this->assertSame(expected: 'b-7', actual: $result['id']);
 		$this->assertSame(expected: 'jdevries', actual: $result['signedBy']);
 	}//end testSigningPatchesTheSessionUserAndTheMoment()
@@ -226,13 +226,13 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailingSignatureIsLoggedAndRefused(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())
 			->method('error')
 			->with('Dossiq subsidie: sign beschikking failed: store down');
 
-		$this->expectException(OCSBadRequestException::class);
-		$this->expectExceptionMessage('Kon beschikking niet ondertekenen');
+		$this->expectException(exception: OCSBadRequestException::class);
+		$this->expectExceptionMessage(message: 'Kon beschikking niet ondertekenen');
 
 		$this->service(objectService: self::objectService(fail: true), user: $this->user(uid: 'jdevries'), logger: $logger)
 			->sign(decisionId: 'b-1');
@@ -245,7 +245,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 */
 	public function testADeclaredStateAidCategoryIsKept(): void {
 		$store = self::objectService();
-		$classifier = $this->createMock(StaatssteunClassifier::class);
+		$classifier = $this->createMock(originalClassName: StaatssteunClassifier::class);
 		$classifier->expects($this->never())->method('classify');
 
 		$created = $this->service(objectService: $store, classifier: $classifier)->createDraft(
@@ -266,7 +266,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheClassifierReceivesTheAmountsTheArticleAndTheDaebFlag(): void {
-		$classifier = $this->createMock(StaatssteunClassifier::class);
+		$classifier = $this->createMock(originalClassName: StaatssteunClassifier::class);
 		$classifier->expects($this->once())
 			->method('classify')
 			->with(2500.0, 100.0, 'art. 25', true)
@@ -287,7 +287,7 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlankArticleIsNoArticle(): void {
-		$classifier = $this->createMock(StaatssteunClassifier::class);
+		$classifier = $this->createMock(originalClassName: StaatssteunClassifier::class);
 		$classifier->expects($this->once())
 			->method('classify')
 			->with(500.0, 0.0, null, false)
@@ -306,13 +306,13 @@ class BeschikkingSignAndDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailingDraftSaveIsLoggedAndRefused(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())
 			->method('error')
 			->with('Dossiq subsidie: createDraft beschikking failed: disk full');
 
-		$this->expectException(OCSBadRequestException::class);
-		$this->expectExceptionMessage('Kon beschikking niet aanmaken');
+		$this->expectException(exception: OCSBadRequestException::class);
+		$this->expectExceptionMessage(message: 'Kon beschikking niet aanmaken');
 
 		$this->service(objectService: self::objectService(fail: true), logger: $logger)->createDraft(
 			requestId: 'aanvraag-4',

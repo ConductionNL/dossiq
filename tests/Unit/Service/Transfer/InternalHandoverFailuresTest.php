@@ -129,7 +129,7 @@ class InternalHandoverFailuresTest extends TestCase {
 			return $e;
 		}
 
-		$this->fail('Expected a refusal.');
+		$this->fail(message: 'Expected a refusal.');
 	}//end refusalOf()
 
 	/**
@@ -167,7 +167,7 @@ class InternalHandoverFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnknownHandoverIsRefusedAsNotFound(): void {
-		$refusal = $this->refusalOf(fn () => $this->handover()->accept(transferId: 't-404', acceptedBy: 'sofie'));
+		$refusal = $this->refusalOf(call: fn () => $this->handover()->accept(transferId: 't-404', acceptedBy: 'sofie'));
 
 		$this->assertSame(expected: InternalHandover::HANDOVER_UNKNOWN, actual: $refusal->getRule());
 		$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
@@ -182,7 +182,7 @@ class InternalHandoverFailuresTest extends TestCase {
 	public function testAnUnreadableHandoverIsRefusedAsIndeterminate(): void {
 		$this->store->refusedToCaller = ['casetransfer'];
 
-		$refusal = $this->refusalOf(fn () => $this->handover()->refuse(transferId: 't-1', reason: 'fout', refusedBy: 'sofie'));
+		$refusal = $this->refusalOf(call: fn () => $this->handover()->refuse(transferId: 't-1', reason: 'fout', refusedBy: 'sofie'));
 
 		$this->assertSame(expected: InternalHandover::HANDOVER_UNKNOWN, actual: $refusal->getRule());
 		$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $refusal->getStatus());
@@ -199,7 +199,7 @@ class InternalHandoverFailuresTest extends TestCase {
 	public function testAnUnrecordableSettlementLeavesTheCaseAlone(): void {
 		$this->store->refusedSchemas = ['casetransfer'];
 
-		$refusal = $this->refusalOf(fn () => $this->handover()->refuse(transferId: 't-1', reason: 'fout', refusedBy: 'sofie'));
+		$refusal = $this->refusalOf(call: fn () => $this->handover()->refuse(transferId: 't-1', reason: 'fout', refusedBy: 'sofie'));
 
 		$this->assertSame(expected: InternalHandover::CASE_UNREADABLE, actual: $refusal->getRule());
 		$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $refusal->getStatus());

@@ -57,7 +57,7 @@ class TermDeclarationReaderTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->register = new InMemoryRegister();
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 		$this->settings->method('getObjectService')->willReturn($this->register);
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
@@ -86,18 +86,18 @@ class TermDeclarationReaderTest extends TestCase {
 	public function testDaysReadsEveryShape(): void {
 		$reader = $this->reader();
 
-		$this->assertSame(8, $reader->days(value: 8));
-		$this->assertSame(0, $reader->days(value: -4));
-		$this->assertSame(3, $reader->days(value: 3.9));
-		$this->assertSame(0, $reader->days(value: -1.5));
-		$this->assertSame(0, $reader->days(value: null));
-		$this->assertSame(0, $reader->days(value: '  '));
-		$this->assertSame(42, $reader->days(value: ' 42 '));
-		$this->assertSame(56, $reader->days(value: 'P8W'));
-		$this->assertSame(10, $reader->days(value: 'p10d'));
-		$this->assertSame(30 + 14 + 2, $reader->days(value: 'P1M2W2D'));
-		$this->assertSame(0, $reader->days(value: 'P1Y'));
-		$this->assertSame(0, $reader->days(value: 'eight weeks'));
+		$this->assertSame(expected: 8, actual: $reader->days(value: 8));
+		$this->assertSame(expected: 0, actual: $reader->days(value: -4));
+		$this->assertSame(expected: 3, actual: $reader->days(value: 3.9));
+		$this->assertSame(expected: 0, actual: $reader->days(value: -1.5));
+		$this->assertSame(expected: 0, actual: $reader->days(value: null));
+		$this->assertSame(expected: 0, actual: $reader->days(value: '  '));
+		$this->assertSame(expected: 42, actual: $reader->days(value: ' 42 '));
+		$this->assertSame(expected: 56, actual: $reader->days(value: 'P8W'));
+		$this->assertSame(expected: 10, actual: $reader->days(value: 'p10d'));
+		$this->assertSame(expected: 30 + 14 + 2, actual: $reader->days(value: 'P1M2W2D'));
+		$this->assertSame(expected: 0, actual: $reader->days(value: 'P1Y'));
+		$this->assertSame(expected: 0, actual: $reader->days(value: 'eight weeks'));
 	}//end testDaysReadsEveryShape()
 
 	/**
@@ -125,7 +125,7 @@ class TermDeclarationReaderTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'leadTimeDays' => 56,
 				'fixedEndDate' => '2026-12-31',
 				'plannedLeadTimeDays' => 20,
@@ -139,7 +139,7 @@ class TermDeclarationReaderTest extends TestCase {
 				'extensionAllowed' => true,
 				'statutoryTermDefinition' => '',
 			],
-			$this->reader()->forCaseType(caseTypeId: 'type-1')
+			actual: $this->reader()->forCaseType(caseTypeId: 'type-1')
 		);
 	}//end testForCaseTypeReadsEveryDeclaration()
 
@@ -151,10 +151,10 @@ class TermDeclarationReaderTest extends TestCase {
 	public function testForCaseTypeOfAMissingRowDeclaresNothing(): void {
 		$declarations = $this->reader()->forCaseType(caseTypeId: 'absent');
 
-		$this->assertSame(0, $declarations['leadTimeDays']);
-		$this->assertSame('', $declarations['fixedEndDate']);
-		$this->assertFalse($declarations['suspensionAllowed']);
-		$this->assertFalse($declarations['extensionAllowed']);
+		$this->assertSame(expected: 0, actual: $declarations['leadTimeDays']);
+		$this->assertSame(expected: '', actual: $declarations['fixedEndDate']);
+		$this->assertFalse(condition: $declarations['suspensionAllowed']);
+		$this->assertFalse(condition: $declarations['extensionAllowed']);
 	}//end testForCaseTypeOfAMissingRowDeclaresNothing()
 
 	/**
@@ -171,9 +171,9 @@ class TermDeclarationReaderTest extends TestCase {
 
 		$declarations = $this->reader()->forCaseType(caseTypeId: 'type-2');
 
-		$this->assertFalse($declarations['suspensionAllowed']);
-		$this->assertTrue($declarations['extensionAllowed']);
-		$this->assertSame('', $declarations['fixedEndDate']);
+		$this->assertFalse(condition: $declarations['suspensionAllowed']);
+		$this->assertTrue(condition: $declarations['extensionAllowed']);
+		$this->assertSame(expected: '', actual: $declarations['fixedEndDate']);
 	}//end testFlagsAreStrictAndMalformedDatesAreDropped()
 
 	/**
@@ -182,18 +182,18 @@ class TermDeclarationReaderTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnconfiguredSourcesDeclareNothing(): void {
-		$this->assertSame(0, $this->reader()->forCaseType(caseTypeId: '')['leadTimeDays']);
+		$this->assertSame(expected: 0, actual: $this->reader()->forCaseType(caseTypeId: '')['leadTimeDays']);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$reader = new TermDeclarationReader(settingsService: $settings);
-		$this->assertSame(['caseType' => '', 'status' => ''], $reader->caseContext(caseId: 'case-1'));
+		$this->assertSame(expected: ['caseType' => '', 'status' => ''], actual: $reader->caseContext(caseId: 'case-1'));
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->register);
 		$settings->method('getConfigValue')->willReturn('');
 		$reader = new TermDeclarationReader(settingsService: $settings);
-		$this->assertSame([], $reader->phasesOf(caseTypeId: 'type-1'));
+		$this->assertSame(expected: [], actual: $reader->phasesOf(caseTypeId: 'type-1'));
 	}//end testUnconfiguredSourcesDeclareNothing()
 
 	/**
@@ -207,8 +207,8 @@ class TermDeclarationReaderTest extends TestCase {
 
 		$reader = $this->reader();
 
-		$this->assertSame(['caseType' => 'type-1', 'status' => 'st-1'], $reader->caseContext(caseId: 'c1'));
-		$this->assertSame(['caseType' => 'type-2', 'status' => ''], $reader->caseContext(caseId: 'c2'));
+		$this->assertSame(expected: ['caseType' => 'type-1', 'status' => 'st-1'], actual: $reader->caseContext(caseId: 'c1'));
+		$this->assertSame(expected: ['caseType' => 'type-2', 'status' => ''], actual: $reader->caseContext(caseId: 'c2'));
 	}//end testCaseContextReadsReferencesInEveryShape()
 
 	/**
@@ -222,8 +222,8 @@ class TermDeclarationReaderTest extends TestCase {
 
 		$declarations = $this->reader()->forCase(caseId: 'c1');
 
-		$this->assertSame(14, $declarations['leadTimeDays']);
-		$this->assertTrue($declarations['suspensionAllowed']);
+		$this->assertSame(expected: 14, actual: $declarations['leadTimeDays']);
+		$this->assertTrue(condition: $declarations['suspensionAllowed']);
 	}//end testForCaseReadsItsCaseType()
 
 	/**
@@ -239,8 +239,8 @@ class TermDeclarationReaderTest extends TestCase {
 		);
 
 		$this->assertSame(
-			['termDays' => 7, 'share' => 0.25, 'order' => 2, 'name' => 'Intake NL'],
-			$this->reader()->forStatusType(statusTypeId: 'st-1')
+			expected: ['termDays' => 7, 'share' => 0.25, 'order' => 2, 'name' => 'Intake NL'],
+			actual: $this->reader()->forStatusType(statusTypeId: 'st-1')
 		);
 	}//end testForStatusTypeReadsThePhase()
 
@@ -256,9 +256,9 @@ class TermDeclarationReaderTest extends TestCase {
 
 		$phases = $this->reader()->phasesOf(caseTypeId: 'type-1');
 
-		$this->assertSame(['st-a', 'st-b'], array_column($phases, 'id'));
-		$this->assertSame(['Intake', 'Decide'], array_column($phases, 'name'));
-		$this->assertSame([5, 10], array_column($phases, 'termDays'));
+		$this->assertSame(expected: ['st-a', 'st-b'], actual: array_column($phases, 'id'));
+		$this->assertSame(expected: ['Intake', 'Decide'], actual: array_column($phases, 'name'));
+		$this->assertSame(expected: [5, 10], actual: array_column($phases, 'termDays'));
 	}//end testPhasesOfAreOrderedAndCarryTheirIds()
 
 	/**
@@ -271,12 +271,12 @@ class TermDeclarationReaderTest extends TestCase {
 
 		try {
 			$this->reader()->phasesOf(caseTypeId: 'type-1');
-			$this->fail('An unreadable store must refuse.');
+			$this->fail(message: 'An unreadable store must refuse.');
 		} catch (RefusedException $e) {
-			$this->assertSame('term-declarations-unreadable', $e->getRule());
-			$this->assertSame('The phases of this case type could not be read, so its terms were not resolved.', $e->getSentence());
-			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
-			$this->assertNotNull($e->getPrevious());
+			$this->assertSame(expected: 'term-declarations-unreadable', actual: $e->getRule());
+			$this->assertSame(expected: 'The phases of this case type could not be read, so its terms were not resolved.', actual: $e->getSentence());
+			$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $e->getStatus());
+			$this->assertNotNull(actual: $e->getPrevious());
 		}
 	}//end testUnreadablePhasesRefuse()
 
@@ -290,11 +290,11 @@ class TermDeclarationReaderTest extends TestCase {
 
 		try {
 			$this->reader()->forCaseType(caseTypeId: 'type-1');
-			$this->fail('An unreadable case type must refuse.');
+			$this->fail(message: 'An unreadable case type must refuse.');
 		} catch (RefusedException $e) {
-			$this->assertSame('term-declarations-unreadable', $e->getRule());
-			$this->assertSame('This case type could not be read, so its terms were not resolved.', $e->getSentence());
-			$this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+			$this->assertSame(expected: 'term-declarations-unreadable', actual: $e->getRule());
+			$this->assertSame(expected: 'This case type could not be read, so its terms were not resolved.', actual: $e->getSentence());
+			$this->assertInstanceOf(expected: \RuntimeException::class, actual: $e->getPrevious());
 		}
 	}//end testUnreadableCaseTypeRefuses()
 }//end class

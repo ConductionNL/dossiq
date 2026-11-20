@@ -200,11 +200,11 @@ class ConnectedSystemDocumentFilerTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoTemporaryFileFailsBeforeTheUpload(): void {
-		$uploads = $this->createMock(DossierUploadHandler::class);
+		$uploads = $this->createMock(originalClassName: DossierUploadHandler::class);
 		$uploads->expects($this->never())->method('uploadOne');
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->never())->method('warning');
-		$filer = new ConnectedSystemDocumentFiler($uploads, $logger);
+		$filer = new ConnectedSystemDocumentFiler(uploads: $uploads, logger: $logger);
 
 		$warnings = [];
 		set_error_handler(
@@ -218,15 +218,15 @@ class ConnectedSystemDocumentFilerTest extends TestCase {
 
 		try {
 			$filer->file(operation: self::operation(), documentTypes: self::types(), case: self::kase(), system: 'sys');
-			self::fail('A document without a temporary file must not be reported as filed or refused.');
+			self::fail(message: 'A document without a temporary file must not be reported as filed or refused.');
 		} catch (RuntimeException $e) {
-			self::assertSame('No temporary file for the document.', $e->getMessage());
+			self::assertSame(expected: 'No temporary file for the document.', actual: $e->getMessage());
 		} finally {
 			restore_error_handler();
 		}
 
-		self::assertCount(1, $warnings);
-		self::assertStringStartsWith('tempnam():', $warnings[0], 'The one notice is tempnam() giving up on the directory.');
+		self::assertCount(expectedCount: 1, haystack: $warnings);
+		self::assertStringStartsWith(prefix: 'tempnam():', string: $warnings[0], message: 'The one notice is tempnam() giving up on the directory.');
 	}//end testNoTemporaryFileFailsBeforeTheUpload()
 
 	/**

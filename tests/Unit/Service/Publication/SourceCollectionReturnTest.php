@@ -390,32 +390,42 @@ class SourceCollectionReturnTest extends TestCase {
 			row: [
 				'title' => 'Parkeren',
 				'owner' => 'subject-ref-anna',
-				'items' => [['id' => 'item-1', 'publication' => 'pub-a', 'note' => 'Het besluit', 'addedAt' => '2026-09-01T10:00:00+00:00', 'addedBy' => 'resident']],
+				'items' => [
+					['id' => 'item-1', 'publication' => 'pub-a', 'note' => 'Het besluit', 'addedAt' => '2026-09-01T10:00:00+00:00', 'addedBy' => 'resident'],
+				],
 				'share' => ['token' => 'tok'],
 			]
 		);
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
 			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
 		);
-		$random = $this->createMock(ISecureRandom::class);
+		$random = $this->createMock(originalClassName: ISecureRandom::class);
 		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
-		$return = new SourceCollectionReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
+		$return = new SourceCollectionReturn(
+			settingsService: $settings,
+			random: $random,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		self::assertTrue($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit op uw Woo-verzoek'));
+		self::assertTrue(condition: $return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit op uw Woo-verzoek'));
 
-		self::assertCount(1, $store->patches);
+		self::assertCount(expectedCount: 1, haystack: $store->patches);
 		[$patch, $rbac, $multitenancy] = $store->patches[0];
-		self::assertSame(self::COLLECTION, $patch->objectId);
-		self::assertSame(['items'], array_keys($patch->data));
-		self::assertCount(2, $patch->data['items']);
-		self::assertSame('item-1', $patch->data['items'][0]['id']);
-		self::assertSame('pub-new', $patch->data['items'][1]['publication']);
-		self::assertSame(SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_register'], $patch->target->register);
-		self::assertSame(SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_schema'], $patch->target->schema);
-		self::assertFalse($rbac);
-		self::assertFalse($multitenancy);
-		self::assertCount(1, $store->row(schema: 'collection', uuid: self::COLLECTION)['items'], 'the full save path is not taken');
+		self::assertSame(expected: self::COLLECTION, actual: $patch->objectId);
+		self::assertSame(expected: ['items'], actual: array_keys($patch->data));
+		self::assertCount(expectedCount: 2, haystack: $patch->data['items']);
+		self::assertSame(expected: 'item-1', actual: $patch->data['items'][0]['id']);
+		self::assertSame(expected: 'pub-new', actual: $patch->data['items'][1]['publication']);
+		self::assertSame(expected: SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_register'], actual: $patch->target->register);
+		self::assertSame(expected: SettingsService::WOO_PUBLICATION_DEFAULTS['woo_collection_schema'], actual: $patch->target->schema);
+		self::assertFalse(condition: $rbac);
+		self::assertFalse(condition: $multitenancy);
+		self::assertCount(
+			expectedCount: 1,
+			haystack: $store->row(schema: 'collection', uuid: self::COLLECTION)['items'],
+			message: 'the full save path is not taken'
+		);
 	}//end testThePatchSeamWritesOnlyTheItemsUnscoped()
 }//end class

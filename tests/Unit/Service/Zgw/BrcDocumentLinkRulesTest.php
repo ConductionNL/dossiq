@@ -180,7 +180,7 @@ class BrcDocumentLinkRulesTest extends TestCase {
 			$objects[$holder][$field] = 'https://ztc.example.com/typen/zonder-uuid';
 			$objects[$unread] = new \RuntimeException($unread . ' must not be read');
 
-			$this->assertTrue($this->link(objects: $objects)['valid'], $name);
+			$this->assertTrue(condition: $this->link(objects: $objects)['valid'], message: $name);
 		}
 	}//end testAReferenceWithoutAUuidIsNotLookedUpAndSkipsTheTypeCheck()
 }//end class

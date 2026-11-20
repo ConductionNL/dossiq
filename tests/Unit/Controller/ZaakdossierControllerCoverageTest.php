@@ -108,14 +108,14 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->request = $this->createMock(IRequest::class);
-		$this->fileService = $this->createMock(ZaakdossierServiceInterface::class);
-		$this->reader = $this->createMock(InformatieobjectReaderInterface::class);
-		$this->uploadHandler = $this->createMock(DossierUploadHandlerInterface::class);
-		$this->userSession = $this->createMock(IUserSession::class);
-		$this->approvals = $this->createMock(DocumentApprovalClearanceInterface::class);
-		$this->writes = $this->createMock(DocumentWriteGateInterface::class);
-		$this->user = $this->createMock(IUser::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
+		$this->fileService = $this->createMock(originalClassName: ZaakdossierServiceInterface::class);
+		$this->reader = $this->createMock(originalClassName: InformatieobjectReaderInterface::class);
+		$this->uploadHandler = $this->createMock(originalClassName: DossierUploadHandlerInterface::class);
+		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
+		$this->approvals = $this->createMock(originalClassName: DocumentApprovalClearanceInterface::class);
+		$this->writes = $this->createMock(originalClassName: DocumentWriteGateInterface::class);
+		$this->user = $this->createMock(originalClassName: IUser::class);
 		$this->user->method('getUID')->willReturn('alice');
 		$this->user->method('getDisplayName')->willReturn('Alice A');
 	}//end setUp()
@@ -127,14 +127,14 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	private function controller(): ZaakdossierController {
 		return new ZaakdossierController(
-			'dossiq',
-			$this->request,
-			$this->fileService,
-			$this->reader,
-			$this->uploadHandler,
-			$this->userSession,
-			$this->approvals,
-			$this->writes,
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $this->reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			writes: $this->writes,
 		);
 	}//end controller()
 
@@ -181,8 +181,8 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->uploadDocument('case-1');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-		$this->assertSame(['error' => 'Not authenticated'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Not authenticated'], actual: $response->getData());
 	}//end testUploadUnauthenticatedIs401()
 
 	/**
@@ -198,8 +198,8 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->uploadDocument('case-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Not authorized'], actual: $response->getData());
 	}//end testUploadWithoutCaseAccessIs403()
 
 	/**
@@ -218,8 +218,8 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->uploadDocument('case-1');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['error' => 'No files uploaded'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'No files uploaded'], actual: $response->getData());
 	}//end testUploadWithNoFilesIs400()
 
 	/**
@@ -234,7 +234,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->updateMetadata('doc-1');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testUpdateMetadataUnauthenticatedIs401()
 
 	/**
@@ -249,7 +249,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 		$this->reader->expects($this->never())->method('guardReadable');
 		$this->fileService->expects($this->never())->method('updateMetadata');
 
-		$this->assertSame($refusal, $this->controller()->updateMetadata('doc-1'));
+		$this->assertSame(expected: $refusal, actual: $this->controller()->updateMetadata('doc-1'));
 	}//end testUpdateMetadataReturnsWriteGateRefusal()
 
 	/**
@@ -259,7 +259,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testUpdateMetadataMapsRequestFields(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$params = [
 			'title' => 'New title',
 			'beschrijving' => 'Legacy description',
@@ -282,8 +282,8 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->updateMetadata('doc-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['id' => 'doc-1', 'title' => 'New title'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['id' => 'doc-1', 'title' => 'New title'], actual: $response->getData());
 	}//end testUpdateMetadataMapsRequestFields()
 
 	/**
@@ -293,7 +293,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testUpdateMetadataPrefersDescriptionOverLegacySpelling(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$params = [
 			'description' => 'Modern',
 			'beschrijving' => 'Legacy',
@@ -313,7 +313,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 			])
 			->willReturn([]);
 
-		$this->assertSame(Http::STATUS_OK, $this->controller()->updateMetadata('doc-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $this->controller()->updateMetadata('doc-1')->getStatus());
 	}//end testUpdateMetadataPrefersDescriptionOverLegacySpelling()
 
 	/**
@@ -323,15 +323,15 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testUpdateMetadataConflictIs409(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$this->request->method('getParam')->willReturn(null);
 		$this->fileService->expects($this->once())->method('updateMetadata')
 			->with('doc-1', [])->willThrowException(new \DomainException('Document is final'));
 
 		$response = $this->controller()->updateMetadata('doc-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame(['error' => 'Document is final'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Document is final'], actual: $response->getData());
 	}//end testUpdateMetadataConflictIs409()
 
 	/**
@@ -341,14 +341,14 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testUpdateMetadataUnavailableIs503(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$this->request->method('getParam')->willReturn(null);
 		$this->fileService->method('updateMetadata')->willThrowException(new \RuntimeException('DRC down'));
 
 		$response = $this->controller()->updateMetadata('doc-1');
 
-		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		$this->assertSame(['error' => 'DRC down'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'DRC down'], actual: $response->getData());
 	}//end testUpdateMetadataUnavailableIs503()
 
 	/**
@@ -358,15 +358,15 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testTransitionInvalidIs400(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$this->request->method('getParam')->with('status', '')->willReturn('bogus');
 		$this->fileService->expects($this->once())->method('transitionStatus')
 			->with('doc-1', 'bogus')->willThrowException(new \InvalidArgumentException('Invalid transition'));
 
 		$response = $this->controller()->transitionStatus('doc-1');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['error' => 'Invalid transition'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Invalid transition'], actual: $response->getData());
 	}//end testTransitionInvalidIs400()
 
 	/**
@@ -376,14 +376,14 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 	 */
 	public function testTransitionUnavailableIs503(): void {
 		$this->signIn();
-		$this->allowWrite('doc-1');
+		$this->allowWrite(id: 'doc-1');
 		$this->request->method('getParam')->willReturn('definitief');
 		$this->fileService->method('transitionStatus')->willThrowException(new \RuntimeException('DRC down'));
 
 		$response = $this->controller()->transitionStatus('doc-1');
 
-		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		$this->assertSame(['error' => 'DRC down'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'DRC down'], actual: $response->getData());
 	}//end testTransitionUnavailableIs503()
 
 	/**
@@ -397,7 +397,7 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->bulkTransitionStatus();
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testBulkTransitionUnauthenticatedIs401()
 
 	/**
@@ -419,8 +419,8 @@ class ZaakdossierControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->bulkTransitionStatus();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['results' => $results], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['results' => $results], actual: $response->getData());
 	}//end testBulkTransitionReturnsResults()
 
 }//end class

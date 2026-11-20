@@ -178,9 +178,9 @@ class RequiredFieldGuardTest extends TestCase {
 			userId: 'u',
 		);
 
-		self::assertFalse($result->passed);
-		self::assertSame('Required field missing: stemuitslag', $result->failureMessage);
-		self::assertSame(['field' => 'stemuitslag'], $result->details);
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Required field missing: stemuitslag', actual: $result->failureMessage);
+		self::assertSame(expected: ['field' => 'stemuitslag'], actual: $result->details);
 	}//end testAnotherFieldsAnswerDoesNotSatisfyTheGuard()
 
 	/**
@@ -197,8 +197,8 @@ class RequiredFieldGuardTest extends TestCase {
 			userId: 'u',
 		);
 
-		self::assertTrue($result->passed);
-		self::assertSame(['field' => 'stemuitslag'], $result->details);
+		self::assertTrue(condition: $result->passed);
+		self::assertSame(expected: ['field' => 'stemuitslag'], actual: $result->details);
 	}//end testTheAnswerAfterStrayEntriesStillPasses()
 
 	/**

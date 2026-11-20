@@ -58,7 +58,7 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return SettingsService
 	 */
 	private function settings(?object $objectService): SettingsService {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default=''): string => match ($key) {
@@ -92,8 +92,10 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 			/**
 			 * Read one case type.
 			 *
-			 * @param string                 $id      The id.
+			 * @param string $id The id.
 			 * @param ObjectFindOptions|null $options The options.
+			 * @param bool $_rbac Ignored.
+			 * @param bool $_multitenancy Ignored.
 			 *
 			 * @return array<string, mixed>|null
 			 */
@@ -104,12 +106,19 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 			/**
 			 * Save, or fail.
 			 *
-			 * @param array<string, mixed> $object  The object.
-			 * @param ObjectSaveOptions    $options The options.
+			 * @param array<string, mixed> $object The object.
+			 * @param ObjectSaveOptions $options The options.
+			 * @param bool $_rbac Ignored.
+			 * @param bool $_multitenancy Ignored.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
 				if ($this->failSave === true) {
 					throw new RuntimeException('database gone');
 				}
@@ -129,12 +138,12 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return CaseTypeVersionWindow
 	 */
 	private function window(SettingsService $settings, ?LoggerInterface $logger=null): CaseTypeVersionWindow {
-		$time = $this->createMock(ITimeFactory::class);
+		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-15 23:30:00'));
 
 		return new CaseTypeVersionWindow(
 			settingsService: $settings,
-			store: new CaseTypeStore($settings),
+			store: new CaseTypeStore(settingsService: $settings),
 			time: $time,
 			logger: ($logger ?? new NullLogger()),
 		);
@@ -146,7 +155,7 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testTodayIsTheClocksDay(): void {
-		$this->assertSame('2026-09-15', $this->window($this->settings(null))->today());
+		$this->assertSame(expected: '2026-09-15', actual: $this->window(settings: $this->settings(objectService: null))->today());
 	}//end testTodayIsTheClocksDay()
 
 	/**
@@ -156,8 +165,8 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 */
 	public function testOpenFillsBlankDatesWithToday(): void {
 		$this->assertSame(
-			['id' => 'ct-2', 'validFrom' => '2026-09-15', 'versionDate' => '2026-09-15'],
-			$this->window($this->settings(null))->open(caseType: ['id' => 'ct-2', 'validFrom' => '  '])
+			expected: ['id' => 'ct-2', 'validFrom' => '2026-09-15', 'versionDate' => '2026-09-15'],
+			actual: $this->window(settings: $this->settings(objectService: null))->open(caseType: ['id' => 'ct-2', 'validFrom' => '  '])
 		);
 	}//end testOpenFillsBlankDatesWithToday()
 
@@ -169,7 +178,7 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	public function testOpenKeepsTypedDates(): void {
 		$caseType = ['validFrom' => '2026-10-01', 'versionDate' => '2026-09-01'];
 
-		$this->assertSame($caseType, $this->window($this->settings(null))->open(caseType: $caseType));
+		$this->assertSame(expected: $caseType, actual: $this->window(settings: $this->settings(objectService: null))->open(caseType: $caseType));
 	}//end testOpenKeepsTypedDates()
 
 	/**
@@ -178,13 +187,19 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testClosePreviousLinksAndClosesOnTheEffectiveDay(): void {
-		$settings = $this->settings($this->objectService(['ct-1' => ['id' => 'ct-1', 'isDraft' => false]]));
+		$settings = $this->settings(objectService: $this->objectService(rows: ['ct-1' => ['id' => 'ct-1', 'isDraft' => false]]));
 
-		$this->window($settings)->closePrevious(caseType: ['previousVersion' => 'ct-1'], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
+		$this->window(settings: $settings)->closePrevious(caseType: ['previousVersion' => 'ct-1'], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
 
 		$this->assertSame(
-			[['object' => ['id' => 'ct-1', 'isDraft' => false, 'supersededBy' => 'ct-2', 'validUntil' => '2026-10-01'], 'register' => 'dossiq', 'schema' => 'caseType']],
-			$this->saves
+			expected: [
+				[
+					'object' => ['id' => 'ct-1', 'isDraft' => false, 'supersededBy' => 'ct-2', 'validUntil' => '2026-10-01'],
+					'register' => 'dossiq',
+					'schema' => 'caseType',
+				],
+			],
+			actual: $this->saves
 		);
 	}//end testClosePreviousLinksAndClosesOnTheEffectiveDay()
 
@@ -194,12 +209,12 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testClosePreviousReadsAnExpandedReference(): void {
-		$settings = $this->settings($this->objectService(['ct-1' => ['id' => 'ct-1']]));
+		$settings = $this->settings(objectService: $this->objectService(rows: ['ct-1' => ['id' => 'ct-1']]));
 
-		$this->window($settings)->closePrevious(caseType: ['previousVersion' => ['id' => 'ct-1']], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
+		$this->window(settings: $settings)->closePrevious(caseType: ['previousVersion' => ['id' => 'ct-1']], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
 
-		$this->assertCount(1, $this->saves);
-		$this->assertSame('ct-2', $this->saves[0]['object']['supersededBy']);
+		$this->assertCount(expectedCount: 1, haystack: $this->saves);
+		$this->assertSame(expected: 'ct-2', actual: $this->saves[0]['object']['supersededBy']);
 	}//end testClosePreviousReadsAnExpandedReference()
 
 	/**
@@ -209,20 +224,20 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 */
 	public function testClosePreviousNeverMovesAChosenClosingDay(): void {
 		$settings = $this->settings(
-			$this->objectService(
-				[
+			objectService: $this->objectService(
+				rows: [
 					'ct-1' => ['id' => 'ct-1', 'validUntil' => '2026-12-31'],
 					'ct-3' => ['id' => 'ct-3'],
 				]
 			)
 		);
-		$window = $this->window($settings);
+		$window = $this->window(settings: $settings);
 
 		$window->closePrevious(caseType: ['previousVersion' => 'ct-1'], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
 		$window->closePrevious(caseType: ['previousVersion' => 'ct-3'], caseTypeId: 'ct-4', takesEffect: '');
 
-		$this->assertSame(['id' => 'ct-1', 'validUntil' => '2026-12-31', 'supersededBy' => 'ct-2'], $this->saves[0]['object']);
-		$this->assertSame(['id' => 'ct-3', 'supersededBy' => 'ct-4'], $this->saves[1]['object']);
+		$this->assertSame(expected: ['id' => 'ct-1', 'validUntil' => '2026-12-31', 'supersededBy' => 'ct-2'], actual: $this->saves[0]['object']);
+		$this->assertSame(expected: ['id' => 'ct-3', 'supersededBy' => 'ct-4'], actual: $this->saves[1]['object']);
 	}//end testClosePreviousNeverMovesAChosenClosingDay()
 
 	/**
@@ -231,9 +246,9 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoPreviousVersionClosesNothing(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->expects($this->never())->method('getObjectService');
-		$window = $this->window($settings);
+		$window = $this->window(settings: $settings);
 
 		$window->closePrevious(caseType: [], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
 		$window->closePrevious(caseType: ['previousVersion' => ' ct-2 '], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
@@ -245,8 +260,8 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadablePreviousVersionIsLoggedNotWritten(): void {
-		$settings = $this->settings($this->objectService([]));
-		$logger = $this->createMock(LoggerInterface::class);
+		$settings = $this->settings(objectService: $this->objectService(rows: []));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())
 			->method('warning')
 			->with(
@@ -254,9 +269,13 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 				['caseType' => 'ct-2', 'previousVersion' => 'ct-1']
 			);
 
-		$this->window($settings, $logger)->closePrevious(caseType: ['previousVersion' => 'ct-1'], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
+		$this->window(settings: $settings, logger: $logger)->closePrevious(
+			caseType: ['previousVersion' => 'ct-1'],
+			caseTypeId: 'ct-2',
+			takesEffect: '2026-10-01'
+		);
 
-		$this->assertSame([], $this->saves);
+		$this->assertSame(expected: [], actual: $this->saves);
 	}//end testAnUnreadablePreviousVersionIsLoggedNotWritten()
 
 	/**
@@ -265,8 +284,8 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailedSaveOfThePreviousVersionIsLogged(): void {
-		$settings = $this->settings($this->objectService(['ct-1' => ['id' => 'ct-1']], failSave: true));
-		$logger = $this->createMock(LoggerInterface::class);
+		$settings = $this->settings(objectService: $this->objectService(rows: ['ct-1' => ['id' => 'ct-1']], failSave: true));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())
 			->method('error')
 			->with('Case type version window: save failed', ['exception' => 'database gone']);
@@ -277,7 +296,11 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 				['caseType' => 'ct-2', 'previousVersion' => 'ct-1']
 			);
 
-		$this->window($settings, $logger)->closePrevious(caseType: ['previousVersion' => 'ct-1'], caseTypeId: 'ct-2', takesEffect: '2026-10-01');
+		$this->window(settings: $settings, logger: $logger)->closePrevious(
+			caseType: ['previousVersion' => 'ct-1'],
+			caseTypeId: 'ct-2',
+			takesEffect: '2026-10-01'
+		);
 	}//end testAFailedSaveOfThePreviousVersionIsLogged()
 
 	/**
@@ -287,23 +310,31 @@ class CaseTypeVersionWindowOpenCloseTest extends TestCase {
 	 */
 	public function testDeprecateRefusesADraftAndTheVersionInForce(): void {
 		$settings = $this->settings(
-			$this->objectService(
-				[
+			objectService: $this->objectService(
+				rows: [
 					'ct-draft' => ['id' => 'ct-draft', 'isDraft' => true, 'supersededBy' => 'ct-9'],
 					'ct-live' => ['id' => 'ct-live', 'isDraft' => false, 'supersededBy' => '  '],
 				]
 			)
 		);
-		$window = $this->window($settings);
+		$window = $this->window(settings: $settings);
 
 		$this->assertSame(
-			['deprecated' => false, 'findings' => ['A draft is not in use yet, so there is nothing to close. Delete it instead.'], 'validUntil' => null],
-			$window->deprecate(caseTypeId: 'ct-draft')
+			expected: [
+				'deprecated' => false,
+				'findings' => ['A draft is not in use yet, so there is nothing to close. Delete it instead.'],
+				'validUntil' => null,
+			],
+			actual: $window->deprecate(caseTypeId: 'ct-draft')
 		);
 		$this->assertSame(
-			['deprecated' => false, 'findings' => ['This is the version new cases are filed under. Publish its successor first.'], 'validUntil' => null],
-			$window->deprecate(caseTypeId: 'ct-live')
+			expected: [
+				'deprecated' => false,
+				'findings' => ['This is the version new cases are filed under. Publish its successor first.'],
+				'validUntil' => null,
+			],
+			actual: $window->deprecate(caseTypeId: 'ct-live')
 		);
-		$this->assertSame([], $this->saves);
+		$this->assertSame(expected: [], actual: $this->saves);
 	}//end testDeprecateRefusesADraftAndTheVersionInForce()
 }//end class

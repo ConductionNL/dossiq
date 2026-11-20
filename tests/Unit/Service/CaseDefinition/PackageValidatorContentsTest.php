@@ -109,28 +109,28 @@ final class PackageValidatorContentsTest extends TestCase {
 		];
 
 		$result = $this->validator()->validatePackage(
-			$this->package(['manifest.json' => json_encode($manifest), 'statuses.json' => '{bad'])
+			$this->package(entries: ['manifest.json' => json_encode($manifest), 'statuses.json' => '{bad'])
 		);
 
-		self::assertFalse($result['valid']);
+		self::assertFalse(condition: $result['valid']);
 		self::assertSame(
-			[
+			expected: [
 				'Missing required manifest field: exportDate',
 				'Missing required manifest field: caseType',
 				"Component 'fields' declared in manifest but file 'fields.json' not found",
 				'Invalid JSON in statuses.json: Syntax error',
 			],
-			$result['errors']
+			actual: $result['errors']
 		);
 		$uncarried = ' is referenced by this package but not carried in it, so the target instance has to hold it already.';
 		self::assertSame(
-			[
+			expected: [
 				'Component "workflows" declared but no workflow files found',
 				"Dependency 'dep-a'" . $uncarried,
 				"Dependency 'dep-b'" . $uncarried,
 				"Dependency 'st-1'" . $uncarried,
 			],
-			$result['warnings']
+			actual: $result['warnings']
 		);
 	}//end testEveryContentProblemIsReported()
 
@@ -150,7 +150,7 @@ final class PackageValidatorContentsTest extends TestCase {
 
 		$result = $this->validator()->validatePackage(
 			$this->package(
-				[
+				entries: [
 					'manifest.json' => json_encode($manifest),
 					'statuses.json' => json_encode([['id' => 'st-1']]),
 					'workflows/intake.json' => '{}',
@@ -158,9 +158,9 @@ final class PackageValidatorContentsTest extends TestCase {
 			)
 		);
 
-		self::assertTrue($result['valid']);
-		self::assertSame([], $result['errors']);
-		self::assertSame([], $result['warnings']);
+		self::assertTrue(condition: $result['valid']);
+		self::assertSame(expected: [], actual: $result['errors']);
+		self::assertSame(expected: [], actual: $result['warnings']);
 	}//end testACompletePackageCarryingItsDependenciesIsClean()
 
 	/**
@@ -169,14 +169,14 @@ final class PackageValidatorContentsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAShippedPackageIsCheckedAndLogged(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::once())
 			->method('info')
 			->with('Validated shipped package {id}: {errorCount} error(s)', ['id' => 'empty-package', 'errorCount' => 1]);
 
 		$result = $this->validator(logger: $logger)->validateShipped(['id' => 'empty-package', 'files' => []]);
 
-		self::assertFalse($result['valid']);
-		self::assertSame(['package.json is missing.'], $result['errors']);
+		self::assertFalse(condition: $result['valid']);
+		self::assertSame(expected: ['package.json is missing.'], actual: $result['errors']);
 	}//end testAShippedPackageIsCheckedAndLogged()
 }//end class

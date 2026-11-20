@@ -149,18 +149,38 @@ class CreateSubCaseHandlerTest extends TestCase {
 			/** @var array<int, string> */
 			public array $targets = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param mixed $recorded The recorded.
+			 */
 			public function __construct(&$recorded) {
 				$this->recorded = &$recorded;
 			}
 
-			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+			/**
+			 * Stand-in for saveObject().
+			 *
+			 * @param array $object The object.
+			 * @param ObjectSaveOptions $options The options.
+			 * @param bool $_rbac The rbac.
+			 * @param bool $_multitenancy The multitenancy.
+			 *
+			 * @return array
+			 */
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
 				$this->targets = [$options->target->register, $options->target->schema];
 				$this->recorded = $object;
 				return ['id' => 'sub-7'];
 			}
 		};
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			function (string $key): string {
@@ -171,7 +191,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler(settingsService: $settings, logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-3', 'title' => 'Controle', 'handoffSource' => '  series-12  '],
@@ -179,12 +199,12 @@ class CreateSubCaseHandlerTest extends TestCase {
 			transitionContext: [],
 		);
 
-		self::assertTrue($result->succeeded);
-		self::assertSame(['subCaseId' => 'sub-7'], $result->data);
-		self::assertSame(['reg-1', 'case-schema'], $objectService->targets);
+		self::assertTrue(condition: $result->succeeded);
+		self::assertSame(expected: ['subCaseId' => 'sub-7'], actual: $result->data);
+		self::assertSame(expected: ['reg-1', 'case-schema'], actual: $objectService->targets);
 		self::assertSame(
-			['title' => 'Controle', 'caseType' => 'ct-3', 'hoofdzaak' => 'parent-uuid', 'handoffSource' => 'series-12'],
-			$recorded
+			expected: ['title' => 'Controle', 'caseType' => 'ct-3', 'hoofdzaak' => 'parent-uuid', 'handoffSource' => 'series-12'],
+			actual: $recorded
 		);
 	}//end testWritesTheHandoffSourceOntoTheSubCase()
 

@@ -55,10 +55,10 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 	 * @return PortalCaseMessages
 	 */
 	private function service(ObjectServiceInterface $objects, ?LoggerInterface $logger = null): PortalCaseMessages {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(fn (string $key): string => ($this->config[$key] ?? ''));
-		return new PortalCaseMessages($settings, ($logger ?? new NullLogger()));
+		return new PortalCaseMessages(settingsService: $settings, logger: ($logger ?? new NullLogger()));
 	}//end service()
 
 	/**
@@ -67,7 +67,7 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 	 * @return ObjectServiceInterface&\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private function objects(): ObjectServiceInterface {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		return $objects;
 	}//end objects()
@@ -81,7 +81,7 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 		$objects = $this->objects();
 		$objects->expects($this->never())->method('find');
 
-		$this->assertSame([], $this->service($objects)->forCase('   '));
+		$this->assertSame(expected: [], actual: $this->service(objects: $objects)->forCase('   '));
 	}//end testABlankCaseIdIsNotRead()
 
 	/**
@@ -94,7 +94,7 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 		$objects = $this->objects();
 		$objects->expects($this->never())->method('find');
 
-		$this->assertSame([], $this->service($objects)->forCase(self::CASE_ID));
+		$this->assertSame(expected: [], actual: $this->service(objects: $objects)->forCase(self::CASE_ID));
 	}//end testAnUnconfiguredMessageSchemaAnswersNothing()
 
 	/**
@@ -103,13 +103,13 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutAPortalSubjectAnswersNothing(): void {
-		$entity = $this->createMock(ObjectEntityInterface::class);
+		$entity = $this->createMock(originalClassName: ObjectEntityInterface::class);
 		$entity->method('jsonSerialize')->willReturn(['id' => self::CASE_ID, 'portalSubject' => '']);
 		$objects = $this->objects();
 		$objects->method('find')->willReturn($entity);
 		$objects->expects($this->never())->method('searchObjectsBySlug');
 
-		$this->assertSame([], $this->service($objects)->forCase(self::CASE_ID));
+		$this->assertSame(expected: [], actual: $this->service(objects: $objects)->forCase(self::CASE_ID));
 	}//end testACaseWithoutAPortalSubjectAnswersNothing()
 
 	/**
@@ -120,13 +120,13 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 	public function testAFailingReadIsLoggedAndAnswersNothing(): void {
 		$objects = $this->objects();
 		$objects->method('find')->willThrowException(new RuntimeException('store down'));
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the portal messages of a case could not be read',
 			['reason' => 'store down']
 		);
 
-		$this->assertSame([], $this->service($objects, $logger)->forCase(self::CASE_ID));
+		$this->assertSame(expected: [], actual: $this->service(objects: $objects, logger: $logger)->forCase(self::CASE_ID));
 	}//end testAFailingReadIsLoggedAndAnswersNothing()
 
 	/**
@@ -135,10 +135,10 @@ class PortalCaseMessagesFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMessageWithoutADirectionIsNotTheResidents(): void {
-		$service = $this->service($this->objects());
+		$service = $this->service(objects: $this->objects());
 
-		$this->assertFalse($service->isTheResidents(['senderRef' => 'r', 'recipientRef' => 'r'], 'r'));
-		$this->assertTrue($service->isTheResidents(['direction' => 'citizen_to_handler', 'senderRef' => 'r'], 'r'));
-		$this->assertFalse($service->isTheResidents(['direction' => 'handler_to_citizen', 'senderRef' => 'r', 'recipientRef' => 'x'], 'r'));
+		$this->assertFalse(condition: $service->isTheResidents(['senderRef' => 'r', 'recipientRef' => 'r'], 'r'));
+		$this->assertTrue(condition: $service->isTheResidents(['direction' => 'citizen_to_handler', 'senderRef' => 'r'], 'r'));
+		$this->assertFalse(condition: $service->isTheResidents(['direction' => 'handler_to_citizen', 'senderRef' => 'r', 'recipientRef' => 'x'], 'r'));
 	}//end testAMessageWithoutADirectionIsNotTheResidents()
 }//end class

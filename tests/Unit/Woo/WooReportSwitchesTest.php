@@ -179,10 +179,10 @@ class WooReportSwitchesTest extends TestCase {
 	 * @return IUserSession The session.
 	 */
 	private function sessionOf(?string $uid): IUserSession {
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$user    = null;
 		if ($uid !== null) {
-			$user = $this->createMock(IUser::class);
+			$user = $this->createMock(originalClassName: IUser::class);
 			$user->method('getUID')->willReturn($uid);
 		}
 
@@ -200,8 +200,8 @@ class WooReportSwitchesTest extends TestCase {
 		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
 		$none = ['throughput' => false, 'parties' => false];
 
-		$this->assertSame($none, $this->switches(stored: $on, session: $this->sessionOf(uid: null))->offeredToCurrentUser());
-		$this->assertSame($none, $this->switches(stored: $on)->offeredToCurrentUser());
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on, session: $this->sessionOf(uid: null))->offeredToCurrentUser());
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on)->offeredToCurrentUser());
 	}//end testNothingIsOfferedWithoutASignedInUser()
 
 	/**
@@ -213,18 +213,18 @@ class WooReportSwitchesTest extends TestCase {
 		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
 
 		$this->assertSame(
-			['throughput' => true, 'parties' => true],
-			$this->switches(stored: $on, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+			expected: ['throughput' => true, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
 		);
 		$this->assertSame(
-			['throughput' => false, 'parties' => true],
-			$this->switches(stored: $on, session: $this->sessionOf(uid: 'clerk'))->offeredToCurrentUser()
+			expected: ['throughput' => false, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'clerk'))->offeredToCurrentUser()
 		);
 
 		$off = [WooReportSwitches::THROUGHPUT => 'false', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'no'];
 		$this->assertSame(
-			['throughput' => false, 'parties' => false],
-			$this->switches(stored: $off, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+			expected: ['throughput' => false, 'parties' => false],
+			actual: $this->switches(stored: $off, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
 		);
 	}//end testTheMenuOffersEachReportByItsOwnRule()
 
@@ -234,12 +234,12 @@ class WooReportSwitchesTest extends TestCase {
 	 * @return void
 	 */
 	public function testTruthyReadsBooleansAndYesWords(): void {
-		$this->assertTrue(WooReportSwitches::truthy(value: true));
-		$this->assertFalse(WooReportSwitches::truthy(value: false));
-		$this->assertTrue(WooReportSwitches::truthy(value: ' ON '));
-		$this->assertTrue(WooReportSwitches::truthy(value: 'Yes'));
-		$this->assertTrue(WooReportSwitches::truthy(value: 1));
-		$this->assertFalse(WooReportSwitches::truthy(value: 'ja'));
-		$this->assertFalse(WooReportSwitches::truthy(value: null));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: true));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: false));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: ' ON '));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 'Yes'));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 1));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: 'ja'));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: null));
 	}//end testTruthyReadsBooleansAndYesWords()
 }//end class

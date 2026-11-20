@@ -254,21 +254,21 @@ class CasePublicationStateTest extends TestCase {
 	public function testDeliverWithAWriterGoesThroughTheWriter(): void {
 		$items = [['documentRef' => 'doc-1', 'position' => 1]];
 		$send = static fn (): string => 'pub-9';
-		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer = $this->createMock(originalClassName: WooRecordedDeliveryInterface::class);
 		$writer->expects($this->once())->method('deliver')
 			->with(
-				$this->identicalTo('case-1'),
-				$this->identicalTo('d-1'),
-				$this->identicalTo($items),
-				$this->identicalTo($send)
+				$this->identicalTo(value: 'case-1'),
+				$this->identicalTo(value: 'd-1'),
+				$this->identicalTo(value: $items),
+				$this->identicalTo(value: $send)
 			)
 			->willReturn(['publicationId' => 'pub-9', 'setId' => 'set-4']);
 
 		$ledger = new CasePublicationState(settingsService: $this->settings(), logger: new NullLogger(), deliveredSets: $writer);
 
 		$this->assertSame(
-			['publicationId' => 'pub-9', 'setId' => 'set-4'],
-			$ledger->deliver(caseId: 'case-1', decisionId: 'd-1', items: $items, send: $send)
+			expected: ['publicationId' => 'pub-9', 'setId' => 'set-4'],
+			actual: $ledger->deliver(caseId: 'case-1', decisionId: 'd-1', items: $items, send: $send)
 		);
 	}//end testDeliverWithAWriterGoesThroughTheWriter()
 
@@ -278,10 +278,10 @@ class CasePublicationStateTest extends TestCase {
 	 * @return void
 	 */
 	public function testMarkWithdrawnStampsTheSet(): void {
-		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer = $this->createMock(originalClassName: WooRecordedDeliveryInterface::class);
 		$writer->expects($this->once())->method('markWithdrawn')
-			->with($this->identicalTo('case-1'), $this->identicalTo('pub-1'));
-		$logger = $this->createMock(LoggerInterface::class);
+			->with($this->identicalTo(value: 'case-1'), $this->identicalTo(value: 'pub-1'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->never())->method('error');
 
 		(new CasePublicationState(settingsService: $this->settings(), logger: $logger, deliveredSets: $writer))
@@ -294,13 +294,13 @@ class CasePublicationStateTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailedWithdrawStampIsLoggedNotThrown(): void {
-		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer = $this->createMock(originalClassName: WooRecordedDeliveryInterface::class);
 		$writer->method('markWithdrawn')->willThrowException(new RuntimeException('set is frozen'));
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error')
 			->with(
-				$this->identicalTo('WooPublicationService: the delivered set could not record the withdraw'),
-				$this->identicalTo(['app' => 'dossiq', 'publicationId' => 'pub-1', 'error' => 'set is frozen'])
+				$this->identicalTo(value: 'WooPublicationService: the delivered set could not record the withdraw'),
+				$this->identicalTo(value: ['app' => 'dossiq', 'publicationId' => 'pub-1', 'error' => 'set is frozen'])
 			);
 
 		(new CasePublicationState(settingsService: $this->settings(), logger: $logger, deliveredSets: $writer))

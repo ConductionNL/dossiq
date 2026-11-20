@@ -51,10 +51,12 @@ class ZrcCaseRelationRulesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseTypeUrlWithoutAUuidIsNotLookedUp(): void {
-		$rules = $this->ruleGroup(ZrcCaseRelationRules::class, self::OFFERS);
+		$rules = $this->ruleGroup(class: ZrcCaseRelationRules::class, objects: self::OFFERS);
 
-		$this->assertNull($rules->validateProductenOfDiensten(['caseType' => 'http://example.com/zaaktypen/geen-uuid', 'productenOfDiensten' => ['not a url']]));
-		$this->assertSame(0, $this->finds);
+		$this->assertNull(
+			actual: $rules->validateProductenOfDiensten(['caseType' => 'http://example.com/zaaktypen/geen-uuid', 'productenOfDiensten' => ['not a url']])
+		);
+		$this->assertSame(expected: 0, actual: $this->finds);
 	}//end testACaseTypeUrlWithoutAUuidIsNotLookedUp()
 
 	/**
@@ -63,13 +65,21 @@ class ZrcCaseRelationRulesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseTypeTheStoreDoesNotHaveOffersNothing(): void {
-		$rules = $this->ruleGroup(ZrcCaseRelationRules::class, self::OFFERS);
+		$rules = $this->ruleGroup(class: ZrcCaseRelationRules::class, objects: self::OFFERS);
 		$other = '44444444-4444-4444-8444-444444444444';
 
-		$this->assertNull($rules->validateProductenOfDiensten(['caseType' => 'http://example.com/zaaktypen/' . $other, 'productenOfDiensten' => ['not a url']]));
-		$this->assertSame(1, $this->finds);
+		$this->assertNull(
+			actual: $rules->validateProductenOfDiensten(['caseType' => 'http://example.com/zaaktypen/' . $other, 'productenOfDiensten' => ['not a url']])
+		);
+		$this->assertSame(expected: 1, actual: $this->finds);
 
-		$refused = $rules->validateProductenOfDiensten(['caseType' => 'http://example.com/zaaktypen/' . self::TYPE, 'productenOfDiensten' => ['not a url']]);
-		$this->assertSame('invalid-products-services', $refused['invalidParams'][0]['code'], 'the control: a zaaktype that is found does refuse');
+		$refused = $rules->validateProductenOfDiensten(
+			['caseType' => 'http://example.com/zaaktypen/' . self::TYPE, 'productenOfDiensten' => ['not a url']]
+		);
+		$this->assertSame(
+			expected: 'invalid-products-services',
+			actual: $refused['invalidParams'][0]['code'],
+			message: 'the control: a zaaktype that is found does refuse'
+		);
 	}//end testACaseTypeTheStoreDoesNotHaveOffersNothing()
 }//end class

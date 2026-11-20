@@ -50,20 +50,20 @@ final class BrcDocumentLinkHandlerEdgesTest extends TestCase {
 		$store->objects[self::BIO] = null;
 		$notFound = new JSONResponse(data: ['detail' => 'Not found'], statusCode: 404);
 
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->method('getObjectService')->willReturn($store);
 		$zgw->method('loadMappingConfig')->willReturn(['sourceRegister' => '7', 'sourceSchema' => '71']);
 		$zgw->expects($this->once())->method('notFoundResponse')->willReturn($notFound);
 		$zgw->expects($this->never())->method('storeFailureResponse');
 		$zgw->expects($this->never())->method('notifyDeleted');
-		$sync = $this->createMock(BrcCrossRegisterSyncInterface::class);
+		$sync = $this->createMock(originalClassName: BrcCrossRegisterSyncInterface::class);
 		$sync->expects($this->never())->method('deleteOioByDecisionAndIo');
 
 		$response = (new BrcDocumentLinkHandler(zgwService: $zgw, sync: $sync))
-			->destroy(request: $this->createMock(IRequest::class), uuid: self::BIO);
+			->destroy(request: $this->createMock(originalClassName: IRequest::class), uuid: self::BIO);
 
-		$this->assertSame($notFound, $response);
-		$this->assertSame([[self::BIO, '7', '71']], $store->callsOf('find'));
-		$this->assertSame([], $store->callsOf('deleteObject'));
+		$this->assertSame(expected: $notFound, actual: $response);
+		$this->assertSame(expected: [[self::BIO, '7', '71']], actual: $store->callsOf('find'));
+		$this->assertSame(expected: [], actual: $store->callsOf('deleteObject'));
 	}//end testADeleteOfALinkTheStoreAnswersAsNothingIsTheNotFoundAnswer()
 }//end class

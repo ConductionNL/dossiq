@@ -215,12 +215,12 @@ class CapacityGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testANonNumericCapacityIsNoLimit(): void {
-		$guard = $this->makeGuard('5 cases', $this->sitting(5));
+		$guard = $this->makeGuard(capacity: '5 cases', cases: $this->sitting(howMany: 5));
 
-		$this->assertSame(0, $guard->capacityOf(self::TARGET));
+		$this->assertSame(expected: 0, actual: $guard->capacityOf(self::TARGET));
 
 		$result = $guard->evaluate($this->config(), ['id' => 'case-new'], 'behandelaar');
-		$this->assertTrue($result->passed, 'an unreadable capacity must not cap the status');
+		$this->assertTrue(condition: $result->passed, message: 'an unreadable capacity must not cap the status');
 	}//end testANonNumericCapacityIsNoLimit()
 
 	/**

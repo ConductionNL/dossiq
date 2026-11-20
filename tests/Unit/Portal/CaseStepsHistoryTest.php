@@ -68,12 +68,12 @@ class CaseStepsHistoryTest extends TestCase {
 		$steps = (new CaseSteps())->forCase(['status' => 's3', 'statusHistory' => $history], $this->statuses());
 
 		$this->assertSame(
-			[
+			expected: [
 				['label' => 'Ontvangen', 'state' => 'done', 'date' => '2026-03-01'],
 				['label' => 'In behandeling', 'state' => 'done'],
 				['label' => 'Besluit', 'state' => 'current'],
 			],
-			$steps
+			actual: $steps
 		);
 	}//end testAJsonHistoryDatesWhatItCanRead()
 
@@ -88,8 +88,8 @@ class CaseStepsHistoryTest extends TestCase {
 			$this->statuses()
 		);
 
-		$this->assertSame(['label' => 'In behandeling', 'state' => 'current', 'date' => '2026-04-02'], $steps[1]);
-		$this->assertArrayNotHasKey('date', $steps[0]);
+		$this->assertSame(expected: ['label' => 'In behandeling', 'state' => 'current', 'date' => '2026-04-02'], actual: $steps[1]);
+		$this->assertArrayNotHasKey(key: 'date', array: $steps[0]);
 	}//end testTheCurrentStepFallsBackToTheCasesEntryMoment()
 
 	/**
@@ -109,11 +109,11 @@ class CaseStepsHistoryTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				['label' => 'Met uuid', 'state' => 'current'],
 				['label' => 'Met self', 'state' => 'todo'],
 			],
-			$steps
+			actual: $steps
 		);
 	}//end testAStatusTypeWithoutAnIdIsNoStep()
 
@@ -125,6 +125,6 @@ class CaseStepsHistoryTest extends TestCase {
 	public function testAnEndedCaseDoesNotPromiseTheRest(): void {
 		$steps = (new CaseSteps())->forCase(['status' => 's1', 'endDate' => '2026-05-01'], $this->statuses());
 
-		$this->assertSame([['label' => 'Ontvangen', 'state' => 'current']], $steps);
+		$this->assertSame(expected: [['label' => 'Ontvangen', 'state' => 'current']], actual: $steps);
 	}//end testAnEndedCaseDoesNotPromiseTheRest()
 }//end class

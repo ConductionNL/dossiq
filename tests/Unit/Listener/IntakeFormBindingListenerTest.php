@@ -69,12 +69,15 @@ class IntakeFormBindingListenerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$settings = $this->createMock(SettingsServiceInterface::class);
+		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($key === 'case_type_schema') ? 'caseType' : ''
+			static fn (string $key): string => match ($key) {
+				'case_type_schema' => 'caseType',
+				default => '',
+			}
 		);
-		$this->check = $this->createMock(IntakeFormBindingCheckInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->check = $this->createMock(originalClassName: IntakeFormBindingCheckInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->listener = new IntakeFormBindingListener(settingsService: $settings, check: $this->check, logger: $this->logger);
 	}//end setUp()
 
@@ -102,22 +105,22 @@ class IntakeFormBindingListenerTest extends TestCase {
 	public function testACreateWithFindingsIsRefused(): void {
 		$findings = [['field' => 'subject', 'problem' => 'unmapped']];
 		$this->check->expects($this->once())->method('findingsFor')
-			->with($this->callback(static fn (array $ct): bool => $ct['intakeFormRef'] === 'form-1'))
+			->with($this->callback(callback: static fn (array $ct): bool => $ct['intakeFormRef'] === 'form-1'))
 			->willReturn($findings);
 		$this->check->expects($this->once())->method('sentenceFor')->with($findings)->willReturn('The form leaves subject empty.');
 
-		$event = new ObjectCreatingEvent($this->entity('caseType', ['intakeFormRef' => 'form-1']));
+		$event = new ObjectCreatingEvent(object: $this->entity(schema: 'caseType', data: ['intakeFormRef' => 'form-1']));
 		$this->listener->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[
+			expected: [
 				'message' => 'The form leaves subject empty.',
 				'error' => IntakeFormBindingCheckInterface::RULE,
 				'code' => IntakeFormBindingCheckInterface::RULE,
 				'findings' => $findings,
 			],
-			$event->getErrors()
+			actual: $event->getErrors()
 		);
 	}//end testACreateWithFindingsIsRefused()
 
@@ -128,18 +131,18 @@ class IntakeFormBindingListenerTest extends TestCase {
 	 */
 	public function testAnUpdateIsJudgedOnTheNewObject(): void {
 		$this->check->expects($this->once())->method('findingsFor')
-			->with($this->callback(static fn (array $ct): bool => $ct['intakeFormRef'] === 'new'))
+			->with($this->callback(callback: static fn (array $ct): bool => $ct['intakeFormRef'] === 'new'))
 			->willReturn([['field' => 'x']]);
 		$this->check->method('sentenceFor')->willReturn('bad');
 
 		$event = new ObjectUpdatingEvent(
-			$this->entity('https://host/schemas/caseType', ['intakeFormRef' => 'new']),
-			$this->entity('caseType', ['intakeFormRef' => 'old'])
+			$this->entity(schema: 'https://host/schemas/caseType', data: ['intakeFormRef' => 'new']),
+			$this->entity(schema: 'caseType', data: ['intakeFormRef' => 'old'])
 		);
 		$this->listener->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
-		$this->assertSame('bad', $event->getErrors()['message']);
+		$this->assertTrue(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: 'bad', actual: $event->getErrors()['message']);
 	}//end testAnUpdateIsJudgedOnTheNewObject()
 
 	/**
@@ -151,11 +154,11 @@ class IntakeFormBindingListenerTest extends TestCase {
 		$this->check->method('findingsFor')->willReturn([]);
 		$this->check->expects($this->never())->method('sentenceFor');
 
-		$event = new ObjectCreatingEvent($this->entity('caseType', ['intakeFormRef' => 'form-1']));
+		$event = new ObjectCreatingEvent(object: $this->entity(schema: 'caseType', data: ['intakeFormRef' => 'form-1']));
 		$this->listener->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
-		$this->assertSame([], $event->getErrors());
+		$this->assertFalse(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: [], actual: $event->getErrors());
 	}//end testABindingWithoutFindingsPasses()
 
 	/**
@@ -166,10 +169,10 @@ class IntakeFormBindingListenerTest extends TestCase {
 	public function testAnotherSchemaIsNotJudged(): void {
 		$this->check->expects($this->never())->method('findingsFor');
 
-		$event = new ObjectCreatingEvent($this->entity('case', ['intakeFormRef' => 'form-1']));
+		$event = new ObjectCreatingEvent(object: $this->entity(schema: 'case', data: ['intakeFormRef' => 'form-1']));
 		$this->listener->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnotherSchemaIsNotJudged()
 
 	/**
@@ -178,7 +181,7 @@ class IntakeFormBindingListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadablePayloadIsSkipped(): void {
-		$entity = $this->createMock(ObjectEntity::class);
+		$entity = $this->createMock(originalClassName: ObjectEntity::class);
 		$entity->method('jsonSerialize')->willThrowException(new RuntimeException('no data'));
 		$this->check->expects($this->never())->method('findingsFor');
 		$this->logger->expects($this->once())->method('debug')
@@ -187,7 +190,7 @@ class IntakeFormBindingListenerTest extends TestCase {
 		$event = new ObjectCreatingEvent($entity);
 		$this->listener->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnUnreadablePayloadIsSkipped()
 
 	/**
@@ -198,6 +201,6 @@ class IntakeFormBindingListenerTest extends TestCase {
 	public function testAPostPersistEventIsIgnored(): void {
 		$this->check->expects($this->never())->method('findingsFor');
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity('caseType', ['intakeFormRef' => 'form-1'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(schema: 'caseType', data: ['intakeFormRef' => 'form-1'])));
 	}//end testAPostPersistEventIsIgnored()
 }//end class

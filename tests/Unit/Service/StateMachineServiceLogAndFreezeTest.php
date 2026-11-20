@@ -55,8 +55,8 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->settings = $this->createMock(SettingsService::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -96,8 +96,8 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 		$this->configure(store: $store, schema: '');
 		$this->logger->expects($this->once())->method('warning')->with('StateMachineService: log schema not configured');
 
-		$this->assertSame([], $this->service()->logTransition(decisionId: 'd1', from: 'draft', to: 'approved-mandate'));
-		$this->assertSame(0, $store->writes);
+		$this->assertSame(expected: [], actual: $this->service()->logTransition(decisionId: 'd1', from: 'draft', to: 'approved-mandate'));
+		$this->assertSame(expected: 0, actual: $store->writes);
 	}//end testLogWithoutSchemaWarnsAndWritesNothing()
 
 	/**
@@ -116,18 +116,18 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 			metadata: ['actor' => 'alice', 'actorType' => 'medewerker', 'trigger' => 'manual', 'evidenceMaterial' => ['doc-1']]
 		);
 
-		$this->assertSame(1, $store->writes);
-		$this->assertSame('d1', $saved['decisionId']);
-		$this->assertSame('generated-1', $saved['id']);
+		$this->assertSame(expected: 1, actual: $store->writes);
+		$this->assertSame(expected: 'd1', actual: $saved['decisionId']);
+		$this->assertSame(expected: 'generated-1', actual: $saved['id']);
 		$transition = $saved['overgang'];
-		$this->assertSame('approved-mandate', $transition['van']);
-		$this->assertSame('signed', $transition['to']);
-		$this->assertSame('alice', $transition['actor']);
-		$this->assertSame('medewerker', $transition['actorType']);
-		$this->assertSame('manual', $transition['trigger']);
-		$this->assertSame(['doc-1'], $transition['evidenceMaterial']);
-		$this->assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $transition['moment']));
-		$this->assertSame($saved, $store->all('transitionLog')[0]);
+		$this->assertSame(expected: 'approved-mandate', actual: $transition['van']);
+		$this->assertSame(expected: 'signed', actual: $transition['to']);
+		$this->assertSame(expected: 'alice', actual: $transition['actor']);
+		$this->assertSame(expected: 'medewerker', actual: $transition['actorType']);
+		$this->assertSame(expected: 'manual', actual: $transition['trigger']);
+		$this->assertSame(expected: ['doc-1'], actual: $transition['evidenceMaterial']);
+		$this->assertNotFalse(condition: \DateTimeImmutable::createFromFormat(format: \DateTimeInterface::ATOM, datetime: $transition['moment']));
+		$this->assertSame(expected: $saved, actual: $store->all('transitionLog')[0]);
 	}//end testLogWritesTheTransitionRecord()
 
 	/**
@@ -141,10 +141,10 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 
 		$transition = $this->service()->logTransition(decisionId: 'd2', from: 'signed', to: 'sent')['overgang'];
 
-		$this->assertSame('systeem', $transition['actor']);
-		$this->assertSame('systeem', $transition['actorType']);
-		$this->assertSame('automatic', $transition['trigger']);
-		$this->assertNull($transition['evidenceMaterial']);
+		$this->assertSame(expected: 'systeem', actual: $transition['actor']);
+		$this->assertSame(expected: 'systeem', actual: $transition['actorType']);
+		$this->assertSame(expected: 'automatic', actual: $transition['trigger']);
+		$this->assertNull(actual: $transition['evidenceMaterial']);
 	}//end testLogDefaultsToTheSystemActor()
 
 	/**
@@ -161,7 +161,7 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 			['exception' => 'Save refused for transitionLog', 'decisionId' => 'd3']
 		);
 
-		$this->assertSame([], $this->service()->logTransition(decisionId: 'd3', from: 'sent', to: 'archived'));
+		$this->assertSame(expected: [], actual: $this->service()->logTransition(decisionId: 'd3', from: 'sent', to: 'archived'));
 	}//end testFailedWriteIsLoggedAndSwallowed()
 
 	/**
@@ -174,7 +174,7 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 		$this->service()->assertDeletable(stored: ['currentStatus' => 'approved-mandate']);
 		$this->service()->assertDeletable(stored: []);
 
-		$this->addToAssertionCount(3);
+		$this->addToAssertionCount(count: 3);
 	}//end testDraftAcceptsContentEdits()
 
 	/**
@@ -183,8 +183,8 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 	 * @return void
 	 */
 	public function testSignedRefusesContentEdits(): void {
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage(StateMachineService::IMMUTABLE_ERROR);
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: StateMachineService::IMMUTABLE_ERROR);
 
 		$this->service()->assertMutable(stored: ['currentStatus' => 'signed'], changed: ['rationale' => 'changed']);
 	}//end testSignedRefusesContentEdits()
@@ -197,7 +197,7 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 	public function testSignedAcceptsNonContentFields(): void {
 		$this->service()->assertMutable(stored: ['currentStatus' => 'sent'], changed: ['currentStatus' => 'archived', 'notes' => 'x']);
 
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testSignedAcceptsNonContentFields()
 
 	/**
@@ -209,10 +209,10 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 		$service = $this->service();
 		$service->assertMutable(stored: ['currentStatus' => 'draft'], changed: ['supersededBy' => 'd9']);
 		$service->assertMutable(stored: ['currentStatus' => 'draft', 'supersededBy' => 'd9'], changed: ['supersededBy' => 'd9']);
-		$this->addToAssertionCount(2);
+		$this->addToAssertionCount(count: 2);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage(StateMachineService::IMMUTABLE_ERROR);
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: StateMachineService::IMMUTABLE_ERROR);
 		$service->assertMutable(stored: ['currentStatus' => 'draft', 'supersededBy' => 'd9'], changed: ['supersededBy' => 'd8']);
 	}//end testWriteOnceFieldCannotChange()
 
@@ -222,8 +222,8 @@ class StateMachineServiceLogAndFreezeTest extends TestCase {
 	 * @return void
 	 */
 	public function testFrozenCannotBeDeleted(): void {
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage(StateMachineService::IMMUTABLE_ERROR);
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: StateMachineService::IMMUTABLE_ERROR);
 
 		$this->service()->assertDeletable(stored: ['currentStatus' => 'sent']);
 	}//end testFrozenCannotBeDeleted()

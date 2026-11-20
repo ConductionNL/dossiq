@@ -55,7 +55,7 @@ class RetiredDocumentStepsTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->steps = new RetiredDocumentSteps(new RetiredTemplateSyntax());
+		$this->steps = new RetiredDocumentSteps(syntax: new RetiredTemplateSyntax());
 	}//end setUp()
 
 	/**
@@ -74,9 +74,9 @@ class RetiredDocumentStepsTest extends TestCase {
 			]
 		);
 
-		$this->assertSame('filinq.generate-document', $step['type']);
+		$this->assertSame(expected: 'filinq.generate-document', actual: $step['type']);
 		$this->assertSame(
-			[
+			expected: [
 				'template' => 'Dear {{ item.applicant }}, case {{ item.number }}',
 				'templateName' => 'Besluit {{ item.number }}',
 				'filename' => 'Besluit {{ item.number }}',
@@ -90,7 +90,7 @@ class RetiredDocumentStepsTest extends TestCase {
 					'addressees' => 'case',
 				],
 			],
-			$step['config']
+			actual: $step['config']
 		);
 	}//end testCreateFilesARewrittenPdfOnTheCase()
 
@@ -104,9 +104,9 @@ class RetiredDocumentStepsTest extends TestCase {
 			config: ['templateSlug' => 'Body', 'documentType' => 'brief', 'outputName' => '  ', 'output' => ' ']
 		);
 
-		$this->assertSame('document', $step['config']['templateName']);
-		$this->assertSame('document', $step['config']['filename']);
-		$this->assertSame('actionResult', $step['config']['output']);
+		$this->assertSame(expected: 'document', actual: $step['config']['templateName']);
+		$this->assertSame(expected: 'document', actual: $step['config']['filename']);
+		$this->assertSame(expected: 'actionResult', actual: $step['config']['output']);
 	}//end testCreateFallsBackToDefaultNameAndOutput()
 
 	/**
@@ -115,8 +115,8 @@ class RetiredDocumentStepsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCreateWithoutDocumentTypeIsRefused(): void {
-		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('the step names no document type, which the case dossier needs to file the document');
+		$this->expectException(exception: UnmappableStep::class);
+		$this->expectExceptionMessage(message: 'the step names no document type, which the case dossier needs to file the document');
 
 		$this->steps->create(config: ['templateSlug' => 'Body', 'documentType' => '   ']);
 	}//end testCreateWithoutDocumentTypeIsRefused()
@@ -127,8 +127,8 @@ class RetiredDocumentStepsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCreateWithoutTextIsRefused(): void {
-		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('the step has no template text');
+		$this->expectException(exception: UnmappableStep::class);
+		$this->expectExceptionMessage(message: 'the step has no template text');
 
 		$this->steps->create(config: ['templateSlug' => " \n ", 'documentType' => 'brief']);
 	}//end testCreateWithoutTextIsRefused()
@@ -144,7 +144,7 @@ class RetiredDocumentStepsTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'type' => 'filinq.generate-document',
 				'config' => [
 					'template' => 'Summary of {{ item.title }} ',
@@ -154,7 +154,7 @@ class RetiredDocumentStepsTest extends TestCase {
 					'output' => 'actionResult',
 				],
 			],
-			$step
+			actual: $step
 		);
 	}//end testMergeIntoAFieldStoresNoFile()
 
@@ -166,8 +166,8 @@ class RetiredDocumentStepsTest extends TestCase {
 	public function testMergeFallsBackToTemplateSlug(): void {
 		$step = $this->steps->merge(config: ['templateSlug' => 'From slug', 'targetField' => 'notes', 'output' => 'out']);
 
-		$this->assertSame('From slug', $step['config']['template']);
-		$this->assertSame('out', $step['config']['output']);
+		$this->assertSame(expected: 'From slug', actual: $step['config']['template']);
+		$this->assertSame(expected: 'out', actual: $step['config']['output']);
 	}//end testMergeFallsBackToTemplateSlug()
 
 	/**
@@ -180,9 +180,9 @@ class RetiredDocumentStepsTest extends TestCase {
 			config: ['template' => 'Text', 'templateName' => 'Rapport.pdf', 'name' => 'ignored', 'documentType' => 'rapport']
 		);
 
-		$this->assertTrue($step['config']['storeFile']);
-		$this->assertSame('Rapport', $step['config']['filename']);
-		$this->assertSame('rapport', $step['config']['metadata']['informatieobjecttype']);
+		$this->assertTrue(condition: $step['config']['storeFile']);
+		$this->assertSame(expected: 'Rapport', actual: $step['config']['filename']);
+		$this->assertSame(expected: 'rapport', actual: $step['config']['metadata']['informatieobjecttype']);
 	}//end testMergeWithoutTargetFieldFilesTheDocument()
 
 	/**
@@ -194,8 +194,8 @@ class RetiredDocumentStepsTest extends TestCase {
 		$named = $this->steps->merge(config: ['template' => 'Text', 'name' => 'Brief', 'documentType' => 't']);
 		$unnamed = $this->steps->merge(config: ['template' => 'Text', 'documentType' => 't']);
 
-		$this->assertSame('Brief', $named['config']['templateName']);
-		$this->assertSame('Document', $unnamed['config']['templateName']);
+		$this->assertSame(expected: 'Brief', actual: $named['config']['templateName']);
+		$this->assertSame(expected: 'Document', actual: $unnamed['config']['templateName']);
 	}//end testMergeNameFallsBackToNameThenDocument()
 
 	/**
@@ -204,8 +204,8 @@ class RetiredDocumentStepsTest extends TestCase {
 	 * @return void
 	 */
 	public function testMergeIntoAFieldWithoutTextIsRefused(): void {
-		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('the step has no template text');
+		$this->expectException(exception: UnmappableStep::class);
+		$this->expectExceptionMessage(message: 'the step has no template text');
 
 		$this->steps->merge(config: ['template' => '', 'targetField' => 'summary']);
 	}//end testMergeIntoAFieldWithoutTextIsRefused()
@@ -216,8 +216,8 @@ class RetiredDocumentStepsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTwigInTheTextIsRefused(): void {
-		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('the template contains "{%" or "{#"');
+		$this->expectException(exception: UnmappableStep::class);
+		$this->expectExceptionMessage(message: 'the template contains "{%" or "{#"');
 
 		$this->steps->merge(config: ['template' => '{% if x %}y{% endif %}', 'targetField' => 'summary']);
 	}//end testTwigInTheTextIsRefused()

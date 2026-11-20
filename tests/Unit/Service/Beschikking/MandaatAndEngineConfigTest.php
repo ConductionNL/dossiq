@@ -67,14 +67,14 @@ class MandaatAndEngineConfigTest extends TestCase {
 					return [['mandateGroups' => [['caseTypes' => []]]]];
 				}
 			};
-			$settings = $this->createMock(SettingsService::class);
+			$settings = $this->createMock(originalClassName: SettingsService::class);
 			$settings->method('getObjectService')->willReturn($store);
 			$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
 
-			$verifier = new MandaatVerifier($settings, $this->createMock(LoggerInterface::class));
+			$verifier = new MandaatVerifier(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class));
 
-			$this->assertSame([], $verifier->resolveMandaatRegeling('vergunning'));
-			$this->assertSame(0, $store->searches);
+			$this->assertSame(expected: [], actual: $verifier->resolveMandaatRegeling('vergunning'));
+			$this->assertSame(expected: 0, actual: $store->searches);
 		}
 	}//end testAHalfConfiguredMandateRegisterHasNoScheme()
 
@@ -84,15 +84,15 @@ class MandaatAndEngineConfigTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMalformedKindMapRendersWithFilinq(): void {
-		$store = $this->createMock(CaseStatusStore::class);
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$store->method('loadCase')->with('case-1')->willReturn(['caseType' => 'ct-1']);
-		$caseTypes = $this->createMock(CaseTypeResolver::class);
+		$caseTypes = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$caseTypes->expects($this->once())->method('effectiveCaseType')->with('ct-1')
 			->willReturn(['id' => 'ct-1', 'decisionDocuments' => 'vendor:xential']);
 
-		$engines = new DecisionTemplateEngine($store, $caseTypes, $this->createMock(LoggerInterface::class));
+		$engines = new DecisionTemplateEngine(store: $store, caseTypes: $caseTypes, logger: $this->createMock(originalClassName: LoggerInterface::class));
 
-		$this->assertSame(DecisionTemplateEngine::DEFAULT_ENGINE, $engines->engineFor('case-1', 'tpl-grant'));
-		$this->assertSame('filinq', DecisionTemplateEngine::DEFAULT_ENGINE);
+		$this->assertSame(expected: DecisionTemplateEngine::DEFAULT_ENGINE, actual: $engines->engineFor('case-1', 'tpl-grant'));
+		$this->assertSame(expected: 'filinq', actual: DecisionTemplateEngine::DEFAULT_ENGINE);
 	}//end testAMalformedKindMapRendersWithFilinq()
 }//end class

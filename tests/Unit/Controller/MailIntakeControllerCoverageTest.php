@@ -117,16 +117,16 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->log             = $this->createMock(IntakeLogInterface::class);
-		$this->bounce          = $this->createMock(BounceActionInterface::class);
-		$this->move            = $this->createMock(MoveActionInterface::class);
-		$this->intake          = $this->createMock(InboundMailIntakeInterface::class);
-		$this->caseAccessGuard = $this->createMock(CaseAccessGuardInterface::class);
+		$this->log             = $this->createMock(originalClassName: IntakeLogInterface::class);
+		$this->bounce          = $this->createMock(originalClassName: BounceActionInterface::class);
+		$this->move            = $this->createMock(originalClassName: MoveActionInterface::class);
+		$this->intake          = $this->createMock(originalClassName: InboundMailIntakeInterface::class);
+		$this->caseAccessGuard = $this->createMock(originalClassName: CaseAccessGuardInterface::class);
 
-		$this->user = $this->createMock(IUser::class);
+		$this->user = $this->createMock(originalClassName: IUser::class);
 		$this->user->method('getUID')->willReturn('intaker');
 
-		$this->session = $this->createMock(IUserSession::class);
+		$this->session = $this->createMock(originalClassName: IUserSession::class);
 	}//end setUp()
 
 	/**
@@ -141,30 +141,30 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 			$this->session->method('getUser')->willReturn($this->user);
 		}
 
-		$policy = $this->createMock(IntakePolicyInterface::class);
+		$policy = $this->createMock(originalClassName: IntakePolicyInterface::class);
 		$policy->method('mayRunIntake')->with('intaker')->willReturn(true);
 
-		$pipeline = $this->createMock(FilterPipelineInterface::class);
+		$pipeline = $this->createMock(originalClassName: FilterPipelineInterface::class);
 		$pipeline->method('declaredOrder')->willReturn(['blocked-sender']);
 
-		$junkRules = $this->createMock(JunkRulesInterface::class);
+		$junkRules = $this->createMock(originalClassName: JunkRulesInterface::class);
 		$junkRules->method('rules')->willReturn([]);
 
-		$time = $this->createMock(ITimeFactory::class);
+		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-14T12:00:00+00:00'));
 
 		return new MailIntakeController(
-			$this->createMock(IRequest::class),
-			$this->log,
-			$policy,
-			$pipeline,
-			$junkRules,
-			$this->bounce,
-			$this->move,
-			$this->intake,
-			$this->session,
-			$time,
-			$this->caseAccessGuard,
+			request: $this->createMock(originalClassName: IRequest::class),
+			log: $this->log,
+			policy: $policy,
+			pipeline: $pipeline,
+			junkRules: $junkRules,
+			bounce: $this->bounce,
+			move: $this->move,
+			intake: $this->intake,
+			userSession: $this->session,
+			time: $time,
+			caseAccessGuard: $this->caseAccessGuard,
 		);
 	}//end controller()
 
@@ -208,10 +208,10 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->index(outcome: IntakeLogInterface::OUTCOME_QUARANTINED);
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		self::assertSame(
-			['results' => [['id' => 'entry-1']], 'filterOrder' => ['blocked-sender'], 'junkRules' => []],
-			$response->getData()
+			expected: ['results' => [['id' => 'entry-1']], 'filterOrder' => ['blocked-sender'], 'junkRules' => []],
+			actual: $response->getData()
 		);
 	}//end testTheLogIsNarrowedByOutcome()
 
@@ -226,8 +226,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->show(entryId: 'entry-1');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame($entry, $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: $entry, actual: $response->getData());
 	}//end testShowAnswersTheEntry()
 
 	/**
@@ -240,8 +240,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->show(entryId: 'entry-1');
 
-		self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		self::assertSame(['message' => 'not_found'], $response->getData());
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		self::assertSame(expected: ['message' => 'not_found'], actual: $response->getData());
 	}//end testALogThatThrowsIsNotFound()
 
 	/**
@@ -254,7 +254,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 		$this->bounce->expects($this->once())->method('bounce')
 			->with(
 				$this->callback(
-					static fn (InboundMessage $message): bool => $message->accountId === 7
+					callback: static fn (InboundMessage $message): bool => $message->accountId === 7
 						&& $message->mailbox === 'INBOX'
 						&& $message->uid === 12
 						&& $message->from === 'aanvrager@voorbeeld.nl'
@@ -278,8 +278,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->bounce(entryId: 'entry-1', address: 'Gemeente Elders <post@elders.nl>', reason: 'Belongs to Elders');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['sent' => true, 'entryId' => 'entry-2'], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['sent' => true, 'entryId' => 'entry-2'], actual: $response->getData());
 	}//end testASentBounceIsRecordedOnTheEntry()
 
 	/**
@@ -294,8 +294,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->bounce(entryId: 'entry-1', address: 'post@elders.nl', reason: 'Elders');
 
-		self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		self::assertSame(['message' => 'bounce_failed'], $response->getData());
+		self::assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		self::assertSame(expected: ['message' => 'bounce_failed'], actual: $response->getData());
 	}//end testAFailedBounceIsRefusedAndNotRecorded()
 
 	/**
@@ -307,7 +307,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 		$this->log->method('find')->willReturn($this->entry());
 		$this->move->expects($this->once())->method('move')
 			->with(
-				$this->isInstanceOf(InboundMessage::class),
+				$this->isInstanceOf(className: InboundMessage::class),
 				'INBOX/Archief',
 				'Not for us',
 				'intaker',
@@ -321,8 +321,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->move(entryId: 'entry-1', target: 'INBOX/Archief', note: 'Not for us');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['moved' => true, 'entryId' => 'entry-3'], $response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['moved' => true, 'entryId' => 'entry-3'], actual: $response->getData());
 	}//end testAConfirmedMoveIsRecordedOnTheEntry()
 
 	/**
@@ -337,8 +337,8 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->move(entryId: 'entry-1', target: 'INBOX/Archief');
 
-		self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		self::assertSame(['message' => 'move_failed'], $response->getData());
+		self::assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		self::assertSame(expected: ['message' => 'move_failed'], actual: $response->getData());
 	}//end testAnUnconfirmedMoveIsRefusedAndNotRecorded()
 
 	/**
@@ -347,11 +347,11 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMessageWithoutItsOriginalIsRebuiltFromTheRow(): void {
-		$this->log->method('find')->willReturn($this->entry(['original' => '']));
+		$this->log->method('find')->willReturn($this->entry(overrides: ['original' => '']));
 		$this->intake->expects($this->once())->method('process')
 			->with(
 				$this->callback(
-					static fn (InboundMessage $message): bool => $message->source === ''
+					callback: static fn (InboundMessage $message): bool => $message->source === ''
 						&& $message->messageId === '<1@voorbeeld.nl>'
 						&& $message->subject === 'Bezwaar'
 				)
@@ -360,7 +360,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 
 		$response = $this->controller()->junk(entryId: 'entry-1', junk: false);
 
-		self::assertSame(['junk' => false, 'outcome' => IntakeLogInterface::OUTCOME_CASE], $response->getData());
+		self::assertSame(expected: ['junk' => false, 'outcome' => IntakeLogInterface::OUTCOME_CASE], actual: $response->getData());
 	}//end testAMessageWithoutItsOriginalIsRebuiltFromTheRow()
 
 	/**
@@ -376,7 +376,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 		$response = $this->controller(defaultSession: false)
 			->fileOnCase(entryId: 'entry-1', caseId: 'case-114', reason: 'Wrong match');
 
-		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-		self::assertSame(['message' => 'unauthenticated'], $response->getData());
+		self::assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
+		self::assertSame(expected: ['message' => 'unauthenticated'], actual: $response->getData());
 	}//end testFileOnCaseWhoseSessionEndsBeforeTheCaseCheckIsUnauthenticated()
 }//end class

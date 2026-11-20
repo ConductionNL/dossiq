@@ -68,8 +68,13 @@ final class SociaalDomeinStoreTest extends TestCase {
 	 * @return SociaalDomeinStore
 	 */
 	private function store(bool $reachable = true, ?LoggerInterface $logger = null): SociaalDomeinStore {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn(($reachable === true) ? $this->objects : null);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(
+			match ($reachable) {
+				true => $this->objects,
+				default => null,
+			}
+		);
 
 		return new SociaalDomeinStore(settingsService: $settings, logger: ($logger ?? new NullLogger()));
 	}//end store()
@@ -86,12 +91,12 @@ final class SociaalDomeinStoreTest extends TestCase {
 		try {
 			$call();
 		} catch (RefusedException $e) {
-			self::assertSame($rule, $e->getRule());
-			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			self::assertSame(expected: $rule, actual: $e->getRule());
+			self::assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $e->getStatus());
 			return;
 		}
 
-		self::fail('Expected a refusal under ' . $rule);
+		self::fail(message: 'Expected a refusal under ' . $rule);
 	}//end assertRefused()
 
 	/**
@@ -102,12 +107,12 @@ final class SociaalDomeinStoreTest extends TestCase {
 	public function testDomainOfCategory(): void {
 		$store = $this->store();
 
-		self::assertSame('Jeugdwet', $store->domainOfCategory(category: 'Jeugdhulp'));
-		self::assertSame('Jeugdwet', $store->domainOfCategory(category: 'Jeugd'));
-		self::assertSame('Wmo', $store->domainOfCategory(category: 'Wmo'));
-		self::assertSame('Participatiewet', $store->domainOfCategory(category: 'Werk en inkomen'));
-		self::assertSame('', $store->domainOfCategory(category: 'Vergunningen'));
-		self::assertSame('', $store->domainOfCategory(category: 'wmo'));
+		self::assertSame(expected: 'Jeugdwet', actual: $store->domainOfCategory(category: 'Jeugdhulp'));
+		self::assertSame(expected: 'Jeugdwet', actual: $store->domainOfCategory(category: 'Jeugd'));
+		self::assertSame(expected: 'Wmo', actual: $store->domainOfCategory(category: 'Wmo'));
+		self::assertSame(expected: 'Participatiewet', actual: $store->domainOfCategory(category: 'Werk en inkomen'));
+		self::assertSame(expected: '', actual: $store->domainOfCategory(category: 'Vergunningen'));
+		self::assertSame(expected: '', actual: $store->domainOfCategory(category: 'wmo'));
 	}//end testDomainOfCategory()
 
 	/**
@@ -123,8 +128,14 @@ final class SociaalDomeinStoreTest extends TestCase {
 		$this->objects->seed(schema: 'caseType', row: ['id' => 'ct-other', 'category' => 'Vergunningen']);
 
 		$bsn = '999993653';
-		$this->objects->seed(schema: 'case', row: ['subjectBsn' => $bsn, 'caseType' => 'ct-jeugd', 'isFinalStatus' => true, 'assignee' => 'closed-handler']);
-		$this->objects->seed(schema: 'case', row: ['subjectBsn' => $bsn, 'caseType' => 'ct-jeugd', 'assignee' => '  ', 'assignedGroup' => 'Wijkteam Noord']);
+		$this->objects->seed(
+			schema: 'case',
+			row: ['subjectBsn' => $bsn, 'caseType' => 'ct-jeugd', 'isFinalStatus' => true, 'assignee' => 'closed-handler']
+		);
+		$this->objects->seed(
+			schema: 'case',
+			row: ['subjectBsn' => $bsn, 'caseType' => 'ct-jeugd', 'assignee' => '  ', 'assignedGroup' => 'Wijkteam Noord']
+		);
 		$this->objects->seed(schema: 'case', row: ['subjectBsn' => $bsn, 'caseType' => 'ct-jeugd', 'assignee' => 'second-handler']);
 		$this->objects->seed(schema: 'case', row: ['subjectBsn' => $bsn, 'caseType' => 'ct-wmo', 'assignee' => 'anna', 'assignedGroup' => 'Team Wmo']);
 		$this->objects->seed(schema: 'case', row: ['subjectBsn' => $bsn, 'caseType' => 'ct-part']);
@@ -134,10 +145,10 @@ final class SociaalDomeinStoreTest extends TestCase {
 		$contacts = $this->store()->openCaseContactsAbout(bsn: $bsn);
 
 		self::assertSame(
-			['Jeugdwet' => 'Wijkteam Noord', 'Wmo' => 'anna', 'Participatiewet' => 'Participatiewet'],
-			$contacts
+			expected: ['Jeugdwet' => 'Wijkteam Noord', 'Wmo' => 'anna', 'Participatiewet' => 'Participatiewet'],
+			actual: $contacts
 		);
-		self::assertFalse($this->objects->scopes[0]['rbac'], 'the cross-domain read runs unscoped');
+		self::assertFalse(condition: $this->objects->scopes[0]['rbac'], message: 'the cross-domain read runs unscoped');
 	}//end testOpenCaseContactsAboutPicksOneContactPerDomain()
 
 	/**
@@ -176,7 +187,7 @@ final class SociaalDomeinStoreTest extends TestCase {
 
 		$rows = $this->store()->rows(schema: 'casePlan', filters: ['caseId' => 'c2']);
 
-		self::assertSame([['id' => 'p2', 'caseId' => 'c2']], $rows);
+		self::assertSame(expected: [['id' => 'p2', 'caseId' => 'c2']], actual: $rows);
 	}//end testRowsReturnsTheMatchingRows()
 
 	/**
@@ -186,11 +197,11 @@ final class SociaalDomeinStoreTest extends TestCase {
 	 */
 	public function testRowsLogsAndRefusesWhenUnreadable(): void {
 		$this->objects->brokenSchemas = ['casePlan'];
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::once())
 			->method('warning')
 			->with(
-				self::stringContains('casePlan could not be read'),
+				self::stringContains(string: 'casePlan could not be read'),
 				['error' => 'the store is unreachable']
 			);
 		$store = $this->store(logger: $logger);
@@ -205,13 +216,13 @@ final class SociaalDomeinStoreTest extends TestCase {
 	 */
 	public function testReadByIdAndBlankId(): void {
 		$this->objects->broken = true;
-		self::assertNull($this->store()->read(schema: 'casePlan', id: '   '));
+		self::assertNull(actual: $this->store()->read(schema: 'casePlan', id: '   '));
 
 		$this->objects->broken = false;
 		$this->objects->seed(schema: 'casePlan', row: ['id' => 'p1', 'goal' => 'Wonen']);
 
-		self::assertSame(['id' => 'p1', 'goal' => 'Wonen'], $this->store()->read(schema: 'casePlan', id: 'p1'));
-		self::assertNull($this->store()->read(schema: 'casePlan', id: 'unknown'));
+		self::assertSame(expected: ['id' => 'p1', 'goal' => 'Wonen'], actual: $this->store()->read(schema: 'casePlan', id: 'p1'));
+		self::assertNull(actual: $this->store()->read(schema: 'casePlan', id: 'unknown'));
 	}//end testReadByIdAndBlankId()
 
 	/**
@@ -237,10 +248,10 @@ final class SociaalDomeinStoreTest extends TestCase {
 		$updated = $store->write(schema: 'casePlan', object: ['id' => ' p9 ', 'goal' => 'Werk']);
 		$created = $store->write(schema: 'casePlan', object: ['goal' => 'Schulden']);
 
-		self::assertSame('p9', $updated['id']);
-		self::assertSame('Werk', $this->objects->store['casePlan']['p9']['goal']);
-		self::assertSame('casePlan-1', $created['id']);
-		self::assertSame('Schulden', $created['goal']);
+		self::assertSame(expected: 'p9', actual: $updated['id']);
+		self::assertSame(expected: 'Werk', actual: $this->objects->store['casePlan']['p9']['goal']);
+		self::assertSame(expected: 'casePlan-1', actual: $created['id']);
+		self::assertSame(expected: 'Schulden', actual: $created['goal']);
 	}//end testWriteUsesTheDeclaredIdAsUuid()
 
 	/**
@@ -273,7 +284,7 @@ final class SociaalDomeinStoreTest extends TestCase {
 				return 'saved';
 			}//end saveObject()
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$store = new SociaalDomeinStore(settingsService: $settings, logger: new NullLogger());
 

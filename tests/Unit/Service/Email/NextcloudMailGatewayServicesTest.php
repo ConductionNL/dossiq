@@ -415,17 +415,17 @@ class NextcloudMailGatewayServicesTest extends TestCase {
 	 * @return void
 	 */
 	public function testEntitiesWithoutGettersAnswerTheFallbacks(): void {
-		$event = new NewMessagesSynchronized(self::entity(3), new \stdClass(), [new \stdClass()]);
+		$event = new NewMessagesSynchronized(self::entity(id: 3), new \stdClass(), [new \stdClass()]);
 
 		self::assertSame(
-			[
+			expected: [
 				'accountId' => 3,
 				'mailbox' => '',
 				'messages' => [['id' => 0, 'uid' => 0, 'messageId' => '', 'subject' => '', 'sentAt' => '']],
 			],
-			$this->gateway([])->unpackSynchronisation($event)
+			actual: $this->gateway(services: [])->unpackSynchronisation($event)
 		);
-		self::assertSame([], $this->logged);
+		self::assertSame(expected: [], actual: $this->logged);
 	}//end testEntitiesWithoutGettersAnswerTheFallbacks()
 
 	/**

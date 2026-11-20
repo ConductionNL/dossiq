@@ -178,7 +178,7 @@ class CaseArchiveReadinessTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableDecisionStoreLeavesTheDateOut(): void {
-		$broken = $this->createMock(SettingsService::class);
+		$broken = $this->createMock(originalClassName: SettingsService::class);
 		$broken->method('getObjectService')->willReturn(
 			new class {
 				/**
@@ -212,14 +212,14 @@ class CaseArchiveReadinessTest extends TestCase {
 		$broken->method('getConfigValue')->willReturn('configured');
 		$readiness = new CaseArchiveReadiness(
 			settingsService: $broken,
-			tasks: $this->createMock(EngineTaskInbox::class),
-			userSession: $this->createMock(IUserSession::class),
-			endings: $this->createMock(CaseEndingActs::class)
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
 		);
 
-		$checklist = $this->byId($readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1', 'd-2']]));
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1', 'd-2']]));
 
-		$this->assertSame(['id' => 'decision', 'met' => true, 'count' => 2], $checklist['decision']);
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 2], actual: $checklist['decision']);
 	}//end testAnUnreadableDecisionStoreLeavesTheDateOut()
 
 	/**
@@ -229,20 +229,20 @@ class CaseArchiveReadinessTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnconfiguredDocumentStoreIsUnknown(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$settings->method('getConfigValue')->willReturn('');
 		$readiness = new CaseArchiveReadiness(
 			settingsService: $settings,
-			tasks: $this->createMock(EngineTaskInbox::class),
-			userSession: $this->createMock(IUserSession::class),
-			endings: $this->createMock(CaseEndingActs::class)
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
 		);
 
-		$checklist = $this->byId($readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1']]));
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1']]));
 
-		$this->assertSame(['id' => 'documents', 'met' => null], $checklist['documents']);
-		$this->assertSame(['id' => 'decision', 'met' => true, 'count' => 1], $checklist['decision']);
+		$this->assertSame(expected: ['id' => 'documents', 'met' => null], actual: $checklist['documents']);
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 1], actual: $checklist['decision']);
 	}//end testAnUnconfiguredDocumentStoreIsUnknown()
 
 	/**

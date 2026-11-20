@@ -41,9 +41,9 @@ class DocumentDefaultsIntegrityTest extends TestCase {
 	 */
 	private function defaults(): DocumentDefaults {
 		return new DocumentDefaults(
-			store: $this->createMock(DocumentRecordStore::class),
-			caseTypes: $this->createMock(CaseTypeResolver::class),
-			userSession: $this->createMock(IUserSession::class),
+			store: $this->createMock(originalClassName: DocumentRecordStore::class),
+			caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
 		);
 	}//end defaults()
 
@@ -55,7 +55,7 @@ class DocumentDefaultsIntegrityTest extends TestCase {
 	 * @return File&MockObject The file.
 	 */
 	private function file(int $size): File&MockObject {
-		$file = $this->createMock(File::class);
+		$file = $this->createMock(originalClassName: File::class);
 		$file->method('getSize')->willReturn($size);
 		return $file;
 	}//end file()
@@ -78,10 +78,10 @@ class DocumentDefaultsIntegrityTest extends TestCase {
 
 		$block = $this->defaults()->integrityOf(node: $file);
 
-		self::assertSame(['algorithm', 'value', 'date'], array_keys($block));
-		self::assertSame('sha256', $block['algorithm']);
-		self::assertSame(hash('sha256', 'hello world'), $block['value']);
-		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/', $block['date']);
+		self::assertSame(expected: ['algorithm', 'value', 'date'], actual: array_keys($block));
+		self::assertSame(expected: 'sha256', actual: $block['algorithm']);
+		self::assertSame(expected: hash('sha256', 'hello world'), actual: $block['value']);
+		self::assertMatchesRegularExpression(pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/', string: $block['date']);
 	}//end testAReadableFileIsHashed()
 
 	/**
@@ -92,11 +92,11 @@ class DocumentDefaultsIntegrityTest extends TestCase {
 	public function testAFileAboveTheLimitIsNotHashed(): void {
 		$big = $this->file(size: 268435457);
 		$big->expects(self::never())->method('fopen');
-		self::assertSame([], $this->defaults()->integrityOf(node: $big));
+		self::assertSame(expected: [], actual: $this->defaults()->integrityOf(node: $big));
 
 		$atLimit = $this->file(size: 268435456);
 		$atLimit->expects(self::once())->method('fopen')->willReturn(false);
-		self::assertSame([], $this->defaults()->integrityOf(node: $atLimit));
+		self::assertSame(expected: [], actual: $this->defaults()->integrityOf(node: $atLimit));
 	}//end testAFileAboveTheLimitIsNotHashed()
 
 	/**
@@ -108,6 +108,6 @@ class DocumentDefaultsIntegrityTest extends TestCase {
 		$file = $this->file(size: 10);
 		$file->method('fopen')->willThrowException(new NotPermittedException('locked'));
 
-		self::assertSame([], $this->defaults()->integrityOf(node: $file));
+		self::assertSame(expected: [], actual: $this->defaults()->integrityOf(node: $file));
 	}//end testAFileThatCannotBeOpenedGetsNoBlock()
 }//end class

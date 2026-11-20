@@ -85,20 +85,20 @@ class ZrcCaseFieldRulesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAcceptedFieldLetsTheLaterRulesRun(array $field, ?array $existing): void {
-		$refused = $this->ruleGroup(ZrcCaseFieldRules::class, null)->validateCaseFields(
-			$this->passing($field + ['archiefstatus' => 'gearchiveerd']),
+		$refused = $this->ruleGroup(class: ZrcCaseFieldRules::class, objects: null)->validateCaseFields(
+			$this->passing(body: $field + ['archiefstatus' => 'gearchiveerd']),
 			$existing
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'valid' => false,
 				'status' => 400,
 				'detail' => 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
 				'invalidParams' => [['name' => 'archiefnominatie', 'code' => 'archiefnominatie-not-set', 'reason' => 'Vereist.']],
 				'enrichedBody' => [],
 			],
-			$refused
+			actual: $refused
 		);
 	}//end testAnAcceptedFieldLetsTheLaterRulesRun()
 
@@ -108,11 +108,11 @@ class ZrcCaseFieldRulesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnArchiefstatusWithBothFieldsPassesWithTheBodyUnchanged(): void {
-		$rules = $this->ruleGroup(ZrcCaseFieldRules::class, null);
+		$rules = $this->ruleGroup(class: ZrcCaseFieldRules::class, objects: null);
 
-		$missingDate = $rules->validateCaseFields($this->passing(['archiefstatus' => 'gearchiveerd', 'archiefnominatie' => 'vernietigen']), null);
-		$this->assertSame('archiefactiedatum', $missingDate['invalidParams'][0]['name']);
-		$this->assertSame('archiefactiedatum-not-set', $missingDate['invalidParams'][0]['code']);
+		$missingDate = $rules->validateCaseFields($this->passing(body: ['archiefstatus' => 'gearchiveerd', 'archiefnominatie' => 'vernietigen']), null);
+		$this->assertSame(expected: 'archiefactiedatum', actual: $missingDate['invalidParams'][0]['name']);
+		$this->assertSame(expected: 'archiefactiedatum-not-set', actual: $missingDate['invalidParams'][0]['code']);
 
 		$body = [
 			'identificatie' => 'Z-1',
@@ -124,8 +124,8 @@ class ZrcCaseFieldRulesEdgesTest extends TestCase {
 			'archiefnominatie' => 'vernietigen',
 			'archiefactiedatum' => '2030-01-01',
 		];
-		$result = $this->passing($body);
+		$result = $this->passing(body: $body);
 
-		$this->assertSame($result, $rules->validateCaseFields($result, ['identificatie' => 'Z-1']));
+		$this->assertSame(expected: $result, actual: $rules->validateCaseFields($result, ['identificatie' => 'Z-1']));
 	}//end testAnArchiefstatusWithBothFieldsPassesWithTheBodyUnchanged()
 }//end class

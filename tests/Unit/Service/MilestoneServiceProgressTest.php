@@ -72,10 +72,10 @@ class MilestoneServiceProgressTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->settings = $this->createMock(SettingsService::class);
-		$this->repository = $this->createMock(MilestoneRepository::class);
-		$this->detector = $this->createMock(StalledCaseDetector::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
+		$this->repository = $this->createMock(originalClassName: MilestoneRepository::class);
+		$this->detector = $this->createMock(originalClassName: StalledCaseDetector::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -118,7 +118,7 @@ class MilestoneServiceProgressTest extends TestCase {
 		$definitions = [['id' => 'd1', 'label' => 'Intake']];
 		$this->repository->expects($this->once())->method('findDefinitions')->with('type-1')->willReturn($definitions);
 
-		$this->assertSame($definitions, $this->service()->getMilestones(caseTypeId: 'type-1'));
+		$this->assertSame(expected: $definitions, actual: $this->service()->getMilestones(caseTypeId: 'type-1'));
 	}//end testGetMilestonesReadsTheDefinitions()
 
 	/**
@@ -131,8 +131,8 @@ class MilestoneServiceProgressTest extends TestCase {
 		$this->repository->expects($this->never())->method('findRecords');
 
 		$this->assertSame(
-			['milestones' => [], 'reached' => 0, 'total' => 0, 'percentage' => 0],
-			$this->service()->getCaseProgress(caseId: 'case-1', caseTypeId: 'type-1')
+			expected: ['milestones' => [], 'reached' => 0, 'total' => 0, 'percentage' => 0],
+			actual: $this->service()->getCaseProgress(caseId: 'case-1', caseTypeId: 'type-1')
 		);
 	}//end testCaseProgressWithoutDefinitionsIsEmpty()
 
@@ -158,11 +158,11 @@ class MilestoneServiceProgressTest extends TestCase {
 
 		$progress = $this->service()->getCaseProgress(caseId: 'case-1', caseTypeId: 'type-1');
 
-		$this->assertSame(2, $progress['reached']);
-		$this->assertSame(3, $progress['total']);
-		$this->assertSame(67, $progress['percentage']);
+		$this->assertSame(expected: 2, actual: $progress['reached']);
+		$this->assertSame(expected: 3, actual: $progress['total']);
+		$this->assertSame(expected: 67, actual: $progress['percentage']);
 		$this->assertSame(
-			[
+			expected: [
 				'identifier' => 'intake',
 				'label' => 'Intake',
 				'order' => 1,
@@ -171,14 +171,14 @@ class MilestoneServiceProgressTest extends TestCase {
 				'reachedAt' => '2026-01-02T10:00:00',
 				'reachedBy' => 'alice',
 			],
-			$progress['milestones'][0]
+			actual: $progress['milestones'][0]
 		);
-		$this->assertSame('Review', $progress['milestones'][1]['label']);
-		$this->assertTrue($progress['milestones'][1]['reached']);
-		$this->assertNull($progress['milestones'][1]['reachedAt']);
-		$this->assertNull($progress['milestones'][1]['reachedBy']);
+		$this->assertSame(expected: 'Review', actual: $progress['milestones'][1]['label']);
+		$this->assertTrue(condition: $progress['milestones'][1]['reached']);
+		$this->assertNull(actual: $progress['milestones'][1]['reachedAt']);
+		$this->assertNull(actual: $progress['milestones'][1]['reachedBy']);
 		$this->assertSame(
-			[
+			expected: [
 				'identifier' => '',
 				'label' => '',
 				'order' => 0,
@@ -187,7 +187,7 @@ class MilestoneServiceProgressTest extends TestCase {
 				'reachedAt' => null,
 				'reachedBy' => null,
 			],
-			$progress['milestones'][2]
+			actual: $progress['milestones'][2]
 		);
 	}//end testCaseProgressJoinsDefinitionsAndRecords()
 
@@ -200,7 +200,7 @@ class MilestoneServiceProgressTest extends TestCase {
 		$this->repository->method('findCaseTypeId')->with('case-1')->willReturn(null);
 		$this->repository->expects($this->never())->method('findDefinitions');
 
-		$this->assertSame(0, $this->service()->getCaseProgressForCase(caseId: 'case-1')['total']);
+		$this->assertSame(expected: 0, actual: $this->service()->getCaseProgressForCase(caseId: 'case-1')['total']);
 	}//end testProgressForCaseWithoutTypeIsEmpty()
 
 	/**
@@ -215,8 +215,8 @@ class MilestoneServiceProgressTest extends TestCase {
 
 		$progress = $this->service()->getCaseProgressForCase(caseId: 'case-1');
 
-		$this->assertSame(1, $progress['total']);
-		$this->assertSame(0, $progress['percentage']);
+		$this->assertSame(expected: 1, actual: $progress['total']);
+		$this->assertSame(expected: 0, actual: $progress['percentage']);
 	}//end testProgressForCaseUsesItsOwnType()
 
 	/**
@@ -227,8 +227,8 @@ class MilestoneServiceProgressTest extends TestCase {
 	public function testMarkWithoutOpenRegisterThrows(): void {
 		$this->settings->method('getObjectService')->willReturn(null);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('OpenRegister is not available');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'OpenRegister is not available');
 		$this->service()->markMilestone(caseId: 'c', definitionId: 'd', userId: 'u');
 	}//end testMarkWithoutOpenRegisterThrows()
 
@@ -241,8 +241,8 @@ class MilestoneServiceProgressTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn(new InMemoryRegister());
 		$this->configure(register: 'dossiq', schema: '');
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('Milestone record schema not configured');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Milestone record schema not configured');
 		$this->service()->markMilestone(caseId: 'c', definitionId: 'd', userId: 'u');
 	}//end testMarkWithoutSchemaThrows()
 
@@ -289,16 +289,16 @@ class MilestoneServiceProgressTest extends TestCase {
 
 		$result = $this->service()->markMilestone(caseId: 'case-1', definitionId: 'd1', userId: 'bob', trigger: 'workflow');
 
-		$this->assertCount(1, $store->saved);
+		$this->assertCount(expectedCount: 1, haystack: $store->saved);
 		[$object, $options] = $store->saved[0];
-		$this->assertSame('case-1', $object['case']);
-		$this->assertSame('d1', $object['milestoneDefinition']);
-		$this->assertSame('bob', $object['reachedBy']);
-		$this->assertSame('workflow', $object['trigger']);
-		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/', $object['reachedAt']);
-		$this->assertSame('dossiq', $options->target->register);
-		$this->assertSame('milestone-record', $options->target->schema);
-		$this->assertSame(['id' => 'rec-1', 'reachedAt' => $object['reachedAt'], 'reachedBy' => 'bob'], $result);
+		$this->assertSame(expected: 'case-1', actual: $object['case']);
+		$this->assertSame(expected: 'd1', actual: $object['milestoneDefinition']);
+		$this->assertSame(expected: 'bob', actual: $object['reachedBy']);
+		$this->assertSame(expected: 'workflow', actual: $object['trigger']);
+		$this->assertMatchesRegularExpression(pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/', string: $object['reachedAt']);
+		$this->assertSame(expected: 'dossiq', actual: $options->target->register);
+		$this->assertSame(expected: 'milestone-record', actual: $options->target->schema);
+		$this->assertSame(expected: ['id' => 'rec-1', 'reachedAt' => $object['reachedAt'], 'reachedBy' => 'bob'], actual: $result);
 	}//end testMarkWritesAStampedRecord()
 
 	/**
@@ -313,8 +313,8 @@ class MilestoneServiceProgressTest extends TestCase {
 		$this->configure(register: 'dossiq', schema: 'milestone-record');
 		$this->logger->expects($this->never())->method('info');
 
-		$this->assertFalse($this->service()->reverseMilestone(caseId: 'case-1', definitionId: 'd1', userId: 'bob', reason: 'oops'));
-		$this->assertCount(1, $register->all('milestone-record'));
+		$this->assertFalse(condition: $this->service()->reverseMilestone(caseId: 'case-1', definitionId: 'd1', userId: 'bob', reason: 'oops'));
+		$this->assertCount(expectedCount: 1, haystack: $register->all('milestone-record'));
 	}//end testReverseWithoutRecordsAnswersFalse()
 
 	/**
@@ -334,10 +334,10 @@ class MilestoneServiceProgressTest extends TestCase {
 			['app' => 'dossiq']
 		);
 
-		$this->assertTrue($this->service()->reverseMilestone(caseId: 'case-1', definitionId: 'd1', userId: 'bob', reason: 'wrong phase'));
-		$this->assertSame([], $register->row('milestone-record', 'r1'));
-		$this->assertNotSame([], $register->row('milestone-record', 'r2'));
-		$this->assertNotSame([], $register->row('milestone-record', 'r3'));
+		$this->assertTrue(condition: $this->service()->reverseMilestone(caseId: 'case-1', definitionId: 'd1', userId: 'bob', reason: 'wrong phase'));
+		$this->assertSame(expected: [], actual: $register->row('milestone-record', 'r1'));
+		$this->assertNotSame(expected: [], actual: $register->row('milestone-record', 'r2'));
+		$this->assertNotSame(expected: [], actual: $register->row('milestone-record', 'r3'));
 	}//end testReverseDeletesTheMatchingRecords()
 
 	/**
@@ -352,12 +352,12 @@ class MilestoneServiceProgressTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'caseTypeId' => 'type-1',
 				'phases' => [],
 				'message' => 'Duration analytics requires sufficient historical data',
 			],
-			$this->service()->getDurationAnalytics(caseTypeId: 'type-1')
+			actual: $this->service()->getDurationAnalytics(caseTypeId: 'type-1')
 		);
 	}//end testDurationAnalyticsIsAnEmptyPlaceholder()
 
@@ -369,6 +369,6 @@ class MilestoneServiceProgressTest extends TestCase {
 	public function testStalledCasesDelegateToTheDetector(): void {
 		$this->detector->expects($this->once())->method('findStalledCases')->with(5)->willReturn([['caseId' => 'c1']]);
 
-		$this->assertSame([['caseId' => 'c1']], $this->service()->findStalledCases(thresholdDays: 5));
+		$this->assertSame(expected: [['caseId' => 'c1']], actual: $this->service()->findStalledCases(thresholdDays: 5));
 	}//end testStalledCasesDelegateToTheDetector()
 }//end class

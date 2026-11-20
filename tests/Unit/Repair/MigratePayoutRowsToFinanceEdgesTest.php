@@ -104,8 +104,13 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 	 *
 	 * @return MigratePayoutRowsToFinance The step.
 	 */
-	private function step(?object $store, PayoutServiceInterface $payouts, LoggerInterface $logger, string $schema = 'dwangsomUitbetaling'): MigratePayoutRowsToFinance {
-		$settings = $this->createMock(SettingsService::class);
+	private function step(
+		?object $store,
+		PayoutServiceInterface $payouts,
+		LoggerInterface $logger,
+		string $schema = 'dwangsomUitbetaling'
+	): MigratePayoutRowsToFinance {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
@@ -124,12 +129,17 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutAPayoutSchemaNothingHappens(): void {
-		$payouts = $this->createMock(PayoutServiceInterface::class);
+		$payouts = $this->createMock(originalClassName: PayoutServiceInterface::class);
 		$payouts->expects($this->never())->method('raiseRowInFinance');
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->never())->method('info');
 
-		$this->step($this->store([]), $payouts, $this->createMock(LoggerInterface::class), schema: '')->run($output);
+		$this->step(
+			store: $this->store(rows: []),
+			payouts: $payouts,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			schema: ''
+		)->run($output);
 	}//end testWithoutAPayoutSchemaNothingHappens()
 
 	/**
@@ -138,17 +148,17 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnreadableRowsAreLoggedAndNothingIsRaised(): void {
-		$payouts = $this->createMock(PayoutServiceInterface::class);
+		$payouts = $this->createMock(originalClassName: PayoutServiceInterface::class);
 		$payouts->expects($this->never())->method('raiseRowInFinance');
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the payout rows could not be read for the move to finance',
 			['error' => 'payout table is locked']
 		);
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->never())->method('info');
 
-		$this->step($this->store(null), $payouts, $logger)->run($output);
+		$this->step(store: $this->store(rows: null), payouts: $payouts, logger: $logger)->run($output);
 	}//end testUnreadableRowsAreLoggedAndNothingIsRaised()
 
 	/**
@@ -164,10 +174,10 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 			['id' => 'u-silent', 'reference' => 'DWS-SIL-0001', 'status' => 'voorbereid'],
 			['id' => 'u-taken', 'reference' => 'DWS-TAK-0001', 'status' => 'paid', 'actualPaymentDate' => '2026-03-03', 'betalingsreferentie' => 'ERP-9'],
 		];
-		$store = $this->store($rows);
+		$store = $this->store(rows: $rows);
 
-		$payouts = $this->createMock(PayoutServiceInterface::class);
-		$payouts->expects($this->exactly(3))->method('raiseRowInFinance')->willReturnCallback(
+		$payouts = $this->createMock(originalClassName: PayoutServiceInterface::class);
+		$payouts->expects($this->exactly(count: 3))->method('raiseRowInFinance')->willReturnCallback(
 			static function (array $row, array $history): array {
 				return match ($row['id']) {
 					'u-refused' => throw new RuntimeException('no account holder'),
@@ -177,17 +187,17 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 			}
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the finance app refused penalty payout {reference}; it stays for the next run',
 			['reference' => 'DWS-REF-0001', 'error' => 'no account holder']
 		);
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')->with('Handed 1 penalty payout(s) to the finance app.');
 
-		$this->step($store, $payouts, $logger)->run($output);
+		$this->step(store: $store, payouts: $payouts, logger: $logger)->run($output);
 
-		$this->assertSame([['id' => 'u-taken', 'data' => ['payableId' => 'payable-1']]], $store->patches);
+		$this->assertSame(expected: [['id' => 'u-taken', 'data' => ['payableId' => 'payable-1']]], actual: $store->patches);
 	}//end testARefusedOrUnansweredRowStaysForTheNextRun()
 
 	/**
@@ -197,8 +207,12 @@ final class MigratePayoutRowsToFinanceEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertSame(
-			'Hand the penalty payouts dossiq kept to the finance app',
-			$this->step(null, $this->createMock(PayoutServiceInterface::class), $this->createMock(LoggerInterface::class))->getName()
+			expected: 'Hand the penalty payouts dossiq kept to the finance app',
+			actual: $this->step(
+				store: null,
+				payouts: $this->createMock(originalClassName: PayoutServiceInterface::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			)->getName()
 		);
 	}//end testTheStepNamesItself()
 }//end class

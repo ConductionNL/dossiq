@@ -52,8 +52,8 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->container = $this->createMock(ContainerInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->container = $this->createMock(originalClassName: ContainerInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -122,8 +122,8 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 		$this->container->expects($this->never())->method('get');
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('', $resolver->resolve(schema: ''));
-		$this->assertSame('', $resolver->resolve(schema: '   '));
+		$this->assertSame(expected: '', actual: $resolver->resolve(schema: ''));
+		$this->assertSame(expected: '', actual: $resolver->resolve(schema: '   '));
 	}//end testEmptySchemaResolvesToEmptyString()
 
 	/**
@@ -135,7 +135,7 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 		$this->container->expects($this->never())->method('get');
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('bezwaar', $resolver->resolve(schema: ' bezwaar '));
+		$this->assertSame(expected: 'bezwaar', actual: $resolver->resolve(schema: ' bezwaar '));
 	}//end testSlugPassesStraightThrough()
 
 	/**
@@ -151,9 +151,9 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 			->willReturn($mapper);
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('case', $resolver->resolve(schema: '12'));
-		$this->assertSame('case', $resolver->resolve(schema: '12'));
-		$this->assertSame([['12', [], false, false]], $mapper->calls);
+		$this->assertSame(expected: 'case', actual: $resolver->resolve(schema: '12'));
+		$this->assertSame(expected: 'case', actual: $resolver->resolve(schema: '12'));
+		$this->assertSame(expected: [['12', [], false, false]], actual: $mapper->calls);
 	}//end testNumericIdIsLookedUpOnceAndMemoised()
 
 	/**
@@ -173,8 +173,8 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 			);
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('', $resolver->resolve(schema: '7'));
-		$this->assertSame('', $resolver->resolve(schema: '7'));
+		$this->assertSame(expected: '', actual: $resolver->resolve(schema: '7'));
+		$this->assertSame(expected: '', actual: $resolver->resolve(schema: '7'));
 	}//end testFailedLookupAnswersEmptyAndMemoisesTheMiss()
 
 	/**
@@ -186,9 +186,9 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 		$this->container->method('get')->willReturn($this->mapperAnswering(slug: 'from-id'));
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('advice', $resolver->resolveFromPayload(payload: ['@self' => ['schema' => ['slug' => 'advice', 'id' => 3]]]));
-		$this->assertSame('from-id', $resolver->resolveFromPayload(payload: ['@self' => ['schema' => ['id' => 3]]]));
-		$this->assertSame('', $resolver->resolveFromPayload(payload: ['@self' => ['schema' => []]]));
+		$this->assertSame(expected: 'advice', actual: $resolver->resolveFromPayload(payload: ['@self' => ['schema' => ['slug' => 'advice', 'id' => 3]]]));
+		$this->assertSame(expected: 'from-id', actual: $resolver->resolveFromPayload(payload: ['@self' => ['schema' => ['id' => 3]]]));
+		$this->assertSame(expected: '', actual: $resolver->resolveFromPayload(payload: ['@self' => ['schema' => []]]));
 	}//end testPayloadWithExtendedSchemaArray()
 
 	/**
@@ -199,7 +199,7 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 	public function testPayloadWithScalarSelfSchema(): void {
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('decision', $resolver->resolveFromPayload(payload: ['@self' => ['schema' => 'decision'], 'schema' => 'other']));
+		$this->assertSame(expected: 'decision', actual: $resolver->resolveFromPayload(payload: ['@self' => ['schema' => 'decision'], 'schema' => 'other']));
 	}//end testPayloadWithScalarSelfSchema()
 
 	/**
@@ -210,10 +210,10 @@ class ObjectSchemaSlugResolverTest extends TestCase {
 	public function testPayloadFallsBackToTopLevelSchema(): void {
 		$resolver = new ObjectSchemaSlugResolver(container: $this->container, logger: $this->logger);
 
-		$this->assertSame('task', $resolver->resolveFromPayload(payload: ['schema' => 'task']));
-		$this->assertSame('task', $resolver->resolveFromPayload(payload: ['@self' => ['schema' => null], 'schema' => 'task']));
-		$this->assertSame('task', $resolver->resolveFromPayload(payload: ['@self' => 'flat', 'schema' => 'task']));
-		$this->assertSame('', $resolver->resolveFromPayload(payload: ['schema' => ['nested']]));
-		$this->assertSame('', $resolver->resolveFromPayload(payload: []));
+		$this->assertSame(expected: 'task', actual: $resolver->resolveFromPayload(payload: ['schema' => 'task']));
+		$this->assertSame(expected: 'task', actual: $resolver->resolveFromPayload(payload: ['@self' => ['schema' => null], 'schema' => 'task']));
+		$this->assertSame(expected: 'task', actual: $resolver->resolveFromPayload(payload: ['@self' => 'flat', 'schema' => 'task']));
+		$this->assertSame(expected: '', actual: $resolver->resolveFromPayload(payload: ['schema' => ['nested']]));
+		$this->assertSame(expected: '', actual: $resolver->resolveFromPayload(payload: []));
 	}//end testPayloadFallsBackToTopLevelSchema()
 }//end class

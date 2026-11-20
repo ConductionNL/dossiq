@@ -103,7 +103,12 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 			 *
 			 * @throws RuntimeException For the refused tenant.
 			 */
-			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
 				if ($object['tenantRef'] === 'refused') {
 					throw new RuntimeException('validation failed');
 				}
@@ -123,25 +128,25 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 * @return MoveTenantQuotaLimitsOntoOrganisation The step.
 	 */
 	private function step(?object $store, LoggerInterface $logger): MoveTenantQuotaLimitsOntoOrganisation {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 
-		$config = $this->createMock(IAppConfig::class);
+		$config = $this->createMock(originalClassName: IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(fn (): string => (string)$this->done);
 		$config->method('setValueString')->willReturnCallback(function (string $app, string $key, string $value): bool {
 			$this->done = $value;
 			return true;
 		});
 
-		$quotas = $this->createMock(TenantQuotaServiceInterface::class);
+		$quotas = $this->createMock(originalClassName: TenantQuotaServiceInterface::class);
 		$quotas->method('quotaRowAsArray')->willReturnCallback(static fn (mixed $row): ?array => $row);
 
 		return new MoveTenantQuotaLimitsOntoOrganisation(
-			$settings,
-			$config,
-			$this->createMock(OrganisationQuotaLimitsInterface::class),
-			$quotas,
-			$logger
+			settings: $settings,
+			appConfig: $config,
+			organisationLimits: $this->createMock(originalClassName: OrganisationQuotaLimitsInterface::class),
+			quotas: $quotas,
+			logger: $logger
 		);
 	}//end step()
 
@@ -153,7 +158,7 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 * @return void
 	 */
 	private function runStep(MoveTenantQuotaLimitsOntoOrganisation $step): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(function (string $line): void {
 			$this->said[] = $line;
 		});
@@ -167,10 +172,10 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterItSkipsAndStaysUnmarked(): void {
-		$this->runStep($this->step(null, $this->createMock(LoggerInterface::class)));
+		$this->runStep(step: $this->step(store: null, logger: $this->createMock(originalClassName: LoggerInterface::class)));
 
-		$this->assertSame(['Tenant quotas: OpenRegister is not available, skipped.'], $this->said);
-		$this->assertNull($this->done);
+		$this->assertSame(expected: ['Tenant quotas: OpenRegister is not available, skipped.'], actual: $this->said);
+		$this->assertNull(actual: $this->done);
 	}//end testWithoutOpenRegisterItSkipsAndStaysUnmarked()
 
 	/**
@@ -179,16 +184,16 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnreadableRowsAreLoggedAndTheStepStaysUnmarked(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: tenant quota rows could not be read',
 			['error' => 'quota table is locked']
 		);
 
-		$this->runStep($this->step($this->store(null), $logger));
+		$this->runStep(step: $this->step(store: $this->store(rows: null), logger: $logger));
 
-		$this->assertSame(['Tenant quotas: the rows could not be read, skipped.'], $this->said);
-		$this->assertNull($this->done);
+		$this->assertSame(expected: ['Tenant quotas: the rows could not be read, skipped.'], actual: $this->said);
+		$this->assertNull(actual: $this->done);
 	}//end testUnreadableRowsAreLoggedAndTheStepStaysUnmarked()
 
 	/**
@@ -199,25 +204,25 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 */
 	public function testARowWithoutAUuidIsSavedAndAFailedSaveKeepsTheStepUnmarked(): void {
 		$store = $this->store(
-			[
+			rows: [
 				['tenantRef' => 'no-uuid', 'quotaType' => 'storage_gb', 'currentUsage' => 2, 'limit' => 10],
 				['tenantRef' => 'refused', 'uuid' => 'q-2', 'quotaType' => 'storage_gb', 'currentUsage' => 1, 'limit' => 5],
 			]
 		);
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: a tenant quota row was not rewritten',
 			['tenantId' => 'refused', 'error' => 'validation failed']
 		);
 
-		$this->runStep($this->step($store, $logger));
+		$this->runStep(step: $this->step(store: $store, logger: $logger));
 
-		$this->assertSame([['tenant' => 'no-uuid', 'uuid' => null]], $store->saves);
+		$this->assertSame(expected: [['tenant' => 'no-uuid', 'uuid' => null]], actual: $store->saves);
 		$this->assertSame(
-			['Tenant quotas: 1 storage row(s) now in MB, 0 user limit(s) moved onto the organisation, 1 failed.'],
-			$this->said
+			expected: ['Tenant quotas: 1 storage row(s) now in MB, 0 user limit(s) moved onto the organisation, 1 failed.'],
+			actual: $this->said
 		);
-		$this->assertNull($this->done);
+		$this->assertNull(actual: $this->done);
 	}//end testARowWithoutAUuidIsSavedAndAFailedSaveKeepsTheStepUnmarked()
 
 	/**
@@ -227,8 +232,8 @@ final class MoveTenantQuotaLimitsOntoOrganisationEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertSame(
-			'Count tenant storage in megabytes and move user limits onto the organisation',
-			$this->step(null, $this->createMock(LoggerInterface::class))->getName()
+			expected: 'Count tenant storage in megabytes and move user limits onto the organisation',
+			actual: $this->step(store: null, logger: $this->createMock(originalClassName: LoggerInterface::class))->getName()
 		);
 	}//end testTheStepNamesItself()
 }//end class

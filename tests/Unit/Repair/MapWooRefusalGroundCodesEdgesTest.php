@@ -75,7 +75,7 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 * @return MapWooRefusalGroundCodes The step.
 	 */
 	private function step(array $config, WooRefusalGrounds $grounds, ?LoggerInterface $logger = null): MapWooRefusalGroundCodes {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
@@ -84,7 +84,7 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 		return new MapWooRefusalGroundCodes(
 			settingsService: $settings,
 			grounds: $grounds,
-			logger: $logger ?? $this->createMock(LoggerInterface::class),
+			logger: $logger ?? $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end step()
 
@@ -96,7 +96,7 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 * @return WooRefusalGrounds The list.
 	 */
 	private function grounds(array $codes): WooRefusalGrounds {
-		$grounds = $this->createMock(WooRefusalGrounds::class);
+		$grounds = $this->createMock(originalClassName: WooRefusalGrounds::class);
 		$grounds->method('listWithRetired')->willReturn(
 			array_map(static fn (string $code): array => ['code' => $code], $codes)
 		);
@@ -112,7 +112,7 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 * @return void
 	 */
 	private function runStep(MapWooRefusalGroundCodes $step): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(function (string $line): void {
 			$this->said[] = $line;
 		});
@@ -131,16 +131,16 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 */
 	public function testAnUnreadableSettledListSkipsTheMapping(): void {
 		$this->store->seed(schema: 'decision', uuid: 'd-1', row: ['refusalGrounds' => ['5.1.2e']]);
-		$grounds = $this->createMock(WooRefusalGrounds::class);
+		$grounds = $this->createMock(originalClassName: WooRefusalGrounds::class);
 		$grounds->method('listWithRetired')->willThrowException(new RuntimeException('no ground schema'));
 
-		$this->runStep($this->step(['register' => 'dossiq', 'decision_schema' => 'decision'], $grounds));
+		$this->runStep(step: $this->step(config: ['register' => 'dossiq', 'decision_schema' => 'decision'], grounds: $grounds));
 
 		$this->assertSame(
-			['Woo refusal ground mapping: the settled list cannot be read yet, skipped until the next upgrade.'],
-			$this->said
+			expected: ['Woo refusal ground mapping: the settled list cannot be read yet, skipped until the next upgrade.'],
+			actual: $this->said
 		);
-		$this->assertSame(0, $this->store->writes);
+		$this->assertSame(expected: 0, actual: $this->store->writes);
 	}//end testAnUnreadableSettledListSkipsTheMapping()
 
 	/**
@@ -152,17 +152,19 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 */
 	public function testAnUnconfiguredSchemaIsPassedOverAndAnUnreadableOneIsLogged(): void {
 		$this->store->missingSchemas = ['decision'];
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the Woo refusal ground mapping could not read decision',
-			$this->callback(static fn (array $context): bool => $context['app'] === 'dossiq' && str_contains($context['error'], 'decision'))
+			$this->callback(callback: static fn (array $context): bool => $context['app'] === 'dossiq' && str_contains($context['error'], 'decision'))
 		);
 
-		$this->runStep($this->step(['register' => 'dossiq', 'decision_schema' => 'decision'], $this->grounds(['5.1.2e']), $logger));
+		$this->runStep(
+			step: $this->step(config: ['register' => 'dossiq', 'decision_schema' => 'decision'], grounds: $this->grounds(codes: ['5.1.2e']), logger: $logger)
+		);
 
 		$this->assertSame(
-			['Woo refusal ground mapping, decision_schema: 0 mapped, 0 failed, 0 with an unmapped code.'],
-			$this->said
+			expected: ['Woo refusal ground mapping, decision_schema: 0 mapped, 0 failed, 0 with an unmapped code.'],
+			actual: $this->said
 		);
 	}//end testAnUnconfiguredSchemaIsPassedOverAndAnUnreadableOneIsLogged()
 
@@ -173,8 +175,8 @@ class MapWooRefusalGroundCodesEdgesTest extends TestCase {
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertSame(
-			'Map the Woo refusal grounds stored on assessments and decisions onto the settled list',
-			$this->step([], $this->grounds([]))->getName()
+			expected: 'Map the Woo refusal grounds stored on assessments and decisions onto the settled list',
+			actual: $this->step(config: [], grounds: $this->grounds(codes: []))->getName()
 		);
 	}//end testTheStepNamesItself()
 }//end class

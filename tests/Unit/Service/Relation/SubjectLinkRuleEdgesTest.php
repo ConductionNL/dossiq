@@ -52,6 +52,11 @@ use Psr\Log\LoggerInterface;
  */
 class SubjectLinkRuleEdgesTest extends TestCase {
 
+	/**
+	 * The objects.
+	 *
+	 * @var FakeObjectService
+	 */
 	private FakeObjectService $objects;
 
 	/**
@@ -59,30 +64,35 @@ class SubjectLinkRuleEdgesTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $objects Cases by uuid.
 	 * @param array<string, array> $usedBy  Incoming rows by uuid.
+	 *
+	 * @return SubjectLinkRule The rule.
 	 */
 	private function rule(array $objects, array $usedBy): SubjectLinkRule {
 		$this->objects = new FakeObjectService(objects: $objects, usedBy: $usedBy);
 
-		$apps = $this->createMock(IAppManager::class);
+		$apps = $this->createMock(originalClassName: IAppManager::class);
 		$apps->method('isInstalled')->willReturn(true);
 		$apps->method('isEnabledForUser')->willReturn(true);
 
-		$config = $this->createMock(IAppConfig::class);
+		$config = $this->createMock(originalClassName: IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => (['register' => '5', 'case_schema' => '9'][$key] ?? $default)
 		);
 		$config->method('hasKey')->willReturn(true);
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->with('OCA\OpenRegister\Service\ObjectService')->willReturn($this->objects);
 
-		$logger = $this->createMock(LoggerInterface::class);
-		$store  = new CaseRelationStore(new SettingsService($config, $apps, $container, $logger), $logger);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$store  = new CaseRelationStore(
+			settingsService: new SettingsService(appConfig: $config, appManager: $apps, container: $container, logger: $logger),
+			logger: $logger
+		);
 
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $params = []): string => vsprintf($text, $params));
 
-		return new SubjectLinkRule($store, new CaseRelationCodec(), new CaseActNotices($l10n));
+		return new SubjectLinkRule(store: $store, codec: new CaseRelationCodec(), notices: new CaseActNotices(l10n: $l10n));
 	}
 
 	/**
@@ -97,6 +107,11 @@ class SubjectLinkRuleEdgesTest extends TestCase {
 		));
 	}
 
+	/**
+	 * Rows that name no other readable holder are skipped.
+	 *
+	 * @return void
+	 */
 	public function testRowsThatNameNoOtherReadableHolderAreSkipped(): void {
 		$rule = $this->rule(
 			objects: [
@@ -106,34 +121,47 @@ class SubjectLinkRuleEdgesTest extends TestCase {
 			usedBy: ['b' => ['results' => [['id' => ''], ['uuid' => 'b'], ['id' => 'ghost'], ['id' => 'y']]]],
 		);
 
-		$this->assertNull($rule->refusal(
+		$this->assertNull(actual: $rule->refusal(
 			['origin' => ['id' => 'a', 'identifier' => 'Z-a'], 'target' => ['id' => 'b', 'identifier' => 'Z-b']],
 			['from' => 'a', 'to' => 'b']
 		));
 		// Neither the row without an id nor the row naming b itself is read.
-		$this->assertSame(['ghost', 'y'], array_slice($this->lookedUp(), 0, 2));
+		$this->assertSame(expected: ['ghost', 'y'], actual: array_slice($this->lookedUp(), 0, 2));
 	}
 
+	/**
+	 * The holder behind skipped rows is still found.
+	 *
+	 * @return void
+	 */
 	public function testTheHolderBehindSkippedRowsIsStillFound(): void {
 		$refusal = $this->rule(
 			objects: ['x' => ['id' => 'x', 'title' => 'Holder x', 'relatedCases' => [['caseId' => 'b', 'aardRelatie' => 'subject']]]],
 			usedBy: ['b' => ['results' => [['id' => ''], ['id' => 'b'], ['id' => 'ghost'], ['uuid' => 'x']]]],
 		)->refusal(['origin' => ['id' => 'a'], 'target' => ['id' => 'b', 'identifier' => 'Z-b']], ['from' => 'a', 'to' => 'b']);
 
-		$this->assertSame('subject_taken', $refusal['reason']);
-		$this->assertSame('Z-b', $refusal['target']);
-		$this->assertSame('Holder x', $refusal['other']);
+		$this->assertSame(expected: 'subject_taken', actual: $refusal['reason']);
+		$this->assertSame(expected: 'Z-b', actual: $refusal['target']);
+		$this->assertSame(expected: 'Holder x', actual: $refusal['other']);
 	}
 
+	/**
+	 * A case without number or title is named by its uuid.
+	 *
+	 * @return void
+	 */
 	public function testACaseWithoutNumberOrTitleIsNamedByItsUuid(): void {
 		$refusal = $this->rule(
 			objects: ['x' => ['@self' => ['id' => 'x'], 'identifier' => '  ', 'relatedCases' => [['caseId' => 'b', 'aardRelatie' => 'subject']]]],
 			usedBy: ['b' => ['results' => [['id' => 'x']]]],
 		)->refusal(['origin' => ['id' => 'a'], 'target' => ['uuid' => 'b', 'title' => '']], ['from' => 'a', 'to' => 'b']);
 
-		$this->assertSame('subject_taken', $refusal['reason']);
-		$this->assertSame('b', $refusal['target']);
-		$this->assertSame('x', $refusal['other']);
-		$this->assertSame('Not linked: b already hangs as the subject under x. A case can hang as the subject under one case only.', $refusal['message']);
+		$this->assertSame(expected: 'subject_taken', actual: $refusal['reason']);
+		$this->assertSame(expected: 'b', actual: $refusal['target']);
+		$this->assertSame(expected: 'x', actual: $refusal['other']);
+		$this->assertSame(
+			expected: 'Not linked: b already hangs as the subject under x. A case can hang as the subject under one case only.',
+			actual: $refusal['message']
+		);
 	}
 }

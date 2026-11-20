@@ -71,39 +71,72 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 	 */
 	private array $consumers = [];
 
+	/**
+	 * The config.
+	 *
+	 * @var IConfig&MockObject
+	 */
 	private IConfig&MockObject $config;
 
+	/**
+	 * The ips.
+	 *
+	 * @var IFactory&MockObject
+	 */
 	private IFactory&MockObject $ips;
 
+	/**
+	 * The users.
+	 *
+	 * @var IUserManager&MockObject
+	 */
 	private IUserManager&MockObject $users;
 
+	/**
+	 * The session.
+	 *
+	 * @var IUserSession&MockObject
+	 */
 	private IUserSession&MockObject $session;
 
+	/**
+	 * Build the subject and its collaborators.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->savedRemote = $_SERVER['REMOTE_ADDR'] ?? null;
 		$this->consumers   = [$this->consumer(userId: 'inspectie', fingerprint: self::FINGERPRINT)];
 
-		$this->config = $this->createMock(IConfig::class);
+		$this->config = $this->createMock(originalClassName: IConfig::class);
 		$this->config->method('getSystemValue')->willReturnCallback(
-			fn (string $key, mixed $default = ''): mixed => $key === 'trusted_proxies' ? $this->trustedProxies : $default
+			fn (string $key, mixed $default = ''): mixed => match ($key) {
+				'trusted_proxies' => $this->trustedProxies,
+				default => $default,
+			}
 		);
 
-		$this->ips = $this->createMock(IFactory::class);
+		$this->ips = $this->createMock(originalClassName: IFactory::class);
 		$this->ips->method('addressFromString')->willReturnCallback(function (string $ip): IAddress {
-			$address = $this->createMock(IAddress::class);
+			$address = $this->createMock(originalClassName: IAddress::class);
 			$address->method('__toString')->willReturn($ip);
 			return $address;
 		});
 		$this->ips->method('rangeFromString')->willReturnCallback(function (string $proxy): IRange {
-			$range = $this->createMock(IRange::class);
+			$range = $this->createMock(originalClassName: IRange::class);
 			$range->method('contains')->willReturnCallback(static fn (IAddress $address): bool => (string)$address === $proxy);
 			return $range;
 		});
 
-		$this->users   = $this->createMock(IUserManager::class);
-		$this->session = $this->createMock(IUserSession::class);
+		$this->users   = $this->createMock(originalClassName: IUserManager::class);
+		$this->session = $this->createMock(originalClassName: IUserSession::class);
 	}//end setUp()
 
+	/**
+	 * Restore what the test changed.
+	 *
+	 * @return void
+	 */
 	protected function tearDown(): void {
 		if ($this->savedRemote === null) {
 			unset($_SERVER['REMOTE_ADDR']);
@@ -122,9 +155,20 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 	 */
 	private function consumer(?string $userId, string $fingerprint): object {
 		return new class($userId, $fingerprint) {
+			/**
+			 * Constructor.
+			 *
+			 * @param ?string $userId The user id.
+			 * @param string $fingerprint The fingerprint.
+			 */
 			public function __construct(private readonly ?string $userId, private readonly string $fingerprint) {
 			}
 
+			/**
+			 * Stand-in for getAuthorizationType().
+			 *
+			 * @return string
+			 */
 			public function getAuthorizationType(): string {
 				return 'certificate';
 			}
@@ -136,6 +180,11 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 				return ['certificateFingerprint' => $this->fingerprint];
 			}
 
+			/**
+			 * Stand-in for getUserId().
+			 *
+			 * @return ?string
+			 */
 			public function getUserId(): ?string {
 				return $this->userId;
 			}
@@ -148,9 +197,12 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 	 * @return ApiCredentialResolver
 	 */
 	private function resolver(): ApiCredentialResolver {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => $key === ApiCredentialResolver::CERT_HEADER_KEY ? self::HEADER : $default
+			static fn (string $key, string $default = ''): string => match ($key) {
+				ApiCredentialResolver::CERT_HEADER_KEY => self::HEADER,
+				default => $default,
+			}
 		);
 
 		$consumers = &$this->consumers;
@@ -170,13 +222,13 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 		};
 
 		return new ApiCredentialResolver(
-			jwtValidator: $this->createMock(ZgwJwtValidator::class),
+			jwtValidator: $this->createMock(originalClassName: ZgwJwtValidator::class),
 			settings: $settings,
 			config: $this->config,
 			ipFactory: $this->ips,
 			userManager: $this->users,
 			userSession: $this->session,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			consumerMapper: $mapper,
 		);
 	}//end resolver()
@@ -187,8 +239,13 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 	 * @return IRequest
 	 */
 	private function certificateRequest(): IRequest {
-		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => $name === self::HEADER ? self::FINGERPRINT : '');
+		$request = $this->createMock(originalClassName: IRequest::class);
+		$request->method('getHeader')->willReturnCallback(
+			static fn (string $name): string => match ($name) {
+				self::HEADER => self::FINGERPRINT,
+				default => '',
+			}
+		);
 		return $request;
 	}//end certificateRequest()
 
@@ -204,7 +261,7 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 			return $refused->getMessage();
 		}
 
-		$this->fail('expected a refusal');
+		$this->fail(message: 'expected a refusal');
 	}//end refusal()
 
 	/**
@@ -216,10 +273,10 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 		$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
 		$this->users->expects($this->once())->method('get')->with('inspectie')->willReturn(null);
 
-		$this->assertSame($this->consumers[0], $this->resolver()->resolve($this->certificateRequest()));
+		$this->assertSame(expected: $this->consumers[0], actual: $this->resolver()->resolve($this->certificateRequest()));
 
 		$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
-		$this->assertSame('Untrusted certificate header', $this->refusal());
+		$this->assertSame(expected: 'Untrusted certificate header', actual: $this->refusal());
 	}//end testTheConnectionAddressIsReadFromTheServer()
 
 	/**
@@ -231,7 +288,7 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 		unset($_SERVER['REMOTE_ADDR']);
 		$this->config->expects($this->never())->method('getSystemValue');
 
-		$this->assertSame('Untrusted certificate header', $this->refusal());
+		$this->assertSame(expected: 'Untrusted certificate header', actual: $this->refusal());
 	}//end testAnUnknownConnectionAddressIsNeverTrusted()
 
 	/**
@@ -244,7 +301,7 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 		$this->trustedProxies = '10.0.0.1';
 		$this->ips->expects($this->never())->method('rangeFromString');
 
-		$this->assertSame('Untrusted certificate header', $this->refusal());
+		$this->assertSame(expected: 'Untrusted certificate header', actual: $this->refusal());
 	}//end testATrustedProxiesSettingThatIsNoListTrustsNobody()
 
 	/**
@@ -259,7 +316,7 @@ class ApiCredentialResolverEdgesTest extends TestCase {
 
 		foreach ([null, ''] as $userId) {
 			$this->consumers = [$this->consumer(userId: $userId, fingerprint: self::FINGERPRINT)];
-			$this->assertSame($this->consumers[0], $this->resolver()->resolve($this->certificateRequest()));
+			$this->assertSame(expected: $this->consumers[0], actual: $this->resolver()->resolve($this->certificateRequest()));
 		}
 	}//end testAConsumerWithoutAUserResolvesWithoutBinding()
 }//end class

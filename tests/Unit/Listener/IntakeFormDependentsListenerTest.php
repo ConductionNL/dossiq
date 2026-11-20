@@ -84,13 +84,16 @@ class IntakeFormDependentsListenerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->check = $this->createMock(BoundFormsCheckInterface::class);
+		$this->check = $this->createMock(originalClassName: BoundFormsCheckInterface::class);
 		$this->check->method('namesOf')->willReturnCallback(
-			static fn (array $ct): array => (isset($ct['id']) === true) ? [$ct['id'], 'alias'] : []
+			static fn (array $ct): array => match (isset($ct['id'])) {
+				true => [$ct['id'], 'alias'],
+				default => [],
+			}
 		);
-		$this->bindings = $this->createMock(IntakeFormBindingsInterface::class);
-		$this->binding = $this->createMock(IntakeFormBindingInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->bindings = $this->createMock(originalClassName: IntakeFormBindingsInterface::class);
+		$this->binding = $this->createMock(originalClassName: IntakeFormBindingInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -99,9 +102,12 @@ class IntakeFormDependentsListenerTest extends TestCase {
 	 * @return IntakeFormDependentsListener The listener.
 	 */
 	private function listener(): IntakeFormDependentsListener {
-		$settings = $this->createMock(SettingsServiceInterface::class);
+		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturnCallback(
-			fn (string $key): string => ($key === 'case_schema') ? $this->caseSchema : ''
+			fn (string $key): string => match ($key) {
+				'case_schema' => $this->caseSchema,
+				default => '',
+			}
 		);
 		return new IntakeFormDependentsListener(
 			settingsService: $settings,
@@ -143,16 +149,19 @@ class IntakeFormDependentsListenerTest extends TestCase {
 			static fn (array $ct): array => ['subject' => 'answer-' . $ct['id']]
 		);
 
-		$event = new FormDestinationDependentsEvent(self::schema('case'));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: 'case'));
 		$this->listener()->handle($event);
 
 		$forms = $event->getForms();
-		$this->assertCount(3, $forms);
-		$this->assertContainsOnlyInstancesOf(FormDependent::class, $forms);
+		$this->assertCount(expectedCount: 3, haystack: $forms);
+		$this->assertContainsOnlyInstancesOf(className: FormDependent::class, haystack: $forms);
 
-		$this->assertSame(['ct-1', 'dossiq', 'Bezwaar', 'alice', ['subject' => 'answer-ct-1']], [$forms[0]->id, $forms[0]->app, $forms[0]->title, $forms[0]->author, $forms[0]->mapping]);
-		$this->assertSame(['ct-2', 'Woo-verzoek', null], [$forms[1]->id, $forms[1]->title, $forms[1]->author]);
-		$this->assertSame(['ct-3', 'VTH-1', null], [$forms[2]->id, $forms[2]->title, $forms[2]->author]);
+		$this->assertSame(
+			expected: ['ct-1', 'dossiq', 'Bezwaar', 'alice', ['subject' => 'answer-ct-1']],
+			actual: [$forms[0]->id, $forms[0]->app, $forms[0]->title, $forms[0]->author, $forms[0]->mapping]
+		);
+		$this->assertSame(expected: ['ct-2', 'Woo-verzoek', null], actual: [$forms[1]->id, $forms[1]->title, $forms[1]->author]);
+		$this->assertSame(expected: ['ct-3', 'VTH-1', null], actual: [$forms[2]->id, $forms[2]->title, $forms[2]->author]);
 	}//end testEachBoundCaseTypeIsAnnouncedAsAForm()
 
 	/**
@@ -164,11 +173,11 @@ class IntakeFormDependentsListenerTest extends TestCase {
 		$this->bindings->method('boundCaseTypes')->willReturn([['id' => 'ct-1', 'title' => 7, '@self' => 'not-an-array']]);
 		$this->binding->method('mappingFor')->willReturn([]);
 
-		$event = new FormDestinationDependentsEvent(self::schema('case'));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: 'case'));
 		$this->listener()->handle($event);
 
-		$this->assertSame('', $event->getForms()[0]->title);
-		$this->assertNull($event->getForms()[0]->author);
+		$this->assertSame(expected: '', actual: $event->getForms()[0]->title);
+		$this->assertNull(actual: $event->getForms()[0]->author);
 	}//end testACaseTypeWithoutATitleGetsAnEmptyOne()
 
 	/**
@@ -181,7 +190,7 @@ class IntakeFormDependentsListenerTest extends TestCase {
 		$this->binding->method('mappingFor')->willReturn([]);
 		$this->bindings->expects($this->once())->method('unbind')->with('ct-7');
 
-		$event = new FormDestinationDependentsEvent(self::schema('case'));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: 'case'));
 		$this->listener()->handle($event);
 
 		($event->getForms()[0]->unpublish)();
@@ -195,14 +204,14 @@ class IntakeFormDependentsListenerTest extends TestCase {
 	public function testAnotherSchemaAnnouncesNothing(): void {
 		$this->bindings->expects($this->never())->method('boundCaseTypes');
 
-		$event = new FormDestinationDependentsEvent(self::schema('contactMoment'));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: 'contactMoment'));
 		$this->listener()->handle($event);
-		$this->assertSame([], $event->getForms());
+		$this->assertSame(expected: [], actual: $event->getForms());
 
 		$this->caseSchema = '';
-		$event = new FormDestinationDependentsEvent(self::schema(''));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: ''));
 		$this->listener()->handle($event);
-		$this->assertSame([], $event->getForms());
+		$this->assertSame(expected: [], actual: $event->getForms());
 	}//end testAnotherSchemaAnnouncesNothing()
 
 	/**
@@ -214,7 +223,7 @@ class IntakeFormDependentsListenerTest extends TestCase {
 		$this->caseSchema = 'uuid-9';
 		$this->bindings->expects($this->once())->method('boundCaseTypes')->willReturn([]);
 
-		$schema = self::schema('case');
+		$schema = self::schema(slug: 'case');
 		$schema->setUuid('uuid-9');
 		$this->listener()->handle(new FormDestinationDependentsEvent($schema));
 	}//end testTheCaseSchemaIsRecognisedByUuid()
@@ -231,10 +240,10 @@ class IntakeFormDependentsListenerTest extends TestCase {
 			['reason' => 'register offline']
 		);
 
-		$event = new FormDestinationDependentsEvent(self::schema('case'));
+		$event = new FormDestinationDependentsEvent(schema: self::schema(slug: 'case'));
 		$this->listener()->handle($event);
 
-		$this->assertSame([], $event->getForms());
+		$this->assertSame(expected: [], actual: $event->getForms());
 	}//end testAFailureIsLoggedNotThrown()
 
 	/**

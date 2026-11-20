@@ -54,20 +54,20 @@ final class BrcHelperFactoryTest extends TestCase {
 	 */
 	public function testTheSyncUsesTheGivenServiceAndSettings(): void {
 		$store = new RecordsBrcStoreCalls();
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('debug')->with('brc-006: case_decision_schema not configured, skipping zaakbesluit sync');
 
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->expects($this->once())->method('getObjectService')->willReturn($store);
 		$zgw->method('getLogger')->willReturn($logger);
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->expects($this->once())->method('getConfigValue')->with('case_decision_schema')->willReturn('');
 
 		$sync = (new BrcHelperFactory())->brcCrossRegisterSync(zgwService: $zgw, settingsService: $settings);
 
-		$this->assertInstanceOf(BrcCrossRegisterSync::class, $sync);
+		$this->assertInstanceOf(expected: BrcCrossRegisterSync::class, actual: $sync);
 		$sync->syncCaseDecisionToZrc(caseUrl: 'https://nc/zaken/v1/zaken/z', decisionUrl: 'https://nc/besluiten/v1/besluiten/b');
-		$this->assertSame([], $store->calls);
+		$this->assertSame(expected: [], actual: $store->calls);
 	}//end testTheSyncUsesTheGivenServiceAndSettings()
 
 	/**
@@ -80,9 +80,9 @@ final class BrcHelperFactoryTest extends TestCase {
 		$store->saved = ['id' => 'bio-1'];
 		$body = ['decision' => 'https://nc/besluiten/v1/besluiten/b', 'informatieobject' => 'https://nc/documenten/v1/eio/d'];
 
-		$rules = $this->createMock(ZgwBusinessRulesService::class);
+		$rules = $this->createMock(originalClassName: ZgwBusinessRulesService::class);
 		$rules->method('validate')->willReturn(['valid' => true, 'status' => 200, 'detail' => '', 'enrichedBody' => $body]);
-		$zgw = $this->createMock(ZgwService::class);
+		$zgw = $this->createMock(originalClassName: ZgwService::class);
 		$zgw->method('getObjectService')->willReturn($store);
 		$zgw->method('loadMappingConfig')->willReturn(['sourceRegister' => '7', 'sourceSchema' => '71']);
 		$zgw->method('getRequestBody')->willReturn($body);
@@ -93,14 +93,14 @@ final class BrcHelperFactoryTest extends TestCase {
 		$zgw->method('applyOutboundMapping')->willReturnArgument(0);
 		$zgw->method('buildBaseUrl')->willReturn('https://nc/besluiten/v1/besluitinformatieobjecten');
 
-		$sync = $this->createMock(BrcCrossRegisterSyncInterface::class);
+		$sync = $this->createMock(originalClassName: BrcCrossRegisterSyncInterface::class);
 		$sync->expects($this->once())->method('createOioInDrc')->with($body['decision'], $body['informatieobject']);
 
 		$handler = (new BrcHelperFactory())->brcDocumentLinkHandler(zgwService: $zgw, sync: $sync);
-		$response = $handler->create(request: $this->createMock(IRequest::class));
+		$response = $handler->create(request: $this->createMock(originalClassName: IRequest::class));
 
-		$this->assertInstanceOf(BrcDocumentLinkHandler::class, $handler);
-		$this->assertSame(201, $response->getStatus());
-		$this->assertSame([['7', '71', $body]], $store->callsOf('saveObject'));
+		$this->assertInstanceOf(expected: BrcDocumentLinkHandler::class, actual: $handler);
+		$this->assertSame(expected: 201, actual: $response->getStatus());
+		$this->assertSame(expected: [['7', '71', $body]], actual: $store->callsOf('saveObject'));
 	}//end testTheHandlerUsesTheGivenServiceAndSync()
 }//end class

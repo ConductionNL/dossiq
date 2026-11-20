@@ -111,9 +111,10 @@ class PublicationChecksFindingsTest extends TestCase {
 			/**
 			 * Read one row.
 			 *
-			 * @param string $id       The id.
-			 * @param mixed  $register The register.
-			 * @param mixed  $schema   The schema.
+			 * @param string $id The id.
+			 * @param ?ObjectFindOptions $options The options.
+			 * @param bool $_rbac Ignored.
+			 * @param bool $_multitenancy Ignored.
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
@@ -140,7 +141,7 @@ class PublicationChecksFindingsTest extends TestCase {
 			}//end searchObjects()
 		};
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default=''): string => match ($key) {
@@ -151,20 +152,20 @@ class PublicationChecksFindingsTest extends TestCase {
 				default => $default,
 			}
 		);
-		$store = new CaseTypeStore($settings);
+		$store = new CaseTypeStore(settingsService: $settings);
 
 		return new PublicationChecks(
 			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
 			declarations: new CaseTypeDeclarationChecks(
 				acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
-				admissibility: $this->createMock(AdmissibilityJudgement::class),
+				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
 				remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 				handling: new CaseTypeHandling(),
 			),
 			unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
 			reachability: new CaseTypeReachability(),
-			senders: $this->createMock(SenderIdentity::class),
+			senders: $this->createMock(originalClassName: SenderIdentity::class),
 		);
 	}//end checks()
 
@@ -174,7 +175,7 @@ class PublicationChecksFindingsTest extends TestCase {
 	 * @return void
 	 */
 	public function testACompleteCaseTypeHasNoFindings(): void {
-		self::assertSame([], $this->checks()->validate(caseTypeId: 'ct'));
+		self::assertSame(expected: [], actual: $this->checks()->validate(caseTypeId: 'ct'));
 	}//end testACompleteCaseTypeHasNoFindings()
 
 	/**
@@ -185,7 +186,7 @@ class PublicationChecksFindingsTest extends TestCase {
 	public function testNoStatusesIsOneFinding(): void {
 		$this->rows['statusType'] = [];
 
-		self::assertSame(['Give the case type at least one status.'], $this->checks()->validate(caseTypeId: 'ct'));
+		self::assertSame(expected: ['Give the case type at least one status.'], actual: $this->checks()->validate(caseTypeId: 'ct'));
 	}//end testNoStatusesIsOneFinding()
 
 	/**
@@ -198,11 +199,11 @@ class PublicationChecksFindingsTest extends TestCase {
 		$this->rows['caseType']['ct']['initialStatus'] = 'elsewhere';
 
 		self::assertSame(
-			[
+			expected: [
 				'Mark one of the statuses as the final one, so a case can close.',
 				'Pick the status a new case of this type starts in.',
 			],
-			$this->checks()->validate(caseTypeId: 'ct')
+			actual: $this->checks()->validate(caseTypeId: 'ct')
 		);
 	}//end testNoFinalStatusAndAForeignInitialStatus()
 
@@ -214,7 +215,7 @@ class PublicationChecksFindingsTest extends TestCase {
 	public function testNoInitialStatusIsAFinding(): void {
 		unset($this->rows['caseType']['ct']['initialStatus']);
 
-		self::assertSame(['Pick the status a new case of this type starts in.'], $this->checks()->validate(caseTypeId: 'ct'));
+		self::assertSame(expected: ['Pick the status a new case of this type starts in.'], actual: $this->checks()->validate(caseTypeId: 'ct'));
 	}//end testNoInitialStatusIsAFinding()
 
 	/**
@@ -227,12 +228,12 @@ class PublicationChecksFindingsTest extends TestCase {
 		unset($this->rows['caseType']['ct']['responsibleUnit'], $this->rows['caseType']['ct']['trigger']);
 
 		self::assertSame(
-			[
+			expected: [
 				'Give the case type a title.',
 				'Give the case type a trigger.',
 				'Give the case type a responsible unit.',
 			],
-			$this->checks()->validate(caseTypeId: 'ct')
+			actual: $this->checks()->validate(caseTypeId: 'ct')
 		);
 	}//end testEmptyRequiredFieldsAreNamedInOrder()
 
@@ -245,8 +246,8 @@ class PublicationChecksFindingsTest extends TestCase {
 		$this->rows['caseType']['ct']['handling'] = ['defaultGroup' => 'juristen', 'autoClose' => true];
 
 		self::assertSame(
-			['Nothing reads the handling switch "autoClose". Remove it, or name a switch that is read.'],
-			$this->checks()->validate(caseTypeId: 'ct')
+			expected: ['Nothing reads the handling switch "autoClose". Remove it, or name a switch that is read.'],
+			actual: $this->checks()->validate(caseTypeId: 'ct')
 		);
 	}//end testAnUnreadHandlingSwitchIsAFinding()
 
@@ -266,7 +267,7 @@ class PublicationChecksFindingsTest extends TestCase {
 			)
 		);
 
-		self::assertSame(['A case type cannot inherit from itself: Bezwaar -> Ouder -> Bezwaar'], $cycles);
+		self::assertSame(expected: ['A case type cannot inherit from itself: Bezwaar -> Ouder -> Bezwaar'], actual: $cycles);
 	}//end testAParentChainThatLoopsIsAFinding()
 
 	/**
@@ -278,7 +279,7 @@ class PublicationChecksFindingsTest extends TestCase {
 		$this->rows['caseType']['ct']['parentCaseType'] = 'parent';
 		$this->rows['caseType']['parent'] = ['id' => 'parent', 'title' => 'Ouder'];
 
-		self::assertSame([], $this->checks()->validate(caseTypeId: 'ct'));
+		self::assertSame(expected: [], actual: $this->checks()->validate(caseTypeId: 'ct'));
 	}//end testASoundParentChainIsNoFinding()
 
 	/**
@@ -291,9 +292,9 @@ class PublicationChecksFindingsTest extends TestCase {
 		$checks = $this->checks();
 
 		self::assertContains(
-			'This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.',
-			$checks->warnings(caseTypeId: 'ct')
+			needle: 'This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.',
+			haystack: $checks->warnings(caseTypeId: 'ct')
 		);
-		self::assertSame([], $checks->validate(caseTypeId: 'ct'));
+		self::assertSame(expected: [], actual: $checks->validate(caseTypeId: 'ct'));
 	}//end testSwitchingOffTheAcknowledgementIsAWarning()
 }//end class

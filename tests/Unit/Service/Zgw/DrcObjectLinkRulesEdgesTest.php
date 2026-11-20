@@ -64,12 +64,12 @@ class DrcObjectLinkRulesEdgesTest extends TestCase {
 	 * @return DrcObjectLinkRules
 	 */
 	private function rules(): DrcObjectLinkRules {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => 'schema-' . $key);
 		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$parts = [
 			'lookups' => $lookups,
-			'results' => new ZgwRuleResults(logger: $this->createMock(LoggerInterface::class)),
+			'results' => new ZgwRuleResults(logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			'settingsService' => $settings,
 			'fieldValidator' => new FieldValidator(),
 		];
@@ -82,11 +82,27 @@ class DrcObjectLinkRulesEdgesTest extends TestCase {
 			public function __construct(private array &$built) {
 			}
 
+			/**
+			 * Stand-in for buildSearchQuery().
+			 *
+			 * @param array $requestParams The request params.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 *
+			 * @return array
+			 */
 			public function buildSearchQuery(array $requestParams, string $register, string $schema): array {
 				$this->built[] = [$requestParams, $register, $schema];
 				return ['schema' => $schema];
 			}
 
+			/**
+			 * Stand-in for searchObjectsPaginated().
+			 *
+			 * @param array $query The query.
+			 *
+			 * @return array
+			 */
 			public function searchObjectsPaginated(array $query): array {
 				return ['results' => []];
 			}
@@ -107,10 +123,10 @@ class DrcObjectLinkRulesEdgesTest extends TestCase {
 			body: ['informatieobject' => 'https://drc.example.com/eio/' . self::DOCUMENT, 'object' => self::CASE_URL, 'objectType' => 'case']
 		);
 
-		$this->assertSame('inconsistent-relation', $result['invalidParams'][0]['code']);
+		$this->assertSame(expected: 'inconsistent-relation', actual: $result['invalidParams'][0]['code']);
 		$this->assertSame(
-			[['case' => self::CASE, 'document' => self::DOCUMENT, '_limit' => 1], '5', 'schema-case_document_schema'],
-			end($this->built)
+			expected: [['case' => self::CASE, 'document' => self::DOCUMENT, '_limit' => 1], '5', 'schema-case_document_schema'],
+			actual: end($this->built)
 		);
 	}//end testTheCounterpartSearchCarriesRegisterSchemaAndBothUuids()
 
@@ -124,8 +140,12 @@ class DrcObjectLinkRulesEdgesTest extends TestCase {
 
 		$result = $this->rules()->rulesObjectinformatieobjectenCreate(body: $body);
 
-		$this->assertSame(['valid' => true, 'status' => 200, 'detail' => '', 'enrichedBody' => $body], $result);
-		$this->assertNotSame([], $this->built, 'the uniqueness check still ran');
-		$this->assertSame([], array_filter($this->built, static fn (array $call): bool => array_key_first($call[0]) === 'case'), 'no counterpart search ran');
+		$this->assertSame(expected: ['valid' => true, 'status' => 200, 'detail' => '', 'enrichedBody' => $body], actual: $result);
+		$this->assertNotSame(expected: [], actual: $this->built, message: 'the uniqueness check still ran');
+		$this->assertSame(
+			expected: [],
+			actual: array_filter($this->built, static fn (array $call): bool => array_key_first($call[0]) === 'case'),
+			message: 'no counterpart search ran'
+		);
 	}//end testADocumentUrlWithoutAUuidSkipsTheCounterpartSearch()
 }//end class

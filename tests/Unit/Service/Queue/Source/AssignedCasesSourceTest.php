@@ -46,7 +46,7 @@ class AssignedCasesSourceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 	}//end setUp()
 
 	/**
@@ -63,9 +63,24 @@ class AssignedCasesSourceTest extends TestCase {
 			/** @var list<array<int|string, mixed>> */
 			public array $searches = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param array $rows The rows.
+			 * @param ?\Throwable $failure The failure.
+			 */
 			public function __construct(private array $rows, private ?\Throwable $failure) {
 			}
 
+			/**
+			 * Stand-in for searchObjectsBySlug().
+			 *
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 * @param array $filters The filters.
+			 *
+			 * @return array
+			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
 				$this->searches[] = [$register, $schema, $filters];
 				if ($this->failure !== null) {
@@ -96,7 +111,7 @@ class AssignedCasesSourceTest extends TestCase {
 	 */
 	public function testOpenCasesOfTheAssigneeBecomeRowsThatOpenTheCase(): void {
 		$store = $this->store(
-			[
+			rows: [
 				['@self' => ['id' => 'case-1'], 'title' => 'Dakkapel', 'priority' => 'high', 'deadline' => ' 2026-12-01 '],
 				['id' => 'case-2', 'deadline' => ''],
 				['uuid' => 'case-3', 'priority' => 'low'],
@@ -106,14 +121,21 @@ class AssignedCasesSourceTest extends TestCase {
 
 		$items = $this->source()->itemsFor('alice');
 
-		$this->assertSame([['dossiq', 'case', ['assignee' => 'alice', 'isFinalStatus' => 0, '_limit' => 100]]], $store->searches);
-		$this->assertSame(['case-1', 'case-2', 'case-3'], array_map(static fn ($item): string => $item->subjectId, $items));
-		$this->assertSame(['assigned-cases', 'case', 'Dakkapel', 'high', '2026-12-01'], [$items[0]->source, $items[0]->subjectType, $items[0]->title, $items[0]->priority, $items[0]->dueAt]);
-		$this->assertSame(['name' => 'CaseDetail', 'params' => ['id' => 'case-1']], $items[0]->route);
-		$this->assertNull($items[0]->coveredFor);
-		$this->assertSame(['case-2', '', null], [$items[1]->title, $items[1]->priority, $items[1]->dueAt], 'a case without a title is titled by its id');
-		$this->assertSame(['uuid' => 'case-3', 'priority' => 'low'], $items[2]->subject);
-		$this->assertSame([], $items[0]->waiting, 'a case not paused waits on nobody');
+		$this->assertSame(expected: [['dossiq', 'case', ['assignee' => 'alice', 'isFinalStatus' => 0, '_limit' => 100]]], actual: $store->searches);
+		$this->assertSame(expected: ['case-1', 'case-2', 'case-3'], actual: array_map(static fn ($item): string => $item->subjectId, $items));
+		$this->assertSame(
+			expected: ['assigned-cases', 'case', 'Dakkapel', 'high', '2026-12-01'],
+			actual: [$items[0]->source, $items[0]->subjectType, $items[0]->title, $items[0]->priority, $items[0]->dueAt]
+		);
+		$this->assertSame(expected: ['name' => 'CaseDetail', 'params' => ['id' => 'case-1']], actual: $items[0]->route);
+		$this->assertNull(actual: $items[0]->coveredFor);
+		$this->assertSame(
+			expected: ['case-2', '', null],
+			actual: [$items[1]->title, $items[1]->priority, $items[1]->dueAt],
+			message: 'a case without a title is titled by its id'
+		);
+		$this->assertSame(expected: ['uuid' => 'case-3', 'priority' => 'low'], actual: $items[2]->subject);
+		$this->assertSame(expected: [], actual: $items[0]->waiting, message: 'a case not paused waits on nobody');
 	}//end testOpenCasesOfTheAssigneeBecomeRowsThatOpenTheCase()
 
 	/**
@@ -122,9 +144,9 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheConfiguredCaseSchemaIsRead(): void {
-		$store = $this->store([], ['register' => 'dossiq', 'case_schema' => ' zaak ']);
+		$store = $this->store(rows: [], config: ['register' => 'dossiq', 'case_schema' => ' zaak ']);
 		$this->source()->itemsFor('bob');
-		$this->assertSame('zaak', $store->searches[0][1]);
+		$this->assertSame(expected: 'zaak', actual: $store->searches[0][1]);
 	}//end testTheConfiguredCaseSchemaIsRead()
 
 	/**
@@ -133,9 +155,9 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlankCaseSchemaFallsBackToCase(): void {
-		$store = $this->store([], ['register' => 'dossiq', 'case_schema' => '  ']);
+		$store = $this->store(rows: [], config: ['register' => 'dossiq', 'case_schema' => '  ']);
 		$this->source()->itemsFor('bob');
-		$this->assertSame('case', $store->searches[0][1]);
+		$this->assertSame(expected: 'case', actual: $store->searches[0][1]);
 	}//end testABlankCaseSchemaFallsBackToCase()
 
 	/**
@@ -144,12 +166,12 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAPausedCaseCarriesItsWaitingFactsIntoTheRow(): void {
-		$this->store([['id' => 'case-1', 'pauseWaitingOn' => ' applicant ', 'waitingSince' => '2000-01-01', 'chasesSent' => 1]]);
+		$this->store(rows: [['id' => 'case-1', 'pauseWaitingOn' => ' applicant ', 'waitingSince' => '2000-01-01', 'chasesSent' => 1]]);
 
 		$waiting = $this->source()->itemsFor('alice')[0]->waiting;
 
-		$this->assertSame(['applicant', '2000-01-01', 1], [$waiting['on'], $waiting['since'], $waiting['chases']]);
-		$this->assertGreaterThan(9000, $waiting['days']);
+		$this->assertSame(expected: ['applicant', '2000-01-01', 1], actual: [$waiting['on'], $waiting['since'], $waiting['chases']]);
+		$this->assertGreaterThan(expected: 9000, actual: $waiting['days']);
 	}//end testAPausedCaseCarriesItsWaitingFactsIntoTheRow()
 
 	/**
@@ -158,8 +180,8 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWaitingOnUsHasNoWaitingFacts(): void {
-		$this->store([]);
-		$this->assertSame([], $this->source()->waitingFactsOf(row: ['pauseWaitingOn' => 'us', 'waitingSince' => '2026-09-01']));
+		$this->store(rows: []);
+		$this->assertSame(expected: [], actual: $this->source()->waitingFactsOf(row: ['pauseWaitingOn' => 'us', 'waitingSince' => '2026-09-01']));
 	}//end testACaseWaitingOnUsHasNoWaitingFacts()
 
 	/**
@@ -168,14 +190,14 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableDateCountsZeroDaysAndNegativeChasesNone(): void {
-		$this->store([]);
+		$this->store(rows: []);
 
 		$facts = $this->source()->waitingFactsOf(
 			row: ['pauseWaitingOn' => 'adviser', 'waitingSince' => 'not a date', 'chasesSent' => -3],
 			now: new DateTimeImmutable('2026-09-10')
 		);
 
-		$this->assertSame(['on' => 'adviser', 'since' => 'not a date', 'days' => 0, 'chases' => 0], $facts);
+		$this->assertSame(expected: ['on' => 'adviser', 'since' => 'not a date', 'days' => 0, 'chases' => 0], actual: $facts);
 	}//end testAnUnreadableDateCountsZeroDaysAndNegativeChasesNone()
 
 	/**
@@ -184,11 +206,11 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutAWaitingDateTheDaysAreZero(): void {
-		$this->store([]);
+		$this->store(rows: []);
 
 		$facts = $this->source()->waitingFactsOf(row: ['pauseWaitingOn' => 'applicant'], now: new DateTimeImmutable('2026-09-10'));
 
-		$this->assertSame(['on' => 'applicant', 'since' => '', 'days' => 0, 'chases' => 0], $facts);
+		$this->assertSame(expected: ['on' => 'applicant', 'since' => '', 'days' => 0, 'chases' => 0], actual: $facts);
 	}//end testWithoutAWaitingDateTheDaysAreZero()
 
 	/**
@@ -199,10 +221,13 @@ class AssignedCasesSourceTest extends TestCase {
 	public function testTheSourceDescribesItself(): void {
 		$source = $this->source();
 
-		$this->assertSame('assigned-cases', $source->name());
-		$this->assertSame('Cases assigned to you', $source->label());
-		$this->assertSame('A case leaves when it is closed or goes to somebody else.', $source->closesWhen());
-		$this->assertSame(['notification:caseAssigned', 'notification:caseHandoffIntake', 'notification:termResumedAfterPause'], $source->mechanisms());
+		$this->assertSame(expected: 'assigned-cases', actual: $source->name());
+		$this->assertSame(expected: 'Cases assigned to you', actual: $source->label());
+		$this->assertSame(expected: 'A case leaves when it is closed or goes to somebody else.', actual: $source->closesWhen());
+		$this->assertSame(
+			expected: ['notification:caseAssigned', 'notification:caseHandoffIntake', 'notification:termResumedAfterPause'],
+			actual: $source->mechanisms()
+		);
 	}//end testTheSourceDescribesItself()
 
 	/**
@@ -211,10 +236,10 @@ class AssignedCasesSourceTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutARegisterTheSourceFails(): void {
-		$this->store([], ['register' => '  ']);
+		$this->store(rows: [], config: ['register' => '  ']);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('Dossiq has no register configured yet.');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Dossiq has no register configured yet.');
 		$this->source()->itemsFor('alice');
 	}//end testWithoutARegisterTheSourceFails()
 
@@ -225,14 +250,14 @@ class AssignedCasesSourceTest extends TestCase {
 	 */
 	public function testAFailedReadIsRaisedKeepingItsCause(): void {
 		$cause = new \LogicException('schema case not found');
-		$this->store([], ['register' => 'dossiq'], $cause);
+		$this->store(rows: [], config: ['register' => 'dossiq'], failure: $cause);
 
 		try {
 			$this->source()->itemsFor('alice');
-			$this->fail('a failed read must not answer an empty queue');
+			$this->fail(message: 'a failed read must not answer an empty queue');
 		} catch (RuntimeException $e) {
-			$this->assertSame('schema case not found', $e->getMessage());
-			$this->assertSame($cause, $e->getPrevious());
+			$this->assertSame(expected: 'schema case not found', actual: $e->getMessage());
+			$this->assertSame(expected: $cause, actual: $e->getPrevious());
 		}
 	}//end testAFailedReadIsRaisedKeepingItsCause()
 }//end class

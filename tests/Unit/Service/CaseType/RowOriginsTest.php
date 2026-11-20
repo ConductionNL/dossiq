@@ -41,8 +41,8 @@ class RowOriginsTest extends TestCase {
 	public function testOriginForTellsOwnFromInherited(): void {
 		$origins = new RowOrigins();
 
-		$this->assertSame(CaseTypeResolver::ORIGIN_OWN, $origins->originFor(isOwn: true));
-		$this->assertSame(CaseTypeResolver::ORIGIN_INHERITED, $origins->originFor(isOwn: false));
+		$this->assertSame(expected: CaseTypeResolver::ORIGIN_OWN, actual: $origins->originFor(isOwn: true));
+		$this->assertSame(expected: CaseTypeResolver::ORIGIN_INHERITED, actual: $origins->originFor(isOwn: false));
 	}//end testOriginForTellsOwnFromInherited()
 
 	/**
@@ -54,8 +54,8 @@ class RowOriginsTest extends TestCase {
 		$row = ['key' => 'naam', 'origin' => CaseTypeResolver::ORIGIN_OWN];
 
 		$this->assertSame(
-			['key' => 'naam', 'origin' => CaseTypeResolver::ORIGIN_OWN, 'overrides' => true],
-			(new RowOrigins())->markOverride(row: $row, isOwn: true, merged: ['naam' => ['key' => 'naam']], key: 'naam')
+			expected: ['key' => 'naam', 'origin' => CaseTypeResolver::ORIGIN_OWN, 'overrides' => true],
+			actual: (new RowOrigins())->markOverride(row: $row, isOwn: true, merged: ['naam' => ['key' => 'naam']], key: 'naam')
 		);
 	}//end testAnOwnRowOverAnAncestorsRowOverrides()
 
@@ -68,8 +68,8 @@ class RowOriginsTest extends TestCase {
 		$origins = new RowOrigins();
 		$row = ['key' => 'naam'];
 
-		$this->assertSame($row, $origins->markOverride(row: $row, isOwn: true, merged: ['adres' => ['key' => 'adres']], key: 'naam'));
-		$this->assertSame($row, $origins->markOverride(row: $row, isOwn: false, merged: ['naam' => ['key' => 'naam']], key: 'naam'));
+		$this->assertSame(expected: $row, actual: $origins->markOverride(row: $row, isOwn: true, merged: ['adres' => ['key' => 'adres']], key: 'naam'));
+		$this->assertSame(expected: $row, actual: $origins->markOverride(row: $row, isOwn: false, merged: ['naam' => ['key' => 'naam']], key: 'naam'));
 	}//end testOnlyAnOwnRowOverAnExistingKeyOverrides()
 
 	/**
@@ -87,8 +87,8 @@ class RowOriginsTest extends TestCase {
 		];
 
 		$this->assertSame(
-			['total' => 5, 'inherited' => 2, 'overridden' => 1],
-			(new RowOrigins())->counts(rows: $rows, inheritedOrigin: CaseTypeResolver::ORIGIN_INHERITED)
+			expected: ['total' => 5, 'inherited' => 2, 'overridden' => 1],
+			actual: (new RowOrigins())->counts(rows: $rows, inheritedOrigin: CaseTypeResolver::ORIGIN_INHERITED)
 		);
 	}//end testCountsTotalInheritedAndOverridden()
 
@@ -104,12 +104,12 @@ class RowOriginsTest extends TestCase {
 		];
 
 		$this->assertSame(
-			['total' => 2, 'inherited' => 1, 'overridden' => 0],
-			(new RowOrigins())->counts(rows: $rows, inheritedOrigin: CaseTypeResolver::ORIGIN_SHARED)
+			expected: ['total' => 2, 'inherited' => 1, 'overridden' => 0],
+			actual: (new RowOrigins())->counts(rows: $rows, inheritedOrigin: CaseTypeResolver::ORIGIN_SHARED)
 		);
 		$this->assertSame(
-			['total' => 0, 'inherited' => 0, 'overridden' => 0],
-			(new RowOrigins())->counts(rows: [], inheritedOrigin: CaseTypeResolver::ORIGIN_INHERITED)
+			expected: ['total' => 0, 'inherited' => 0, 'overridden' => 0],
+			actual: (new RowOrigins())->counts(rows: [], inheritedOrigin: CaseTypeResolver::ORIGIN_INHERITED)
 		);
 	}//end testCountsUseTheGivenInheritedOrigin()
 }//end class

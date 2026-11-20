@@ -85,7 +85,7 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 	 */
 	private function repairOutput(): IOutput {
 		$this->lines = [];
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(
 			function (string $message): void {
 				$this->lines[] = $message;
@@ -105,7 +105,7 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 	 * @return DeclareTimelineKinds The step under test.
 	 */
 	private function step(array $services, ?LoggerInterface $logger = null): DeclareTimelineKinds {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $name) use ($services) {
 				if (array_key_exists($name, $services) === false) {
@@ -118,7 +118,7 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 
 		return new DeclareTimelineKinds(
 			container: $container,
-			logger: $logger ?? $this->createMock(LoggerInterface::class),
+			logger: $logger ?? $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end step()
 
@@ -131,17 +131,17 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 	public function testAMissingBlockServiceSeedsNoNotesButStillDeclaresTheKinds(): void {
 		$kinds = $this->kindService();
 
-		$this->step([DeclareTimelineKinds::KIND_SERVICE => $kinds])->run($this->repairOutput());
+		$this->step(services: [DeclareTimelineKinds::KIND_SERVICE => $kinds])->run($this->repairOutput());
 
-		$this->assertSame(array_column(TimelineKindsInterface::DECLARATIONS, 'slug'), $kinds->slugs);
+		$this->assertSame(expected: array_column(TimelineKindsInterface::DECLARATIONS, 'slug'), actual: $kinds->slugs);
 		$this->assertSame(
-			[
+			expected: [
 				sprintf(
 					'Declared %d timeline kind(s) and 0 standard note(s).',
 					count(TimelineKindsInterface::DECLARATIONS)
 				),
 			],
-			$this->lines
+			actual: $this->lines
 		);
 	}//end testAMissingBlockServiceSeedsNoNotesButStillDeclaresTheKinds()
 
@@ -186,7 +186,7 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 			}//end declareBlock()
 		};
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq timeline: text block {block} was not seeded, {reason}',
 			[
@@ -197,11 +197,11 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 		);
 
 		$this->step(
-			[
+			services: [
 				DeclareTimelineKinds::KIND_SERVICE => $this->kindService(),
 				DeclareTimelineKinds::BLOCK_SERVICE => $blocks,
 			],
-			$logger
+			logger: $logger
 		)->run($this->repairOutput());
 
 		$expected = array_values(
@@ -210,10 +210,10 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 				static fn (string $slug): bool => $slug !== $refused
 			)
 		);
-		$this->assertSame($expected, $blocks->slugs);
+		$this->assertSame(expected: $expected, actual: $blocks->slugs);
 		$this->assertStringEndsWith(
-			sprintf('and %d standard note(s).', count(TimelineKindsInterface::TEXT_BLOCKS) - 1),
-			$this->lines[0]
+			suffix: sprintf('and %d standard note(s).', count(TimelineKindsInterface::TEXT_BLOCKS) - 1),
+			string: $this->lines[0]
 		);
 	}//end testARefusedBlockIsLoggedAndTheRestAreSeeded()
 
@@ -225,15 +225,15 @@ class DeclareTimelineKindsEdgesTest extends TestCase {
 	 */
 	public function testANonObjectServiceCountsAsAbsent(): void {
 		$this->step(
-			[
+			services: [
 				DeclareTimelineKinds::KIND_SERVICE => 'not a service',
 				DeclareTimelineKinds::BLOCK_SERVICE => 'not a service',
 			]
 		)->run($this->repairOutput());
 
 		$this->assertSame(
-			['OpenRegister does not carry timeline kinds on this instance, so none were declared.'],
-			$this->lines
+			expected: ['OpenRegister does not carry timeline kinds on this instance, so none were declared.'],
+			actual: $this->lines
 		);
 	}//end testANonObjectServiceCountsAsAbsent()
 }//end class

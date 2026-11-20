@@ -61,8 +61,8 @@ class BezwaarArchiveTriggerConfigTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->decisions = $this->createMock(BeschikkingService::class);
-		$this->logger    = $this->createMock(LoggerInterface::class);
+		$this->decisions = $this->createMock(originalClassName: BeschikkingService::class);
+		$this->logger    = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -74,7 +74,7 @@ class BezwaarArchiveTriggerConfigTest extends TestCase {
 	 * @return BezwaarArchiveTrigger The trigger.
 	 */
 	private function trigger(?object $objects, array $config): BezwaarArchiveTrigger {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
 
@@ -99,10 +99,10 @@ class BezwaarArchiveTriggerConfigTest extends TestCase {
 		$objects = new FakeObjectService();
 		$full    = ['register' => 'dossiq', 'bezwaar_trigger_schema' => 'bezwaarTrigger'];
 
-		$this->assertNull($this->trigger(objects: $objects, config: ['bezwaar_trigger_schema' => 'bezwaarTrigger'])->find(triggerId: 'trig-1'));
-		$this->assertNull($this->trigger(objects: $objects, config: ['register' => 'dossiq'])->find(triggerId: 'trig-1'));
-		$this->assertNull($this->trigger(objects: null, config: $full)->find(triggerId: 'trig-1'));
-		$this->assertNull($this->trigger(objects: $objects, config: $full)->find(triggerId: ''));
+		$this->assertNull(actual: $this->trigger(objects: $objects, config: ['bezwaar_trigger_schema' => 'bezwaarTrigger'])->find(triggerId: 'trig-1'));
+		$this->assertNull(actual: $this->trigger(objects: $objects, config: ['register' => 'dossiq'])->find(triggerId: 'trig-1'));
+		$this->assertNull(actual: $this->trigger(objects: null, config: $full)->find(triggerId: 'trig-1'));
+		$this->assertNull(actual: $this->trigger(objects: $objects, config: $full)->find(triggerId: ''));
 	}//end testAnUnconfiguredStoreReadsNoTrigger()
 
 	/**
@@ -137,7 +137,12 @@ class BezwaarArchiveTriggerConfigTest extends TestCase {
 			 *
 			 * @return array<string, mixed> Never.
 			 */
-			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
 				throw new RuntimeException('store down');
 			}
 		};

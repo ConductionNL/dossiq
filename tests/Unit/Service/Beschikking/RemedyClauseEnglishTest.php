@@ -68,12 +68,12 @@ class RemedyClauseEnglishTest extends TestCase {
 	 */
 	public function testTheEnglishClauseUsesTheKindsVerb(): void {
 		$this->assertSame(
-			'You can lodge an objection against this decision. Do that within 42 days, with the board.',
-			$this->declaration()->clauseInEnglishFor(caseType: $this->caseType())
+			expected: 'You can lodge an objection against this decision. Do that within 42 days, with the board.',
+			actual: $this->declaration()->clauseInEnglishFor(caseType: $this->caseType())
 		);
 		$this->assertSame(
-			'You can appeal against this decision. Do that within 6 days, with the court.',
-			$this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['kind' => 'Beroep', 'termDays' => 6, 'body' => 'the court']))
+			expected: 'You can appeal against this decision. Do that within 6 days, with the court.',
+			actual: $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['kind' => 'Beroep', 'termDays' => 6, 'body' => 'the court']))
 		);
 	}//end testTheEnglishClauseUsesTheKindsVerb()
 
@@ -84,8 +84,8 @@ class RemedyClauseEnglishTest extends TestCase {
 	 */
 	public function testAnUnknownKindIsSubmittedByName(): void {
 		$this->assertSame(
-			'You can submit a herziening against this decision. Do that within 42 days, with the board.',
-			$this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['kind' => 'herziening']))
+			expected: 'You can submit a herziening against this decision. Do that within 42 days, with the board.',
+			actual: $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['kind' => 'herziening']))
 		);
 	}//end testAnUnknownKindIsSubmittedByName()
 
@@ -95,9 +95,9 @@ class RemedyClauseEnglishTest extends TestCase {
 	 * @return void
 	 */
 	public function testASwitchedOffOrIncompleteRemedyPrintsNoEnglishClause(): void {
-		$this->assertSame('', $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['enabled' => false])));
-		$this->assertSame('', $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['body' => ''])));
-		$this->assertSame('', $this->declaration()->clauseInEnglishFor(caseType: ['title' => 'Melding']));
+		$this->assertSame(expected: '', actual: $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['enabled' => false])));
+		$this->assertSame(expected: '', actual: $this->declaration()->clauseInEnglishFor(caseType: $this->caseType(remedy: ['body' => ''])));
+		$this->assertSame(expected: '', actual: $this->declaration()->clauseInEnglishFor(caseType: ['title' => 'Melding']));
 	}//end testASwitchedOffOrIncompleteRemedyPrintsNoEnglishClause()
 
 	/**
@@ -108,9 +108,12 @@ class RemedyClauseEnglishTest extends TestCase {
 	public function testASwitchedOffRemedyRaisesNoWarning(): void {
 		$declaration = $this->declaration();
 
-		$this->assertSame([], $declaration->publicationWarnings(caseType: $this->caseType(remedy: ['enabled' => false, 'termDays' => 0])));
-		$this->assertSame(0, $declaration->termDaysFor(caseType: $this->caseType(remedy: ['enabled' => false])));
-		$this->assertSame(42, $declaration->termDaysFor(caseType: $this->caseType()));
+		$this->assertSame(
+			expected: [],
+			actual: $declaration->publicationWarnings(caseType: $this->caseType(remedy: ['enabled' => false, 'termDays' => 0]))
+		);
+		$this->assertSame(expected: 0, actual: $declaration->termDaysFor(caseType: $this->caseType(remedy: ['enabled' => false])));
+		$this->assertSame(expected: 42, actual: $declaration->termDaysFor(caseType: $this->caseType()));
 	}//end testASwitchedOffRemedyRaisesNoWarning()
 
 	/**
@@ -121,7 +124,7 @@ class RemedyClauseEnglishTest extends TestCase {
 	public function testAnUntitledCaseTypeIsNamedGenerically(): void {
 		$warnings = $this->declaration()->publicationWarnings(caseType: [RemedyClauseDeclaration::DECLARATION => ['kind' => 'bezwaar']]);
 
-		$this->assertCount(1, $warnings);
-		$this->assertStringStartsWith('The decisions of this case type declare no remedy', $warnings[0]);
+		$this->assertCount(expectedCount: 1, haystack: $warnings);
+		$this->assertStringStartsWith(prefix: 'The decisions of this case type declare no remedy', string: $warnings[0]);
 	}//end testAnUntitledCaseTypeIsNamedGenerically()
 }//end class

@@ -222,10 +222,10 @@ class ZrcControllerCoverageTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->store = new ZrcCoverageStore();
-		$this->request = $this->createMock(IRequest::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
-		$this->mappings = $this->createMock(ZgwMappingServiceInterface::class);
-		$this->zgw = $this->createMock(ZgwServiceInterface::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$this->mappings = $this->createMock(originalClassName: ZgwMappingServiceInterface::class);
+		$this->zgw = $this->createMock(originalClassName: ZgwServiceInterface::class);
 		$this->zgw->method('getLogger')->willReturn($this->logger);
 		$this->zgw->method('getZgwMappingService')->willReturn($this->mappings);
 		$this->zgw->method('getObjectService')->willReturn($this->store);
@@ -237,7 +237,7 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return ZrcController
 	 */
 	private function controller(): ZrcController {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(
 			static fn (string $text, array $params = []): string => vsprintf($text, $params)
 		);
@@ -246,9 +246,9 @@ class ZrcControllerCoverageTest extends TestCase {
 			request: $this->request,
 			zgwService: $this->zgw,
 			l10n: $l10n,
-			caseRelationService: $this->createMock(CaseRelationServiceInterface::class),
-			statusEffects: $this->createMock(ZrcStatusEffectsInterface::class),
-			joinHoming: $this->createMock(DocumentJoinHomingInterface::class),
+			caseRelationService: $this->createMock(originalClassName: CaseRelationServiceInterface::class),
+			statusEffects: $this->createMock(originalClassName: ZrcStatusEffectsInterface::class),
+			joinHoming: $this->createMock(originalClassName: DocumentJoinHomingInterface::class),
 		);
 	}//end controller()
 
@@ -287,7 +287,7 @@ class ZrcControllerCoverageTest extends TestCase {
 		$this->zgw->expects($this->once())->method('mappingNotFoundResponse')->with('zaken', 'rollen')->willReturn($notFound);
 		$this->zgw->expects($this->never())->method('getRequestBody');
 
-		$this->assertSame($notFound, $this->controller()->create('rollen'));
+		$this->assertSame(expected: $notFound, actual: $this->controller()->create('rollen'));
 	}//end testCreateWithoutMappingAnswersMappingNotFound()
 
 	/**
@@ -300,12 +300,12 @@ class ZrcControllerCoverageTest extends TestCase {
 		$this->zgw->method('loadMappingConfig')->willReturn(['sourceRegister' => '1', 'sourceSchema' => '2']);
 		$this->zgw->method('getRequestBody')->willThrowException(new \RuntimeException('body broken'));
 		$this->logger->expects($this->once())->method('error')
-			->with('ZRC create error: body broken', $this->callback(static fn (array $ctx): bool => $ctx['exception'] instanceof \RuntimeException));
+			->with('ZRC create error: body broken', $this->callback(callback: static fn (array $ctx): bool => $ctx['exception'] instanceof \RuntimeException));
 
 		$response = $this->controller()->create('rollen');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame(['detail' => 'body broken'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['detail' => 'body broken'], actual: $response->getData());
 	}//end testCreateFailureIsLoggedAndAnswered400()
 
 	/**
@@ -319,15 +319,15 @@ class ZrcControllerCoverageTest extends TestCase {
 		$this->zgw->expects($this->once())->method('resolveZaakClosedFromBody')->with('statussen', $body)->willReturn(true);
 		$this->zgw->expects($this->once())->method('consumerHasScope')
 			->with($this->request, 'zrc', 'zaken.geforceerd-bijwerken')->willReturn(false);
-		$rules = $this->createMock(ZgwBusinessRulesServiceInterface::class);
+		$rules = $this->createMock(originalClassName: ZgwBusinessRulesServiceInterface::class);
 		$rules->expects($this->once())->method('validate')
 			->with('zaken', 'statussen', 'create', $body, null, $this->store, $mapping, null, true, false)
 			->willReturn(['valid' => false, 'status' => 400]);
 		$this->zgw->method('getBusinessRulesService')->willReturn($rules);
 
-		$result = $this->call('validateCreate', ['resource' => 'statussen', 'body' => $body, 'mappingConfig' => $mapping]);
+		$result = $this->call(method: 'validateCreate', args: ['resource' => 'statussen', 'body' => $body, 'mappingConfig' => $mapping]);
 
-		$this->assertSame(['valid' => false, 'status' => 400], $result);
+		$this->assertSame(expected: ['valid' => false, 'status' => 400], actual: $result);
 	}//end testValidateCreateOnClosedCaseAsksForcedScope()
 
 	/**
@@ -339,7 +339,10 @@ class ZrcControllerCoverageTest extends TestCase {
 		$response = new JSONResponse(['url' => 'x'], Http::STATUS_OK);
 		$this->zgw->expects($this->never())->method('getRequestBody');
 
-		$this->assertSame($response, $this->call('enrichUpdated', ['resource' => 'rollen', 'uuid' => 'u', 'response' => $response]));
+		$this->assertSame(
+			expected: $response,
+			actual: $this->call(method: 'enrichUpdated', args: ['resource' => 'rollen', 'uuid' => 'u', 'response' => $response])
+		);
 	}//end testEnrichUpdatedPassesOtherResourcesThrough()
 
 	/**
@@ -354,10 +357,13 @@ class ZrcControllerCoverageTest extends TestCase {
 		$this->zgw->expects($this->once())->method('consumerHasScope')
 			->with($this->request, 'zrc', 'zaken.geforceerd-bijwerken')->willReturn(true);
 
-		$result = $this->call('closedStateOf', ['resource' => 'statussen', 'uuid' => 'u-1', 'mappingConfig' => ['sourceRegister' => '7', 'sourceSchema' => '8']]);
+		$result = $this->call(
+			method: 'closedStateOf',
+			args: ['resource' => 'statussen', 'uuid' => 'u-1', 'mappingConfig' => ['sourceRegister' => '7', 'sourceSchema' => '8']]
+		);
 
-		$this->assertSame([true, true], $result);
-		$this->assertInstanceOf(ObjectFindOptions::class, $this->store->finds[0][1]);
+		$this->assertSame(expected: [true, true], actual: $result);
+		$this->assertInstanceOf(expected: ObjectFindOptions::class, actual: $this->store->finds[0][1]);
 	}//end testClosedStateOfAClosedCaseAsksForcedScope()
 
 	/**
@@ -367,12 +373,12 @@ class ZrcControllerCoverageTest extends TestCase {
 	 */
 	public function testEnrichZioResponse(): void {
 		$this->assertSame(
-			['natureRelationshipDisplay' => 'Hoort bij, omgekeerd: kent', 'registrationDate' => '2026-01-01'],
-			$this->call('enrichZioResponse', ['mapped' => [], 'body' => ['registrationDate' => '2026-01-01']])
+			expected: ['natureRelationshipDisplay' => 'Hoort bij, omgekeerd: kent', 'registrationDate' => '2026-01-01'],
+			actual: $this->call(method: 'enrichZioResponse', args: ['mapped' => [], 'body' => ['registrationDate' => '2026-01-01']])
 		);
 		$this->assertSame(
-			['registrationDate' => 'kept', 'natureRelationshipDisplay' => 'Hoort bij, omgekeerd: kent'],
-			$this->call('enrichZioResponse', ['mapped' => ['registrationDate' => 'kept'], 'body' => ['registrationDate' => 'other']])
+			expected: ['registrationDate' => 'kept', 'natureRelationshipDisplay' => 'Hoort bij, omgekeerd: kent'],
+			actual: $this->call(method: 'enrichZioResponse', args: ['mapped' => ['registrationDate' => 'kept'], 'body' => ['registrationDate' => 'other']])
 		);
 	}//end testEnrichZioResponse()
 
@@ -396,19 +402,19 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testProductNotListedOnZaaktypeIsRefused(): void {
-		$this->zaaktype(['productsOrServices' => ['https://p/1']]);
+		$this->zaaktype(zaaktype: ['productsOrServices' => ['https://p/1']]);
 
-		$response = $this->call('preValidateProductenOfDiensten', [
+		$response = $this->call(method: 'preValidateProductenOfDiensten', args: [
 			'producten' => ['https://p/1', 'https://p/9'],
 			'caseTypeUrl' => 'https://x/zaaktypen/' . self::ZT_UUID,
 		]);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
 		$data = $response->getData();
-		$this->assertSame('productenOfDiensten contains a value not present in the zaaktype.', $data['detail']);
-		$this->assertSame('invalid-products-services', $data['invalidParams'][0]['code']);
-		$this->assertSame("Product 'https://p/9' is not allowed for this zaaktype.", $data['invalidParams'][0]['reason']);
-		$this->assertSame(self::ZT_UUID, $this->store->finds[0][0]);
+		$this->assertSame(expected: 'productenOfDiensten contains a value not present in the zaaktype.', actual: $data['detail']);
+		$this->assertSame(expected: 'invalid-products-services', actual: $data['invalidParams'][0]['code']);
+		$this->assertSame(expected: "Product 'https://p/9' is not allowed for this zaaktype.", actual: $data['invalidParams'][0]['reason']);
+		$this->assertSame(expected: self::ZT_UUID, actual: $this->store->finds[0][0]);
 	}//end testProductNotListedOnZaaktypeIsRefused()
 
 	/**
@@ -417,9 +423,9 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testListedProductsPassIncludingJsonList(): void {
-		$this->zaaktype(['productenOfDiensten' => json_encode(['https://p/1', 'https://p/2'])]);
+		$this->zaaktype(zaaktype: ['productenOfDiensten' => json_encode(['https://p/1', 'https://p/2'])]);
 
-		$this->assertNull($this->call('preValidateProductenOfDiensten', [
+		$this->assertNull(actual: $this->call(method: 'preValidateProductenOfDiensten', args: [
 			'producten' => ['https://p/2'],
 			'caseTypeUrl' => 'https://x/zaaktypen/' . self::ZT_UUID,
 		]));
@@ -431,9 +437,9 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testZaaktypeWithoutProductListAllowsAnything(): void {
-		$this->zaaktype(['productsAndServices' => []]);
+		$this->zaaktype(zaaktype: ['productsAndServices' => []]);
 
-		$this->assertNull($this->call('preValidateProductenOfDiensten', [
+		$this->assertNull(actual: $this->call(method: 'preValidateProductenOfDiensten', args: [
 			'producten' => ['https://p/anything'],
 			'caseTypeUrl' => 'https://x/zaaktypen/' . self::ZT_UUID,
 		]));
@@ -445,13 +451,15 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnresolvableZaaktypeSkipsTheCheck(): void {
-		$this->zaaktype(new \RuntimeException('gone'));
+		$this->zaaktype(zaaktype: new \RuntimeException(message: 'gone'));
 		$args = ['producten' => ['https://p/1'], 'caseTypeUrl' => 'https://x/zaaktypen/' . self::ZT_UUID];
-		$this->assertNull($this->call('preValidateProductenOfDiensten', $args));
-		$this->assertCount(1, $this->store->finds);
+		$this->assertNull(actual: $this->call(method: 'preValidateProductenOfDiensten', args: $args));
+		$this->assertCount(expectedCount: 1, haystack: $this->store->finds);
 
-		$this->assertNull($this->call('preValidateProductenOfDiensten', ['producten' => ['p'], 'caseTypeUrl' => 'https://x/zaaktypen/none']));
-		$this->assertCount(1, $this->store->finds);
+		$this->assertNull(
+			actual: $this->call(method: 'preValidateProductenOfDiensten', args: ['producten' => ['p'], 'caseTypeUrl' => 'https://x/zaaktypen/none'])
+		);
+		$this->assertCount(expectedCount: 1, haystack: $this->store->finds);
 	}//end testUnresolvableZaaktypeSkipsTheCheck()
 
 	/**
@@ -462,11 +470,11 @@ class ZrcControllerCoverageTest extends TestCase {
 	public function testNoZaaktypeMappingSkipsTheCheck(): void {
 		$this->mappings->expects($this->once())->method('getMapping')->with('caseType')->willReturn(null);
 
-		$this->assertNull($this->call('preValidateProductenOfDiensten', [
+		$this->assertNull(actual: $this->call(method: 'preValidateProductenOfDiensten', args: [
 			'producten' => ['https://p/1'],
 			'caseTypeUrl' => 'https://x/zaaktypen/' . self::ZT_UUID,
 		]));
-		$this->assertSame([], $this->store->finds);
+		$this->assertSame(expected: [], actual: $this->store->finds);
 	}//end testNoZaaktypeMappingSkipsTheCheck()
 
 	/**
@@ -478,7 +486,10 @@ class ZrcControllerCoverageTest extends TestCase {
 	 */
 	private function oioMapping(?array $oioMapping): void {
 		$this->mappings->method('getMapping')->willReturnCallback(
-			static fn (string $key): ?array => ($key === 'objectinformatieobject' ? $oioMapping : null)
+			static fn (string $key): ?array => match ($key) {
+				'objectinformatieobject' => $oioMapping,
+				default => null,
+			}
 		);
 	}//end oioMapping()
 
@@ -489,7 +500,7 @@ class ZrcControllerCoverageTest extends TestCase {
 	 */
 	public function testSyncCreateSavesMappedOio(): void {
 		$config = ['sourceRegister' => '21', 'sourceSchema' => '22'];
-		$this->oioMapping($config);
+		$this->oioMapping(oioMapping: $config);
 		$mapping = new \stdClass();
 		$this->zgw->expects($this->once())->method('createInboundMapping')->with($config)->willReturn($mapping);
 		$this->zgw->expects($this->once())->method('applyInboundMapping')
@@ -497,10 +508,10 @@ class ZrcControllerCoverageTest extends TestCase {
 			->willReturn(['object' => 'https://z/1', 'document' => 'https://io/1']);
 		$this->logger->expects($this->once())->method('info')->with('zrc-005a: Created ObjectInformatieObject for zaak/io sync');
 
-		$this->call('syncCreateObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncCreateObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
 
-		$this->assertCount(1, $this->store->saved);
-		$this->assertSame(['object' => 'https://z/1', 'document' => 'https://io/1'], $this->store->saved[0][0]);
+		$this->assertCount(expectedCount: 1, haystack: $this->store->saved);
+		$this->assertSame(expected: ['object' => 'https://z/1', 'document' => 'https://io/1'], actual: $this->store->saved[0][0]);
 	}//end testSyncCreateSavesMappedOio()
 
 	/**
@@ -509,13 +520,13 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testSyncCreateWithoutMappingOrUrlsSavesNothing(): void {
-		$this->oioMapping(null);
+		$this->oioMapping(oioMapping: null);
 		$this->logger->expects($this->once())->method('debug')->with('zrc-005a: objectinformatieobject mapping not configured');
 
-		$this->call('syncCreateObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
-		$this->call('syncCreateObjectInformatieObject', ['caseUrl' => '', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncCreateObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncCreateObjectInformatieObject', args: ['caseUrl' => '', 'ioUrl' => 'https://io/1']);
 
-		$this->assertSame([], $this->store->saved);
+		$this->assertSame(expected: [], actual: $this->store->saved);
 	}//end testSyncCreateWithoutMappingOrUrlsSavesNothing()
 
 	/**
@@ -524,14 +535,14 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testSyncCreateFailureIsLogged(): void {
-		$this->oioMapping(['sourceRegister' => '21', 'sourceSchema' => '22']);
+		$this->oioMapping(oioMapping: ['sourceRegister' => '21', 'sourceSchema' => '22']);
 		$this->zgw->method('createInboundMapping')->willThrowException(new \RuntimeException('mapping broke'));
 		$this->logger->expects($this->once())->method('warning')
 			->with('zrc-005a: Failed to create ObjectInformatieObject: mapping broke');
 
-		$this->call('syncCreateObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncCreateObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
 
-		$this->assertSame([], $this->store->saved);
+		$this->assertSame(expected: [], actual: $this->store->saved);
 	}//end testSyncCreateFailureIsLogged()
 
 	/**
@@ -540,7 +551,7 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testSyncDeleteOiosOfCaseDeletesEachLinkedOio(): void {
-		$this->oioMapping(['sourceRegister' => '21', 'sourceSchema' => '22']);
+		$this->oioMapping(oioMapping: ['sourceRegister' => '21', 'sourceSchema' => '22']);
 		$this->zgw->method('loadMappingConfig')->with('zaken', 'zaakinformatieobjecten')
 			->willReturn(['sourceRegister' => '12', 'sourceSchema' => '34']);
 		$this->zgw->method('buildBaseUrl')->with($this->request, 'zaken', 'zaken')->willReturn('https://h/zaken');
@@ -550,16 +561,16 @@ class ZrcControllerCoverageTest extends TestCase {
 			['results' => [['id' => 'zio-1'], ['@self' => ['id' => 'zio-2']], ['id' => '']]],
 			['results' => [['id' => 'oio-1'], ['@self' => ['id' => 'oio-2']], ['id' => '']]],
 		];
-		$this->logger->expects($this->exactly(2))->method('info');
+		$this->logger->expects($this->exactly(count: 2))->method('info');
 
 		$scope = ZgwSearchScope::fromMapping(['sourceRegister' => '12', 'sourceSchema' => '34']);
-		$this->call('syncDeleteOiosOfCase', ['uuid' => 'case-1', 'zioScope' => $scope]);
+		$this->call(method: 'syncDeleteOiosOfCase', args: ['uuid' => 'case-1', 'zioScope' => $scope]);
 
-		$this->assertSame(['oio-1', 'oio-2'], $this->store->deleted);
-		$this->assertSame(['case' => 'case-1', '_limit' => 100, '_page' => 1], $this->store->queries[0]['params']);
-		$this->assertSame(['object' => 'https://h/zaken/case-1', 'document' => 'https://io/1'], $this->store->queries[1]['params']);
-		$this->assertSame(21, $this->store->queries[1]['register']);
-		$this->assertSame(22, $this->store->queries[1]['schema']);
+		$this->assertSame(expected: ['oio-1', 'oio-2'], actual: $this->store->deleted);
+		$this->assertSame(expected: ['case' => 'case-1', '_limit' => 100, '_page' => 1], actual: $this->store->queries[0]['params']);
+		$this->assertSame(expected: ['object' => 'https://h/zaken/case-1', 'document' => 'https://io/1'], actual: $this->store->queries[1]['params']);
+		$this->assertSame(expected: 21, actual: $this->store->queries[1]['register']);
+		$this->assertSame(expected: 22, actual: $this->store->queries[1]['schema']);
 	}//end testSyncDeleteOiosOfCaseDeletesEachLinkedOio()
 
 	/**
@@ -573,9 +584,9 @@ class ZrcControllerCoverageTest extends TestCase {
 			->with('zrc-023: Failed to sync-delete OIOs for zaak case-1: search down');
 
 		$scope = ZgwSearchScope::fromMapping(['sourceRegister' => '12', 'sourceSchema' => '34']);
-		$this->call('syncDeleteOiosOfCase', ['uuid' => 'case-1', 'zioScope' => $scope]);
+		$this->call(method: 'syncDeleteOiosOfCase', args: ['uuid' => 'case-1', 'zioScope' => $scope]);
 
-		$this->assertSame([], $this->store->deleted);
+		$this->assertSame(expected: [], actual: $this->store->deleted);
 	}//end testSyncDeleteOiosOfCaseFailureIsLogged()
 
 	/**
@@ -594,9 +605,9 @@ class ZrcControllerCoverageTest extends TestCase {
 
 		$controller = $this->controller();
 		$method = new \ReflectionMethod($controller, 'getZioDataForOioSync');
-		$this->assertNull($method->invoke($controller, 'zio-1'));
-		$this->assertNull($method->invoke($controller, 'zio-1'));
-		$this->assertCount(1, $this->store->finds);
+		$this->assertNull(actual: $method->invoke($controller, 'zio-1'));
+		$this->assertNull(actual: $method->invoke($controller, 'zio-1'));
+		$this->assertCount(expectedCount: 1, haystack: $this->store->finds);
 	}//end testZioDataForOioSyncUnreadable()
 
 	/**
@@ -605,14 +616,14 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeleteOioWithUnsearchableMappingLogsOrphan(): void {
-		$this->oioMapping(['sourceRegister' => 'slug', 'sourceSchema' => '22']);
+		$this->oioMapping(oioMapping: ['sourceRegister' => 'slug', 'sourceSchema' => '22']);
 		$this->logger->expects($this->once())->method('error')
-			->with($this->stringContains('so the OIO for https://io/1 is being left behind as an orphan'));
+			->with($this->stringContains(string: 'so the OIO for https://io/1 is being left behind as an orphan'));
 
-		$this->call('syncDeleteObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncDeleteObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
 
-		$this->assertSame([], $this->store->queries);
-		$this->assertSame([], $this->store->deleted);
+		$this->assertSame(expected: [], actual: $this->store->queries);
+		$this->assertSame(expected: [], actual: $this->store->deleted);
 	}//end testDeleteOioWithUnsearchableMappingLogsOrphan()
 
 	/**
@@ -621,17 +632,17 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeleteOioWithoutMappingOrUrlsIsANoOp(): void {
-		$this->oioMapping(['sourceRegister' => '21', 'sourceSchema' => '22']);
-		$this->call('syncDeleteObjectInformatieObject', ['caseUrl' => '', 'ioUrl' => 'https://io/1']);
-		$this->assertSame([], $this->store->queries);
+		$this->oioMapping(oioMapping: ['sourceRegister' => '21', 'sourceSchema' => '22']);
+		$this->call(method: 'syncDeleteObjectInformatieObject', args: ['caseUrl' => '', 'ioUrl' => 'https://io/1']);
+		$this->assertSame(expected: [], actual: $this->store->queries);
 
-		$this->mappings = $this->createMock(ZgwMappingServiceInterface::class);
+		$this->mappings = $this->createMock(originalClassName: ZgwMappingServiceInterface::class);
 		$this->mappings->method('getMapping')->willReturn(null);
-		$this->zgw = $this->createMock(ZgwServiceInterface::class);
+		$this->zgw = $this->createMock(originalClassName: ZgwServiceInterface::class);
 		$this->zgw->method('getZgwMappingService')->willReturn($this->mappings);
 		$this->zgw->method('getObjectService')->willReturn($this->store);
-		$this->call('syncDeleteObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
-		$this->assertSame([], $this->store->queries);
+		$this->call(method: 'syncDeleteObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->assertSame(expected: [], actual: $this->store->queries);
 	}//end testDeleteOioWithoutMappingOrUrlsIsANoOp()
 
 	/**
@@ -640,14 +651,14 @@ class ZrcControllerCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeleteOioFailureIsLogged(): void {
-		$this->oioMapping(['sourceRegister' => '21', 'sourceSchema' => '22']);
+		$this->oioMapping(oioMapping: ['sourceRegister' => '21', 'sourceSchema' => '22']);
 		$this->store->pages = [new \RuntimeException('search down')];
 		$this->logger->expects($this->once())->method('warning')
 			->with('zrc-005b: Failed to delete ObjectInformatieObject: search down');
 
-		$this->call('syncDeleteObjectInformatieObject', ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
+		$this->call(method: 'syncDeleteObjectInformatieObject', args: ['caseUrl' => 'https://z/1', 'ioUrl' => 'https://io/1']);
 
-		$this->assertSame([], $this->store->deleted);
+		$this->assertSame(expected: [], actual: $this->store->deleted);
 	}//end testDeleteOioFailureIsLogged()
 
 }//end class

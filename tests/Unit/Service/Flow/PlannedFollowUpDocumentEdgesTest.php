@@ -64,8 +64,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 	 */
 	public function testEndOfStoresATrimmedEndDate(): void {
 		$this->assertSame(
-			['until' => '2027-12-31', 'count' => 0],
-			$this->document->endOf(recurrence: 'yearly', until: ' 2027-12-31 ', count: 0)
+			expected: ['until' => '2027-12-31', 'count' => 0],
+			actual: $this->document->endOf(recurrence: 'yearly', until: ' 2027-12-31 ', count: 0)
 		);
 	}//end testEndOfStoresATrimmedEndDate()
 
@@ -76,8 +76,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 	 */
 	public function testEndOfStoresACount(): void {
 		$this->assertSame(
-			['until' => '', 'count' => 4],
-			$this->document->endOf(recurrence: 'monthly', until: '', count: 4)
+			expected: ['until' => '', 'count' => 4],
+			actual: $this->document->endOf(recurrence: 'monthly', until: '', count: 4)
 		);
 	}//end testEndOfStoresACount()
 
@@ -87,8 +87,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 	 * @return void
 	 */
 	public function testEndOfRefusesANegativeCount(): void {
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('invalid_end');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'invalid_end');
 
 		$this->document->endOf(recurrence: 'monthly', until: '', count: -1);
 	}//end testEndOfRefusesANegativeCount()
@@ -100,8 +100,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 	 */
 	public function testEndOfDropsTheEndOfASingleFollowUp(): void {
 		$this->assertSame(
-			['until' => '', 'count' => 0],
-			$this->document->endOf(recurrence: 'none', until: '2027-01-01', count: 3)
+			expected: ['until' => '', 'count' => 0],
+			actual: $this->document->endOf(recurrence: 'none', until: '2027-01-01', count: 3)
 		);
 	}//end testEndOfDropsTheEndOfASingleFollowUp()
 
@@ -116,7 +116,7 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 			['type' => 'openregister.trigger-schedule', 'config' => ['cron' => '0 6 1 1 *']],
 		];
 
-		$this->assertNull($this->document->markerOf(nodes: $nodes));
+		$this->assertNull(actual: $this->document->markerOf(nodes: $nodes));
 	}//end testMarkerOfIsNullWithoutACreateNode()
 
 	/**
@@ -129,7 +129,7 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 			['type' => 'dossiq.createSubCase', 'config' => ['relatedCases' => ['  '], 'caseType' => 't']],
 		];
 
-		$this->assertNull($this->document->markerOf(nodes: $nodes));
+		$this->assertNull(actual: $this->document->markerOf(nodes: $nodes));
 	}//end testMarkerOfIsNullWithoutARelatedCase()
 
 	/**
@@ -152,7 +152,7 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 		];
 
 		$this->assertSame(
-			[
+			expected: [
 				'case' => 'case-9',
 				'caseType' => 'type-3',
 				'title' => 'Controle',
@@ -161,7 +161,7 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 				'until' => '',
 				'count' => 0,
 			],
-			$this->document->markerOf(nodes: $nodes, from: new DateTimeImmutable('2026-01-01'))
+			actual: $this->document->markerOf(nodes: $nodes, from: new DateTimeImmutable('2026-01-01'))
 		);
 	}//end testMarkerOfReadsTheGraph()
 
@@ -176,8 +176,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 		];
 
 		$this->assertSame(
-			['recurrence' => 'none', 'anchor' => '', 'until' => '', 'count' => 2],
-			$this->document->seriesOf(nodes: $nodes)
+			expected: ['recurrence' => 'none', 'anchor' => '', 'until' => '', 'count' => 2],
+			actual: $this->document->seriesOf(nodes: $nodes)
 		);
 	}//end testSeriesOfNormalisesAnUnknownRecurrence()
 
@@ -188,8 +188,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 	 */
 	public function testSeriesOfWithoutACreateNode(): void {
 		$this->assertSame(
-			['recurrence' => 'none', 'anchor' => '', 'until' => '', 'count' => 0],
-			$this->document->seriesOf(nodes: [])
+			expected: ['recurrence' => 'none', 'anchor' => '', 'until' => '', 'count' => 0],
+			actual: $this->document->seriesOf(nodes: [])
 		);
 	}//end testSeriesOfWithoutACreateNode()
 
@@ -205,8 +205,8 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 			],
 		];
 
-		$this->assertFalse($this->document->isSpent(document: $document, firedCount: 5, today: new DateTimeImmutable('2027-03-31')));
-		$this->assertTrue($this->document->isSpent(document: $document, firedCount: 5, today: new DateTimeImmutable('2027-04-01')));
+		$this->assertFalse(condition: $this->document->isSpent(document: $document, firedCount: 5, today: new DateTimeImmutable(datetime: '2027-03-31')));
+		$this->assertTrue(condition: $this->document->isSpent(document: $document, firedCount: 5, today: new DateTimeImmutable(datetime: '2027-04-01')));
 	}//end testAnAnchorlessSeriesIsSpentPastItsEndDate()
 
 	/**
@@ -221,6 +221,6 @@ class PlannedFollowUpDocumentEdgesTest extends TestCase {
 			],
 		];
 
-		$this->assertFalse($this->document->isSpent(document: $document, firedCount: 99, today: new DateTimeImmutable('2040-01-01')));
+		$this->assertFalse(condition: $this->document->isSpent(document: $document, firedCount: 99, today: new DateTimeImmutable(datetime: '2040-01-01')));
 	}//end testAnOpenSeriesIsNeverSpent()
 }//end class

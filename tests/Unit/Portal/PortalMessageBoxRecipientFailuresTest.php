@@ -47,14 +47,14 @@ class PortalMessageBoxRecipientFailuresTest extends TestCase {
 	 * @return PortalMessageBoxRecipient
 	 */
 	private function service(ObjectServiceInterface $objects, LoggerInterface $logger): PortalMessageBoxRecipient {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => [
 			'register' => 'dossiq',
 			'case_schema' => 'case',
 			'portaal_bericht_schema' => 'portaalBericht',
 		][$key] ?? '');
-		return new PortalMessageBoxRecipient($settings, $logger);
+		return new PortalMessageBoxRecipient(settingsService: $settings, logger: $logger);
 	}//end service()
 
 	/**
@@ -63,17 +63,17 @@ class PortalMessageBoxRecipientFailuresTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailingReadNamesNobody(): void {
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		$objects->method('find')->willThrowException(new RuntimeException('999993653 not readable'));
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: the message box recipient could not be read',
 			['exception' => RuntimeException::class]
 		);
 
-		$this->assertNull($this->service($objects, $logger)->forMessage('msg-letter'));
+		$this->assertNull(actual: $this->service(objects: $objects, logger: $logger)->forMessage('msg-letter'));
 	}//end testAFailingReadNamesNobody()
 
 	/**
@@ -86,14 +86,14 @@ class PortalMessageBoxRecipientFailuresTest extends TestCase {
 			'msg-letter' => ['direction' => 'handler_to_citizen', 'caseId' => 'case-1', 'recipientRef' => 'subject-a'],
 			'case-1' => ['initiatorType' => 'person', 'initiatorSourceId' => '000000000', 'portalSubject' => 'subject-a'],
 		];
-		$objects = $this->createMock(ObjectServiceInterface::class);
+		$objects = $this->createMock(originalClassName: ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
 		$objects->method('find')->willReturnCallback(function ($id) use ($rows) {
-			$entity = $this->createMock(ObjectEntityInterface::class);
+			$entity = $this->createMock(originalClassName: ObjectEntityInterface::class);
 			$entity->method('jsonSerialize')->willReturn($rows[$id]);
 			return $entity;
 		});
 
-		$this->assertNull($this->service($objects, new NullLogger())->forMessage('msg-letter'));
+		$this->assertNull(actual: $this->service(objects: $objects, logger: new NullLogger())->forMessage('msg-letter'));
 	}//end testAllZeroesIsNoBsn()
 }//end class

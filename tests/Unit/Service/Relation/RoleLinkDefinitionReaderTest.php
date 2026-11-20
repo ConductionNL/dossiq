@@ -74,7 +74,7 @@ class RoleLinkDefinitionReaderTest extends TestCase {
 	 */
 	public function testARelationsValueThatIsNotAListDeclaresNone(): void {
 		foreach (['follows', 7, null, true] as $relations) {
-			self::assertSame([], (new RoleLinkDefinitionReader())->allOf(caseType: ['relations' => $relations]));
+			self::assertSame(expected: [], actual: (new RoleLinkDefinitionReader())->allOf(caseType: ['relations' => $relations]));
 		}
 	}//end testARelationsValueThatIsNotAListDeclaresNone()
 }//end class

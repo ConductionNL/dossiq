@@ -69,8 +69,8 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->check = $this->createMock(BoundFormsCheckInterface::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->check = $this->createMock(originalClassName: BoundFormsCheckInterface::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->listener = new CaseTypeBoundFormsListener(check: $this->check, logger: $this->logger);
 	}//end setUp()
 
@@ -106,23 +106,23 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 	public function testACreateIsRefusedWhenTheCheckRefuses(): void {
 		$this->check->method('isCaseType')->willReturn(true);
 		$this->check->expects($this->once())->method('assess')
-			->with($this->callback(static fn (array $ct): bool => $ct['title'] === 'Bezwaar' && $ct['id'] === 'ct-1'))
+			->with($this->callback(callback: static fn (array $ct): bool => $ct['title'] === 'Bezwaar' && $ct['id'] === 'ct-1'))
 			->willReturn(self::refusing());
 		$this->check->method('sentenceFor')->willReturn('Form X would open no case.');
 		$this->check->method('listed')->willReturn(['Form X']);
 
-		$event = new ObjectCreatingEvent($this->entity(['title' => 'Bezwaar']));
+		$event = new ObjectCreatingEvent(object: $this->entity(data: ['title' => 'Bezwaar']));
 		$this->listener->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[
+			expected: [
 				'message' => 'Form X would open no case.',
 				'error' => BoundFormsCheckInterface::RULE,
 				'code' => BoundFormsCheckInterface::RULE,
 				'forms' => ['Form X'],
 			],
-			$event->getErrors()
+			actual: $event->getErrors()
 		);
 	}//end testACreateIsRefusedWhenTheCheckRefuses()
 
@@ -134,16 +134,16 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 	public function testAnUpdateIsJudgedOnTheNewObject(): void {
 		$this->check->method('isCaseType')->willReturn(true);
 		$this->check->expects($this->once())->method('assess')
-			->with($this->callback(static fn (array $ct): bool => $ct['title'] === 'New'))
+			->with($this->callback(callback: static fn (array $ct): bool => $ct['title'] === 'New'))
 			->willReturn(self::refusing());
 		$this->check->method('sentenceFor')->willReturn('refused');
 		$this->check->method('listed')->willReturn([]);
 
-		$event = new ObjectUpdatingEvent($this->entity(['title' => 'New']), $this->entity(['title' => 'Old']));
+		$event = new ObjectUpdatingEvent(newObject: $this->entity(data: ['title' => 'New']), oldObject: $this->entity(data: ['title' => 'Old']));
 		$this->listener->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
-		$this->assertSame('refused', $event->getErrors()['message']);
+		$this->assertTrue(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: 'refused', actual: $event->getErrors()['message']);
 	}//end testAnUpdateIsJudgedOnTheNewObject()
 
 	/**
@@ -157,11 +157,11 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 		$this->check->expects($this->never())->method('apply');
 		$this->check->expects($this->never())->method('sentenceFor');
 
-		$event = new ObjectCreatingEvent($this->entity(['title' => 'Bezwaar']));
+		$event = new ObjectCreatingEvent(object: $this->entity(data: ['title' => 'Bezwaar']));
 		$this->listener->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
-		$this->assertSame([], $event->getErrors());
+		$this->assertFalse(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: [], actual: $event->getErrors());
 	}//end testANonRefusedSaveIsLeftAlone()
 
 	/**
@@ -173,11 +173,11 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 		$this->check->method('isCaseType')->willReturn(false);
 		$this->check->expects($this->never())->method('assess');
 
-		$event = new ObjectCreatingEvent($this->entity(['title' => 'A case']));
+		$event = new ObjectCreatingEvent(object: $this->entity(data: ['title' => 'A case']));
 		$this->listener->handle($event);
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(['title' => 'A case'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(data: ['title' => 'A case'])));
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnotherObjectIsNotAssessed()
 
 	/**
@@ -186,7 +186,7 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableObjectIsSkipped(): void {
-		$entity = $this->createMock(ObjectEntity::class);
+		$entity = $this->createMock(originalClassName: ObjectEntity::class);
 		$entity->method('jsonSerialize')->willThrowException(new RuntimeException('broken row'));
 		$this->check->expects($this->never())->method('isCaseType');
 		$this->check->expects($this->never())->method('assess');
@@ -196,7 +196,7 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 		$event = new ObjectCreatingEvent($entity);
 		$this->listener->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnUnreadableObjectIsSkipped()
 
 	/**
@@ -214,7 +214,7 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 			['caseType' => 'ct-1', 'forms' => ['f-1' => 'unpublished']]
 		);
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(['title' => 'Bezwaar'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(data: ['title' => 'Bezwaar'])));
 	}//end testAfterACreateBrokenFormsAreUnpublished()
 
 	/**
@@ -225,11 +225,13 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 	public function testAfterAnUpdateTheNewObjectIsApplied(): void {
 		$this->check->method('isCaseType')->willReturn(true);
 		$this->check->expects($this->once())->method('assess')
-			->with($this->callback(static fn (array $ct): bool => $ct['title'] === 'New'))
+			->with($this->callback(callback: static fn (array $ct): bool => $ct['title'] === 'New'))
 			->willReturn(['refused' => false, 'affected' => [['id' => 'f-2']]]);
 		$this->check->expects($this->once())->method('apply')->willReturn([]);
 
-		$this->listener->handle(new ObjectUpdatedEvent($this->entity(['title' => 'New']), $this->entity(['title' => 'Old'])));
+		$this->listener->handle(
+			new ObjectUpdatedEvent(newObject: $this->entity(data: ['title' => 'New']), oldObject: $this->entity(data: ['title' => 'Old']))
+		);
 	}//end testAfterAnUpdateTheNewObjectIsApplied()
 
 	/**
@@ -246,8 +248,8 @@ class CaseTypeBoundFormsListenerTest extends TestCase {
 		$this->check->expects($this->never())->method('apply');
 		$this->logger->expects($this->never())->method('warning');
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(['title' => 'A'])));
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(['title' => 'B'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(data: ['title' => 'A'])));
+		$this->listener->handle(new ObjectCreatedEvent(object: $this->entity(data: ['title' => 'B'])));
 	}//end testNothingIsAppliedWithoutAffectedFormsOrOnARefusal()
 
 	/**

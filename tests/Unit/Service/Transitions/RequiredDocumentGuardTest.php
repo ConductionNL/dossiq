@@ -123,8 +123,8 @@ class RequiredDocumentGuardTest extends TestCase {
 			userId: 'u',
 		);
 
-		self::assertTrue($result->passed);
-		self::assertSame(['documentType' => 'Besluit'], $result->details);
+		self::assertTrue(condition: $result->passed);
+		self::assertSame(expected: ['documentType' => 'Besluit'], actual: $result->details);
 	}//end testSkipsNonRecordCandidates()
 
 	/**
@@ -140,8 +140,8 @@ class RequiredDocumentGuardTest extends TestCase {
 			userId: 'u',
 		);
 
-		self::assertFalse($result->passed);
-		self::assertSame('Required document missing: Besluit', $result->failureMessage);
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Required document missing: Besluit', actual: $result->failureMessage);
 	}//end testABareStringIsNotADocument()
 
 	/**
