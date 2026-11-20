@@ -1,0 +1,41 @@
+# Dossiq
+
+> Case management (zaakgericht werken) for Nextcloud: case types with configurable status lifecycles, deadlines, roles and formal decisions. A thin client on OpenRegister, which stores the cases and their related records.
+
+## Start here
+
+- [AGENTS.md](AGENTS.md): setup, build, test and lint commands, OpenSpec flow and conventions
+- [README.md](README.md): overview, installation and the Docker evaluation stack
+- [DEVELOPMENT.md](DEVELOPMENT.md): development environment and demo data
+- [CONTRIBUTING.md](CONTRIBUTING.md): branches, pull requests and commit format
+
+## Documentation
+
+- [docs/index.md](docs/index.md): documentation home
+- [docs/Features/](docs/Features/): one page per feature
+- [docs/Technical/architecture.md](docs/Technical/architecture.md): architecture
+- [docs/Technical/design-decisions.md](docs/Technical/design-decisions.md): design decisions
+- [docs/Technical/zgw-spec.md](docs/Technical/zgw-spec.md): ZGW API mapping
+- [docs/admin/](docs/admin/): administrator guides
+- [docs/user-guide/](docs/user-guide/): user guide
+
+## API
+
+- [openapi.json](openapi.json): OpenAPI 3.0 description of the app's JSON API
+- [docs/openapi/](docs/openapi/): further OpenAPI documents (ZGW, tenant SaaS, supplier case portal)
+
+## Specifications and decisions
+
+- [openspec/config.yaml](openspec/config.yaml): OpenSpec project context and rules
+- [openspec/specs/](openspec/specs/): current requirements, one directory per capability
+- [openspec/changes/](openspec/changes/): proposed and in-progress changes; finished ones in `archive/`
+- [openspec/architecture/](openspec/architecture/): architecture decision records
+- [docs/adr/](docs/adr/): numbered architecture decision records
+- [docs/decisions/](docs/decisions/): ownership decisions against neighbouring apps
+
+## Code
+
+- [appinfo/info.xml](appinfo/info.xml): app metadata
+- [lib/](lib/): PHP backend
+- [src/](src/): Vue frontend; pages and menu in [src/manifest.json](src/manifest.json)
+- [lib/Settings/dossiq_register.json](lib/Settings/dossiq_register.json): OpenRegister register and schemas
