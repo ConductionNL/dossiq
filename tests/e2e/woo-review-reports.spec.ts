@@ -228,7 +228,7 @@ test.describe('Review reports', () => {
 
 		// The address still resolves; it draws neither half.
 		await navToRoute(page, '/document-review-reports')
-		await expect(page.getByTestId('woo-throughput')).toHaveCount(0)
+		await expect(page.getByText('Assessments per reviewer per day')).toHaveCount(0)
 		await expect(page.getByTestId('case-mail-parties')).toHaveCount(0)
 		expect(errors).toEqual([])
 	})
@@ -264,7 +264,7 @@ test.describe('Review reports', () => {
 			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toHaveCount(0)
 		await navToRoute(page, '/document-review-reports')
-		await expect(page.getByTestId('woo-throughput')).toHaveCount(0)
+		await expect(page.getByText('Assessments per reviewer per day')).toHaveCount(0)
 	})
 
 	test('a member of the reader group sees the throughput table (REQ-WRR-002)', async ({
@@ -290,27 +290,14 @@ test.describe('Review reports', () => {
 			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toBeVisible(PAGE_LOAD)
 		await navToRoute(page, '/document-review-reports')
-		await expect(page.getByTestId('woo-throughput')).toBeVisible(PAGE_LOAD)
-		await page
-			.getByTestId('woo-throughput-from')
-			.locator('input')
-			.fill('2026-11-01')
-		await page
-			.getByTestId('woo-throughput-to')
-			.locator('input')
-			.fill('2026-11-30')
-		await page.getByTestId('woo-throughput-show').click()
 
-		// The screen draws what the route answered: one row per reviewer per
-		// day, and no refusal. The counts themselves are WooThroughputReportTest's.
-		await expect(page.getByTestId('woo-throughput-refusal')).toHaveCount(0)
-		if (rows.length > 0) {
-			await expect(
-				page.getByTestId('woo-throughput-table').locator('tbody tr'),
-			).toHaveCount(rows.length)
-		} else {
-			await expect(page.getByTestId('woo-throughput-table')).toHaveCount(0)
-		}
+		// The report is a widget over the route, for the page's own period, and
+		// it reads only when asked. The counts themselves are WooThroughputReportTest's.
+		await expect(page.getByText('Assessments per reviewer per day')).toBeVisible(PAGE_LOAD)
+		const shown = page.waitForResponse((res) => res.url().includes('/document-review/reports/throughput'))
+		// The parties report is off here, so its Show button is not on the page.
+		await page.getByRole('button', { name: 'Show', exact: true }).click()
+		expect((await shown).status(), 'the widget read the route').toBe(200)
 		// Only the half on offer: the parties report is still off.
 		await expect(page.getByTestId('case-mail-parties')).toHaveCount(0)
 		expect(errors).toEqual([])
@@ -347,13 +334,14 @@ test.describe('Review reports', () => {
 		await navToRoute(page, '/document-review-reports')
 		await page.goto(`${page.url().split('?')[0]}?case=${caseId}`, PAGE_LOAD)
 		await expect(page.getByTestId('case-mail-parties')).toBeVisible(PAGE_LOAD)
+		// The widget is the library's count-tables report; its test ids carry the library's prefix.
 		await expect(
-			page.getByTestId('case-mail-parties-case').locator('input'),
+			page.locator('input[data-testid="cn-count-tables-report-object"], [data-testid="cn-count-tables-report-object"] input').first(),
 		).toHaveValue(caseId)
-		await page.getByTestId('case-mail-parties-show').click()
+		await page.getByTestId('cn-count-tables-report-show').click()
 
 		const senders = page
-			.getByTestId('case-mail-parties-senders')
+			.getByTestId('cn-count-tables-report-senders')
 			.locator('tbody tr')
 		await expect(senders).toHaveCount(2)
 		await expect(senders.nth(0).locator('td')).toHaveText([
@@ -362,17 +350,17 @@ test.describe('Review reports', () => {
 		])
 		await expect(senders.nth(1).locator('td')).toHaveText(['b@aannemer.nl', '1'])
 		const recipients = page
-			.getByTestId('case-mail-parties-recipients')
+			.getByTestId('cn-count-tables-report-recipients')
 			.locator('tbody tr')
 		await expect(recipients.nth(0).locator('td')).toHaveText([
 			'b@aannemer.nl',
 			'2',
 		])
 		await expect(
-			page.getByTestId('case-mail-parties-domains').locator('tbody tr'),
+			page.getByTestId('cn-count-tables-report-domains').locator('tbody tr'),
 		).toHaveCount(2)
-		await expect(page.getByTestId('case-mail-parties-totals')).toContainText('4')
-		await expect(page.getByTestId('case-mail-parties-csv')).toBeVisible()
+		await expect(page.getByTestId('cn-count-tables-report-totals')).toContainText('4')
+		await expect(page.getByTestId('cn-count-tables-report-csv')).toBeVisible()
 		expect(errors).toEqual([])
 	})
 })
