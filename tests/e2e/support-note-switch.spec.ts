@@ -12,7 +12,7 @@ import type { APIRequestContext, Browser } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { ensureUser, login } from './helpers/auth.ts'
 import { getRequestToken, RUN_PREFIX } from './helpers/fixtures.ts'
-import { PAGE_LOAD } from './helpers/nav.ts'
+import { PAGE_LOAD, sidebarNav } from './helpers/nav.ts'
 import { occRun } from './helpers/occ.ts'
 
 const PASSWORD = 'support-note-e2e-Pass-1'
@@ -37,14 +37,14 @@ async function noteOnSecondLoad(browser: Browser, baseURL: string, uid: string):
 	const page = await context.newPage()
 	await login(page, uid, PASSWORD)
 	await page.goto('/apps/dossiq/', PAGE_LOAD)
-	await page.waitForLoadState('networkidle')
+	await expect(sidebarNav(page)).toBeVisible(PAGE_LOAD)
 
 	// What the walkthrough records when the user finishes it.
 	const marked = await occRun(['user:setting', uid, 'dossiq', 'pref_walkthrough_completed_version', '1'])
 	expect(marked.code, marked.output).toBe(0)
 
 	await page.reload(PAGE_LOAD)
-	await page.waitForLoadState('networkidle')
+	await expect(sidebarNav(page)).toBeVisible(PAGE_LOAD)
 	const note = page.locator('[data-testid-modal="cn-support-dialog"]')
 	const shown = await note.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false)
 	await context.close()

@@ -366,7 +366,7 @@ class WooReportControllerTest extends TestCase {
 	public function testTheCsvLinkNeedsNoCsrfToken(): void {
 		foreach (['throughput', 'throughputLegacyPath'] as $method) {
 			$attributes = (new \ReflectionMethod(WooReportController::class, $method))->getAttributes(NoCSRFRequired::class);
-			$this->assertCount(1, $attributes, $method.' answers 412 to the Download CSV link when it asks for a CSRF token');
+			$this->assertCount(expectedCount: 1, haystack: $attributes, message: $method.' answers 412 to the Download CSV link when it asks for a CSRF token');
 		}
 	}//end testTheCsvLinkNeedsNoCsrfToken()
 }//end class

@@ -168,6 +168,6 @@ class MailPartiesReportControllerTest extends TestCase {
 	 */
 	public function testTheCsvLinkNeedsNoCsrfToken(): void {
 		$attributes = (new \ReflectionMethod(MailPartiesReportController::class, 'show'))->getAttributes(NoCSRFRequired::class);
-		self::assertCount(1, $attributes, 'a download link answers 412 when show() asks for a CSRF token');
+		self::assertCount(expectedCount: 1, haystack: $attributes, message: 'a download link answers 412 when show() asks for a CSRF token');
 	}//end testTheCsvLinkNeedsNoCsrfToken()
 }//end class
