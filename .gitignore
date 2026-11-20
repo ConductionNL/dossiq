@@ -46,8 +46,9 @@ phpmetrics/
 .DS_Store
 Thumbs.db
 
-# Claude Code
-/.claude/
+# Claude Code (local state stays out; committed agent commands are shared)
+/.claude/*
+!/.claude/commands/
 
 # Repo-specific
 tests/e2e/.auth/
