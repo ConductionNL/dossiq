@@ -139,7 +139,7 @@ test.describe('A form keeps what the handler typed (REQ-TM-DRAFT-01)', () => {
 	/**
 	 * @spec openspec/changes/task-forms-keep-a-draft/specs/task-management/spec.md#requirement-a-task-form-keeps-what-you-typed-req-tm-draft-01
 	 */
-	test('input survives a closed dialog and is offered back @spec REQ-TM-DRAFT-01', async ({
+	test('input survives a reload and is offered back @spec REQ-TM-DRAFT-01', async ({
 		browser,
 		baseURL,
 	}) => {
@@ -156,8 +156,9 @@ test.describe('A form keeps what the handler typed (REQ-TM-DRAFT-01)', () => {
 		// rather than racing the close against the timer.
 		await expect.poll(() => draftKeys(page), { timeout: 10_000 }).not.toHaveLength(0)
 
-		await page.keyboard.press('Escape')
-		await expect(formDialog(page)).toBeHidden({ timeout: 10_000 })
+		// The handler leaves the half-filled form by reloading the page.
+		await page.reload(PAGE_LOAD)
+		await expect(page.getByTestId('cn-detail-page')).toBeVisible(PAGE_LOAD)
 
 		await openTaskEdit(page)
 		const offer = formDialog(page).getByTestId('cn-form-dialog-draft-offer')
@@ -180,7 +181,8 @@ test.describe('A form keeps what the handler typed (REQ-TM-DRAFT-01)', () => {
 		playwright,
 	}) => {
 		const page = await handlerPage(browser, String(baseURL))
-		await page.goto('/index.php/apps/dossiq/', PAGE_LOAD)
+		// The Cases page's new-case form is the one that offers Save draft.
+		await page.goto('/index.php/apps/dossiq/cases', PAGE_LOAD)
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
 		const dialog = formDialog(page)
 		await expect(dialog).toBeVisible({ timeout: 20_000 })

@@ -9,6 +9,50 @@
 
 The panel check of REQ-BAC-2 MUST run on every single-object save that moves an advice request into `in-deliberation`, not only on `transitionAdviceStatus()`. That includes a lifecycle action on the advice request page and a direct OpenRegister API write. It also includes a single-object create of an advice request whose status is `in-deliberation`. The check MUST also run again when a save keeps the status at `in-deliberation` but changes the panel or the objection. The objection is `bezwaar`, or the legacy `objectionProceeding` when `bezwaar` is empty, so the objection backfill does not count as a change. The check MUST read the panel and the objection from the request as it will be saved. A request without an objection MUST count as unverifiable, never as independent. So MUST a request whose contested decision cannot be established: no objection record for the case, an objection without a `contestedDecision`, a `contestedDecision` that does not resolve, or a contested decision that has no recorded author. Every non-empty value of the decision's `decidedBy`, `@self.owner`, `createdBy` and `steller` is a recorded author. A panel member who is any recorded author MUST make the panel not independent. Authors and panel members MUST be compared with surrounding whitespace removed, Unicode spaces such as the non-breaking space included. A panel entry that is not a UID, such as a list or an object, MUST make the panel refused rather than be skipped. An empty or blank value, such as the owner an import without a session user leaves, is not an author, and a blank panel member is not a member. A panel with no member left after that MUST be refused as having no panel. Saves that fire no `ObjectUpdatingEvent` or `ObjectCreatingEvent` (bulk save, import, flow writes) are outside this requirement. The check MUST run before OpenRegister saves the write. A refused check MUST stop the write. An updated request MUST keep its old values, and a created request MUST NOT be saved. The refusal MUST reach the caller as the write's error. The trail entry of the refusal MUST be written before the write is stopped, exactly as `transitionAdviceStatus()` writes it. On a refused create no record exists to carry it, so the full entry MUST go to the error log. A check that fails with an unexpected error MUST stop the write too. A save that leaves the status, the panel and the objection of a request in deliberation as they were MUST NOT run the check, and neither may a move anywhere else than `in-deliberation`. A create in any other status MUST NOT run the check.
 
+#### Scenario: a lifecycle action starts deliberation with a conflicted panel
+@e2e exclude needs a contested decision signed by a panel member on a seeded instance; covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `assigned` with panel `["a.bakker", "p.janssen"]`
+- **AND** `p.janssen` decided the contested primair besluit
+- **WHEN** a handler moves the request to `in-deliberation` with the page's lifecycle action
+- **THEN** OpenRegister refuses the write with reason "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+- **AND** the request stays in `assigned`
+- **AND** the request's trail holds an `independence-check-failed` entry naming `p.janssen`
+
+#### Scenario: an API write starts deliberation when independence cannot be verified
+@e2e exclude needs a broken object store; covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `assigned` with a panel
+- **AND** the contested primair besluit cannot be read
+- **WHEN** a client writes `status: in-deliberation` on the request through the OpenRegister API
+- **THEN** OpenRegister refuses the write
+- **AND** the request stays in `assigned`
+- **AND** the request's trail holds an `independence-check-unverifiable` entry with no conflicting member
+
+#### Scenario: an independent panel starts deliberating
+@e2e exclude covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `assigned` with a panel that took no part in the contested decision
+- **WHEN** a handler moves the request to `in-deliberation`
+- **THEN** the write is saved
+
+#### Scenario: a request without a panel does not start deliberating
+@e2e exclude covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `assigned` without a panel
+- **WHEN** a handler moves the request to `in-deliberation`
+- **THEN** OpenRegister refuses the write with "Panel must be set before deliberation can start"
+
+#### Scenario: the check fails with an unexpected error
+@e2e exclude needs a failing checker; covered by DeliberationStartGuardTest
+- **GIVEN** an advice request in `assigned` with a panel
+- **AND** the panel check throws an unexpected error
+- **WHEN** a handler moves the request to `in-deliberation`
+- **THEN** OpenRegister refuses the write
+- **AND** the request stays in `assigned`
+
+#### Scenario: other writes are not checked
+@e2e exclude covered by DeliberationStartGuardTest
+- **GIVEN** an advice request already in `in-deliberation`
+- **WHEN** a handler edits its advice text
+- **THEN** the panel check does not run and the write is saved
+
 #### Scenario: a client creates an advice request in deliberation with a conflicted panel
 @e2e exclude needs a contested decision signed by a panel member on a seeded instance; covered by DeliberationStartGuardTest
 - **GIVEN** a contested primair besluit decided by `p.janssen`

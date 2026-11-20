@@ -129,8 +129,9 @@ first and seen red. Build every OpenRegister double from the real class signatur
   new request from this one. Cite REQ-WRC-001 to REQ-WRC-005.
   - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
   - spec written; the run is owed (live pass, decision 139).
-- [ ] 6.2 Live check after merge on the dev instance: one Woo case through the same path. Record the
+- [x] 6.2 Live check after merge on the dev instance: one Woo case through the same path. Record the
   collection report.
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6, standing in for the dev instance this lane may not touch): tests/e2e/woo-corpus.spec.ts took one Woo case through plan, gather, duplicate, exclusion, reconciliation, re-run and follow-up request, and passed.
 
 ## 7. Verify and deliver
 

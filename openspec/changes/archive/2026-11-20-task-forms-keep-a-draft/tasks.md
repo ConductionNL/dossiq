@@ -7,5 +7,6 @@
 - [x] 3 Check `@conduction/nextcloud-vue` in `package.json` is at or above the release that shipped `form-dialog-autosave`; bump only if lower.
 - [x] 4 `tests/e2e/task-form-draft.spec.ts`: restore after close, save as draft with required fields empty. Tag both scenarios of REQ-TM-DRAFT-01. (Written as a non-admin handler from an empty storage state; lints and lists, not run here: it needs a live instance.)
 - [x] 5 `tests/vitest/manifestDrafts.spec.js`: both pages carry `draftField` and `draftAppId`; the case pages also carry `allowDraft` on `isDraft`.
-- [ ] 6 Live pass (decision 139): fill half a task form on :8080, reload, see the values offered back.
+- [x] 6 Live pass (decision 139): fill half a task form on :8080, reload, see the values offered back.
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6): tests/e2e/task-form-draft.spec.ts, 'input survives a reload and is offered back', passed as a non-admin handler: half a task form, a page reload, the draft offered back and restored.
 - [x] 7 `openspec/parity/capabilities.json` row 3.14: `built.state` built, evidence the two manifest paths, `reachedOn` TaskDetail.

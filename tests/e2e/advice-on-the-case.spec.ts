@@ -29,18 +29,40 @@ import {
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
+const SETTINGS_API = `/index.php/apps/${REGISTER}/api/settings`
 
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
+let menuBefore = ''
+
+/**
+ * Save the app's menu structure.
+ *
+ * @param value `simple` or `full`.
+ */
+async function saveMenuStructure(value: string): Promise<void> {
+	const saved = await api.post(SETTINGS_API, {
+		headers: { requesttoken: token, 'Content-Type': 'application/json' },
+		data: { menu_structure: value },
+	})
+	expect(saved.status(), `POST /api/settings menu_structure=${value}`).toBe(200)
+}
 
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
 	caseTypeId = objectId(await ensureCaseType(api, token))
+
+	// The advice card is drawn in the simple layout's Decisions tab only.
+	const current = await api.get(SETTINGS_API, { headers: { 'OCS-APIRequest': 'true' } })
+	const body = await current.json()
+	menuBefore = String((body.config ?? body).menu_structure ?? '')
+	await saveMenuStructure('simple')
 })
 
 test.afterAll(async () => {
+	await saveMenuStructure(menuBefore === 'full' ? 'full' : 'simple')
 	await cleanupRunObjects(api, token)
 	await api.dispose()
 })
@@ -100,7 +122,8 @@ test.describe('advice on the case', () => {
 
 		const row = await adviceRow(page, caseId, 'Welstand')
 		await expect(row).toBeVisible()
-		await expect(row).toContainText(/20 nov/i)
+		// The deadline reads in the user language: "20 nov 2099" or "Nov 20, 2099".
+		await expect(row).toContainText(/20 nov\.? 2099|nov 20, 2099/i)
 		await expect(row).toContainText(/Waiting for answer|Open/)
 
 		expect(errors).toHaveLength(0)

@@ -74,7 +74,8 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
   the language, the hand-off and the programme.
 - [x] 9.2 (2026-10-10: written, four scenarios, each skipping with a reason on an instance without pipelinq) `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
-- [ ] 9.4 (live pass, decision 139) Run `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts` and `tests/e2e/case-communication.spec.ts` on an instance with dossiq and pipelinq installed (pipelinq with at least two party kinds and two programmes).
+- [x] 9.4 (live pass, decision 139) Run `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts` and `tests/e2e/case-communication.spec.ts` on an instance with dossiq and pipelinq installed (pipelinq with at least two party kinds and two programmes).
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6, pipelinq development b96e131, two party kinds and two programmes seeded): parties-and-contact-moments-consume-pipelinq.spec.ts passed 4/4 and case-communication.spec.ts 5/5, after both followed the current Log contact dialog (selects for channel and direction, the test id on the textarea) and the library's cn-section-* test ids.
 - [x] 9.3 `openspec validate --strict` exits 0. (2026-10-10, lane L4: `openspec validate parties-and-contact-moments-consume-pipelinq --strict` is valid)
 
 ## Rescue, 2026-09-18: the six guards, one at a time

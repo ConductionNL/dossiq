@@ -397,7 +397,7 @@ test.describe('The case Actions menu', () => {
 		// from a sub-case that happened to share the title. The
 		// `.cn-tabs__content >` scoping is development's and is kept.
 		const panel = strip.locator(
-			'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
 		)
 		await expect(panel).toContainText(plannedTitle, { timeout: 30_000 })
 		await expect(panel).toContainText(due, { timeout: 30_000 })

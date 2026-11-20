@@ -49,7 +49,8 @@ Tier: V1. Kind: code. Row: opencatalogi `wr-search-sources`.
   - `npm run check:manifest` and `npm run lint` exit 0
   - done: `tests/vitest/gatherDocumentsDialog.spec.js`; board DqZaakDialogen gains the dialog in
     design-system#180.
-- [ ] 3.2 `tests/e2e/woo-gather-documents.spec.ts`: a handler searches files,
+- [x] 3.2 `tests/e2e/woo-gather-documents.spec.ts`: a handler searches files,
   adds two, and finds them outstanding for assessment; citing the scenarios.
   - Live pass 2026-11-16: the spec now opens the action from the header menu and records a search plan first; the search now lists both uploaded files (the plan's period must hold them, since it prefills the search). Still open: picking the two rows by their name text leaves one unchecked, so Add does not close the dialog; the next step is to pick through `gather-pick-files-<fileId>`.
   - spec written; the run is owed (live pass, decision 139).
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6): passed. Two fixes in the spec: rows are picked by file id, and the two files hold different text, since two files with the same bytes are one document and the second is listed as a duplicate.

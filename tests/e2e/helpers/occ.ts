@@ -512,3 +512,41 @@ export async function occFlowWorkerPass(): Promise<{
 		'--force-execute',
 	])
 }
+
+/**
+ * Run now every queued job of one class whose argument names the given text.
+ *
+ * A throwaway instance's cron can run minutes behind, and a test that waits for
+ * it measures the cron rather than the job. The exit code of each run is
+ * returned, never thrown on.
+ *
+ * @param jobClass The job's class name, as stored.
+ * @param argumentHas Text the job's argument must contain, such as a case uuid.
+ * @return One result per job that was run.
+ */
+export async function occRunQueuedJobs(
+	jobClass: string,
+	argumentHas: string,
+): Promise<Array<{ code: number; output: string }>> {
+	const invocation = await resolveOcc()
+	if (invocation === null) {
+		throw new OccUnavailableError(unavailableMessage())
+	}
+
+	const listed = await run(invocation, ['background-job:list', `--class=${jobClass}`, '--output=json'])
+	let jobs: Array<{ id: string | number, argument?: string }>
+	try {
+		jobs = JSON.parse(listed.stdout)
+	} catch {
+		return []
+	}
+
+	const results: Array<{ code: number; output: string }> = []
+	for (const job of jobs) {
+		if (String(job.argument ?? '').includes(argumentHas) === false) {
+			continue
+		}
+		results.push(await run(invocation, ['background-job:execute', String(job.id), '--force-execute']))
+	}
+	return results
+}

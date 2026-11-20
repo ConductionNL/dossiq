@@ -5,4 +5,5 @@
 - **files**: `lib/Listener/DeliberationStartGuard.php`, `lib/Service/Bezwaar/AdvisoryCommitteeService.php`, `lib/AppInfo/Registrar/BezwaarListenerRegistrar.php`
 - [x] Implement
 - [x] Test: `tests/Unit/Listener/DeliberationStartGuardTest.php`, `tests/Unit/Service/Bezwaar/AdvisoryCommitteeServiceTest.php`
-- [ ] Live: on a seeded instance, the advice request page's lifecycle action refuses a conflicted panel and the history tab shows the entry
+- [x] Live: on a seeded instance, the advice request page's lifecycle action refuses a conflicted panel and the history tab shows the entry
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77, openregister main ce0543d6 and decidiq development e81adfb): tests/e2e/bezwaar-deliberation-guards.spec.ts, 'Start deliberation on the page refuses a conflicted panel and History shows the refusal', passed. The action sits in the page's More menu.

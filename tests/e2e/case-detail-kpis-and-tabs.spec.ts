@@ -91,15 +91,15 @@ const RELATED = /^(Related|Gerelateerd)\b/
  * the difference between a small strip and four missing features.
  */
 const FOLDED_SECTIONS: Array<[RegExp, string, 'registry' | 'integration']> = [
-	[OVERVIEW, 'case-section-case-core', 'registry'],
-	[OVERVIEW, 'case-section-case-location-map', 'registry'],
-	[PEOPLE, 'case-section-case-roles', 'registry'],
-	[CONTACT, 'case-section-case-communication', 'registry'],
-	[TASKS, 'case-section-case-tasks', 'registry'],
-	[TASKS, 'case-section-case-calendar', 'integration'],
-	[RELATED, 'case-section-case-related', 'registry'],
-	[RELATED, 'case-section-case-sub-cases', 'registry'],
-	[RELATED, 'case-section-case-objects', 'registry'],
+	[OVERVIEW, 'cn-section-case-core', 'registry'],
+	[OVERVIEW, 'cn-section-case-location-map', 'registry'],
+	[PEOPLE, 'cn-section-case-roles', 'registry'],
+	[CONTACT, 'cn-section-case-communication', 'registry'],
+	[TASKS, 'cn-section-case-tasks', 'registry'],
+	[TASKS, 'cn-section-case-calendar', 'integration'],
+	[RELATED, 'cn-section-case-related', 'registry'],
+	[RELATED, 'cn-section-case-sub-cases', 'registry'],
+	[RELATED, 'cn-section-case-objects', 'registry'],
 ]
 
 /**
@@ -719,7 +719,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(panel.getByTestId('cn-files-browser')).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(panel.locator('[data-testid^="case-section-"]')).toHaveCount(0)
+		await expect(panel.locator('[data-testid^="cn-section-"]')).toHaveCount(0)
 		await expect(panel.locator('.case-sections__heading')).toHaveCount(0)
 		await expect(panel.getByText(/^(Documents|Documenten)/)).toHaveCount(0)
 		// The trail runs from the user's files root down to this case's folder.

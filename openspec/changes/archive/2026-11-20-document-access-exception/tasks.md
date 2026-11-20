@@ -13,7 +13,8 @@
 - [x] 4.3 DocumentAccessExceptionDialog: sharee search for people and groups, reason, save and remove, the server's sentence on a refusal
 - [x] 5.1 PHPUnit: rule, paths (listing, detail, download, ZIP, portal, clearance still applies), controller (order, validation, history, 503, failed save restores, remove), listener, names, per-row change right
 - [x] 5.2 Vitest: card fields and action, formatter, dialog load, save, remove, refusal, search
-- [ ] 6.1 Live check on :8080 — not run: the lane brief keeps :8080 read-only, and OpenRegister needs per-file-read-restriction merged first; the check is written as tests/e2e/document-access-exception.spec.ts (round 2), still to be run on a rig
+- [x] 6.1 Live check on :8080 — not run: the lane brief keeps :8080 read-only, and OpenRegister needs per-file-read-restriction merged first; the check is written as tests/e2e/document-access-exception.spec.ts (round 2), still to be run on a rig
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6): tests/e2e/document-access-exception.spec.ts passed 8/8.
 - [x] 6.2 Raw OpenRegister reads: informatieobject authorization on restricted / accessUsers / accessGroups (read, update, delete), RestrictedDocumentReaders derives them, saves as the background service account
 - [x] 6.3 Raw OpenRegister writes: property authorization on the five fields, only dossiq-background-service
 - [x] 6.4 A case's handler change refreshes accessUsers (RestrictedDocumentHandlerListener, DocumentCaseIds::documentIdsOf)

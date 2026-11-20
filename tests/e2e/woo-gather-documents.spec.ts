@@ -47,6 +47,7 @@ test.describe('Gather documents on a Woo case', () => {
 		const headers = { requesttoken: token, 'OCS-APIRequest': 'true' }
 
 		// Two files about the subject in two folders the handler can read.
+		const fileIds: string[] = []
 		for (const [folder, name] of [
 			['Team Ruimte', `${TERM}-notulen.txt`],
 			['Team Verkeer', `${TERM}-memo.txt`],
@@ -55,9 +56,12 @@ test.describe('Gather documents on a Woo case', () => {
 			await request.fetch(dir, { method: 'MKCOL', headers })
 			const put = await request.put(`${dir}/${encodeURIComponent(name)}`, {
 				headers,
-				data: `Notities over ${TERM}`,
+				// Distinct content: two files with the same bytes are one document, the second a duplicate.
+				data: `Notities over ${TERM} in ${name}`,
 			})
 			expect(put.ok(), `upload ${name} -> ${put.status()}`).toBeTruthy()
+			// `OC-FileId` is the zero-padded id followed by the instance id.
+			fileIds.push(String(parseInt(put.headers()['oc-fileid'] ?? '', 10)))
 		}
 
 		const created = await seedCase(request, token, {
@@ -112,8 +116,14 @@ test.describe('Gather documents on a Woo case', () => {
 		const files = dialog.getByTestId('gather-results-files')
 		await expect(files.getByText(`${TERM}-notulen.txt`, { exact: true })).toBeVisible(PAGE_LOAD)
 		await expect(files.getByText(`${TERM}-memo.txt`, { exact: true })).toBeVisible()
-		await files.getByText(`${TERM}-notulen.txt`, { exact: true }).click()
-		await files.getByText(`${TERM}-memo.txt`, { exact: true }).click()
+		// Each row is picked by its file id: a click on the name text can land on
+		// the label of the row beside it and leave a row unpicked.
+		for (const fileId of fileIds) {
+			// The library puts the test id on the checkbox input itself.
+			const box = files.locator(`input[data-testid="gather-pick-files-${fileId}"], [data-testid="gather-pick-files-${fileId}"] input`).first()
+			await box.check({ force: true })
+			await expect(box).toBeChecked()
+		}
 		await dialog.getByTestId('gather-add').click()
 		await expect(dialog).toBeHidden(PAGE_LOAD)
 

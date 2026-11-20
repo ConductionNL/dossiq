@@ -31,6 +31,7 @@ use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -98,7 +99,8 @@ class WooReportController extends Controller {
 	/**
 	 * Throughput per reviewer per day, for one case (`?case=`) or a period (`?from=&to=`).
 	 *
-	 * `?format=csv` answers the same rows as a CSV download. Every read that
+	 * `?format=csv` answers the same rows as a CSV download. The page offers the
+	 * CSV as a plain link, which carries no CSRF token. Every read that
 	 * counted a case is recorded on that case's audit trail before it is
 	 * answered; a read that cannot be recorded is refused.
 	 *
@@ -107,6 +109,7 @@ class WooReportController extends Controller {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function throughput(): JSONResponse|DataDownloadResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -283,6 +286,7 @@ class WooReportController extends Controller {
 	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
 	 */
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {
 		return $this->throughput();
 	}//end throughputLegacyPath()

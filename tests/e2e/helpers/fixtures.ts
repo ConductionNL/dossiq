@@ -1281,6 +1281,25 @@ export async function cleanupFlowTasks(
  * @param token   CSRF request-token.
  * @param schemas Schema slugs to sweep (order matters: children before parents).
  */
+/**
+ * The sweep order with `deadlineInstance` just before `case`.
+ *
+ * Seeding a case starts its statutory term on the server, and
+ * CaseDeleteGuardListener refuses to delete or purge a case while that term
+ * runs. A caller naming only `case` would leave every case behind.
+ *
+ * @param schemas The schemas a caller asked to sweep, child-first.
+ * @return The same order, with the term rows swept before the cases.
+ */
+export function withTermsBeforeCases(schemas: string[]): string[] {
+	const at = schemas.indexOf('case')
+	if (at === -1 || schemas.includes('deadlineInstance') === true) {
+		return schemas
+	}
+
+	return [...schemas.slice(0, at), 'deadlineInstance', ...schemas.slice(at)]
+}
+
 export async function cleanupRunObjects(
 	api: APIRequestContext,
 	token: string,
@@ -1316,12 +1335,13 @@ export async function cleanupRunObjects(
 	// whose `case` or `parentCase` points at one of our cases still go, because
 	// that is a foreign key and not a content match: the transition engine writes
 	// `statusRecord` rows itself, carrying the case uuid and none of our text.
+	const swept = withTermsBeforeCases(schemas)
 	const ledger = (schema: string): Set<string> => new Set(trackedObjects(schema))
-	const ourIds = new Set(schemas.flatMap((schema) => trackedObjects(schema)))
+	const ourIds = new Set(swept.flatMap((schema) => trackedObjects(schema)))
 
 	const noticed: string[] = []
 	const survivors = [
-		...(await sweepPrefix(api, token, RUN_PREFIX, schemas, 0, ledger, noticed)),
+		...(await sweepPrefix(api, token, RUN_PREFIX, swept, 0, ledger, noticed)),
 		...(await sweepTrashIds(api, token, ourIds)),
 	]
 

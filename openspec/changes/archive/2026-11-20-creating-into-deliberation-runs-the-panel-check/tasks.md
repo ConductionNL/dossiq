@@ -5,7 +5,8 @@
 - **files**: `lib/Listener/DeliberationStartGuard.php`, `lib/AppInfo/Registrar/BezwaarListenerRegistrar.php`
 - [x] Implement
 - [x] Test: `tests/Unit/Listener/DeliberationStartGuardTest.php`
-- [ ] Live: on a seeded instance, an API create of an advice request in `in-deliberation` with a conflicted panel is refused and nothing is saved
+- [x] Live: on a seeded instance, an API create of an advice request in `in-deliberation` with a conflicted panel is refused and nothing is saved
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77, openregister main ce0543d6 and decidiq development e81adfb): tests/e2e/bezwaar-deliberation-guards.spec.ts, 'a create straight into in-deliberation with a conflicted panel is refused and nothing is saved', passed: a 4xx naming the panel member conflict, and no advice request stored.
 
 ### Task 2: Close the remaining gaps around deliberation
 - **spec_ref**: `openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-an-advice-request-reaches-advice-issued-or-inadmissible-only-from-in-deliberation`
