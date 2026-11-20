@@ -82,7 +82,6 @@
 		"EndOfDayMenu": "WorkGroup",
 		"MyWork": "WorkGroup",
 		"Cases": "WorkGroup",
-		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
 		"CaseObjectsMenu": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
