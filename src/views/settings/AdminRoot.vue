@@ -117,6 +117,21 @@
 				:fields="backgroundAccountFields" />
 
 			<CnSettingsFieldsSection
+				id="section-widget-audience"
+				:name="t('dossiq', 'Dashboard widgets')"
+				:description="
+					t(
+						'dossiq',
+						'Which groups see each Dossiq widget on the dashboard. An administrator outside the groups does not see it either.',
+					)
+				"
+				:url="widgetAudienceUrl"
+				:saveAll="true"
+				:saveLabel="t('dossiq', 'Save')"
+				:savedMessage="t('dossiq', 'Saved. The widgets follow the new groups the next time the dashboard is opened.')"
+				:fields="widgetAudienceFields" />
+
+			<CnSettingsFieldsSection
 				id="section-mailbox"
 				:name="t('dossiq', 'Case email: shared mailbox')"
 				:description="
@@ -856,6 +871,8 @@ import {
 	sharedMailboxFields,
 	storeRegistryFields,
 	textsAndAccessFields,
+	WIDGET_AUDIENCE_URL,
+	widgetAudienceFields,
 } from './adminFields.js'
 import {
 	publicationRows,
@@ -1298,6 +1315,12 @@ export default {
 		 */
 		menuStructureFields() {
 			return menuStructureFields(this.t.bind(this))
+		},
+		widgetAudienceFields() {
+			return widgetAudienceFields(this.t.bind(this))
+		},
+		widgetAudienceUrl() {
+			return WIDGET_AUDIENCE_URL
 		},
 
 		/**

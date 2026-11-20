@@ -1497,3 +1497,44 @@ export function registerMappingGroups(t) {
 		},
 	]
 }
+
+/**
+ * Where the groups per contributed dashboard widget are read and stored (admin only).
+ *
+ * @type {string}
+ */
+export const WIDGET_AUDIENCE_URL = '/apps/dossiq/api/settings/widget-audience'
+
+/**
+ * The dashboard widgets dossiq contributes, by the id the server keys their
+ * audience on, with their titles. The ids keep their frozen prefix (see
+ * `CasesOverviewWidget::getId()`).
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<{id: string, title: string}>} The widgets.
+ * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+ */
+export function contributedWidgets(t) {
+	return [
+		{ id: 'procest_cases_overview_widget', title: t('dossiq', 'Cases overview') },
+		{ id: 'dossiq_my_open_work_widget', title: t('dossiq', 'My work') },
+		{ id: 'procest_deadline_alerts_widget', title: t('dossiq', 'Deadline signals') },
+		{ id: 'procest_task_reminders_widget', title: t('dossiq', 'Task reminders') },
+		{ id: 'procest_stalled_cases_widget', title: t('dossiq', 'Stalled cases') },
+		{ id: 'procest_start_case_widget', title: t('dossiq', 'Start case') },
+	]
+}
+
+/**
+ * Who sees each dashboard widget: one field per contributed widget, under its
+ * title, holding its group ids separated by commas. Empty means everybody; the
+ * server refuses the save for anyone who is not an administrator.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+ */
+export function widgetAudienceFields(t) {
+	const hint = t('dossiq', 'Group names, separated by commas. Empty: everybody sees the widget.')
+	return contributedWidgets(t).map((widget) => ({ key: widget.id, label: widget.title, hint }))
+}

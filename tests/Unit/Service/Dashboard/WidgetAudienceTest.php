@@ -156,4 +156,64 @@ final class WidgetAudienceTest extends TestCase {
 			$this->assertSame(expected: $expected, actual: $widget->isEnabled(), message: $uid);
 		}
 	}//end testTheWidgetBaseIsEnabledOnlyForItsAudience()
+	/**
+	 * Saving writes the shipped widgets only, splits text on commas, keeps a widget left out, and reads back.
+	 *
+	 * @return void
+	 */
+	public function testSaveStoresTheShippedWidgetsOnly(): void {
+		$stored   = '{"procest_stalled_cases_widget": ["teamleiders"]}';
+		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = '') use (&$stored): string {
+				return $key === WidgetAudience::SETTING ? $stored : $default;
+			}
+		);
+		$settings->expects($this->once())->method('setConfigValue')->willReturnCallback(
+			static function (string $key, string $value) use (&$stored): void {
+				$stored = $value;
+			}
+		);
+		$audience = new WidgetAudience(settings: $settings, groups: $this->createMock(originalClassName: IGroupManager::class));
+
+		$saved = $audience->save(
+			audiences: [
+				'procest_deadline_alerts_widget' => 'vergunningen, toezicht, ',
+				'procest_cases_overview_widget'  => ['kcc', ''],
+				'not_a_widget'                   => ['admin'],
+			]
+		);
+
+		$this->assertSame(expected: ['vergunningen', 'toezicht'], actual: $saved['procest_deadline_alerts_widget']);
+		$this->assertSame(expected: ['kcc'], actual: $saved['procest_cases_overview_widget']);
+		$this->assertSame(expected: ['teamleiders'], actual: $saved['procest_stalled_cases_widget']);
+		$this->assertArrayNotHasKey(key: 'not_a_widget', array: $saved);
+		$this->assertStringNotContainsString(needle: 'not_a_widget', haystack: $stored);
+	}//end testSaveStoresTheShippedWidgetsOnly()
+
+	/**
+	 * Saving an empty text opens a widget to everybody again.
+	 *
+	 * @return void
+	 */
+	public function testSavingAnEmptyTextOpensTheWidget(): void {
+		$stored   = '{"procest_start_case_widget": ["kcc"]}';
+		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = '') use (&$stored): string {
+				return $key === WidgetAudience::SETTING ? $stored : $default;
+			}
+		);
+		$settings->method('setConfigValue')->willReturnCallback(
+			static function (string $key, string $value) use (&$stored): void {
+				$stored = $value;
+			}
+		);
+		$audience = new WidgetAudience(settings: $settings, groups: $this->createMock(originalClassName: IGroupManager::class));
+
+		$saved = $audience->save(audiences: ['procest_start_case_widget' => '']);
+
+		$this->assertSame(expected: [], actual: $saved['procest_start_case_widget']);
+		$this->assertTrue(condition: $audience->admits(widgetId: 'procest_start_case_widget', userId: 'anyone'));
+	}//end testSavingAnEmptyTextOpensTheWidget()
 }//end class
