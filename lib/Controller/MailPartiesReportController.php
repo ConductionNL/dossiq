@@ -34,6 +34,7 @@ use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -73,7 +74,8 @@ class MailPartiesReportController extends Controller {
 	/**
 	 * Counts per sender, recipient and domain of the case's collected mail, plus unreadable.
 	 *
-	 * `?format=csv` answers the same rows as a CSV download.
+	 * `?format=csv` answers the same rows as a CSV download, which the page offers
+	 * as a plain link that carries no CSRF token.
 	 *
 	 * @param string $id The case uuid.
 	 *
@@ -82,6 +84,7 @@ class MailPartiesReportController extends Controller {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function show(string $id): JSONResponse|DataDownloadResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
