@@ -6470,6 +6470,32 @@
 						}
 					},
 					{
+						"id": "tender-answer-publish",
+						"type": "open-modal",
+						"label": "Publish answer",
+						"icon": "CommentCheckOutline",
+						"target": "AnswerPublishDialog",
+						"props": {
+							"caseId": "@objectId",
+							"register": "dossiq",
+							"schema": "tenderQuestion",
+							"caseField": "tender"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.tenderChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "bid-register",
 						"type": "open-form",
 						"label": "Register bid",
