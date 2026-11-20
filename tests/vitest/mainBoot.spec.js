@@ -184,14 +184,26 @@ describe('main.js boot', { timeout: 60000 }, () => {
 		expect(booted.integrations).toEqual([{
 			id: 'field-inspection',
 			label: 'Field inspection',
+			// inspection-checklists-onto-task 4.2b: the one template schema, and
+			// a finished run replayed to the case's result endpoint.
 			offlineConfig: {
 				plannedSchema: 'fieldInspection',
-				referenceSchema: 'inspectionChecklist',
+				referenceSchema: 'inspectionChecklistTemplate',
 				templateRefField: 'checklistTemplateRef',
-				resultSchema: 'checklistResult',
+				resultSchema: '',
 				assigneeField: 'inspectorRef',
 				dateField: 'scheduledAt',
 				titleField: 'caseRef',
+				sectionsField: 'sections',
+				itemKeyField: 'id',
+				itemTextField: 'label',
+				itemTypeField: 'responseType',
+				itemTypeMap: { yes_no_na: 'yes_no', photo: 'photo_required' },
+				photoRequiredField: 'photoRequired',
+				photoRequiredValue: 'altijd',
+				resultEndpoint: '/apps/dossiq/api/cases/{caseRef}/checklist-results',
+				resultTemplateParam: 'checklistId',
+				resultPlannedItemParam: 'inspection',
 			},
 		}])
 	})

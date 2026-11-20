@@ -60,7 +60,7 @@
     "@vueuse/core": "^14.4.0",
     "dexie": "^4.4.6",
     "dompurify": "^3.4.17",
-    "gridstack": "^13.2.0",
+    "gridstack": "^14.1.0",
     "marked": "^18.2.0",
     "pinia": "^3.0.3",
     "proj4": "^2.22.0",
