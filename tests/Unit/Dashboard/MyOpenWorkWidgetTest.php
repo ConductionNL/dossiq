@@ -38,6 +38,9 @@ use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Service\Dashboard\WidgetAudience;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -47,6 +50,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Dashboard\OpenWorkSummary
  * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
  * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
+ * @uses   \OCA\Dossiq\Service\Dashboard\WidgetAudience
  * @uses   \OCA\Dossiq\Service\Queue\QueueItem
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
@@ -187,19 +191,62 @@ class MyOpenWorkWidgetTest extends TestCase {
 	}//end testDeclaresTheItemApiAndTheButton()
 
 	/**
+	 * A user outside the widget's audience gets no items, and the queue is never read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 */
+	public function testAUserOutsideTheAudienceGetsNoItems(): void {
+		$queue = $this->createMock(originalClassName: PersonalQueueService::class);
+		$queue->expects($this->never())->method('forPerson');
+
+		$widget = $this->widget(queue: $queue, admitted: false);
+
+		$this->assertSame(expected: [], actual: $widget->getItemsV2(userId: 'outsider')->getItems());
+		$this->assertFalse(condition: $widget->isEnabled());
+	}//end testAUserOutsideTheAudienceGetsNoItems()
+
+	/**
+	 * A user inside the audience still reads the queue as themselves, so case rights apply.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-003-the-audience-narrows-and-never-widens
+	 */
+	public function testAUserInsideTheAudienceReadsTheQueueAsThemselves(): void {
+		$queue = $this->createMock(originalClassName: PersonalQueueService::class);
+		$queue->expects($this->once())->method('forPerson')->with('handler')->willReturn(['items' => [], 'unavailable' => [], 'total' => 0]);
+
+		$widget = $this->widget(queue: $queue);
+
+		$this->assertSame(expected: [], actual: $widget->getItemsV2(userId: 'handler')->getItems());
+		$this->assertTrue(condition: $widget->isEnabled());
+	}//end testAUserInsideTheAudienceReadsTheQueueAsThemselves()
+
+	/**
 	 * The widget under test.
 	 *
-	 * @param PersonalQueueService $queue The queue double.
+	 * @param PersonalQueueService $queue    The queue double.
+	 * @param bool                 $admitted Whether the audience admits the user.
 	 *
 	 * @return MyOpenWorkWidget The widget.
 	 */
-	private function widget(PersonalQueueService $queue): MyOpenWorkWidget {
+	private function widget(PersonalQueueService $queue, bool $admitted = true): MyOpenWorkWidget {
 		$dates = $this->caseDatesFrozenAt(instant: '2026-10-12T09:00:00+02:00');
 		$items = new QueueWidgetItems(url: $this->url, dates: $dates);
+		$audience = $this->createMock(originalClassName: WidgetAudience::class);
+		$audience->method('admits')->willReturn($admitted);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('handler');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
 		return new MyOpenWorkWidget(
 			l10n: $this->l10n,
 			queue: $queue,
-			summary: new OpenWorkSummary(l10n: $this->l10n, items: $items)
+			summary: new OpenWorkSummary(l10n: $this->l10n, items: $items),
+			audience: $audience,
+			userSession: $session
 		);
 
 	}//end widget()

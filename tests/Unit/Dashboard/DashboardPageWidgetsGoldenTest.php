@@ -29,7 +29,9 @@ use OCA\Dossiq\Dashboard\StartCaseWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\Dashboard\IWidget;
 use OCP\IL10N;
+use OCA\Dossiq\Service\Dashboard\WidgetAudience;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -75,7 +77,12 @@ class DashboardPageWidgetsGoldenTest extends TestCase {
 		$url = $this->createMock(originalClassName: IURLGenerator::class);
 		$url->expects($this->once())->method('linkToRouteAbsolute')->with('dossiq.dashboard.page')->willReturn('https://x/apps/dossiq/');
 
-		$widget = new $class($l10n, $url);
+		$widget = new $class(
+			l10n: $l10n,
+			url: $url,
+			audience: $this->createMock(originalClassName: WidgetAudience::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class)
+		);
 
 		self::assertSame(
 			expected: [...$expected, 'https://x/apps/dossiq/'],
