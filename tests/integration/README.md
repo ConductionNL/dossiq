@@ -44,6 +44,13 @@ The collection documents this honestly: the complaints **no-auth** (401) and
 **without faking a pass**. When the app is fixed (`findObjects` → `findAll`), that
 quarantine test goes RED — flip it to a happy-path 200 assertion at that point.
 
+## The complaint case type
+
+`klacht-behandeling.postman_collection.json` (complaints-are-a-case-type, REQ-CMP-CT-01) reads the
+shipped case type `klacht-behandeling`, starts a case of it received on Monday 1 March 2021, asserts
+through `GET /api/cases/{id}/terms` that its statutory term runs to 12 April (six weeks, Awb 9:11
+lid 1), and deletes the case again. Run it with the same variables as the main suite.
+
 ## Running
 
 ```bash

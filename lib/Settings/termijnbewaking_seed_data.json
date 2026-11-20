@@ -151,6 +151,25 @@
       "validFrom": "2026-01-01"
     },
     {
+      "id": "td-klacht-behandeling-commissie",
+      "caseType": "klacht-behandeling",
+      "kind": "statutory",
+      "pickedByCaseType": true,
+      "legalBasis": "Awb 9:11 lid 1 en 2, afdeling 9.1.3",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 9:11 lid 1 (tien weken als een klachtadviescommissie adviseert, afdeling 9.1.3) en lid 2 (verdaging met ten hoogste vier weken)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk9_Titeldeel9.1_Afdeling9.1.2_Artikel9:11"
+        }
+      ],
+      "standardDurationDays": 70,
+      "standardDurationWeeks": 10,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 28,
+      "countExtensions": 1,
+      "validFrom": "2026-01-01"
+    },
+    {
       "id": "td-bezwaar",
       "caseType": "bezwaar",
       "kind": "statutory",

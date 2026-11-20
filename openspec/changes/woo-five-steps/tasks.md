@@ -19,4 +19,7 @@
 - [x] 2.3 StatusTypePalette: Publiceren green
 
 ## 3. Example data
-- [ ] 3.1 The Zuiddrecht Woo cases and the Lindelaan sub-cases on version 2
+- [x] 3.1 The Zuiddrecht Woo cases and the Lindelaan sub-cases on version 2
+  - Already in the example set: every Woo case, result, decision, planned-action type and mail template in
+    `example-sets/zuiddrecht.json`, `zuiddrecht.d/20-team-queue.json` and `zuiddrecht.d/63-closed-lindelaan-woo.json`
+    looks up `woo-verzoek` version 2 and its five statuses.
