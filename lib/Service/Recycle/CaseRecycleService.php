@@ -396,7 +396,12 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		// null` in the catch makes the two indistinguishable downstream.
 		$case = null;
 		try {
-			$case = $this->findLiveCase(location: $location, caseId: $caseId);
+			$case = $this->findObjectAsArray(
+				objectService: $location->objectService,
+				register: $location->register,
+				schema: $location->schema,
+				id: $caseId
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the case behind the retention clocks could not be read',
@@ -406,23 +411,6 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 
 		return $case;
 	}//end readLiveCase()
-
-	/**
-	 * Find one case at its location.
-	 *
-	 * @param CaseStoreLocation $location Where the case is stored.
-	 * @param string            $caseId   The case UUID.
-	 *
-	 * @return array<string, mixed>|null The case payload, or null when it is not there.
-	 */
-	private function findLiveCase(CaseStoreLocation $location, string $caseId): ?array {
-		return $this->findObjectAsArray(
-			objectService: $location->objectService,
-			register: $location->register,
-			schema: $location->schema,
-			id: $caseId
-		);
-	}//end findLiveCase()
 
 	/**
 	 * Restore a deleted case, and record who did it and when.
