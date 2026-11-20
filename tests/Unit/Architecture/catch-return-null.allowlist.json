@@ -165,7 +165,7 @@
       "method": "versionInForce",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`versionInForce()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Filinq could not list the versions of a beschikking template\") and the caller carries on without it."
+      "reason": "`versionInForce()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Filinq could not say which version of a beschikking template was in force\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/Beschikking/OpenRegisterArchivalAdapter.php",
