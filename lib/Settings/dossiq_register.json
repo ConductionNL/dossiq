@@ -1791,14 +1791,20 @@
                         "properties": {
                             "code": {
                                 "type": "string",
+                                "title": "Code",
+                                "description": "The code of the DIWOO information category, such as infocat014.",
                                 "maxLength": 64
                             },
                             "label": {
                                 "type": "string",
+                                "title": "Label",
+                                "description": "The name of the information category as it is published.",
                                 "maxLength": 255
                             },
                             "uri": {
                                 "type": "string",
+                                "title": "URI",
+                                "description": "The URI of the information category in the DIWOO list.",
                                 "format": "uri"
                             }
                         }
