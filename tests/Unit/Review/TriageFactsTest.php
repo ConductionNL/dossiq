@@ -48,12 +48,18 @@ class TriageFactsTest extends TestCase {
 	/**
 	 * The facts over a register with one mail and one note on case X.
 	 *
-	 * @param DocumentText|null $text The text double, or one that answers nothing.
+	 * @param DocumentText|null                  $text  The text double, or one that answers nothing.
+	 * @param array<string, array<string, mixed>> $extra More documents on case X, by id.
 	 *
 	 * @return TriageFacts
 	 */
-	private function facts(?DocumentText $text = null): TriageFacts {
+	private function facts(?DocumentText $text = null, array $extra = []): TriageFacts {
 		$store = new InMemoryRegister();
+		foreach ($extra as $id => $row) {
+			$store->seed(schema: 'informatieobject', uuid: $id, row: $row);
+			$store->seed(schema: 'zaakinformatieobject', uuid: 'join-'.$id, row: ['case' => 'case-x', 'informatieobject' => $id]);
+		}
+
 		$store->seed(schema: 'informatieobject', uuid: 'mail-1', row: ['format' => 'message/rfc822', 'creatiedatum' => '2026-01-01', 'fileId' => 5, 'provenance' => ['source' => 'exchange', 'custodian' => 'A. de Wit', 'mail' => ['from' => 'Redactie@Nieuwsbrief.example.nl', 'date' => 'Tue, 3 Mar 2026 10:00:00 +0100']]]);
 		$store->seed(schema: 'informatieobject', uuid: 'note-1', row: ['mimeType' => 'application/pdf', 'creatiedatum' => '2025-06-01T09:00:00+02:00']);
 		foreach (['mail-1', 'note-1'] as $id) {
@@ -104,6 +110,18 @@ class TriageFactsTest extends TestCase {
 		$this->assertSame('application/pdf', $facts['mimeType']);
 		$this->assertSame('2025-06-01', $facts['date']);
 	}//end testADocumentWithoutProvenanceReadsItsRecord()
+
+	/**
+	 * A document with no date, or a date that is no date, reads an empty date.
+	 *
+	 * @return void
+	 */
+	public function testAMissingOrUnreadableDateReadsEmpty(): void {
+		$facts = $this->facts(extra: ['undated-1' => ['mimeType' => 'text/plain'], 'garbled-1' => ['mimeType' => 'text/plain', 'creatiedatum' => 'not a date']]);
+
+		$this->assertSame('', $facts->forDocument(caseId: 'case-x', documentId: 'undated-1')['date']);
+		$this->assertSame('', $facts->forDocument(caseId: 'case-x', documentId: 'garbled-1')['date']);
+	}//end testAMissingOrUnreadableDateReadsEmpty()
 
 	/**
 	 * The text is read from the record when asked.

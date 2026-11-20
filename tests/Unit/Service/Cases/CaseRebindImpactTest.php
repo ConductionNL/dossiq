@@ -35,16 +35,16 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseRebindImpact
  * @covers \OCA\Dossiq\Service\Cases\RebindValueConverter
+ * @covers \OCA\Dossiq\Service\Cases\RebindAnswer
+ * @covers \OCA\Dossiq\Service\Cases\RebindChoice
+ * @covers \OCA\Dossiq\Service\Cases\RebindImpactRun
+ * @covers \OCA\Dossiq\Service\Cases\RebindLanding
  *
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
- * @uses \OCA\Dossiq\Service\Cases\RebindAnswer
- * @uses \OCA\Dossiq\Service\Cases\RebindChoice
  * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
- * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
- * @uses \OCA\Dossiq\Service\Cases\RebindLanding
  */
 class CaseRebindImpactTest extends TestCase {
 
@@ -335,4 +335,38 @@ class CaseRebindImpactTest extends TestCase {
 			$impact->apply(case: $case, impact: $computed)['properties']
 		);
 	}//end testALegacyMapIsReadAndTheListIsWritten()
+
+	/**
+	 * A case that names no case type has no source definitions, and the resolver is not asked for one.
+	 *
+	 * An answer still ports by name onto the target field: without a source
+	 * definition it is judged as plain text, which the target's text field takes.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutACaseTypeReadsNoSourceDefinitions(): void {
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->expects($this->once())
+			->method('propertyDefinitionsFor')
+			->with('ct-dst')
+			->willReturn([['id' => 'dst-boomsoort', 'name' => 'boomsoort']]);
+
+		$store = new CaseTypeStore($this->createMock(SettingsService::class));
+		$impact = new CaseRebindImpact(
+			store: $store,
+			resolver: $resolver,
+			converter: $this->rebindConverter(),
+			answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
+		);
+
+		$computed = $impact->compute(
+			case: ['id' => 'case-1', 'properties' => [['propertyDefinition' => 'x', 'name' => 'boomsoort', 'value' => 'eik']]],
+			targetCaseTypeId: 'ct-dst',
+			targetStatusId: '',
+		);
+
+		self::assertSame(['boomsoort'], array_column($computed['ported'], 'target'));
+		self::assertSame([], $computed['dropped']);
+		self::assertTrue($computed['complete']);
+	}//end testACaseWithoutACaseTypeReadsNoSourceDefinitions()
 }//end class

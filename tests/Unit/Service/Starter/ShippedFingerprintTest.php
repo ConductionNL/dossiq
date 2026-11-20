@@ -227,4 +227,16 @@ final class ShippedFingerprintTest extends TestCase {
 	public function testNoPackageDirectoryMeansNoVersion(): void {
 		self::assertSame(expected: '', actual: (new ShippedSets())->versionOf(set: 'omgevingswet'));
 	}//end testNoPackageDirectoryMeansNoVersion()
+
+	/**
+	 * An object JSON cannot encode (invalid UTF-8) is hashed over its serialized canonical form.
+	 *
+	 * @return void
+	 */
+	public function testAnUnencodableObjectIsHashedOverItsSerializedForm(): void {
+		$hash = $this->fingerprint->hashOf(object: ['title' => "\xB1", 'id' => 7]);
+
+		self::assertSame(expected: hash('sha256', serialize(['title' => "\xB1"])), actual: $hash);
+		self::assertNotSame(expected: $hash, actual: $this->fingerprint->hashOf(object: ['title' => "\xB2"]));
+	}//end testAnUnencodableObjectIsHashedOverItsSerializedForm()
 }//end class

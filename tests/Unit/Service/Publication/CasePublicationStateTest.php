@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
+use OCA\Dossiq\Kernel\Contracts\WooRecordedDeliveryInterface;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -28,6 +29,7 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use RuntimeException;
 
 /**
  * Pins the ledger's answers: which decision a case publishes, and the state it writes back.
@@ -243,4 +245,65 @@ class CasePublicationStateTest extends TestCase {
 
 		(new CasePublicationState(settingsService: $this->settings(), logger: $logger))->markWithdrawn(caseId: 'case-1', publicationId: 'pub-1');
 	}//end testMarkWithdrawnWithoutAWriterIsQuiet()
+
+	/**
+	 * With a set writer the delivery goes through it, with the case, decision, items and send unchanged.
+	 *
+	 * @return void
+	 */
+	public function testDeliverWithAWriterGoesThroughTheWriter(): void {
+		$items = [['documentRef' => 'doc-1', 'position' => 1]];
+		$send = static fn (): string => 'pub-9';
+		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer->expects($this->once())->method('deliver')
+			->with(
+				$this->identicalTo('case-1'),
+				$this->identicalTo('d-1'),
+				$this->identicalTo($items),
+				$this->identicalTo($send)
+			)
+			->willReturn(['publicationId' => 'pub-9', 'setId' => 'set-4']);
+
+		$ledger = new CasePublicationState(settingsService: $this->settings(), logger: new NullLogger(), deliveredSets: $writer);
+
+		$this->assertSame(
+			['publicationId' => 'pub-9', 'setId' => 'set-4'],
+			$ledger->deliver(caseId: 'case-1', decisionId: 'd-1', items: $items, send: $send)
+		);
+	}//end testDeliverWithAWriterGoesThroughTheWriter()
+
+	/**
+	 * With a set writer a withdraw is stamped on the publication's set, and nothing is logged.
+	 *
+	 * @return void
+	 */
+	public function testMarkWithdrawnStampsTheSet(): void {
+		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer->expects($this->once())->method('markWithdrawn')
+			->with($this->identicalTo('case-1'), $this->identicalTo('pub-1'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('error');
+
+		(new CasePublicationState(settingsService: $this->settings(), logger: $logger, deliveredSets: $writer))
+			->markWithdrawn(caseId: 'case-1', publicationId: 'pub-1');
+	}//end testMarkWithdrawnStampsTheSet()
+
+	/**
+	 * A set writer that fails on the withdraw is logged with the publication and its error; the withdraw stands.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWithdrawStampIsLoggedNotThrown(): void {
+		$writer = $this->createMock(WooRecordedDeliveryInterface::class);
+		$writer->method('markWithdrawn')->willThrowException(new RuntimeException('set is frozen'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')
+			->with(
+				$this->identicalTo('WooPublicationService: the delivered set could not record the withdraw'),
+				$this->identicalTo(['app' => 'dossiq', 'publicationId' => 'pub-1', 'error' => 'set is frozen'])
+			);
+
+		(new CasePublicationState(settingsService: $this->settings(), logger: $logger, deliveredSets: $writer))
+			->markWithdrawn(caseId: 'case-1', publicationId: 'pub-1');
+	}//end testAFailedWithdrawStampIsLoggedNotThrown()
 }//end class
