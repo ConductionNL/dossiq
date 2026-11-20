@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
@@ -83,7 +84,7 @@ class EndOfDayRowMeta {
 		$status = '';
 		if ($task === false && is_string($case['status'] ?? null) === true && $case['status'] !== '') {
 			$statusType = $this->objectData(id: $case['status'], schema: $this->config(key: 'status_type_schema', default: 'statusType'));
-			$status = trim((string)($statusType['name'] ?? ''));
+			$status = (new LanguageMapText())->textOf(value: ($statusType['name'] ?? null));
 		}
 
 		return [
