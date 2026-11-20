@@ -3460,6 +3460,33 @@
                 "set": {
                     "status": "submitted"
                 }
+            },
+            {
+                "id": "completeChecklistTask",
+                "label": "Checklist invullen",
+                "endpoint": "/index.php/apps/dossiq/api/portal/inspectie/checklist",
+                "method": "POST",
+                "taskField": "taskId",
+                "minTrust": "low",
+                "fields": [
+                    "responses",
+                    "remarks"
+                ],
+                "requiredFields": [
+                    "responses"
+                ],
+                "fieldConfigs": {
+                    "responses": {
+                        "label": "Antwoorden"
+                    },
+                    "remarks": {
+                        "label": "Opmerkingen",
+                        "size": "large",
+                        "maxLength": 4000
+                    }
+                },
+                "submitLabel": "Checklist indienen",
+                "successMessage": "Wij hebben uw checklist ontvangen."
             }
         ],
         "notifications": [],

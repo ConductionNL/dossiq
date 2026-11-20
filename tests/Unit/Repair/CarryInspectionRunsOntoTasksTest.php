@@ -75,6 +75,49 @@ final class CarryInspectionRunsOntoTasksTest extends TestCase {
 	}//end testEachRunIsCarriedOnceAndARefusalIsCounted()
 
 	/**
+	 * An offline leaf result is carried onto the case and inspector of its
+	 * planned inspection; one whose planned inspection names no case is not.
+	 *
+	 * @return void
+	 */
+	public function testAnOfflineResultIsCarriedOntoItsPlannedInspectionsCase(): void {
+		$tasks = self::taskLayer(refuse: '');
+		$store = self::store(
+			[
+				'inspectionChecklistTemplate' => [['@self' => ['id' => 't-c'], 'name' => 'Brand', 'legacyRef' => 'inspectionChecklist/c-1', 'sections' => []]],
+				'fieldInspection' => [
+					['@self' => ['id' => 'fi-1'], 'caseRef' => 'case-9', 'inspectorRef' => 'inspecteur-b'],
+					['@self' => ['id' => 'fi-2'], 'inspectorRef' => 'inspecteur-b'],
+				],
+				'checklistResult' => [
+					[
+						'@self' => ['id' => 'cr-1'],
+						'inspectionRef' => 'fi-1',
+						'checklistTemplateRef' => 'c-1',
+						'items' => [['questionId' => 'q1', 'answer' => 'no', 'evidenceRefs' => ['41'], 'answeredAt' => '2026-11-01T09:00:00Z']],
+					],
+					['@self' => ['id' => 'cr-2'], 'inspectionRef' => 'fi-2', 'checklistTemplateRef' => 'c-1', 'items' => []],
+				],
+			]
+		);
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('warning')->with('Inspection run checklistResult/cr-2 names no planned inspection with a case; not carried over.');
+		$output->expects($this->once())->method('info')->with($this->stringContains('1 carried, 0 already carried, 1 failed'));
+		$this->step(store: $store, tasks: $tasks)->run($output);
+
+		$this->assertCount(1, $tasks->imported);
+		$task = $tasks->imported[0];
+		$this->assertSame('case-9', $task['objectUuid']);
+		$this->assertSame('inspecteur-b', $task['assignee']);
+		$this->assertSame('t-c', $task['templateId'], 'the result found the template folded from its checklist');
+		$this->assertSame('checklistResult/cr-1', $task['metadata']['legacyRef']);
+		$this->assertSame('fi-1', $task['metadata']['inspection']);
+		$this->assertSame([['itemId' => 'q1', 'value' => 'nee', 'photos' => ['41']]], $task['responses']);
+		$this->assertSame(['41'], $task['evidence']);
+	}//end testAnOfflineResultIsCarriedOntoItsPlannedInspectionsCase()
+
+	/**
 	 * Without the task layer the step says so and does nothing.
 	 *
 	 * @return void

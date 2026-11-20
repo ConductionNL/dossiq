@@ -82,4 +82,31 @@ interface InspectionRunServiceInterface {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
 	public function submit(string $caseId, string $templateId, array $payload, string $actor): array;
+
+	/**
+	 * The template a run is filled against.
+	 *
+	 * The older endpoints name the checklist they knew, so an id that is not a
+	 * template is looked up as the source a template was folded from.
+	 *
+	 * @param string $templateId The template uuid, or an older checklist uuid.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent or nothing answers to it.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
+	 */
+	public function templateFor(string $templateId): array;
+
+	/**
+	 * A task in the shape the panel and the results endpoint read.
+	 *
+	 * @param array<string, mixed> $task The serialised task.
+	 *
+	 * @return array<string, mixed> The run.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
+	 */
+	public function asRun(array $task): array;
 }//end interface

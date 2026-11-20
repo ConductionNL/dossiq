@@ -76,6 +76,46 @@ final class InspectionRunCarryOverTest extends TestCase {
 	}//end testAStackAReportBecomesACompletedTask()
 
 	/**
+	 * An offline leaf result: its answers move onto the shared keys, its
+	 * planned inspection is kept, and its latest answer dates its completion.
+	 *
+	 * @return void
+	 */
+	public function testAnOfflineLeafResultIsReadInTheSharedShape(): void {
+		$carry = new InspectionRunCarryOver();
+		$result = [
+			'@self' => ['id' => 'cr-1'],
+			'case' => 'case-9',
+			'inspector' => 'inspecteur-b',
+			'inspectionRef' => 'fi-1',
+			'checklistTemplateRef' => 'c-1',
+			'items' => [
+				['questionId' => 'q1', 'answer' => 'yes', 'answeredAt' => '2026-11-01T09:00:00Z'],
+				['questionId' => 'q2', 'answer' => 'no', 'evidenceRefs' => ['41'], 'notes' => 'lekkage', 'answeredAt' => '2026-11-01T09:05:00Z', 'gpsAtAnswer' => ['source' => 'sensorless']],
+				'not an item',
+			],
+		];
+
+		$this->assertSame('inspectionChecklist/c-1', $carry->templateRef(schema: 'checklistResult', object: $result));
+		$data = $carry->taskData(schema: 'checklistResult', object: $result, template: null);
+
+		$this->assertSame('case-9', $data['objectUuid']);
+		$this->assertSame('completed', $data['state']);
+		$this->assertSame('c-1', $data['templateId'], 'without a folded template the reference it held');
+		$this->assertSame(
+			[
+				['itemId' => 'q1', 'value' => 'ja'],
+				['itemId' => 'q2', 'value' => 'nee', 'comment' => 'lekkage', 'photos' => ['41'], 'gpsAtAnswer' => ['source' => 'sensorless']],
+			],
+			$data['responses']
+		);
+		$this->assertSame(['41'], $data['evidence']);
+		$this->assertSame('fi-1', $data['metadata']['inspection']);
+		$this->assertSame('2026-11-01T09:05:00Z', $data['metadata']['legacyCompletedAt']);
+		$this->assertSame('checklistResult/cr-1', $data['metadata']['legacyRef']);
+	}//end testAnOfflineLeafResultIsReadInTheSharedShape()
+
+	/**
 	 * Stack B: its own snapshot wins; a draft run arrives active; an external inspector stays external.
 	 *
 	 * @return void

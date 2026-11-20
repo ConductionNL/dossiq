@@ -62,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalInspectionRunInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
@@ -386,6 +387,14 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 			'label' => 'Prestaties',
 		],
 	];
+
+	/**
+	 * The inspector's action that completes an external inspection task; the
+	 * id the task's `metadata.completeVia` names.
+	 *
+	 * @var string
+	 */
+	public const COMPLETE_CHECKLIST_TASK = ExternalInspectionRunInterface::ACTION;
 
 	/**
 	 * The inspector's collections, by id: each scoped by `assignedInspectorRef`,
@@ -974,6 +983,11 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 	 * minTrust is `low` (Portaliq's password edge) pending an inspector identity
 	 * broker.
 	 *
+	 * A run given to an external inspector is now an OpenRegister portal task
+	 * (inspection-checklists-onto-task 4.3): it shows in their portal task
+	 * list, and `completeChecklistTask` completes it. The two collections and
+	 * `submitChecklistRun` stay until the run schemas retire (task 5).
+	 *
 	 * @return array<string, mixed> The inspector manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
@@ -982,7 +996,7 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 		$contribution = [
 			'label' => self::INSPECTOR_GROUP,
 			'collections' => $this->inspectorCollections(),
-			'actions' => [$this->submitChecklistRunAction()],
+			'actions' => [$this->submitChecklistRunAction(), $this->completeChecklistTaskAction()],
 			'notifications' => [],
 		];
 		$contribution['pages'] = $this->pages->forCollections(
@@ -1045,6 +1059,42 @@ class PortalContributionProvider implements PortalContributionProviderInterface 
 		];
 
 	}//end submitChecklistRunAction()
+
+	/**
+	 * The inspector completes the inspection task they are assigned.
+	 *
+	 * An endpoint action, not a flat write. The run is an OpenRegister task
+	 * whose `metadata.completeVia` names this action, so OpenRegister refuses
+	 * to complete it any other way and portaliq's task list opens this form
+	 * with the task uuid preset under `taskField`. dossiq takes the inspector
+	 * from the verified assertion, compares it with the task's stored party
+	 * reference and checks the answers against the frozen template before
+	 * the task is completed ({@see \OCA\Dossiq\Service\Inspection\ExternalInspectionRunService}).
+	 * No `type`, `register` or `schema`, so the flat writer never takes it for
+	 * one of its own.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/design.md
+	 */
+	private function completeChecklistTaskAction(): array {
+		return [
+			'id' => self::COMPLETE_CHECKLIST_TASK,
+			'label' => 'Checklist invullen',
+			'endpoint' => '/index.php/apps/dossiq/api/portal/inspectie/checklist',
+			'method' => 'POST',
+			'taskField' => 'taskId',
+			'minTrust' => 'low',
+			'fields' => ['responses', 'remarks'],
+			'requiredFields' => ['responses'],
+			'fieldConfigs' => [
+				'responses' => ['label' => 'Antwoorden'],
+				'remarks' => ['label' => 'Opmerkingen', 'size' => 'large', 'maxLength' => 4000],
+			],
+			'submitLabel' => 'Checklist indienen',
+			'successMessage' => 'Wij hebben uw checklist ontvangen.',
+		];
+	}//end completeChecklistTaskAction()
 
 	/**
 	 * The case type each filing action opens (decision 179, Q8).
