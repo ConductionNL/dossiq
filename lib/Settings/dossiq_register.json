@@ -4544,7 +4544,8 @@
                         "type": "boolean",
                         "title": "Received outside working hours",
                         "x-openregister": {
-                            "serverSet": true
+                            "serverSet": true,
+                            "confirmation": true
                         },
                         "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
                         "facetable": true
