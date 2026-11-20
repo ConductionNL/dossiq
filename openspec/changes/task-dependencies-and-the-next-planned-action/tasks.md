@@ -26,7 +26,7 @@ Tier: V1. Kind: code. Size M. Rows 3.27, 3.28 and 3.29.
   - `tests/unit/Service/PlannedActionChainTest.php`
 - [x] 2.3 Show the next planned action on the case and on the work list.
   - `tests/vitest/caseNextAction.spec.js`
-**3.1 to 3.3 are the ENGINE's half, and are open rather than done.** Row 3.29
+**3.1 to 3.3 are the ENGINE's half, built in openregister rather than here.** Row 3.29
 is about a TASK, and since `remove-casetask` dossiq has no task table: the
 Tasks page is the engine's inbox (`entitySource: "tasks"`), the due list is
 built by the engine, and the close event is the engine's. dossiq can neither
@@ -35,14 +35,18 @@ does not build, so shipping a dossiq-side blocked flag would be a field the
 engine never reads, which is the exact failure `dependsOn` was. It belongs in
 openregister beside `rbac-inherits-to-children`.
 
-- [ ] 3.1 A task may declare the task that blocks it; the blocked state is
+- [x] 3.1 A task may declare the task that blocks it; the blocked state is
   derived, never stored by hand (D-7).
-  - `tests/unit/Service/TaskBlockedStateTest.php`
-- [ ] 3.2 A blocked task leaves the assignee's due list and returns when the
+  - Built in openregister (main, change `a-task-may-wait-on-another-task`): a task's `blockedBy`,
+    and `TaskBlockerGuard::refuseHandWrittenState()` refuses a hand-written state in `TaskService::create()`.
+  - openregister `tests/Unit/Db/TaskBlockedByTest.php`, `tests/Unit/Service/Task/TaskBlockedByCreateTest.php`
+- [x] 3.2 A blocked task leaves the assignee's due list and returns when the
   blocker closes (D-7).
-- [ ] 3.3 Release dependents on the blocker's close event, placed as
+  - openregister main: `TaskMapper::applyBlockedExclusion()` keeps a task out of a list while its
+    `blockedBy` names an open task; once the blocker is terminal it is listed again.
+- [x] 3.3 Release dependents on the blocker's close event, placed as
   post-event work under ADR-078 (D-8).
-  - `tests/unit/Listener/TaskReleaseListenerTest.php`
+  - openregister main: `lib/Listener/TaskBlockerReleaseListener.php` over `TaskBlockerMapper`; openregister `tests/Unit/Listener/TaskBlockerReleaseListenerTest.php`.
 - [x] 4.1 Dutch and English strings for the predecessor field, the planned
   action types and states, and the blocked label.
 - [x] 4.2 `tests/e2e/task-dependencies-and-the-next-planned-action.spec.ts`:
