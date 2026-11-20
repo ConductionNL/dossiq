@@ -80,6 +80,10 @@
             "description": "Reads and picks the background service account."
         },
         {
+            "name": "widget-audience",
+            "description": "Which groups see each dashboard widget dossiq contributes."
+        },
+        {
             "name": "belplan",
             "description": "REST API for belplannen and datagedreven routing."
         },
@@ -23610,6 +23614,97 @@
                     },
                     "400": {
                         "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/settings/widget-audience": {
+            "get": {
+                "operationId": "widget-audience-show",
+                "summary": "Every contributed dashboard widget with the groups that may see it",
+                "description": "Every contributed dashboard widget with the groups that may see it, as comma-separated group ids by widget id; empty means everybody. Needs a Nextcloud administrator.",
+                "tags": [
+                    "widget-audience"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "widget-audience-save",
+                "summary": "Store the groups per dashboard widget",
+                "description": "Store the groups per dashboard widget; a widget id the app does not ship is ignored, a widget left out keeps its groups. Needs a Nextcloud administrator.",
+                "tags": [
+                    "widget-audience"
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "procest_cases_overview_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    },
+                                    "dossiq_my_open_work_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    },
+                                    "procest_deadline_alerts_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    },
+                                    "procest_task_reminders_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    },
+                                    "procest_stalled_cases_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    },
+                                    "procest_start_case_widget": {
+                                        "description": "Group ids, comma-separated or a list; empty for everybody."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"

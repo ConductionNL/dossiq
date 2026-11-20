@@ -812,6 +812,9 @@ $extra = [
     // The account the background jobs (the termijn reminder sweep) write as. Admin only.
     ['name' => 'backgroundServiceAccount#show', 'url' => '/api/settings/background-service-account', 'verb' => 'GET'],
     ['name' => 'backgroundServiceAccount#save', 'url' => '/api/settings/background-service-account', 'verb' => 'PUT'],
+    // Which groups may see each contributed dashboard widget. Admin only.
+    ['name' => 'widgetAudience#show', 'url' => '/api/settings/widget-audience', 'verb' => 'GET'],
+    ['name' => 'widgetAudience#save', 'url' => '/api/settings/widget-audience', 'verb' => 'PUT'],
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
