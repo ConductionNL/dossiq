@@ -13308,7 +13308,7 @@
 				},
 				"spec": "openspec/specs/case-management",
 				"requirement": "openspec/specs/case-management :: A held case cannot be deleted, and you are told why (REQ-CM-35)",
-				"plan": "openspec/changes/deleted-cases-read-the-case-table"
+				"plan": "openspec/changes/archive/2026-11-20-deleted-cases-read-the-case-table"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php and lib/Controller/CaseController.php have DELETE routes for documents (routes.php:163), files (:177) and grants (CaseController.php:511) but none for a case; closing and archiving are the end states | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\"",

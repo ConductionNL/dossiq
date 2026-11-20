@@ -341,7 +341,7 @@ class CaseRecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function testTheLensPagesAfterKeepingTheCases(): void {
 		$this->mapper = $this->crowdedTrash();
@@ -358,7 +358,7 @@ class CaseRecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function testTheLensReadsTheCaseTableOnly(): void {
 		$this->mapper = new class {
@@ -418,7 +418,7 @@ class CaseRecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function testTheLensNarrowsBySearch(): void {
 		$hit = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0009');
