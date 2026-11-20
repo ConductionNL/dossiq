@@ -110,6 +110,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'CreateDocumentReviews' => 'marks existing assessed Woo documents in scope; a fresh install has no assessments',
 		'ReconcileCaseRecordGrants' => 'grants the people on existing cases their private records; a fresh install has none',
 		'BackfillWooPublicationState' => 'shows the publication state on existing Woo cases; a fresh install has none',
+		'CopyShippedPublicationCategories' => 'copies a shipped category onto a stored decision type; a fresh install imports it with the row',
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
@@ -118,6 +119,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateCmmnCasePlans' => 'drains existing casePlanState blobs into OpenRegister plan items; a fresh install has none',
 		'CarryInspectionRunsOntoTasks' => 'carries existing inspection reports, runs and results onto tasks; a fresh install has none',
 		'FoldInspectionChecklistTemplates' => 'folds existing inspectieChecklist and inspectionChecklist rows into the one template schema; a fresh install has none',
+		'RepointFieldInspectionTemplates' => 'points existing planned field inspections at their folded template; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no
 		// entry on either side. Named here rather than left red: it rewrites
 		// the goal and trajectory text of EXISTING gezinsplan rows, and a

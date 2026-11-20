@@ -34,19 +34,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
-use OCA\Dossiq\Service\Publication\CasePublicationState;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -69,7 +68,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
-class WooPublicationService implements WooPublicationServiceInterface {
+class OutcomePublisher implements WooPublicationServiceInterface {
 
 	/**
 	 * The OpenCatalogi app identifier.
@@ -122,7 +121,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param OpenCatalogiApiClient $apiClient Thin HTTP client to OpenCatalogi's register.
-	 * @param WooCategoryMapper $categoryMapper DIWOO informatiecategorie mapper.
+	 * @param PublicationCategory $publicationCategory The decision type's information category.
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
 	 * @param WooDossierReturnInterface|null $dossierReturn Brings the decision back to its source dossier (C6).
@@ -135,7 +134,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		OpenCatalogiApiClient $apiClient,
-		private readonly WooCategoryMapper $categoryMapper,
+		private readonly PublicationCategory $publicationCategory,
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
 		private readonly ?WooDossierReturnInterface $dossierReturn = null,
@@ -233,7 +232,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function buildPayload(array $case, array $decision): array {
-		$category = $this->categoryMapper->forDecision($decision);
+		$category = $this->publicationCategory->forDecision(decision: $decision);
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? $decision['case'] ?? '');
 
 		$payload = [

@@ -4,7 +4,8 @@
  * Repair step: carry every older stored inspection run onto a task.
  *
  * Change inspection-checklists-onto-task, task 4.2. Every `inspectieRapport`,
- * `inspectionChecklistRun` and `inspectionResult` becomes one inspection
+ * `inspectionChecklistRun` and `inspectionResult`, and (task 4.2b) every
+ * `checklistResult` the offline leaf queued, becomes one inspection
  * task through OpenRegister's trusted import path, carrying
  * `metadata.legacyRef`. A source whose reference already sits on one of its
  * case's inspection tasks is skipped, so a second run creates nothing. The
@@ -86,6 +87,13 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	private array $templates = [];
 
 	/**
+	 * The case and inspector of each planned field inspection, by its uuid; null until read.
+	 *
+	 * @var array<string, array{case: string, inspector: string}>|null
+	 */
+	private ?array $plannedCases = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister and config.
@@ -136,6 +144,10 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
 					foreach ($this->read(objects: $objects, place: [$register, $schema]) as $object) {
+						if ($schema === InspectionRunCarryOver::OFFLINE_RESULT) {
+							$object = $this->withPlannedCase(objects: $objects, register: $register, object: $object);
+						}
+
 						$outcome = $this->carryOne(sink: ['tasks' => $tasks, 'output' => $output], source: ['schema' => $schema, 'object' => $object]);
 						$counts[$outcome]++;
 					}
@@ -161,6 +173,10 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 		['schema' => $schema, 'object' => $object] = $source;
 		$ref = $this->carry->legacyRef(schema: $schema, object: $object);
 		$caseId = (string)($object['case'] ?? '');
+		if ($caseId === '' && $schema === InspectionRunCarryOver::OFFLINE_RESULT) {
+			$output->warning(sprintf('Inspection run %s names no planned inspection with a case; not carried over.', $ref));
+			return 'failed';
+		}
 		if (isset($this->carriedFor(caseId: $caseId)[$ref]) === true) {
 			return 'already';
 		}
@@ -231,6 +247,39 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 
 		return $data;
 	}//end withLocation()
+
+	/**
+	 * An offline result with the case and inspector of the planned inspection it belongs to.
+	 *
+	 * @param object               $objects  The ObjectService.
+	 * @param string               $register The register id.
+	 * @param array<string, mixed> $object   The `checklistResult` row.
+	 *
+	 * @return array<string, mixed> The row, with `case` and `inspector` when its planned inspection names them.
+	 */
+	private function withPlannedCase(object $objects, string $register, array $object): array {
+		if ($this->plannedCases === null) {
+			$this->plannedCases = [];
+			foreach ($this->read(objects: $objects, place: [$register, 'fieldInspection']) as $planned) {
+				$id = (string)($planned['@self']['id'] ?? $planned['id'] ?? '');
+				if ($id !== '') {
+					$this->plannedCases[$id] = [
+						'case' => trim((string)($planned['caseRef'] ?? '')),
+						'inspector' => trim((string)($planned['inspectorRef'] ?? '')),
+					];
+				}
+			}
+		}
+
+		$planned = ($this->plannedCases[(string)($object['inspectionRef'] ?? '')] ?? ['case' => '', 'inspector' => '']);
+		foreach (['case' => 'case', 'inspector' => 'inspector'] as $from => $to) {
+			if ($planned[$from] !== '' && trim((string)($object[$to] ?? '')) === '') {
+				$object[$to] = $planned[$from];
+			}
+		}
+
+		return $object;
+	}//end withPlannedCase()
 
 	/**
 	 * Index every template by uuid and by the source it was folded from.

@@ -132,6 +132,26 @@ class CaseRelationDetailsTest extends TestCase {
 		$this->assertSame(expected: ['Woo-verzoek', 'Woo-verzoek'], actual: array_column($rows, 'caseTypeTitle'));
 		$this->assertSame(expected: ['', ''], actual: array_column($rows, 'assigneeName'));
 	}//end testReadsEachCaseTypeOnce()
+
+	/**
+	 * A case type title stored as a language map reads as its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeTitleStoredAsALanguageMapReadsAsText(): void {
+		$store = $this->createMock(originalClassName: CaseRelationStore::class);
+		$store->method('fetchCase')->willReturn(['identifier' => 'x', 'caseType' => 'ct', 'assignee' => '']);
+		$store->method('fetchCaseType')->willReturn(['title' => ['en' => 'Woo request', 'nl' => 'Woo-verzoek']]);
+
+		$rows = $this->details(store: $store)->describe(
+			rows: [['caseId' => 'b', 'title' => 'B']],
+			canRead: fn (string $id): bool => true,
+		);
+
+		$this->assertSame(expected: 'Woo-verzoek', actual: $rows[0]['caseTypeTitle']);
+	}//end testACaseTypeTitleStoredAsALanguageMapReadsAsText()
 	/**
 	 * A related case without a readable title is left out of the list.
 	 *

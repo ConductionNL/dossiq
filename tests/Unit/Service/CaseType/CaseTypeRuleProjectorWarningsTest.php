@@ -77,12 +77,13 @@ class CaseTypeRuleProjectorWarningsTest extends TestCase {
 	 *
 	 * @param array<int, mixed>     $rules    The rules.
 	 * @param array<string, mixed>  $services OpenRegister services by class name; a non-object is served as is.
+	 * @param mixed                 $title    The case type title, a string or a language map.
 	 *
 	 * @return CaseTypeRuleProjector The projector.
 	 */
-	private function projector(array $rules, array $services): CaseTypeRuleProjector {
+	private function projector(array $rules, array $services, mixed $title = 'Vergunning'): CaseTypeRuleProjector {
 		$store = $this->createMock(CaseTypeStore::class);
-		$store->method('readCaseType')->willReturn(['title' => 'Vergunning', 'rules' => $rules]);
+		$store->method('readCaseType')->willReturn(['title' => $title, 'rules' => $rules]);
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturn('x');
@@ -192,6 +193,26 @@ class CaseTypeRuleProjectorWarningsTest extends TestCase {
 			$projector->publish(caseTypeId: 'type-1')
 		);
 	}//end testAnActionWithoutAFlowStepIsUnprojectedAndWarned()
+
+	/**
+	 * A case type title stored as a language map names the flow in its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeTitleStoredAsALanguageMapNamesTheFlowInText(): void {
+		$projector = $this->projector(
+			rules: [self::ADD_TASK],
+			services: [self::FLOW_SERVICE => self::flowService(page: [])],
+			title: ['en' => 'Permit', 'nl' => 'Vergunning'],
+		);
+
+		$plan = $projector->plan(caseTypeId: 'type-1');
+
+		$this->assertCount(expectedCount: 1, haystack: $plan['flows']);
+		$this->assertStringStartsWith(prefix: 'Vergunning: ', string: $plan['flows'][0]['name']);
+	}//end testACaseTypeTitleStoredAsALanguageMapNamesTheFlowInText()
 
 	/**
 	 * Without a flow engine, rules that would project say so; no rules say nothing.

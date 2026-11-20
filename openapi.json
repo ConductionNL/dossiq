@@ -452,10 +452,6 @@
             "description": "The intake declaration, and the three acts an intake worker performs on it."
         },
         {
-            "name": "iv3-taakveld",
-            "description": "Read-only access to the IV3/BBV taakveld reference list."
-        },
-        {
             "name": "kcc-contact",
             "description": "Controller exposing KCC contact-moment and callback endpoints."
         },
@@ -11017,6 +11013,65 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/cases/{id}/checklist-runs/external": {
+            "post": {
+                "operationId": "external-inspection-run-assign",
+                "summary": "Give an external inspector a checklist to run on the case",
+                "description": "Give an external inspector a checklist to run on the case. The run is an OpenRegister task with performer type `external` whose assignee is the inspector's portal party reference, so it shows in their portal task list. Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`, asked before the payload is read. Body: `checklistId`, `inspectorRef`, optional `inspection` and `dueAt`. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "external-inspection-run"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "UUID of the case.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Problem422"
                     }
                 }
             }
@@ -22541,6 +22596,41 @@
                 }
             }
         },
+        "/portal/inspectie/checklist": {
+            "post": {
+                "operationId": "portal-inspection-complete",
+                "summary": "Complete the external inspector's own inspection task",
+                "description": "Complete the external inspector's own inspection task with their answers. Called by the portal with a signed subject assertion; the task's stored party reference must be the assertion's subject, and the answers are checked against the frozen template before the task is completed. Public: it needs no login.",
+                "tags": [
+                    "portal-inspection"
+                ],
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Problem422"
+                    }
+                }
+            }
+        },
         "/portal/woo-verzoek": {
             "post": {
                 "operationId": "portal-woo-request-start",
@@ -22910,34 +23000,6 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/Problem404"
-                    }
-                }
-            }
-        },
-        "/reports/iv3/taakvelden": {
-            "get": {
-                "operationId": "iv3-taakveld-taakvelden",
-                "summary": "The IV3 taakveld reference list — open to any authenticated user (it is a public CBS classification, not report data)",
-                "description": "The IV3 taakveld reference list — open to any authenticated user (it is a public CBS classification, not report data). Needs a signed-in Nextcloud user.",
-                "tags": [
-                    "iv3-taakveld"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The request succeeded.",
-                        "headers": {
-                            "API-Version": {
-                                "$ref": "#/components/headers/API-Version"
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Problem401"
                     }
                 }
             }

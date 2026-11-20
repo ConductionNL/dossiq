@@ -102,7 +102,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
 	public function submit(string $caseId, string $templateId, array $payload, string $actor): array {
-		$template = $this->template(templateId: $templateId);
+		$template = $this->templateFor(templateId: $templateId);
 		$answers = $this->answers->fromPayload(payload: $payload);
 		$violations = $this->answers->violations(snapshot: $template, answers: $answers);
 		if ($violations !== []) {
@@ -338,8 +338,10 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @return array<string, mixed> The template.
 	 *
 	 * @throws RuntimeException When nothing answers to it.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
-	private function template(string $templateId): array {
+	public function templateFor(string $templateId): array {
 		$objects = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		if ($objects === null || $register === '') {

@@ -34,8 +34,8 @@ use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Support\UuidAnsweringRegister;
@@ -55,7 +55,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
@@ -64,7 +64,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
@@ -256,15 +256,23 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
-		$service = new WooPublicationService(
-			$this->settings,
-			$client,
-			new WooCategoryMapper(),
-			$apps,
-			$this->createMock(LoggerInterface::class),
-			null,
-			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
-			new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
+		$service = new OutcomePublisher(
+			settingsService: $this->settings,
+			apiClient: $client,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(
+				settingsService: $this->settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				urlGenerator: $urls
+			),
+			caseDocuments: new WooCaseDocuments(
+				settingsService: $this->settings,
+				rootFolder: $this->createMock(originalClassName: IRootFolder::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			),
 		);
 
 		$published = $service->publish(self::CASE);

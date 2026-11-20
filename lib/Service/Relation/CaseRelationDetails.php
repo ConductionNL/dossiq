@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use OCA\Dossiq\Kernel\Contracts\CaseRelationDetailsInterface;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IUserManager;
 
 /**
@@ -136,7 +137,7 @@ class CaseRelationDetails implements CaseRelationDetailsInterface {
 	private function caseTypeTitle(RelationDetailsRun $run, string $caseTypeId): string {
 		if ($caseTypeId !== '' && array_key_exists($caseTypeId, $run->caseTypeTitles) === false) {
 			$caseType = $this->store->fetchCaseType(caseTypeUuid: $caseTypeId);
-			$run->caseTypeTitles[$caseTypeId] = trim((string)($caseType['title'] ?? ''));
+			$run->caseTypeTitles[$caseTypeId] = (new LanguageMapText())->textOf(value: ($caseType['title'] ?? null));
 		}
 
 		return $run->caseTypeTitles[$caseTypeId] ?? '';

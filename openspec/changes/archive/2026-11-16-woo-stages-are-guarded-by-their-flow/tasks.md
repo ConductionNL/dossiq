@@ -23,7 +23,7 @@
   - Test: tests/Unit/Settings/WooFlowGuardsTest.php (`testARecordedNothingFoundCountsAsAssessed`)
 - [x] 3.2 D2: a decision-only publication when the case records that nothing is disclosable
   - Spec ref: specs/woo-publication-via-opencatalogi/spec.md
-  - Files: lib/Service/WooPublicationService.php
+  - Files: lib/Service/Publication/OutcomePublisher.php
   - Test: tests/Unit/Service/WooPublicationServiceTest.php (five cases: all withheld, nothing found, nothing found without a note, a redaction still missing, an assessment outstanding)
 - [x] 3.3 D3: "Niet ontvankelijk" from Beoordeling ontvankelijkheid to Afgehandeld, withheld until `inadmissibilityReason`; the withdrawal moves wait for `withdrawalReason`
   - Test: tests/Unit/Settings/WooFlowGuardsTest.php (`testAnInadmissibleRequestClosesWithItsReason`, `testTheWithdrawalStaysReachableAndWaitsForItsReason`, `testEveryExitWithoutADecisionWaitsForAReason`)

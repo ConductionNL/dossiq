@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service\CaseType;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -122,7 +123,7 @@ class CaseTypeRuleProjector {
 	 * @return RuleFlowScope The scope.
 	 */
 	private function scopeOf(string $caseTypeId, array $caseType): RuleFlowScope {
-		$title = (string)($caseType['title'] ?? $caseTypeId);
+		$title = (new LanguageMapText())->textOr(value: ($caseType['title'] ?? null), fallback: $caseTypeId);
 		$register = $this->settings->getConfigValue(key: 'register');
 		$schema = $this->settings->getConfigValue(key: 'case_schema');
 
