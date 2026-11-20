@@ -497,4 +497,28 @@ class MenuCaseTypesServiceTest extends TestCase {
 		);
 		$this->assertSame([], $service->byIdentifier([]));
 	}//end testByIdentifier()
+
+	/**
+	 * A case type found by identifier carries its description when it has one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	public function testByIdentifierCarriesTheDescription(): void {
+		$service = $this->service(
+			[
+				['id' => 'k', 'title' => 'Klacht', 'identifier' => 'KL', 'description' => 'Een klacht over gedrag'],
+				['id' => 'b', 'title' => 'Bezwaar', 'identifier' => 'BZ', 'description' => '  '],
+			]
+		);
+
+		$this->assertSame(
+			[
+				'BZ' => ['id' => 'b', 'title' => 'Bezwaar'],
+				'KL' => ['id' => 'k', 'title' => 'Klacht', 'description' => 'Een klacht over gedrag'],
+			],
+			$service->byIdentifier(['KL', 'BZ'])
+		);
+	}//end testByIdentifierCarriesTheDescription()
 }//end class

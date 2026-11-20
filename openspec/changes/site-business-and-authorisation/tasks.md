@@ -41,7 +41,7 @@ switcher and the acting-for bar already exist in portaliq.
 
 ## 3. Who acted
 
-- [ ] 3.1 (built, waits on its portaliq dependency to land before ticking: `ApplicantPortalActs::recordWrite()` takes the event's mandate and writes a PUBLIC entry "Namens {label}: ..." (the label from portaliq's write-record-names-the-mandate PR, the party reference without it); portaliq hands over no acting person's name, so the entry names the party only: D4's fallback. `ApplicantPortalActsTest::testAWriteForSomeoneElseIsToldToThemByTheMandatesLabel`) `caseTimeline` names "{name}, namens {party}" for a portal write with `actingFor`
+- [x] 3.1 (built; its portaliq dependency landed on portaliq development: `CitizenCaseController` sets `actingForLabel` and `CitizenWriteRecorder` hands it over: `ApplicantPortalActs::recordWrite()` takes the event's mandate and writes a PUBLIC entry "Namens {label}: ..." (the label from portaliq's write-record-names-the-mandate PR, the party reference without it); portaliq hands over no acting person's name, so the entry names the party only: D4's fallback. `ApplicantPortalActsTest::testAWriteForSomeoneElseIsToldToThemByTheMandatesLabel`) `caseTimeline` names "{name}, namens {party}" for a portal write with `actingFor`
       (design D4).
   - unit: with and without a mandate label
 

@@ -49,4 +49,5 @@
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutOneOfSeveralMatchedPropertiesIsInvalid`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid`
-- [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.
+- [x] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.
+  - Done on development: `lib/Settings/packages/` holds `bezwaar-beroep`, `vth`, `besluitvorming`, `subsidie`, `dso-intake`, `lhs-intervention` and `lhs-matrix`, and no procedure seeder class is left in `lib/` (the remaining seeders, `IntakeSourceSeeder` and `GemachtigdeRoleTypeSeeder`, seed generic reference data, not a procedure).
