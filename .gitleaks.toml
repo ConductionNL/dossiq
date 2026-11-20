@@ -55,3 +55,10 @@ paths = [
   '''(^|/)tests/vitest/caseTypeRulesAsRows\.spec\.js$''',
   '''(^|/)tests/vitest/rulesTabDutchWords\.spec\.js$''',
 ]
+
+[[allowlists]]
+description = "Test fixture: a fixed signing key ('abcdefghijklmnop-1234') for the portal submission ledger test, not a credential."
+targetRules = ["generic-api-key"]
+paths = [
+  '''(^|/)tests/Unit/Portal/PortalSubmissionLedgerTest\.php$''',
+]
