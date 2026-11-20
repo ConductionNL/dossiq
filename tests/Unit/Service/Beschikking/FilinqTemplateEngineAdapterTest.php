@@ -341,7 +341,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	public function testCompositionDescribesTheProducedDocument(): void {
 		$this->settings->method('getConfigValue')->willReturn('');
 		$this->givenFilinq(
-			[
+			result: [
 				'content' => self::PDF_BYTES,
 				'format' => 'pdf',
 				'output' => ['fileId' => 4242],
@@ -354,7 +354,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->assertSame('4242', $composition['fileId'], 'the fileId must be the one filinq stored');
 		$this->assertSame(hash('sha256', self::PDF_BYTES), $composition['checksumSha256']);
-		$this->assertSame(3, $composition['paginas'], 'the page count is the one filinq reports, not re-counted');
+		$this->assertSame(expected: 3, actual: $composition['paginas'], message: 'the page count is the one filinq reports, not re-counted');
 		$this->assertSame('pdf', $composition['format']);
 	}//end testCompositionDescribesTheProducedDocument()
 
@@ -368,12 +368,12 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testAResultWithoutDigestOrPageCountIsDescribedFromTheBytes(): void {
 		$this->settings->method('getConfigValue')->willReturn('');
-		$this->givenFilinq(['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 4243], 'sha256' => 'not a digest']);
+		$this->givenFilinq(result: ['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 4243], 'sha256' => 'not a digest']);
 
 		$composition = $this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
 
-		$this->assertSame(hash('sha256', self::PDF_BYTES), $composition['checksumSha256']);
-		$this->assertSame(0, $composition['paginas']);
+		$this->assertSame(expected: hash('sha256', self::PDF_BYTES), actual: $composition['checksumSha256']);
+		$this->assertSame(expected: 0, actual: $composition['paginas']);
 	}//end testAResultWithoutDigestOrPageCountIsDescribedFromTheBytes()
 
 	/**
@@ -450,7 +450,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->assertSame([], $filinq->calls[0]['dataRefs']);
 		$this->assertSame('beschikking', $filinq->calls[0]['options']['filename']);
-		$this->assertSame(0, $composition['paginas'], 'filinq reported no page count');
+		$this->assertSame(expected: 0, actual: $composition['paginas'], message: 'filinq reported no page count');
 		$this->assertSame('html', $composition['format']);
 	}//end testRenderWithoutACaseSendsNoDataRefs()
 
@@ -507,7 +507,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testResolveVersionAsksFilinqForTheVersionInForceAtTheEndOfTheDate(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.9']]);
-		$versions = $this->versionChainDouble(2);
+		$versions = $this->versionChainDouble(answer: 2);
 		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
@@ -533,13 +533,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testAFilinqThatCannotSayFallsBackToTheTemplatesOwnVersion(): void {
 		$templates = $this->templateDouble(['@self' => ['version' => '0.0.9']]);
-		$versions = $this->versionChainDouble(null, true);
+		$versions = $this->versionChainDouble(answer: null, fails: true);
 		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
 
-		$this->assertCount(1, $versions->asked);
-		$this->assertSame('0.0.9', $version['version']);
+		$this->assertCount(expectedCount: 1, haystack: $versions->asked);
+		$this->assertSame(expected: '0.0.9', actual: $version['version']);
 	}//end testAFilinqThatCannotSayFallsBackToTheTemplatesOwnVersion()
 
 	/**
@@ -557,7 +557,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testResolveVersionReadsTheVersionOpenRegisterKeepsUnderSelf(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.4']]);
-		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(null));
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(answer: null));
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
 
@@ -573,7 +573,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testResolveVersionRefusesATemplateWithNoVersionAnywhere(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking']);
-		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(null));
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(answer: null));
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/filinq_template_unversioned/');
