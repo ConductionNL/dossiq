@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261117001500</version>
+    <version>0.4.54-unstable.20261120013000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -783,6 +783,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  metadata.legacyRef. After the fold, so runs find their
                  template. Post-migration only: a fresh install has no runs. -->
             <step>OCA\Dossiq\Repair\CarryInspectionRunsOntoTasks</step>
+            <!-- inspection-checklists-onto-task 4.2b: every fieldInspection whose
+                 checklistTemplateRef names an older checklist is pointed at the
+                 template the fold made from it, so the offline leaf (which now
+                 reads inspectionChecklistTemplate) finds it. After the fold;
+                 skips what already names a template. Post-migration only: a
+                 fresh install has no planned inspections. -->
+            <step>OCA\Dossiq\Repair\RepointFieldInspectionTemplates</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.

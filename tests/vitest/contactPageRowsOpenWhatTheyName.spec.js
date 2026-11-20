@@ -47,7 +47,9 @@ describe('the contact pages declare a row action per list', () => {
 
 	it.each(PAGES)('%s opens a contact moment from its row', (id) => {
 		const actions = widget(id, 'contact-moments').content.rowActions
-		expect(actions).toHaveLength(1)
+		// Opening the moment stays the first action; the read marks follow it
+		// (unread-state-on-the-case 1.2b, messageUnread.spec.js).
+		expect(actions.map((a) => a.id)).toEqual(['open-moment', 'mark-unread', 'mark-read'])
 		expect(actions[0]).toMatchObject({
 			id: 'open-moment',
 			type: 'open-modal',

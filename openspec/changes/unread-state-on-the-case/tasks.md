@@ -18,11 +18,12 @@ affordance is nextcloud-vue's and is not in yet.
   - `@spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md`
 - [x] 1.2 Mark as read and mark as unread, on a case row and on the case
   page (D-5).
-- [ ] 1.2b Mark a single MESSAGE read or unread. Not built: a dossiq
-  message is a `contactmoment` object with its own uuid, so the gesture is
-  the same endpoint on a different schema, but no dossiq surface lists
-  messages with a per-row menu yet. It belongs with the communication
-  panel's own row actions rather than bolted onto this change.
+- [x] 1.2b Mark a single MESSAGE read or unread. A dossiq message is a
+  `contactmoment` object with its own uuid, so the gesture is the case's
+  read-state write on that schema (`src/utils/messageUnread.js`). Offered as
+  row actions on every message list: the case's Communication list, the
+  contact and organisation Contact moments, and the simple layout's case card.
+  - `tests/vitest/messageUnread.spec.js`
 - [x] 1.3 A test that fails when dossiq gains a read marker of its own
   (D-1): `tests/Unit/Architecture/NoLocalReadStateTest.php`, scanning the
   whole of `lib/` and carrying a control so its silence means something.
@@ -39,10 +40,15 @@ affordance is nextcloud-vue's and is not in yet.
 - [x] 3.1 `caseType.unreadTriggers`: declare which changes make a case
   unread, defaulting to status, documents and messages (D-2).
   - `tests/Unit/Service/UnreadTriggerServiceTest.php`
-- [ ] 3.1b Enforce the declaration PER CASE TYPE. Not possible today and
-  not faked: OpenRegister resolves `x-openregister-read-state` per schema
-  (`SubstantiveChangeEvaluator::annotation()` takes a `Schema`), so the
-  enforced floor is the whole vocabulary on the `case` schema. See D-6.
+- [x] 3.1b Enforce the declaration PER CASE TYPE. OpenRegister now asks,
+  per object, whether a leaf app narrows the schema's read-state properties
+  (`ObjectReadStatePropertiesEvent`, openregister#10614); it can only narrow,
+  so the `case` schema's block stays the floor (D-6).
+  `lib/Listener/CaseReadStateTriggersListener.php` keeps, for a case, only the
+  properties its case type's `unreadTriggers` map to; an unreadable type keeps
+  the schema's list. Works once openregister#10614 is on main; before that
+  nothing dispatches the event and the schema-wide floor stands.
+  - `tests/Unit/Listener/CaseReadStateTriggersListenerTest.php`
 - [x] 4.1 Dutch and English strings.
 - [x] 4.2 Record the openregister slug here once that lane opens it, and
   ask it whether its change carries the snooze and the notification-list

@@ -127,6 +127,26 @@ class EndOfDayRowMetaTest extends TestCase {
 	}//end testACaseNamesItsNumberAndStatus()
 
 	/**
+	 * A status name stored as a language map reads as its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAStatusNameStoredAsALanguageMapReadsAsText(): void {
+		$meta = $this->meta(
+			objects: [
+				'c1' => ['identifier' => '2026-4836', 'title' => 'Bezwaar parkeerboete Havenstraat', 'status' => 's1'],
+				's1' => ['name' => ['en' => 'In progress', 'nl' => 'In behandeling']],
+			]
+		);
+
+		$facts = $meta->factsOf(item: ['subjectType' => 'case', 'subjectId' => 'c1']);
+
+		$this->assertSame(expected: '2026-4836 · In behandeling', actual: $meta->openLine(facts: $facts));
+	}//end testAStatusNameStoredAsALanguageMapReadsAsText()
+
+	/**
 	 * A task names the number and title of the case it is on.
 	 *
 	 * @return void
