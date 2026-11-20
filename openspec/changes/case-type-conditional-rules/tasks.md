@@ -44,8 +44,11 @@ the engine task carries as its `key`.
 ### Task 0: OpenRegister, a scoped rule inventory (built first, in OpenRegister)
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rule-inventory-can-be-asked-for-one-case-types-rules`
 - **files**: OpenRegister `lib/Service/Rules/RuleInventoryService.php`, `lib/Controller/RulesController.php`, rule descriptors
-- [ ] Implement
-- [ ] Test
+- [x] Implement (on openregister main: `GET /api/schemas/{schema}/rules` reads a `scope` parameter into
+      `RuleInventoryOptions::$scope`, which keeps the rules with that scope plus those without one; dossiq's
+      `RulesTab.vue` asks with `{ caseType: <id> }`)
+- [x] Test (openregister `tests/Unit/Controller/RulesControllerScopeTest.php` and
+      `tests/Unit/Service/Rules/RuleInventoryServiceTest.php`)
 
 ### Task 4: Idempotent effects
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version`
