@@ -137,6 +137,7 @@ class TermDeclarationReaderTest extends TestCase {
 				'chainTermDays' => 30,
 				'suspensionAllowed' => true,
 				'extensionAllowed' => true,
+				'statutoryTermDefinition' => '',
 			],
 			$this->reader()->forCaseType(caseTypeId: 'type-1')
 		);
