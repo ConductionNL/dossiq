@@ -7199,6 +7199,7 @@ OC.L10N.register(
         "Publishing comes after this. Once the decision is recorded the publication is ready, and Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.": "Publishing comes after this. Once the decision is recorded the publication is ready, and Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
         "Publishing comes afterwards": "Publishing comes afterwards",
         "Publishing waits until every required page has been seen.": "Publishing waits until every required page has been seen.",
+        "Publishing …": "Publishing …",
         "Purple": "Purple",
         "Purpose": "Purpose",
         "Purpose and usage notes for this case model.": "Purpose and usage notes for this case model.",

@@ -60,7 +60,7 @@
 				:disabled="!canPublish"
 				data-testid="answer-publish-submit"
 				@click="publish">
-				{{ t('dossiq', 'Publish answer') }}
+				{{ submitLabel }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -133,6 +133,15 @@ export default {
 		 */
 		selected() {
 			return this.questions.find((question) => question.id === this.questionId) ?? null
+		},
+
+		/**
+		 * The primary button's label, telling while the answer is being published.
+		 *
+		 * @return {string}
+		 */
+		submitLabel() {
+			return this.saving ? t('dossiq', 'Publishing …') : t('dossiq', 'Publish answer')
 		},
 
 		/**

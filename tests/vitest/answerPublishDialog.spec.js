@@ -125,6 +125,14 @@ describe('AnswerPublishDialog', () => {
 			.toBe('The questions of this case could not be read.')
 	})
 
+	it('says it is publishing while the answer is on its way', async () => {
+		const wrapper = await mountDialog()
+
+		expect(wrapper.vm.submitLabel).toBe('Publish answer')
+		wrapper.vm.saving = true
+		expect(wrapper.vm.submitLabel).toBe('Publishing\u00a0…')
+	})
+
 	it('needs a question and an answer before it publishes', async () => {
 		const wrapper = await mountDialog()
 		wrapper.vm.questionId = 'q1'
