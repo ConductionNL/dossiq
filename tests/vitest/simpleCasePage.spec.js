@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 45 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 46 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -294,11 +294,12 @@ describe('the actions', () => {
 		// enforcement-intervention-from-the-case 3.2), and so did two acts
 		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
 		// (capability-rows-said-and-planned T04). 45: Register bid joined
-		// Case (tenders-run-on-the-tender-case-type 3.2).
-		expect(placed).toHaveLength(45)
+		// Case (tenders-run-on-the-tender-case-type 3.2), and 46: Publish
+		// answer joined it beside Register bid (same task).
+		expect(placed).toHaveLength(46)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(30)
+		expect(count('Case')).toBe(31)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)

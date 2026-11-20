@@ -2138,6 +2138,9 @@
 					"link-object": {
 						"group": "Case"
 					},
+					"tender-answer-publish": {
+						"group": "Case"
+					},
 					"bid-register": {
 						"group": "Case"
 					},
@@ -7170,6 +7173,7 @@
 					"share-with-organisation",
 					"add-party",
 					"link-object",
+					"tender-answer-publish",
 					"bid-register",
 					"add-location",
 					"case-acknowledgement-met",
