@@ -261,10 +261,18 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			apiClient: $client,
 			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dossierReturn: null,
-			caseLedger: new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
-			caseDocuments: new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
+			caseLedger: new CasePublicationState(
+				settingsService: $this->settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				urlGenerator: $urls
+			),
+			caseDocuments: new WooCaseDocuments(
+				settingsService: $this->settings,
+				rootFolder: $this->createMock(originalClassName: IRootFolder::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			),
 		);
 
 		$published = $service->publish(self::CASE);

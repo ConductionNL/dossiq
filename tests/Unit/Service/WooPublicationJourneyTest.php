@@ -128,9 +128,13 @@ class WooPublicationJourneyTest extends TestCase {
 			apiClient: $this->client,
 			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dossierReturn: $this->return,
-			caseLedger: new CasePublicationState(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			caseLedger: new CasePublicationState(
+				settingsService: $settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				urlGenerator: $urls
+			),
 		);
 	}//end setUp()
 
