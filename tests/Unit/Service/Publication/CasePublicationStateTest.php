@@ -299,7 +299,7 @@ class CasePublicationStateTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error')
 			->with(
-				$this->identicalTo(value: 'WooPublicationService: the delivered set could not record the withdraw'),
+				$this->identicalTo(value: 'OutcomePublisher: the delivered set could not record the withdraw'),
 				$this->identicalTo(value: ['app' => 'dossiq', 'publicationId' => 'pub-1', 'error' => 'set is frozen'])
 			);
 
