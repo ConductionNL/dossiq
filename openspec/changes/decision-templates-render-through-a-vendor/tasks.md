@@ -2,7 +2,8 @@
 
 ## 1. filinq (dependency, decision 153)
 
-- [ ] 1.1 Open the filinq change for ConductionNL/filinq#1253: a template engine `vendor:<sourceSlug>` rendering through integriq's source; link its PR here.
+- [x] 1.1 Open the filinq change for ConductionNL/filinq#1253: a template engine `vendor:<sourceSlug>` rendering through integriq's source; link its PR here.
+  - filinq `openspec/changes/template-engine-renders-through-a-vendor`, ConductionNL/filinq#2175; it also adds `GET /api/templates/engines`, which task 2.3 reads.
 
 ## 2. dossiq
 

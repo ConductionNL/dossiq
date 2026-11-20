@@ -1,0 +1,3254 @@
+{
+  "app": "dossiq",
+  "productOwner": "Remco Damhuis",
+  "rows": {
+    "1.1": {
+      "tier": "mvp",
+      "reason": "Most municipal cases start from a citizen web form; a municipality cannot work without that intake channel.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.2": {
+      "tier": "poc",
+      "reason": "Registering a case of a case type is the first step of the core job.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.3": {
+      "tier": "mvp",
+      "reason": "Handlers start cases from a known citizen or company daily; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.4": {
+      "tier": "mvp",
+      "reason": "Incoming post must be sorted onto cases every day; three competitors offer a document intake queue.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.5": {
+      "tier": "mvp",
+      "reason": "Many requests arrive by e-mail; turning a mailbox into cases is daily work at a municipality.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.6": {
+      "tier": "production",
+      "reason": "Scan streams with separator sheets matter for large post rooms; only one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.7": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors accept cases over an API, and forms and portals deliver cases that way.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.8": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has recurring planned cases and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.9": {
+      "tier": "later",
+      "reason": "Office add-ins sit outside the Nextcloud app model (see 4.6); forwarding mail to the intake mailbox covers it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.10": {
+      "tier": "later",
+      "reason": "Only one competitor saves any file or chat to a case; no tender asks for it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.11": {
+      "tier": "later",
+      "reason": "Payment belongs to the form or portal; only one competitor takes it during intake.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.12": {
+      "tier": "mvp",
+      "reason": "Cases must reach the right department or role; two competitors have it fully, two partly.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.13": {
+      "tier": "mvp",
+      "reason": "A visible way to start a case from the start page is basic daily usability.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.1": {
+      "tier": "poc",
+      "reason": "Every case needs its own number from the moment it is created.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.2": {
+      "tier": "mvp",
+      "reason": "Case types need their own fields to hold real data; three competitors have it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.3": {
+      "tier": "mvp",
+      "reason": "Admins must change case types without breaking running cases; draft and publish is common practice.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.4": {
+      "tier": "poc",
+      "reason": "Assigning a case to a handler is part of moving it through its statuses.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.5": {
+      "tier": "mvp",
+      "reason": "Municipalities assign work to teams and departments, not only to people; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.6": {
+      "tier": "production",
+      "reason": "Bulk changes matter with large caseloads; only one competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.7": {
+      "tier": "poc",
+      "reason": "A case type needs its own statuses before a case can move through them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.8": {
+      "tier": "later",
+      "reason": "Only one competitor has case tags; not needed to handle cases.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.9": {
+      "tier": "later",
+      "reason": "Copying a case is a convenience; two competitors have it, no demand recorded.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.10": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors link sub-cases and related cases.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.11": {
+      "tier": "mvp",
+      "reason": "The Awb lets a term be suspended for missing information; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.12": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors reopen a closed case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.13": {
+      "tier": "production",
+      "reason": "Moving running cases to a new case type version matters at scale; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.14": {
+      "tier": "mvp",
+      "reason": "Permits and reports concern an address; two competitors have it and many case types need it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.15": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors link objects such as buildings or vehicles to a case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.16": {
+      "tier": "mvp",
+      "reason": "Handlers and auditors need to see earlier case data; three competitors keep versions.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.17": {
+      "tier": "mvp",
+      "reason": "Mistaken cases must be removable under a guard; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.18": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors record confidentiality, and ZGW requires it on every case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.19": {
+      "tier": "later",
+      "reason": "Favourites help but are not needed to do the job; one competitor has them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.20": {
+      "tier": "later",
+      "reason": "Live refresh is polish; two competitors have it and no demand is recorded.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.21": {
+      "tier": "later",
+      "reason": "Change proposals from others are a niche workflow; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.22": {
+      "tier": "production",
+      "reason": "Raw inspection helps support teams at scale; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.23": {
+      "tier": "later",
+      "reason": "No competitor merges cases and no tender asks for it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.24": {
+      "tier": "later",
+      "reason": "Only one competitor partly detects duplicates at intake; no demand recorded.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.25": {
+      "tier": "later",
+      "reason": "Automatic chasing is a convenience; no competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.26": {
+      "tier": "later",
+      "reason": "Typed links with an inverse go beyond the related-case links in 2.10; no competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.27": {
+      "tier": "production",
+      "reason": "An edit lock prevents overwrites when many handlers share cases; hardening at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.53": {
+      "tier": "production",
+      "reason": "Awb chapter 9 complaint handling is a legal duty asked in tenders; it runs as a configured case type.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.54": {
+      "tier": "later",
+      "reason": "Procurement is a separate domain from case handling; no compared case system covers it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.1": {
+      "tier": "production",
+      "reason": "BPMN import is asked by municipalities that model processes elsewhere; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.2": {
+      "tier": "poc",
+      "reason": "Phases per case type are how a case moves from start to close.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.3": {
+      "tier": "mvp",
+      "reason": "Handlers need to see what each phase still requires; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.4": {
+      "tier": "mvp",
+      "reason": "Tasks with a form are how handlers record their work; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.5": {
+      "tier": "nee",
+      "reason": "Decided no: the work lenses shipped, and the remaining team filter waits on nextcloud-vue.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.6": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors give tasks a due date.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.7": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.8": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.9": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors run actions such as mails and documents on a phase change.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.10": {
+      "tier": "production",
+      "reason": "Reusable sub-processes matter once many case types are configured; three competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.11": {
+      "tier": "production",
+      "reason": "A rules engine serves complex procedures at scale; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.12": {
+      "tier": "later",
+      "reason": "Multi-step forms belong to the form product; one competitor builds them into the case system.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.13": {
+      "tier": "mvp",
+      "reason": "A decision letter is checked before it is sent; four-eyes review is daily practice.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.14": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors save a task form halfway.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.15": {
+      "tier": "poc",
+      "reason": "Showing where a case stands in its phases makes the status flow visible in a demo.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.16": {
+      "tier": "production",
+      "reason": "Migrating running cases between definitions matters at scale; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.17": {
+      "tier": "production",
+      "reason": "Calculated fields and dates help configured procedures at scale; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.18": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors show tasks beside the case tabs.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.19": {
+      "tier": "production",
+      "reason": "Tasks for chain partners outside the organisation are a larger-scale need; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.20": {
+      "tier": "later",
+      "reason": "Macros are convenience for power users; no competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.35": {
+      "tier": "production",
+      "reason": "Formal advice rounds with external bodies are typical of permits and larger procedures.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.36": {
+      "tier": "mvp",
+      "reason": "Handlers work their queue by urgency every day; it is how deadlines get met.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.1": {
+      "tier": "poc",
+      "reason": "Attaching documents to a case is part of the core job.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.2": {
+      "tier": "later",
+      "reason": "Only one competitor has folders inside a case; metadata covers ordering documents.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.3": {
+      "tier": "later",
+      "reason": "Deferred: download and restore ship; viewing an old version in place only one competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.4": {
+      "tier": "mvp",
+      "reason": "Decision letters are made from templates; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.5": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud Office opens case documents; dossiq carries no WOPI code.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.6": {
+      "tier": "nee",
+      "reason": "Outside the Nextcloud app model: Office add-ins and Teams apps are separate products.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.7": {
+      "tier": "mvp",
+      "reason": "Table stakes: all five competitors record document type, status and confidentiality.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.8": {
+      "tier": "later",
+      "reason": "Only one competitor lets users choose document list columns.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.9": {
+      "tier": "mvp",
+      "reason": "Three competitors label documents; handlers use labels to find documents in a full dossier.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.10": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud sharing shares a case file with permissions and expiry.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.11": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud file locking and Collabora handle locks.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.12": {
+      "tier": "production",
+      "reason": "E-signing is an integration asked by larger organisations; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.13": {
+      "tier": "production",
+      "reason": "Redaction is required for Woo publication; no competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.14": {
+      "tier": "later",
+      "reason": "Merging to PDF and copying documents is a convenience; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.15": {
+      "tier": "nee",
+      "reason": "Platform-provided: the Nextcloud trash bin restores a deleted case file.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.16": {
+      "tier": "nee",
+      "reason": "Platform-provided: the Nextcloud Viewer previews case files.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.17": {
+      "tier": "production",
+      "reason": "Full-text indexing of content matters for large dossiers; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.18": {
+      "tier": "nee",
+      "reason": "Decided no: one competitor has document notes and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.19": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.20": {
+      "tier": "production",
+      "reason": "Transfer to an e-depot under the Archiefwet is a tender and law demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.21": {
+      "tier": "production",
+      "reason": "Publishing documents under the Woo is a law demand at scale; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.22": {
+      "tier": "poc",
+      "reason": "Dragging a file onto a case is the simplest way to show attaching documents.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.23": {
+      "tier": "nee",
+      "reason": "Platform-provided: case files are ordinary Nextcloud files the Files app shows.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.1": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors record parties such as the applicant with their role.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.2": {
+      "tier": "mvp",
+      "reason": "Handlers need a register of persons and organisations to put on cases; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.3": {
+      "tier": "production",
+      "reason": "A BRP and KvK connection needs a contract and a legal basis; manual entry works for a first municipality.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.4": {
+      "tier": "production",
+      "reason": "A full contact view belongs to the contact centre side; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.5": {
+      "tier": "production",
+      "reason": "Address secrecy comes with the BRP connection in 5.3; three competitors show it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.6": {
+      "tier": "production",
+      "reason": "Special-category data behind its own permission is fine-grained authorisation; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.7": {
+      "tier": "mvp",
+      "reason": "Routing and assignment need departments and staff; two competitors have an organisation tree.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.8": {
+      "tier": "production",
+      "reason": "Authorised representatives are asked in tenders and ZGW; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.9": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors show the main party in the case header.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.10": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors put an address or building on a case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.11": {
+      "tier": "production",
+      "reason": "Subscriptions to registry changes are integration work for scale; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.12": {
+      "tier": "mvp",
+      "reason": "Incoming and outgoing letters need sender and recipient recorded; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.13": {
+      "tier": "later",
+      "reason": "Embedded register views are a convenience; one competitor has them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.20": {
+      "tier": "later",
+      "reason": "A supplier portal belongs to procurement, outside the core case job.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.1": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors keep journal notes on a case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.2": {
+      "tier": "production",
+      "reason": "Contact moments belong to the contact centre side; one competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.3": {
+      "tier": "mvp",
+      "reason": "Handlers mail applicants from the case every day; two competitors have it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.4": {
+      "tier": "later",
+      "reason": "Notes and history already cover the record; one competitor merges everything into one timeline.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.5": {
+      "tier": "production",
+      "reason": "An organisation-wide inbox matters at scale; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.6": {
+      "tier": "production",
+      "reason": "Digital post through the Berichtenbox is a law and tender demand; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.7": {
+      "tier": "production",
+      "reason": "Portal messaging is the citizen channel at scale; the inbox contract is being built.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.8": {
+      "tier": "mvp",
+      "reason": "Handlers need to know when work arrives; three competitors notify in the app.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.9": {
+      "tier": "later",
+      "reason": "Scheduled mails are a convenience; one competitor has them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.10": {
+      "tier": "mvp",
+      "reason": "Handlers file received mails on cases daily; one competitor has it fully, two partly.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.11": {
+      "tier": "production",
+      "reason": "Webhooks couple dossiq to other systems; three competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.12": {
+      "tier": "later",
+      "reason": "Only one competitor captures chats into a case.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.13": {
+      "tier": "production",
+      "reason": "Telephony integration is a tender item for larger municipalities, mostly on the contact centre side.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.14": {
+      "tier": "mvp",
+      "reason": "Notes must persist with the case; storing them as OpenRegister notes is how 6.1 works.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.15": {
+      "tier": "production",
+      "reason": "Internal versus public entries matter once citizens see the case in a portal.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.16": {
+      "tier": "nee",
+      "reason": "Owned by pipelinq; dossiq builds no satisfaction survey.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.1": {
+      "tier": "poc",
+      "reason": "Closing a case with its result is the end of the core job.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.2": {
+      "tier": "production",
+      "reason": "Decision tables support rule-heavy procedures such as enforcement; one competitor has them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.3": {
+      "tier": "mvp",
+      "reason": "Formal decisions under the Awb are what many cases end in; ZGW requires a decision record.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.4": {
+      "tier": "mvp",
+      "reason": "Generating the decision letter as a step is daily work; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.5": {
+      "tier": "production",
+      "reason": "Woo requests are a law demand with their own assessment work; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.6": {
+      "tier": "production",
+      "reason": "Objection and appeal under the Awb is a law demand asked in tenders.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.7": {
+      "tier": "production",
+      "reason": "Archival nomination from the result is an Archiefwet demand; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.10": {
+      "tier": "production",
+      "reason": "The national enforcement strategy is asked by VTH tenders; it configures enforcement case types.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.1": {
+      "tier": "poc",
+      "reason": "A legal lead time with a target date is what makes a case a zaak.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.2": {
+      "tier": "mvp",
+      "reason": "Handlers must see overdue cases at a glance; two competitors have it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.3": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors give tasks a due date.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.4": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.5": {
+      "tier": "mvp",
+      "reason": "The Awb lets a term be extended with a reason; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.6": {
+      "tier": "mvp",
+      "reason": "Deadline mails keep handlers from missing terms; two competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.7": {
+      "tier": "production",
+      "reason": "Destruction as a separate act by a declared role is an Archiefwet demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.8": {
+      "tier": "production",
+      "reason": "Planned milestones help manage long procedures at scale; one competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.9": {
+      "tier": "production",
+      "reason": "Timer events in the process serve complex procedures; one competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.10": {
+      "tier": "production",
+      "reason": "Automatic resumption refines suspension in 2.11; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.11": {
+      "tier": "mvp",
+      "reason": "The Algemene termijnenwet moves a term off weekends and holidays; every legal deadline depends on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.12": {
+      "tier": "later",
+      "reason": "Deferred: no competitor has it and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.13": {
+      "tier": "mvp",
+      "reason": "Under the Awb the paused time is added back to the term; deadlines are wrong otherwise.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.14": {
+      "tier": "production",
+      "reason": "Multi-step escalation matters in larger organisations; no competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.15": {
+      "tier": "mvp",
+      "reason": "A legal term ends on a day; counting otherwise gives wrong deadlines.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.32": {
+      "tier": "production",
+      "reason": "Penalty for late decisions under the Awb is a law demand; it needs a finance link.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.1": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors offer a quick search, and handlers find cases by number daily.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.2": {
+      "tier": "mvp",
+      "reason": "Handlers search on case type fields daily; one competitor has it fully, others partly.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.3": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors save personal searches.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.4": {
+      "tier": "later",
+      "reason": "Shared searches with permissions only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.5": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors let users choose list columns.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.6": {
+      "tier": "production",
+      "reason": "Searching inside documents matters for large dossiers; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.7": {
+      "tier": "mvp",
+      "reason": "All five competitors filter results by access; showing hidden cases would be a privacy breach.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.8": {
+      "tier": "production",
+      "reason": "Spec tier V1; map overviews of cases matter for VTH at scale; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.9": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors search persons and contacts.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.10": {
+      "tier": "production",
+      "reason": "Searching linked objects matters once many object types exist; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.11": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.12": {
+      "tier": "mvp",
+      "reason": "Inside Nextcloud users expect cases in the platform search bar; it is the natural quick search.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.13": {
+      "tier": "later",
+      "reason": "Threshold alerts on searches no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.20": {
+      "tier": "later",
+      "reason": "Stepping through a list from the case page is a convenience no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.21": {
+      "tier": "later",
+      "reason": "Unread state per person is a convenience; no competitor is rated on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.1": {
+      "tier": "production",
+      "reason": "Management dashboards are a tender and reporting demand at scale; one competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.2": {
+      "tier": "mvp",
+      "reason": "Spec says V1, but handlers need a start page with their work; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.3": {
+      "tier": "mvp",
+      "reason": "Table stakes: three competitors export lists to a spreadsheet.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.4": {
+      "tier": "production",
+      "reason": "Process analytics is reporting at scale; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.5": {
+      "tier": "production",
+      "reason": "An audit log viewer with export is an audit and tender demand; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.6": {
+      "tier": "production",
+      "reason": "Spec tier V1; a statistics API feeds reporting and monitoring at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.7": {
+      "tier": "later",
+      "reason": "An export files area only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.8": {
+      "tier": "later",
+      "reason": "Timeline export only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.9": {
+      "tier": "mvp",
+      "reason": "Table stakes: four of five competitors show the case history on the case page.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.10": {
+      "tier": "later",
+      "reason": "Saved-search widgets only one competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.11": {
+      "tier": "later",
+      "reason": "Deferred: no competitor has it; hours belong to humaniq's leaf.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.20": {
+      "tier": "later",
+      "reason": "Iv3 reporting runs in the finance system; no competitor is rated on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.1": {
+      "tier": "poc",
+      "reason": "Spec tier MVP; a case type has to be made before any case can be created.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.2": {
+      "tier": "mvp",
+      "reason": "Admins move case types from test to production; three competitors import and export them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.3": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; custom fields per case type are how a municipality fits its procedures.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.4": {
+      "tier": "later",
+      "reason": "Forms are built in the form product; one competitor builds them in the case system.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.5": {
+      "tier": "later",
+      "reason": "Editing imported BPMN in the flow editor follows 3.1; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.6": {
+      "tier": "later",
+      "reason": "Configurable case tabs only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.7": {
+      "tier": "later",
+      "reason": "Configurable case page widgets no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.8": {
+      "tier": "later",
+      "reason": "A configurable header only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.9": {
+      "tier": "production",
+      "reason": "List columns per case type help with many case types; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.10": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; four of five competitors have code lists for choice fields.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.11": {
+      "tier": "mvp",
+      "reason": "Decision letters need a template library; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.12": {
+      "tier": "mvp",
+      "reason": "Mails to applicants need templates; two competitors have them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.13": {
+      "tier": "later",
+      "reason": "Translation in the UI only one competitor has; Dutch and English ship with the app.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.14": {
+      "tier": "nee",
+      "reason": "Decided no: branding belongs to thematiq under ADR-010.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.15": {
+      "tier": "later",
+      "reason": "Feature toggles only one competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.16": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; connections need configuring with their secrets before cases flow.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.17": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.18": {
+      "tier": "production",
+      "reason": "Detecting configuration issues is hardening for many case types; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.19": {
+      "tier": "later",
+      "reason": "Nextcloud manages users and groups; role mapping itself sits in 13.1 and 13.16.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.20": {
+      "tier": "production",
+      "reason": "Spec tier V1; per case type rules serve complex procedures at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.21": {
+      "tier": "later",
+      "reason": "Case type inheritance only one competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.22": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; the AVG requires the processing purpose recorded per case type.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.23": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.24": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; municipalities must set their own notification texts.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.25": {
+      "tier": "production",
+      "reason": "Field rules by role and state are fine-grained authorisation; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.26": {
+      "tier": "later",
+      "reason": "No competitor has a knowledge base and no tender asks for it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.56": {
+      "tier": "production",
+      "reason": "VTH under the Omgevingswet is a large tender market; it is seeded configuration.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.57": {
+      "tier": "poc",
+      "reason": "Setup with demo data is what makes the first demo possible.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.1": {
+      "tier": "production",
+      "reason": "The ZGW APIs are the tender standard for Dutch case systems; three competitors offer them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.2": {
+      "tier": "production",
+      "reason": "The Notificaties API comes with ZGW; three competitors offer it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.3": {
+      "tier": "production",
+      "reason": "The Objecten APIs are part of the Common Ground stack asked in tenders.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.4": {
+      "tier": "production",
+      "reason": "StUF is still asked to couple older back offices; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.5": {
+      "tier": "production",
+      "reason": "The Omgevingswet requires DSO intake for permits; a law demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.6": {
+      "tier": "production",
+      "reason": "BRP and KvK connections are integrations that need a contract; two competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.7": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud's SAML and OIDC apps handle staff login.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.8": {
+      "tier": "production",
+      "reason": "DigiD and eHerkenning are for portals at scale; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.9": {
+      "tier": "production",
+      "reason": "Digital post is a law and tender demand; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.10": {
+      "tier": "production",
+      "reason": "E-signing is an integration asked by larger organisations; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.11": {
+      "tier": "production",
+      "reason": "SmartDocuments and Xential are asked by organisations that use them; three competitors connect.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.12": {
+      "tier": "production",
+      "reason": "Fee collection integration is asked at scale; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.13": {
+      "tier": "later",
+      "reason": "Spec says V1, but one competitor has it and appointments belong to the calendar side.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.14": {
+      "tier": "production",
+      "reason": "Event streaming matters for integration at scale; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.15": {
+      "tier": "nee",
+      "reason": "Decided no: OpenRegister keeps one built-in search backend.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.16": {
+      "tier": "production",
+      "reason": "Spec tier V1; PDOK and GIS layers are integrations for VTH at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.17": {
+      "tier": "production",
+      "reason": "A connector framework matters once several systems are coupled; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.18": {
+      "tier": "production",
+      "reason": "Published API documentation is a tender demand; four competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.19": {
+      "tier": "production",
+      "reason": "Public APIs with keys or certificates are integration demand; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.20": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud object storage holds case files.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.21": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud Office opens case documents.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.22": {
+      "tier": "nee",
+      "reason": "Owned by integriq; dossiq builds no inbound cloud events.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.23": {
+      "tier": "later",
+      "reason": "An acting AI assistant no competitor has; demand is not recorded.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "12.28": {
+      "tier": "later",
+      "reason": "Federated case sharing no competitor has; no tender asks for it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.1": {
+      "tier": "mvp",
+      "reason": "All five competitors have application roles; a municipality cannot go live without them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.2": {
+      "tier": "production",
+      "reason": "Attribute-based access is fine-grained authorisation; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.3": {
+      "tier": "production",
+      "reason": "A per-case access list is fine-grained authorisation; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.4": {
+      "tier": "later",
+      "reason": "Only one competitor grants time-limited access; substitution in 13.12 covers the need.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.5": {
+      "tier": "production",
+      "reason": "Per-document access is fine-grained authorisation; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.6": {
+      "tier": "mvp",
+      "reason": "Social domain cases must stay hidden from other departments; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.7": {
+      "tier": "mvp",
+      "reason": "Three competitors classify confidentiality, and ZGW requires it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.8": {
+      "tier": "later",
+      "reason": "Deferred: one competitor has it fully and there is no demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.9": {
+      "tier": "production",
+      "reason": "Read logging is an AVG and BIO audit demand; spec says MVP, but a first municipality can start without it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.10": {
+      "tier": "production",
+      "reason": "Retention and deletion are Archiefwet demands; no competitor has them fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.11": {
+      "tier": "mvp",
+      "reason": "Spec tier MVP; the AVG requires a processing register per case type.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.12": {
+      "tier": "production",
+      "reason": "Mandates and substitutes matter in larger organisations; one competitor partly has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.13": {
+      "tier": "production",
+      "reason": "Portal access rights per case come with the citizen portal at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.14": {
+      "tier": "nee",
+      "reason": "Owned by OpenRegister; dossiq builds no list access filter of its own.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.15": {
+      "tier": "nee",
+      "reason": "Platform-provided: Nextcloud two-factor and session list cover it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.16": {
+      "tier": "mvp",
+      "reason": "Four of five competitors have an access admin screen; roles must be set without code.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.17": {
+      "tier": "later",
+      "reason": "No competitor has a stand-in view; Nextcloud out of office covers the basics.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.18": {
+      "tier": "later",
+      "reason": "No competitor has watchers apart from the assignee.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "14.2": {
+      "tier": "later",
+      "reason": "The social domain runs on specialised systems; no compared competitor is rated on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "15.2": {
+      "tier": "later",
+      "reason": "Grant processes are a separate domain; no compared competitor is rated on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "16.2": {
+      "tier": "production",
+      "reason": "Field inspections are asked by VTH tenders; they extend enforcement case types.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "17.2": {
+      "tier": "production",
+      "reason": "Many tenants on one platform is how a hosted offer scales.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.27": {
+      "tier": "mvp",
+      "reason": "Every capability ships in the one open build; nothing extra has to be bought.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.28": {
+      "tier": "production",
+      "reason": "Tenders ask what happens when the contract ends; the open licence answers it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.16": {
+      "tier": "production",
+      "reason": "Different laws count terms differently; per-term counting matters with many case types.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.17": {
+      "tier": "later",
+      "reason": "Recomputing deadlines on a calendar change no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q3.21": {
+      "tier": "later",
+      "reason": "Links between cases moving dates no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q10.12": {
+      "tier": "later",
+      "reason": "Effort outside cases belongs to humaniq; no competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q10.13": {
+      "tier": "production",
+      "reason": "Recording settings changes is an audit demand; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q12.25": {
+      "tier": "mvp",
+      "reason": "A municipality cannot install without known prerequisites; three competitors document them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q4.25": {
+      "tier": "production",
+      "reason": "Text extraction feeds full-text search in 4.17; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.27": {
+      "tier": "mvp",
+      "reason": "All five competitors keep case numbers unique; a duplicate number breaks the dossier.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.20": {
+      "tier": "production",
+      "reason": "Narrow API tokens are security hardening for integrations; two competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q10.14": {
+      "tier": "mvp",
+      "reason": "All five competitors tell the caller when a rule refuses a write.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.28": {
+      "tier": "mvp",
+      "reason": "Form answers must arrive as data the case can use; two competitors do this fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q12.26": {
+      "tier": "production",
+      "reason": "Tenders and security reviews ask what the product sends out; four competitors state it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.29": {
+      "tier": "later",
+      "reason": "Nextcloud's app manifest already declares versions; no competitor is rated on it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.21": {
+      "tier": "later",
+      "reason": "Storage limits per owner no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.30": {
+      "tier": "mvp",
+      "reason": "Users must not hit silent dead ends; all five competitors partly say what is unavailable.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.18": {
+      "tier": "later",
+      "reason": "Testing the term engine on a chosen date no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.29": {
+      "tier": "mvp",
+      "reason": "Several parties can have standing on a case; three competitors support it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.30": {
+      "tier": "production",
+      "reason": "Keeping identity when a case moves matters for migration and transfer; three competitors do.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.31": {
+      "tier": "later",
+      "reason": "Only one competitor avoids storage for unused capabilities.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.22": {
+      "tier": "production",
+      "reason": "Refusing weak API credentials is hardening; staff passwords are Nextcloud's.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.19": {
+      "tier": "production",
+      "reason": "Terms must use the Dutch day, not the server's; hardening for correct deadlines.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.17": {
+      "tier": "production",
+      "reason": "Keeping earlier versions of timeline entries is an audit demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.32": {
+      "tier": "later",
+      "reason": "Browsing the data model in the product only one competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q10.15": {
+      "tier": "production",
+      "reason": "Working time per stage is management reporting at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.18": {
+      "tier": "production",
+      "reason": "Threading replies onto the case matters at mail volume; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.31": {
+      "tier": "later",
+      "reason": "Showing who else has a case open no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q3.22": {
+      "tier": "later",
+      "reason": "Stage limits no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q3.23": {
+      "tier": "production",
+      "reason": "Automation conditions as data serve complex procedures; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q9.16": {
+      "tier": "later",
+      "reason": "Saved searches as navigation places only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.23": {
+      "tier": "production",
+      "reason": "Inherited rights are fine-grained authorisation; two competitors have them.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.20": {
+      "tier": "production",
+      "reason": "Signed webhooks are security hardening for integrations.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.14": {
+      "tier": "production",
+      "reason": "External parties filing with their own identity comes with the portal at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.15": {
+      "tier": "later",
+      "reason": "Several forms per case type no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.19": {
+      "tier": "production",
+      "reason": "A citizen status vocabulary comes with the portal; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.20": {
+      "tier": "later",
+      "reason": "A calendar API no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q9.15": {
+      "tier": "later",
+      "reason": "A typed command language only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.32": {
+      "tier": "mvp",
+      "reason": "Guarding status changes by role and condition is basic control; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.33": {
+      "tier": "production",
+      "reason": "Refusing to strand configuration in use is hardening; two competitors do it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.21": {
+      "tier": "later",
+      "reason": "Telling the requester when the clock starts no competitor offers.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.16": {
+      "tier": "production",
+      "reason": "Embedding intake on the municipality website comes with the form and portal side.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.33": {
+      "tier": "production",
+      "reason": "Archiving closed cases without deleting them is an Archiefwet need at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.22": {
+      "tier": "mvp",
+      "reason": "A deadline shown two ways is wrong once; every write path must agree.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.24": {
+      "tier": "production",
+      "reason": "Admin-defined roles are fine-grained authorisation; two competitors have it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.34": {
+      "tier": "later",
+      "reason": "One vocabulary across configuration modes is consistency polish; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.25": {
+      "tier": "production",
+      "reason": "Removing rights from a role is fine-grained authorisation; one competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.23": {
+      "tier": "later",
+      "reason": "One administered calendar follows 8.12, which is deferred.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.17": {
+      "tier": "mvp",
+      "reason": "Under Awb 4:5 the applicant is asked to complete a request; daily intake work.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "1.18": {
+      "tier": "later",
+      "reason": "Duplicate checks on every save only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.34": {
+      "tier": "later",
+      "reason": "Priority levels no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.35": {
+      "tier": "later",
+      "reason": "Splitting a case no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.36": {
+      "tier": "later",
+      "reason": "Attention flags no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.37": {
+      "tier": "production",
+      "reason": "Dated custody between units is an audit need; no competitor has it fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.38": {
+      "tier": "later",
+      "reason": "Requesting a case from its handler no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.39": {
+      "tier": "mvp",
+      "reason": "Closing a case with open tasks or sub-cases breaks the dossier; two competitors block it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.40": {
+      "tier": "later",
+      "reason": "A separately permissioned risk level only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.41": {
+      "tier": "later",
+      "reason": "Undoing bulk actions no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.42": {
+      "tier": "later",
+      "reason": "A command palette no competitor has fully; basic keyboard operation is part of accessibility anyway.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.43": {
+      "tier": "later",
+      "reason": "Derived status no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.44": {
+      "tier": "later",
+      "reason": "Tab-level attention markers only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.45": {
+      "tier": "later",
+      "reason": "Incident records on a case no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.46": {
+      "tier": "later",
+      "reason": "Declaring who a status waits on no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.47": {
+      "tier": "production",
+      "reason": "Withdrawal from the portal comes with the citizen portal at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.48": {
+      "tier": "later",
+      "reason": "Deriving affected parties from relations no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.50": {
+      "tier": "production",
+      "reason": "Refusing conflicting saves is hardening when many handlers share cases.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "2.51": {
+      "tier": "production",
+      "reason": "Transfer between organisations matters for chains and shared services.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.24": {
+      "tier": "later",
+      "reason": "Manager approval gating closure no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.25": {
+      "tier": "later",
+      "reason": "Round robin distribution no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.26": {
+      "tier": "later",
+      "reason": "Board swimlanes no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.27": {
+      "tier": "later",
+      "reason": "Offset task timelines only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.28": {
+      "tier": "later",
+      "reason": "Chained next actions no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.29": {
+      "tier": "production",
+      "reason": "Blocking tasks keep larger procedures in order; four competitors partly have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.30": {
+      "tier": "later",
+      "reason": "Hand-offs that return the case no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.31": {
+      "tier": "later",
+      "reason": "Approval where silence has meaning no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "3.32": {
+      "tier": "production",
+      "reason": "Scoped advice requests to outside bodies follow 3.35; three competitors partly have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.26": {
+      "tier": "production",
+      "reason": "A registration number per incoming and outgoing document is a records management demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.27": {
+      "tier": "later",
+      "reason": "A signing folder across cases no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "4.28": {
+      "tier": "later",
+      "reason": "Plain-language twins of letters no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.14": {
+      "tier": "later",
+      "reason": "Party merging with field selection no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.15": {
+      "tier": "later",
+      "reason": "Marking pairs as not duplicate follows 5.14, which is later.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.16": {
+      "tier": "later",
+      "reason": "Reciprocal relationship types only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.17": {
+      "tier": "later",
+      "reason": "Preferred correspondence language no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.18": {
+      "tier": "later",
+      "reason": "Cross-domain existence views belong to the social domain, which is later.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "5.19": {
+      "tier": "production",
+      "reason": "A policy for records owned by external registries comes with the registry links.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.23": {
+      "tier": "production",
+      "reason": "One-off recipients refine case mail; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.24": {
+      "tier": "later",
+      "reason": "Last contact moment in the work list no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.25": {
+      "tier": "later",
+      "reason": "Filing one item onto several cases only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.26": {
+      "tier": "later",
+      "reason": "Field-change notification rules only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.27": {
+      "tier": "production",
+      "reason": "Delivery outcome per recipient is proof of dispatch asked for formal letters.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "6.28": {
+      "tier": "later",
+      "reason": "Per-recipient notification kinds no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.8": {
+      "tier": "production",
+      "reason": "A sent decision must not change; corrections as numbered successors protect legal integrity.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "7.9": {
+      "tier": "later",
+      "reason": "Committee agenda flow belongs to decidiq; one competitor has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.24": {
+      "tier": "later",
+      "reason": "First-response terms no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.25": {
+      "tier": "later",
+      "reason": "Dwell limits per status only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.26": {
+      "tier": "later",
+      "reason": "Service hour clocks no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.28": {
+      "tier": "later",
+      "reason": "Reminders on any date field no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.29": {
+      "tier": "later",
+      "reason": "Lead time from organisation and priority only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "8.30": {
+      "tier": "later",
+      "reason": "Status-bound clocks with thresholds only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.17": {
+      "tier": "later",
+      "reason": "Historical filters only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "9.18": {
+      "tier": "later",
+      "reason": "Search stopwords and synonyms no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.16": {
+      "tier": "production",
+      "reason": "Attributing every audit entry to its cause is an audit demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.17": {
+      "tier": "later",
+      "reason": "Effort estimates no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.18": {
+      "tier": "later",
+      "reason": "Time per status as a column no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "10.19": {
+      "tier": "later",
+      "reason": "Data quality audits no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.35": {
+      "tier": "later",
+      "reason": "Routing by district only one competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.36": {
+      "tier": "later",
+      "reason": "Detecting local divergence from shipped case types only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.37": {
+      "tier": "production",
+      "reason": "Field dependencies enforced on the API too protect data quality at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.38": {
+      "tier": "production",
+      "reason": "One rule set for form and API protects data quality at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.39": {
+      "tier": "production",
+      "reason": "Imports with an outcome per row are needed for migration from the old system.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.40": {
+      "tier": "later",
+      "reason": "Nested rules only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.41": {
+      "tier": "later",
+      "reason": "Admin explanations on statuses no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.42": {
+      "tier": "later",
+      "reason": "Duplicate value alerts no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.43": {
+      "tier": "later",
+      "reason": "Screen configuration as patches no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.44": {
+      "tier": "later",
+      "reason": "Before and after conditions no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.45": {
+      "tier": "later",
+      "reason": "Custom fields by ordinary users no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.46": {
+      "tier": "later",
+      "reason": "A service catalogue driving case types no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.47": {
+      "tier": "later",
+      "reason": "Query-based reference choices only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.48": {
+      "tier": "mvp",
+      "reason": "Retiring a code list value without deleting it is daily maintenance; three competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.49": {
+      "tier": "later",
+      "reason": "A rule firing ledger only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.50": {
+      "tier": "later",
+      "reason": "Rules relative to now only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.51": {
+      "tier": "later",
+      "reason": "Screen overrides per team only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.52": {
+      "tier": "later",
+      "reason": "Code lists with consequences no competitor has fully.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "11.53": {
+      "tier": "production",
+      "reason": "Admin-written validation backs the tender demand for field checks in Q1.20.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.26": {
+      "tier": "production",
+      "reason": "Separation of duties is an audit and BIO demand for sensitive transitions.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.27": {
+      "tier": "later",
+      "reason": "Break-glass access no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.28": {
+      "tier": "later",
+      "reason": "Consent-gated hand-offs belong to the social domain, which is later.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.29": {
+      "tier": "production",
+      "reason": "AVG erasure for one person across every case is a law demand at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.30": {
+      "tier": "production",
+      "reason": "Role slots carrying rights are fine-grained authorisation; three competitors partly have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.31": {
+      "tier": "production",
+      "reason": "A reviewed destruction list is an Archiefwet demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.32": {
+      "tier": "later",
+      "reason": "Anonymising instead of deleting no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.33": {
+      "tier": "later",
+      "reason": "Anonymous reports with a custodian only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.34": {
+      "tier": "later",
+      "reason": "Dated access through party relations only one competitor partly has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.35": {
+      "tier": "production",
+      "reason": "A tamper-evident audit log is an audit and security demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.36": {
+      "tier": "later",
+      "reason": "Link types exposing chosen fields no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.38": {
+      "tier": "later",
+      "reason": "Portal visibility by party tree no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.39": {
+      "tier": "later",
+      "reason": "Download notifications no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.40": {
+      "tier": "production",
+      "reason": "A separate hand-off permission is fine-grained authorisation; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.41": {
+      "tier": "production",
+      "reason": "Group row access with declared inheritance is fine-grained authorisation.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.42": {
+      "tier": "later",
+      "reason": "Login-free bearer links no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.43": {
+      "tier": "production",
+      "reason": "Legal hold during proceedings is an Archiefwet and court demand.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "13.44": {
+      "tier": "mvp",
+      "reason": "Reassigning a departing handler's caseload is routine; two competitors have it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "14.1": {
+      "tier": "later",
+      "reason": "Case plans of interventions belong to the social domain, which is later.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "15.1": {
+      "tier": "later",
+      "reason": "Grant amounts and recovery belong to grant processes, which are later.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "16.1": {
+      "tier": "later",
+      "reason": "A visible replay queue is detail of 16.2 that no competitor has.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "17.1": {
+      "tier": "production",
+      "reason": "Serving several organisations from one instance is how shared services scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q4.29": {
+      "tier": "production",
+      "reason": "Seven of ten tenders ask for a durable archive format such as PDF/A.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.19": {
+      "tier": "mvp",
+      "reason": "Wrongly routed cases happen daily; six of ten tenders ask for refusing and rerouting.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.45": {
+      "tier": "production",
+      "reason": "Six of ten tenders ask records managers to change archive attributes.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.29": {
+      "tier": "production",
+      "reason": "Eight of ten tenders ask for callback requests, largely on the contact centre side.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q8.31": {
+      "tier": "production",
+      "reason": "Four of ten tenders ask for destruction date conflict checks.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.54": {
+      "tier": "production",
+      "reason": "Five of ten tenders name i-Navigator as the source of case types.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q9.19": {
+      "tier": "production",
+      "reason": "Five of ten tenders ask for spelling-tolerant search with suggestions.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.20": {
+      "tier": "production",
+      "reason": "Five of ten tenders ask for required fields and format checks on web forms.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q3.33": {
+      "tier": "production",
+      "reason": "Three of ten tenders ask for a handler per phase with automatic hand-over.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q2.52": {
+      "tier": "production",
+      "reason": "Three of ten tenders ask that closed cases change only by authorised users.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.46": {
+      "tier": "production",
+      "reason": "Three of ten tenders ask for an authorisation matrix for ENSIA or NIS2.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.21": {
+      "tier": "production",
+      "reason": "Three of ten tenders ask for forms prefilled from the BRP and trade register.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q1.22": {
+      "tier": "later",
+      "reason": "Two of ten tenders ask for saving unfinished forms; that belongs to the form product.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q6.30": {
+      "tier": "production",
+      "reason": "Two of ten tenders ask that filed mails keep layout and split attachments.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q11.55": {
+      "tier": "mvp",
+      "reason": "Every outgoing letter needs the house style; five of ten tenders ask for one letterhead.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q3.34": {
+      "tier": "later",
+      "reason": "Highlighting unread tasks is a convenience; one competitor partly has it.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q13.47": {
+      "tier": "production",
+      "reason": "The BRP protocol requires a purpose per lookup; it comes with the BRP connection.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    },
+    "Q12.27": {
+      "tier": "production",
+      "reason": "A message log with retry is needed to run integrations at scale.",
+      "proposedBy": "claude",
+      "proposedOn": "2026-11-17",
+      "decidedBy": null,
+      "decidedOn": null
+    }
+  }
+}
