@@ -37,6 +37,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one line per registrar; the coupling is the list itself.
+ *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 class ListenerRegistrar {
@@ -63,6 +65,7 @@ class ListenerRegistrar {
 		(new DerivedStatusListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
+		(new IntakeObligationListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);
 		(new CaseMergeRegistrar())->register(context: $context);
 		(new BulkActionRegistrar())->register(context: $context);

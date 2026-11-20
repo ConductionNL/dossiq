@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261106100000</version>
+    <version>0.4.47-unstable.20261117001500</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -238,6 +238,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
              whatever hour the runner happened to fire.
              See openspec/changes/one-personal-queue. -->
         <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
+        <!-- Daily: an intake obligation past its due date is marked expired and
+             its kind's whenUnmet rule applied (obligations-placed-at-intake). -->
+        <job>OCA\Dossiq\BackgroundJob\IntakeObligationLapseJob</job>
     </background-jobs>
 
     <repair-steps>

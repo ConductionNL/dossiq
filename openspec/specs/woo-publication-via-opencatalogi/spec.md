@@ -429,13 +429,13 @@ path".
 - **AND** the resident's case MUST carry the publication link that portaliq's change rule reports
 
 #### Scenario: Republishing does not add the item twice
-@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testRepublishingAddsNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testRepublishingAddsNothing`.
 - **GIVEN** a decision already published and added to the dossier
 - **WHEN** it is published again
 - **THEN** the dossier MUST still hold one item for that publication
 
 #### Scenario: A request without a dossier
-@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testARequestWithoutADossierWritesNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testARequestWithoutADossierWritesNothing`.
 - **GIVEN** a Woo request case with no `wooRequest.collectionId`
 - **WHEN** its decision is published
 - **THEN** the publication MUST be created and no collection MUST be written

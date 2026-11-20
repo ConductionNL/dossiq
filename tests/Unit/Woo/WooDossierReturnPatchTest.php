@@ -3,7 +3,7 @@
 /**
  * The decision's return to its dossier through OpenRegister's PATCH seam, and a failed write.
  *
- * WooDossierReturnTest runs the return against a store that only saves whole
+ * SourceCollectionReturnTest runs the return against a store that only saves whole
  * objects. OpenRegister also offers patchObject(), and when it does the return
  * must use it, unscoped, writing ONLY the collection's items, so a share or a
  * note another app wrote meanwhile is not saved away. A write that fails is a

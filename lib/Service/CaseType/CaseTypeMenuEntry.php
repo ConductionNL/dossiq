@@ -50,18 +50,23 @@ class CaseTypeMenuEntry {
 
 	/**
 	 * A case type as the menu and its picker see it: id and title, and its
-	 * icon when it names one.
+	 * icon and description when it names them.
 	 *
-	 * @param array{id: string, title: string, icon: string} $row The case type.
+	 * @param array{id: string, title: string, icon: string, description?: string} $row The case type.
 	 *
-	 * @return array{id: string, title: string, icon?: string} The row.
+	 * @return array{id: string, title: string, icon?: string, description?: string} The row.
 	 *
 	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
 	 */
 	public function publicRow(array $row): array {
 		$public = ['id' => $row['id'], 'title' => $row['title']];
 		if ($row['icon'] !== '') {
 			$public['icon'] = $row['icon'];
+		}
+
+		if (($row['description'] ?? '') !== '') {
+			$public['description'] = $row['description'];
 		}
 
 		return $public;
@@ -93,6 +98,7 @@ class CaseTypeMenuEntry {
 			'title' => $title,
 			'identifier' => (string)($row['identifier'] ?? ''),
 			'icon' => $this->iconOf(row: $row),
+			'description' => trim($this->text->forReader(value: ($row['description'] ?? ''))),
 			'teams' => (new CaseTypeHandling())->teams(caseType: $row),
 		];
 	}//end entry()

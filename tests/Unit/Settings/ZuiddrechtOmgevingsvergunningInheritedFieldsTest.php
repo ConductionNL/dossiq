@@ -124,7 +124,7 @@ class ZuiddrechtOmgevingsvergunningInheritedFieldsTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(expected: 6, actual: $cases);
+		$this->assertSame(expected: 7, actual: $cases);
 	}//end testTheParentsCasesAnswerTheRequiredFields()
 
 	/**

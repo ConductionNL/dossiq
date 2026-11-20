@@ -39,7 +39,7 @@ class ZuiddrechtJeugdwetFilesTest extends TestCase {
 
 		$linked = [];
 		foreach ($objects as $object) {
-			if ($object['schema'] === 'zaakinformatieobject' && $object['data']['case'] === 'e0b306d2-c523-5938-9b5c-3474d292dc01') {
+			if ($object['schema'] === 'zaakinformatieobject' && $object['data']['case'] === '{{object:jeugdwet-gezin-oosthaven.id}}') {
 				$linked[] = substr($object['data']['informatieobject'], strlen('{{object:'), -strlen('.id}}'));
 			}
 		}

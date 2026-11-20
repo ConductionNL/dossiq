@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Dossiq outcome publisher
+ * Dossiq WOO Publication Service
  *
- * Bridges an assembled WOO besluit ({@see \OCA\Dossiq\Service\WOODecisionService}) to
+ * Bridges an assembled WOO besluit ({@see WOODecisionService}) to
  * OpenCatalogi's publication model. Builds a disclosure-safe publication
  * payload (redacted documents only, never unredacted originals or withheld
  * documents), creates/updates the publication via
@@ -18,7 +18,7 @@
  * flow.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Publication
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
@@ -45,8 +46,6 @@ use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Service\Publication\CasePublicationState;
-use OCA\Dossiq\Kernel\Contracts\WooDossierReturnInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -54,7 +53,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Publishes the decision of a case through OpenCatalogi, and withdraws it.
+ * Service for publishing WOO decisions through OpenCatalogi.
  *
  * @psalm-suppress UnusedClass
  *

@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,7 +48,7 @@ class CatalogTransport {
 	 * @param SettingsService       $settingsService The catalog register and publication schema.
 	 * @param OpenCatalogiApiClient $apiClient       Thin HTTP client to the catalog's register.
 	 * @param LoggerInterface       $logger          Logger.
-	 * @param CasePublicationState  $caseLedger      Writes the delivered set around the send.
+	 * @param CasePublicationState         $caseLedger      Writes the delivered set around the send.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
