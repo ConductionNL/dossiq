@@ -155,17 +155,6 @@ never an orphaned or unreachable capability.
   side-effect failures never roll back the status), and the failure MUST be
   recorded on `statusRecord.dispatchedActions[]`
 
-### Requirement: Decisions are also invokable standalone via REST
-The system MUST expose `POST /api/decisions/{id}/evaluate` for any
-authenticated user, independent of any workflow transition, so a decision
-table can be tested or consumed outside a case's lifecycle.
-
-#### Scenario: Standalone evaluation
-- **GIVEN** an authenticated user and a published decision table id
-- **WHEN** they POST valid inputs to `/api/decisions/{id}/evaluate`
-- **THEN** the system MUST return the computed outputs without requiring
-  any case or workflow transition
-
 ### Requirement: PRIORITY and ANY hit policies are evaluated by OpenRegister
 The system MUST evaluate a decision table declaring `PRIORITY` or `ANY` rather
 than refusing it. `PRIORITY` MUST return the matching rule with the highest
