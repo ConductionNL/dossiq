@@ -33,6 +33,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCA\Dossiq\Service\Dashboard\WidgetAudience;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -183,7 +185,15 @@ class OpenWorkSummaryTest extends TestCase {
 			['unavailable' => ['tasks']]
 		);
 
-		$widget = new MyOpenWorkWidget(l10n: $this->l10n, queue: $queue, summary: $this->summary());
+		$audience = $this->createMock(originalClassName: WidgetAudience::class);
+		$audience->method('admits')->willReturn(true);
+		$widget = new MyOpenWorkWidget(
+			l10n: $this->l10n,
+			queue: $queue,
+			summary: $this->summary(),
+			audience: $audience,
+			userSession: $this->createMock(originalClassName: IUserSession::class)
+		);
 
 		$this->assertSame([['1 open task', '0 late, 1 today']], $this->titles(rows: $widget->getItemsV2('handler')->getItems()));
 
