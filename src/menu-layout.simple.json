@@ -3768,6 +3768,22 @@
 								}
 							],
 							"emptyText": "No contact logged on this case yet",
+							"rowActions": [
+								{
+									"id": "mark-unread",
+									"label": "Mark unread",
+									"icon": "EmailMarkAsUnread",
+									"handler": "markMessageUnread",
+									"type": "handler"
+								},
+								{
+									"id": "mark-read",
+									"label": "Mark read",
+									"icon": "EmailOpenOutline",
+									"handler": "markMessageRead",
+									"type": "handler"
+								}
+							],
 							"allowCreate": false
 						}
 					},
