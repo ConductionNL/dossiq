@@ -50,9 +50,14 @@ class OutcomePublisherTest extends TestCase {
 	 * @return OutcomePublisher
 	 */
 	private function publisher(bool $installed = true, bool $enabled = true, bool $register = true): OutcomePublisher {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($register === true ? new \stdClass() : null);
-		$apps = $this->createMock(IAppManager::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$objectService = null;
+		if ($register === true) {
+			$objectService = new \stdClass();
+		}
+
+		$settings->method('getObjectService')->willReturn($objectService);
+		$apps = $this->createMock(originalClassName: IAppManager::class);
 		$apps->method('isInstalled')->with('opencatalogi')->willReturn($installed);
 		$apps->method('isEnabledForUser')->with('opencatalogi')->willReturn($enabled);
 
@@ -71,10 +76,10 @@ class OutcomePublisherTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheStoredValuesKeepTheirSpelling(): void {
-		$this->assertSame('woo-besluit', OutcomePublisher::PUBLICATION_KIND);
-		$this->assertSame('ready', OutcomePublisher::STATUS_READY);
-		$this->assertSame('published', OutcomePublisher::STATUS_PUBLISHED);
-		$this->assertSame('withdrawn', OutcomePublisher::STATUS_WITHDRAWN);
+		$this->assertSame(expected: 'woo-besluit', actual: OutcomePublisher::PUBLICATION_KIND);
+		$this->assertSame(expected: 'ready', actual: OutcomePublisher::STATUS_READY);
+		$this->assertSame(expected: 'published', actual: OutcomePublisher::STATUS_PUBLISHED);
+		$this->assertSame(expected: 'withdrawn', actual: OutcomePublisher::STATUS_WITHDRAWN);
 	}//end testTheStoredValuesKeepTheirSpelling()
 
 	/**
@@ -83,10 +88,19 @@ class OutcomePublisherTest extends TestCase {
 	 * @return void
 	 */
 	public function testAvailabilityAnswers(): void {
-		$this->assertSame(['available' => true], $this->publisher()->checkAvailability());
-		$this->assertSame(['available' => false, 'reason' => 'opencatalogi_not_installed'], $this->publisher(installed: false)->checkAvailability());
-		$this->assertSame(['available' => false, 'reason' => 'opencatalogi_not_installed'], $this->publisher(enabled: false)->checkAvailability());
-		$this->assertSame(['available' => false, 'reason' => 'openregister_unavailable'], $this->publisher(register: false)->checkAvailability());
+		$this->assertSame(expected: ['available' => true], actual: $this->publisher()->checkAvailability());
+		$this->assertSame(
+			expected: ['available' => false, 'reason' => 'opencatalogi_not_installed'],
+			actual: $this->publisher(installed: false)->checkAvailability()
+		);
+		$this->assertSame(
+			expected: ['available' => false, 'reason' => 'opencatalogi_not_installed'],
+			actual: $this->publisher(enabled: false)->checkAvailability()
+		);
+		$this->assertSame(
+			expected: ['available' => false, 'reason' => 'openregister_unavailable'],
+			actual: $this->publisher(register: false)->checkAvailability()
+		);
 	}//end testAvailabilityAnswers()
 
 	/**
@@ -97,13 +111,19 @@ class OutcomePublisherTest extends TestCase {
 	public function testThePayloadOfACaseWithAPeriod(): void {
 		$payload = $this->publisher()->buildPayload(
 			case: ['id' => 'case-1', 'title' => 'Verzoek parkeerbeleid', 'wooRequest' => ['periodeVan' => '2025-01-01', 'periodeTot' => '2025-12-31']],
-			decision: ['case' => 'case-1', 'title' => 'Besluit', 'description' => 'Kort', 'explanation' => 'Lang', 'decisionType' => '3c0f5a00-0000-4000-a000-00000000d001'],
+			decision: [
+				'case' => 'case-1',
+				'title' => 'Besluit',
+				'description' => 'Kort',
+				'explanation' => 'Lang',
+				'decisionType' => '3c0f5a00-0000-4000-a000-00000000d001',
+			],
 		);
 
-		$this->assertNotSame('', $payload['publicationDate']);
+		$this->assertNotSame(expected: '', actual: $payload['publicationDate']);
 		unset($payload['publicationDate']);
 		$this->assertSame(
-			[
+			expected: [
 				'title' => 'Verzoek parkeerbeleid',
 				'summary' => 'Kort',
 				'description' => 'Lang',
@@ -113,7 +133,7 @@ class OutcomePublisherTest extends TestCase {
 				'caseReference' => 'case-1',
 				'period' => ['from' => '2025-01-01', 'to' => '2025-12-31'],
 			],
-			$payload
+			actual: $payload
 		);
 	}//end testThePayloadOfACaseWithAPeriod()
 
@@ -126,18 +146,18 @@ class OutcomePublisherTest extends TestCase {
 		$publisher = $this->publisher();
 
 		$fromDecision = $publisher->buildPayload(case: ['uuid' => 'case-2'], decision: ['title' => 'Besluit', 'description' => 'Kort']);
-		$this->assertSame('Besluit', $fromDecision['title']);
-		$this->assertSame('Kort', $fromDecision['description']);
-		$this->assertSame('case-2', $fromDecision['caseReference']);
-		$this->assertArrayNotHasKey('period', $fromDecision);
+		$this->assertSame(expected: 'Besluit', actual: $fromDecision['title']);
+		$this->assertSame(expected: 'Kort', actual: $fromDecision['description']);
+		$this->assertSame(expected: 'case-2', actual: $fromDecision['caseReference']);
+		$this->assertArrayNotHasKey(key: 'period', array: $fromDecision);
 
 		$bare = $publisher->buildPayload(case: [], decision: ['case' => 'case-3', 'decisionType' => 'iets-anders']);
-		$this->assertSame('WOO-besluit case-3', $bare['title']);
-		$this->assertSame('', $bare['summary']);
-		$this->assertSame('', $bare['description']);
-		$this->assertSame('infocat014', $bare['wooCategory']);
+		$this->assertSame(expected: 'WOO-besluit case-3', actual: $bare['title']);
+		$this->assertSame(expected: '', actual: $bare['summary']);
+		$this->assertSame(expected: '', actual: $bare['description']);
+		$this->assertSame(expected: 'infocat014', actual: $bare['wooCategory']);
 
 		$half = $publisher->buildPayload(case: ['id' => 'c', 'wooRequest' => ['periodeVan' => '2025-01-01']], decision: []);
-		$this->assertSame(['from' => '2025-01-01', 'to' => ''], $half['period']);
+		$this->assertSame(expected: ['from' => '2025-01-01', 'to' => ''], actual: $half['period']);
 	}//end testThePayloadFallbacks()
 }//end class

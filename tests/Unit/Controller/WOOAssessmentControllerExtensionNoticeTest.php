@@ -209,7 +209,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			$this->createMock(WOODocumentAssessmentService::class),
 			$deadlines,
 			$this->createMock(WOODecisionService::class),
-			$this->createMock(OutcomePublisher::class),
+			$this->createMock(originalClassName: OutcomePublisher::class),
 			$this->createMock(WOOAnonymisationAssistService::class),
 			$session,
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),

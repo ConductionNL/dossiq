@@ -129,7 +129,7 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->deadlineService = $this->createMock(WOODeadlineService::class);
 		$this->decisionService = $this->createMock(WOODecisionService::class);
-		$this->publicationService = $this->createMock(OutcomePublisher::class);
+		$this->publicationService = $this->createMock(originalClassName: OutcomePublisher::class);
 		$this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
