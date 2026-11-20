@@ -255,14 +255,14 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 
 		return new OutcomePublisher(
-			$settings,
-			$client,
-			new PublicationCategory(),
-			$apps,
-			$logger,
-			null,
-			new CasePublicationState(settingsService: $settings, logger: $logger, urlGenerator: $urls),
-			new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
+			settingsService: $settings,
+			apiClient: $client,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $logger,
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(settingsService: $settings, logger: $logger, urlGenerator: $urls),
+			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
 		);
 	}//end service()
 }//end class

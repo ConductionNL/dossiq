@@ -62,11 +62,11 @@ class OutcomePublisherTest extends TestCase {
 		$apps->method('isEnabledForUser')->with('opencatalogi')->willReturn($enabled);
 
 		return new OutcomePublisher(
-			$settings,
-			$this->createMock(OpenCatalogiApiClient::class),
-			new PublicationCategory(),
-			$apps,
-			new NullLogger(),
+			settingsService: $settings,
+			apiClient: $this->createMock(originalClassName: OpenCatalogiApiClient::class),
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: new NullLogger(),
 		);
 	}//end publisher()
 

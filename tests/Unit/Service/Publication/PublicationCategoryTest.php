@@ -72,7 +72,7 @@ class PublicationCategoryTest extends TestCase {
 	 * @return PublicationCategory
 	 */
 	private function categories(): PublicationCategory {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
@@ -89,7 +89,7 @@ class PublicationCategoryTest extends TestCase {
 	public function testTheDecisionTypeRowNamesTheCategory(): void {
 		$this->store->seed(schema: 'decisionType', uuid: 'type-1', row: ['name' => 'Subsidiebesluit', 'publicationCategory' => self::DECISIONS]);
 
-		$this->assertSame(self::DECISIONS, $this->categories()->forDecision(decision: ['decisionType' => 'type-1']));
+		$this->assertSame(expected: self::DECISIONS, actual: $this->categories()->forDecision(decision: ['decisionType' => 'type-1']));
 	}//end testTheDecisionTypeRowNamesTheCategory()
 
 	/**
@@ -103,13 +103,17 @@ class PublicationCategoryTest extends TestCase {
 			$fragment['components']['objects'],
 			static fn (array $row): bool => ($row['id'] ?? '') === self::WOO_TYPE
 		));
-		$this->assertCount(1, $rows);
+		$this->assertCount(expectedCount: 1, haystack: $rows);
 
 		$this->store->seed(schema: 'decisionType', uuid: self::WOO_TYPE, row: $rows[0]);
-		$this->assertSame(PublicationCategory::FALLBACK, $this->categories()->forDecision(decision: ['decisionType' => self::WOO_TYPE]));
+		$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $this->categories()->forDecision(decision: ['decisionType' => self::WOO_TYPE]));
 		$this->assertSame(
-			[],
-			(new RealSchemaValidator())->errors(slug: 'decisionType', payload: ['publicationCategory' => $rows[0]['publicationCategory']], creating: false)
+			expected: [],
+			actual: (new RealSchemaValidator())->errors(
+				slug: 'decisionType',
+				payload: ['publicationCategory' => $rows[0]['publicationCategory']],
+				creating: false
+			)
 		);
 	}//end testTheShippedWooDecisionTypeCarriesItsCategory()
 
@@ -125,11 +129,14 @@ class PublicationCategoryTest extends TestCase {
 		$categories = $this->categories();
 
 		foreach (['WOO-besluit', 'unknown', 'bare', 'half', 'odd', ''] as $type) {
-			$this->assertSame(PublicationCategory::FALLBACK, $categories->forDecision(decision: ['decisionType' => $type]), $type);
+			$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $categories->forDecision(decision: ['decisionType' => $type]), message: $type);
 		}
 
-		$this->assertSame(PublicationCategory::FALLBACK, $categories->forDecision(decision: []));
-		$this->assertSame(PublicationCategory::FALLBACK, (new PublicationCategory())->forDecision(decision: ['decisionType' => 'type-1']));
+		$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $categories->forDecision(decision: []));
+		$this->assertSame(
+			expected: PublicationCategory::FALLBACK,
+			actual: (new PublicationCategory())->forDecision(decision: ['decisionType' => 'type-1'])
+		);
 	}//end testEverythingElseFallsBack()
 
 	/**
@@ -151,14 +158,14 @@ class PublicationCategoryTest extends TestCase {
 				throw new \RuntimeException(message: 'store refused');
 			}//end find()
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($failing);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
 		);
 
-		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('store refused');
+		$this->expectException(exception: \RuntimeException::class);
+		$this->expectExceptionMessage(message: 'store refused');
 		(new PublicationCategory(settingsService: $settings))->forDecision(decision: ['decisionType' => 'type-1']);
 	}//end testAFailedReadFailsThePublish()
 
@@ -169,12 +176,12 @@ class PublicationCategoryTest extends TestCase {
 	 */
 	public function testTheFallbackIsTheFormerDefault(): void {
 		$this->assertSame(
-			[
+			expected: [
 				'code' => 'infocat014',
 				'label' => 'Woo-verzoeken en -besluiten',
 				'uri' => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532',
 			],
-			PublicationCategory::FALLBACK
+			actual: PublicationCategory::FALLBACK
 		);
 	}//end testTheFallbackIsTheFormerDefault()
 }//end class

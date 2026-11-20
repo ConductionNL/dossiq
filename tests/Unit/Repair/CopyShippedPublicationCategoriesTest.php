@@ -67,7 +67,7 @@ class CopyShippedPublicationCategoriesTest extends TestCase {
 	 * @return CopyShippedPublicationCategories
 	 */
 	private function step(string $fragmentDir = ''): CopyShippedPublicationCategories {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
@@ -84,15 +84,15 @@ class CopyShippedPublicationCategoriesTest extends TestCase {
 	public function testAStoredWooDecisionTypeGetsItsCategoryOnce(): void {
 		$this->store->seed(schema: 'decisionType', uuid: self::WOO_TYPE, row: ['name' => 'WOO-besluit', 'publicationRequired' => true]);
 
-		$this->step()->run(output: $this->createMock(IOutput::class));
+		$this->step()->run(output: $this->createMock(originalClassName: IOutput::class));
 
 		$row = $this->store->row(schema: 'decisionType', uuid: self::WOO_TYPE);
-		$this->assertSame(PublicationCategory::FALLBACK, $row['publicationCategory']);
-		$this->assertSame('WOO-besluit', $row['name']);
+		$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $row['publicationCategory']);
+		$this->assertSame(expected: 'WOO-besluit', actual: $row['name']);
 
 		$writes = $this->store->writes;
-		$this->step()->run(output: $this->createMock(IOutput::class));
-		$this->assertSame($writes, $this->store->writes);
+		$this->step()->run(output: $this->createMock(originalClassName: IOutput::class));
+		$this->assertSame(expected: $writes, actual: $this->store->writes);
 	}//end testAStoredWooDecisionTypeGetsItsCategoryOnce()
 
 	/**
@@ -104,10 +104,10 @@ class CopyShippedPublicationCategoriesTest extends TestCase {
 		$own = ['code' => 'infocat016', 'label' => 'Beschikkingen', 'uri' => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_46a81018'];
 		$this->store->seed(schema: 'decisionType', uuid: self::WOO_TYPE, row: ['name' => 'WOO-besluit', 'publicationCategory' => $own]);
 
-		$this->step()->run(output: $this->createMock(IOutput::class));
+		$this->step()->run(output: $this->createMock(originalClassName: IOutput::class));
 
-		$this->assertSame($own, $this->store->row(schema: 'decisionType', uuid: self::WOO_TYPE)['publicationCategory']);
-		$this->assertSame(0, $this->store->writes);
+		$this->assertSame(expected: $own, actual: $this->store->row(schema: 'decisionType', uuid: self::WOO_TYPE)['publicationCategory']);
+		$this->assertSame(expected: 0, actual: $this->store->writes);
 	}//end testAnOwnCategoryIsKept()
 
 	/**
@@ -126,14 +126,14 @@ class CopyShippedPublicationCategoriesTest extends TestCase {
 		$this->store->seed(schema: 'decisionType', uuid: 'held', row: ['name' => 'Gehouden']);
 
 		try {
-			$this->step(fragmentDir: $dir)->run(output: $this->createMock(IOutput::class));
+			$this->step(fragmentDir: $dir)->run(output: $this->createMock(originalClassName: IOutput::class));
 		} finally {
 			unlink($dir . '/10-a.json');
 			rmdir($dir);
 		}
 
-		$this->assertSame(0, $this->store->writes);
-		$this->assertSame(['held'], array_column($this->store->all(schema: 'decisionType'), 'id'));
+		$this->assertSame(expected: 0, actual: $this->store->writes);
+		$this->assertSame(expected: ['held'], actual: array_column($this->store->all(schema: 'decisionType'), 'id'));
 	}//end testNothingIsCreatedAndIncompleteCategoriesAreSkipped()
 
 	/**
@@ -142,10 +142,10 @@ class CopyShippedPublicationCategoriesTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterTheStepSkips(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
-		$output = $this->createMock(IOutput::class);
-		$output->expects($this->once())->method('info')->with($this->stringContains('skipping'));
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->expects($this->once())->method('info')->with($this->stringContains(string: 'skipping'));
 
 		(new CopyShippedPublicationCategories(settingsService: $settings, logger: new NullLogger()))->run(output: $output);
 	}//end testWithoutOpenRegisterTheStepSkips()

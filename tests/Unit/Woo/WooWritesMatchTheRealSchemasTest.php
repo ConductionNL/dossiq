@@ -257,14 +257,14 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
 		$service = new OutcomePublisher(
-			$this->settings,
-			$client,
-			new PublicationCategory(),
-			$apps,
-			$this->createMock(LoggerInterface::class),
-			null,
-			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
-			new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
+			settingsService: $this->settings,
+			apiClient: $client,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $this->createMock(LoggerInterface::class),
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			caseDocuments: new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
 		);
 
 		$published = $service->publish(self::CASE);
