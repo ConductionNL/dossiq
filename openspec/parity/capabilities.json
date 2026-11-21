@@ -17915,10 +17915,10 @@
 				},
 				"spec": [
 					"openspec/specs/termijnbewaking-schemas",
-					"openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers"
+					"openspec/specs/termijnbewaking-op-engine-timers"
 				],
 				"requirement": [
-					"openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers :: REQ-TOT-001 — Every active beslistermijn is an armed FlowTimer",
+					"openspec/specs/termijnbewaking-op-engine-timers :: REQ-TOT-001 — Every active beslistermijn is an armed FlowTimer",
 					"openspec/specs/status-transition-engine :: A status may declare a maximum dwell that breaches on its own (REQ-SDC-03)"
 				]
 			},
@@ -18128,7 +18128,7 @@
 					"reason": "backend: escalation notifications"
 				},
 				"requirement": [
-					"openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers :: REQ-TOT-003 — Escalation is the engine ladder, bookkeeping stays case data",
+					"openspec/specs/termijnbewaking-op-engine-timers :: REQ-TOT-003 — Escalation is the engine ladder, bookkeeping stays case data",
 					"openspec/specs/termijn-escalation :: Pro-actieve notificaties bij naderende deadlines (REQ-TERM-004)"
 				]
 			},

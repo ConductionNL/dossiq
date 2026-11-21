@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use DateTimeImmutable;
 /**
  * When an advice timer starts counting, and how many days it counts to the breach.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 final class TimerWindow {
 
@@ -39,7 +39,7 @@ final class TimerWindow {
 	 * @param DateTimeImmutable $anchor  Midnight today.
 	 * @param int               $slaDays Days from the anchor to the breach.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function __construct(
 		public readonly DateTimeImmutable $anchor,

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Notifies the assignee and marks an overdue DSO case.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	use SearchesObjects;
@@ -91,7 +91,7 @@ class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	 *
 	 * @return string NOTIFIED or SKIPPED.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function notify(array $case, string $subject): string {
 		$caseId   = (string) ($case['id'] ?? '');
@@ -123,7 +123,7 @@ class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	 *
 	 * @return bool True when the marker was written now.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function markOverdue(array $case): bool {
 		if ($this->isOpen(case: $case) === false) {
@@ -145,7 +145,7 @@ class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	 *
 	 * @return bool True when the marker was written, false when the register is not configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function writeOverdue(array $case): bool {
 		$objectService = $this->settingsService->getObjectService();

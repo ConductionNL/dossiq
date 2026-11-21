@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Listener\Support\SavedObjectPayload
  * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class SavedObjectPayloadEventTest extends TestCase {
 

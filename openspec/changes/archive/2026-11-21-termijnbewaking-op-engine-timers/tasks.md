@@ -238,6 +238,9 @@
       refusal; `TermijnTimerArmGoldenTest` the armed spans); `CaseDateNormaliserTest::
       testDaysBetweenCountsWholeDaysEitherWayRound` pins the new method. The list holds only
       `WOODeadlineService`, so the task closes.
+      At archive (21 Nov): `WOODeadlineService::signedDaysUntil()` asks
+      `CaseDateNormaliser::signedDaysBetween()` (`DayCount::signed()`), pinned by
+      `WOODeadlineServiceTest::testCheckAndWarnCountsAPassedDeadlineAsOverdue`; the allowlist is empty.
 
 ## Verify
 

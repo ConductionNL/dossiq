@@ -350,7 +350,7 @@ class CaseDateNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public function testDaysBetweenCountsWholeDaysEitherWayRound(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
@@ -360,5 +360,21 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(expected: 60, actual: $normaliser->daysBetween(from: $start, to: $end));
 		self::assertSame(expected: 60, actual: $normaliser->daysBetween(from: $end, to: $start));
 		self::assertSame(expected: 0, actual: $normaliser->daysBetween(from: $start, to: $start->modify('+23 hours')));
+	}
+
+	/**
+	 * Signed days are negative once the second moment lies before the first.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function testSignedDaysBetweenIsNegativeForAPassedDeadline(): void {
+		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
+		$today = $normaliser->parse('2026-09-10', 'today');
+
+		self::assertSame(expected: 5, actual: $normaliser->signedDaysBetween(from: $today, to: $normaliser->parse('2026-09-15', 'deadline')));
+		self::assertSame(expected: -9, actual: $normaliser->signedDaysBetween(from: $today, to: $normaliser->parse('2026-09-01', 'deadline')));
+		self::assertSame(expected: 0, actual: $normaliser->signedDaysBetween(from: $today, to: $today));
 	}
 }//end class

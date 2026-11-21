@@ -77,7 +77,7 @@ class DeadlineEscalationService implements DeadlineEscalationServiceInterface {
 	 *                                              names (`tellHandlerAt`).
 	 *
 	 * @spec openspec/specs/case-priority/spec.md
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
