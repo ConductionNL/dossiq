@@ -1187,6 +1187,6 @@ class BeschikkingServiceTest extends TestCase {
 		$fallback = $this->service->issueSuccessor($second['id'], 'withdrawal', ['decision' => ['text' => 'Ingetrokken.']]);
 		self::assertSame('tpl-default', $fallback['templateId'], 'No template on the original: compose chooses.');
 		self::assertSame(['text' => 'Ingetrokken.'], $fallback['decision']);
-		self::assertArrayNotHasKey('rationale', array_filter($fallback, static fn ($value): bool => $value !== null), 'A rationale the handler did not write is not carried.');
+		self::assertNull($fallback['rationale'] ?? null, 'A rationale the handler did not write is not carried.');
 	}//end testASuccessorIsWrittenFromTheOriginalsTemplate()
 }//end class

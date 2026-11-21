@@ -808,3 +808,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `@uses` line, as is `DocumentRedactionServiceTest`. Own test:
         `tests/Unit/Service/Redaction/RulesFloorProposalTest` (3); accepting an empty span turns 2
         tests red (checked).
+  - [x] 8af `BeschikkingService` (2: ExcessiveClassComplexity 52 against 50, and TooManyMethods).
+        What a successor request says without a store moved onto the request itself,
+        `Beschikking/SuccessorRequest`: whether its kind is one a successor may be
+        (`assertKnownKind()`, with the list as `KINDS`; the service keeps `SUCCESSOR_KINDS` as an
+        alias), the fields it is composed with (`fieldsFrom()`), its case (`caseIdFrom()`) and its
+        template, the named one else the original's (`templateFrom()`). Bodies and the refusal
+        sentence moved unchanged. The service already coupled to the request, so its
+        CouplingBetweenObjects stays at 20 (its suppression stays, as does ExcessiveParameterList);
+        its constructor, interface and container binding are unchanged. phpmd: zero findings on
+        both files under both rulesets.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `BeschikkingServiceTest` (28 in all) for the original's template, the one the handler names
+        and the default when the original names none. Own test:
+        `tests/Unit/Service/Beschikking/SuccessorRequestTest` (3); preferring the original's template
+        over the named one turns 2 tests red (checked).
