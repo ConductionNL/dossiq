@@ -823,3 +823,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and the default when the original names none. Own test:
         `tests/Unit/Service/Beschikking/SuccessorRequestTest` (3); preferring the original's template
         over the named one turns 2 tests red (checked).
+  - [x] 8ag `Flow/PlannedSeriesLedger` (1: ExcessiveClassComplexity 53 against 50). Two parts that
+        need no case lookup moved out. Reading a `findAll()` answer as the `{id, title}` of every
+        row with an id (paginated or a bare list, array, entity or plain-object rows) is the new
+        `Flow/OccurrenceRows` (`occurrences()`). Counting one firing of a series once, with the two
+        config-key prefixes, is the new `Flow/SeriesFiringCount` (`count()`). Bodies moved
+        unchanged. The second move is there for the coupling: moving only the rows made
+        CouplingBetweenObjects 14 against 13, and the firing count takes `DateTimeInterface` and
+        `AppIdentity` with it. The ledger builds both in its constructor, so its constructor
+        signature, `firedCount()`, `occurrencesOf()` and the container binding are unchanged.
+        phpmd: zero findings on the three files under both rulesets.
+        Characterisation: the existing `PlannedSeriesOccurrencesTest` (every row shape, the
+        non-array serialisation, the unconfigured and the failing store) and
+        `PlannedSeriesLedgerTest` (the fired count per last-run stamp), with the rest of
+        `tests/Unit/Service/Flow` (221 tests), green before and unchanged after except for two
+        `@uses` lines in each file that covers or uses the ledger. Own tests:
+        `tests/Unit/Service/Flow/OccurrenceRowsTest` (2) and `SeriesFiringCountTest` (2); counting a
+        stamp already seen turns 6 tests red (checked).
