@@ -178,7 +178,7 @@ class ZtcPublishControllerContractTest extends TestCase {
 		$objectService = $this->createMock(ZtcContractObjectServiceStub::class);
 		$objectService->method('find')->willReturn(['id' => 'zt-1', 'isDraft' => true, 'title' => 'Melding']);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (string $register, string $schema, array $object, ?string $uuid = null) use (&$saved): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
 				$saved[] = $object;
 				return $object;
 			}

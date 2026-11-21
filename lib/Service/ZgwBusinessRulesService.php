@@ -261,13 +261,16 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 		try {
 			$this->ztcRules->setContext($objectService, $mappingConfig);
 
-			return $this->guardCaseTypePublish(
-				resource: $resource,
-				action: 'update',
-				body: ['isDraft' => false],
-				existingObject: $existingObject,
-				mappingConfig: $mappingConfig
-			);
+			$write = new ZgwWriteCheck();
+			$write->zgwApi = 'catalogi';
+			$write->resource = $resource;
+			$write->action = 'update';
+			$write->body = ['isDraft' => false];
+			$write->existingObject = $existingObject;
+			$write->objectService = $objectService;
+			$write->mappingConfig = $mappingConfig;
+
+			return $this->guardCaseTypePublish(write: $write);
 		} catch (LookupNotCompleted $e) {
 			return $this->results->notVerified(
 				rule: "catalogi/{$resource} publish",
