@@ -953,3 +953,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `DeadlineReportingControllerContractTest` and `ReportingToolsTest`, green before and unchanged after.
         Own tests: 2 added to `tests/Unit/Service/Reporting/PerTypeRowsTest` (4 in all); writing a missing
         share as 0 instead of blank turns 2 tests red (checked).
+  - [x] 8ao `Flow/CaseFlowActions` (1: ExcessiveClassComplexity 55 against 50). Two pieces that read no
+        store moved onto `Flow/StartableFlowLookup`, the value the lookup steps already pass around: the
+        flow uuids a case type's `startableFlows` holds, a plain uuid or the object shape a picker writes
+        (`flowIdsOf()`), and an ObjectService answer read as an array (`asArray()`). Bodies moved
+        unchanged. Moving onto a class the service already held adds no coupling. Its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files under both
+        rulesets, and over the whole of `lib/`.
+        Characterisation: the existing `CaseFlowActionsLookupTest` (an entity, a plain object and an entity
+        serialising to a scalar read as arrays, a missing case type) and `CaseFlowActionsBehaviourTest`
+        (the declared startable flows, none declared, an unknown case), green before and unchanged after
+        but for one `@uses` line in each.
+        Own tests: 2 added to `tests/Unit/Service/Flow/StartableFlowLookupTest` (3 in all); keeping the
+        blanks around a uuid turns 2 tests red (checked).

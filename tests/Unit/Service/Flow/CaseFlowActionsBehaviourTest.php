@@ -41,6 +41,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * Behaviour of CaseFlowActions with OpenRegister's flow services present.
  *
  * @covers \OCA\Dossiq\Service\Flow\CaseFlowActions
+ * @uses \OCA\Dossiq\Service\Flow\StartableFlowLookup
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
