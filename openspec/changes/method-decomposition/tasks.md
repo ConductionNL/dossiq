@@ -767,3 +767,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         access exception, both through `publish()`) and the publication suites (258 tests), green before
         and unchanged after. Own test: `tests/Unit/Service/Publication/DisclosableDocumentCheckTest` (3);
         renaming the unread reason turns 2 tests red (checked).
+  - [x] 8ac `Portal/PortalPages` (1: ExcessiveClassComplexity 54 against 50). One page per listable
+        collection (the schema's first create action, the list, the selected row, the label override
+        and the group) moved to the new `Portal/CollectionPages` (`forCollections()`, with
+        `listable()`, `blocksFor()` and `createBlocks()`; bodies moved unchanged). `PortalPages` keeps
+        the resident's pages and the case screen; its `forCollections()` delegates, and it builds the
+        collection pages in a new argument-free constructor, so every `new PortalPages()` keeps working.
+        phpmd: zero findings on both files.
+        Characterisation: the existing `tests/Unit/Portal` suite (209 tests, among them
+        `PortalContributionManifestGoldenTest` over the whole declared contribution), green before and
+        unchanged after. Own test: `tests/Unit/Portal/CollectionPagesTest` (2); listing a collection
+        marked `listable: false` turns it red (checked).
