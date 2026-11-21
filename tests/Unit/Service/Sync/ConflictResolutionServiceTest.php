@@ -161,6 +161,7 @@ class ConflictObjectServiceDouble {
  *
  * @covers \OCA\Dossiq\Service\Sync\ConflictResolutionService
  * @uses   \OCA\Dossiq\Service\Sync\ConflictResolutionOutcome
+ * @uses   \OCA\Dossiq\Service\Sync\DottedPath
  */
 class ConflictResolutionServiceTest extends TestCase {
 

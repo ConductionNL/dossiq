@@ -1020,3 +1020,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         The new file does date arithmetic, so it has its own row in
         `docs/research/date-arithmetic-audit-2026-09-14.md` (verdict neither: chart buckets, not a term),
         which `EveryTermOnTheCalendarTest` asks for.
+  - [x] 8as `Sync/ConflictResolutionService` (1: ExcessiveClassComplexity 56 against 50). Reading and
+        writing the value at a conflict field's dot path reads no store, so it moved to the new
+        `Sync/DottedPath`: the value at a path, null when a step is missing (`valueAt()`), the data with a
+        value set at a path, making the missing steps (`withValueAt()`), and a segment as a key, digits
+        indexing a list (`keyOf()`). Bodies moved unchanged. The service builds one in each of the two
+        steps that use it, so its constructor, interface and container binding are unchanged.
+        CouplingBetweenObjects goes from 12 to 13, at its maximum. phpmd: zero new findings on both files
+        under both rulesets (the nine StaticAccess findings on `ConflictResolutionOutcome` are inherited);
+        over the whole of `lib/` the class reads 48.
+        Characterisation: the existing `ConflictResolutionServiceTest` (a device value written onto a list
+        item through `responses.0.comment`, the refreshed office version), green before and unchanged after
+        but for one `@uses` line.
+        Own test: `tests/Unit/Service/Sync/DottedPathTest` (2); answering a missing step with '' instead of
+        null turns 1 test red (checked).

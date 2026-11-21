@@ -57,9 +57,6 @@ use Throwable;
  * Keeps one of the two versions a conflict record holds.
  *
  * @spec openspec/changes/inspection-conflict-card/tasks.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of
- *  small private steps; each method stays under the method thresholds.
  */
 class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
@@ -319,18 +316,21 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * @param array<string, mixed> $current The target's current data.
 	 *
 	 * @return array<string, mixed>|null The refreshed server version, or null.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function refreshedServerVersion(array $data, array $fields, array $current): ?array {
 		$serverVersion = $this->arrayOf(value: ($data['serverVersion'] ?? null));
+		$paths = new DottedPath();
 		$officeMoved = false;
 		$refreshed = $serverVersion;
 		foreach ($fields as $path) {
-			$now = $this->valueAt(data: $current, path: $path);
-			if ($now !== $this->valueAt(data: $serverVersion, path: $path)) {
+			$now = $paths->valueAt(data: $current, path: $path);
+			if ($now !== $paths->valueAt(data: $serverVersion, path: $path)) {
 				$officeMoved = true;
 			}
 
-			$refreshed = $this->withValueAt(data: $refreshed, path: $path, value: $now);
+			$refreshed = $paths->withValueAt(data: $refreshed, path: $path, value: $now);
 		}
 
 		if ($officeMoved === false) {
@@ -373,17 +373,20 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * @param array<string, mixed> $current The target's current data.
 	 *
 	 * @return array<string, mixed> The changes to write.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function deviceChanges(array $data, array $fields, array $current): array {
 		$clientVersion = $this->arrayOf(value: ($data['clientVersion'] ?? null));
+		$paths = new DottedPath();
 		$changes = [];
 		foreach ($fields as $path) {
 			$top = explode('.', $path)[0];
 			$base = ($changes[$top] ?? ($current[$top] ?? null));
-			$changes[$top] = $this->withValueAt(
+			$changes[$top] = $paths->withValueAt(
 				data: [$top => $base],
 				path: $path,
-				value: $this->valueAt(data: $clientVersion, path: $path)
+				value: $paths->valueAt(data: $clientVersion, path: $path)
 			)[$top];
 		}
 
@@ -519,65 +522,6 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			)
 		);
 	}//end fieldsOf()
-
-	/**
-	 * The value at a dot path, or null when the path does not exist.
-	 *
-	 * @param array<string, mixed> $data The data.
-	 * @param string               $path The dot path.
-	 *
-	 * @return mixed The value.
-	 */
-	private function valueAt(array $data, string $path): mixed {
-		$node = $data;
-		foreach (explode('.', $path) as $segment) {
-			if (is_array($node) === false || array_key_exists($this->keyOf(segment: $segment), $node) === false) {
-				return null;
-			}
-
-			$node = $node[$this->keyOf(segment: $segment)];
-		}
-
-		return $node;
-	}//end valueAt()
-
-	/**
-	 * The data with the value set at a dot path.
-	 *
-	 * @param array<string, mixed> $data  The data.
-	 * @param string               $path  The dot path.
-	 * @param mixed                $value The value.
-	 *
-	 * @return array<string, mixed> The data with the value in place.
-	 */
-	private function withValueAt(array $data, string $path, mixed $value): array {
-		$segments = explode('.', $path);
-		$key = $this->keyOf(segment: array_shift($segments));
-		if ($segments === []) {
-			$data[$key] = $value;
-			return $data;
-		}
-
-		$child = $this->arrayOf(value: ($data[$key] ?? null));
-		$data[$key] = $this->withValueAt(data: $child, path: implode('.', $segments), value: $value);
-
-		return $data;
-	}//end withValueAt()
-
-	/**
-	 * A path segment as an array key: digits index a list.
-	 *
-	 * @param string $segment The segment.
-	 *
-	 * @return int|string The key.
-	 */
-	private function keyOf(string $segment): int|string {
-		if (ctype_digit($segment) === true) {
-			return (int)$segment;
-		}
-
-		return $segment;
-	}//end keyOf()
 
 	/**
 	 * A scalar value as a string, or an empty one.
