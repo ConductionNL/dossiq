@@ -73,8 +73,6 @@ use Throwable;
  * Chasing while a case waits on somebody else (REQ-TERM-011).
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PauseChaseService implements PauseChaseServiceInterface {
 	use SearchesObjects;
@@ -293,7 +291,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
-		$this->recordChased(step: $step, reason: $step->reason);
+		$this->recordChased(step: $step);
 
 		return true;
 	}//end chase()
@@ -315,12 +313,13 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	/**
 	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
 	 *
-	 * @param PauseStep            $step   The step, numbered, carrying when this is happening.
-	 * @param array<string, mixed> $reason The normalised reason in force.
+	 * @param PauseStep $step The step, numbered, carrying when this is happening and the reason in force.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function recordChased(PauseStep $step, array $reason): void {
+	private function recordChased(PauseStep $step): void {
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
 			[
@@ -330,7 +329,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		);
 
 		$step->event = self::EVENT_CHASED;
-		$step->sentence = $this->chasedSentence(reason: $reason, number: $step->number);
+		$step->sentence = $step->chasedSentence();
 		$this->recordStep(step: $step);
 		$this->projectOntoCase(step: $step);
 		$this->logChased(step: $step);
@@ -417,11 +416,13 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	 * @param PauseStep $step The fresh, still-paused row with the normalised reason in force and the moment.
 	 *
 	 * @return bool True when the escalation was recorded.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function escalate(PauseStep $step): bool {
 		$reason = $step->reason;
 		$step->event = self::EVENT_ESCALATED;
-		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $step->instance));
+		$step->sentence = $step->escalatedSentence(sent: $this->chase->schedule->sent(instance: $step->instance));
 
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
@@ -449,12 +450,14 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	 * @param PauseStep $step The reminder or escalation, with its event and sentence.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function recordStep(PauseStep $step): void {
 		$this->termService->recordEvent(
 			termInstanceId: $step->instanceId,
 			type: $step->event,
-			basis: $this->basisOf(reason: $step->reason),
+			basis: $step->basis(),
 			rationale: $step->sentence,
 			daysImpact: 0,
 			moment: $step->moment,
@@ -472,57 +475,6 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			],
 		);
 	}//end recordStep()
-
-	/**
-	 * What one reminder reads as, on the term and on the timeline.
-	 *
-	 * @param array<string, mixed> $reason The normalised reason.
-	 * @param int                  $number Which reminder this is.
-	 *
-	 * @return string The sentence.
-	 */
-	private function chasedSentence(array $reason, int $number): string {
-		$name = trim((string)$reason['name']);
-		if ($name === '') {
-			$name = (string)$reason['key'];
-		}
-
-		return 'Reminder ' . $number . ' of ' . (int)$reason['chaseBudget'] . ' sent: ' . $name;
-	}//end chasedSentence()
-
-	/**
-	 * What the escalation reads as.
-	 *
-	 * @param array<string, mixed> $reason The normalised reason.
-	 * @param int                  $sent   How many reminders went out.
-	 *
-	 * @return string The sentence.
-	 */
-	private function escalatedSentence(array $reason, int $sent): string {
-		$sentence = 'No reply after ' . $sent . ' reminders.';
-		$target = trim((string)$reason['escalateTo']);
-		if ($target !== '') {
-			$sentence .= ' Escalated to ' . $target . '.';
-		}
-
-		return $sentence;
-	}//end escalatedSentence()
-
-	/**
-	 * The legal basis a reason's events are recorded under.
-	 *
-	 * @param array<string, mixed> $reason The normalised reason.
-	 *
-	 * @return string The basis, Awb 4:5 when the reason declares none.
-	 */
-	private function basisOf(array $reason): string {
-		$basis = trim((string)$reason['legalBasis']);
-		if ($basis === '') {
-			return 'Awb 4:5';
-		}
-
-		return $basis;
-	}//end basisOf()
 
 	/**
 	 * Where the reminder goes.
