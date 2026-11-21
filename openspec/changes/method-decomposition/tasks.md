@@ -1147,3 +1147,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         windows among them) and `RoutingRuleServiceTest`, green before and unchanged after but for one `@uses` line in
         the first three.
         Own test: `tests/Unit/Service/Kcc/RuleConditionsTest` (2).
+  - [x] 8ba `Money/PayoutService` (1: ExcessiveClassComplexity 52 against 50; CouplingBetweenObjects 14 stays,
+        inherited). The two checks of the payment input read no store and only the request's own fields, so they
+        moved onto `Money/PayoutRequest`, the value the service already builds per payout: the IBAN check, length
+        and mod-97 (`hasValidIban()`, was the body of `isValidIban()`), and the refusal of an invalid IBAN or a
+        blank account holder (`assertPayable()`, was `assertPaymentInput()`). Bodies and refusal sentences moved
+        unchanged. The public `isValidIban()` stays on the service and its interface, and delegates. Moving onto a
+        class the service already held adds no coupling. Its constructor and container binding are unchanged.
+        phpmd: the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared); no
+        new findings under either ruleset.
+        Characterisation: the existing `PayoutServiceTest` (valid and invalid IBANs, the refusals before any read),
+        `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `PayoutRequesterTest` and the objection, schedule
+        and end-to-end deadline tests (131), green before and unchanged after but for one `@uses` line in the two
+        files that cover the service without it.
+        Own test: `tests/Unit/Service/Money/PayoutRequestTest` (2).
