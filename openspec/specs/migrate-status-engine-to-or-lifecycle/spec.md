@@ -1,7 +1,7 @@
 # migrate-status-engine-to-or-lifecycle Specification
 
 ## Purpose
-TBD - created by archiving change migrate-status-engine-to-or-lifecycle. Update Purpose after archive.
+Declare the voorstel and bezwaar lifecycles as OpenRegister schema extensions, with dossiq's guards implementing OpenRegister's guard interface.
 ## Requirements
 ### Requirement: Voorstel Lifecycle MUST Be Declared as an OR Schema Extension
 

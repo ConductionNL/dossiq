@@ -32,6 +32,8 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The payment projection runs as the configured account, or not at all.
@@ -39,6 +41,8 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\PaymentStateProjectionJob
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\BackgroundJob\OpenCaseSweep
+ * @uses \OCA\Dossiq\Service\EmailArchivalService
  */
 class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
@@ -110,6 +114,101 @@ class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 			$this->register->row(schema: 'case', id: 'case-1')['paymentState']
 		);
 	}//end testWithoutAnAccountTheRunWritesNothing()
+
+	/**
+	 * The projected fields are readOnly, which OpenRegister lets only a system
+	 * operation stamp: the patch runs inside one.
+	 *
+	 * @return void
+	 */
+	public function testThePatchRunsAsASystemOperation(): void {
+		$this->register = $this->readOnlyRegister();
+		$this->register->seed(
+			schema: 'case',
+			id: 'case-1',
+			row: [
+				'title' => 'Omgevingsvergunning',
+				'isFinalStatus' => false,
+				'isDraft' => false,
+				'paymentState' => CasePaymentState::OUTSTANDING,
+			]
+		);
+
+		$this->runJobOnce(job: $this->job());
+
+		$this->assertSame([], $this->register->refusals);
+		$this->assertSame(CasePaymentState::PAID, $this->register->row(schema: 'case', id: 'case-1')['paymentState']);
+	}//end testThePatchRunsAsASystemOperation()
+
+	/**
+	 * A register that, like OpenRegister, refuses a readOnly change outside a system operation.
+	 *
+	 * @return AnonymousRefusingRegister The register.
+	 */
+	private function readOnlyRegister(): AnonymousRefusingRegister {
+		return new class (actor: fn (): ?string => $this->actingUid()) extends AnonymousRefusingRegister {
+
+			/**
+			 * How deep the system operation is.
+			 *
+			 * @var int
+			 */
+			private int $system = 0;
+
+			/**
+			 * Run an operation as the system.
+			 *
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed What it returns.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->system++;
+				try {
+					return $operation();
+				} finally {
+					$this->system--;
+				}
+			}//end runAsSystem()
+
+			/**
+			 * Patch a row, refusing a readOnly change outside a system operation.
+			 *
+			 * @param string          $objectId      The id.
+			 * @param array           $data          The changes.
+			 * @param string|int|null $register      Ignored.
+			 * @param string|int|null $schema        The schema.
+			 * @param bool            $_rbac         Passed on.
+			 * @param bool            $_multitenancy Passed on.
+			 *
+			 * @return array<string, mixed> The stored row.
+			 */
+			public function patchObject(
+				ObjectPatch $patch,
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
+				if ($this->system === 0 && array_intersect(array_keys($data), ['paymentState', 'paymentStateCheckedAt']) !== []) {
+					$this->refusals[] = 'Cannot modify readOnly property: paymentState';
+					throw new \RuntimeException('Cannot modify readOnly property: paymentState');
+				}
+
+				return parent::patchObject(
+					new ObjectPatch(
+						objectId: $objectId,
+						data: $data,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
+					_rbac: $_rbac,
+					_multitenancy: $_multitenancy
+				);
+			}//end patchObject()
+		};
+	}//end readOnlyRegister()
 
 	/**
 	 * The real job, with the shillinq read doubled.

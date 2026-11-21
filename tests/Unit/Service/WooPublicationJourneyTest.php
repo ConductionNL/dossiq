@@ -23,11 +23,11 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -37,13 +37,14 @@ use Psr\Log\LoggerInterface;
 /**
  * Runs publish and withdraw against an in-memory dossiq register and a recording OpenCatalogi client.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationJourneyTest extends TestCase {
 
@@ -66,16 +67,16 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * The dossier return.
 	 *
-	 * @var WooDossierReturn&MockObject
+	 * @var SourceCollectionReturn&MockObject
 	 */
-	private WooDossierReturn&MockObject $return;
+	private SourceCollectionReturn&MockObject $return;
 
 	/**
 	 * The service under test.
 	 *
-	 * @var WooPublicationService
+	 * @var OutcomePublisher
 	 */
-	private WooPublicationService $service;
+	private OutcomePublisher $service;
 
 	/**
 	 * A decided Woo request case started from a dossier, with one public document.
@@ -120,16 +121,20 @@ class WooPublicationJourneyTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
 		$this->client = $this->createMock(OpenCatalogiApiClient::class);
-		$this->return = $this->createMock(WooDossierReturn::class);
+		$this->return = $this->createMock(SourceCollectionReturn::class);
 
-		$this->service = new WooPublicationService(
-			$settings,
-			$this->client,
-			new WooCategoryMapper(),
-			$apps,
-			$this->createMock(LoggerInterface::class),
-			$this->return,
-			new WooCaseLedger(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+		$this->service = new OutcomePublisher(
+			settingsService: $settings,
+			apiClient: $this->client,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dossierReturn: $this->return,
+			caseLedger: new CasePublicationState(
+				settingsService: $settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				urlGenerator: $urls
+			),
 		);
 	}//end setUp()
 

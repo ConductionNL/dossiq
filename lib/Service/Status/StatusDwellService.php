@@ -86,15 +86,27 @@ class StatusDwellService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function applyStatusChange(array $case, string $toStatus, ?DateTimeImmutable $now = null): array {
-		$moment = ($now ?? new DateTimeImmutable());
+		return $this->entered(case: $case, move: ['toStatus' => $toStatus, 'moment' => ($now ?? new DateTimeImmutable())]);
+	}//end applyStatusChange()
+
+	/**
+	 * The case with the dwell of the status it leaves added, and the dwell clock restarted for the one it enters.
+	 *
+	 * @param array<string, mixed>                                 $case The case payload about to be saved.
+	 * @param array{toStatus: string, moment: DateTimeImmutable} $move The status entered and the moment of the move.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function entered(array $case, array $move): array {
+		$moment = $move['moment'];
+		$toStatus = $move['toStatus'];
 		$leaving = (string)($case['status'] ?? '');
 		$spent = $this->elapsedWorkingDays(case: $case, now: $moment);
 
 		if ($leaving !== '' && $leaving !== $toStatus) {
 			$case['statusDwellTotals'] = $this->addTo(
 				totals: ($case['statusDwellTotals'] ?? []),
-				statusTypeId: $leaving,
-				workingDays: $spent,
+				spell: ['statusType' => $leaving, 'workingDays' => $spent],
 			);
 		}
 
@@ -103,7 +115,7 @@ class StatusDwellService {
 		$case['statusDwellBreached'] = false;
 
 		return $case;
-	}//end applyStatusChange()
+	}//end entered()
 
 	/**
 	 * The working days the case has spent in the status it is in now.
@@ -244,43 +256,72 @@ class StatusDwellService {
 	/**
 	 * Add working days to one status's entry in the totals list.
 	 *
-	 * @param mixed  $totals       The stored list, in whatever shape it arrived.
-	 * @param string $statusTypeId The status the time was spent in.
-	 * @param int    $workingDays  The days to add.
+	 * @param mixed                                     $totals The stored list, in whatever shape it arrived.
+	 * @param array{statusType: string, workingDays: int} $spell  The status the time was spent in, and the days to add.
 	 *
 	 * @return array<int, array{statusType: string, workingDays: int}>
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function addTo(mixed $totals, string $statusTypeId, int $workingDays): array {
+	private function addTo(mixed $totals, array $spell): array {
 		$rebuilt = [];
 		$seen = false;
 
 		if (is_array($totals) === true) {
-			foreach ($totals as $entry) {
-				if (is_array($entry) === false) {
-					continue;
-				}
-
-				$id = (string)($entry['statusType'] ?? '');
-				if ($id === '') {
-					continue;
-				}
-
-				$days = (int)($entry['workingDays'] ?? 0);
-				if ($id === $statusTypeId) {
-					$days += $workingDays;
-					$seen = true;
-				}
-
-				$rebuilt[] = ['statusType' => $id, 'workingDays' => $days];
-			}
+			[$rebuilt, $seen] = $this->rebuiltTotals(totals: $totals, spell: $spell);
 		}
 
 		if ($seen === false) {
-			$rebuilt[] = ['statusType' => $statusTypeId, 'workingDays' => $workingDays];
+			$rebuilt[] = $spell;
 		}
 
 		return $rebuilt;
 	}//end addTo()
+
+	/**
+	 * The readable entries of the totals list, with the days added to the status's entry.
+	 *
+	 * @param array<mixed>                                $totals The stored list.
+	 * @param array{statusType: string, workingDays: int} $spell  The status the time was spent in, and the days to add.
+	 *
+	 * @return array{0: array<int, array{statusType: string, workingDays: int}>, 1: bool} The entries, and whether the status had one.
+	 */
+	private function rebuiltTotals(array $totals, array $spell): array {
+		[$rebuilt, $seen] = [[], false];
+		foreach ($totals as $entry) {
+			$total = $this->totalEntry(entry: $entry);
+			if ($total === null) {
+				continue;
+			}
+
+			if ($total['statusType'] === $spell['statusType']) {
+				$total['workingDays'] += $spell['workingDays'];
+				$seen = true;
+			}
+
+			$rebuilt[] = $total;
+		}
+
+		return [$rebuilt, $seen];
+	}//end rebuiltTotals()
+
+	/**
+	 * One stored totals entry, read.
+	 *
+	 * @param mixed $entry The stored entry.
+	 *
+	 * @return array{statusType: string, workingDays: int}|null The entry, or null when it names no status.
+	 */
+	private function totalEntry(mixed $entry): array|null {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$id = (string)($entry['statusType'] ?? '');
+		if ($id === '') {
+			return null;
+		}
+
+		return ['statusType' => $id, 'workingDays' => (int)($entry['workingDays'] ?? 0)];
+	}//end totalEntry()
 }//end class

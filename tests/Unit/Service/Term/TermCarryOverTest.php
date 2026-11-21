@@ -32,6 +32,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\CarriedTerm
  */
 class TermCarryOverTest extends TestCase {
 

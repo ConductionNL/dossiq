@@ -1,0 +1,286 @@
+{
+    "nothing on the instance": {
+        "candidates": [],
+        "printed": [
+            "terminal decisions found: 0 (bezwaarDecision=0, appealDecision=0)",
+            "  scanned objectionProceeding: 0 object(s), 0 already concluded",
+            "  scanned objection: 0 object(s), 0 already concluded",
+            "  scanned beroep: 0 object(s), 0 already concluded"
+        ],
+        "errors": [],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":[]},false,false]"
+        ]
+    },
+    "open proceedings, none concluded": {
+        "candidates": {
+            "case-1": {
+                "schemas": [
+                    "objectionProceeding",
+                    "objection",
+                    "beroep"
+                ],
+                "count": 3
+            },
+            "case-2": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-3": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-4": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-6": {
+                "schemas": [
+                    "beroep"
+                ],
+                "count": 1
+            }
+        },
+        "printed": [
+            "terminal decisions found: 0 (bezwaarDecision=0, appealDecision=0)",
+            "  scanned objectionProceeding: 5 object(s), 0 already concluded",
+            "  scanned objection: 1 object(s), 0 already concluded",
+            "  scanned beroep: 2 object(s), 0 already concluded"
+        ],
+        "errors": [],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":[]},false,false]"
+        ]
+    },
+    "some concluded": {
+        "candidates": {
+            "case-2": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-3": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-4": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-6": {
+                "schemas": [
+                    "beroep"
+                ],
+                "count": 1
+            }
+        },
+        "printed": [
+            "terminal decisions found: 3 (bezwaarDecision=2, appealDecision=1)",
+            "  scanned objectionProceeding: 5 object(s), 1 already concluded",
+            "  scanned objection: 1 object(s), 1 already concluded",
+            "  scanned beroep: 2 object(s), 1 already concluded"
+        ],
+        "errors": [],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":[]},false,false]"
+        ]
+    },
+    "deleted proceedings included": {
+        "candidates": {
+            "case-1": {
+                "schemas": [
+                    "objectionProceeding",
+                    "objection",
+                    "beroep"
+                ],
+                "count": 3
+            },
+            "case-2": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-3": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-4": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-6": {
+                "schemas": [
+                    "beroep"
+                ],
+                "count": 1
+            }
+        },
+        "printed": [
+            "terminal decisions found: 0 (bezwaarDecision=0, appealDecision=0)",
+            "  scanned objectionProceeding: 5 object(s), 0 already concluded",
+            "  scanned objection: 1 object(s), 0 already concluded",
+            "  scanned beroep: 2 object(s), 0 already concluded"
+        ],
+        "errors": [],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]"
+        ]
+    },
+    "a schema that fails": {
+        "candidates": {
+            "case-1": {
+                "schemas": [
+                    "objectionProceeding",
+                    "beroep"
+                ],
+                "count": 2
+            },
+            "case-2": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-3": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-4": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-6": {
+                "schemas": [
+                    "beroep"
+                ],
+                "count": 1
+            }
+        },
+        "printed": [
+            "terminal decisions found: 0 (bezwaarDecision=0, appealDecision=0)",
+            "  scanned objectionProceeding: 5 object(s), 0 already concluded",
+            "  scanned objection: 0 object(s), 0 already concluded",
+            "  scanned beroep: 2 object(s), 0 already concluded"
+        ],
+        "errors": [
+            "appealDecision: register offline",
+            "objection: schema not found"
+        ],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":[]},false,false]"
+        ]
+    },
+    "a schema that answers no list": {
+        "candidates": {
+            "case-1": {
+                "schemas": [
+                    "objectionProceeding",
+                    "objection"
+                ],
+                "count": 2
+            },
+            "case-2": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-3": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            },
+            "case-4": {
+                "schemas": [
+                    "objectionProceeding"
+                ],
+                "count": 1
+            }
+        },
+        "printed": [
+            "terminal decisions found: 0 (bezwaarDecision=0, appealDecision=0)",
+            "  scanned objectionProceeding: 5 object(s), 0 already concluded",
+            "  scanned objection: 1 object(s), 0 already concluded",
+            "  scanned beroep: 0 object(s), 0 already concluded"
+        ],
+        "errors": [],
+        "queries": [
+            "register dossiq",
+            "findAll bezwaarDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll appealDecision [{\"limit\":null,\"filters\":{\"_includeDeleted\":true}},false,false]",
+            "register dossiq",
+            "findAll objectionProceeding [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll objection [{\"limit\":null,\"filters\":[]},false,false]",
+            "register dossiq",
+            "findAll beroep [{\"limit\":null,\"filters\":[]},false,false]"
+        ]
+    }
+}

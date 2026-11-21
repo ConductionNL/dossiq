@@ -58,14 +58,33 @@ class TransitionSpecReader {
 	 *
 	 * @param array<string, mixed> $transition     The transition.
 	 * @param bool                 $approvalsWired Whether the registry answers for the approval gate.
+	 * @param bool                 $entryGuardWired Whether the registry answers for a status's entry requirements.
 	 *
 	 * @return array<int, array<string, mixed>> The guards to evaluate, in order.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
-	public function guardsWithImplicit(array $transition, bool $approvalsWired): array {
+	public function guardsWithImplicit(array $transition, bool $approvalsWired, bool $entryGuardWired): array {
 		$guards = $this->extractGuards(transition: $transition);
+
+		return array_merge($guards, $this->implicitGuards(transition: $transition, wired: ['approvals' => $approvalsWired, 'entry' => $entryGuardWired]));
+	}//end guardsWithImplicit()
+
+	/**
+	 * The guards every transition carries beside its own: the checklist, the capacity of the status entered,
+	 * its entry requirements and the approval gate, each of the last two only when its evaluator is wired.
+	 *
+	 * @param array<string, mixed>                $transition The transition.
+	 * @param array{approvals: bool, entry: bool} $wired      Whether the registry answers for the approval gate, and for
+	 *                                                        a status's entry requirements.
+	 *
+	 * @return array<int, array<string, mixed>> The implicit guards, in order.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function implicitGuards(array $transition, array $wired): array {
+		$guards = [];
 		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
 
 		// The capacity of the status being ENTERED, which is the one value the
@@ -86,13 +105,20 @@ class TransitionSpecReader {
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
 		];
 
+		if ($wired['entry'] === true) {
+			$guards[] = [
+				'type' => GuardRegistry::STATUS_ENTRY_REQUIREMENTS,
+				'toStatus' => (string)($transition['toStatus'] ?? ''),
+			];
+		}
+
 		$act = trim((string)($transition['id'] ?? ''));
-		if ($approvalsWired === true && $act !== '') {
+		if ($wired['approvals'] === true && $act !== '') {
 			$guards[] = ['type' => GuardRegistry::APPROVAL_GATE, 'act' => $act];
 		}
 
 		return $guards;
-	}//end guardsWithImplicit()
+	}//end implicitGuards()
 
 	/**
 	 * Extract the guards list from a transition definition (supports both

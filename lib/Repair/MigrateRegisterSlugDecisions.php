@@ -61,27 +61,7 @@ class MigrateRegisterSlugDecisions {
 	 *  conformance to a requirement that says nothing about it.
 	 */
 	public function plan(array $map, array $existing): array {
-		$renames = [];
-		$refused = [];
-
-		foreach ($map as $old => $new) {
-			if (in_array($old, $existing, true) === false) {
-				continue;
-			}
-
-			if (in_array($new, $existing, true) === true) {
-				$refused[$old] = sprintf("target slug '%s' already exists", $new);
-				continue;
-			}
-
-			$renames[$old] = $new;
-			$existing[] = $new;
-		}
-
-		return [
-			'renames' => $renames,
-			'refused' => $refused,
-		];
+		return (new SlugRenamePlan())->plan(map: $map, existing: $existing);
 	}//end plan()
 
 	/**
@@ -100,7 +80,7 @@ class MigrateRegisterSlugDecisions {
 	 *  conformance to a requirement that says nothing about it.
 	 */
 	public function slugsFrom(array $rows): array {
-		return array_map(static fn (array $row): string => (string)($row['slug'] ?? ''), $rows);
+		return (new SlugRenamePlan())->slugsFrom(rows: $rows);
 	}//end slugsFrom()
 
 	/**
@@ -138,6 +118,6 @@ class MigrateRegisterSlugDecisions {
 	 *  conformance to a requirement that says nothing about it.
 	 */
 	public function placeholders(int $count): string {
-		return implode(',', array_fill(0, max(0, $count), '?'));
+		return (new SlugRenamePlan())->placeholders(count: $count);
 	}//end placeholders()
 }//end class

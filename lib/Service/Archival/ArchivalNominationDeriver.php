@@ -147,15 +147,46 @@ class ArchivalNominationDeriver {
 			return [];
 		}
 
+		$resultType = $this->resultTypeRow(resultTypeId: $resultTypeId);
+		if ($resultType === []) {
+			return [];
+		}
+
+		$derived = $this->nominationAndClass(resultType: $resultType);
+
+		return $this->withActionDate(derived: $derived, closing: ['resultType' => $resultType, 'case' => $case, 'endDate' => $endDate]);
+	}//end derive()
+
+	/**
+	 * The resultType row, or an empty array (logged) when there is none.
+	 *
+	 * @param string $resultTypeId The chosen resultType UUID.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function resultTypeRow(string $resultTypeId): array {
 		$resultType = $this->findRow(schemaKey: 'result_type_schema', id: $resultTypeId);
 		if ($resultType === []) {
 			$this->logger->info(
 				'zrc-021: no resultType row, case closes with no archival nomination',
 				['resultType' => $resultTypeId]
 			);
-			return [];
 		}
 
+		return $resultType;
+	}//end resultTypeRow()
+
+	/**
+	 * The nomination and selectielijst class a resultaattype names, each only when set.
+	 *
+	 * @param array<string, mixed> $resultType The resultType row.
+	 *
+	 * @return array<string, string|null> `archiveNomination` and/or `selectionListClass`.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function nominationAndClass(array $resultType): array {
 		$derived = [];
 		$nomination = $this->nomination(resultType: $resultType);
 		if ($nomination !== null) {
@@ -171,11 +202,28 @@ class ArchivalNominationDeriver {
 			$derived['selectionListClass'] = $class;
 		}
 
+		return $derived;
+	}//end nominationAndClass()
+
+	/**
+	 * The derived fields with the archive action date added, empty when no base date derives.
+	 *
+	 * @param array<string, string|null> $derived The fields derived so far.
+	 * @param array<string, mixed>       $closing The resultType row (`resultType`), the case payload as it will be saved
+	 *                                            (`case`) and its end date, Y-m-d, the zrc-021 einddatum (`endDate`).
+	 *
+	 * @return array<string, string|null> The derived fields.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function withActionDate(array $derived, array $closing): array {
+		$resultType = $closing['resultType'];
 		$brondatum = $this->sourceDateProcedure(resultType: $resultType);
 		$baseDate = $this->baseDates->resolve(
 			method: (string)($brondatum['derivationMethod'] ?? ($brondatum['afleidingswijze'] ?? '')),
-			endDate: $endDate,
-			case: $case,
+			endDate: $closing['endDate'],
+			case: $closing['case'],
 			brondatum: $brondatum,
 		);
 
@@ -201,7 +249,7 @@ class ArchivalNominationDeriver {
 		);
 
 		return $derived;
-	}//end derive()
+	}//end withActionDate()
 
 	/**
 	 * The resultType a case's written result points at.

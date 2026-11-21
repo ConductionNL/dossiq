@@ -2,19 +2,15 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The deleted lens, and why it is not a chip.
+ * Cases are archival, so there is no deleted lens.
  *
- * The obvious shape for this lens is a seventh quick filter beside All, Mine
- * and Closed. It cannot be one, and the failure would be silent: those chips
- * are filters on the objects endpoint, and that endpoint excludes soft-deleted
- * rows by design. A chip spelling `deleted: true` would get the empty set back
- * and render as a working lens over an empty trash.
+ * Ruben decided on 17 November 2026 that a case is never deleted: it is
+ * withdrawn or closed through the lifecycle menu, and it leaves the register
+ * only through an archival destruction list. The Deleted cases page that
+ * `case-recycle-window` added is therefore gone, and nothing on the case
+ * list pretends to show deleted cases either.
  *
- * So the assertions here pin the two halves that make the lens real: the page
- * exists with a component behind it, and no chip on the case list pretends to
- * do the same job.
- *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/changes/cases-are-archival-no-delete/specs/case-management/spec.md
  */
 
 import fs from 'fs'
@@ -22,60 +18,44 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(
-	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
-)
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const register = JSON.parse(
-	fs.readFileSync(
-		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
-		'utf8',
-	),
-)
+const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
+const manifest = JSON.parse(read('src', 'manifest.json'))
+const register = JSON.parse(read('lib', 'Settings', 'dossiq_register.json'))
+const layouts = ['menu-layout.json', 'menu-layout.simple.json'].map((file) => JSON.parse(read('src', file)))
+const lifecycleMenu = read('src', 'dialogs', 'CaseLifecycleMenuDialog.vue')
 
-/** The deleted lens page as the manifest declares it. @return {object} The page. */
-function deletedPage() {
-	return manifest.pages.find((page) => page.id === 'CasesDeleted')
+/**
+ * Every menu entry, nested ones included.
+ *
+ * @param {Array<object>} items The menu.
+ * @return {Array<object>} The entries.
+ */
+function flat(items) {
+	return (items || []).flatMap((item) => [item, ...flat(item.children)])
 }
 
-describe('the deleted lens', () => {
-	it('is a page of its own, with a component behind it', () => {
-		const page = deletedPage()
-
-		expect(page).toBeTruthy()
-		expect(page.route).toBe('/cases/deleted')
-		expect(page.type).toBe('custom')
-		expect(page.component).toBe('DeletedCasesView')
+describe('cases are archival', () => {
+	it('has no page over the deleted-cases endpoint', () => {
+		expect(manifest.pages.find((page) => page.id === 'CasesDeleted')).toBeUndefined()
+		expect(manifest.pages.find((page) => page.route === '/cases/deleted')).toBeUndefined()
+		expect(JSON.stringify(manifest.pages)).not.toContain('/api/cases/deleted')
 	})
 
-	it('has its component registered, so the route renders something', () => {
-		expect(registrySource).toContain('DeletedCasesView')
-		expect(
-			fs.existsSync(
-				path.join(ROOT, 'src', 'views', 'cases', 'DeletedCasesView.vue'),
-			),
-		).toBe(true)
+	it('has no menu entry for deleted cases, in the manifest or in either layout', () => {
+		expect(flat(manifest.menu).find((item) => item.route === 'CasesDeleted' || item.id === 'CasesDeletedMenu')).toBeUndefined()
+		for (const layout of layouts) {
+			expect(JSON.stringify(layout)).not.toContain('"CasesDeletedMenu"')
+		}
 	})
 
-	it('is reachable from the menu, with an icon that exists', () => {
-		const entry = manifest.menu.find((item) => item.route === 'CasesDeleted')
-
-		expect(entry).toBeTruthy()
-		expect(entry.label).toBe('Deleted cases')
-		// An icon that is not in src/icons.js renders nothing at all rather
-		// than a fallback glyph, so the menu entry would be a blank row.
-		expect(iconsSource).toContain(`\n\t${entry.icon},`)
+	it('offers no delete of a case anywhere in the manifest', () => {
+		expect(JSON.stringify(manifest)).not.toContain('/api/case/@objectId/delete')
+		expect(JSON.stringify(manifest)).not.toContain('/api/case/@objectId/destroy')
 	})
 
-	it('shows the date each window ends, not a duration the reader computes', () => {
-		const view = fs.readFileSync(
-			path.join(ROOT, 'src', 'views', 'cases', 'DeletedCasesView.vue'),
-			'utf8',
-		)
-
-		expect(view).toContain('windowEndsOn')
-		expect(view).toContain('Recover until')
+	it('ends a case by withdrawing or closing it in the lifecycle menu', () => {
+		expect(lifecycleMenu).toContain("['abort', () => t('dossiq', 'Break off')]")
+		expect(lifecycleMenu).toMatch(/\['finish', \(\) => t\('dossiq', /)
 	})
 
 	it('does not put a deleted chip on the case list, which would answer nothing', () => {
@@ -90,16 +70,7 @@ describe('the deleted lens', () => {
 	})
 })
 
-describe('the case type declares the destructive act', () => {
-	it('names the destroying role and the recovery window', () => {
-		const caseType = register.components.schemas.caseType.properties
-
-		expect(caseType.destructionRole).toBeTruthy()
-		expect(caseType.destructionRole.type).toBe('string')
-		expect(caseType.recoveryWindowDays.type).toBe('integer')
-		expect(caseType.recoveryWindowDays.minimum).toBe(1)
-	})
-
+describe('the case type keeps its two clocks', () => {
 	it('keeps the lawful-purpose clock beside the archive clock, not instead of it', () => {
 		const caseSchema = register.components.schemas.case.properties
 

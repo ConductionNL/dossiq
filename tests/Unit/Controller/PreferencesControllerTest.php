@@ -203,7 +203,7 @@ class PreferencesControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function testThePageViewKeyIsAccepted(): void {
 		$this->signIn();
@@ -229,7 +229,7 @@ class PreferencesControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function testAColonOutsideThePageViewPrefixIsRefused(): void {
 		$this->signIn();

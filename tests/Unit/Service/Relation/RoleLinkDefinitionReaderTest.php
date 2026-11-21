@@ -65,4 +65,16 @@ class RoleLinkDefinitionReaderTest extends TestCase {
 	public function testACaseTypeWithoutRolesDeclaresNone(): void {
 		self::assertSame([], (new RoleLinkDefinitionReader())->allOf(caseType: ['title' => 'x']));
 	}//end testACaseTypeWithoutRolesDeclaresNone()
+
+	/**
+	 * A `relations` value that is not a list declares no roles, rather than
+	 * failing on the first entry.
+	 *
+	 * @return void
+	 */
+	public function testARelationsValueThatIsNotAListDeclaresNone(): void {
+		foreach (['follows', 7, null, true] as $relations) {
+			self::assertSame(expected: [], actual: (new RoleLinkDefinitionReader())->allOf(caseType: ['relations' => $relations]));
+		}
+	}//end testARelationsValueThatIsNotAListDeclaresNone()
 }//end class

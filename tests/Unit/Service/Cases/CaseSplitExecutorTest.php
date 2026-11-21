@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Cases\CaseSplitPlan;
 use OCA\Dossiq\Service\Cases\CaseSplitStore;
 use OCA\Dossiq\Service\Cases\CaseSplitPolicy;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -57,8 +58,11 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
+ * @uses \OCA\Dossiq\Service\Cases\SplitCases
+ * @uses \OCA\Dossiq\Service\Support\ObjectSearch
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseSplitExecutorTest extends TestCase {
 
@@ -325,6 +329,52 @@ class CaseSplitExecutorTest extends TestCase {
 	}//end testTheNewCaseNamesTheOriginal()
 
 	/**
+	 * A planned move naming a row outside the selection moves nothing.
+	 *
+	 * The executor writes only rows it read for the chosen ids. A plan that
+	 * names another of the case's documents (doc-3, not chosen) or a part the
+	 * selection never read (parties) is not carried out, and is not reported
+	 * as moved.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	public function testAPlannedMoveOutsideTheSelectionIsNotCarriedOut(): void {
+		$overreaching = new class extends CaseSplitPlan {
+			/**
+			 * The shipped plan, plus moves for rows the handler did not choose.
+			 *
+			 * @param string                                          $sourceId The case being split.
+			 * @param string                                          $newId    The new case.
+			 * @param array<string, array<int, array<string, mixed>>> $chosen   The chosen rows.
+			 *
+			 * @return array<string, mixed> The plan.
+			 */
+			public function forSelection(string $sourceId, string $newId, array $chosen): array {
+				$plan = parent::forSelection(sourceId: $sourceId, newId: $newId, chosen: $chosen);
+				$plan['moves'][] = ['part' => 'documents', 'id' => 'doc-3', 'changes' => ['case' => $newId]];
+				$plan['moves'][] = ['part' => 'parties', 'id' => 'role-1', 'changes' => ['case' => $newId]];
+
+				return $plan;
+			}//end forSelection()
+		};
+
+		$answer = $this->executor(plan: $overreaching)->split(
+			caseId: 'case-1',
+			title: 'De tweede klacht',
+			chosen: ['documents' => ['doc-1']],
+			actor: 'jan',
+		);
+
+		$newId = (string)$answer['case']['id'];
+		self::assertSame(expected: [['part' => 'documents', 'id' => 'doc-1', 'changes' => ['case' => $newId]]], actual: $answer['moved']);
+		self::assertSame(expected: ['doc-1'], actual: $this->idsOn(schema: 'caseDocument', caseId: $newId));
+		self::assertSame(expected: ['doc-2', 'doc-3', 'doc-4'], actual: $this->idsOn(schema: 'caseDocument', caseId: 'case-1'));
+		self::assertSame(expected: ['role-1', 'role-2'], actual: $this->idsOn(schema: 'role', caseId: 'case-1'));
+	}//end testAPlannedMoveOutsideTheSelectionIsNotCarriedOut()
+
+	/**
 	 * The ids of one schema's rows on one case, sorted.
 	 *
 	 * @param string $schema The schema slug.
@@ -370,9 +420,11 @@ class CaseSplitExecutorTest extends TestCase {
 	 * are actually consulted, and a double would let an executor that decided
 	 * for itself pass.
 	 *
+	 * @param CaseSplitPlan|null $plan The plan, or null for the shipped one.
+	 *
 	 * @return CaseSplitExecutor The executor.
 	 */
-	private function executor(): CaseSplitExecutor {
+	private function executor(?CaseSplitPlan $plan = null): CaseSplitExecutor {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
@@ -391,11 +443,11 @@ class CaseSplitExecutorTest extends TestCase {
 
 		return new CaseSplitExecutor(
 			policy: new CaseSplitPolicy(),
-			plan: new CaseSplitPlan(),
+			plan: ($plan ?? new CaseSplitPlan()),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			// A REAL store over the SAME settings double the assertions read
 			// through. Only the wiring line moved when it was split out.
-			store: new CaseSplitStore($settings),
+			store: new CaseSplitStore(settingsService: $settings, ledger: $this->createMock(originalClassName: CaseMoveLedger::class)),
 		);
 	}//end executor()
 }//end class

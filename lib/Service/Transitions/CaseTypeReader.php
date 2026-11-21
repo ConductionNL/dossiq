@@ -29,15 +29,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Reads a case type's lifecycle rules and its statuses.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 
 	/**
 	 * Constructor.
@@ -62,7 +65,8 @@ class CaseTypeReader {
 	 * @param string $caseTypeId CaseType UUID.
 	 *
 	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string,
-	 *               maxExtensions: int|null, initialStatus: string, title: string}
+	 *               maxExtensions: int|null, initialStatus: string, title: string,
+	 *               entryRequirements: array<string, mixed>}
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -76,6 +80,8 @@ class CaseTypeReader {
 			'maxExtensions' => $this->limit(value: ($row['maxExtensions'] ?? null)),
 			'initialStatus' => (string)($row['initialStatus'] ?? ''),
 			'title' => $this->text->textOf(value: ($row['title'] ?? ($row['name'] ?? null))),
+			// What each status requires before a case enters it, projected from the case type's rules.
+			'entryRequirements' => (array)($row['entryRequirements'] ?? []),
 		];
 	}//end read()
 
@@ -117,7 +123,7 @@ class CaseTypeReader {
 	 *
 	 * @return array{paymentRequiredBeforeHandling: bool}|null The rule, or null.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function paymentRule(string $caseTypeId): ?array {
 		if ($caseTypeId === '') {
@@ -212,7 +218,7 @@ class CaseTypeReader {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($id, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			return [];
 		}
@@ -228,17 +234,6 @@ class CaseTypeReader {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

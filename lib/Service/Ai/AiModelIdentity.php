@@ -26,20 +26,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
  * Resolves the configured AI model identifier.
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
 class AiModelIdentity {
 	/**
@@ -59,11 +59,11 @@ class AiModelIdentity {
 	 *
 	 * @return string The identifier in `<type>/<name>` form.
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function identifier(): string {
-		$type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
-		$name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
+		$type = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_type', 'local');
+		$name = $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_name', 'unknown');
 
 		return $type . '/' . $name;
 	}//end identifier()

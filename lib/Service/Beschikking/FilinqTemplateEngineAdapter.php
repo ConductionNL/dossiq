@@ -44,15 +44,18 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
+ * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use DateTimeImmutable;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -90,35 +93,31 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	private const TEMPLATE_VERSION_SERVICE = 'Service\TemplateVersionService';
 
 	/**
-	 * How many chain entries to read when resolving the version in force.
-	 *
-	 * Filinq returns them newest first, so this is a ceiling on how far back a
-	 * beschikking's effective date may reach, not a page to iterate. A template
-	 * with more than this many revisions before the date falls through to the
-	 * template's own version rather than reporting a wrong one.
-	 *
-	 * @var integer
-	 */
-	private const VERSION_PAGE_SIZE = 100;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves filinq's services across the rename.
 	 * @param SettingsService $settings Supplies the case register/schema a template binds to.
 	 * @param IUserSession $userSession The acting user; filinq stores the output in their Files.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param DecisionTemplateEngine $engines The engine the case type names for a template.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly DecisionTemplateEngine $engines,
 	) {
 	}//end __construct()
 
 	/**
 	 * Render a beschikking template through filinq and store the result.
+	 *
+	 * The engine the case type names for the template (`filinq`, or
+	 * `vendor:<sourceSlug>` for a document vendor reached through integriq)
+	 * travels to filinq with the render. A vendor render that fails is refused
+	 * with a message naming the vendor; it never falls back to filinq's own
+	 * engine or to the mock.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
@@ -128,8 +127,35 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @throws RuntimeException When filinq is absent, no user is acting, or the render fails.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
 	 */
 	public function render(string $templateId, array $context): array {
+		$documentService = $this->filinqDocumentService();
+		$user = $this->actingUser();
+
+		$caseId = (string)($context['caseId'] ?? '');
+		$engine = $this->engines->engineFor(caseId: $caseId, templateId: $templateId);
+
+		try {
+			$options = $this->renderOptions(context: $context, job: ['user' => $user, 'caseId' => $caseId, 'engine' => $engine]);
+			$result = $documentService->generateDocument($templateId, $this->buildDataRefs(caseId: $caseId), $options);
+		} catch (Throwable $e) {
+			throw $this->renderFailure(job: ['engine' => $engine, 'templateId' => $templateId], e: $e);
+		}
+
+		return $this->toComposition(result: (array)$result, templateId: $templateId);
+	}//end render()
+
+	/**
+	 * Resolve filinq's DocumentService, refusing when filinq is absent.
+	 *
+	 * @return object The DocumentService.
+	 *
+	 * @throws RuntimeException When filinq's DocumentService cannot be resolved.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function filinqDocumentService(): object {
 		$documentService = FleetAppId::getService($this->container, 'filinq', self::DOCUMENT_SERVICE);
 		if ($documentService === null) {
 			throw new RuntimeException(
@@ -138,6 +164,19 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		return $documentService;
+	}//end filinqDocumentService()
+
+	/**
+	 * The acting Nextcloud user, refusing when nobody is acting.
+	 *
+	 * @return IUser The acting user.
+	 *
+	 * @throws RuntimeException When no user is acting.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function actingUser(): IUser {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			// Filinq refuses to store a generated document without an owning
@@ -146,31 +185,62 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			throw new RuntimeException('user_required: a beschikking render must run as a Nextcloud user');
 		}
 
-		$caseId = (string)($context['caseId'] ?? '');
+		return $user;
+	}//end actingUser()
 
-		try {
-			$result = $documentService->generateDocument(
-				$templateId,
-				$this->buildDataRefs(caseId: $caseId),
-				[
-					'format' => 'pdf',
-					'adHocData' => $context,
-					'userId' => $user->getUID(),
-					'caseId' => $caseId,
-					'filename' => $this->buildFilename(caseId: $caseId),
-					'output' => ['mode' => 'both'],
-				]
-			);
-		} catch (Throwable $e) {
+	/**
+	 * The options filinq's generateDocument() receives for a beschikking render.
+	 *
+	 * @param array<string, mixed> $context The zaakdata + beschikking context.
+	 * @param array{user: IUser, caseId: string, engine: string} $job The acting user, the case id and the engine
+	 *                                                                the case type names for the template.
+	 *
+	 * @return array<string, mixed> The render options.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function renderOptions(array $context, array $job): array {
+		return [
+			'format' => 'pdf',
+			'adHocData' => $context,
+			'userId' => $job['user']->getUID(),
+			'caseId' => $job['caseId'],
+			'filename' => $this->buildFilename(caseId: $job['caseId']),
+			'output' => ['mode' => 'both'],
+			'engine' => $job['engine'],
+		];
+	}//end renderOptions()
+
+	/**
+	 * Log a refused render and build the exception that reports it.
+	 *
+	 * A vendor render names the vendor; a filinq render carries filinq's message.
+	 *
+	 * @param array{engine: string, templateId: string} $job The engine the render went to and the filinq template UUID.
+	 * @param Throwable $e The render failure.
+	 *
+	 * @return RuntimeException The exception to throw.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
+	 */
+	private function renderFailure(array $job, Throwable $e): RuntimeException {
+		['engine' => $engine, 'templateId' => $templateId] = $job;
+		$vendor = DecisionTemplateEngine::vendorSlugOf(engine: $engine);
+		if ($vendor !== null) {
 			$this->logger->error(
-				'Filinq refused a beschikking render',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				'A document vendor refused a beschikking render',
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
 			);
-			throw new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+			return new RuntimeException(DecisionTemplateEngine::vendorName(slug: $vendor) . ' is niet bereikbaar', 0, $e);
 		}
 
-		return $this->toComposition(result: (array)$result, templateId: $templateId);
-	}//end render()
+		$this->logger->error(
+			'Filinq refused a beschikking render',
+			['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+		);
+		return new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+	}//end renderFailure()
 
 	/**
 	 * Resolve the template version effective on a given date.
@@ -184,25 +254,22 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * front of it, which is worse than the mock, because it looked like a
 	 * query. Filinq #1063 records the same three facts from the other side.
 	 *
-	 * What answers it instead is filinq's OWN version chain, which already
-	 * ships: `TemplateVersionService::getVersions()` returns every stored
-	 * version of a template, newest first, each with a monotonic `version`
-	 * number and its own creation timestamp. The version in force on a date is
-	 * the highest one created on or before that date, so `$effectiveDate` now
-	 * selects rather than being echoed back. A beschikking issued in March can
-	 * therefore name the template that produced it rather than the one that
-	 * happens to be current when someone appeals.
+	 * What answers it instead is filinq itself:
+	 * `TemplateVersionService::versionInForceAt()` names the version that was the
+	 * head of the template at a moment, from its own version chain (filinq change
+	 * generated-document-names-its-template-version). The adapter asks it for the
+	 * end of the effective date, so `$effectiveDate` selects rather than being
+	 * echoed back. A beschikking issued in March can therefore name the template
+	 * that produced it rather than the one that happens to be current when
+	 * someone appeals.
 	 *
 	 * Two fallbacks, in order, and neither of them invents a number:
 	 *
-	 *   - No chain entry at or before the date (a template saved once and never
-	 *     edited has no chain at all): the template object's own OpenRegister
-	 *     version, verbatim, lifted from `@self`.
+	 *   - Filinq names no version for the date (a filinq without the query, or
+	 *     one that cannot read the chain): the template object's own
+	 *     OpenRegister version, verbatim, lifted from `@self`.
 	 *   - Neither available: a refusal. `v1` is not a safe default when the
 	 *     answer is on an appealable decision.
-	 *
-	 * When filinq gains a first-class effective-version query (#1063), this
-	 * method becomes a call to it and the chain walk below moves out.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
@@ -222,16 +289,54 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		$template = $this->fetchTemplate(templateService: $templateService, templateId: $templateId);
+
+		return [
+			'templateId' => $templateId,
+			'version' => $this->effectiveVersion(asked: ['templateId' => $templateId, 'effectiveDate' => $effectiveDate], template: $template),
+			'effectiveDate' => $effectiveDate,
+		];
+	}//end resolveVersion()
+
+	/**
+	 * Fetch a template from filinq, refusing a template filinq does not know.
+	 *
+	 * @param object $templateService Filinq's TemplateService.
+	 * @param string $templateId The filinq template UUID.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When filinq does not know the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function fetchTemplate(object $templateService, string $templateId): array {
 		try {
-			$template = (array)$templateService->getTemplate($templateId);
+			return (array)$templateService->getTemplate($templateId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq does not know the beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
+	}//end fetchTemplate()
 
+	/**
+	 * The version in force on the date, else the template's own version.
+	 *
+	 * @param array{templateId: string, effectiveDate: string} $asked The filinq template UUID and the ISO date the
+	 *                                                               beschikking is effective.
+	 * @param array<string, mixed> $template The template as filinq returns it.
+	 *
+	 * @return string The resolved version.
+	 *
+	 * @throws RuntimeException When filinq holds no version for the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function effectiveVersion(array $asked, array $template): string {
+		['templateId' => $templateId, 'effectiveDate' => $effectiveDate] = $asked;
 		$version = $this->versionInForce(templateId: $templateId, effectiveDate: $effectiveDate);
 		if ($version === null) {
 			$version = $this->templateOwnVersion(template: $template);
@@ -243,25 +348,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
-		return [
-			'templateId' => $templateId,
-			'version' => $version,
-			'effectiveDate' => $effectiveDate,
-		];
-	}//end resolveVersion()
+		return $version;
+	}//end effectiveVersion()
 
 	/**
-	 * The highest chain version created on or before the effective date.
+	 * The chain version in force at the end of the effective date.
 	 *
-	 * A version whose creation timestamp cannot be read is skipped rather than
-	 * treated as ancient: an unreadable date must not win a comparison it never
-	 * took part in.
+	 * Filinq answers this itself (`TemplateVersionService::versionInForceAt()`,
+	 * generated-document-names-its-template-version): a snapshot is written when
+	 * its version is replaced, so only filinq knows which version was the head at
+	 * a moment. A beschikking effective on a date takes the version that was the
+	 * head at the end of that day.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
 	 *
 	 * @return string|null The version, as `v<n>`, or null when the chain
 	 *                     answers nothing for that date.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function versionInForce(string $templateId, string $effectiveDate): ?string {
 		$versionService = FleetAppId::getService($this->container, 'filinq', self::TEMPLATE_VERSION_SERVICE);
@@ -269,55 +374,31 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			return null;
 		}
 
-		$cutoff = strtotime($effectiveDate . ' 23:59:59');
-		if ($cutoff === false) {
+		$day = substr($effectiveDate, 0, 10);
+		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $day, $parts) !== 1
+			|| checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]) === false
+		) {
 			return null;
 		}
 
+		$moment = new DateTimeImmutable($day . ' 23:59:59');
+
 		try {
-			$page = (array)$versionService->getVersions($templateId, self::VERSION_PAGE_SIZE);
+			$number = $versionService->versionInForceAt($templateId, $moment);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Filinq could not list the versions of a beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				'Filinq could not say which version of a beschikking template was in force',
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
 
-		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
-		if ($highest === null) {
+		if (is_int($number) === false || $number < 1) {
 			return null;
 		}
 
-		return 'v' . $highest;
+		return 'v' . $number;
 	}//end versionInForce()
-
-	/**
-	 * The highest version number among the chain rows at or before a moment.
-	 *
-	 * @param array<int, mixed> $rows Filinq's chain rows.
-	 * @param integer $cutoff The last second of the effective date, as a timestamp.
-	 *
-	 * @return integer|null The version number, or null when no row qualifies.
-	 */
-	private function highestVersionAtOrBefore(array $rows, int $cutoff): ?int {
-		$highest = null;
-
-		foreach ($rows as $row) {
-			$row = (array)$row;
-			$created = strtotime((string)(((array)($row['@self'] ?? []))['created'] ?? ''));
-			if ($created === false || $created > $cutoff) {
-				continue;
-			}
-
-			$number = (int)($row['version'] ?? 0);
-			if ($number > 0 && ($highest === null || $number > $highest)) {
-				$highest = $number;
-			}
-		}
-
-		return $highest;
-	}//end highestVersionAtOrBefore()
 
 	/**
 	 * The template object's own OpenRegister version, if it carries one.
@@ -366,7 +447,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Rendering a beschikking without the case object: register or case_schema is unset',
-				['app' => Application::APP_ID, 'caseId' => $caseId]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId]
 			);
 			return [];
 		}
@@ -414,28 +495,29 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		return [
 			'format' => (string)($result['format'] ?? 'pdf'),
 			'fileId' => (string)$fileId,
-			'checksumSha256' => hash('sha256', $content),
-			'paginas' => $this->countPages(content: $content),
+			'checksumSha256' => $this->checksumOf(result: $result, content: $content),
+			'paginas' => (int)($result['pageCount'] ?? 0),
 		];
 	}//end toComposition()
 
 	/**
-	 * Count the pages in the produced document.
+	 * The SHA-256 of the produced document, as filinq reports it.
 	 *
-	 * Counted out of the PDF's own page objects rather than assumed, because a
-	 * constant page count was one of the three fields the mock invented. A
-	 * non-PDF output has no page structure to read, so it reports zero rather
-	 * than a guess.
+	 * Filinq holds the bytes and reports their digest with the result
+	 * (generated-document-names-its-template-version). Only a filinq that does
+	 * not report one is answered by hashing the returned bytes here.
 	 *
-	 * @param string $content The produced document bytes.
+	 * @param array<string, mixed> $result  Filinq's `generateDocument()` return value.
+	 * @param string               $content The produced document bytes.
 	 *
-	 * @return int The page count, or 0 when the bytes carry no page structure.
+	 * @return string The lowercase hex digest.
 	 */
-	private function countPages(string $content): int {
-		if (str_starts_with($content, '%PDF') === false) {
-			return 0;
+	private function checksumOf(array $result, string $content): string {
+		$reported = ($result['sha256'] ?? null);
+		if (is_string($reported) === true && preg_match('/^[0-9a-f]{64}$/', $reported) === 1) {
+			return $reported;
 		}
 
-		return preg_match_all('#/Type\s*/Page[^s]#', $content);
-	}//end countPages()
+		return hash('sha256', $content);
+	}//end checksumOf()
 }//end class

@@ -37,6 +37,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * The object store, deleting for real and losing a slug exactly as the real
@@ -89,6 +91,7 @@ final class ZrcCascadeStore {
 	 * @return array<string, mixed> The zaak row.
 	 */
 	public function find(int|string $id, mixed ...$args): array {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		return ['id' => (string)$id, 'archiefstatus' => ''];
 	}//end find()
 
@@ -99,7 +102,8 @@ final class ZrcCascadeStore {
 	 *
 	 * @return void
 	 */
-	public function deleteObject(string $uuid): void {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+		$uuid = $deletion->uuid;
 		$this->deleted[] = $uuid;
 	}//end deleteObject()
 }//end class
@@ -152,7 +156,6 @@ final class ZrcDestroyCascadeScopeTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new ZrcController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			zgwService: $zgwService,
 			l10n: $l10n,

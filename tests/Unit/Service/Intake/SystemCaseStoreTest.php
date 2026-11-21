@@ -27,6 +27,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\SystemCaseStore
@@ -34,7 +36,6 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
  */
 class SystemCaseStoreTest extends TestCase {
 
@@ -85,7 +86,9 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedReadIsLoggedAndReadsAsAbsent(): void {
 		$broken = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new RuntimeException('down');
 			}
 		};
@@ -129,7 +132,9 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedWriteIsLoggedAndAnswersNull(): void {
 		$broken = new class {
-			public function saveObject(array $object, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('down');
 			}
 		};
@@ -138,4 +143,72 @@ class SystemCaseStoreTest extends TestCase {
 
 		self::assertNull($store->write(objectService: $broken, register: 'dossiq', case: ['title' => 'A case']));
 	}//end testAFailedWriteIsLoggedAndAnswersNull()
+
+	/**
+	 * An id that names no case type has no current version.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownCaseTypeHasNoCurrentVersion(): void {
+		$register = new InMemoryRegister();
+
+		self::assertNull($this->store()->currentCaseType(objectService: $register, register: 'dossiq', caseTypeId: 'missing'));
+	}//end testAnUnknownCaseTypeHasNoCurrentVersion()
+
+	/**
+	 * The current version follows supersededBy, and a broken link ends on the last readable version.
+	 *
+	 * @return void
+	 */
+	public function testTheCurrentVersionFollowsTheChainToTheLastReadableVersion(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'caseType', uuid: 'v1', row: ['title' => 'First', 'supersededBy' => 'v2']);
+		$register->seed(schema: 'caseType', uuid: 'v2', row: ['title' => 'Second', 'supersededBy' => ' v3 ']);
+		$register->seed(schema: 'caseType', uuid: 'v3', row: ['title' => 'Third', 'supersededBy' => 'v4']);
+
+		$current = $this->store()->currentCaseType(objectService: $register, register: 'dossiq', caseTypeId: 'v1');
+
+		self::assertSame('Third', $current['title']);
+		self::assertSame('v3', $current['id']);
+	}//end testTheCurrentVersionFollowsTheChainToTheLastReadableVersion()
+
+	/**
+	 * A chain that loops back ends where it would repeat.
+	 *
+	 * @return void
+	 */
+	public function testALoopingChainEndsWhereItWouldRepeat(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'caseType', uuid: 'a', row: ['title' => 'A', 'supersededBy' => 'b']);
+		$register->seed(schema: 'caseType', uuid: 'b', row: ['title' => 'B', 'supersededBy' => 'a']);
+
+		$current = $this->store()->currentCaseType(objectService: $register, register: 'dossiq', caseTypeId: 'a');
+
+		self::assertSame('B', $current['title']);
+		self::assertSame('b', $current['id']);
+	}//end testALoopingChainEndsWhereItWouldRepeat()
+
+	/**
+	 * A case without its case type passed reads it, and opens on the type's first status and confidentiality.
+	 *
+	 * @return void
+	 */
+	public function testAWriteReadsTheCaseTypeItNamesForTheOpeningFields(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'caseType', uuid: 'type-1', row: ['initialStatus' => 'status-received', 'confidentiality' => 'internal']);
+
+		$written = $this->store()->write(
+			objectService: $register,
+			register: 'dossiq',
+			case: ['title' => 'A case', 'caseType' => 'type-1', 'confidentiality' => 'secret']
+		);
+
+		self::assertNotNull($written);
+		$row = $register->row(schema: 'case', uuid: 'generated-1');
+		self::assertSame('status-received', $row['status']);
+		// What the case already carries is kept.
+		self::assertSame('secret', $row['confidentiality']);
+		self::assertNotEmpty($row['currentStatusEnteredAt']);
+		self::assertSame(['caseType/type-1'], $register->unscopedReads);
+	}//end testAWriteReadsTheCaseTypeItNamesForTheOpeningFields()
 }//end class

@@ -543,7 +543,7 @@ the move itself happened.
 - **AND** a warning SHALL be logged naming the case
 
 #### Scenario: The handler is told how many actions did not run
-@e2e exclude needs a failing action, which the browser cannot provoke; covered by caseTransitionOutcome.spec.js, which mounts the dialog, and workflowBoardMove.spec.js, which drives the board, both against a partial answer
+@e2e exclude needs a failing action, which the browser cannot provoke; covered by caseTransitionOutcome.spec.js, which mounts the dialog, and caseStatusBoardMoves.spec.js, which drives the board's move, both against a partial answer
 
 - **GIVEN** a handler confirms a transition in the case-page dialog
 - **AND** the answer lists two failed actions
@@ -819,3 +819,137 @@ The DMN decision tables SHALL keep working unchanged, as the neighbour of the
 - **WHEN** the administrator tries the rule against the case
 - **THEN** the verdict SHALL be shown with the operand and the value it read
 - **AND** nothing SHALL be written to the case
+
+### Requirement: A lifecycle gesture saves the case as the term left it (REQ-STE-15)
+
+Suspending, resuming, extending and reopening a case SHALL save the case as it is
+stored after the statutory term moved, plus only the fields the gesture itself
+sets. A gesture SHALL NOT save a copy of the case read before the term moved: the
+deadline mirror writes the term's new end onto the case during the term gesture,
+and `deadline` is readOnly. An unexpected failure SHALL answer with the code
+`change_failed`, which the page translates.
+
+#### Scenario: Pausing a case with a statutory term succeeds
+@e2e exclude the readOnly refusal comes from OpenRegister's store, so it is reproduced by a store fake that refuses the same way; proven by tests/Unit/Service/CaseLifecycleServiceTest.php::testPauseOnATermSavesTheCaseTheMirrorWrote
+
+- **GIVEN** a case with a statutory term instance
+- **WHEN** a handler pauses it and the mirror moves the case's deadline
+- **THEN** the gesture SHALL succeed and the case SHALL keep the term's new end
+
+#### Scenario: Extending a case with a statutory term succeeds
+@e2e exclude the readOnly refusal comes from OpenRegister's store, so it is reproduced by a store fake that refuses the same way; proven by tests/Unit/Service/CaseLifecycleServiceTest.php::testExtendOnATermSavesTheCaseTheMirrorWrote
+
+- **GIVEN** a case with a statutory term instance
+- **WHEN** a handler extends it
+- **THEN** the case SHALL carry the new planned end date and extension count on top of the deadline the mirror wrote
+
+#### Scenario: An unexpected failure answers a code the page translates
+@e2e exclude an unexpected failure cannot be provoked from a browser; proven by tests/Unit/Controller/CaseLifecycleControllerTest.php::testAnUnexpectedFailureWithholdsItsDetail
+
+- **GIVEN** a gesture that fails for a reason that is not a refusal
+- **WHEN** the controller answers
+- **THEN** the answer SHALL be HTTP 500 with `code` `change_failed` and no detail of the failure
+
+### Requirement: A move MAY require every partly public document redacted
+
+The guard kind `documentAssessment` SHALL accept `require: redacted`. It SHALL pass only when every document of the case assessed as partly public has a redacted copy (`redactedDocumentRef`), and SHALL pass when the case has none. It SHALL read the assessments regardless of the caller. When they cannot be read, it SHALL fail with a sentence saying so. The Woo request flow SHALL require it, beside `assessed`, on the move from Lakken / Anonimiseren to Besluit, and the `woo-verzoek` package version SHALL rise so existing installs receive the flow.
+
+@e2e exclude The redacted copy needs filinq or the redaction upload route, which the e2e Woo journey does not exercise yet. Covered by DocumentAssessmentGuardRedactedTest and WooFlowGuardsTest through the real engine.
+
+#### Scenario: One copy is missing
+
+- **GIVEN** a Woo request in Lakken / Anonimiseren with two partly public documents, one with a redacted copy
+- **WHEN** the handler opens the moves out of its status
+- **THEN** "Besluit voorbereiden" is disabled with "1 van 2 deels openbare documenten wachten nog op een gelakte versie"
+
+#### Scenario: Every copy is there
+
+- **GIVEN** the same case after the second redacted copy is recorded
+- **THEN** "Besluit voorbereiden" is offered
+
+#### Scenario: An existing install receives the guard
+
+- **GIVEN** an instance that installed `woo-verzoek` 1.0.0 and never edited its flow
+- **WHEN** it upgrades to a dossiq shipping 1.1.0
+- **THEN** its Woo request flow carries the `redacted` requirement
+
+### Requirement: A required-field guard sees a sensitive answer without showing it (REQ-STE-SENS-001)
+
+When a case does not carry the guarded field at the top level or in `properties`, the required-field
+guard SHALL check the case's `sensitiveProperties` read as the system, and SHALL answer only
+whether the field is answered: the guard's details and message SHALL carry the field name and
+never the value. A case that cannot be read SHALL fail the guard.
+
+#### Scenario: A klantmanager outside dossiq-sensitive completes the tests
+- **GIVEN** a Bijstandsaanvraag whose asset and income tests are answered in `sensitiveProperties`
+- **AND** a mover who cannot read them
+- **WHEN** the mover takes "Toetsing afronden"
+- **THEN** the guard SHALL pass, and nothing of the tests SHALL be in its answer
+
+### Requirement: A move MAY require the case's documents gathered or assessed
+
+The engine SHALL offer a guard kind `documentAssessment`. With `require: gathered` it SHALL pass only when the case has at least one document under review. With `require: assessed` it SHALL pass only when the case has at least one document under review and none waits for an assessment. When the documents cannot be read, it SHALL fail with a sentence saying so.
+
+#### Scenario: Nothing gathered
+
+- **GIVEN** a case with no documents under review
+- **WHEN** the handler opens the moves out of its status
+- **THEN** a move guarded by `documentAssessment` is offered disabled with "Er zijn nog geen documenten verzameld"
+
+#### Scenario: One document still waits
+
+- **GIVEN** a case with two documents under review and one assessed
+- **THEN** a move guarded by `require: assessed` is disabled with "1 van 2 documenten wachten nog op een beoordeling"
+
+### Requirement: The Woo request case type MUST ship a guarded flow
+
+The Woo request case type SHALL name a shipped flow as its default route. In that flow, assessing documents SHALL need gathered documents. Redaction and the decision stage SHALL need every gathered document assessed. Publication SHALL be withheld until the decision is made. Closing from Publicatie SHALL be withheld until the decision is published. The resident's withdrawal SHALL have a direct move from every status it is open in.
+
+#### Scenario: The 13 October walk is refused
+
+- **GIVEN** a new Woo request with no documents and no decision
+- **WHEN** the coordinator tries to take it to Publicatie
+- **THEN** the move into Beoordelen documenten is refused, and so is every move after it
+
+#### Scenario: Publication waits for the decision
+
+- **GIVEN** a Woo request in Besluit whose documents are all assessed
+- **AND** no decision is made
+- **THEN** "Naar publicatie" is withheld, naming "het besluit (stel het besluit op)"
+
+### Requirement: A recorded search outcome MUST count as assessed
+
+When a case records `documentSearchOutcome: nothing_found` with a non-empty `documentSearchNote`, the `documentAssessment` guard SHALL pass for both requirements. An outcome without a note SHALL count for nothing.
+
+#### Scenario: Nothing found, with a note
+
+- **GIVEN** a Woo request in Zoeken documenten with no documents
+- **AND** the coordinator records "nothing found" and where was searched
+- **THEN** the moves through Beoordelen documenten, Lakken / Anonimiseren and Besluit are allowed
+
+#### Scenario: Nothing found, without a note
+
+- **GIVEN** the same request with the outcome but no note
+- **THEN** "Documenten beoordelen" stays disabled
+
+### Requirement: Every Woo exit without a decision MUST wait for a recorded reason
+
+A move that closes a Woo request without a published decision SHALL be withheld until its reason is recorded on the case: `inadmissibilityReason` for "Niet ontvankelijk", `withdrawalReason` for the withdrawal.
+
+#### Scenario: A request that is not admissible
+
+- **GIVEN** a Woo request in Beoordeling ontvankelijkheid
+- **WHEN** no `inadmissibilityReason` is recorded
+- **THEN** "Niet ontvankelijk" is withheld, naming "de reden waarom het verzoek niet ontvankelijk is"
+- **AND** once the reason is recorded, the move is offered
+
+### Requirement: Open cases on a backfilled basis flow MUST move to the flow their case type names
+
+An upgrade SHALL bind every open case that is still on a backfilled basis flow of its case type to the flow the case type names as `workflowDefinition`, when that flow is not itself a basis. Closed cases, cases on another flow and unbound cases SHALL be left alone. Running it again SHALL change nothing.
+
+#### Scenario: An open Woo request on the basis flow
+
+- **GIVEN** an open Woo request bound to "Woo-verzoek (basis)"
+- **AND** the Woo case type names the shipped flow
+- **WHEN** dossiq upgrades
+- **THEN** the request is bound to the shipped flow, and a closed request on the basis flow is not

@@ -49,7 +49,7 @@ export const FLOW_TASKS_URL = '/apps/openregister/api/flow-tasks'
  * refuses when a required field is empty or a declared effect resolves to
  * nothing. Claiming and the rest are the engine's alone.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export const DOSSIQ_TASKS_URL = '/apps/dossiq/api/case-tasks'
 
@@ -107,14 +107,12 @@ export function isTerminal(task) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function signedDaysUntilDue(task) {
-	if (!task || typeof task !== 'object') {
+	if (!isRow(task)) {
 		return null
 	}
 
 	if (typeof task.daysOverdue === 'number') {
-		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
-		// less than a day stays a plain zero rather than a negative one.
-		return task.daysOverdue === 0 ? 0 : -task.daysOverdue
+		return negatedOverdue(task.daysOverdue)
 	}
 
 	if (typeof task.daysUntilDue === 'number') {
@@ -122,6 +120,197 @@ export function signedDaysUntilDue(task) {
 	}
 
 	return null
+}
+
+/**
+ * The register names a task row is given, as `[name, read first, read second]`.
+ */
+const REGISTER_NAMES = [
+	['id', 'uuid', 'id'],
+	['status', 'status', 'state'],
+	['dueDate', 'dueDate', 'dueAt'],
+	['case', 'case', 'objectUuid'],
+]
+
+/**
+ * Whether a value is an engine row at all: a non-null object.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean} Whether it is.
+ */
+function isRow(value) {
+	return Boolean(value) && typeof value === 'object'
+}
+
+/**
+ * An overdue count as a negative number of days left.
+ *
+ * `-0` prints as "0" but fails a `< 0` test, so a task overdue by less than
+ * a day stays a plain zero rather than a negative one.
+ *
+ * @param {number} daysOverdue The days the task is overdue.
+ * @return {number} The days left.
+ */
+function negatedOverdue(daysOverdue) {
+	return daysOverdue === 0 ? 0 : -daysOverdue
+}
+
+/**
+ * A value as a trimmed string, '' for nothing.
+ *
+ * @param {unknown} value The value.
+ * @return {string} The string.
+ */
+function trimmed(value) {
+	return String(value ?? '').trim()
+}
+
+/**
+ * The text of a refused task write: the engine's message, which names the
+ * verb and the reason, else the error's own.
+ *
+ * @param {unknown} error What the request threw.
+ * @return {string} The text.
+ */
+function refusal(error) {
+	return error?.response?.data?.message || error?.message || String(error)
+}
+
+/**
+ * The text of a refused leaf read or write: the controller's error first.
+ *
+ * @param {unknown} error What the request threw.
+ * @return {string} The text.
+ */
+function leafRefusal(error) {
+	return error?.response?.data?.error
+		|| error?.response?.data?.message
+		|| error?.message
+		|| String(error)
+}
+
+/**
+ * The rows a leaf read answered, unwrapped, or none when it is not a list.
+ *
+ * @param {object} response The leaf read's response.
+ * @return {Array<object>} The rows.
+ */
+function leafRows(response) {
+	const rows = response.data?.results ?? response.data ?? []
+	return Array.isArray(rows) === true ? rows : []
+}
+
+/**
+ * Run one task write with the store loading, keep the task it answers, or
+ * keep the refusal and answer null.
+ *
+ * @param {object} store The engine task store.
+ * @param {() => Promise<object>} request The write.
+ * @return {Promise<object|null>} The answered task, or null.
+ */
+async function keepAnsweredTask(store, request) {
+	store.loading = true
+	store.error = null
+	try {
+		const response = await request()
+		store.task = response.data?.results ?? response.data ?? null
+		return store.task
+	} catch (error) {
+		store.error = refusal(error)
+		return null
+	} finally {
+		store.loading = false
+	}
+}
+
+/**
+ * Where a lifecycle verb on a task is posted.
+ *
+ * 🔑 COMPLETE GOES THROUGH DOSSIQ, EVERY OTHER VERB GOES STRAIGHT TO THE
+ * ENGINE. Completing a task is the one verb with a dossiq half: the case
+ * type declared a form whose required fields must be answered and effects
+ * that must resolve, and both are refusals dossiq can make while the
+ * handler is still looking at the form. dossiq's endpoint makes them and
+ * then hands the completion to the engine, so there is still exactly one
+ * completion path and not two that have to agree.
+ *
+ * @param {string} id The engine task uuid.
+ * @param {string} action The verb.
+ * @return {string} The URL.
+ */
+function verbUrl(id, action) {
+	return generateUrl(
+		action === 'complete'
+			? `${DOSSIQ_TASKS_URL}/${encodeURIComponent(id)}/complete`
+			: `${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
+	)
+}
+
+/**
+ * The dossiq task fields the engine takes, as `[dossiq name, engine name]`,
+ * each sent only when it is not blank.
+ */
+const OPTIONAL_TASK_FIELDS = [
+	['description', 'description'],
+	['assignee', 'assignee'],
+	['dueDate', 'dueAt'],
+	['priority', 'priority'],
+	// What sort of work this is, as the surface that made it named
+	// it. The engine carries and indexes it and attaches no
+	// behaviour to any value, so `reminder` is a label the Tasks
+	// index can facet on and nothing else treats specially.
+	['kind', 'kind'],
+]
+
+/**
+ * A dossiq-shaped task as the engine's create payload.
+ *
+ * @param {object} task The task, in the dossiq shape.
+ * @return {object} The payload.
+ */
+function enginePayload(task) {
+	const payload = {
+		title: String(task.title ?? ''),
+		appId: 'dossiq',
+		state: engineState(trimmed(task.status)),
+	}
+
+	const caseId = trimmed(task.case ?? task.objectUuid)
+	if (caseId !== '') {
+		payload.objectUuid = caseId
+	}
+
+	copyFilledFields(task, payload)
+	return payload
+}
+
+/**
+ * Copy the optional task fields that are not blank onto the payload, under
+ * the engine's names.
+ *
+ * @param {object} task The task, in the dossiq shape.
+ * @param {object} payload The engine payload being built.
+ */
+function copyFilledFields(task, payload) {
+	for (const [from, to] of OPTIONAL_TASK_FIELDS) {
+		const value = trimmed(task[from])
+		if (value !== '') {
+			payload[to] = value
+		}
+	}
+}
+
+/**
+ * The engine state for a dossiq status: a terminal state or `active` as
+ * given, `available` for everything else (`open` included).
+ *
+ * @param {string} state The trimmed status.
+ * @return {string} The engine state.
+ */
+function engineState(state) {
+	return TERMINAL_STATES.includes(state) || state === 'active'
+		? state
+		: 'available'
 }
 
 /**
@@ -147,7 +336,7 @@ export function signedDaysUntilDue(task) {
  * @spec openspec/specs/task-management/spec.md
  */
 export function asTaskRow(row) {
-	if (!row || typeof row !== 'object') {
+	if (!isRow(row)) {
 		return row
 	}
 
@@ -160,29 +349,119 @@ export function asTaskRow(row) {
 	// `id` (the database primary key) beside `uuid`, so `row.id ?? row.uuid`
 	// never once reached the uuid and this mapping was a no-op on real data.
 	// No route or verb accepts the numeric key: `/tasks/:id` and every
-	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so three surfaces
-	// (MyTasksWidget, TaskRemindersWidget, CaseTasksTab) built a deep link
+	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so the surfaces
+	// (TaskRemindersWidget) built a deep link
 	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
-	// error, it just went nowhere. `taskIdOf()` in `caseTaskPaneHelpers.js`
-	// already reads uuid first, and this is the same precedence in the one
-	// place every reader goes through.
+	// error, it just went nowhere. Uuid first is the precedence every reader
+	// needs, kept here in the one place they all go through.
 	//
 	// The other three keep `row.<registerName> ?? row.<engineName>`: unlike
 	// `id`, none of them is emitted by the engine at all, so the register
 	// name is only ever present on a row that already carries it.
+	return withRegisterNames(row)
+}
+
+/**
+ * A copy of an engine row with the register's name added for every value
+ * that resolves to something.
+ *
+ * @param {object} row The engine row.
+ * @return {object} The copy.
+ */
+function withRegisterNames(row) {
 	const mapped = { ...row }
-	for (const [name, value] of [
-		['id', row.uuid ?? row.id],
-		['status', row.status ?? row.state],
-		['dueDate', row.dueDate ?? row.dueAt],
-		['case', row.case ?? row.objectUuid],
-	]) {
+	for (const [name, first, second] of REGISTER_NAMES) {
+		const value = row[first] ?? row[second]
 		if (value !== undefined && value !== null) {
 			mapped[name] = value
 		}
 	}
-
 	return mapped
+}
+
+/**
+ * The text of a failed read: the error's own message.
+ *
+ * @param {unknown} error What the request threw.
+ * @return {string} The text.
+ */
+function readFailure(error) {
+	return error?.message || String(error)
+}
+
+/**
+ * Keep the rows and the datastore total a list read answered.
+ *
+ * @param {object} store The engine task store.
+ * @param {object|undefined} data The list response body.
+ * @return {Array<object>} The rows kept.
+ */
+function keepListedRows(store, data) {
+	store.tasks = (data?.results ?? []).map(asTaskRow)
+	store.total = Number(data?.total ?? store.tasks.length) || 0
+	return store.tasks
+}
+
+/**
+ * Keep the failure of a list read and empty the list.
+ *
+ * @param {object} store The engine task store.
+ * @param {unknown} error What the request threw.
+ * @return {Array<object>} No rows.
+ */
+function clearListedRows(store, error) {
+	store.error = readFailure(error)
+	store.tasks = []
+	store.total = 0
+	return []
+}
+
+/**
+ * Read one task with the store loading, keep it, or keep the failure and
+ * answer null.
+ *
+ * @param {object} store The engine task store.
+ * @param {string} id The engine task uuid, trimmed and not blank.
+ * @return {Promise<object|null>} The task, or null.
+ */
+async function readOneTask(store, id) {
+	store.loading = true
+	store.error = null
+	try {
+		const response = await axios.get(
+			generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
+		)
+		return keepReadTask(store, response.data)
+	} catch (error) {
+		return clearReadTask(store, error)
+	} finally {
+		store.loading = false
+	}
+}
+
+/**
+ * Keep the task a read answered, unwrapped from its envelope.
+ *
+ * @param {object} store The engine task store.
+ * @param {object|undefined} data The read response body.
+ * @return {object|null} The task kept.
+ */
+function keepReadTask(store, data) {
+	store.task = asTaskRow(data?.results ?? data ?? null)
+	return store.task
+}
+
+/**
+ * Keep the failure of a task read and forget the task.
+ *
+ * @param {object} store The engine task store.
+ * @param {unknown} error What the request threw.
+ * @return {null} No task.
+ */
+function clearReadTask(store, error) {
+	store.error = readFailure(error)
+	store.task = null
+	return null
 }
 
 export const useEngineTaskStore = defineStore('dossiqEngineTask', {
@@ -220,14 +499,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(generateUrl(FLOW_TASKS_URL), {
 					params,
 				})
-				this.tasks = (response.data?.results ?? []).map(asTaskRow)
-				this.total = Number(response.data?.total ?? this.tasks.length) || 0
-				return this.tasks
+				return keepListedRows(this, response.data)
 			} catch (error) {
-				this.error = error?.message || String(error)
-				this.tasks = []
-				this.total = 0
-				return []
+				return clearListedRows(this, error)
 			} finally {
 				this.loading = false
 			}
@@ -268,28 +542,12 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
 		 */
 		async fetch(uuid) {
-			const id = String(uuid ?? '').trim()
+			const id = trimmed(uuid)
 			if (id === '') {
 				return null
 			}
 
-			this.loading = true
-			this.error = null
-			try {
-				const response = await axios.get(
-					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
-				)
-				this.task = asTaskRow(
-					response.data?.results ?? response.data ?? null,
-				)
-				return this.task
-			} catch (error) {
-				this.error = error?.message || String(error)
-				this.task = null
-				return null
-			} finally {
-				this.loading = false
-			}
+			return readOneTask(this, id)
 		},
 
 		/**
@@ -320,54 +578,12 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async create(task = {}) {
-			const state = String(task.status ?? '').trim()
-			const payload = {
-				title: String(task.title ?? ''),
-				appId: 'dossiq',
-				state:
-					TERMINAL_STATES.includes(state) || state === 'active'
-						? state
-						: 'available',
-			}
+			const payload = enginePayload(task)
 
-			const caseId = String(task.case ?? task.objectUuid ?? '').trim()
-			if (caseId !== '') {
-				payload.objectUuid = caseId
-			}
-
-			for (const [from, to] of [
-				['description', 'description'],
-				['assignee', 'assignee'],
-				['dueDate', 'dueAt'],
-				['priority', 'priority'],
-				// What sort of work this is, as the surface that made it named
-				// it. The engine carries and indexes it and attaches no
-				// behaviour to any value, so `reminder` is a label the Tasks
-				// index can facet on and nothing else treats specially.
-				['kind', 'kind'],
-			]) {
-				const value = String(task[from] ?? '').trim()
-				if (value !== '') {
-					payload[to] = value
-				}
-			}
-
-			this.loading = true
-			this.error = null
-			try {
-				const response = await axios.post(
-					generateUrl(FLOW_TASKS_URL),
-					payload,
-				)
-				this.task = response.data?.results ?? response.data ?? null
-				return this.task
-			} catch (error) {
-				this.error =
-					error?.response?.data?.message || error?.message || String(error)
-				return null
-			} finally {
-				this.loading = false
-			}
+			return keepAnsweredTask(this, () => axios.post(
+				generateUrl(FLOW_TASKS_URL),
+				payload,
+			))
 		},
 
 		/**
@@ -385,41 +601,16 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
 		 */
 		async invoke(uuid, verb, body = {}) {
-			const id = String(uuid ?? '').trim()
-			const action = String(verb ?? '').trim()
+			const id = trimmed(uuid)
+			const action = trimmed(verb)
 			if (id === '' || action === '') {
 				return null
 			}
 
-			this.loading = true
-			this.error = null
-			try {
-				// 🔑 COMPLETE GOES THROUGH DOSSIQ, EVERY OTHER VERB GOES
-				// STRAIGHT TO THE ENGINE. Completing a task is the one verb
-				// with a dossiq half: the case type declared a form whose
-				// required fields must be answered and effects that must
-				// resolve, and both are refusals dossiq can make while the
-				// handler is still looking at the form. dossiq's endpoint
-				// makes them and then hands the completion to the engine, so
-				// there is still exactly one completion path and not two that
-				// have to agree.
-				const url = generateUrl(
-					action === 'complete'
-						? `${DOSSIQ_TASKS_URL}/${encodeURIComponent(id)}/complete`
-						: `${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
-				)
-				const response = await axios.post(url, body)
-				this.task = response.data?.results ?? response.data ?? null
-				return this.task
-			} catch (error) {
-				// The engine's refusal message is the useful part: it names the
-				// verb and the reason. Keep it rather than a generic failure.
-				this.error =
-					error?.response?.data?.message || error?.message || String(error)
-				return null
-			} finally {
-				this.loading = false
-			}
+			// The engine's refusal message is the useful part: it names the
+			// verb and the reason. keepAnsweredTask keeps it rather than a
+			// generic failure.
+			return keepAnsweredTask(this, () => axios.post(verbUrl(id, action), body))
 		},
 
 		/**
@@ -440,30 +631,19 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async checkItem(uuid, itemId, checked) {
-			const id = String(uuid ?? '').trim()
-			const item = String(itemId ?? '').trim()
+			const id = trimmed(uuid)
+			const item = trimmed(itemId)
 			if (id === '' || item === '') {
 				return null
 			}
 
-			this.loading = true
-			this.error = null
-			try {
-				const url = generateUrl(
+			return keepAnsweredTask(this, () => axios.patch(
+				generateUrl(
 					`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/checklist/${encodeURIComponent(item)}`,
-				)
-				const response = await axios.patch(url, null, {
-					params: { checked: checked === true ? 'true' : 'false' },
-				})
-				this.task = response.data?.results ?? response.data ?? null
-				return this.task
-			} catch (error) {
-				this.error =
-					error?.response?.data?.message || error?.message || String(error)
-				return null
-			} finally {
-				this.loading = false
-			}
+				),
+				null,
+				{ params: { checked: checked === true ? 'true' : 'false' } },
+			))
 		},
 
 		/**
@@ -487,8 +667,8 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async readLeaf(uuid, leaf) {
-			const id = String(uuid ?? '').trim()
-			const name = String(leaf ?? '').trim()
+			const id = trimmed(uuid)
+			const name = trimmed(leaf)
 			if (id === '' || name === '') {
 				return { results: [], error: null }
 			}
@@ -499,20 +679,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 						`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(name)}`,
 					),
 				)
-				const rows = response.data?.results ?? response.data ?? []
-				return {
-					results: Array.isArray(rows) === true ? rows : [],
-					error: null,
-				}
+				return { results: leafRows(response), error: null }
 			} catch (error) {
-				return {
-					results: [],
-					error:
-						error?.response?.data?.error
-						|| error?.response?.data?.message
-						|| error?.message
-						|| String(error),
-				}
+				return { results: [], error: leafRefusal(error) }
 			}
 		},
 
@@ -531,8 +700,8 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async writeNote(uuid, message) {
-			const id = String(uuid ?? '').trim()
-			const text = String(message ?? '').trim()
+			const id = trimmed(uuid)
+			const text = trimmed(message)
 			if (id === '' || text === '') {
 				return { note: null, error: null }
 			}
@@ -544,14 +713,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				)
 				return { note: response.data ?? null, error: null }
 			} catch (error) {
-				return {
-					note: null,
-					error:
-						error?.response?.data?.error
-						|| error?.response?.data?.message
-						|| error?.message
-						|| String(error),
-				}
+				return { note: null, error: leafRefusal(error) }
 			}
 		},
 
@@ -564,8 +726,8 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async removeNote(uuid, noteId) {
-			const id = String(uuid ?? '').trim()
-			const note = String(noteId ?? '').trim()
+			const id = trimmed(uuid)
+			const note = trimmed(noteId)
 			if (id === '' || note === '') {
 				return { removed: false, error: null }
 			}
@@ -578,14 +740,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				)
 				return { removed: true, error: null }
 			} catch (error) {
-				return {
-					removed: false,
-					error:
-						error?.response?.data?.error
-						|| error?.response?.data?.message
-						|| error?.message
-						|| String(error),
-				}
+				return { removed: false, error: leafRefusal(error) }
 			}
 		},
 	},

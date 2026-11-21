@@ -285,7 +285,7 @@ The system SHOULD support controlling who can see and edit a case based on their
 
 ---
 
-### REQ-RESULT-001: Case Result Recording
+### Requirement: REQ-RESULT-001: Case Result Recording
 
 The system MUST support case result recording.
 
@@ -357,7 +357,7 @@ The system MUST support recording a result when a case is being completed. Each 
 
 ---
 
-### REQ-RESULT-002: Result Type Configuration
+### Requirement: REQ-RESULT-002: Result Type Configuration
 
 Admin users MUST be able to configure result types.
 
@@ -401,7 +401,7 @@ Admin users MUST be able to configure result types per case type, including arch
 
 ---
 
-### REQ-DECISION-001: Decision CRUD
+### Requirement: REQ-DECISION-001: Decision CRUD
 
 The system SHALL support decision create, read, update, and delete operations.
 
@@ -694,7 +694,7 @@ The system MUST validate role assignments to ensure data integrity.
 
 ---
 
-### REQ-DECISION-005: Decisions Section on Case Detail
+### Requirement: REQ-DECISION-005: Decisions Section on Case Detail
 
 The case detail view MUST display all decisions linked to the case.
 

@@ -49,8 +49,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Rbac\GrantLookup;
+use OCA\OpenRegister\Service\Rbac\ObjectGrantResolverInterface;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -62,7 +66,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CaseAccessGuard {
+class CaseAccessGuard implements CaseAccessGuardInterface {
 
 	use SearchesObjects;
 
@@ -128,28 +132,14 @@ class CaseAccessGuard {
 	 *
 	 * @return bool True when the user handles the case itself or is an admin.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseMutationAccess(string $caseId, IUser $user): bool {
 		$uid = $user->getUID();
-		if ($uid === '' || $caseId === '') {
-			return false;
-		}
-
-		// Admins bypass per-case checks (consistent with DsoCaseService and
-		// AdviceService).
-		try {
-			if ($this->groupManager->isAdmin($uid) === true) {
-				return true;
-			}
-		} catch (Throwable $e) {
-			// An unresolvable admin check is NOT an authorization: fall through
-			// to the per-case check rather than granting or throwing.
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+		$verdict = $this->callerVerdict(caseId: $caseId, uid: $uid);
+		if ($verdict !== null) {
+			return $verdict;
 		}
 
 		$case = $this->loadCase(caseId: $caseId);
@@ -163,6 +153,53 @@ class CaseAccessGuard {
 
 		return ($assignee !== '' && $assignee === $uid);
 	}//end hasCaseMutationAccess()
+
+	/**
+	 * What the caller alone decides, before any case is read.
+	 *
+	 * No uid or no case is refused; an administrator is let through, without
+	 * reading the case. Anyone else is left to the case: null.
+	 *
+	 * @param string $caseId The case asked about.
+	 * @param string $uid    The caller's uid.
+	 *
+	 * @return bool|null False to refuse, true to allow, null when the case decides.
+	 */
+	private function callerVerdict(string $caseId, string $uid): ?bool {
+		if ($uid === '' || $caseId === '') {
+			return false;
+		}
+
+		if ($this->isAdministrator(uid: $uid) === true) {
+			return true;
+		}
+
+		return null;
+	}//end callerVerdict()
+
+	/**
+	 * Whether the caller is an administrator.
+	 *
+	 * Admins bypass per-case checks (consistent with DsoCaseService and
+	 * AdviceService). An unresolvable admin check is NOT an authorization: it
+	 * answers false, so the per-case check decides, rather than granting or
+	 * throwing.
+	 *
+	 * @param string $uid The caller's uid.
+	 *
+	 * @return bool True for an administrator.
+	 */
+	private function isAdministrator(string $uid): bool {
+		try {
+			return ($this->groupManager->isAdmin($uid) === true);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID]
+			);
+			return false;
+		}
+	}//end isAdministrator()
 
 	/**
 	 * Whether the given user may read the given case.
@@ -189,13 +226,16 @@ class CaseAccessGuard {
 	 * `deelzaken-inherit-the-parent-grants` said would go the moment the
 	 * platform could answer. It can, so it has.
 	 *
-	 * WHAT IS LEFT IS TWO WAYS IN, AND NEITHER IS THE SCHEMA'S OWN READ RULE.
+	 * WHAT IS LEFT IS THREE WAYS IN, AND NONE IS A SCHEMA READ RULE THAT LETS EVERY USER IN.
 	 *
 	 *  - the per-case RELATIONSHIP: the caller is named on the case, as its
 	 *    assignee or in `assignees`. dossiq's own rule, unchanged since the
 	 *    gate-7 remediation, and the reason this guard exists at all;
 	 *  - a per-object GRANT, which OpenRegister resolves and which now
 	 *    includes an inherited one.
+	 *  - membership of a HANDLING TEAM of the case's case type, the team
+	 *    OpenRegister's own case rule lets read the case (REQ-ACC-10), so a
+	 *    team member opens an unclaimed case of their team.
 	 *
 	 * 🔴 IT DOES NOT DEFER WHOLESALE TO `loadCase()` RESOLVING. That was the
 	 * tempting shape and it is a silent widening: `ObjectService::find()`
@@ -208,26 +248,16 @@ class CaseAccessGuard {
 	 * @param string $caseId The case UUID.
 	 * @param IUser $user The authenticated user.
 	 *
-	 * @return bool True when the user works on the case, holds a grant on it, or is an admin.
+	 * @return bool True when the user works on the case, holds a grant on it, is in its handling team, or is an admin.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseReadAccess(string $caseId, IUser $user): bool {
 		$uid = $user->getUID();
-		if ($uid === '' || $caseId === '') {
-			return false;
-		}
-
-		try {
-			if ($this->groupManager->isAdmin($uid) === true) {
-				return true;
-			}
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+		$verdict = $this->callerVerdict(caseId: $caseId, uid: $uid);
+		if ($verdict !== null) {
+			return $verdict;
 		}
 
 		// The platform is asked FIRST and without loading the case, because a
@@ -244,6 +274,20 @@ class CaseAccessGuard {
 			return false;
 		}
 
+		return ($this->isNamedOn(case: $case, uid: $uid) === true || $this->inHandlingTeam(case: $case, uid: $uid) === true);
+	}//end hasCaseReadAccess()
+
+	/**
+	 * Whether the caller is named on the case, as its assignee or in `assignees`.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string $uid The caller.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function isNamedOn(array $case, string $uid): bool {
 		if ((string)($case['assignee'] ?? '') === $uid) {
 			return true;
 		}
@@ -251,7 +295,74 @@ class CaseAccessGuard {
 		$assignees = ($case['assignees'] ?? []);
 
 		return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
-	}//end hasCaseReadAccess()
+	}//end isNamedOn()
+
+	/**
+	 * Whether the caller is in one of the handling teams of the case's case type.
+	 *
+	 * The same teams OpenRegister lets read the case (REQ-ACC-10), read off the
+	 * case type here so a team member can open a case of their team before
+	 * anyone claims it. A case's own `assignedGroup` grants nothing. Read only:
+	 * {@see self::hasCaseMutationAccess()} does not call this.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string $uid The caller.
+	 *
+	 * @return bool True when the caller is in one of the case type's handling teams.
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	private function inHandlingTeam(array $case, string $uid): bool {
+		try {
+			$caseType = $this->caseTypeOf(case: $case);
+		} catch (Throwable $e) {
+			// An unreadable case type is not a team: deny, as every other branch of this guard does.
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID]
+			);
+			return false;
+		}
+
+		foreach ((new CaseTypeHandling())->teams(caseType: $caseType) as $team) {
+			if ($this->groupManager->isInGroup($uid, $team) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end inHandlingTeam()
+
+	/**
+	 * The case type row of a case, or an empty row when the case names none or it is not found.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws Throwable When OpenRegister fails the lookup.
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	private function caseTypeOf(array $case): array {
+		$caseTypeId = ($case['caseType'] ?? '');
+		if (is_array($caseTypeId) === true) {
+			$caseTypeId = ($caseTypeId['id'] ?? ($caseTypeId['uuid'] ?? ''));
+		}
+
+		if (is_string($caseTypeId) === false || $caseTypeId === '') {
+			return [];
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId) ?? []);
+	}//end caseTypeOf()
 
 	/**
 	 * Whether OpenRegister says this caller holds a read grant on this case.
@@ -282,21 +393,21 @@ class CaseAccessGuard {
 	 *
 	 * @return bool True only when the platform affirmatively says so.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	private function holdsPlatformGrant(string $caseId, string $uid): bool {
 		$resolver = $this->settingsService->getObjectGrantResolver();
-		if ($resolver === null || method_exists($resolver, 'isGranted') === false) {
+		if ($resolver instanceof ObjectGrantResolverInterface === false) {
 			return false;
 		}
 
 		try {
-			return ($resolver->isGranted($uid, $caseId, 'read') === true);
+			return ($resolver->isGranted(lookup: new GrantLookup(userId: $uid, objectUuid: $caseId), action: 'read') === true);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: the platform grant lookup failed, treating the caller as holding none: '
 				. $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}
@@ -312,24 +423,12 @@ class CaseAccessGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function loadCase(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
-				['app' => Application::APP_ID]
-			);
+		$source = $this->caseSource();
+		if ($source === null) {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
-				['app' => Application::APP_ID]
-			);
-			return null;
-		}
+		[$objectService, $register, $caseSchema] = $source;
 
 		try {
 			return $this->findObjectAsArray(
@@ -341,9 +440,39 @@ class CaseAccessGuard {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return null;
 		}
 	}//end loadCase()
+
+	/**
+	 * The object service, register and case schema a case is loaded from, logging what is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The source, or null when OpenRegister or the schema is missing.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function caseSource(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if (empty($register) === true || empty($caseSchema) === true) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
+				['app' => AppIdentity::APP_ID]
+			);
+			return null;
+		}
+
+		return [$objectService, $register, $caseSchema];
+	}//end caseSource()
 }//end class

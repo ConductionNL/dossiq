@@ -22,22 +22,45 @@
  */
 export function translateLensLabels(manifest, translate) {
 	for (const page of manifest?.pages ?? []) {
-		for (const key of ['footerNote', 'bulkHint']) {
-			if (typeof page?.config?.[key] === 'string') {
-				page.config[key] = translate(page.config[key])
-			}
-		}
-		const lenses = page?.config?.quickFilters
-		if (!Array.isArray(lenses)) {
-			continue
-		}
-		page.config.quickFilters = lenses.map((lens) =>
-			lens && typeof lens.label === 'string'
-				? { ...lens, label: translate(lens.label) }
-				: lens,
-		)
+		translatePageNotes(page, translate)
+		translateQuickFilters(page, translate)
 	}
 	return manifest
+}
+
+/** The page config notes nextcloud-vue draws as written. */
+const PAGE_NOTE_KEYS = ['footerNote', 'bulkHint']
+
+/**
+ * Translate a page's footer note and bulk hint, when they are strings.
+ *
+ * @param {object|null} page One page of the manifest.
+ * @param {(text: string) => string} translate The host translate.
+ */
+function translatePageNotes(page, translate) {
+	for (const key of PAGE_NOTE_KEYS) {
+		if (typeof page?.config?.[key] === 'string') {
+			page.config[key] = translate(page.config[key])
+		}
+	}
+}
+
+/**
+ * Translate the string label of each of a page's quick filters.
+ *
+ * @param {object|null} page One page of the manifest.
+ * @param {(text: string) => string} translate The host translate.
+ */
+function translateQuickFilters(page, translate) {
+	const lenses = page?.config?.quickFilters
+	if (!Array.isArray(lenses)) {
+		return
+	}
+	page.config.quickFilters = lenses.map((lens) =>
+		lens && typeof lens.label === 'string'
+			? { ...lens, label: translate(lens.label) }
+			: lens,
+	)
 }
 
 /** The widget copy keys nextcloud-vue draws as written. */
@@ -64,7 +87,7 @@ const TAB_TEXT_KEYS = ['moreLabel', 'ariaLabel']
  * @param {(text: string) => string} translate The host translate.
  * @return {void}
  *
- * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 function translateTabsAndSections(content, translate) {
 	for (const key of TAB_TEXT_KEYS) {
@@ -165,38 +188,75 @@ const FIELD_OVERRIDE_KEYS = ['fieldOverrides', 'overrides']
  * @param {(text: string) => string} translate The host translate.
  * @return {object} The same manifest with its override labels translated.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 export function translateFieldOverrideLabels(manifest, translate) {
-	const seen = new Set()
-	const walk = (node) => {
-		if (!node || typeof node !== 'object' || seen.has(node)) {
-			return
+	walkOverrides({ seen: new Set(), translate }, manifest)
+	return manifest
+}
+
+/**
+ * Walk one node of the manifest, translating every override map under it.
+ * A node is walked once, so a shared or cyclic node is not visited again.
+ *
+ * @param {{seen: Set<object>, translate: (text: string) => string}} run The walked nodes and the host translate.
+ * @param {unknown} node The node.
+ */
+function walkOverrides(run, node) {
+	if (!node || typeof node !== 'object' || run.seen.has(node)) {
+		return
+	}
+	run.seen.add(node)
+	if (Array.isArray(node)) {
+		node.forEach((child) => walkOverrides(run, child))
+		return
+	}
+	walkEntries(run, node)
+}
+
+/**
+ * Translate the override maps an object holds, and walk each of its values,
+ * key by key.
+ *
+ * @param {{seen: Set<object>, translate: (text: string) => string}} run The walked nodes and the host translate.
+ * @param {object} node The object.
+ */
+function walkEntries(run, node) {
+	for (const [key, value] of Object.entries(node)) {
+		if (isOverrideMap(key, value)) {
+			translateOverrides(value, run.translate)
 		}
-		seen.add(node)
-		if (Array.isArray(node)) {
-			node.forEach(walk)
-			return
-		}
-		for (const [key, value] of Object.entries(node)) {
-			if (
-				FIELD_OVERRIDE_KEYS.includes(key)
-				&& value
-				&& typeof value === 'object'
-				&& !Array.isArray(value)
-			) {
-				for (const [field, override] of Object.entries(value)) {
-					if (override && typeof override.label === 'string') {
-						value[field] = {
-							...override,
-							label: translate(override.label),
-						}
-					}
-				}
+		walkOverrides(run, value)
+	}
+}
+
+/**
+ * Whether a key holds a map of per-field overrides.
+ *
+ * @param {string} key The key.
+ * @param {unknown} value Its value.
+ * @return {boolean} True for an override map.
+ */
+function isOverrideMap(key, value) {
+	return FIELD_OVERRIDE_KEYS.includes(key)
+		&& value
+		&& typeof value === 'object'
+		&& !Array.isArray(value)
+}
+
+/**
+ * Translate the string label of each override in a map, in place.
+ *
+ * @param {object} overrides The override map.
+ * @param {(text: string) => string} translate The host translate.
+ */
+function translateOverrides(overrides, translate) {
+	for (const [field, override] of Object.entries(overrides)) {
+		if (override && typeof override.label === 'string') {
+			overrides[field] = {
+				...override,
+				label: translate(override.label),
 			}
-			walk(value)
 		}
 	}
-	walk(manifest)
-	return manifest
 }

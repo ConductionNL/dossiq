@@ -1,0 +1,2 @@
+- [x] CaseShareOrganisationDialog organisation :clearable="false"
+- [x] vitest (red first)

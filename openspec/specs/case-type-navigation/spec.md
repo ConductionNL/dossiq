@@ -58,3 +58,50 @@ The `Cases` index page SHALL offer a map view alongside table and cards (`viewMo
 - **WHEN** an administrator inspects the menu
 - **THEN** there SHALL be no standalone "Map" menu leaf
 - **AND** the `/map` route SHALL still be reachable by deep link
+
+### Requirement: REQ-CTN-007 — A case type in my menu is named in the reader's language
+
+The case type views a user pinned, and their entries under "Mijn weergaven" in
+the menu, SHALL carry the case type's title as text in the reader's language. Because the
+title is translatable and stored as a language map, the title SHALL be resolved to
+the reader's language, then to Dutch, then to the first text the map holds. A case
+type with no title SHALL be named by its id. A title SHALL never be shown as
+"Array".
+
+#### Scenario: A translatable title is read in the reader's language
+@e2e exclude the language map is resolved server side and the instance seeds Dutch titles only; proven by tests/Unit/Service/MenuCaseTypesServiceTest.php::testATranslatableTitleIsReadInTheReadersLanguage
+
+- **GIVEN** a case type whose title is `{"nl": "Kapvergunning", "en": "Tree felling permit"}`
+- **WHEN** a reader whose language is English reads their pinned case type views
+- **THEN** the case type SHALL be named "Tree felling permit"
+
+#### Scenario: A title without the reader's language falls back to Dutch
+@e2e exclude the language map is resolved server side; proven by tests/Unit/Service/MenuCaseTypesServiceTest.php::testATranslatableTitleIsReadInTheReadersLanguage
+
+- **GIVEN** a case type whose title is `{"nl": "Woo-verzoek"}`
+- **WHEN** a reader whose language is English reads their pinned case type views
+- **THEN** the case type SHALL be named "Woo-verzoek"
+
+### Requirement: A pinned case type is a view of the case list
+
+The manifest delta SHALL add, for each case type a user pinned, a default view
+of the Cases page filtering on that case type, and SHALL add no menu entry of
+its own. The Woo request case type SHALL use the view the Cases page ships.
+
+#### Scenario: A user pinned two case types
+- GIVEN a user who pinned Klacht and Bezwaar
+- WHEN the app loads its manifest
+- THEN the Cases page has the default views case-type-<Klacht> and case-type-<Bezwaar>
+- AND the menu has no My case types heading
+
+### Requirement: Pins are carried over to the menu views once
+
+On upgrade, each user's pinned case types SHALL be added to their menu views,
+in their order, after the views they added themselves, once per user, and the
+stored pins SHALL be kept.
+
+#### Scenario: A view taken out stays out
+- GIVEN a user whose pins were carried over
+- AND who took one of those views out of the menu
+- WHEN the upgrade runs again
+- THEN that view is not added again

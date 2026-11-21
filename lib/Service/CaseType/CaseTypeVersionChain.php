@@ -31,13 +31,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
 
@@ -46,9 +47,9 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypeVersionChain {
+class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 
 	/**
 	 * Constructor.
@@ -77,7 +78,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsOf(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -98,7 +99,7 @@ class CaseTypeVersionChain {
 			}
 
 			$seen[$id] = true;
-			$versions[] = $this->entry(row: $row, id: $id, currentId: $caseTypeId);
+			$versions[] = $this->entry(row: $row, id: $id) + ['isSelf' => ($id === $caseTypeId)];
 		}
 
 		usort(
@@ -121,7 +122,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<string, mixed> The current version's entry, or an empty array.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function currentOf(string $caseTypeId): array {
 		foreach ($this->versionsOf(caseTypeId: $caseTypeId) as $entry) {
@@ -145,7 +146,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The candidate versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function targetsFor(string $caseTypeId): array {
 		$targets = [];
@@ -163,13 +164,12 @@ class CaseTypeVersionChain {
 	/**
 	 * One version, as the page and the dialog read it.
 	 *
-	 * @param array<string, mixed> $row       The case type row.
-	 * @param string               $id        Its id.
-	 * @param string               $currentId The version the reader started from.
+	 * @param array<string, mixed> $row The case type row.
+	 * @param string               $id  Its id.
 	 *
-	 * @return array<string, mixed> The entry.
+	 * @return array<string, mixed> The entry, without whether it is the version the reader started from.
 	 */
-	private function entry(array $row, string $id, string $currentId): array {
+	private function entry(array $row, string $id): array {
 		return [
 			'id' => $id,
 			'title' => $this->text->forReader(value: ($row['title'] ?? null)),
@@ -180,7 +180,6 @@ class CaseTypeVersionChain {
 			'validUntil' => (string)($row['validUntil'] ?? ''),
 			'previousVersion' => $this->store->referenceId(value: ($row['previousVersion'] ?? '')),
 			'supersededBy' => $this->store->referenceId(value: ($row['supersededBy'] ?? '')),
-			'isSelf' => ($id === $currentId),
 		];
 	}//end entry()
 }//end class

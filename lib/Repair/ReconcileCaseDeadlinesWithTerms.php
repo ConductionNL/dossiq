@@ -28,17 +28,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -47,11 +47,10 @@ use Throwable;
 /**
  * Writes every case's deadline from its statutory term, once.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The most term instances one run reads.
@@ -61,13 +60,13 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Settings and ObjectService access.
-	 * @param CaseDeadlineMirror $mirror          The write the term engine makes.
+	 * @param SettingsServiceInterface    $settingsService Settings and ObjectService access.
+	 * @param CaseDeadlineMirrorInterface $mirror          The write the term engine makes.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDeadlineMirror $mirror,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDeadlineMirrorInterface $mirror,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -77,7 +76,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function getName(): string {
 		return 'Write every Dossiq case deadline from its statutory term';
@@ -90,7 +89,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -99,28 +98,73 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 		}
 
 		$objectService = $this->settingsService->getObjectService();
-		$caseIds = null;
 		$counts = ['followed' => 0, 'unchanged' => 0, 'failed' => 0];
 
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use (&$caseIds, &$counts): void {
-				$caseIds = $this->casesWithAStatutoryTerm();
-				if ($caseIds === null) {
-					return;
-				}
-
-				foreach ($caseIds as $caseId) {
-					$this->reconcile(caseId: $caseId, counts: $counts);
-				}
-			}
-		);
+		$caseIds = $this->reconcileAsSystem(objectService: $objectService, counts: $counts);
 
 		if ($caseIds === null) {
 			$output->warning('Term instances not readable (schemas unconfigured, or the read was refused). Skipping the case deadline repair.');
 			return;
 		}
 
+		$this->report(output: $output, counts: $counts);
+	}//end run()
+
+	/**
+	 * Reconcile every case with a statutory term under the system identity.
+	 *
+	 * @param object|null        $objectService OpenRegister's ObjectService.
+	 * @param array<string, int> $counts        Running counts (by reference).
+	 *
+	 * @return array<int, string>|null The case uuids read, or null when unreadable.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	private function reconcileAsSystem(?object $objectService, array &$counts): ?array {
+		$caseIds = null;
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use (&$caseIds, &$counts): void {
+				$caseIds = $this->reconcileAll(counts: $counts);
+			}
+		);
+
+		return $caseIds;
+	}//end reconcileAsSystem()
+
+	/**
+	 * Read the cases with a statutory term and reconcile each one.
+	 *
+	 * @param array<string, int> $counts Running counts (by reference).
+	 *
+	 * @return array<int, string>|null The case uuids read, or null when unreadable.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	private function reconcileAll(array &$counts): ?array {
+		$caseIds = $this->casesWithAStatutoryTerm();
+		if ($caseIds === null) {
+			return null;
+		}
+
+		foreach ($caseIds as $caseId) {
+			$this->reconcile(caseId: $caseId, counts: $counts);
+		}
+
+		return $caseIds;
+	}//end reconcileAll()
+
+	/**
+	 * Log and print the repair's counts.
+	 *
+	 * @param IOutput            $output Output sink.
+	 * @param array<string, int> $counts The counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq case deadline repair complete', $counts);
 		$output->info(
 			sprintf(
@@ -130,7 +174,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 				$counts['failed']
 			)
 		);
-	}//end run()
+	}//end report()
 
 	/**
 	 * Reconcile one case.
@@ -163,10 +207,8 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 * @return array<int, string>|null The case uuids.
 	 */
 	private function casesWithAStatutoryTerm(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_instance_schema');
+		if ($target === null) {
 			return null;
 		}
 
@@ -174,17 +216,23 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 			// A page as large as the step will meet, not the default page: a repair
 			// that silently stopped after the first twenty cases would report
 			// green over every case after them.
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE]
-			);
+			$rows = $target->search(filters: ['_limit' => self::PAGE]);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq case deadline repair: listing the terms failed', ['error' => $e->getMessage()]);
 			return null;
 		}
 
+		return $this->statutoryCaseIds(rows: $rows);
+	}//end casesWithAStatutoryTerm()
+
+	/**
+	 * The distinct cases among term rows that carry a statutory term.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The TermijnInstance rows.
+	 *
+	 * @return array<int, string> The case uuids.
+	 */
+	private function statutoryCaseIds(array $rows): array {
 		$caseIds = [];
 		foreach ($rows as $row) {
 			$caseId = trim((string)($row['case'] ?? ''));
@@ -196,5 +244,5 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 		}
 
 		return array_map(strval(...), array_keys($caseIds));
-	}//end casesWithAStatutoryTerm()
+	}//end statutoryCaseIds()
 }//end class

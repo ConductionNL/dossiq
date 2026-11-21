@@ -14,7 +14,7 @@
  * - Tenant onboarding put its empty-state text in a slot NcEmptyContent does
  *   not render, so the section showed a bare icon.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -55,6 +55,7 @@ const PROPER = new Set([
 	'Dossiq',
 	'KCC',
 	'Nextcloud',
+	'Omgevingsloket',
 	'OpenRegister',
 	'PHP',
 	'StUF',
@@ -100,6 +101,10 @@ const headings = files(SETTINGS).flatMap((file) => {
 		...source.matchAll(
 			/<CnAdminSettingsShell[\s\S]*?:title="t\('dossiq', '([^']+)'\)"/g,
 		),
+		// The tab labels: the open tab is the page title.
+		...source.matchAll(
+			/\{\s*id: '[a-z-]+',\s*label: this\.t\('dossiq', '([^']+)'\),?\s*\}/g,
+		),
 	].map((m) => m[1])
 	return found.map((heading) => ({
 		file: path.relative(ROOT, file),
@@ -112,8 +117,9 @@ describe('admin settings headings', () => {
 		// The control: a regex that matched nothing would pass every heading.
 		expect(headings.length).toBeGreaterThan(30)
 		expect(headings.map((h) => h.heading)).toContain('Search index')
-		// The page title: the library's default is "{app} Settings".
-		expect(headings.map((h) => h.heading)).toContain('Dossiq settings')
+		// The page title is the open tab: the library's default is "{app} Settings".
+		expect(headings.map((h) => h.heading)).toContain('General')
+		expect(headings.map((h) => h.heading)).toContain('Integration settings')
 	})
 
 	it.each(headings.map((h) => [h.file, h.heading]))(

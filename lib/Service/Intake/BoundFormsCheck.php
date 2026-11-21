@@ -29,7 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BoundFormsCheckInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
  */
-class BoundFormsCheck {
+class BoundFormsCheck implements BoundFormsCheckInterface {
 
 	/**
 	 * The event OpenRegister asks the owning apps for their forms with.
@@ -57,25 +58,11 @@ class BoundFormsCheck {
 	public const DEPENDENTS_CHECK = 'OCA\\OpenRegister\\Service\\Form\\FormDependentsCheck';
 
 	/**
-	 * The form an owning app announces.
-	 *
-	 * @var string
-	 */
-	public const FORM_DEPENDENT = 'OCA\\OpenRegister\\Service\\Form\\FormDependent';
-
-	/**
 	 * The owning app's setting: `unpublish` (default) or `refuse`. OpenRegister's own key.
 	 *
 	 * @var string
 	 */
 	public const BREAK_SETTING = 'formDestinationBreak';
-
-	/**
-	 * The rule a refused case type save names.
-	 *
-	 * @var string
-	 */
-	public const RULE = 'bound-form-invalid';
 
 	/**
 	 * Constructor.
@@ -141,52 +128,89 @@ class BoundFormsCheck {
 		}
 
 		$schema = $this->check->caseSchema();
-		$eventClass = self::DEPENDENTS_EVENT;
-		if ($schema === null || class_exists($eventClass) === false) {
+		if ($schema === null || class_exists(self::DEPENDENTS_EVENT) === false) {
 			// An OpenRegister without the form destination check has no forms to ask for.
 			return $assessment;
 		}
 
+		return $this->assessmentFor(schema: $schema, caseType: $caseType);
+	}//end assess()
+
+	/**
+	 * Ask OpenRegister for the forms bound to the case schema and judge each one.
+	 *
+	 * @param object               $schema   The case schema.
+	 * @param array<string, mixed> $caseType The case type as it is being saved.
+	 *
+	 * @return array{refused: bool, schema: string, affected: list<array<string, mixed>>} The assessment.
+	 */
+	private function assessmentFor(object $schema, array $caseType): array {
+		$eventClass = self::DEPENDENTS_EVENT;
 		$event = new $eventClass(schema: $schema);
 		$this->dispatcher->dispatchTyped($event);
 
+		$assessment = ['refused' => false, 'schema' => '', 'affected' => []];
 		if (is_callable([$schema, 'getSlug']) === true) {
 			$assessment['schema'] = (string)$schema->getSlug();
 		}
 
+		return array_merge($assessment, $this->judgedForms(forms: $event->getForms(), caseType: $caseType));
+	}//end assessmentFor()
+
+	/**
+	 * Every judged form, and whether any of them refuses the save.
+	 *
+	 * @param iterable<object>     $forms    OpenRegister's `FormDependent`s.
+	 * @param array<string, mixed> $caseType The case type as it is being saved.
+	 *
+	 * @return array{refused: bool, affected: list<array<string, mixed>>} The refusal and the judged forms.
+	 */
+	private function judgedForms(iterable $forms, array $caseType): array {
+		$judged = ['refused' => false, 'affected' => []];
 		$names = $this->namesOf(caseType: $caseType);
-		foreach ($event->getForms() as $form) {
-			$entry = $this->judged(form: $form, caseType: $caseType, names: $names);
+		foreach ($forms as $form) {
+			if ($this->isBoundElsewhere(form: $form, names: $names) === false) {
+				continue;
+			}
+
+			$entry = $this->judged(form: $form, caseType: $caseType);
 			if ($entry === null) {
 				continue;
 			}
 
-			$assessment['refused'] = ($assessment['refused'] || $entry['break'] === 'refuse');
-			$assessment['affected'][] = $entry;
+			$judged['refused'] = ($judged['refused'] || $entry['break'] === 'refuse');
+			$judged['affected'][] = $entry;
 		}
 
-		return $assessment;
-	}//end assess()
+		return $judged;
+	}//end judgedForms()
 
 	/**
-	 * One announced form, judged, or null when it is not another app's form for this type or has no findings.
+	 * Whether an announced form is another app's form that opens a case of this type.
+	 *
+	 * @param object             $form  OpenRegister's `FormDependent`.
+	 * @param array<int, string> $names The names the case type answers to.
+	 *
+	 * @return bool TRUE when the form is another app's and its fixed case type is one of the names.
+	 */
+	private function isBoundElsewhere(object $form, array $names): bool {
+		$fixed = ($form->mapping['fixed'] ?? null);
+		if ($form->app === AppIdentity::APP_ID || is_array($fixed) === false) {
+			return false;
+		}
+
+		return in_array(trim((string)($fixed['caseType'] ?? '')), $names, true);
+	}//end isBoundElsewhere()
+
+	/**
+	 * One bound form, judged, or null when it has no findings.
 	 *
 	 * @param object               $form     OpenRegister's `FormDependent`.
 	 * @param array<string, mixed> $caseType The case type as it is being saved.
-	 * @param array<int, string>   $names    The names the case type answers to.
 	 *
 	 * @return array<string, mixed>|null id, app, title, break, findings and form.
 	 */
-	private function judged(object $form, array $caseType, array $names): ?array {
-		$fixed = ($form->mapping['fixed'] ?? null);
-		if ($form->app === Application::APP_ID || is_array($fixed) === false) {
-			return null;
-		}
-
-		if (in_array(trim((string)($fixed['caseType'] ?? '')), $names, true) === false) {
-			return null;
-		}
-
+	private function judged(object $form, array $caseType): ?array {
 		$findings = $this->check->findingsOfMapping(caseType: $caseType, mapping: $form->mapping, audience: $form->audience);
 		if ($findings === []) {
 			return null;

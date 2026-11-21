@@ -1,7 +1,7 @@
 # woo-publication-via-opencatalogi Specification
 
 ## Purpose
-TBD - created by archiving change woo-publication-via-opencatalogi. Update Purpose after archive.
+Publish Woo decisions through OpenCatalogi, building the publication from the case and disclosing only redacted documents.
 
 ## Requirements
 
@@ -13,13 +13,13 @@ informatiecategorie and including only disclosable documents.
 #### Scenario: Payload includes core besluit metadata
 - **GIVEN** a WOO decision assembled via `WOODecisionService::assembleDecision()`
   for case `caseId` with `decisionDate`, `wooSummary`, and `weigeringsgronden`
-- **WHEN** `WooPublicationService::buildPayload()` is called for that decision
+- **WHEN** `OutcomePublisher::buildPayload()` is called for that decision
 - **THEN** the built payload MUST include title, summary, the decision date,
   and a case reference to `caseId`
 
 #### Scenario: Decision maps to the Woo-verzoeken-en-besluiten informatiecategorie
 - **GIVEN** a WOO decision with `decisionType` "WOO-besluit"
-- **WHEN** `WooCategoryMapper::forDecision()` is called
+- **WHEN** `PublicationCategory::forDecision()` is called
 - **THEN** it MUST return category code `infocat014` with label
   "Woo-verzoeken en -besluiten" and the TOOI URI
   `https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532`
@@ -27,7 +27,7 @@ informatiecategorie and including only disclosable documents.
 #### Scenario: Unmapped decision type falls back to the Woo category
 - **GIVEN** a decision whose `decisionType` has no explicit entry in the
   category mapping table
-- **WHEN** `WooCategoryMapper::forDecision()` is called
+- **WHEN** `PublicationCategory::forDecision()` is called
 - **THEN** it MUST still return the `infocat014` entry rather than throwing or
   returning null
 
@@ -38,7 +38,7 @@ NEVER include a document assessed as `niet_openbaar` at all.
 
 #### Scenario: Openbaar document is included as-is
 - **GIVEN** a document assessment with `classification: 'openbaar'`
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST appear in the returned list using its normal
   content reference
 
@@ -46,7 +46,7 @@ NEVER include a document assessed as `niet_openbaar` at all.
 - **GIVEN** a document assessment with `classification: 'deels_openbaar'` that
   has both an original content reference and a finalized redacted-version
   reference
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST appear in the returned list
 - **AND** the content reference used MUST be the redacted version
 - **AND** the original content reference MUST NOT appear anywhere in the
@@ -56,12 +56,12 @@ NEVER include a document assessed as `niet_openbaar` at all.
 - **GIVEN** a document assessment with `classification: 'deels_openbaar'` and
   no finalized redacted-version reference (still `awaiting_manual_redaction`
   or queued at Docudesk)
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST NOT appear in the returned list
 
 #### Scenario: Niet openbaar document is always excluded
 - **GIVEN** a document assessment with `classification: 'niet_openbaar'`
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST NOT appear in the returned list regardless of
   any content reference it carries
 
@@ -127,7 +127,7 @@ installed or not enabled, and MUST surface an actionable admin hint instead.
 #### Scenario: OpenRegister unavailable
 - **GIVEN** `SettingsService::getObjectService()` returns null (OpenRegister
   unavailable)
-- **WHEN** `WooPublicationService::checkAvailability()` is called
+- **WHEN** `OutcomePublisher::checkAvailability()` is called
 - **THEN** it MUST return `available: false` with reason
   `openregister_unavailable`
 
@@ -300,7 +300,7 @@ MIME argument.
 
 Every failure of any operation on this client MUST continue to surface as
 `RuntimeException` with message `opencatalogi_api_error`, so
-`WooPublicationService`'s existing `catch (Throwable)` arms — which map it to
+`OutcomePublisher`'s existing `catch (Throwable)` arms — which map it to
 `['available' => false, 'reason' => 'opencatalogi_api_error']` — keep working
 unchanged.
 
@@ -408,7 +408,10 @@ paths MUST create a public, searchable publication".
 When the case has `wooRequest.collectionId`, publishing MUST append one item
 `{id, publication, attachment: null, note, addedAt, addedBy: "dossiq"}` to that
 collection, once per publication, without changing or removing any other item.
-The case MUST then read `wooPublicationUrl`, and the citizen contribution MUST
+The collection lives in another app's register and the resident's tenant, so
+it MUST be read and written unscoped, and only while its `owner` is the case's
+`portalSubject`, the check the intake made; a collection that is not the
+requester's MUST get nothing. The case MUST then read `wooPublicationUrl`, and the citizen contribution MUST
 declare the change rule `dossiq.wooRequest.published` on `mijnZaken` for that
 field, so portaliq writes the resident's notice in the portal inbox and sends
 it by email as the resident prefers. It MUST NOT be sent to the Berichtenbox,
@@ -419,8 +422,8 @@ answer, decision and alert MUST reach the resident through portaliq's notice
 path".
 
 #### Scenario: The resident finds the decision in their dossier
-@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `WooDossierReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`.
-- **GIVEN** a Woo request started from a dossier
+@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `SourceCollectionReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`, on a store that hides the dossier from a scoped read.
+- **GIVEN** a Woo request started from a dossier, handled by a signed-in handler who cannot see that dossier under their own scope
 - **WHEN** its decision is published
 - **THEN** the dossier MUST hold the new publication, added by dossiq
 - **AND** the resident's case MUST carry the publication link that portaliq's change rule reports
@@ -436,6 +439,12 @@ path".
 - **GIVEN** a Woo request case with no `wooRequest.collectionId`
 - **WHEN** its decision is published
 - **THEN** the publication MUST be created and no collection MUST be written
+
+#### Scenario: A dossier that is not the requester's gets nothing
+@e2e exclude Covered by `SourceCollectionReturnTest::testADossierOfSomebodyElseGetsNothing`.
+- **GIVEN** a case whose `wooRequest.collectionId` names a collection owned by somebody else
+- **WHEN** its decision is published
+- **THEN** that collection MUST NOT change
 
 ### Requirement: The publish action shows only to whoever may publish, and says what happened (REQ-WPI-009)
 The case page MUST offer "Publish (Woo)" and "Withdraw publication" only to the
@@ -475,3 +484,73 @@ their own check.
 - **WHEN** a Dutch-speaking handler presses "Publish (Woo)" and confirms
 - **THEN** the system MUST answer 409 with the message "Er kan nog niets gepubliceerd worden: geen enkel document is als openbaar beoordeeld."
 @e2e exclude unit over the controller; WOOAssessmentControllerTest::testARefusalIsTranslatedForTheHeaderAction
+
+### Requirement: The publication carries every disclosable file, or is not made (REQ-WPI-010)
+
+Publishing a Woo decision MUST attach the file of every document assessed `openbaar` and the redacted copy of every document assessed `deels_openbaar`, and nothing else. A case file MUST be read from OpenRegister's managed tree, where it lives, whoever the caller is, and from the root folder only when the managed tree does not know it. When the file of a document that would be disclosed cannot be read, the publish MUST be refused with 409 and the reason `documents_unreadable`, naming those documents, and no publication MUST be created or changed.
+
+#### Scenario: The handler publishes a case with a public and a redacted document
+@e2e exclude {needs OpenCatalogi and OpenRegister's managed file tree; asserted in tests/Unit/Woo/WooPublicationCarriesItsDocumentsTest.php with a root folder that finds nothing, as it did for the handler in rehearsal R3}
+
+- **GIVEN** a Woo request with a document assessed Openbaar, a document assessed Deels openbaar with a redacted copy, one Deels openbaar without a copy, and one Niet openbaar
+- **AND** the handler has no mount on the folder that holds the case files
+- **WHEN** the handler publishes the decision
+- **THEN** the publication MUST carry the public document and the redacted copy
+- **AND** it MUST NOT carry the original of either partly public document or the withheld document
+
+#### Scenario: A file that cannot be read stops the publish
+@e2e exclude {asserted in tests/Unit/Woo/WooPublicationCarriesItsDocumentsTest.php and tests/Unit/Controller/WOOAssessmentControllerTest.php}
+
+- **GIVEN** a document assessed Openbaar whose file cannot be read
+- **WHEN** the handler publishes the decision
+- **THEN** the answer MUST be 409 with "Een document dat openbaar mag worden kon niet worden gelezen, dus er is niets gepubliceerd."
+- **AND** the case MUST still read ready, not published
+
+### Requirement: The decision MUST be published when the case records that nothing is disclosable
+
+When no document can be disclosed, publishing SHALL still publish the decision itself, as an opencatalogi publication without attachments, if the case records that nothing is disclosable. That record is either a recorded "nothing found" with its note, or every document under review assessed and every assessment `niet_openbaar`. In every other case an empty disclosable set SHALL still refuse with `no_publishable_documents`.
+
+#### Scenario: Everything withheld
+
+- **GIVEN** a Woo request whose two documents are both assessed `niet_openbaar`
+- **WHEN** the coordinator publishes
+- **THEN** opencatalogi receives one publication with no attachment
+- **AND** the case reads `wooPublicationStatus: published`
+
+#### Scenario: A redaction is still missing
+
+- **GIVEN** one document `niet_openbaar` and one `deels_openbaar` without its redacted version
+- **WHEN** the coordinator publishes
+- **THEN** the publish is refused with `no_publishable_documents`
+
+### Requirement: A decision is filed under its decision type's publication category
+
+A decision type MAY carry `publicationCategory` with a `code`, `label` and
+`uri`. A published decision SHALL be filed under the category of its decision
+type when that row carries all three, and under `infocat014`
+(Woo-verzoeken en -besluiten) otherwise. A decision type row that does not
+exist SHALL read as having no category. A read of the decision type that
+fails SHALL fail the publish, as the publish's other reads do. A shipped
+decision type row stored before the property existed SHALL get its shipped
+category on upgrade, and a row that already carries one SHALL keep it.
+
+#### Scenario: The Woo decision type names its category
+- **GIVEN** a decision whose `decisionType` is the shipped Woo decision type `3c0f5a00-0000-4000-a000-00000000d001`, which carries `publicationCategory`
+- **WHEN** `PublicationCategory::forDecision()` is called
+- **THEN** it returns code `infocat014`, label "Woo-verzoeken en -besluiten" and the TOOI URI `https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532`
+
+@e2e exclude Needs OpenCatalogi. Covered by `PublicationCategoryTest::testTheDecisionTypeRowNamesTheCategory` and `testTheShippedWooDecisionTypeCarriesItsCategory`.
+
+#### Scenario: A decision type without a category
+- **GIVEN** a decision whose `decisionType` is not a stored row, or whose row carries no complete `publicationCategory`
+- **WHEN** `PublicationCategory::forDecision()` is called
+- **THEN** it returns the `infocat014` entry, never null
+
+@e2e exclude Needs OpenCatalogi. Covered by `PublicationCategoryTest::testEverythingElseFallsBack`.
+
+#### Scenario: An existing instance keeps its category
+- **GIVEN** an instance whose stored Woo decision type row predates `publicationCategory`
+- **WHEN** the app is upgraded
+- **THEN** the row carries the shipped category, and a row that already had one is not changed
+
+@e2e exclude Repair step. Covered by `CopyShippedPublicationCategoriesTest`.

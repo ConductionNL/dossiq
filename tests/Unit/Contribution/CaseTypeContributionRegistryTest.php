@@ -133,6 +133,8 @@ use RuntimeException;
 
 /**
  * Tests for CaseTypeContributionRegistry.
+ *
+ * @covers \OCA\Dossiq\Contribution\CaseTypeContributionRegistry
  */
 class CaseTypeContributionRegistryTest extends TestCase {
 

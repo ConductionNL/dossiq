@@ -142,33 +142,73 @@ class CaseStateFieldRuleProjector {
 		);
 
 		$requiredByStatus = $this->requiredByStatus(caseTypeId: $caseTypeId);
-		$roleFields = $this->roles->lifecycleFields(
-			caseType: $this->store->readCaseType(caseTypeId: $caseTypeId)
-		);
+		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 
 		$states = [];
 		foreach ($statusTypes as $statusType) {
-			$stateKey = $this->store->rowId(row: $statusType);
-			if ($stateKey === '') {
-				continue;
-			}
-
-			$fields = $this->declaration->fieldsBlock(statusType: $statusType);
-			$fields = $this->foldInRequired(
-				fields: $fields,
-				required: ($requiredByStatus[$stateKey] ?? [])
+			$states = $this->withState(
+				states: $states,
+				source: ['statusType' => $statusType, 'requiredByStatus' => $requiredByStatus, 'caseType' => $caseType]
 			);
-			$fields = $this->roles->foldInto(fields: $fields, roles: $roleFields);
-
-			if ($fields === []) {
-				continue;
-			}
-
-			$states[$stateKey] = ['fields' => $fields];
 		}
 
 		return $states;
 	}//end statesOf()
+
+	/**
+	 * The states with one status type's field rules added, when it has any.
+	 *
+	 * @param array<string, array<string, mixed>> $states The states so far.
+	 * @param array<string, mixed>                $source The status type row (`statusType`), the required fields per
+	 *                                                    status (`requiredByStatus`) and the case type (`caseType`).
+	 *
+	 * @return array<string, array<string, mixed>> The states.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withState(array $states, array $source): array {
+		$statusType = $source['statusType'];
+		$stateKey = $this->store->rowId(row: $statusType);
+		if ($stateKey === '') {
+			return $states;
+		}
+
+		$fields = $this->stateFields(
+			statusType: $statusType,
+			state: ['key' => $stateKey, 'required' => ($source['requiredByStatus'][$stateKey] ?? []), 'caseType' => $source['caseType']]
+		);
+		if ($fields === []) {
+			return $states;
+		}
+
+		$states[$stateKey] = ['fields' => $fields];
+
+		return $states;
+	}//end withState()
+
+	/**
+	 * One state's field rules: declared on the status type, required by it, and per role.
+	 *
+	 * @param array<string, mixed> $statusType The status type row.
+	 * @param array<string, mixed> $state      The status type id (`key`), the fields required in this state
+	 *                                         (`required`) and the case type (`caseType`).
+	 *
+	 * @return array<string, mixed> The fields block.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function stateFields(array $statusType, array $state): array {
+		$fields = $this->declaration->fieldsBlock(statusType: $statusType);
+		$fields = $this->foldInRequired(
+			fields: $fields,
+			required: $state['required']
+		);
+
+		return $this->roles->foldInto(
+			fields: $fields,
+			roles: $this->roles->lifecycleFields(caseType: $state['caseType'], statusId: $state['key'])
+		);
+	}//end stateFields()
 
 	/**
 	 * Publish a case type's states onto the live case schema.
@@ -217,7 +257,7 @@ class CaseStateFieldRuleProjector {
 
 		$configuration[self::LIFECYCLE_KEY] = $updated;
 
-		return $this->write(schema: $schema, configuration: $configuration, caseTypeId: $caseTypeId);
+		return $this->write(schema: $schema, publish: ['configuration' => $configuration, 'caseTypeId' => $caseTypeId]);
 	}//end publish()
 
 	/**
@@ -336,26 +376,26 @@ class CaseStateFieldRuleProjector {
 	 * case type must not fail because an instance's OpenRegister cannot take
 	 * the block, and the declarations survive on the rows for the next publish.
 	 *
-	 * @param object $schema The schema entity.
-	 * @param array<string, mixed> $configuration The configuration to write.
-	 * @param string $caseTypeId The case type being published, for the log line.
+	 * @param object               $schema  The schema entity.
+	 * @param array<string, mixed> $publish The configuration to write (`configuration`) and the case type being
+	 *                                      published, for the log line (`caseTypeId`).
 	 *
 	 * @return bool True when the schema was written.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function write(object $schema, array $configuration, string $caseTypeId): bool {
+	private function write(object $schema, array $publish): bool {
 		if ($this->schemaMapper === null) {
 			return false;
 		}
 
 		try {
-			$schema->setConfiguration($configuration);
+			$schema->setConfiguration($publish['configuration']);
 			$this->schemaMapper->update($schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not publish per-status field rules onto the case schema',
-				['caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+				['caseType' => $publish['caseTypeId'], 'exception' => $e->getMessage()]
 			);
 			return false;
 		}

@@ -23,8 +23,8 @@
   @spec openspec/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Copy this case')"
+	<CnDialog
+		:name="t('dossiq', 'Copy case')"
 		data-testid="case-copy-dialog"
 		@closing="$emit('close')">
 		<div class="case-copy-dialog">
@@ -32,7 +32,7 @@
 				{{
 					t(
 						'dossiq',
-						'The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.',
+						'The copy gets its own case number.',
 					)
 				}}
 			</p>
@@ -79,34 +79,26 @@
 				{{ t('dossiq', 'Copy case') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseActionRefusal, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
+import { caseActionRefusalOf, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
 
 export default {
 	name: 'CaseCopyDialog',
 
-	components: { NcButton, NcCheckboxRadioSwitch, NcDialog, NcTextField },
+	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcTextField },
 
-	props: {
-		/**
-		 * The case to copy. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -120,14 +112,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/case-management/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {boolean} Whether the copy may be sent.
 		 * @spec openspec/specs/case-management/spec.md
@@ -199,9 +183,7 @@ export default {
 					this.$router?.push({ name: 'CaseDetail', params: { id: newId } })
 				}
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}

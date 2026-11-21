@@ -28,18 +28,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsSavedEntity;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -48,18 +47,20 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessListener implements IEventListener {
+	use ReadsSavedEntity;
+
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService         $settingsService Knows which schema holds the case types.
-	 * @param CaseTeamAccessProjector $projector       Writes the rules onto the case schema.
+	 * @param SettingsServiceInterface         $settingsService Knows which schema holds the case types.
+	 * @param CaseTeamAccessProjectorInterface $projector       Writes the rules onto the case schema.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTeamAccessProjector $projector,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTeamAccessProjectorInterface $projector,
 	) {
 	}//end __construct()
 
@@ -70,18 +71,10 @@ class CaseTeamAccessListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function handle(Event $event): void {
-		$entity = null;
-		if ($event instanceof ObjectCreatedEvent === true) {
-			$entity = $event->getObject();
-		}
-
-		if ($event instanceof ObjectUpdatedEvent === true) {
-			$entity = $event->getNewObject();
-		}
-
+		$entity = $this->savedEntity(event: $event);
 		if ($entity === null || $this->isCaseType(entity: $entity) === false) {
 			return;
 		}

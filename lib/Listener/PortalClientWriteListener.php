@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Portal\ApplicantPortalActs;
+use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -70,11 +70,11 @@ class PortalClientWriteListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ApplicantPortalActs $acts   Records the act and tells the assignee.
+	 * @param ApplicantPortalActsInterface $acts   Records the act and tells the assignee.
 	 * @param LoggerInterface     $logger Logger.
 	 */
 	public function __construct(
-		private readonly ApplicantPortalActs $acts,
+		private readonly ApplicantPortalActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,27 +94,12 @@ class PortalClientWriteListener implements IEventListener {
 		}
 
 		try {
-			$fields = [];
-			if (method_exists($event, 'getFields') === true) {
-				$fields = array_values(array_filter((array)$event->getFields(), 'is_string'));
-			}
-
-			$occurredAt = '';
-			if (method_exists($event, 'getOccurredAt') === true) {
-				$occurredAt = (string)$event->getOccurredAt();
-			}
-
-			$mandate = [];
-			if (method_exists($event, 'getMandate') === true) {
-				$mandate = (array)$event->getMandate();
-			}
-
 			$this->acts->recordWrite(
 				(string)$event->getCaseId(),
 				(string)$event->getAct(),
-				$fields,
-				$occurredAt,
-				$mandate,
+				$this->fieldsOf(event: $event),
+				$this->occurredAtOf(event: $event),
+				$this->mandateOf(event: $event),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -123,4 +108,55 @@ class PortalClientWriteListener implements IEventListener {
 			);
 		}
 	}//end handle()
+
+	/**
+	 * The fields the resident wrote, when the event names them.
+	 *
+	 * @param Event $event The portal client's event.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function fieldsOf(Event $event): array {
+		if (method_exists($event, 'getFields') === false) {
+			return [];
+		}
+
+		return array_values(array_filter((array)$event->getFields(), 'is_string'));
+	}//end fieldsOf()
+
+	/**
+	 * When the resident wrote, when the event says.
+	 *
+	 * @param Event $event The portal client's event.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function occurredAtOf(Event $event): string {
+		if (method_exists($event, 'getOccurredAt') === false) {
+			return '';
+		}
+
+		return (string)$event->getOccurredAt();
+	}//end occurredAtOf()
+
+	/**
+	 * The mandate the resident wrote under, when the event carries one.
+	 *
+	 * @param Event $event The portal client's event.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function mandateOf(Event $event): array {
+		if (method_exists($event, 'getMandate') === false) {
+			return [];
+		}
+
+		return (array)$event->getMandate();
+	}//end mandateOf()
 }//end class

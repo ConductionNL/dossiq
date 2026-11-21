@@ -21,9 +21,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -31,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
@@ -44,18 +48,19 @@ class WooReportSwitchesTest extends TestCase {
 	 *
 	 * @return WooReportSwitches The switches.
 	 */
-	private function switches(array $stored, array $groups = ['woo-leiding' => ['lead']]): WooReportSwitches {
+	private function switches(array $stored, array $groups = ['woo-leiding' => ['lead']], ?IUserSession $session = null): WooReportSwitches {
 		$config = $this->createMock(IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => ($stored[$key] ?? $default)
 		);
+		$config->method('hasKey')->willReturnCallback(static fn (string $app, string $key): bool => array_key_exists($key, $stored));
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturnCallback(static fn (string $gid): bool => isset($groups[$gid]));
 		$groupManager->method('isInGroup')->willReturnCallback(
 			static fn (string $uid, string $gid): bool => in_array($uid, ($groups[$gid] ?? []), true)
 		);
 
-		return new WooReportSwitches(appConfig: $config, groupManager: $groupManager);
+		return new WooReportSwitches(appConfig: $config, groupManager: $groupManager, userSession: $session);
 	}//end switches()
 
 	/**
@@ -114,7 +119,13 @@ class WooReportSwitchesTest extends TestCase {
 		$switches->assertSaveAllowed(data: [WooReportSwitches::THROUGHPUT => true, WooReportSwitches::READERS => 'woo-leiding']);
 
 		$stillOn = $this->switches(stored: [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding']);
-		foreach ([[$switches, [WooReportSwitches::THROUGHPUT => 'true']], [$stillOn, [WooReportSwitches::READERS => '']]] as [$subject, $data]) {
+		$refusals = [
+			[$switches, [WooReportSwitches::THROUGHPUT => 'true']],
+			[$stillOn, [WooReportSwitches::READERS => '']],
+			[$switches, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::THROUGHPUT] => 'true']],
+			[$stillOn, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::READERS] => '']],
+		];
+		foreach ($refusals as [$subject, $data]) {
 			try {
 				$subject->assertSaveAllowed(data: $data);
 				$this->fail('Refusal expected for '.json_encode($data));
@@ -124,4 +135,111 @@ class WooReportSwitchesTest extends TestCase {
 			}
 		}
 	}//end testASaveWithoutAnExistingReaderGroupIsRefused()
+
+	/**
+	 * A setting stored under its earlier key is read while the current key was never written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public function testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten(): void {
+		$legacy = ['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding', 'wooCollectionPartiesReport' => 'true'];
+		$switches = $this->switches(stored: $legacy);
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::THROUGHPUT));
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('woo-leiding', $switches->readerGroup());
+
+		// Written under the current key, even empty, the current key wins.
+		$switches = $this->switches(stored: $legacy + [WooReportSwitches::PARTIES => 'false', WooReportSwitches::READERS => '']);
+		$this->assertFalse($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('', $switches->readerGroup());
+	}//end testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten()
+
+	/**
+	 * A save posted under the earlier keys is carried onto the current ones; the current key wins.
+	 *
+	 * @return void
+	 */
+	public function testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes(): void {
+		$this->assertSame(
+			['wooCollectionPartiesReport' => 'true', WooReportSwitches::PARTIES => 'true'],
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: ['wooCollectionPartiesReport' => 'true'])
+		);
+		$this->assertSame(
+			[WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'],
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
+		);
+	}//end testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes()
+	/**
+	 * A session signed in as the given user, or signed out for null.
+	 *
+	 * @param string|null $uid The user id, null for no user.
+	 *
+	 * @return IUserSession The session.
+	 */
+	private function sessionOf(?string $uid): IUserSession {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$user    = null;
+		if ($uid !== null) {
+			$user = $this->createMock(originalClassName: IUser::class);
+			$user->method('getUID')->willReturn($uid);
+		}
+
+		$session->method('getUser')->willReturn($user);
+
+		return $session;
+	}//end sessionOf()
+
+	/**
+	 * Nothing is offered without a signed-in user or without a session at all.
+	 *
+	 * @return void
+	 */
+	public function testNothingIsOfferedWithoutASignedInUser(): void {
+		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
+		$none = ['throughput' => false, 'parties' => false];
+
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on, session: $this->sessionOf(uid: null))->offeredToCurrentUser());
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on)->offeredToCurrentUser());
+	}//end testNothingIsOfferedWithoutASignedInUser()
+
+	/**
+	 * The throughput report is offered only to a reader while it is on; the parties report to everyone while it is on.
+	 *
+	 * @return void
+	 */
+	public function testTheMenuOffersEachReportByItsOwnRule(): void {
+		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
+
+		$this->assertSame(
+			expected: ['throughput' => true, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+		);
+		$this->assertSame(
+			expected: ['throughput' => false, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'clerk'))->offeredToCurrentUser()
+		);
+
+		$off = [WooReportSwitches::THROUGHPUT => 'false', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'no'];
+		$this->assertSame(
+			expected: ['throughput' => false, 'parties' => false],
+			actual: $this->switches(stored: $off, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+		);
+	}//end testTheMenuOffersEachReportByItsOwnRule()
+
+	/**
+	 * A boolean is its own answer; strings are read case- and space-insensitively.
+	 *
+	 * @return void
+	 */
+	public function testTruthyReadsBooleansAndYesWords(): void {
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: true));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: false));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: ' ON '));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 'Yes'));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 1));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: 'ja'));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: null));
+	}//end testTruthyReadsBooleansAndYesWords()
 }//end class

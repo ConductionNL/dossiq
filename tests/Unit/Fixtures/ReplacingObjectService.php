@@ -15,6 +15,8 @@ namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object service that replaces on save, the way OpenRegister does.
@@ -74,7 +76,9 @@ class ReplacingObjectService {
 	 *
 	 * @throws DoesNotExistException When nothing is stored under the id.
 	 */
-	public function find(string $id, string|int|null $register = null, string|int|null $schema = null): object {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if (isset($this->stored[$id]) === false) {
 			throw new DoesNotExistException('not found: ' . $id);
 		}
@@ -96,10 +100,13 @@ class ReplacingObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): object {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->saves[] = $object;
 
 		$self = (array)($object['@self'] ?? []);

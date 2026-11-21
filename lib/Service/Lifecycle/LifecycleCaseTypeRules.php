@@ -47,8 +47,8 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * Reads the case type declarations the lifecycle acts are gated by.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class LifecycleCaseTypeRules {
 
@@ -96,7 +96,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return string The group id, empty when the case type names none.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roleFor(string $caseTypeId, string $act): string {
 		$field = ([
@@ -119,7 +119,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return bool True when no status may be hand-set on its cases.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function processOwnsStatus(string $caseTypeId): bool {
 		$declared = ($this->row(caseTypeId: $caseTypeId)['processOwnedStatus'] ?? false);
@@ -138,7 +138,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return string The workflow definition id, empty when none is declared.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function processOf(string $caseTypeId): string {
 		$declared = ($this->row(caseTypeId: $caseTypeId)['workflowDefinition'] ?? '');
@@ -192,7 +192,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return int The warning lead time in days.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function warningDays(string $caseTypeId): int {
 		$days = (int)($this->row(caseTypeId: $caseTypeId)['autoCloseWarningDays'] ?? 0);

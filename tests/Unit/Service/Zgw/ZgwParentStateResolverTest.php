@@ -26,12 +26,13 @@ use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
 use OCA\Dossiq\Service\ZgwMappingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the resolver calls.
  */
 interface ParentStateObjectServiceStub {
-	public function find(mixed $id, string $register, string $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -83,7 +84,9 @@ class ZgwParentStateResolverTest extends TestCase {
 	private function objects(array $objects, bool $throws=false): ParentStateObjectServiceStub {
 		$service = $this->createMock(ParentStateObjectServiceStub::class);
 		$service->method('find')->willReturnCallback(
-			function (mixed $id, string $register, string $schema) use ($objects, $throws): mixed {
+			function (mixed $id, ?ObjectFindOptions $options = null) use ($objects, $throws): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->asked[] = $id;
 				if ($throws === true) {
 					throw new \RuntimeException('register down');

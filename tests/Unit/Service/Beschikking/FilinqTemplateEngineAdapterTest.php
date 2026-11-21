@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
+use DateTimeInterface;
+use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
@@ -38,6 +40,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine
  */
 class FilinqTemplateEngineAdapterTest extends TestCase {
 
@@ -85,6 +88,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The engine the case type names; filinq unless a test says otherwise.
+	 *
+	 * @var string
+	 */
+	private string $engine = 'filinq';
+
+	/**
 	 * Set up the collaborators every test shares.
 	 *
 	 * @return void
@@ -109,9 +119,22 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			$this->container,
 			$this->settings,
 			$this->userSession,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->engines()
 		);
 	}//end adapter()
+
+	/**
+	 * The engine resolver, answering `$this->engine` for every template.
+	 *
+	 * @return DecisionTemplateEngine The double.
+	 */
+	private function engines(): DecisionTemplateEngine {
+		$engines = $this->createMock(DecisionTemplateEngine::class);
+		$engines->method('engineFor')->willReturnCallback(fn (): string => $this->engine);
+
+		return $engines;
+	}//end engines()
 
 	/**
 	 * Point the container at a filinq document service that records its calls.
@@ -228,42 +251,47 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	}//end templateDouble()
 
 	/**
-	 * A filinq version chain that answers with canned rows.
+	 * Filinq's version-in-force query, answering with a canned number.
 	 *
-	 * @param array<int, array<string, mixed>> $rows The chain, newest first.
+	 * @param integer|null $answer The version filinq names, or null for none.
+	 * @param boolean      $fails  Whether the query throws instead.
 	 *
 	 * @return object The double; its `$asked` holds every call's arguments.
 	 */
-	private function versionChainDouble(array $rows): object {
-		return new class($rows) {
+	private function versionChainDouble(?int $answer, bool $fails = false): object {
+		return new class($answer, $fails) {
 
 			/**
 			 * Every call, in order.
 			 *
-			 * @var array<int, array<string, mixed>>
+			 * @var array<int, array<string, string>>
 			 */
 			public array $asked = [];
 
 			/**
 			 * Constructor.
 			 *
-			 * @param array<int, array<string, mixed>> $rows The canned chain.
+			 * @param integer|null $answer The canned version.
+			 * @param boolean      $fails  Whether the query throws.
 			 */
-			public function __construct(private array $rows) {
+			public function __construct(private ?int $answer, private bool $fails) {
 			}
 
 			/**
-			 * Filinq's version listing.
+			 * Filinq's version-in-force query.
 			 *
-			 * @param string $templateId The template id.
-			 * @param int $limit How many entries to return.
-			 * @param int $offset Where to start.
+			 * @param string            $templateId The template id.
+			 * @param DateTimeInterface $moment     The moment asked about.
 			 *
-			 * @return array<string, mixed> The paginated chain.
+			 * @return integer|null The version in force.
 			 */
-			public function getVersions(string $templateId, int $limit = 20, int $offset = 0): array {
-				$this->asked[] = ['templateId' => $templateId, 'limit' => $limit, 'offset' => $offset];
-				return ['results' => $this->rows, 'total' => count($this->rows)];
+			public function versionInForceAt(string $templateId, DateTimeInterface $moment): ?int {
+				$this->asked[] = ['templateId' => $templateId, 'moment' => $moment->format('Y-m-d H:i:s')];
+				if ($this->fails === true) {
+					throw new RuntimeException('the chain cannot be read');
+				}
+
+				return $this->answer;
 			}
 		};
 	}//end versionChainDouble()
@@ -312,15 +340,41 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testCompositionDescribesTheProducedDocument(): void {
 		$this->settings->method('getConfigValue')->willReturn('');
-		$this->givenFilinq(['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 4242]]);
+		$this->givenFilinq(
+			result: [
+				'content' => self::PDF_BYTES,
+				'format' => 'pdf',
+				'output' => ['fileId' => 4242],
+				'sha256' => hash('sha256', self::PDF_BYTES),
+				'pageCount' => 3,
+			]
+		);
 
 		$composition = $this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
 
 		$this->assertSame('4242', $composition['fileId'], 'the fileId must be the one filinq stored');
 		$this->assertSame(hash('sha256', self::PDF_BYTES), $composition['checksumSha256']);
-		$this->assertSame(2, $composition['paginas'], 'the page count is read out of the PDF, not assumed');
+		$this->assertSame(expected: 3, actual: $composition['paginas'], message: 'the page count is the one filinq reports, not re-counted');
 		$this->assertSame('pdf', $composition['format']);
 	}//end testCompositionDescribesTheProducedDocument()
+
+	/**
+	 * A filinq that reports no digest or page count is answered from the bytes.
+	 *
+	 * The checksum is still computed over the produced bytes, and the page
+	 * count is zero rather than a guess.
+	 *
+	 * @return void
+	 */
+	public function testAResultWithoutDigestOrPageCountIsDescribedFromTheBytes(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->givenFilinq(result: ['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 4243], 'sha256' => 'not a digest']);
+
+		$composition = $this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+
+		$this->assertSame(expected: hash('sha256', self::PDF_BYTES), actual: $composition['checksumSha256']);
+		$this->assertSame(expected: 0, actual: $composition['paginas']);
+	}//end testAResultWithoutDigestOrPageCountIsDescribedFromTheBytes()
 
 	/**
 	 * A render that produced no stored file is refused, not reported.
@@ -371,7 +425,8 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			$this->container,
 			$this->settings,
 			$session,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->engines()
 		);
 
 		$this->expectException(RuntimeException::class);
@@ -395,7 +450,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->assertSame([], $filinq->calls[0]['dataRefs']);
 		$this->assertSame('beschikking', $filinq->calls[0]['options']['filename']);
-		$this->assertSame(0, $composition['paginas'], 'a non-PDF carries no page structure to read');
+		$this->assertSame(expected: 0, actual: $composition['paginas'], message: 'filinq reported no page count');
 		$this->assertSame('html', $composition['format']);
 	}//end testRenderWithoutACaseSendsNoDataRefs()
 
@@ -441,61 +496,51 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	}//end testResolveVersionReadsFilinqsTemplateVersion()
 
 	/**
-	 * The version in force is the chain entry the effective date selects.
+	 * The version in force is the one filinq names for the end of the date.
 	 *
 	 * The date used to be echoed back untouched, so a beschikking issued in
-	 * March reported whatever the template said today. Here the chain holds a
-	 * version created after the effective date and two before it; the answer
-	 * must be the newest of the two, not the newest of the three.
+	 * March reported whatever the template said today. Filinq answers which
+	 * version was the head at a moment; the adapter asks for the last second of
+	 * the effective date, so a revision made that morning counts.
 	 *
 	 * @return void
 	 */
-	public function testResolveVersionPicksTheChainEntryInForceOnTheDate(): void {
+	public function testResolveVersionAsksFilinqForTheVersionInForceAtTheEndOfTheDate(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.9']]);
-		$versions = $this->versionChainDouble(
-			[
-				['version' => 3, '@self' => ['created' => '2026-08-01T09:00:00+00:00']],
-				['version' => 2, '@self' => ['created' => '2026-03-04T09:00:00+00:00']],
-				['version' => 1, '@self' => ['created' => '2026-01-05T09:00:00+00:00']],
-			]
-		);
+		$versions = $this->versionChainDouble(answer: 2);
 		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
 
 		$this->assertSame(
-			[['templateId' => 'tpl-abc', 'limit' => 100, 'offset' => 0]],
+			[['templateId' => 'tpl-abc', 'moment' => '2026-03-15 23:59:59']],
 			$versions->asked,
-			'the chain must be queried for this template'
+			'filinq must be asked for this template at the end of the effective date'
 		);
 		$this->assertSame(
 			['templateId' => 'tpl-abc', 'version' => 'v2', 'effectiveDate' => '2026-03-15'],
 			$version
 		);
-	}//end testResolveVersionPicksTheChainEntryInForceOnTheDate()
+	}//end testResolveVersionAsksFilinqForTheVersionInForceAtTheEndOfTheDate()
 
 	/**
-	 * A version created on the effective date itself is in force on it.
+	 * A filinq that cannot say falls back to the template's own version.
 	 *
-	 * The boundary matters: a template revised in the morning and used to
-	 * decide in the afternoon must report the revision, not its predecessor.
+	 * A failed query is not a version: the template object's own OpenRegister
+	 * version is reported instead, and nothing is invented.
 	 *
 	 * @return void
 	 */
-	public function testAVersionCreatedOnTheEffectiveDateIsInForce(): void {
+	public function testAFilinqThatCannotSayFallsBackToTheTemplatesOwnVersion(): void {
 		$templates = $this->templateDouble(['@self' => ['version' => '0.0.9']]);
-		$versions = $this->versionChainDouble(
-			[
-				['version' => 4, '@self' => ['created' => '2026-03-15T08:30:00+00:00']],
-				['version' => 3, '@self' => ['created' => '2026-03-14T08:30:00+00:00']],
-			]
-		);
+		$versions = $this->versionChainDouble(answer: null, fails: true);
 		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
 
-		$this->assertSame('v4', $version['version']);
-	}//end testAVersionCreatedOnTheEffectiveDateIsInForce()
+		$this->assertCount(expectedCount: 1, haystack: $versions->asked);
+		$this->assertSame(expected: '0.0.9', actual: $version['version']);
+	}//end testAFilinqThatCannotSayFallsBackToTheTemplatesOwnVersion()
 
 	/**
 	 * Without a chain, the template's own OpenRegister version is read.
@@ -512,7 +557,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testResolveVersionReadsTheVersionOpenRegisterKeepsUnderSelf(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.4']]);
-		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble([]));
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(answer: null));
 
 		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
 
@@ -528,7 +573,7 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 */
 	public function testResolveVersionRefusesATemplateWithNoVersionAnywhere(): void {
 		$templates = $this->templateDouble(['name' => 'Beschikking']);
-		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble([]));
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble(answer: null));
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/filinq_template_unversioned/');
@@ -606,5 +651,104 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
 	}//end testRenderRefusesWhenFilinqThrows()
+
+	/**
+	 * The engine the case type names for the template reaches filinq.
+	 *
+	 * @return void
+	 */
+	public function testRenderHandsTheTemplatesEngineToFilinq(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:smartdocuments';
+		$filinq = $this->givenFilinq(
+			['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 41]]
+		);
+
+		$composition = $this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+
+		$this->assertSame('vendor:smartdocuments', $filinq->calls[0]['options']['engine']);
+		$this->assertSame('41', $composition['fileId']);
+	}//end testRenderHandsTheTemplatesEngineToFilinq()
+
+	/**
+	 * A template on filinq's own engine says so to filinq.
+	 *
+	 * @return void
+	 */
+	public function testRenderHandsFilinqItsOwnEngineByDefault(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$filinq = $this->givenFilinq(
+			['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 42]]
+		);
+
+		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+
+		$this->assertSame('filinq', $filinq->calls[0]['options']['engine']);
+	}//end testRenderHandsFilinqItsOwnEngineByDefault()
+
+	/**
+	 * An unreachable vendor fails with its name, and no composition is returned.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableVendorIsRefusedByName(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:xential';
+		$service = new class {
+
+			/**
+			 * Filinq's document generation, whose vendor is down here.
+			 *
+			 * @param string $templateId The template id.
+			 * @param array<int, mixed> $dataRefs The OpenRegister references.
+			 * @param array<string, mixed> $options The generation options.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options): array {
+				throw new \RuntimeException('connection refused');
+			}
+		};
+		$this->bindFilinq(documents: $service, templates: null);
+
+		try {
+			$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+			$this->fail('an unreachable vendor must not produce a composition');
+		} catch (RuntimeException $e) {
+			$this->assertSame('Xential is niet bereikbaar', $e->getMessage());
+			$this->assertSame('connection refused', $e->getPrevious()?->getMessage());
+		}
+	}//end testAnUnreachableVendorIsRefusedByName()
+
+	/**
+	 * A vendor source the fleet has no display name for is named by its slug.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownVendorIsNamedBySlug(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$this->engine = 'vendor:acme-docs';
+		$service = new class {
+
+			/**
+			 * Filinq's document generation, whose vendor is down here.
+			 *
+			 * @param string $templateId The template id.
+			 * @param array<int, mixed> $dataRefs The OpenRegister references.
+			 * @param array<string, mixed> $options The generation options.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options): array {
+				throw new \RuntimeException('timeout');
+			}
+		};
+		$this->bindFilinq(documents: $service, templates: null);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('acme-docs is niet bereikbaar');
+
+		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+	}//end testAnUnknownVendorIsNamedBySlug()
 
 }//end class

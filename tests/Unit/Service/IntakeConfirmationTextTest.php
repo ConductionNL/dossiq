@@ -51,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
@@ -175,6 +176,35 @@ class IntakeConfirmationTextTest extends TestCase {
 			),
 		);
 	}//end testTheCitizenMaySeeTheThreeFields()
+
+	/**
+	 * The submit response carries the flag, so the screen can say the sentence.
+	 *
+	 * The portal's confirmation page reads the case properties the schema marks
+	 * `x-openregister.confirmation` from the submit response. Without the flag
+	 * among them the screen can name the three moments but cannot know whether
+	 * to explain the gap, and the citizen who filed on Sunday is told nothing
+	 * the ontvangstbevestiging tells them later (REQ-TERM-041).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 */
+	public function testTheSubmitResponseCarriesTheFlag(): void {
+		$register = json_decode(
+			json: (string) file_get_contents(filename: __DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			associative: true,
+			flags: JSON_THROW_ON_ERROR,
+		);
+		$properties = $register['components']['schemas']['case']['properties'];
+
+		foreach (['receivedAt', 'termStartsAt', 'deadline', 'receivedOutsideWorkingHours'] as $field) {
+			self::assertTrue(
+				condition: ($properties[$field]['x-openregister']['confirmation'] ?? false),
+				message: $field . ' is not a confirmation field',
+			);
+		}
+	}//end testTheSubmitResponseCarriesTheFlag()
 
 	/**
 	 * Render the acknowledgement over one context.

@@ -15,9 +15,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Reporting;
 
-use OCP\IUser;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
+use OCA\Dossiq\Service\Support\ReadsGroupMembership;
 use OCP\IGroupManager;
-use Throwable;
+use OCP\IUser;
 
 /**
  * The gate a fleet-wide reporting endpoint asks before it answers.
@@ -50,7 +51,9 @@ use Throwable;
  *
  * @spec openspec/specs/security-hardening/spec.md
  */
-class ReportingAudience {
+class ReportingAudience implements ReportingAudienceInterface {
+
+	use ReadsGroupMembership;
 
 	/**
 	 * The groups that may read a figure about the whole case population.
@@ -61,11 +64,6 @@ class ReportingAudience {
 	 * @var array<int, string>
 	 */
 	public const ALLOWED_GROUPS = ['controllers', 'beheerders', 'admin'];
-
-	/**
-	 * The sentence a refused caller reads.
-	 */
-	public const REFUSAL = 'This report covers every case, so it is for the controller and beheerder roles.';
 
 	/**
 	 * Constructor.
@@ -98,26 +96,9 @@ class ReportingAudience {
 			return false;
 		}
 
-		$uid = $user->getUID();
-		if ($uid === '') {
-			return false;
-		}
-
-		try {
-			foreach (self::ALLOWED_GROUPS as $group) {
-				if ($group === 'admin') {
-					continue;
-				}
-
-				if ($this->groupManager->isInGroup($uid, $group) === true) {
-					return true;
-				}
-			}
-
-			return $this->groupManager->isAdmin($uid);
-		} catch (Throwable $e) {
-			// An unresolvable group check is not an authorization.
-			return false;
-		}
+		return $this->inGroupsOrAdmin(
+			uid: $user->getUID(),
+			groups: array_values(array_diff(self::ALLOWED_GROUPS, ['admin']))
+		);
 	}//end isInAudience()
 }//end class

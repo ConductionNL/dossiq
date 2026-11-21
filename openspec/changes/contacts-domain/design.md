@@ -22,7 +22,7 @@ string with a Dutch name. It has no reference to a register row.
 The navigation (`src/manifest.json` `menu`, then `src/menu-layout.json`
 relocations) shows Dashboard (order 10) and the My work group (order 20,
 holding Queue, Assigned to me, All cases, Tasks and Workflow board) at the top
-level, Reports, Documentation, Store and Features in the footer, and the
+level, Reports, Documentation, Marketplace and Features in the footer, and the
 admin entries in the gear foldout. `tests/e2e/navigation.spec.ts` asserts
 that Dashboard is the only top-level leaf.
 

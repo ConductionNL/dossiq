@@ -39,10 +39,7 @@ namespace OCA\Dossiq\Service\Email;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) — the ten parameters are the ten
- *  facts a mail message carries. Each is readonly and named at the call site, so a
- *  half-built message cannot be constructed.
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 final class InboundMessage {
 
@@ -86,13 +83,7 @@ final class InboundMessage {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public static function fromRow(array $row, int $accountId = 0, string $mailbox = ''): self {
-		$headers = [];
-		$raw = ($row['headers'] ?? []);
-		if (is_array($raw) === true) {
-			foreach ($raw as $name => $value) {
-				$headers[strtolower((string)$name)] = (string)$value;
-			}
-		}
+		$headers = self::rowHeaders(row: $row);
 
 		return new self(
 			accountId: (int)($row['accountId'] ?? $accountId),
@@ -107,6 +98,25 @@ final class InboundMessage {
 			source: (string)($row['source'] ?? ''),
 		);
 	}//end fromRow()
+
+	/**
+	 * The row's headers, keyed by lower-case name; none when the row carries no list.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 *
+	 * @return array<string, string> The headers.
+	 */
+	private static function rowHeaders(array $row): array {
+		$headers = [];
+		$raw = ($row['headers'] ?? []);
+		if (is_array($raw) === true) {
+			foreach ($raw as $name => $value) {
+				$headers[strtolower((string)$name)] = (string)$value;
+			}
+		}
+
+		return $headers;
+	}//end rowHeaders()
 
 	/**
 	 * The same message with its raw source read in.
@@ -268,15 +278,25 @@ final class InboundMessage {
 			return [];
 		}
 
+		return self::headersOf(unfolded: $unfolded);
+	}//end parseHeaders()
+
+	/**
+	 * The headers of an unfolded header block, a repeated one keeping every value.
+	 *
+	 * @param string $unfolded The header block, one header per line.
+	 *
+	 * @return array<string, string> Lowercased header name to value.
+	 */
+	private static function headersOf(string $unfolded): array {
 		$headers = [];
 		foreach (explode("\n", $unfolded) as $line) {
-			$position = strpos($line, ':');
-			if ($position === false || $position === 0) {
+			$header = self::headerOf(line: $line);
+			if ($header === null) {
 				continue;
 			}
 
-			$name = strtolower(trim(substr($line, 0, $position)));
-			$value = trim(substr($line, ($position + 1)));
+			[$name, $value] = $header;
 			if (array_key_exists($name, $headers) === true) {
 				$headers[$name] .= "\n" . $value;
 				continue;
@@ -286,5 +306,24 @@ final class InboundMessage {
 		}//end foreach
 
 		return $headers;
-	}//end parseHeaders()
+	}//end headersOf()
+
+	/**
+	 * One header line split into its lowercased name and its value.
+	 *
+	 * @param string $line The header line.
+	 *
+	 * @return array{0: string, 1: string}|null The name and value, or null when the line names no header.
+	 */
+	private static function headerOf(string $line): array|null {
+		$position = strpos($line, ':');
+		if ($position === false || $position === 0) {
+			return null;
+		}
+
+		$name = strtolower(trim(substr($line, 0, $position)));
+		$value = trim(substr($line, ($position + 1)));
+
+		return [$name, $value];
+	}//end headerOf()
 }//end class

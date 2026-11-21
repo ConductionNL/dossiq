@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\ListsOpenRegisterTables;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
 
@@ -39,6 +40,17 @@ use Psr\Log\LoggerInterface;
  * @spec exclude Database adapter for the Dutch-to-English vocabulary migration.
  */
 class DbValueMigrationPort implements ValueMigrationPort {
+	use ListsOpenRegisterTables;
+
+	/**
+	 * The column types that can hold an enum value, as PostgreSQL and MySQL name
+	 * them. Every OpenRegister shard table is scanned, so another app's integer
+	 * or jsonb column of the same name must never be compared with a string.
+	 *
+	 * @var array<int, string>
+	 */
+	public const TEXT_TYPES = ['text', 'character varying', 'character', 'varchar', 'char', 'tinytext', 'mediumtext', 'longtext'];
+
 	/**
 	 * Constructor.
 	 *
@@ -62,12 +74,7 @@ class DbValueMigrationPort implements ValueMigrationPort {
 	 */
 	public function shardTables(): array {
 		try {
-			$stmt = $this->db->prepare(
-				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
-			);
-			$stmt->bindValue('pattern', '%openregister\_table\_%');
-			$stmt->execute();
-			$rows = $stmt->fetchAll();
+			$rows = $this->openRegisterTableListing()->fetchAll();
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DbValueMigrationPort: could not list tables.',
@@ -92,6 +99,7 @@ class DbValueMigrationPort implements ValueMigrationPort {
 		try {
 			$stmt = $this->db->prepare(
 				'SELECT column_name FROM information_schema.columns WHERE table_name = :table'
+				." AND data_type IN ('".implode("', '", self::TEXT_TYPES)."')"
 			);
 			$stmt->bindValue('table', $table);
 			$stmt->execute();
@@ -126,8 +134,20 @@ class DbValueMigrationPort implements ValueMigrationPort {
 		$quote = fn (string $identifier): string => $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
 		$sql = 'UPDATE ' . $quote($table) . ' SET ' . $quote($column) . ' = ? WHERE ' . $quote($column) . ' = ?';
 
+		return $this->execute(sql: $sql, values: [$new, $old]);
+	}//end rewrite()
+
+	/**
+	 * Run one update; a failed statement is logged and changes nothing.
+	 *
+	 * @param string            $sql    The statement.
+	 * @param array<int, mixed> $values Its parameters.
+	 *
+	 * @return int The rows changed, 0 when the statement failed.
+	 */
+	private function execute(string $sql, array $values): int {
 		try {
-			return $this->db->executeStatement($sql, [$new, $old]);
+			return $this->db->executeStatement($sql, $values);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DbValueMigrationPort: statement failed; leaving the value as it was.',
@@ -139,5 +159,5 @@ class DbValueMigrationPort implements ValueMigrationPort {
 			return 0;
 		}
 
-	}//end rewrite()
+	}//end execute()
 }//end class

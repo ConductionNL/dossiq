@@ -54,12 +54,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Service\Support\CollectsUniqueNames;
+
 /**
  * Reads and normalises the per-task declaration block of a workflow step.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class TaskDeclaration {
+
+	use CollectsUniqueNames;
 
 	/**
 	 * The key the block lives under on a workflow step.
@@ -102,7 +106,7 @@ class TaskDeclaration {
 	 *               candidateUsers: array<int, string>, form: array<string, mixed>|null,
 	 *               effects: array<int, array<string, mixed>>} The declaration.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function forStep(array $step): array {
 		$block = ($step[self::BLOCK] ?? null);
@@ -130,7 +134,7 @@ class TaskDeclaration {
 	 *
 	 * @return string The title, trimmed, or the empty string.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function titleOf(array $step): string {
 		return trim((string)($step['title'] ?? ''));
@@ -143,7 +147,7 @@ class TaskDeclaration {
 	 *
 	 * @return string The statusType uuid, or the empty string.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function statusOf(array $step): string {
 		return trim((string)($step['status'] ?? ''));
@@ -161,19 +165,9 @@ class TaskDeclaration {
 			return [];
 		}
 
-		$names = [];
-		foreach ($value as $entry) {
-			if (is_string($entry) === false && is_numeric($entry) === false) {
-				continue;
-			}
-
-			$name = trim((string)$entry);
-			if ($name !== '' && in_array($name, $names, true) === false) {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
+		return $this->uniqueNames(
+			entries: array_filter($value, static fn (mixed $entry): bool => is_string($entry) === true || is_numeric($entry) === true)
+		);
 	}//end names()
 
 	/**

@@ -165,9 +165,10 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
     `AssistantControllerTest`, `caseAiFeatureGateway.spec.js`,
     `caseAiFeaturesPanel.spec.js`, `caseAiFeaturesApi.spec.js`,
     `ReportGroupingConsumerTest`, `IntakeToolsTest`, `CaseIntakeFilingTest`.
-- [ ] 8.2 e2e coverage or a reason-bearing exclusion per scenario, per gate 19.
+- [x] 8.2 e2e coverage or a reason-bearing exclusion per scenario, per gate 19.
   - `tests/e2e/ai-features-on-the-case.spec.ts` written (hermiq's answers
     routed in the browser, dossiq's page real). Run it: (live pass, decision 139).
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6): tests/e2e/ai-features-on-the-case.spec.ts passed 4/4 after opening the case sidebar from the More menu, where the Assistant tab now lives.
 
 ## Rescue, 2026-09-18: the client has its caller
 

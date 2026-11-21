@@ -1,0 +1,131 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the cross-domain lookup > asks, keeps and refuses as before 1`] = `
+{
+  "cannot": {
+    "answered": true,
+    "busy": false,
+    "calls": [],
+    "error": "old",
+    "found": [
+      "old",
+    ],
+  },
+  "failed": {
+    "answered": false,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cases/case-9/household-cases/lookup",
+        {
+          "ground": "wmo",
+        },
+      ],
+    ],
+    "error": "The lookup was not made.",
+    "found": [
+      "old",
+    ],
+  },
+  "household": {
+    "answered": true,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cases/case-9/household-cases/lookup",
+        {
+          "ground": "wmo",
+        },
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+      ],
+    ],
+    "error": "",
+    "found": [
+      {
+        "id": "h1",
+      },
+    ],
+  },
+  "householdNoList": {
+    "answered": true,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cases/case-9/household-cases/lookup",
+        {
+          "ground": "wmo",
+        },
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+      ],
+    ],
+    "error": "",
+    "found": [],
+  },
+  "person": {
+    "answered": true,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cross-domain/lookup",
+        {
+          "bsn": "123456782",
+          "domain": "zorg",
+          "ground": "wmo",
+        },
+      ],
+    ],
+    "error": "",
+    "found": [
+      {
+        "id": "p1",
+      },
+    ],
+  },
+  "personNoList": {
+    "answered": true,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cross-domain/lookup",
+        {
+          "bsn": "123456782",
+          "domain": "zorg",
+          "ground": "wmo",
+        },
+      ],
+    ],
+    "error": "",
+    "found": [],
+  },
+  "refused": {
+    "answered": false,
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/apps/dossiq/api/cross-domain/lookup",
+        {
+          "bsn": "123456782",
+          "domain": "zorg",
+          "ground": "wmo",
+        },
+      ],
+    ],
+    "error": "Choose a ground first.",
+    "found": [
+      "old",
+    ],
+  },
+}
+`;

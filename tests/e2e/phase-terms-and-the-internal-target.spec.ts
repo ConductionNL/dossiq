@@ -370,7 +370,7 @@ test.describe('The four clocks on a case', () => {
 			.toISOString()
 			.slice(0, 10)
 		const refused = await request.post(
-			`/index.php/apps/dossiq/api/termijn/instances/${statutory.id}/verleng`,
+			`/index.php/apps/dossiq/api/deadlines/instances/${statutory.id}/extend`,
 			{
 				headers: { requesttoken: token },
 				data: { rationale: 'Extra onderzoek', newEinddatum: tooFar },
@@ -462,7 +462,7 @@ test.describe('The four clocks on a case', () => {
 		})
 
 		const response = await request.get(
-			'/index.php/apps/dossiq/api/termijn/reports/open-workload-age',
+			'/index.php/apps/dossiq/api/deadlines/reports/open-workload-age',
 			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), 'the workload report answers').toBeTruthy()

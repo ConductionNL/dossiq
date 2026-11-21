@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use DateTimeImmutable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 class RoutingEngine {
 	/**
@@ -59,29 +59,28 @@ class RoutingEngine {
 	 *
 	 * @return array<string, mixed>|null The routing result, or null when unmatched.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function evaluate(array $rules, array $contactMoment, ?\DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
 
-		$enabled = array_values(
-			array_filter(
-				$rules,
-				static function (array $rule): bool {
-					return (($rule['enabled'] ?? true) === true);
-				}
-			)
+		return $this->firstMatch(
+			enabled: RoutingRuleOrder::enabledByPriority(rules: $rules),
+			moment: ['contactMoment' => $contactMoment, 'now' => $now]
 		);
+	}//end evaluate()
 
-		usort(
-			$enabled,
-			static function (array $first, array $second): int {
-				return (((int)($first['priority'] ?? 0)) <=> ((int)($second['priority'] ?? 0)));
-			}
-		);
-
+	/**
+	 * The routing result of the first rule that matches the contact moment.
+	 *
+	 * @param array<int, array<string, mixed>>                                       $enabled The enabled rules, by priority.
+	 * @param array{contactMoment: array<string, mixed>, now: \DateTimeImmutable} $moment  The contact moment and the reference time.
+	 *
+	 * @return array<string, mixed>|null The routing result, or null when unmatched.
+	 */
+	private function firstMatch(array $enabled, array $moment): ?array {
 		foreach ($enabled as $rule) {
-			if ($this->ruleMatches(rule: $rule, contactMoment: $contactMoment, now: $now) === true) {
+			if ($this->ruleMatches(rule: $rule, contactMoment: $moment['contactMoment'], now: $moment['now']) === true) {
 				return [
 					'rule' => ($rule['name'] ?? ''),
 					'assignedDomain' => ($rule['assignedDomain'] ?? ''),
@@ -92,7 +91,7 @@ class RoutingEngine {
 		}
 
 		return null;
-	}//end evaluate()
+	}//end firstMatch()
 
 	/**
 	 * Determine whether every condition of a rule matches the contact moment.
@@ -103,7 +102,7 @@ class RoutingEngine {
 	 *
 	 * @return bool True when all conditions match.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function ruleMatches(array $rule, array $contactMoment, \DateTimeImmutable $now): bool {
 		$conditions = ($rule['matchConditions'] ?? []);
@@ -117,30 +116,50 @@ class RoutingEngine {
 			)
 		);
 
+		return $this->allConditionsMatch(
+			conditions: $conditions,
+			probe: ['contactMoment' => $contactMoment, 'haystack' => $haystack, 'now' => $now]
+		);
+	}//end ruleMatches()
+
+	/**
+	 * Whether every condition is a condition and matches.
+	 *
+	 * @param array<mixed>                                                                         $conditions The rule's conditions.
+	 * @param array{contactMoment: array<string, mixed>, haystack: string, now: \DateTimeImmutable} $probe      The contact moment,
+	 *                                                                                                          its lower-cased subject + summary
+	 *                                                                                                          and the reference time.
+	 *
+	 * @return bool True when all conditions match.
+	 */
+	private function allConditionsMatch(array $conditions, array $probe): bool {
 		foreach ($conditions as $condition) {
 			if (is_array($condition) === false) {
 				return false;
 			}
 
-			if ($this->conditionMatches(condition: $condition, contactMoment: $contactMoment, haystack: $haystack, now: $now) === false) {
+			if ($this->conditionMatches(condition: $condition, probe: $probe) === false) {
 				return false;
 			}
 		}
 
 		return true;
-	}//end ruleMatches()
+	}//end allConditionsMatch()
 
 	/**
 	 * Evaluate a single routing condition.
 	 *
-	 * @param array<string, mixed> $condition The condition.
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 * @param string $haystack Lower-cased subject + summary.
-	 * @param \DateTimeImmutable $now Reference time.
+	 * @param array<string, mixed>                                                                 $condition The condition.
+	 * @param array{contactMoment: array<string, mixed>, haystack: string, now: \DateTimeImmutable} $probe     The contact moment,
+	 *                                                                                                        its lower-cased subject + summary
+	 *                                                                                                        and the reference time.
 	 *
 	 * @return bool True when the condition matches.
 	 */
-	private function conditionMatches(array $condition, array $contactMoment, string $haystack, \DateTimeImmutable $now): bool {
+	private function conditionMatches(array $condition, array $probe): bool {
+		$contactMoment = $probe['contactMoment'];
+		$haystack = $probe['haystack'];
+		$now = $probe['now'];
 		$type = (string)($condition['type'] ?? '');
 		$value = (string)($condition['value'] ?? '');
 
@@ -155,7 +174,7 @@ class RoutingEngine {
 			case 'channel':
 				return (((string)($contactMoment['channel'] ?? '')) === $value);
 			case 'customer_type':
-				return ($this->customerType(contactMoment: $contactMoment) === $value);
+				return (RoutingRuleOrder::customerType(contactMoment: $contactMoment) === $value);
 			case 'time_of_day':
 				return $this->timeOfDayMatches(value: $value, now: $now);
 			case 'day_of_week':
@@ -164,29 +183,6 @@ class RoutingEngine {
 				return false;
 		}//end switch
 	}//end conditionMatches()
-
-	/**
-	 * Derive the customer type from the contact moment.
-	 *
-	 * An 8-digit numeric customerRef is treated as a KvK number (bedrijf);
-	 * any other non-empty reference is a burger; empty is anonymous.
-	 *
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 *
-	 * @return string One of 'bedrijf', 'burger', 'anoniem'.
-	 */
-	private function customerType(array $contactMoment): string {
-		$ref = trim((string)($contactMoment['customerRef'] ?? ''));
-		if ($ref === '') {
-			return 'anoniem';
-		}
-
-		if (preg_match('/^\d{8}$/', $ref) === 1) {
-			return 'bedrijf';
-		}
-
-		return 'burger';
-	}//end customerType()
 
 	/**
 	 * Evaluate a time-of-day condition such as "after_17:00" or "before_09:00".
@@ -226,26 +222,37 @@ class RoutingEngine {
 	 *
 	 * @return array<int, array<string, mixed>> Ranked agents with motivation.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function rankAgents(array $agents, string $team, array $contactMoment, int $limit = 3): array {
-		$domain = strtolower((string)($contactMoment['assignedDomain'] ?? ''));
-		$tags = array_map('strtolower', (array)($contactMoment['tags'] ?? []));
-		$customerRef = (string)($contactMoment['customerRef'] ?? '');
+		$scored = $this->scoredAgents(available: $this->availableIn(agents: $agents, team: $team), contactMoment: $contactMoment);
 
-		$candidates = array_values(
-			array_filter(
-				$agents,
-				static function (array $agent) use ($team): bool {
-					return (($agent['currentStatus'] ?? 'offline') === 'available'
-						&& ($team === '' || ((string)($agent['team'] ?? '')) === $team));
-				}
-			)
-		);
+		$result = [];
+		foreach (array_slice($scored, 0, max(0, $limit)) as $entry) {
+			$result[] = $this->rankedAgent(entry: $entry);
+		}
+
+		return $result;
+	}//end rankAgents()
+
+	/**
+	 * Score the available agents for the contact moment, lowest score first.
+	 *
+	 * @param array<int, array<string, mixed>> $available     The available agents.
+	 * @param array<string, mixed>             $contactMoment The contact moment.
+	 *
+	 * @return array<int, array<string, mixed>> The scored entries, sorted.
+	 */
+	private function scoredAgents(array $available, array $contactMoment): array {
+		$wanted = [
+			'domain' => strtolower((string)($contactMoment['assignedDomain'] ?? '')),
+			'tags' => array_map('strtolower', (array)($contactMoment['tags'] ?? [])),
+			'customerRef' => (string)($contactMoment['customerRef'] ?? ''),
+		];
 
 		$scored = [];
-		foreach ($candidates as $agent) {
-			$scored[] = $this->scoreAgent(agent: $agent, domain: $domain, tags: $tags, customerRef: $customerRef);
+		foreach ($available as $agent) {
+			$scored[] = $this->scoreAgent(agent: $agent, wanted: $wanted);
 		}
 
 		usort(
@@ -255,21 +262,48 @@ class RoutingEngine {
 			}
 		);
 
-		$result = [];
-		foreach (array_slice($scored, 0, max(0, $limit)) as $entry) {
-			$agent = $entry['agent'];
-			$result[] = [
-				'userRef' => (string)($agent['userRef'] ?? ''),
-				'workload' => $entry['workload'],
-				'skills' => (array)($agent['skills'] ?? []),
-				'skillMatch' => $entry['skillMatch'],
-				'continuity' => $entry['continuity'],
-				'motivation' => $this->motivation(agent: $agent, entry: $entry),
-			];
-		}
+		return $scored;
+	}//end scoredAgents()
 
-		return $result;
-	}//end rankAgents()
+	/**
+	 * The available agents, of the team when one is named.
+	 *
+	 * @param array<int, array<string, mixed>> $agents The agents.
+	 * @param string                           $team   The team, or '' for any.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function availableIn(array $agents, string $team): array {
+		return array_values(
+			array_filter(
+				$agents,
+				static function (array $agent) use ($team): bool {
+					return (($agent['currentStatus'] ?? 'offline') === 'available'
+						&& ($team === '' || ((string)($agent['team'] ?? '')) === $team));
+				}
+			)
+		);
+	}//end availableIn()
+
+	/**
+	 * One ranked agent as the suggestion list shows it.
+	 *
+	 * @param array<string, mixed> $entry The scored agent.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function rankedAgent(array $entry): array {
+		$agent = $entry['agent'];
+
+		return [
+			'userRef' => (string)($agent['userRef'] ?? ''),
+			'workload' => $entry['workload'],
+			'skills' => (array)($agent['skills'] ?? []),
+			'skillMatch' => $entry['skillMatch'],
+			'continuity' => $entry['continuity'],
+			'motivation' => $this->motivation(agent: $agent, entry: $entry),
+		];
+	}//end rankedAgent()
 
 	/**
 	 * Score a single candidate agent for ranking.
@@ -277,14 +311,16 @@ class RoutingEngine {
 	 * Lower score sorts first: workload dominates, a skill match and recent
 	 * contact continuity each reduce the effective score.
 	 *
-	 * @param array<string, mixed> $agent The candidate agent.
-	 * @param string $domain Lower-cased routing domain.
-	 * @param array<int, string> $tags Lower-cased contact tags.
-	 * @param string $customerRef The contact's customer reference.
+	 * @param array<string, mixed>                                              $agent  The candidate agent.
+	 * @param array{domain: string, tags: array<int, string>, customerRef: string} $wanted Lower-cased routing domain and contact tags,
+	 *                                                                                     and the contact's customer reference.
 	 *
 	 * @return array<string, mixed> The scored entry.
 	 */
-	private function scoreAgent(array $agent, string $domain, array $tags, string $customerRef): array {
+	private function scoreAgent(array $agent, array $wanted): array {
+		$domain = $wanted['domain'];
+		$tags = $wanted['tags'];
+		$customerRef = $wanted['customerRef'];
 		$skills = array_map('strtolower', (array)($agent['skills'] ?? []));
 		$skillMatch = (in_array($domain, $skills, true) === true);
 		if ($skillMatch === false) {

@@ -67,10 +67,14 @@ describe('the case lock request (nextcloud-vue ^2.76.0)', () => {
 
 describe('the Credentials text in the settings dialog (nextcloud-vue ^2.76.0)', () => {
 	// The build calls `translate('nextcloud-vue', '...')`; the source calls `t(...)`.
-	const source = fs.readFileSync(
-		path.join(LIBRARY, 'components', 'CnCredentials', 'CnCredentials.vue2.js'),
-		'utf8',
-	)
+	// The bundler's chunk names for the script and the template change between
+	// releases (CnCredentials.vue2.js, then CnCredentials2.vue.js), so every
+	// chunk of the component is read.
+	const directory = path.join(LIBRARY, 'components', 'CnCredentials')
+	const source = fs.readdirSync(directory)
+		.filter((name) => /^CnCredentials\d*\.vue\d*\.js$/.test(name))
+		.map((name) => fs.readFileSync(path.join(directory, name), 'utf8'))
+		.join('\n')
 	const strings = [
 		...source.matchAll(
 			/\b(?:t|translate)\(\s*'nextcloud-vue'\s*,\s*'((?:\\.|[^'\\])*)'/g,

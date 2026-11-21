@@ -119,6 +119,7 @@ import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -140,6 +141,32 @@ function localDay(date) {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+/**
+ * What a lodging sends: the day it was received, how, the grounds and what is asked for.
+ *
+ * @param {object} dialog The lodging dialog.
+ * @return {object} The body.
+ */
+function lodging(dialog) {
+	return {
+		receivedDate: localDay(dialog.receivedDate),
+		receivedChannel: dialog.channel.id,
+		grounds: dialog.grounds.trim(),
+		requestedRelief: dialog.requestedRelief.trim(),
+	}
+}
+
+/**
+ * The sentence for a lodging that failed: the server's message, its error, or the plain one.
+ *
+ * @param {Error} failure The failure.
+ * @return {string} The sentence.
+ */
+function lodgeRefusal(failure) {
+	const data = failure?.response?.data
+	return String(data?.message || data?.error || t('dossiq', 'This could not be registered.'))
+}
+
 export default {
 	name: 'RemedyLodgeDialog',
 
@@ -151,16 +178,9 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The decided case. Arrives as the unresolved `@objectId` token from
-		 * an `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialogTokenAware],
 
+	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
 		title: {
 			type: String,
@@ -202,16 +222,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003 */
 		heading() {
 			return t('dossiq', this.title)
@@ -258,29 +268,11 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const { data } = await axios.post(
-					generateUrl(
-						String(this.lodgeUrl).replace(
-							'{caseId}',
-							encodeURIComponent(this.targetCaseId),
-						),
-					),
-					{
-						receivedDate: localDay(this.receivedDate),
-						receivedChannel: this.channel.id,
-						grounds: this.grounds.trim(),
-						requestedRelief: this.requestedRelief.trim(),
-					},
-				)
+				const { data } = await axios.post(generateUrl(String(this.lodgeUrl).replace('{caseId}', encodeURIComponent(this.targetCaseId))), lodging(this))
 				this.lodged = data || {}
 				emit(PAGE_REFRESH, {})
 			} catch (failure) {
-				const data = failure?.response?.data
-				this.error = String(
-					data?.message
-						|| data?.error
-						|| t('dossiq', 'This could not be registered.'),
-				)
+				this.error = lodgeRefusal(failure)
 			} finally {
 				this.busy = false
 			}
@@ -309,20 +301,17 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .remedy-lodge {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	p {
 		margin: 0;
 	}
 
 	&__late {
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
+		@include banner.warning-banner;
 	}
 
 	&__error {

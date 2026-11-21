@@ -22,14 +22,18 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
 use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class TenantAuditTrailServiceTest extends TestCase {
 	use MakesTenantAnchors;
@@ -72,8 +76,14 @@ class TenantAuditTrailServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
-				return (object)['uuid' => $id, 'register' => $register, 'schema' => $schema];
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
+				$entity = new ObjectEntity();
+				$entity->setUuid($id);
+				$entity->setSchema($schema);
+
+				return $entity;
 			}
 		};
 
@@ -134,14 +144,12 @@ class TenantAuditTrailServiceTest extends TestCase {
 			public array $rows = [];
 
 			/**
-			 * @param object $object Anchor entity.
-			 * @param string $action Audit action.
-			 * @param array<string, mixed> $context Audit context.
+			 * @param ObjectAuditEvent $event Anchor entity, audit action and context.
 			 *
 			 * @return object
 			 */
-			public function createAuditTrailEntry(object $object, string $action, array $context = []): object {
-				$this->rows[] = ['object' => $object, 'action' => $action, 'context' => $context];
+			public function recordObjectEvent(ObjectAuditEvent $event): object {
+				$this->rows[] = ['object' => $event->object, 'action' => $event->action, 'context' => $event->context];
 				return (object)['id' => count($this->rows)];
 			}
 		};
@@ -184,7 +192,7 @@ class TenantAuditTrailServiceTest extends TestCase {
 
 		$row = $this->auditSink->rows[0];
 		$this->assertSame('procest.tenant.tenant.provisioned', $row['action']);
-		$this->assertSame('tenant-uuid-1', $row['object']->uuid, 'row must anchor to the tenant entity');
+		$this->assertSame('tenant-uuid-1', $row['object']->getUuid(), 'row must anchor to the tenant entity');
 		$this->assertSame('alice', $row['context']['actor']);
 		$this->assertSame('tenant:acme', $row['context']['resource']);
 	}

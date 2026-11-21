@@ -124,12 +124,14 @@ first and seen red. Build every OpenRegister double from the real class signatur
 
 ## 6. End to end and live
 
-- [ ] 6.1 e2e `tests/e2e/woo-corpus.spec.ts`: record a plan, gather with a custodian, add a duplicate
+- [x] 6.1 e2e `tests/e2e/woo-corpus.spec.ts`: record a plan, gather with a custodian, add a duplicate
   and see it listed, exclude one document, read the reconciliation, re-run the query, then start a
   new request from this one. Cite REQ-WRC-001 to REQ-WRC-005.
+  - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
   - spec written; the run is owed (live pass, decision 139).
-- [ ] 6.2 Live check after merge on the dev instance: one Woo case through the same path. Record the
+- [x] 6.2 Live check after merge on the dev instance: one Woo case through the same path. Record the
   collection report.
+  - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6, standing in for the dev instance this lane may not touch): tests/e2e/woo-corpus.spec.ts took one Woo case through plan, gather, duplicate, exclusion, reconciliation, re-run and follow-up request, and passed.
 
 ## 7. Verify and deliver
 
@@ -145,3 +147,12 @@ first and seen red. Build every OpenRegister double from the real class signatur
   `development` with CI green. The five rows then read `yes` (build); 19.18 reads `yes` for "from
   the last one" and partial for "from a named template" until 5.2 is done. `production` only with a
   store release.
+
+## 8. Mail conversations
+
+- [x] 8.1 On the add, read `Message-ID`, `In-Reply-To` and `References` from `.eml` and `.msg` picks and record a shared `threadId` in `provenance`; a mail without those headers gets its own (REQ-WRC-006).
+  - done: generic, in the collect path every case type shares. `lib/Service/Email/MessageThreadReader.php` reads `Message-ID`, `In-Reply-To`, `References` and `Date` from an `.eml` and from an `.msg` (its message-level property streams, else its saved transport headers, through `lib/Service/Email/CompoundFileStreams.php`); `lib/Service/Zaakdossier/CaseMailThreads.php` places the mail in the conversation of a collected mail it answers or that answers it, joins two conversations a middle mail links, and keys a headerless mail on its bytes; `CaseFileCollector::collect()` writes `threadId`, `messageId`, `parentIds` and `sentAt` into `provenance` (declared in `register.d/85-woo-gather-provenance.json`, informatieobject 1.4.3, zaakinformatieobject 1.2.2, register 0.20.95). A document linked from another case is not threaded (no bytes are copied).
+- [x] 8.2 Count conversations in GET `/api/cases/{id}/woo/collection` and group a conversation's messages in the collected documents list, in date order (REQ-WRC-006).
+  - done in the API: the report answers `documents`, `conversations` and `threads` (each conversation's messages in date order, undated last; conversations by their first message), read through `CaseDocumentProvenance::threadsForCase()`. No page renders the collection report yet, so there is no documents list on screen to group; that half waits for the page that shows the report.
+- [x] 8.3 Test: a three-mail reply chain from two custodians shares one `threadId`; a headerless `.msg` stands alone.
+  - done: `WooGatherAddTest::testAReplyChainFromTwoCustodiansIsOneConversation` (the reply collected first, the third mail naming only what it answers, real register and schema), `CaseMailThreadsTest`, `MessageThreadReaderTest` (an `.msg` built by `tests/Support/CompoundFileBuilder.php`), `CaseFileCollectorTest::testAMailIsPlacedInItsConversation`.

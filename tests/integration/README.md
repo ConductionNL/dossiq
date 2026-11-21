@@ -13,6 +13,7 @@ in Newman**; Playwright drives the UI only.
 | 2. Case (zaak) CRUD | OpenRegister `/api/objects/{register}/{schema}` (ADR-022; dossiq owns no case-CRUD controller) | create → read → update → delete with id capture | — | anon read (OR reads are not auth-gated — see note) |
 | 3. Settings | `GET /api/settings`, `POST /api/settings/load` | 200 + contract shape | — | 401 no-auth, 401 invalid-auth |
 | 4. Complaints | `GET /api/complaints`, `POST /api/complaints` | — (see KNOWN BUG) | 400 missing-fields validation | 401 no-auth |
+| 5. Public API access with an API key | OpenRegister `/api/consumers`, `GET /api/zgw/zaken/v1/zaken`, `GET /api/zgw/catalogi/v1/zaaktypen` | API key in scope → 200 | unknown key → 401 | key out of scope → 403 |
 | 9. Teardown | deletes the seeded cases | idempotent cleanup | — | — |
 
 The collection is **self-contained and idempotent**: setup requests seed the
@@ -42,6 +43,13 @@ The collection documents this honestly: the complaints **no-auth** (401) and
 `complaints index QUARANTINED` asserts the *current* 500 so the suite stays green
 **without faking a pass**. When the app is fixed (`findObjects` → `findAll`), that
 quarantine test goes RED — flip it to a happy-path 200 assertion at that point.
+
+## The complaint case type
+
+`klacht-behandeling.postman_collection.json` (complaints-are-a-case-type, REQ-CMP-CT-01) reads the
+shipped case type `klacht-behandeling`, starts a case of it received on Monday 1 March 2021, asserts
+through `GET /api/cases/{id}/terms` that its statutory term runs to 12 April (six weeks, Awb 9:11
+lid 1), and deletes the case again. Run it with the same variables as the main suite.
 
 ## Running
 

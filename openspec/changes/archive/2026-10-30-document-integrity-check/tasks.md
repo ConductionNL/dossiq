@@ -1,0 +1,4 @@
+- [x] DocumentIntegrityVerifier + PHPUnit
+- [x] DocumentIntegrityCheckJob registered in info.xml
+- [x] informatieobject schema 1.3.0
+- [x] checksum side card fields + integrityStatus formatter + vitest
