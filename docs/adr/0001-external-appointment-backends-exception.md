@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-06-15
 - Relates to: ADR-019 (integration leaves), ADR-022 (apps consume OR abstractions)
-- Change: `openspec/changes/migrate-appointments-to-calendar-leaf`
+- Change: `openspec/changes/archive/2026-06-15-migrate-appointments-to-calendar-leaf` (archived)
 
 ## Context
 
