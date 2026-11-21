@@ -45,7 +45,6 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  * @SuppressWarnings(PHPMD.TooManyMethods)            The total is the sum of small private steps; each method stays under the method thresholds.
  */
 abstract class ZgwRulesBase {
@@ -275,6 +274,7 @@ abstract class ZgwRulesBase {
 	 * @return array|null Validation error, or null if valid
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array {
 		$extractedUuid = $this->extractUuid(url: $typeUrl);
@@ -292,6 +292,8 @@ abstract class ZgwRulesBase {
 	 * @param string                                 $fieldName The field name for error reporting
 	 *
 	 * @return array|null Validation error, or null if valid
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function storedTypeError(array $type, string $fieldName): ?array {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
@@ -312,29 +314,6 @@ abstract class ZgwRulesBase {
 
 		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
 	}//end storedTypeError()
-
-	/**
-	 * The error for a type URL that is malformed or names no type.
-	 *
-	 * @param string $fieldName The field name for error reporting
-	 *
-	 * @return array The validation error
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function badTypeUrlError(string $fieldName): array {
-		return $this->error(
-			status: 400,
-			detail: "De {$fieldName} URL is ongeldig.",
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'bad-url',
-					reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-				),
-			]
-		);
-	}//end badTypeUrlError()
 
 	/**
 	 * The error for a type that is still a draft, or null when it is published.
@@ -371,6 +350,24 @@ abstract class ZgwRulesBase {
 	}//end draftTypeError()
 
 	/**
+	 * The refusal of a type URL that is malformed or names no type.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array The validation error.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function badTypeUrlError(string $fieldName): array {
+		return $this->results->fieldRefusal(
+			fieldName: $fieldName,
+			code: 'bad-url',
+			detail: "De {$fieldName} URL is ongeldig.",
+			reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+		);
+	}//end badTypeUrlError()
+
+	/**
 	 * Validate an informatieobject URL resolves to an existing document.
 	 *
 	 * @param string $ioUrl The informatieobject URL
@@ -378,17 +375,28 @@ abstract class ZgwRulesBase {
 	 * @return array|null Validation error, or null if valid
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function validateInformatieobjectUrl(string $ioUrl): ?array {
 		if ($this->isValidUrl(url: $ioUrl) === false) {
-			return $this->badInformatieobjectUrl(reason: 'Ongeldige URL.');
+			return $this->results->fieldRefusal(
+				fieldName: 'informatieobject',
+				code: 'bad-url',
+				detail: 'De informatieobject URL is ongeldig.',
+				reason: 'Ongeldige URL.'
+			);
 		}
 
 		$ioUuid = $this->extractUuid(url: $ioUrl);
 
 		// Brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
 		if ($ioUuid === null) {
-			return $this->badInformatieobjectUrl(reason: 'De informatieobject URL bevat geen geldig UUID.');
+			return $this->results->fieldRefusal(
+				fieldName: 'informatieobject',
+				code: 'bad-url',
+				detail: 'De informatieobject URL is ongeldig.',
+				reason: 'De informatieobject URL bevat geen geldig UUID.'
+			);
 		}
 
 		// If we can look up the document in our own register, do so.
@@ -399,29 +407,6 @@ abstract class ZgwRulesBase {
 
 		return null;
 	}//end validateInformatieobjectUrl()
-
-	/**
-	 * The validation error for an informatieobject URL that is not usable.
-	 *
-	 * @param string $reason Why the URL is not usable
-	 *
-	 * @return array Validation error
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function badInformatieobjectUrl(string $reason): array {
-		return $this->error(
-			status: 400,
-			detail: 'De informatieobject URL is ongeldig.',
-			invalidParams: [
-				$this->fieldError(
-					fieldName: 'informatieobject',
-					code: 'bad-url',
-					reason: $reason
-				),
-			]
-		);
-	}//end badInformatieobjectUrl()
 
 	/**
 	 * Look the informatieobject up in the own register; a miss is not an error.
@@ -461,45 +446,23 @@ abstract class ZgwRulesBase {
 	 * @return array|null Validation error, or null if valid
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function validateExternalUrl(string $url, string $fieldName): ?array {
 		if ($this->isValidUrl(url: $url) === false) {
-			return $this->urlError(fieldName: $fieldName, code: 'bad-url');
+			$message = sprintf(self::URL_ERRORS['bad-url'], $fieldName);
+			return $this->results->fieldRefusal(fieldName: $fieldName, code: 'bad-url', detail: $message, reason: $message);
 		}
 
 		$lastSegment = $this->lastPathSegment(url: $url);
 
 		if ($this->fieldValidator->isUuid($lastSegment) === false) {
-			return $this->urlError(fieldName: $fieldName, code: 'invalid-resource');
+			$message = sprintf(self::URL_ERRORS['invalid-resource'], $fieldName);
+			return $this->results->fieldRefusal(fieldName: $fieldName, code: 'invalid-resource', detail: $message, reason: $message);
 		}
 
 		return null;
 	}//end validateExternalUrl()
-
-	/**
-	 * The validation error for a URL field, with the same sentence as detail and reason.
-	 *
-	 * @param string $fieldName The field name for error reporting
-	 * @param string $code The error code, one of URL_ERRORS' keys
-	 *
-	 * @return array Validation error
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function urlError(string $fieldName, string $code): array {
-		$message = sprintf(self::URL_ERRORS[$code], $fieldName);
-		return $this->error(
-			status: 400,
-			detail: $message,
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: $code,
-					reason: $message
-				),
-			]
-		);
-	}//end urlError()
 
 	/**
 	 * The last segment of a URL's path, or an empty string.
@@ -740,6 +703,7 @@ abstract class ZgwRulesBase {
 	 * @return array|null Validation error if duplicate found, null if unique
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function checkFieldUniqueness(
 		string $field1Value,
@@ -758,27 +722,11 @@ abstract class ZgwRulesBase {
 			return null;
 		}
 
-		return $this->notUniqueError(errorField: $errorField);
-	}//end checkFieldUniqueness()
-
-	/**
-	 * The validation error for a field combination that already exists.
-	 *
-	 * @param string $errorField Field name for error reporting
-	 *
-	 * @return array Validation error
-	 */
-	private function notUniqueError(string $errorField): array {
-		return $this->error(
-			status: 400,
+		return $this->results->fieldRefusal(
+			fieldName: $errorField,
+			code: 'identificatie-niet-uniek',
 			detail: 'De combinatie is niet uniek.',
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $errorField,
-					code: 'identificatie-niet-uniek',
-					reason: 'De combinatie bestaat al.'
-				),
-			]
+			reason: 'De combinatie bestaat al.'
 		);
-	}//end notUniqueError()
+	}//end checkFieldUniqueness()
 }//end class
