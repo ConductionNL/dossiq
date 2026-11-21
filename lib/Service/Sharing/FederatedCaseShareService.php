@@ -44,7 +44,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sharing;
 
-use DateTime;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
@@ -224,7 +223,7 @@ class FederatedCaseShareService {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
 
-		if ($this->isFederatedShareConfigured(register: $register, caseSchema: $caseSchema, shareSchema: $shareSchema) === false) {
+		if (empty($register) === true || empty($caseSchema) === true || empty($shareSchema) === true) {
 			return ['error' => 'Federated case sharing is not configured'];
 		}
 
@@ -465,11 +464,10 @@ class FederatedCaseShareService {
 	 * @return array The updated share data
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function storeRevokedShare(FederatedShareStore $store, array $shareData, string $shareId, string $userId): array {
-		$shareData['status'] = 'revoked';
-		$shareData['revokedBy'] = $userId;
-		$shareData['revokedAt'] = (new DateTime())->format('c');
+		$shareData = $this->snapshot->revoked(shareData: $shareData, userId: $userId);
 
 		$result = $store->objectService->saveObject(
 			object: $shareData,
@@ -487,11 +485,7 @@ class FederatedCaseShareService {
 
 		$this->logger->info('Dossiq: Federated case share revoked', ['shareId' => $shareId, 'revokedBy' => $userId]);
 
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		return $result->jsonSerialize();
+		return $this->snapshot->recordOf(saved: $result);
 	}//end storeRevokedShare()
 
 	/**
@@ -547,19 +541,6 @@ class FederatedCaseShareService {
 
 		return $this->snapshot->caseIdOf(stored: $shareObj);
 	}//end readShareCaseId()
-
-	/**
-	 * Whether every configuration value a federated share needs is present.
-	 *
-	 * @param string $register The configured register id
-	 * @param string $caseSchema The configured case schema id
-	 * @param string $shareSchema The configured federated-share schema id
-	 *
-	 * @return bool True when all three are configured
-	 */
-	private function isFederatedShareConfigured(string $register, string $caseSchema, string $shareSchema): bool {
-		return (empty($register) === false && empty($caseSchema) === false && empty($shareSchema) === false);
-	}//end isFederatedShareConfigured()
 
 	/**
 	 * Load the case a federated share is being built from.

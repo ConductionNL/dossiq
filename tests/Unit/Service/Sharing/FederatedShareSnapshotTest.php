@@ -125,4 +125,32 @@ final class FederatedShareSnapshotTest extends TestCase {
 		self::assertNull(actual: $snapshot->caseIdOf(stored: ['status' => 'active']));
 		self::assertNull(actual: $snapshot->caseIdOf(stored: null));
 	}//end testTheCaseOfAStoredSnapshot()
+
+	/**
+	 * A revoked snapshot names who revoked it and when; a saved one reads back as an array either way.
+	 *
+	 * @return void
+	 */
+	public function testARevokedSnapshotAndItsSavedRecord(): void {
+		$snapshot = new FederatedShareSnapshot();
+		$revoked = $snapshot->revoked(shareData: ['caseId' => 'case-1', 'status' => 'active'], userId: 'bob');
+
+		self::assertSame(expected: 'revoked', actual: $revoked['status']);
+		self::assertSame(expected: 'bob', actual: $revoked['revokedBy']);
+		self::assertSame(expected: 'case-1', actual: $revoked['caseId']);
+		self::assertNotFalse(actual: \DateTime::createFromFormat(\DateTimeInterface::ATOM, $revoked['revokedAt']));
+
+		$entity = new class implements JsonSerializable {
+			/**
+			 * The saved row.
+			 *
+			 * @return array<string, string>
+			 */
+			public function jsonSerialize(): array {
+				return ['id' => 's-1'];
+			}//end jsonSerialize()
+		};
+		self::assertSame(expected: ['id' => 's-1'], actual: $snapshot->recordOf(saved: $entity));
+		self::assertSame(expected: ['id' => 's-2'], actual: $snapshot->recordOf(saved: ['id' => 's-2']));
+	}//end testARevokedSnapshotAndItsSavedRecord()
 }//end class

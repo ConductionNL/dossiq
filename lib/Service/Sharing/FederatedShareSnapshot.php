@@ -9,7 +9,7 @@
  * and from the loaded case and the request it takes the allow-listed fields
  * the case actually carries and the documents already attached to it,
  * refusing a document that is not. It also reads the case a stored
- * snapshot belongs to.
+ * snapshot belongs to, marks a snapshot revoked, and reads a saved one back.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Sharing
@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sharing;
 
+use DateTime;
 use OCA\Dossiq\Service\CaseSharingService;
 
 /**
@@ -126,6 +127,43 @@ final class FederatedShareSnapshot {
 
 		return null;
 	}//end caseIdOf()
+
+	/**
+	 * The snapshot marked revoked by the user, now.
+	 *
+	 * @param array<string, mixed> $shareData The stored snapshot.
+	 * @param string               $userId    Who revokes it.
+	 *
+	 * @return array<string, mixed> The snapshot to save.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function revoked(array $shareData, string $userId): array {
+		$shareData['status'] = 'revoked';
+		$shareData['revokedBy'] = $userId;
+		$shareData['revokedAt'] = (new DateTime())->format('c');
+
+		return $shareData;
+	}//end revoked()
+
+	/**
+	 * A saved snapshot as a record: the array itself, or the entity's serialisation.
+	 *
+	 * @param mixed $saved What the object service answered for the save.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function recordOf(mixed $saved): array {
+		if (is_array($saved) === true) {
+			return $saved;
+		}
+
+		return $saved->jsonSerialize();
+	}//end recordOf()
 
 	/**
 	 * Project the requested fields that are actually present on the case.
