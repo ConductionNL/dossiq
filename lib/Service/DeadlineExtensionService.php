@@ -595,6 +595,8 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 *
 	 * @return int Absolute number of days between the current and the new deadline.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	private function calculateDaysImpact(string $current, string $newEndDate): int {
 		$currentDate = $this->dates->now();
@@ -604,8 +606,8 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 
 		$newDate = $this->dates->parse($newEndDate, 'newEinddatum');
 
-		return (int)$currentDate->diff($newDate)->days;
-	}//end calculateDagenImpact()
+		return $this->dates->daysBetween(from: $currentDate, to: $newDate);
+	}//end calculateDaysImpact()
 
 	/**
 	 * Resolve the grondslag and actor recorded with the verlenging event.

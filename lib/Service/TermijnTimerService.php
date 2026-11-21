@@ -658,10 +658,11 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 * @return int|null The span.
 	 *
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {
-			return (int)$from->diff($to)->days;
+			return $this->dates->daysBetween(from: $from, to: $to);
 		}
 
 		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
