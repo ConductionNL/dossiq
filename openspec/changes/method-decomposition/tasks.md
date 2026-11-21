@@ -768,7 +768,30 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `MigrateArchivalHoldsAndTmloTest`, green before and unchanged after but for one `@uses` line
         each. Own test: `tests/Unit/Repair/ProofOfTransferExportTest` (2); exporting a proof without
         a case turns 2 tests red (checked).
-  - [x] 8ac `WOOAnonymisationAssistService` (1: ExcessiveClassComplexity 52 against 50). Building a
+  - [x] 8ac `Publication/OutcomePublisher` (1: ExcessiveClassComplexity 52 against 50). Whether the
+        disclosable documents may go out (no unread file, none under an access exception, each refused
+        document named by file name, else title, else id) moved to the new
+        `Publication/DisclosableDocumentCheck` (`refusal()`; bodies moved unchanged, the repeated name
+        expression is one `nameOf()`). It reads no store; the publisher builds it in its constructor, so
+        its constructor, interface and container binding are unchanged, and the `AccessExceptionValue`
+        import moved with it, so CouplingBetweenObjects stays at 13 (its suppression stays). phpmd: zero
+        findings on both files.
+        Characterisation: the existing `WooPublicationCarriesItsDocumentsTest` (an unread file and an
+        access exception, both through `publish()`) and the publication suites (258 tests), green before
+        and unchanged after. Own test: `tests/Unit/Service/Publication/DisclosableDocumentCheckTest` (3);
+        renaming the unread reason turns 2 tests red (checked).
+  - [x] 8ad `Portal/PortalPages` (1: ExcessiveClassComplexity 54 against 50). One page per listable
+        collection (the schema's first create action, the list, the selected row, the label override
+        and the group) moved to the new `Portal/CollectionPages` (`forCollections()`, with
+        `listable()`, `blocksFor()` and `createBlocks()`; bodies moved unchanged). `PortalPages` keeps
+        the resident's pages and the case screen; its `forCollections()` delegates, and it builds the
+        collection pages in a new argument-free constructor, so every `new PortalPages()` keeps working.
+        phpmd: zero findings on both files.
+        Characterisation: the existing `tests/Unit/Portal` suite (209 tests, among them
+        `PortalContributionManifestGoldenTest` over the whole declared contribution), green before and
+        unchanged after. Own test: `tests/Unit/Portal/CollectionPagesTest` (2); listing a collection
+        marked `listable: false` turns it red (checked).
+  - [x] 8ae `WOOAnonymisationAssistService` (1: ExcessiveClassComplexity 52 against 50). Building a
         redaction-span proposal moved to the new `Redaction/RulesFloorProposal` (`build()`): the rule
         spans tagged as rules, the proposal without the assistant, the logged fall back when it
         fails, and the UNION merge with the rules as a floor (the dedup keys, the well-formed check
