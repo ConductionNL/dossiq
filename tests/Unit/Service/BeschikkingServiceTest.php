@@ -1175,18 +1175,18 @@ class BeschikkingServiceTest extends TestCase {
 		$original = $this->composeWmo();
 		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
 		$successor = $this->service->issueSuccessor($original['id'], 'amendment');
-		self::assertSame('tpl-wmo-v1', $successor['templateId'], 'The original\'s template.');
+		self::assertSame(expected: 'tpl-wmo-v1', actual: $successor['templateId'], message: 'The original\'s template.');
 
 		$this->objects->store['beschikking'][$successor['id']]['currentStatus'] = 'sent';
 		$named = $this->service->issueSuccessor($successor['id'], 'withdrawal', [], 'tpl-other');
-		self::assertSame('tpl-other', $named['templateId'], 'The template the handler named.');
+		self::assertSame(expected: 'tpl-other', actual: $named['templateId'], message: 'The template the handler named.');
 
 		$second = $this->composeWmo();
 		$this->objects->store['beschikking'][$second['id']]['currentStatus'] = 'sent';
 		$this->objects->store['beschikking'][$second['id']]['templateId'] = '  ';
 		$fallback = $this->service->issueSuccessor($second['id'], 'withdrawal', ['decision' => ['text' => 'Ingetrokken.']]);
-		self::assertSame('tpl-default', $fallback['templateId'], 'No template on the original: compose chooses.');
-		self::assertSame(['text' => 'Ingetrokken.'], $fallback['decision']);
-		self::assertNull($fallback['rationale'] ?? null, 'A rationale the handler did not write is not carried.');
+		self::assertSame(expected: 'tpl-default', actual: $fallback['templateId'], message: 'No template on the original: compose chooses.');
+		self::assertSame(expected: ['text' => 'Ingetrokken.'], actual: $fallback['decision']);
+		self::assertNull(actual: $fallback['rationale'] ?? null, message: 'A rationale the handler did not write is not carried.');
 	}//end testASuccessorIsWrittenFromTheOriginalsTemplate()
 }//end class

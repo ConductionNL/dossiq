@@ -50,13 +50,13 @@ final class SuccessorRequestTest extends TestCase {
 
 		try {
 			(new SuccessorRequest(originalId: 'b-1', kind: 'Amendment', overrides: [], templateId: null))->assertKnownKind();
-			self::fail('A kind is compared exactly.');
+			self::fail(message: 'A kind is compared exactly.');
 		} catch (RefusedException $refusal) {
-			self::assertSame('successor-kind-unknown', $refusal->getRule());
-			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
+			self::assertSame(expected: 'successor-kind-unknown', actual: $refusal->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
 		}
 
-		self::assertSame(['amendment', 'withdrawal'], SuccessorRequest::KINDS);
+		self::assertSame(expected: ['amendment', 'withdrawal'], actual: SuccessorRequest::KINDS);
 	}//end testOnlyTheTwoKindsAreKnown()
 
 	/**
@@ -69,8 +69,8 @@ final class SuccessorRequestTest extends TestCase {
 
 		$bare = new SuccessorRequest(originalId: 'b-1', kind: 'withdrawal', overrides: [], templateId: null);
 		self::assertSame(
-			['decisionType' => 'withdrawal', 'supersedes' => 'b-1', 'addressee' => ['name' => 'M. Jansen']],
-			$bare->fieldsFrom(original: $original)
+			expected: ['decisionType' => 'withdrawal', 'supersedes' => 'b-1', 'addressee' => ['name' => 'M. Jansen']],
+			actual: $bare->fieldsFrom(original: $original)
 		);
 
 		$written = new SuccessorRequest(
@@ -80,18 +80,18 @@ final class SuccessorRequestTest extends TestCase {
 			templateId: null
 		);
 		self::assertSame(
-			[
+			expected: [
 				'decisionType' => 'amendment',
 				'supersedes' => 'b-1',
 				'addressee' => ['name' => 'P. de Vries'],
 				'rationale' => null,
 				'decision' => ['text' => 'Nieuw.'],
 			],
-			$written->fieldsFrom(original: $original),
-			'A written null is still written; a field the successor does not take is dropped.'
+			actual: $written->fieldsFrom(original: $original),
+			message: 'A written null is still written; a field the successor does not take is dropped.'
 		);
 
-		self::assertSame([], $bare->fieldsFrom(original: [])['addressee'], 'No addressee anywhere: an empty one.');
+		self::assertSame(expected: [], actual: $bare->fieldsFrom(original: [])['addressee'], message: 'No addressee anywhere: an empty one.');
 	}//end testTheFieldsCarryTheAddresseeAndOnlyWhatWasWritten()
 
 	/**
@@ -103,13 +103,13 @@ final class SuccessorRequestTest extends TestCase {
 		$original = ['caseId' => 'case-1', 'templateId' => ' tpl-a '];
 
 		$unnamed = new SuccessorRequest(originalId: 'b-1', kind: 'amendment', overrides: [], templateId: null);
-		self::assertSame('case-1', $unnamed->caseIdFrom(original: $original));
-		self::assertSame('', $unnamed->caseIdFrom(original: []));
-		self::assertSame('tpl-a', $unnamed->templateFrom(original: $original));
-		self::assertNull($unnamed->templateFrom(original: ['templateId' => '   ']));
-		self::assertNull($unnamed->templateFrom(original: []));
+		self::assertSame(expected: 'case-1', actual: $unnamed->caseIdFrom(original: $original));
+		self::assertSame(expected: '', actual: $unnamed->caseIdFrom(original: []));
+		self::assertSame(expected: 'tpl-a', actual: $unnamed->templateFrom(original: $original));
+		self::assertNull(actual: $unnamed->templateFrom(original: ['templateId' => '   ']));
+		self::assertNull(actual: $unnamed->templateFrom(original: []));
 
 		$named = new SuccessorRequest(originalId: 'b-1', kind: 'amendment', overrides: [], templateId: 'tpl-b');
-		self::assertSame('tpl-b', $named->templateFrom(original: $original));
+		self::assertSame(expected: 'tpl-b', actual: $named->templateFrom(original: $original));
 	}//end testTheCaseAndTheTemplate()
 }//end class
