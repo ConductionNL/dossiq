@@ -372,7 +372,7 @@ class ConsultationServiceTest extends TestCase {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function testAMoveTheStatusGraphDoesNotAllowIsRefused(): void {
-		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$objectService = $this->createMock(originalClassName: ConsultationObjectServiceStub::class);
 		$objectService->method('find')->willReturn(['id' => 'con-uuid', 'status' => 'closed']);
 		$objectService->expects($this->never())->method('saveObject');
 		$this->settings->method('getObjectService')->willReturn($objectService);
