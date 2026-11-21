@@ -34,13 +34,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Import;
 
-use DateInterval;
-use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\Term\PeriodDays;
 use OCA\Dossiq\Service\Term\TermCarryOver;
 use OCP\App\IAppManager;
 use Throwable;
@@ -48,9 +47,8 @@ use Throwable;
 /**
  * Moves another app's stored records onto cases, by the case type's declaration.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class CaseRecordImport implements CaseRecordImportInterface {
 
@@ -77,37 +75,25 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	private const UNREAD_NUMBERS = 'The existing cases could not be read by their earlier number, so nothing more was imported.';
 
 	/**
-	 * An import's answer before anything was read, after its key and source app.
-	 */
-	private const NOTHING_YET = [
-		'installed' => false,
-		'imported' => 0,
-		'alreadyImported' => 0,
-		'failed' => [],
-		'unmigrated' => 0,
-		'migrated' => [],
-		'duplicates' => [],
-		'repointed' => 0,
-	];
-
-	/**
-	 * Per outcome kind: the counter it raises and the list it joins, if any.
-	 * Any other kind is a migration.
-	 */
-	private const COUNTS = [
-		'alreadyImported' => ['alreadyImported', null],
-		'unmigrated' => ['unmigrated', null],
-		'failed' => ['unmigrated', 'failed'],
-		'duplicate' => [null, 'duplicates'],
-		'migrated' => ['imported', 'migrated'],
-	];
-
-	/**
 	 * The cases a number became, and the references to move.
 	 *
 	 * @var RecordImportReferences
 	 */
 	private readonly RecordImportReferences $references;
+
+	/**
+	 * Opens an import's answer and counts each record's outcome on it.
+	 *
+	 * @var RecordImportAnswer
+	 */
+	private readonly RecordImportAnswer $answers;
+
+	/**
+	 * Reads an ISO 8601 period as days.
+	 *
+	 * @var PeriodDays
+	 */
+	private readonly PeriodDays $periodDays;
 
 	/**
 	 * Constructor.
@@ -117,15 +103,19 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	 * @param RecordImportSteps $steps The record mapping, the term carry-over and the import store.
 	 * @param DayCount               $days            Counts the days between two moments.
 	 * @param RecordImportReferences|null $references The cases a number became, and the references to move.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly RecordImportSteps $steps,
-		private readonly DayCount $days = new DayCount(),
+		DayCount $days = new DayCount(),
 		?RecordImportReferences $references = null,
 	) {
 		$this->references = ($references ?? new RecordImportReferences(settingsService: $settingsService, store: $steps->store));
+		$this->answers    = new RecordImportAnswer();
+		$this->periodDays = new PeriodDays(days: $days);
 	}//end __construct()
 
 	/**
@@ -250,13 +240,12 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
 	 *
 	 * @return array<string, mixed> The answer.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function runOne(array $run): array {
 		$import = $run['import'];
-		$answer = [
-			'key' => (string)($import['key'] ?? ''),
-			'sourceApp' => (string)($import['sourceApp'] ?? ''),
-		] + self::NOTHING_YET;
+		$answer = $this->answers->opened(import: $import);
 
 		// An undeclared app id is an app nobody installed: isInstalled('') answers false.
 		if ($this->appManager->isInstalled($answer['sourceApp']) === false) {
@@ -278,7 +267,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 				return $answer;
 			}
 
-			$answer = $this->counted(answer: $answer, outcome: $outcome);
+			$answer = $this->answers->counted(answer: $answer, outcome: $outcome);
 		}
 
 		return $answer;
@@ -390,31 +379,6 @@ class CaseRecordImport implements CaseRecordImportInterface {
 
 		return $placement;
 	}//end matchFor()
-
-	/**
-	 * The answer with one record's outcome counted.
-	 *
-	 * @param array<string, mixed>                          $answer  The answer so far.
-	 * @param array{kind: string, row: array<string, mixed>} $outcome The record's outcome.
-	 *
-	 * @return array<string, mixed> The answer.
-	 */
-	private function counted(array $answer, array $outcome): array {
-		$row = $outcome['row'];
-		$answer['repointed'] += (int)($row['repointed'] ?? 0);
-		unset($row['repointed']);
-
-		[$counter, $list] = (self::COUNTS[$outcome['kind']] ?? self::COUNTS['migrated']);
-		if ($counter !== null) {
-			$answer[$counter]++;
-		}
-
-		if ($list !== null) {
-			$answer[$list][] = $row;
-		}
-
-		return $answer;
-	}//end counted()
 
 	/**
 	 * Write one record as a case, carry its term, move its references and stamp it.
@@ -543,31 +507,16 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	 * @param array{caseId: string, term: mixed} $onto     The case, and the mapped record's `term`.
 	 *
 	 * @return array<string, mixed> The carry result, with its `outcome`.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function carryTerm(array $caseType, array $onto): array {
 		return $this->steps->term->carry(
 			caseId: $onto['caseId'],
 			term: $onto['term'],
 			definitionSlug: (string)($caseType['identifier'] ?? ''),
-			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+			extensionDays: $this->periodDays->days(period: (string)($caseType['extensionPeriod'] ?? '')),
 		);
 	}//end carryTerm()
-
-	/**
-	 * An ISO 8601 period as days, 0 when absent or unreadable.
-	 *
-	 * @param string $period The period, such as P14D or P2W.
-	 *
-	 * @return int The days.
-	 */
-	private function days(string $period): int {
-		// An empty or unreadable period throws, and reads as no extension.
-		try {
-			$from = new DateTimeImmutable('2000-01-01');
-			return $this->days->between(from: $from, to: $from->add(new DateInterval($period)));
-		} catch (Throwable) {
-			return 0;
-		}
-	}//end days()
 
 }//end class
