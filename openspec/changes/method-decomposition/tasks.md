@@ -755,7 +755,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Unchanged and green after but for one `@uses` line in each file that builds the executor.
         Own test: `tests/Unit/Service/Cases/CaseSplitFieldsTest` (3); defaulting impact to high turns
         3 tests red (checked).
-  - [x] 8ab `Publication/OutcomePublisher` (1: ExcessiveClassComplexity 52 against 50). Whether the
+  - [x] 8ab `Repair/MigrateArchivalToOpenRegister` (1: ExcessiveClassComplexity 52 against 50). Its
+        third step, writing every proof-of-transfer record as a case document, moved to the new
+        `Repair/ProofOfTransferExport` (`export()`, with the read, the per-record skip of a proof
+        without a case, the caseDocument it becomes and the logged failed write; bodies and messages
+        moved unchanged). The repair step keeps the guard, the system identity, the TMLO switch, the
+        legal holds and the marker; it builds the export over its own settings and logger in its
+        constructor, so its constructor and its registration in `appinfo/info.xml` are unchanged.
+        phpmd: zero findings on both files under both rulesets.
+        Characterisation: the existing `MigrateArchivalRunTest` (every save and the logged failure in
+        order, the unreadable proof schema, the completion counts) and
+        `MigrateArchivalHoldsAndTmloTest`, green before and unchanged after but for one `@uses` line
+        each. Own test: `tests/Unit/Repair/ProofOfTransferExportTest` (2); exporting a proof without
+        a case turns 2 tests red (checked).
+  - [x] 8ac `Publication/OutcomePublisher` (1: ExcessiveClassComplexity 52 against 50). Whether the
         disclosable documents may go out (no unread file, none under an access exception, each refused
         document named by file name, else title, else id) moved to the new
         `Publication/DisclosableDocumentCheck` (`refusal()`; bodies moved unchanged, the repeated name
@@ -767,7 +780,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         access exception, both through `publish()`) and the publication suites (258 tests), green before
         and unchanged after. Own test: `tests/Unit/Service/Publication/DisclosableDocumentCheckTest` (3);
         renaming the unread reason turns 2 tests red (checked).
-  - [x] 8ac `Portal/PortalPages` (1: ExcessiveClassComplexity 54 against 50). One page per listable
+  - [x] 8ad `Portal/PortalPages` (1: ExcessiveClassComplexity 54 against 50). One page per listable
         collection (the schema's first create action, the list, the selected row, the label override
         and the group) moved to the new `Portal/CollectionPages` (`forCollections()`, with
         `listable()`, `blocksFor()` and `createBlocks()`; bodies moved unchanged). `PortalPages` keeps
