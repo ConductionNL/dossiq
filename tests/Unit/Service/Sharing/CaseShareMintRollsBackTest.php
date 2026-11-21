@@ -49,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseSharingService
  *
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShareRecord
  */
 class CaseShareMintRollsBackTest extends TestCase {
 

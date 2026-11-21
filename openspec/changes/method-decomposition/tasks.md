@@ -726,3 +726,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the graph with the closing stamp, and the blocking rule. Own test:
         `tests/Unit/Service/Consultation/ConsultationStatusRulesTest` (6); letting every stored
         status through `assertMove()` turns 2 tests red (checked).
+  - [x] 8z `Sharing/CaseLinkShares` (1: ExcessiveClassComplexity 52 against 50). What a `caseShare`
+        record holds for an access link, read and written without a store, moved to the new
+        `Sharing/CaseLinkShareRecord`: the record written for a minted link (`forMinted()`, with
+        `ownFields()` and `linkFields()`), the link ids a stored record holds (`linkIds()`, the case
+        link first, from stored text or a list) and the anchor at the end of a link address
+        (`anchorOf()`). Bodies moved unchanged. The service keeps the reads, the writes, the IDOR
+        guard and the revokes; it builds the record reader in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files under
+        both rulesets.
+        Characterisation: the existing `CaseLinkSharesTest` (the whole stored record, the view-only
+        level, the junk document entries, the trimmed anchor) and `CaseShareMintRollsBackTest`, green
+        before and unchanged after but for one `@uses` line in each file that builds the service.
+        Own test: `tests/Unit/Service/Sharing/CaseLinkShareRecordTest` (4); keeping a document link
+        id of 0 turns 2 tests red (checked).
