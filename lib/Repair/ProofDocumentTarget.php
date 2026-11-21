@@ -3,7 +3,7 @@
 /**
  * Where migrated proof-of-transfer records are written as case documents.
  *
- * Built by `MigrateArchivalToOpenRegister::exportProofRecords()` and handed through its export steps:
+ * Built by `ProofOfTransferExport::export()` and handed through its export steps:
  * OpenRegister's object service, the register and the case document schema.
  *
  * @category Repair
