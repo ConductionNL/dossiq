@@ -755,3 +755,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Unchanged and green after but for one `@uses` line in each file that builds the executor.
         Own test: `tests/Unit/Service/Cases/CaseSplitFieldsTest` (3); defaulting impact to high turns
         3 tests red (checked).
+  - [x] 8ab `Publication/OutcomePublisher` (1: ExcessiveClassComplexity 52 against 50). Whether the
+        disclosable documents may go out (no unread file, none under an access exception, each refused
+        document named by file name, else title, else id) moved to the new
+        `Publication/DisclosableDocumentCheck` (`refusal()`; bodies moved unchanged, the repeated name
+        expression is one `nameOf()`). It reads no store; the publisher builds it in its constructor, so
+        its constructor, interface and container binding are unchanged, and the `AccessExceptionValue`
+        import moved with it, so CouplingBetweenObjects stays at 13 (its suppression stays). phpmd: zero
+        findings on both files.
+        Characterisation: the existing `WooPublicationCarriesItsDocumentsTest` (an unread file and an
+        access exception, both through `publish()`) and the publication suites (258 tests), green before
+        and unchanged after. Own test: `tests/Unit/Service/Publication/DisclosableDocumentCheckTest` (3);
+        renaming the unread reason turns 2 tests red (checked).
