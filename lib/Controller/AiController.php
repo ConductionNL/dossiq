@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\SuggestionActionReport;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
@@ -54,20 +55,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AiController extends Controller {
-	/**
-	 * What a person can do with a suggestion.
-	 *
-	 * @var string[]
-	 */
-	private const USER_ACTIONS = ['accepted', 'rejected', 'modified', 'ignored'];
-
-	/**
-	 * Why a shown suggestion went unused.
-	 *
-	 * @var string[]
-	 */
-	private const UNUSED_BECAUSE = ['closed', 'expired', 'superseded'];
-
 	/**
 	 * Constructor for AiController.
 	 *
@@ -248,6 +235,7 @@ class AiController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function recordAction(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -255,7 +243,8 @@ class AiController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$error = $this->recordError();
+		$report = new SuggestionActionReport(request: $this->request);
+		$error = $report->refusal();
 		if ($error !== null) {
 			return $this->badRequest(error: $error);
 		}
@@ -265,123 +254,33 @@ class AiController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		return new JSONResponse($this->recordedAction(caseId: $caseId, user: $user));
+		return new JSONResponse($this->recordedAction(report: $report, caseId: $caseId, user: $user));
 	}//end recordAction()
-
-	/**
-	 * Why the reported action is refused: a required field missing, or an unknown action or cause.
-	 *
-	 * @return string|null The refusal, or null when the report may be recorded.
-	 *
-	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
-	 */
-	private function recordError(): ?string {
-		$caseId = (string)$this->request->getParam('caseId', '');
-		$type = (string)$this->request->getParam('type', '');
-		$userAction = (string)$this->request->getParam('userAction', '');
-		$unusedBecause = (string)$this->request->getParam('unusedBecause', '');
-
-		if ($caseId === '' || $type === '' || $userAction === '') {
-			return 'caseId, type, and userAction are required';
-		}
-
-		return $this->refuseAction(userAction: $userAction, unusedBecause: $unusedBecause);
-	}//end recordError()
 
 	/**
 	 * Write the oversight entry the request reports.
 	 *
-	 * @param string $caseId The case the suggestion was on.
-	 * @param IUser  $user   The person who acted on it.
+	 * @param SuggestionActionReport $report The reported action.
+	 * @param string                 $caseId The case the suggestion was on.
+	 * @param IUser                  $user   The person who acted on it.
 	 *
 	 * @return array<string, mixed> The stored entry.
 	 *
 	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function recordedAction(string $caseId, IUser $user): array {
+	private function recordedAction(SuggestionActionReport $report, string $caseId, IUser $user): array {
 		return $this->auditService->recordUserAction(
 			caseId: $caseId,
 			type: (string)$this->request->getParam('type', ''),
 			userAction: (string)$this->request->getParam('userAction', ''),
-			suggestion: $this->asPayload(value: $this->request->getParam('suggestion', [])) ?? [],
-			actualValue: $this->asPayload(value: $this->request->getParam('actualValue')),
-			reason: $this->stringOrNull(value: $this->request->getParam('reason')),
+			suggestion: $report->suggestion(),
+			actualValue: $report->actualValue(),
+			reason: $report->reason(),
 			userId: $user->getUID(),
-			context: $this->actionContext(),
+			context: $report->context(),
 		);
 	}//end recordedAction()
-
-	/**
-	 * What surrounded the suggestion: why it went unused, the prompt, the model, the ids.
-	 *
-	 * @return array<string, string>
-	 */
-	private function actionContext(): array {
-		return [
-			'unusedBecause' => (string)$this->request->getParam('unusedBecause', ''),
-			'prompt' => (string)$this->request->getParam('prompt', ''),
-			'model' => (string)$this->request->getParam('model', ''),
-			'suggestionId' => (string)$this->request->getParam('suggestionId', ''),
-			'documentId' => (string)$this->request->getParam('documentId', ''),
-		];
-	}//end actionContext()
-
-	/**
-	 * A string as it is; anything else as null.
-	 *
-	 * @param mixed $value The request value.
-	 *
-	 * @return string|null
-	 */
-	private function stringOrNull(mixed $value): ?string {
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		return $value;
-	}//end stringOrNull()
-
-	/**
-	 * Why a reported action is refused, or null when it is accepted.
-	 *
-	 * @param string $userAction    The reported action.
-	 * @param string $unusedBecause Why an ignored suggestion went unused.
-	 *
-	 * @return string|null The refusal, or null.
-	 */
-	private function refuseAction(string $userAction, string $unusedBecause): ?string {
-		if (in_array($userAction, self::USER_ACTIONS, true) === false) {
-			return 'userAction must be one of: ' . implode(', ', self::USER_ACTIONS);
-		}
-
-		if ($userAction === 'ignored' && in_array($unusedBecause, self::UNUSED_BECAUSE, true) === false) {
-			return 'unusedBecause must be one of: ' . implode(', ', self::UNUSED_BECAUSE);
-		}
-
-		return null;
-	}//end refuseAction()
-
-	/**
-	 * A suggestion or applied value as the audit entry stores it.
-	 *
-	 * The schema holds an object; a surface that shows text sends a string,
-	 * which is kept under `text`.
-	 *
-	 * @param mixed $value The request value.
-	 *
-	 * @return array|null The value as an array, or null when absent.
-	 */
-	private function asPayload(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_string($value) === true && $value !== '') {
-			return ['text' => $value];
-		}
-
-		return null;
-	}//end asPayload()
 
 	/**
 	 * Get AI audit trail entries.

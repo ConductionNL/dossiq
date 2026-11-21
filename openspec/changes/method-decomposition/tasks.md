@@ -1120,3 +1120,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         for one `@uses` line in each file that covers the service.
         Own test: `tests/Unit/Service/Zaakdossier/DossierEditAndUploadRulesTest` (3); reading a different
         word for definitief turns 2 tests red (checked).
+  - [x] 8ay `AiController` (1: ExcessiveClassComplexity 51 against 50). What a person reports doing with a
+        suggestion reads no store, so it moved to the new `Controller/Support/SuggestionActionReport`, built over
+        the request: why the report is refused, a missing field or an unknown action or cause (`refusal()`, was
+        `recordError()` with `refuseAction()`), the suggestion and the applied value as the entry stores them, text
+        under `text` (`suggestion()`, `actualValue()`, with `asPayload()`), the reason when it is a string
+        (`reason()`, was `stringOrNull()`) and the surrounding context (`context()`, was `actionContext()`). The two
+        lists of accepted actions and causes moved with them. Bodies and refusal sentences moved unchanged.
+        `recordAction()` builds the report inline, so the constructor and the container binding are unchanged.
+        phpmd: zero findings on both files under both rulesets, and over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `AiControllerContractTest` (the required fields, the unknown action and cause,
+        the seven arguments in their order, absent optionals as null, an ignored suggestion with its cause) and
+        `AiControllerAuditIndexTest`, green before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Controller/Support/SuggestionActionReportTest` (2).
