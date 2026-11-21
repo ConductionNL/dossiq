@@ -257,6 +257,8 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function storeAssessment(array $assessment, AssessmentBatchTarget $target): array {
 		$existing = $this->existingAssessments(assessment: $assessment, target: $target);
@@ -271,7 +273,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			$uuid = (string)($existing[0]['id'] ?? $existing[0]['uuid'] ?? null);
 		}
 
-		return $this->saveAssessment(assessment: $assessment, target: $target, uuid: $uuid);
+		return $target->save(assessment: $assessment, uuid: $uuid);
 	}//end storeAssessment()
 
 	/**
@@ -308,23 +310,6 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			reference: (string)$assessment['documentRef']
 		);
 	}//end refusalOn()
-
-	/**
-	 * Save the assessment, new or over the stored one.
-	 *
-	 * @param array<string, mixed>  $assessment The stamped assessment.
-	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
-	 * @param string|null           $uuid       The stored assessment's uuid, or null to create.
-	 *
-	 * @return array<string, mixed> `{saved, created, documentRef}`.
-	 *
-	 * @spec openspec/changes/method-decomposition/tasks.md
-	 */
-	private function saveAssessment(array $assessment, AssessmentBatchTarget $target, ?string $uuid): array {
-		$saved = $target->save(assessment: $assessment, uuid: $uuid);
-
-		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
-	}//end saveAssessment()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.

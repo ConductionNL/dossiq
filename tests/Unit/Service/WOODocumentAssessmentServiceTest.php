@@ -996,19 +996,24 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
 		$service = function (?object $objects, array $config): WOODocumentAssessmentService {
-			$settings = $this->createMock(SettingsService::class);
+			$settings = $this->createMock(originalClassName: SettingsService::class);
 			$settings->method('getObjectService')->willReturn($objects);
 			$settings->method('getConfigValue')->willReturnCallback(
 				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
 			);
 
-			return new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+			return new WOODocumentAssessmentService(
+				settingsService: $settings,
+				userSession: $this->userSession,
+				logger: $this->logger,
+				refusalGrounds: new WooRefusalGrounds(settingsService: $settings, logger: $this->logger)
+			);
 		};
 
-		$rows = $service($register, $config)->partlyPublicAssessments('case-1');
-		$this->assertSame(['doc-1', 'doc-4'], array_column($rows, 'documentRef'));
-		$this->assertSame([0, 1], array_keys($rows), 'A list, not the keys of the read.');
-		$this->assertSame([], $service($register, ['register' => 'dossiq'])->partlyPublicAssessments('case-1'));
-		$this->assertSame([], $service(null, $config)->partlyPublicAssessments('case-1'));
+		$rows = $service($register, $config)->partlyPublicAssessments(caseId: 'case-1');
+		$this->assertSame(expected: ['doc-1', 'doc-4'], actual: array_column($rows, 'documentRef'));
+		$this->assertSame(expected: [0, 1], actual: array_keys($rows), message: 'A list, not the keys of the read.');
+		$this->assertSame(expected: [], actual: $service($register, ['register' => 'dossiq'])->partlyPublicAssessments(caseId: 'case-1'));
+		$this->assertSame(expected: [], actual: $service(null, $config)->partlyPublicAssessments(caseId: 'case-1'));
 	}//end testThePartlyPublicAssessmentsAreTheCasesOwn()
 }//end class

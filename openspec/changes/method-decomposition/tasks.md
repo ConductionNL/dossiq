@@ -858,9 +858,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         case's own partly public rows as a list (`rowsOf()`, the filter `partlyPublicAssessments()`
         applied inline) and the count with the documents still waiting for a redacted copy (`tally()`,
         with `isPartlyPublicOf()`). Bodies moved unchanged; the classification is the class's
-        `PARTLY_PUBLIC`. To keep the coupling from rising, the one save of an assessment moved onto the
-        value object it already took, `AssessmentBatchTarget::save()`, which takes `ObjectSaveOptions` and
-        `ObjectFindTarget` with it: CouplingBetweenObjects goes from 17 to 16 (an inherited finding, not
+        `PARTLY_PUBLIC`. To keep the coupling from rising, the save step (`saveAssessment()`, the save and
+        its `{saved, created, documentRef}` answer) moved onto the value object it already took,
+        `AssessmentBatchTarget::save()`, which takes `ObjectSaveOptions` and `ObjectFindTarget` with it
+        (the save and its answer together, so gate-17 does not read it as a pass-through): CouplingBetweenObjects goes from 17 to 16 (an inherited finding, not
         suppressed, and still above 13). The service builds the rows reader in its constructor, so its
         constructor, interface and container binding are unchanged. phpmd: no finding on the three files
         except that inherited coupling.

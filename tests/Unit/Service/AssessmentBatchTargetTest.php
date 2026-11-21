@@ -62,7 +62,7 @@ class AssessmentBatchTargetTest extends TestCase {
 	}//end testPropertiesReadBack()
 
 	/**
-	 * A save goes to the object service in the batch's register and schema, with the uuid it replaces.
+	 * A save goes to the object service in the batch's register and schema, with the uuid it replaces, and says what it did.
 	 *
 	 * @return void
 	 */
@@ -90,8 +90,11 @@ class AssessmentBatchTargetTest extends TestCase {
 		};
 		$target = new AssessmentBatchTarget(objectService: $objectService, register: 'dossiq', schema: 'wooDocumentAssessment', userId: 'u', caseId: 'c');
 
-		self::assertSame(expected: ['documentRef' => 'doc-1', 'id' => 'a-1'], actual: $target->save(assessment: ['documentRef' => 'doc-1'], uuid: null));
-		$target->save(assessment: ['documentRef' => 'doc-2'], uuid: 'a-2');
+		self::assertSame(
+			expected: ['saved' => ['documentRef' => 'doc-1', 'id' => 'a-1'], 'created' => 1, 'documentRef' => 'doc-1'],
+			actual: $target->save(assessment: ['documentRef' => 'doc-1'], uuid: null)
+		);
+		self::assertSame(expected: 0, actual: $target->save(assessment: ['documentRef' => 'doc-2'], uuid: 'a-2')['created']);
 
 		self::assertSame(expected: 'dossiq', actual: $objectService->calls[0]['options']->target->register);
 		self::assertSame(expected: 'wooDocumentAssessment', actual: $objectService->calls[0]['options']->target->schema);

@@ -55,23 +55,26 @@ final class AssessmentBatchTarget {
 	}//end __construct()
 
 	/**
-	 * Save one assessment in this batch's register and schema.
+	 * Save one assessment in this batch's register and schema, new or over the stored one.
 	 *
-	 * @param array<string, mixed> $assessment The assessment to store.
-	 * @param string|null          $uuid       The stored assessment it replaces, or null for a new one.
+	 * @param array<string, mixed> $assessment The stamped assessment; it carries its `documentRef`.
+	 * @param string|null          $uuid       The stored assessment's uuid, or null to create.
 	 *
-	 * @return mixed What the object service answered.
+	 * @return array<string, mixed> `{saved, created, documentRef}`: what the object service answered,
+	 *                              1 for a new assessment, and the document it judged.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function save(array $assessment, ?string $uuid): mixed {
-		return $this->objectService->saveObject(
+	public function save(array $assessment, ?string $uuid): array {
+		$saved = $this->objectService->saveObject(
 			object: $assessment,
 			options: new ObjectSaveOptions(
 				target: new ObjectFindTarget(register: $this->register, schema: $this->schema),
 				uuid: $uuid
 			)
 		);
+
+		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
 	}//end save()
 }//end class
