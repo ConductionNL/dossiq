@@ -768,3 +768,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `MigrateArchivalHoldsAndTmloTest`, green before and unchanged after but for one `@uses` line
         each. Own test: `tests/Unit/Repair/ProofOfTransferExportTest` (2); exporting a proof without
         a case turns 2 tests red (checked).
+  - [x] 8ac `WOOAnonymisationAssistService` (1: ExcessiveClassComplexity 52 against 50). Building a
+        redaction-span proposal moved to the new `Redaction/RulesFloorProposal` (`build()`): the rule
+        spans tagged as rules, the proposal without the assistant, the logged fall back when it
+        fails, and the UNION merge with the rules as a floor (the dedup keys, the well-formed check
+        and the start sort). Bodies and the log line moved unchanged. Moving the whole build, not
+        only the merge, takes the `HermiqAssistantException` catch with it, so the service's
+        CouplingBetweenObjects stays at 13; the merge alone would have made it 14. The service keeps
+        the text checks, the pending proposal, the review and the oversight reports; it builds the
+        proposal over its own assistant client and logger in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files under both
+        rulesets.
+        Characterisation: the existing `WOOAnonymisationAssistServiceTest` (the rules floor against
+        adversarial assistant spans, malformed spans dropped, an exact duplicate counted once, the
+        rules-only answers with and without a failure), green before and unchanged after but for one
+        `@uses` line, as is `DocumentRedactionServiceTest`. Own test:
+        `tests/Unit/Service/Redaction/RulesFloorProposalTest` (3); accepting an empty span turns 2
+        tests red (checked).
