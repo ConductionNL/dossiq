@@ -38,6 +38,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * ObjectService stub matching the named-arg signatures used in ConsultationService.
@@ -361,5 +362,108 @@ class ConsultationServiceTest extends TestCase {
 		);
 
 	}//end testApproveExtensionRejectsInvalidDateFormat()
+
+	/**
+	 * A move the declared status graph does not allow is refused, naming both statuses.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAMoveTheStatusGraphDoesNotAllowIsRefused(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'con-uuid', 'status' => 'closed']);
+		$objectService->expects($this->never())->method('saveObject');
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Invalid status transition: closed -> open');
+
+		$this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'open');
+
+	}//end testAMoveTheStatusGraphDoesNotAllowIsRefused()
+
+	/**
+	 * A stored status outside the graph does not constrain the move, and closing stamps closedAt.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAStoredStatusOutsideTheGraphDoesNotConstrainTheMove(): void {
+		$objectService = new class {
+
+			/**
+			 * The patches written, in order.
+			 *
+			 * @var array<int, ObjectPatch>
+			 */
+			public array $patches = [];
+
+			/**
+			 * The stored consultation.
+			 *
+			 * @param string                 $id      The object id.
+			 * @param ObjectFindOptions|null $options Ignored.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				return ['id' => $id, 'status' => 'legacy'];
+			}
+
+			/**
+			 * Record a partial write.
+			 *
+			 * @param ObjectPatch $patch The patch.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(ObjectPatch $patch): array {
+				$this->patches[] = $patch;
+				return ['id' => $patch->objectId] + $patch->data;
+			}
+
+			/**
+			 * No rows.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 * @param mixed                ...$scope Ignored.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function searchObjects(array $query, mixed ...$scope): array {
+				return [];
+			}
+		};
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
+
+		$result = $this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'closed');
+
+		$this->assertSame(['id' => 'con-uuid', 'status' => 'closed'], $result);
+		$this->assertCount(1, $objectService->patches);
+		$this->assertSame('con-uuid', $objectService->patches[0]->objectId);
+		$this->assertSame('closed', $objectService->patches[0]->data['status']);
+		$this->assertArrayHasKey('closedAt', $objectService->patches[0]->data);
+
+	}//end testAStoredStatusOutsideTheGraphDoesNotConstrainTheMove()
+
+	/**
+	 * Only a request flagged mandatory with the boolean true, and not answered, closed or withdrawn, blocks.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testOnlyAnUnansweredMandatoryRequestBlocks(): void {
+		$this->assertTrue($this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'received']));
+		$this->assertTrue($this->service->consultationBlocks(consultation: ['mandatory' => true]));
+		$this->assertFalse($this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'withdrawn']));
+		$this->assertFalse($this->service->consultationBlocks(consultation: ['mandatory' => 'true', 'status' => 'open']));
+		$this->assertFalse($this->service->consultationBlocks(consultation: ['status' => 'open']));
+
+	}//end testOnlyAnUnansweredMandatoryRequestBlocks()
 
 }//end class
