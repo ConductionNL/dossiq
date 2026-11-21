@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,8 +27,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryBodyServiceInterface;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -39,9 +43,9 @@ use RuntimeException;
  * can be consulted during case processing. This service exposes CRUD, weighted
  * specialization search, and secure-token issuance for external notification.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
  */
-class AdvisoryBodyService {
+class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -63,29 +67,13 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<int, array<string, mixed>> List of advisory bodies
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findAll(array $filters = []): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$results = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+			schemaKey: 'advisory_body_schema',
 			filters: array_merge($filters, ['_limit' => 200]),
 		);
-
-		return $results;
 	}//end findAll()
 
 	/**
@@ -95,30 +83,13 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<string, mixed>|null The advisory body or null if not found
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findById(string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
 		// A top-level `['id' => $id]` filter does not resolve in OpenRegister
 		// (ids are metadata, not schema properties) and silently matches
 		// nothing. The get-by-uuid path resolves the id directly.
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'advisory_body_schema', id: $id);
 	}//end findById()
 
 	/**
@@ -134,20 +105,10 @@ class AdvisoryBodyService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable or schema not configured
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function save(array $data, string $id = ''): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Advisory body schema not configured');
-		}
+		[$objectService, $register, $schema] = $this->requireSaveTarget();
 
 		$saveArgs = [$register, $schema, $data];
 		if ($id !== '') {
@@ -156,18 +117,11 @@ class AdvisoryBodyService {
 
 		$result = $objectService->saveObject(...$saveArgs);
 
-		$savedId = '';
-		if ($id !== '') {
-			$savedId = $id;
-		}
-
-		if (is_object($result) === true) {
-			$savedId = $result->getUuid();
-		}
+		$savedId = $this->savedIdOf(result: $result, id: $id);
 
 		$this->logger->info(
 			'Advisory body saved: ' . $savedId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($result) === true) {
@@ -178,17 +132,15 @@ class AdvisoryBodyService {
 	}//end save()
 
 	/**
-	 * Delete an advisory body by ID.
+	 * The object service, register and schema an advisory body is saved to.
 	 *
-	 * @param string $id The advisory body UUID
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema
 	 *
-	 * @return bool True on success
+	 * @throws \RuntimeException If OpenRegister is unavailable or schema not configured
 	 *
-	 * @throws \RuntimeException If OpenRegister is unavailable
-	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
-	public function delete(string $id): bool {
+	private function requireSaveTarget(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -201,11 +153,51 @@ class AdvisoryBodyService {
 			throw new RuntimeException('Advisory body schema not configured');
 		}
 
-		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+		return [$objectService, $register, $schema];
+	}//end requireSaveTarget()
+
+	/**
+	 * The id of the saved advisory body: the stored object's uuid, else the id it was saved under.
+	 *
+	 * @param mixed  $result What the save answered
+	 * @param string $id     The UUID for update (empty for create)
+	 *
+	 * @return mixed The saved id, empty when unknown
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
+	 */
+	private function savedIdOf(mixed $result, string $id): mixed {
+		$savedId = '';
+		if ($id !== '') {
+			$savedId = $id;
+		}
+
+		if (is_object($result) === true) {
+			$savedId = $result->getUuid();
+		}
+
+		return $savedId;
+	}//end savedIdOf()
+
+	/**
+	 * Delete an advisory body by ID.
+	 *
+	 * @param string $id The advisory body UUID
+	 *
+	 * @return bool True on success
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
+	 */
+	public function delete(string $id): bool {
+		[$objectService, $register, $schema] = $this->requireSaveTarget();
+
+		$objectService->deleteObject(new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 
 		$this->logger->info(
 			'Advisory body deleted: ' . $id,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return true;
@@ -222,7 +214,7 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<int, array<string, mixed>> Ranked list of advisory bodies
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function searchBySpecialization(string $query): array {
 		$all = $this->findAll(filters: ['active' => true]);
@@ -232,20 +224,7 @@ class AdvisoryBodyService {
 		$rest = [];
 
 		foreach ($all as $body) {
-			$specializations = $body['specializations'] ?? [];
-			if (is_array($specializations) === false) {
-				$specializations = [];
-			}
-
-			$hasMatch = false;
-			foreach ($specializations as $tag) {
-				if (str_contains(mb_strtolower((string)$tag), $lowerQuery) === true) {
-					$hasMatch = true;
-					break;
-				}
-			}
-
-			if ($hasMatch === true) {
+			if ($this->hasSpecialization(body: $body, lowerQuery: $lowerQuery) === true) {
 				$matching[] = $body;
 				continue;
 			}
@@ -255,6 +234,31 @@ class AdvisoryBodyService {
 
 		return array_merge($matching, $rest);
 	}//end searchBySpecialization()
+
+	/**
+	 * Whether one of a body's specialization tags contains the query.
+	 *
+	 * @param array<string, mixed> $body       The advisory body.
+	 * @param string               $lowerQuery The query, lowercased.
+	 *
+	 * @return bool True when a tag matches.
+	 */
+	private function hasSpecialization(array $body, string $lowerQuery): bool {
+		$specializations = $body['specializations'] ?? [];
+		if (is_array($specializations) === false) {
+			$specializations = [];
+		}
+
+		$hasMatch = false;
+		foreach ($specializations as $tag) {
+			if (str_contains(mb_strtolower((string)$tag), $lowerQuery) === true) {
+				$hasMatch = true;
+				break;
+			}
+		}
+
+		return $hasMatch;
+	}//end hasSpecialization()
 
 	/*
 	 * NO issueSecureToken() / sendExternalNotification() HERE.

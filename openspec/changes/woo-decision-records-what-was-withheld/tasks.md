@@ -11,7 +11,7 @@ and seen red; put the failing line in the PR body.
 
 ## 1. The entries
 
-- [x] 1.1 (done, generic per decision 182: `lib/Service/Publication/WithheldEntries.php` `fromAssessments()`, the Woo classification and grounds field passed by WooPublicationService; position = documentRef order, from 1, because `WooDecisionDrafts` does not exist (REQ-PWL-001); tests `tests/Unit/Service/Publication/WithheldEntriesTest.php`, all four named plus `testGroundsAreReducedToNonEmptyCodes`) Add `lib/Woo/WithheldEntries.php` with `build(string $caseId): array`: one
+- [x] 1.1 (done, generic per decision 182: `lib/Service/Publication/WithheldEntries.php` `fromAssessments()`, the Woo classification and grounds field passed by OutcomePublisher; position = documentRef order, from 1, because `WooDecisionDrafts` does not exist (REQ-PWL-001); tests `tests/Unit/Service/Publication/WithheldEntriesTest.php`, all four named plus `testGroundsAreReducedToNonEmptyCodes`) Add `lib/Woo/WithheldEntries.php` with `build(string $caseId): array`: one
   `{position, grounds}` per `niet_openbaar` assessment, `position` from `WooDecisionDrafts::wooDecision()`
   (REQ-WRW-001).
   - unit `tests/Unit/Woo/WithheldEntriesTest.php`: `testOnlyWithheldDocumentsAreListed`,
@@ -20,7 +20,7 @@ and seen red; put the failing line in the PR body.
 
 ## 2. The call
 
-- [x] 2.1 (done: `Service/Publication/WithheldListRecorder` resolves the door only when the class exists and the container builds it; tests in `WooPublicationServiceTest` red on development first (dq-l10-logs/r4/red-withheld.log, 5 red), `WOOAssessmentControllerTest::testPublishDecisionAnswersTheWithheldRecord`) Call `record()` from `WooPublicationService::publish()` after the publication is created or
+- [x] 2.1 (done: `Service/Publication/WithheldListRecorder` resolves the door only when the class exists and the container builds it; tests in `WooPublicationServiceTest` red on development first (dq-l10-logs/r4/red-withheld.log, 5 red), `WOOAssessmentControllerTest::testPublishDecisionAnswersTheWithheldRecord`) Call `record()` from `OutcomePublisher::publish()` after the publication is created or
   updated, resolving `WithheldDocuments` from the container only when opencatalogi is enabled and
   the class exists; answer `withheldRecord`; never roll back the publication (REQ-WRW-001,
   REQ-WRW-002).

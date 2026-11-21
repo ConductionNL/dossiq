@@ -27,10 +27,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  */
 class PublicationReadinessTest extends TestCase {
 
@@ -80,13 +82,14 @@ class PublicationReadinessTest extends TestCase {
 		$register = new class extends InMemoryRegister {
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('down');
 			}
 		};

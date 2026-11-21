@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseIncompleteness
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseIncompletenessTest extends TestCase {
 
@@ -171,6 +172,27 @@ class CaseIncompletenessTest extends TestCase {
 		$this->incompleteness->requireFields(case: $this->case, needs: ['bsn']);
 		$this->addToAssertionCount(count: 1);
 	}//end testAnActThatNeedsSomethingElseStillRuns()
+
+	/**
+	 * Finishing asks about everything a case is missing: a case missing any
+	 * field is refused with every one named, and a complete case passes.
+	 *
+	 * @return void
+	 */
+	public function testRequireCompleteNamesEveryMissingField(): void {
+		try {
+			$this->incompleteness->requireComplete(case: ['missingFields' => ['applicantAddress', ' bsn ']]);
+			$this->fail(message: 'finishing a case that is missing data must be refused');
+		} catch (RefusedException $e) {
+			$this->assertSame(expected: 'incomplete-case', actual: $e->getRule());
+			$this->assertSame(expected: 'This case is missing applicantAddress, bsn.', actual: $e->getSentence());
+			$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $e->getStatus());
+		}
+
+		$this->incompleteness->requireComplete(case: ['missingFields' => '[]']);
+		$this->incompleteness->requireComplete(case: []);
+		$this->addToAssertionCount(count: 1);
+	}//end testRequireCompleteNamesEveryMissingField()
 
 	/**
 	 * A case whose missing-field list will not parse reads as complete.

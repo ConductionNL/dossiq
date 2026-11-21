@@ -8,7 +8,7 @@ from `today`.
 
 > **Moved, 2026-10-09.** Sections 1 to 3 (the rolled case deadline, rolled API
 > end dates, the Woo extension through the term engine) are built under
-> `openspec/changes/one-term-engine` (Ruben's one-term-engine decision of
+> `openspec/changes/archive/2026-11-21-one-term-engine` (Ruben's one-term-engine decision of
 > 2026-10-09), which supersedes them: the case deadline follows the statutory
 > term instance rather than a generalised `CaseInheritedDeadlineListener`, and
 > `deadlineBeforeRoll` on the case is not added (the instance keeps
@@ -102,11 +102,12 @@ from `today`.
 
 ## 5. End to end and live
 
-- [ ] 5.1 `tests/e2e/woo-term-rolls.spec.ts`: create a Woo case through the API with a start date
+- [x] 5.1 `tests/e2e/woo-term-rolls.spec.ts`: create a Woo case through the API with a start date
   whose term ends on a configured holiday, and read the `deadline` back. Extend it once and then
   twice. Cite REQ-WTR-001 and REQ-WTR-003. (live pass, decision 139: written as
   `tests/e2e/woo-term-rolls.spec.ts`, asserting the dates `one-term-engine` computes: the case
   deadline is the statutory instance's, and the one extension counts from the unrolled end)
+  - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
 - [ ] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
   the portal intake. Read `deadline` and the term instance's `endDateCurrent` through the
   OpenRegister API, and record both. This proves the removed calculation no longer overwrites the

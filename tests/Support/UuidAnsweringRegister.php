@@ -18,10 +18,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * Delegates to InMemoryRegister; a save on the named schemas answers an entity with a uuid.
  */
 class UuidAnsweringRegister {
+
+	/**
+	 * How many uuids this register minted.
+	 *
+	 * @var int
+	 */
+	private int $minted = 0;
 
 	/**
 	 * Constructor.
@@ -50,14 +61,15 @@ class UuidAnsweringRegister {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?array {
-		return $this->store->find(id: $id, register: $register, schema: $schema);
+		$_extend = $options?->extend;
+		$files = $options?->files ?? false;
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
+		return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 	}//end find()
 
 	/**
@@ -95,16 +107,21 @@ class UuidAnsweringRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): mixed {
-		$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if (in_array((string)$schema, $this->schemas, true) === false) {
-			return $row;
+			return $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 		}
+
+		// A create on these schemas mints a uuid, as OpenRegister does, so a
+		// caller that writes the answered id into a uuid-typed property fits.
+		$uuid ??= sprintf('00000000-0000-4000-8000-%012d', ++$this->minted);
+		$row = $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 
 		return new class((string)$row['id']) {
 			/**

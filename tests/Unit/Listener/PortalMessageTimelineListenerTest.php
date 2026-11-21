@@ -31,6 +31,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\PortalMessageTimelineListener
+ * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class PortalMessageTimelineListenerTest extends TestCase {
 

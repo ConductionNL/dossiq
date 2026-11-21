@@ -5,7 +5,7 @@
 //
 // `statusType.colour` is a NAME from the NL Design System palette, never a hex
 // value, so a themed install repoints one token and every badge, every board
-// column header and every stepper step follows. The names are the twelve the
+// column header and every stepper step follows. The names are the fourteen the
 // schema enumerates; anything else — an empty colour, a value from an older
 // row, a typo — resolves to grey rather than to nothing, because a badge with
 // no colour at all reads as a rendering fault rather than as an unconfigured
@@ -32,6 +32,8 @@ export const STATUS_COLOURS = [
 	'red-light',
 	'purple',
 	'purple-light',
+	'teal',
+	'teal-light',
 	'grey',
 	'grey-light',
 ]
@@ -54,6 +56,8 @@ const FALLBACK = {
 	'red-light': '#fbe9e8',
 	purple: '#762f8e',
 	'purple-light': '#f2eaf5',
+	teal: '#1d5e66',
+	'teal-light': '#e3f1f3',
 	grey: '#696969',
 	'grey-light': '#f0f0f0',
 }
@@ -133,9 +137,11 @@ export function statusColourStyle(colour) {
  * text over it, the way the Zuiddrecht workplace boards draw every status
  * pill (DqTokens "Statuskleuren": zachte vlakken met donkere tekst).
  *
- * A full hue becomes its own `-light` tint as the background, with the hue
- * darkened towards the main text as the text: `color-mix(in srgb, <hue> 65%,
- * <text>)`. A `-light` tint stays what it was: the tint with the main text.
+ * A full hue becomes its own `-light` tint as the background. The text is the
+ * theme's pill text for that hue (`--nl-color-<hue>-text`) when it names one,
+ * else the hue darkened towards the main text: `color-mix(in srgb, <hue> 65%,
+ * <text>)`. A `-light` tint stays the tint, with the theme's pill text or else
+ * the main text.
  *
  * Computed on the fallback ramps, text on tint: blue 7.20:1, green 6.50:1,
  * orange 5.20:1, red 7.01:1, purple 9.45:1, grey 7.30:1 (all AA). The full
@@ -153,51 +159,28 @@ export function statusColourStyle(colour) {
 export function statusBadgeStyle(colour) {
 	const name = normaliseStatusColour(colour)
 	if (isLightStatusColour(name)) {
-		return statusColourStyle(name)
+		const style = statusColourStyle(name)
+		return { ...style, color: statusTextToken(name.replace(/-light$/, ''), style.color) }
 	}
 	return {
 		backgroundColor: statusColourToken(`${name}-light`),
-		color: `color-mix(in srgb, ${statusColourToken(name)} 65%, var(--color-main-text, #1b1c1d))`,
+		color: statusTextToken(name, `color-mix(in srgb, ${statusColourToken(name)} 65%, var(--color-main-text, #1b1c1d))`),
 	}
 }
 
 /**
- * The colour a merged board column takes.
+ * The text a status badge sets on a hue's tint: the theme's own pill text
+ * for that hue (`--nl-color-<hue>-text`, the boards' text in the workplace
+ * sets, each at AA on its tint), else the given fallback.
  *
- * The Workflow board merges every non-final status that shares a NAME into one
- * column, because statuses are defined per case type and the board would
- * otherwise draw one near-empty column per type. Two types can give the same
- * status name two different colours, and the column can only be one of them.
+ * @param {string} hue A hue name from the palette, without `-light`.
+ * @param {string} fallback The CSS colour when the theme names none.
+ * @return {string} A `var(--nl-color-<hue>-text, <fallback>)` expression.
  *
- * 🔴 GREY NEVER OUTRANKS A CHOSEN HUE, and that is the whole point of this
- * function. `statusType.colour` carries `"default": "grey"` in the schema, so a
- * status whose author never picked a colour is STORED as grey and reads back
- * exactly like one somebody deliberately made grey. Treating that stored grey
- * as a configured colour let it win the merge on nothing but iteration order:
- * the board walks the statusType collection in the order the API answers, not
- * in the order it later sorts the columns, so which case type happened to be
- * created first decided whether an authored orange reached the screen at all.
- * That is what made a board column grey while its status page badge was
- * orange, and it is why this takes a chosen hue over grey in either position.
- *
- * Between two CHOSEN hues the first still wins and the later one is ignored:
- * blending would give the column a colour neither case type asked for.
- *
- * @param {unknown} current The colour the column already took, if any.
- * @param {unknown} candidate The colour of another status with the same name.
- * @return {string|null} The column's colour, or null while none is configured.
- *
- * @spec openspec/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-10-30-status-badge-text-token/specs/case-types/spec.md#requirement-a-status-badge-sets-the-theme-s-pill-text
  */
-export function mergeColumnColour(current, candidate) {
-	const chosen = (colour) =>
-		isStatusColour(colour) && colour !== DEFAULT_STATUS_COLOUR
-
-	if (chosen(current)) return current
-	if (chosen(candidate)) return candidate
-	if (isStatusColour(current)) return current
-	if (isStatusColour(candidate)) return candidate
-	return null
+export function statusTextToken(hue, fallback) {
+	return `var(--nl-color-${hue}-text, ${fallback})`
 }
 
 /**
@@ -220,6 +203,8 @@ export const STATUS_COLOUR_BADGE_VARIANTS = Object.freeze({
 	'red-light': 'error',
 	purple: 'purple',
 	'purple-light': 'purple',
+	teal: 'teal',
+	'teal-light': 'teal',
 	grey: 'default',
 	'grey-light': 'default',
 })

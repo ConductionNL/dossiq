@@ -12,8 +12,8 @@
  * the timeline tab History, and the sidebar named the audit trail History too.
  * N-7: a new user met the support note before the welcome tour.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -92,11 +92,16 @@ function caseDetail(manifest) {
 
 describe('N-3: field labels and the term tile read Dutch', () => {
 	for (const layout of ['menu-layout.simple.json', 'menu-layout.json']) {
-		it(`the requester field is Aanvrager on every form and panel (${layout})`, () => {
-			const labels = requesterLabels(translated(layout))
+		it(`the requester field is Aanvrager on every form and panel, Verzoeker on the case edit form (${layout})`, () => {
+			const manifest = translated(layout)
+			const edit = caseDetail(manifest).config.fieldOverrides
+			const labels = requesterLabels(manifest)
 			// Create forms on four pages, the nav's new-case action, the case
 			// edit form and the Overview panel.
 			expect(labels.length).toBeGreaterThanOrEqual(6)
+			// The case edit form draws the requester as Verzoeker (DqZaakDialogen).
+			expect(edit.requester.label).toBe('Verzoeker')
+			labels.splice(labels.indexOf('Verzoeker'), 1)
 			expect(new Set(labels)).toEqual(new Set(['Aanvrager']))
 		})
 	}
@@ -121,7 +126,15 @@ describe('N-3: field labels and the term tile read Dutch', () => {
 		).config.widgets.find((widget) => widget.id === 'case-tile-deadline')
 		const { label, ...rest } = base.content
 		expect(label).toBe('Deadline')
-		expect(tile.content).toEqual(rest)
+		expect(tile.content).toMatchObject(rest)
+		// And it draws the board's term card: days, the decide-by line, the
+		// bar from the start date and the suspend act.
+		expect(tile.content).toMatchObject({
+			daysLabel: { one: '{count} day', other: '{count} days' },
+			caption: 'Beslissen uiterlijk {date}',
+			startField: 'startDate',
+			action: { type: 'open-modal', target: 'CaseLifecycleMenuDialog', props: { act: 'suspend' } },
+		})
 	})
 })
 
@@ -134,7 +147,7 @@ describe('N-6: the case page names every tab once', () => {
 			).content.tabs
 			const sidebar = config.sidebar.tabs
 			const ids = [
-				...strip.map((tab) => `strip:${tab.widgetId}`),
+				...strip.map((tab) => `strip:${Array.isArray(tab.widgetIds) ? tab.widgetIds[0] : tab.widgetId}`),
 				...sidebar.map((tab) => `sidebar:${tab.id}`),
 			]
 			expect(new Set(ids).size).toBe(ids.length)

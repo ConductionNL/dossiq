@@ -36,14 +36,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+ * @spec openspec/specs/webhook-steps-through-integriq/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IUserSession;
 use Throwable;
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Builds `openconnector.source-call` steps from retired webhook steps.
  *
- * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+ * @spec openspec/specs/webhook-steps-through-integriq/spec.md
  */
 class RetiredWebhookSteps {
 
@@ -128,7 +128,7 @@ class RetiredWebhookSteps {
 	 *
 	 * @throws UnmappableStep When the step cannot be carried over.
 	 *
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function transition(array $config): array {
 		$body = ['case' => self::WHOLE_ITEM];
@@ -136,7 +136,7 @@ class RetiredWebhookSteps {
 			$body['transition'] = $config[self::TRANSITION_KEY];
 		}
 
-		$step = $this->call(url: trim((string)($config['url'] ?? '')), timeout: self::WEBHOOK_TIMEOUT, output: $config);
+		$step = $this->call(target: ['url' => trim((string)($config['url'] ?? '')), 'timeout' => self::WEBHOOK_TIMEOUT], output: $config);
 		$step['config']['body'] = $body;
 
 		$headers = $this->headers(headers: ($config['headers'] ?? []));
@@ -156,7 +156,7 @@ class RetiredWebhookSteps {
 	 *
 	 * @throws UnmappableStep When the step cannot be carried over.
 	 *
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function action(array $config): array {
 		$timeout = (int)($config['timeoutSec'] ?? self::CALL_WEBHOOK_TIMEOUT);
@@ -164,7 +164,7 @@ class RetiredWebhookSteps {
 			$timeout = self::CALL_WEBHOOK_TIMEOUT;
 		}
 
-		$step = $this->call(url: $this->actionUrl(config: $config), timeout: $timeout, output: $config);
+		$step = $this->call(target: ['url' => $this->actionUrl(config: $config), 'timeout' => $timeout], output: $config);
 
 		$template = (string)($config['payloadTemplate'] ?? '');
 		if ($template === '') {
@@ -216,15 +216,16 @@ class RetiredWebhookSteps {
 	/**
 	 * A POST source-call step to the URL: its base as a Source, its path and query as the endpoint.
 	 *
-	 * @param string               $url     The URL the retired step called.
-	 * @param int                  $timeout The timeout a newly created Source gets.
-	 * @param array<string, mixed> $output  The retired configuration, for its `output` key.
+	 * @param array{url: string, timeout: int} $target The URL the retired step called, and the timeout a newly
+	 *                                                 created Source gets.
+	 * @param array<string, mixed>             $output The retired configuration, for its `output` key.
 	 *
 	 * @return array{type: string, config: array<string, mixed>} The step, without a body.
 	 *
 	 * @throws UnmappableStep When the URL is unusable or Integriq gives no Source.
 	 */
-	private function call(string $url, int $timeout, array $output): array {
+	private function call(array $target, array $output): array {
+		['url' => $url, 'timeout' => $timeout] = $target;
 		[$base, $endpoint] = $this->baseAndEndpoint(url: $url);
 
 		$outputKey = trim((string)($output['output'] ?? ''));
@@ -291,20 +292,7 @@ class RetiredWebhookSteps {
 	 * @throws UnmappableStep When Integriq is absent or gives no Source.
 	 */
 	private function source(string $base, int $timeout): string {
-		$eventClass = '\\' . self::SOURCE_EVENT;
-		if (class_exists($eventClass) === false) {
-			throw new UnmappableStep(
-				message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it'
-			);
-		}
-
-		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
-			baseUrl: $base,
-			purpose: 'the webhook steps dossiq handed to Integriq',
-			timeoutSeconds: $timeout,
-			userId: $this->userSession->getUser()?->getUID(),
-		);
+		$event = $this->sourceRequest(base: $base, timeout: $timeout);
 
 		try {
 			$this->dispatcher->dispatchTyped($event);
@@ -312,6 +300,47 @@ class RetiredWebhookSteps {
 			throw new UnmappableStep(message: 'Integriq could not provide a source for ' . $base . ': ' . $e->getMessage());
 		}
 
+		return $this->answeredSourceId(event: $event, base: $base);
+	}//end source()
+
+	/**
+	 * The event asking Integriq for a Source for a base URL.
+	 *
+	 * @param string $base The base URL.
+	 * @param int $timeout The timeout a newly created Source gets.
+	 *
+	 * @return object The request event.
+	 *
+	 * @throws UnmappableStep When Integriq is absent.
+	 */
+	private function sourceRequest(string $base, int $timeout): object {
+		$eventClass = '\\' . self::SOURCE_EVENT;
+		if (class_exists($eventClass) === false) {
+			throw new UnmappableStep(
+				message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it'
+			);
+		}
+
+		return new $eventClass(
+			sourceApp: AppIdentity::APP_ID,
+			baseUrl: $base,
+			purpose: 'the webhook steps dossiq handed to Integriq',
+			timeoutSeconds: $timeout,
+			userId: $this->userSession->getUser()?->getUID(),
+		);
+	}//end sourceRequest()
+
+	/**
+	 * The Source uuid Integriq answered the request with.
+	 *
+	 * @param object $event The dispatched request event.
+	 * @param string $base The base URL.
+	 *
+	 * @return string The Source uuid.
+	 *
+	 * @throws UnmappableStep When Integriq gives no Source.
+	 */
+	private function answeredSourceId(object $event, string $base): string {
 		$sourceId = trim((string)$event->getSourceId());
 		if ($event->isHandled() === false || $sourceId === '') {
 			$reason = trim((string)$event->getRefusal());
@@ -323,7 +352,7 @@ class RetiredWebhookSteps {
 		}
 
 		return $sourceId;
-	}//end source()
+	}//end answeredSourceId()
 
 	/**
 	 * The step's own request headers, refusing a credential header.

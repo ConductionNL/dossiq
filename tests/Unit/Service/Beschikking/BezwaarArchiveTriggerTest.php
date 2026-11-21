@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -38,6 +38,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 require_once __DIR__.'/../BeschikkingServiceTest.php';
 
@@ -101,12 +104,11 @@ class BezwaarArchiveTriggerTest extends TestCase {
 	 */
 	private function stored(array $fields = []): array {
 		return $this->objects->saveObject(
-			'dossiq',
-			'bezwaarTrigger',
 			array_merge(
 				['id' => 'trig-1', 'decisionId' => 'besch-1', 'objectionReceived' => false, 'archiveTriggerActive' => true, 'archiveDate' => '2026-10-01'],
 				$fields
-			)
+			),
+			new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger'))
 		);
 	}//end stored()
 
@@ -121,7 +123,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored());
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::ARCHIVED, actual: $outcome);
-		$this->assertFalse($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertFalse($this->objects->find('trig-1', new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testALapsedTermArchivesTheBeschikking()
 
 	/**
@@ -135,7 +137,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored(fields: ['objectionReceived' => true]));
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::OBJECTED, actual: $outcome);
-		$this->assertFalse($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertFalse($this->objects->find('trig-1', new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testAReceivedObjectionSkipsTheArchive()
 
 	/**
@@ -167,7 +169,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored());
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::FAILED, actual: $outcome);
-		$this->assertTrue($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertTrue($this->objects->find('trig-1', new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testARefusedArchiveLeavesTheTriggerOn()
 
 	/**

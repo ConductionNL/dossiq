@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service\CaseDefinition;
  * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
  */
 class PackagePartRules {
+	use DecodesPackageFiles;
 
 	/**
 	 * The collections a `case-type.json` may carry besides `caseType`.
@@ -102,7 +103,8 @@ class PackagePartRules {
 		match ($part) {
 			'case-type' => $this->checkCaseType(files: $files),
 			'flows' => $this->checkRowFiles(files: $files, dir: 'flows/'),
-			'seed' => $this->checkSeed(files: $files),
+			'seed' => $this->checkSeed(files: $files, dir: 'seed/'),
+			'examples' => $this->checkSeed(files: $files, dir: 'examples/'),
 			'settings' => $this->checkSettings(files: $files),
 			default => null,
 		};
@@ -187,19 +189,21 @@ class PackagePartRules {
 	}//end checkRowFiles()
 
 	/**
-	 * Check the `seed/` files: each names the schema its rows go to, by
-	 * settings key for a schema of this app, or by app, register and slug for
-	 * a schema of another app. A file may name the property (`match`) an
-	 * existing row is recognised by; then every row carries it.
+	 * Check the `seed/` or `examples/` files: each names the schema its rows
+	 * go to, by settings key for a schema of this app, or by app, register and
+	 * slug for a schema of another app. A file may name the property (`match`)
+	 * an existing row is recognised by; then every row carries it. Example
+	 * files follow the same rules as seed files.
 	 *
 	 * @param array<string, string> $files The package files.
+	 * @param string                $dir   The part's directory, `seed/` or `examples/`.
 	 *
 	 * @return void
 	 */
-	private function checkSeed(array $files): void {
-		$paths = $this->jsonUnder(files: $files, dir: 'seed/');
+	private function checkSeed(array $files, string $dir): void {
+		$paths = $this->jsonUnder(files: $files, dir: $dir);
 		if ($paths === []) {
-			$this->errors[] = 'seed/: the part is declared but holds no .json file.';
+			$this->errors[] = "{$dir}: the part is declared but holds no .json file.";
 		}
 
 		foreach ($paths as $path) {
@@ -304,27 +308,4 @@ class PackagePartRules {
 
 		return $value;
 	}//end listOf()
-
-	/**
-	 * Decode one file to an object, recording why when it cannot be.
-	 *
-	 * @param array<string, string> $files The package files.
-	 * @param string                $path  The file.
-	 *
-	 * @return array<string, mixed>|null The object, or null.
-	 */
-	private function decode(array $files, string $path): ?array {
-		if (isset($files[$path]) === false) {
-			$this->errors[] = "{$path} is missing.";
-			return null;
-		}
-
-		$data = json_decode($files[$path], true);
-		if (is_array($data) === false || ($data !== [] && array_is_list($data) === true)) {
-			$this->errors[] = "{$path} is not a JSON object: " . json_last_error_msg();
-			return null;
-		}
-
-		return $data;
-	}//end decode()
 }//end class

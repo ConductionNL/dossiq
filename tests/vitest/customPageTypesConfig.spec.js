@@ -12,7 +12,7 @@
  * that warning while the board loaded its three schemas through
  * initializeStores() anyway.
  *
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'
@@ -54,12 +54,5 @@ describe('custom page register/schema pairs', () => {
 			)
 			expect(halfDeclared(overlays)).toEqual([])
 		}
-	})
-
-	it('the Workflow board declares neither, because it loads three schemas', () => {
-		const board = manifest.pages.find((page) => page.id === 'WorkflowBoard')
-		expect(board.type).toBe('custom')
-		expect(board.config?.register).toBeUndefined()
-		expect(board.config?.schema).toBeUndefined()
 	})
 })

@@ -14,7 +14,7 @@
  * without its actions is now a row on the job, carrying the same note as its
  * reason (see lib/BulkAction/TransitionCasesAction::missedActions).
  *
- * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 import { translatePlural as n } from '@nextcloud/l10n'
@@ -24,7 +24,7 @@ import { translatePlural as n } from '@nextcloud/l10n'
  *
  * @param {object} body The transition response body.
  * @return {Array<{type: string, error: string}>} The failures, empty when none.
- * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function failedActionsOf(body) {
 	return Array.isArray(body?.failedActions) ? body.failedActions : []
@@ -35,7 +35,7 @@ export function failedActionsOf(body) {
  *
  * @param {object} body The transition response body.
  * @return {string} The sentence to show, or the empty string when every action ran.
- * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function failedActionsWarning(body) {
 	const count = failedActionsOf(body).length

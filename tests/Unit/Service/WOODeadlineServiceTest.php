@@ -182,7 +182,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testCalculateRefusesWithoutADefinition(): void {
 		$service = new WOODeadlineService(
@@ -206,7 +206,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testExtendDeadlineExtendsTheStatutoryTerm(): void {
 		$this->extensions->expects(self::once())->method('extendStatutoryTermOfCase')
@@ -234,7 +234,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testTheExtensionCountsFromTheUnrolledOriginalEnd(): void {
 		$base = null;
@@ -257,7 +257,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testExtendDeadlineRefusesASecondExtension(): void {
 		$this->extensions->method('extendStatutoryTermOfCase')
@@ -286,6 +286,29 @@ class WOODeadlineServiceTest extends TestCase {
 			self::assertSame(422, $e->getStatus());
 		}
 	}//end testExtendDeadlineThrowsForEmptyReason()
+
+	/**
+	 * Without a term engine the extension is refused as unavailable, before anything is extended.
+	 *
+	 * @return void
+	 */
+	public function testExtendDeadlineWithoutATermEngineIsUnavailable(): void {
+		$service = new WOODeadlineService(
+			settingsService: $this->settingsService,
+			notificationManager: $this->notificationManager,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			definitions: $this->definitions,
+		);
+
+		try {
+			$service->extendDeadline('case-uuid-001', 'More time needed');
+			self::fail('An extension without a term engine must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('woo-extension-unavailable', $e->getRule());
+			self::assertSame(422, $e->getStatus());
+		}
+	}//end testExtendDeadlineWithoutATermEngineIsUnavailable()
 
 	/**
 	 * CheckAndWarn returns warned=false when OpenRegister is unavailable.
@@ -324,5 +347,32 @@ class WOODeadlineServiceTest extends TestCase {
 		$this->assertFalse($result['isOverdue']);
 		$this->assertFalse($result['warned']);
 	}//end testCheckAndWarnReturnsFalseForDistantDeadline()
+
+	/**
+	 * CheckAndWarn counts a passed deadline as negative days and warns.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function testCheckAndWarnCountsAPassedDeadlineAsOverdue(): void {
+		$objectServiceMock = $this->createMock(originalClassName: WOODeadlineObjectServiceStub::class);
+		$objectServiceMock->method('find')->willReturn([
+			'id' => 'case-uuid-001',
+			'deadline' => '2000-01-01',
+		]);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['case_schema', '', 'case'],
+		]);
+
+		$result = $this->service->checkAndWarn('case-uuid-001', 'j.dejong');
+
+		$this->assertTrue(condition: $result['isOverdue']);
+		$this->assertLessThan(expected: 0, actual: $result['daysRemaining']);
+		$this->assertTrue(condition: $result['warned']);
+	}//end testCheckAndWarnCountsAPassedDeadlineAsOverdue()
 
 }//end class

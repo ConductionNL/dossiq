@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -37,6 +37,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mandaat;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
+use OCA\Dossiq\Service\Support\SearchesConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -46,10 +49,12 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 class MandaatRepository {
 	use SearchesObjects;
+	use ReadsConfiguredSource;
+	use SearchesConfiguredSchema;
 
 	/**
 	 * Constructor.
@@ -70,7 +75,7 @@ class MandaatRepository {
 	 *
 	 * @throws RuntimeException When the mandaat services are not configured.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function resolveApprovalContext(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -100,7 +105,7 @@ class MandaatRepository {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function activateMandatenForBesluit(
 		object $objectService,
@@ -109,53 +114,84 @@ class MandaatRepository {
 		string $decisionId,
 		string $now,
 	): void {
+		$store = ['objectService' => $objectService, 'register' => $register, 'schema' => $mSchema];
+		foreach ($this->mandatenOf(store: $store, decisionId: $decisionId) as $m) {
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $mSchema, object: $this->activated(mandaat: $m, now: $now));
+		}
+	}//end activateMandatenForBesluit()
+
+	/**
+	 * The mandaten a MandateringsBesluit owns; none when they cannot be read.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store      The object service, the
+	 *                                                                                   register and the mandaat schema.
+	 * @param string                                                          $decisionId The owning MandateringsBesluit id.
+	 *
+	 * @return array<int, array<string, mixed>> The mandaten.
+	 */
+	private function mandatenOf(array $store, string $decisionId): array {
 		try {
 			$mandaten = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $mSchema,
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
 				filters: ['mandateDecision' => $decisionId]
 			);
 		} catch (\Throwable $e) {
 			$mandaten = [];
 		}
 
-		foreach ($mandaten as $m) {
-			$m['status'] = 'active';
-			if (isset($m['validFrom']) === false || $m['validFrom'] === '') {
-				$m['validFrom'] = $now;
-			}
+		return $mandaten;
+	}//end mandatenOf()
 
-			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $mSchema, object: $m);
+	/**
+	 * The mandaat made active, valid from today when it names no start.
+	 *
+	 * @param array<string, mixed> $mandaat The mandaat.
+	 * @param string               $now     The activation date (Y-m-d).
+	 *
+	 * @return array<string, mixed> The active mandaat.
+	 */
+	private function activated(array $mandaat, string $now): array {
+		$mandaat['status'] = 'active';
+		if (isset($mandaat['validFrom']) === false || $mandaat['validFrom'] === '') {
+			$mandaat['validFrom'] = $now;
 		}
-	}//end activateMandatenForBesluit()
+
+		return $mandaat;
+	}//end activated()
 
 	/**
 	 * Build a rolNaam to rolId index from OrganisatieRol objects.
 	 *
 	 * @return array<string, string> rolNaam → rolId.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function loadRoleIndex(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('organisatie_rol_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'organisatie_rol_schema');
+		if ($source === null) {
 			return [];
 		}
 
+		[$objectService, $register, $schema] = $source;
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: []
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
 		} catch (\Throwable $e) {
 			return [];
 		}
 
+		return $this->roleIndex(rows: $rows);
+	}//end loadRoleIndex()
+
+	/**
+	 * Index OrganisatieRol rows by role name.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The OrganisatieRol rows.
+	 *
+	 * @return array<string, string> rolNaam → rolId.
+	 */
+	private function roleIndex(array $rows): array {
 		$out = [];
 		foreach ($rows as $row) {
 			$roleName = (string)($row['roleName'] ?? '');
@@ -165,7 +201,7 @@ class MandaatRepository {
 		}
 
 		return $out;
-	}//end loadRoleIndex()
+	}//end roleIndex()
 
 	/**
 	 * Find the prior adopted decision for a decision number.
@@ -175,39 +211,50 @@ class MandaatRepository {
 	 *
 	 * @return array<string, mixed>|null The prior adopted decision, or null.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findPriorDecision(string $decisionNumber, ?string $excludeId = null): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaterings_besluit_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$rows = $this->configuredRows(schemaKey: 'mandaterings_besluit_schema', filters: ['decisionNumber' => $decisionNumber]);
+		if ($rows === null) {
 			return null;
 		}
 
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['decisionNumber' => $decisionNumber]
-			);
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return $this->firstDetermined(rows: $rows, excludeId: $excludeId);
+	}//end findPriorDecision()
 
+	/**
+	 * The first adopted decision among the rows, skipping the excluded id.
+	 *
+	 * @param array<int, array<string, mixed>> $rows      The decisions with one decision number.
+	 * @param string|null                      $excludeId Optional id to skip.
+	 *
+	 * @return array<string, mixed>|null The adopted decision, or null.
+	 */
+	private function firstDetermined(array $rows, ?string $excludeId): ?array {
 		foreach ($rows as $row) {
-			if ($excludeId !== null && (string)($row['id'] ?? '') === $excludeId) {
-				continue;
-			}
-
-			if (($row['status'] ?? '') === 'determined') {
+			if ($this->isAdoptedOutside(row: $row, excludeId: $excludeId) === true) {
 				return $row;
 			}
 		}
 
 		return null;
-	}//end findPriorDecision()
+	}//end firstDetermined()
+
+	/**
+	 * Whether the decision is adopted and not the excluded one.
+	 *
+	 * @param array<string, mixed> $row       One stored decision.
+	 * @param string|null          $excludeId Optional id to skip.
+	 *
+	 * @return bool
+	 */
+	private function isAdoptedOutside(array $row, ?string $excludeId): bool {
+		if ($excludeId !== null && (string)($row['id'] ?? '') === $excludeId) {
+			return false;
+		}
+
+		return ($row['status'] ?? '') === 'determined';
+	}//end isAdoptedOutside()
 
 	/**
 	 * Find the mandaten linked to a besluit.
@@ -216,26 +263,10 @@ class MandaatRepository {
 	 *
 	 * @return array<int, array<string, mixed>> The besluit's mandaten.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findMandatenForBesluit(string $decisionId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			return (array)$this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['mandateDecision' => $decisionId]
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		return ($this->configuredRows(schemaKey: 'mandaat_schema', filters: ['mandateDecision' => $decisionId]) ?? []);
 	}//end findMandatenForBesluit()
 
 	/**
@@ -247,31 +278,16 @@ class MandaatRepository {
 	 * @return array<string, mixed> The saved object, or the payload when the
 	 *                              save could not be performed.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function save(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('Mandaat import persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Mandaat import persist failed',
-				['key' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end save()
 }//end class

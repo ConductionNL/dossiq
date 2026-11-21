@@ -46,8 +46,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Timeline;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\ListQuery;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -57,7 +62,9 @@ use Throwable;
  *
  * @spec openspec/specs/case-history-surface/spec.md
  */
-class CaseTimeline {
+class CaseTimeline implements CaseTimelineInterface {
+
+	use SearchesObjects;
 
 	/**
 	 * OpenRegister's timeline writer, as a class name so this app never
@@ -65,28 +72,14 @@ class CaseTimeline {
 	 *
 	 * @var string
 	 */
-	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineWriteService';
+	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineWriteService';
 
 	/**
 	 * OpenRegister's timeline reader, named the same way and for the same reason.
 	 *
 	 * @var string
 	 */
-	public const READ_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineEntryService';
-
-	/**
-	 * An entry only the handling organisation reads.
-	 *
-	 * @var string
-	 */
-	public const INTERNAL = 'internal';
-
-	/**
-	 * An entry the applicant may read too.
-	 *
-	 * @var string
-	 */
-	public const PUBLIC_ENTRY = 'public';
+	public const READ_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineEntryService';
 
 	/**
 	 * Constructor.
@@ -94,11 +87,14 @@ class CaseTimeline {
 	 * @param SettingsService    $settings  Resolves the register, the case schema and the object service.
 	 * @param ContainerInterface $container The DI container, for the lazy resolve.
 	 * @param LoggerInterface    $logger    Logger for the failures that stay soft.
+	 * @param IUserSession|null  $userSession Who is signed in; nobody means a background
+	 *                                        run, which writes as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -143,63 +139,105 @@ class CaseTimeline {
 		string $visibility = self::INTERNAL,
 		array $relatedCaseIds = [],
 	): string {
-		if (trim($caseId) === '' || trim($kind) === '') {
+		if ($this->canRecord(caseId: $caseId, kind: $kind) === false) {
 			return '';
 		}
 
-		if ($this->isAvailable() === false) {
-			return '';
-		}
+		return $this->recordEntry(
+			entry: [
+				'caseId' => $caseId,
+				'data' => ['message' => $message, 'kind' => $kind, 'fields' => $fields, 'visibility' => $visibility],
+				'relatedCaseIds' => $relatedCaseIds,
+			]
+		);
+	}//end record()
 
+	/**
+	 * Whether an entry can be written at all: it names a case and a kind, and the timeline is there.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param string $kind   The entry kind.
+	 *
+	 * @return bool
+	 */
+	private function canRecord(string $caseId, string $kind): bool {
+		return trim($caseId) !== ''
+			&& trim($kind) !== ''
+			&& $this->isAvailable() === true;
+	}//end canRecord()
+
+	/**
+	 * Record one entry where the register is configured, as the system when nobody is signed in.
+	 *
+	 * @param array{caseId: string, data: array<string, mixed>, relatedCaseIds: array<int, string>} $entry The case,
+	 *        the entry's message, kind, fields and visibility, and the further cases it belongs on.
+	 *
+	 * @return string The entry uuid, or '' when nothing was written.
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	private function recordEntry(array $entry): string {
+		$kind = (string)$entry['data']['kind'];
 		$coordinates = $this->coordinates();
 		if ($coordinates === null) {
-			$this->soften(caseId: $caseId, kind: $kind, reason: 'the register or the case schema is not configured');
+			$this->soften(context: ['kind' => $kind, 'case' => $entry['caseId'], 'reason' => 'the register or the case schema is not configured']);
 			return '';
 		}
 
-		[$objectService, $register, $schema] = $coordinates;
+		$entry['data']['register'] = (string)$coordinates->register;
+		$entry['data']['schema'] = (string)$coordinates->schema;
 
 		try {
-			$writer = $this->writer();
-
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
-			if ($object === null) {
-				$this->soften(caseId: $caseId, kind: $kind, reason: 'the case could not be read');
-				return '';
-			}
-
-			$data = [
-				'message' => $message,
-				'kind' => $kind,
-				'fields' => $fields,
-				'visibility' => $visibility,
-				'register' => (string)$register,
-				'schema' => (string)$schema,
-			];
-
-			$related = $this->relatedObjects(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				caseId: $caseId,
-				relatedCaseIds: $relatedCaseIds,
+			// An entry written during an install, an import or a cron run has
+			// nobody signed in, and OpenRegister refuses the case read to
+			// "Anonymous"; a signed-in caller keeps their own rights.
+			return (string)$this->asSystemWithoutUser(
+				objectService: $coordinates->objectService,
+				userSession: $this->userSession,
+				operation: fn (): string => $this->writeEntry(coordinates: $coordinates, entry: $entry),
 			);
-
-			if ($related === []) {
-				return (string)$writer->write(object: $object, data: $data)->getUuid();
-			}
-
-			$written = $writer->writeToMany(objects: array_merge([$object], $related), data: $data);
-			if ($written === []) {
-				return '';
-			}
-
-			return (string)$written[0]->getUuid();
 		} catch (Throwable $e) {
-			$this->soften(caseId: $caseId, kind: $kind, reason: $e->getMessage());
+			$this->soften(context: ['kind' => $kind, 'case' => $entry['caseId'], 'reason' => $e->getMessage()]);
 			return '';
 		}//end try
-	}//end record()
+	}//end recordEntry()
+
+	/**
+	 * Write one entry on a case and its related cases.
+	 *
+	 * @param TimelineCoordinates                                                                    $coordinates The
+	 *        object service, register and case schema.
+	 * @param array{caseId: string, data: array<string, mixed>, relatedCaseIds: array<int, string>} $entry       The
+	 *        case the entry hangs on, the entry, and further cases the same entry belongs on.
+	 *
+	 * @return string The entry uuid, or '' when nothing was written.
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	private function writeEntry(TimelineCoordinates $coordinates, array $entry): string {
+		$caseId = $entry['caseId'];
+		$data = $entry['data'];
+		$writer = $this->writer();
+
+		$object = $coordinates->objectService->find($caseId, new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema));
+		if ($object === null) {
+			$this->soften(context: ['kind' => (string)$data['kind'], 'case' => $caseId, 'reason' => 'the case could not be read']);
+			return '';
+		}
+
+		$related = $this->relatedObjects(coordinates: $coordinates, entry: $entry);
+
+		if ($related === []) {
+			return (string)$writer->write(object: $object, data: $data)->getUuid();
+		}
+
+		$written = $writer->writeToMany(objects: array_merge([$object], $related), data: $data);
+		if ($written === []) {
+			return '';
+		}
+
+		return (string)$written[0]->getUuid();
+	}//end writeEntry()
 
 	/**
 	 * The entries on a case that the applicant may read.
@@ -249,14 +287,14 @@ class CaseTimeline {
 	 *
 	 * @throws Throwable When the timeline could not be read at all.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function publicEntries(string $caseId, int $limit = 50): array {
 		if (trim($caseId) === '') {
 			return [];
 		}
 
-		if ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false) {
+		if ($this->isUnreadable() === true) {
 			return [];
 		}
 
@@ -265,30 +303,15 @@ class CaseTimeline {
 			return [];
 		}
 
-		[$objectService, $register, $schema] = $coordinates;
-
 		try {
-			// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
-			// user, so OpenRegister's RBAC answered nothing and the resident's
-			// timeline was always empty. The caller proves the case is the
-			// reader's before asking (see the docblock), and only the public
-			// entries of the case asked for come back.
-			$object = $objectService->find(
-				$caseId,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if ($object === null) {
-				return [];
+			$entries = [];
+			$object = $this->unscopedCase(coordinates: $coordinates, caseId: $caseId);
+			if ($object !== null) {
+				$entries = $this->container->get(self::READ_SERVICE)->listForObject(
+					object: $object,
+					query: new ListQuery(limit: $limit, filters: ['visibility' => self::PUBLIC_ENTRY]),
+				);
 			}
-
-			$entries = $this->container->get(self::READ_SERVICE)->listForObject(
-				object: $object,
-				visibility: self::PUBLIC_ENTRY,
-				limit: $limit,
-			);
 		} catch (Throwable $e) {
 			// LOGGED AND RETHROWN, NOT SWALLOWED. "I could not read" and
 			// "there are nothing public here" are different facts, and a
@@ -299,17 +322,65 @@ class CaseTimeline {
 			// case because an optional dependency threw. The caller that owns
 			// the consequence decides; see
 			// `PortalContributionProvider::caseTimeline()`.
-			$this->soften(caseId: $caseId, kind: 'public read', reason: $e->getMessage());
+			$this->soften(context: ['kind' => 'public read', 'case' => $caseId, 'reason' => $e->getMessage()]);
 			throw $e;
 		}
 
+		return $this->projectAll(entries: $entries);
+	}//end publicEntries()
+
+	/**
+	 * Whether OpenRegister or its timeline reader is absent.
+	 *
+	 * @return bool True when the timeline cannot be read.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function isUnreadable(): bool {
+		return ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false);
+	}//end isUnreadable()
+
+	/**
+	 * Read one case, unscoped, so its public entries can be listed.
+	 *
+	 * @param TimelineCoordinates $coordinates The object service, register and case schema.
+	 * @param string              $caseId      The case to read.
+	 *
+	 * @return mixed The case object, or null when the case is not there.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function unscopedCase(TimelineCoordinates $coordinates, string $caseId): mixed {
+		// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
+		// user, so OpenRegister's RBAC answered nothing and the resident's
+		// timeline was always empty. The caller proves the case is the
+		// reader's before asking (see the docblock), and only the public
+		// entries of the case asked for come back.
+		return $coordinates->objectService->find(
+			$caseId,
+			new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema),
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end unscopedCase()
+
+	/**
+	 * Project every entry.
+	 *
+	 * @param mixed $entries The entries as OpenRegister answered them.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function projectAll(mixed $entries): array {
 		$projected = [];
 		foreach ((array)$entries as $entry) {
 			$projected[] = $this->project(entry: $entry);
 		}
 
 		return $projected;
-	}//end publicEntries()
+	}//end projectAll()
 
 	/**
 	 * One entry, cut down to what an applicant may be shown.
@@ -318,7 +389,7 @@ class CaseTimeline {
 	 *
 	 * @return array<string, mixed> The projection.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function project(mixed $entry): array {
 		$row = $entry;
@@ -360,25 +431,17 @@ class CaseTimeline {
 	 * the note on some of the cases and fail on the rest, which is the exact
 	 * half-write the endpoint's own contract refuses.
 	 *
-	 * @param object             $objectService  OpenRegister's object service.
-	 * @param mixed              $register       The register as configured.
-	 * @param mixed              $schema         The case schema as configured.
-	 * @param string             $caseId         The case already resolved, never repeated.
-	 * @param array<int, string> $relatedCaseIds The further cases.
+	 * @param TimelineCoordinates                                     $coordinates The object service, register and case schema.
+	 * @param array{caseId: string, relatedCaseIds: array<int, string>} $entry       The case already resolved, never
+	 *                                                                               repeated, and the further cases.
 	 *
 	 * @return array<int, object> The resolved objects.
 	 */
-	private function relatedObjects(
-		object $objectService,
-		$register,
-		$schema,
-		string $caseId,
-		array $relatedCaseIds,
-	): array {
+	private function relatedObjects(TimelineCoordinates $coordinates, array $entry): array {
 		$resolved = [];
-		$seen = [$caseId => true];
+		$seen = [$entry['caseId'] => true];
 
-		foreach ($relatedCaseIds as $relatedId) {
+		foreach ($entry['relatedCaseIds'] as $relatedId) {
 			$relatedId = trim((string)$relatedId);
 			if ($relatedId === '' || isset($seen[$relatedId]) === true) {
 				continue;
@@ -386,17 +449,8 @@ class CaseTimeline {
 
 			$seen[$relatedId] = true;
 
-			try {
-				$object = $objectService->find($relatedId, register: $register, schema: $schema);
-			} catch (Throwable $e) {
-				$object = null;
-			}
-
+			$object = $this->readRelated(coordinates: $coordinates, relatedId: $relatedId);
 			if ($object === null) {
-				$this->logger->warning(
-					'Dossiq timeline: related case {case} could not be read, so the entry was not written on it',
-					['app' => Application::APP_ID, 'case' => $relatedId],
-				);
 				continue;
 			}
 
@@ -405,6 +459,34 @@ class CaseTimeline {
 
 		return $resolved;
 	}//end relatedObjects()
+
+	/**
+	 * Read one further case, or log and answer null when it cannot be read.
+	 *
+	 * @param TimelineCoordinates $coordinates The object service, register and case schema.
+	 * @param string              $relatedId   The further case.
+	 *
+	 * @return mixed The case object, or null.
+	 */
+	private function readRelated(TimelineCoordinates $coordinates, string $relatedId): mixed {
+		try {
+			$object = $coordinates->objectService->find(
+				$relatedId,
+				new ObjectFindOptions(register: $coordinates->register, schema: $coordinates->schema)
+			);
+		} catch (Throwable $e) {
+			$object = null;
+		}
+
+		if ($object === null) {
+			$this->logger->warning(
+				'Dossiq timeline: related case {case} could not be read, so the entry was not written on it',
+				['app' => AppIdentity::APP_ID, 'case' => $relatedId],
+			);
+		}
+
+		return $object;
+	}//end readRelated()
 
 	/**
 	 * OpenRegister's timeline writer.
@@ -429,9 +511,9 @@ class CaseTimeline {
 	/**
 	 * The object service, register and case schema, or null when unconfigured.
 	 *
-	 * @return array{0: object, 1: mixed, 2: mixed}|null The three, or null.
+	 * @return TimelineCoordinates|null The three, or null.
 	 */
-	private function coordinates(): ?array {
+	private function coordinates(): ?TimelineCoordinates {
 		$objectService = $this->settings->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -443,27 +525,20 @@ class CaseTimeline {
 			return null;
 		}
 
-		return [$objectService, $register, $schema];
+		return new TimelineCoordinates(objectService: $objectService, register: $register, schema: $schema);
 	}//end coordinates()
 
 	/**
 	 * Log a write that did not happen, without failing the act it recorded.
 	 *
-	 * @param string $caseId The case.
-	 * @param string $kind   The kind that was not written.
-	 * @param string $reason Why.
+	 * @param array{kind: string, case: string, reason: string} $context The kind that was not written, the case and why.
 	 *
 	 * @return void
 	 */
-	private function soften(string $caseId, string $kind, string $reason): void {
+	private function soften(array $context): void {
 		$this->logger->warning(
 			'Dossiq timeline: no {kind} entry was written on case {case}, {reason}',
-			[
-				'app' => Application::APP_ID,
-				'kind' => $kind,
-				'case' => $caseId,
-				'reason' => $reason,
-			],
+			(['app' => AppIdentity::APP_ID] + $context),
 		);
 	}//end soften()
 }//end class

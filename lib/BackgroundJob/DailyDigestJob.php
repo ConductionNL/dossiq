@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -45,9 +45,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Queue\DailyDigestComposer;
-use OCA\Dossiq\Service\Queue\DigestDispatcher;
-use OCA\Dossiq\Service\Queue\DigestPreferences;
+use OCA\Dossiq\Kernel\Contracts\DailyDigestComposerInterface;
+use OCA\Dossiq\Kernel\Contracts\DigestDispatcherInterface;
+use OCA\Dossiq\Kernel\Contracts\DigestPreferencesInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
@@ -64,11 +64,8 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The classes over the limit are the
- *   background service account, its refusal and the session that carries the
- *   recipient, which composing as the recipient needs.
+ * @spec openspec/specs/my-work/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class DailyDigestJob extends TimedJob {
 	/**
@@ -77,24 +74,24 @@ class DailyDigestJob extends TimedJob {
 	 * @param ITimeFactory        $time       Time factory.
 	 * @param IUserManager        $users      The people who might be due a digest.
 	 * @param IAppManager         $appManager Guards the run when OpenRegister is absent.
-	 * @param DigestPreferences   $settings   Who wants one, and when.
-	 * @param DailyDigestComposer $composer   What to say, or that there is nothing.
-	 * @param DigestDispatcher    $dispatcher How it reaches them.
+	 * @param DigestPreferencesInterface   $settings   Who wants one, and when.
+	 * @param DailyDigestComposerInterface $composer   What to say, or that there is nothing.
+	 * @param DigestDispatcherInterface    $dispatcher How it reaches them.
 	 * @param LoggerInterface     $logger     Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes the digest row.
 	 * @param IUserSession        $userSession Carries the recipient while their digest is composed.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly IUserManager $users,
 		private readonly IAppManager $appManager,
-		private readonly DigestPreferences $settings,
-		private readonly DailyDigestComposer $composer,
-		private readonly DigestDispatcher $dispatcher,
+		private readonly DigestPreferencesInterface $settings,
+		private readonly DailyDigestComposerInterface $composer,
+		private readonly DigestDispatcherInterface $dispatcher,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly IUserSession $userSession,
@@ -114,7 +111,7 @@ class DailyDigestJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) TimedJob's signature.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	protected function run($argument): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
@@ -129,15 +126,30 @@ class DailyDigestJob extends TimedJob {
 			return;
 		}
 
+		$sent = $this->sendDigests(account: $account);
+
+		if ($sent > 0) {
+			$this->logger->info('Dossiq: sent ' . $sent . ' work digests.');
+		}
+	}//end run()
+
+	/**
+	 * Send the due digests to every seen user but the service account.
+	 *
+	 * @param IUser $account The background service account.
+	 *
+	 * @return int How many digests were sent.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function sendDigests(IUser $account): int {
 		$now = new DateTimeImmutable();
-		$hour = (int)$now->format('G');
-		$today = $now->format('Y-m-d');
 		$sent = 0;
 
 		$this->users->callForSeenUsers(
-			function (IUser $user) use ($account, $now, $hour, $today, &$sent): ?bool {
+			function (IUser $user) use ($account, $now, &$sent): ?bool {
 				if ($user->getUID() !== $account->getUID()) {
-					$sent += $this->sendOne(user: $user, now: $now, hour: $hour, today: $today);
+					$sent += $this->sendOne(user: $user, now: $now);
 				}
 
 				// `callForSeenUsers` types its callback as returning bool|null
@@ -148,26 +160,23 @@ class DailyDigestJob extends TimedJob {
 			}
 		);
 
-		if ($sent > 0) {
-			$this->logger->info('Dossiq: sent ' . $sent . ' work digests.');
-		}
-	}//end run()
+		return $sent;
+	}//end sendDigests()
 
 	/**
 	 * One person's digest, if they are due one and have something waiting.
 	 *
-	 * @param IUser             $user   The person.
-	 * @param DateTimeImmutable $now    The moment the run started.
-	 * @param integer           $hour   The hour the run is in.
-	 * @param string            $today  Today, `Y-m-d`.
+	 * @param IUser             $user The person.
+	 * @param DateTimeImmutable $now  The moment the run started; its hour and day decide whether a digest is due.
 	 *
 	 * @return integer 1 when a digest was sent, 0 otherwise.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function sendOne(IUser $user, DateTimeImmutable $now, int $hour, string $today): int {
+	private function sendOne(IUser $user, DateTimeImmutable $now): int {
+		$today = $now->format('Y-m-d');
 		$userId = $user->getUID();
-		if ($this->settings->isDue(userId: $userId, hour: $hour, today: $today) === false) {
+		if ($this->settings->isDue(userId: $userId, hour: (int)$now->format('G'), today: $today) === false) {
 			return 0;
 		}
 

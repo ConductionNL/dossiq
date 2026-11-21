@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ServiceAccount;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ServiceAccountInterface;
 use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-abstract class ServiceAccount {
+abstract class ServiceAccount implements ServiceAccountInterface {
 
 	/**
 	 * Why the account cannot be used: none is set.
@@ -58,27 +59,6 @@ abstract class ServiceAccount {
 	 * @var string
 	 */
 	public const REASON_UNSET = 'unset';
-
-	/**
-	 * Why the account cannot be used: the uid names no account.
-	 *
-	 * @var string
-	 */
-	public const REASON_UNKNOWN = 'unknown';
-
-	/**
-	 * Why the account cannot be used: the account is disabled.
-	 *
-	 * @var string
-	 */
-	public const REASON_DISABLED = 'disabled';
-
-	/**
-	 * Why the account cannot be used: it is not in the service group.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_A_MEMBER = 'not-in-group';
 
 	/**
 	 * Constructor.
@@ -136,7 +116,7 @@ abstract class ServiceAccount {
 	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function configuredUserId(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, $this->configKey(), ''));
+		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, $this->configKey(), ''));
 	}//end configuredUserId()
 
 	/**
@@ -197,6 +177,28 @@ abstract class ServiceAccount {
 	}//end runAs()
 
 	/**
+	 * Run an operation as the account, and run nothing when there is none.
+	 *
+	 * For the background jobs. The refusal that stops the run has already been
+	 * logged as an error and told to the admins, nothing was read, sent or
+	 * written, and the next run tries again, so the job has nothing to add.
+	 * Anything else the operation throws still reaches the caller.
+	 *
+	 * @param callable $operation The operation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function runAsWhenAvailable(callable $operation): void {
+		try {
+			$this->runAs(operation: $operation);
+		} catch (ServiceAccountUnavailableException $e) {
+			return;
+		}
+	}//end runAsWhenAvailable()
+
+	/**
 	 * Run an operation as the account only when nobody is signed in.
 	 *
 	 * For code that a request and cron both reach, such as a listener on an
@@ -249,7 +251,7 @@ abstract class ServiceAccount {
 			$group->addUser($account);
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $this->configKey(), $userId);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $this->configKey(), $userId);
 
 		return $this->status();
 	}//end assign()
@@ -275,7 +277,7 @@ abstract class ServiceAccount {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not create a service group',
-				['app' => Application::APP_ID, 'group' => $this->group(), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'group' => $this->group(), 'exception' => $e->getMessage()]
 			);
 			throw new InvalidArgumentException('The group '.$this->group().' could not be created.', 0, $e);
 		}

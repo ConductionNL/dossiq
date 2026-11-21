@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Listener\Support\ProvidesOnOwnPage;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -43,6 +43,8 @@ use OCP\IAppConfig;
  * @template-implements IEventListener<Event>
  */
 class SupportNoteInitialStateListener implements IEventListener {
+
+	use ProvidesOnOwnPage;
 
 	/**
 	 * The app config key that switches the note.
@@ -81,14 +83,10 @@ class SupportNoteInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/the-support-note-can-be-switched-off/specs/first-load-onboarding/spec.md#requirement-an-administrator-can-switch-the-support-note-off-req-flo-002
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
-		) {
-			return;
-		}
-
-		$this->initialState->provideInitialState(self::STATE_KEY, $this->shown());
+		$this->provideOnOwnPage(
+			event: $event,
+			provide: fn () => $this->initialState->provideInitialState(self::STATE_KEY, $this->shown())
+		);
 	}//end handle()
 
 	/**
@@ -98,9 +96,9 @@ class SupportNoteInitialStateListener implements IEventListener {
 	 */
 	private function shown(): bool {
 		try {
-			$value = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'true');
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'true');
 		} catch (AppConfigTypeConflictException $e) {
-			return $this->appConfig->getValueBool(Application::APP_ID, self::CONFIG_KEY, true);
+			return $this->appConfig->getValueBool(AppIdentity::APP_ID, self::CONFIG_KEY, true);
 		}
 
 		return in_array(strtolower(trim($value)), self::OFF, true) === false;

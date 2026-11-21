@@ -24,13 +24,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
+use OCA\Dossiq\Kernel\Contracts\DigestDispatcherInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -38,9 +39,9 @@ use RuntimeException;
 /**
  * Writes the digest record the register turns into a message.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class DigestDispatcher {
+class DigestDispatcher implements DigestDispatcherInterface {
 	use SearchesObjects;
 
 	/**
@@ -57,7 +58,7 @@ class DigestDispatcher {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
@@ -73,7 +74,7 @@ class DigestDispatcher {
 	 *
 	 * @throws RuntimeException When the digest cannot be written.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function send(array $digest): string {
 		$objects = $this->settings->getObjectService();
@@ -82,30 +83,47 @@ class DigestDispatcher {
 			throw new RuntimeException('Dossiq cannot write a digest without a configured register.');
 		}
 
-		$saved = $this->saveObjectAsArray(
-			objectService: $objects,
-			register: $register,
-			schema: self::SCHEMA,
-			object: [
-				'person' => (string)$digest['person'],
-				'day' => (string)$digest['day'],
-				'waiting' => (int)$digest['waiting'],
-				'late' => (int)$digest['late'],
-				'summary' => $this->summaryOf(digest: $digest),
-			]
-		);
+		$saved = $this->saveObjectAsArray(objectService: $objects, register: $register, schema: self::SCHEMA, object: $this->recordOf(digest: $digest));
 
 		if ($saved === null) {
 			throw new RuntimeException('The digest was not written.');
 		}
 
+		return $this->idOf(saved: $saved);
+	}//end send()
+
+	/**
+	 * The digest record to store.
+	 *
+	 * @param array<string, mixed> $digest The composed digest.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function recordOf(array $digest): array {
+		return [
+			'person' => (string)$digest['person'],
+			'day' => (string)$digest['day'],
+			'waiting' => (int)$digest['waiting'],
+			'late' => (int)$digest['late'],
+			'summary' => $this->summaryOf(digest: $digest),
+		];
+	}//end recordOf()
+
+	/**
+	 * The id of the stored record, from `@self` when it carries one.
+	 *
+	 * @param array<string, mixed> $saved The stored record.
+	 *
+	 * @return string
+	 */
+	private function idOf(array $saved): string {
 		$self = ($saved['@self'] ?? []);
 		if (is_array($self) === true && trim((string)($self['id'] ?? '')) !== '') {
 			return (string)$self['id'];
 		}
 
 		return (string)($saved['id'] ?? '');
-	}//end send()
+	}//end idOf()
 
 	/**
 	 * The one line the message quotes.
@@ -118,7 +136,7 @@ class DigestDispatcher {
 	 *
 	 * @return string The summary line.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function summaryOf(array $digest): string {
 		$titles = [];

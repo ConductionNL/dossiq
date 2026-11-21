@@ -152,3 +152,16 @@ describe('SearchIndexTab', () => {
 		)
 	})
 })
+
+describe('the search index figures, as the board draws them', () => {
+	it('sets label over value at the font leading, a 14px label and a 15px value', async () => {
+		const { readFileSync } = await import('node:fs')
+		const { resolve } = await import('node:path')
+		const tab = readFileSync(resolve(__dirname, '../../src/views/settings/tabs/SearchIndexTab.vue'), 'utf8')
+		const rule = (sel) => tab.slice(tab.indexOf(`${sel} {`), tab.indexOf('}', tab.indexOf(`${sel} {`)))
+		expect(rule('.search-index__figures')).toContain('line-height: normal;')
+		expect(rule('.search-index__figures')).toContain('padding: 0;')
+		expect(rule('.search-index__figures dt')).toContain('font-size: 14px;')
+		expect(rule('.search-index__figures dd')).toContain('font-size: 15px;')
+	})
+})

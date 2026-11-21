@@ -8,7 +8,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -21,6 +21,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Task 3.2: "Kenteken wijzigen" opens a change case and leaves the permit as it is.
@@ -55,7 +57,9 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ($this->broken === true) {
 					throw new \RuntimeException('database gone');
 				}
@@ -93,7 +97,10 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 				return array_merge($object, ['id' => 'case-new', 'identifier' => '2026-0042']);
 			}
@@ -102,6 +109,12 @@ class PermitPlateChangeTest extends TestCase {
 			'permit' => [
 				'permit-1' => ['id' => 'permit-1', 'title' => 'Bewonersvergunning binnenstad', 'kind' => 'parkeren-bewoner', 'portalSubject' => 'subj-sanne', 'status' => 'active', 'kenteken' => 'GZ482K', 'case' => '5e7a1000-0000-4000-a000-00000000ac01'],
 				'permit-revoked' => ['id' => 'permit-revoked', 'title' => 'Oud', 'portalSubject' => 'subj-sanne', 'status' => 'revoked', 'case' => '5e7a1000-0000-4000-a000-00000000ac01'],
+				'permit-no-status' => [
+					'id' => 'permit-no-status',
+					'title' => 'Zonder status',
+					'portalSubject' => 'subj-sanne',
+					'case' => '5e7a1000-0000-4000-a000-00000000ac01',
+				],
 			],
 			'propertyDefinition' => [
 				'5e7a1000-0000-4000-a000-00000000ad01' => ['id' => '5e7a1000-0000-4000-a000-00000000ad01', 'caseType' => '5e7a1000-0000-4000-a000-00000000aa02', 'name' => 'permit'],
@@ -159,6 +172,7 @@ class PermitPlateChangeTest extends TestCase {
 			'someone else\'s permit' => ['subj-bob', 'permit-1', 'HX901B', PermitChangeRefused::NOT_FOUND],
 			'no such permit' => ['subj-sanne', 'permit-404', 'HX901B', PermitChangeRefused::NOT_FOUND],
 			'a revoked permit' => ['subj-sanne', 'permit-revoked', 'HX901B', PermitChangeRefused::NOT_ACTIVE],
+			'a permit without a status' => ['subj-sanne', 'permit-no-status', 'HX901B', PermitChangeRefused::NOT_ACTIVE],
 		];
 	}//end refusals()
 

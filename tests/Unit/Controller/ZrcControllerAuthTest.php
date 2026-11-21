@@ -117,7 +117,6 @@ class ZrcControllerAuthTest extends TestCase {
 		);
 
 		$this->controller = new ZrcController(
-			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,

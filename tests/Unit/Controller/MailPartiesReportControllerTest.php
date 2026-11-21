@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Zaakdossier\MailPartiesReport;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -159,4 +160,14 @@ class MailPartiesReportControllerTest extends TestCase {
 		self::assertInstanceOf(DataDownloadResponse::class, $csv);
 		self::assertSame("kind,party,count\n", $csv->render());
 	}//end testPartiesAnswersTheReportAndItsCsv()
+
+	/**
+	 * The CSV is a plain link on the page, which carries no CSRF token.
+	 *
+	 * @return void
+	 */
+	public function testTheCsvLinkNeedsNoCsrfToken(): void {
+		$attributes = (new \ReflectionMethod(MailPartiesReportController::class, 'show'))->getAttributes(NoCSRFRequired::class);
+		self::assertCount(expectedCount: 1, haystack: $attributes, message: 'a download link answers 412 when show() asks for a CSRF token');
+	}//end testTheCsvLinkNeedsNoCsrfToken()
 }//end class

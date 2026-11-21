@@ -1,0 +1,103 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`lodging a remedy > asks, keeps, announces and refuses as before 1`] = `
+{
+  "failed": {
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/objections",
+        {
+          "grounds": "Onjuist",
+          "receivedChannel": "post",
+          "receivedDate": "2026-11-09",
+          "requestedRelief": "Herzien",
+        },
+      ],
+    ],
+    "error": "This could not be registered.",
+    "lodged": null,
+  },
+  "lodged": {
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/objections",
+        {
+          "grounds": "Onjuist",
+          "receivedChannel": "post",
+          "receivedDate": "2026-11-09",
+          "requestedRelief": "Herzien",
+        },
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+        {},
+      ],
+    ],
+    "error": "",
+    "lodged": {
+      "caseId": "case-2",
+    },
+  },
+  "lodgedWithoutAnswer": {
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/appeals",
+        {
+          "grounds": "Onjuist",
+          "receivedChannel": "post",
+          "receivedDate": "2026-11-09",
+          "requestedRelief": "Herzien",
+        },
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+        {},
+      ],
+    ],
+    "error": "",
+    "lodged": {},
+  },
+  "refusedWithError": {
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/objections",
+        {
+          "grounds": "Onjuist",
+          "receivedChannel": "post",
+          "receivedDate": "2026-11-09",
+          "requestedRelief": "Herzien",
+        },
+      ],
+    ],
+    "error": "late",
+    "lodged": null,
+  },
+  "refusedWithMessage": {
+    "busy": false,
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/objections",
+        {
+          "grounds": "Onjuist",
+          "receivedChannel": "post",
+          "receivedDate": "2026-11-09",
+          "requestedRelief": "Herzien",
+        },
+      ],
+    ],
+    "error": "Too late",
+    "lodged": null,
+  },
+}
+`;

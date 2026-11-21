@@ -196,7 +196,7 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 ---
 
-### REQ-TASK-003: Task Assignment
+### Requirement: REQ-TASK-003: Task Assignment
 
 The system MUST support assigning tasks to Nextcloud users.
 
@@ -1020,8 +1020,11 @@ old spelling `assignee = "IS NULL"` asked one of the two facts, of a column
 this page no longer reads. The scenario below still asks the old question, and
 is left byte-identical for the reason given under REQ-TASK-014.
 
-Saved views are off (`allowSavedViews: false`) and the schema facets are gone
-with the schema. The sidebar itself stays, with `showMetadata: true`. What a
+Saved views are on (`allowSavedViews: true`), as on every index page, and
+scoped to the inbox by `savedViewsScope: "source:tasks"` because the page has
+no register and schema to scope them by. A view keeps the sidebar's fields and
+the search term. The schema facets are gone with the schema. The sidebar
+itself stays, with `showMetadata: true`. What a
 reader lost is the Team facet: it stood on `caseTask.assigneeGroup` being
 `facetable`, and the engine models the same idea as `candidateGroups`, a list,
 with no single value for a facet or a column to read.
@@ -1196,7 +1199,7 @@ available effects.
 - **GIVEN** a task whose declared handler cannot be resolved
 - **WHEN** a handler completes it
 - **THEN** the completion SHALL be refused
-- **AND** the refusal SHALL name the handler
+- **AND** the refusal SHALL name the handler, in the pattern the board `DqZaakTaken` draws for a refused cancel: "Annuleren geweigerd voor Documenten beoordelen: de engine staat annuleren niet toe zolang de stap Beoordeling loopt."
 
 #### Scenario: an unknown handler refuses publication
 @e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnknownEffectRefusesPublication.
@@ -1294,6 +1297,102 @@ number and a lock are not available, and SHALL NOT invent either.
 - **GIVEN** a task with a lead time shorter than the case term
 - **WHEN** the task is shown
 - **THEN** its due date SHALL be its own, not the case deadline
+
+### Requirement: The task page is a manifest detail page
+
+The task page SHALL be a `type: "detail"` manifest page with `entitySource: "tasks"`, on the route `/tasks/:id` with the
+page id `TaskDetail`. Its header SHALL show the task's state and, for a high or urgent task, its priority as pills, a
+breadcrumb back to Tasks, and the engine's verbs read off the task, Finish posted to dossiq's own completion route. Its
+body SHALL have an Overview tab (description, checklist, appointments, notes) and a History tab (the engine's audit
+trail), and its side column the task facts, the case card, the waiting-case card and the task history. A task that is
+missing or may not be read SHALL show one not-found state. The notes, appointments and history leaves and the
+waiting-case section SHALL be detail widgets that read the task the page hands them as `objectId`.
+
+#### Scenario: A notification link opens the task on the manifest page
+@e2e exclude the e2e rig seeds no engine task with a checklist and a waiting run; the unit specs `tests/vitest/taskDetailManifestPage.spec.js` and `tests/vitest/taskLeavesAsDetailWidgets.spec.js` assert the page config and the widgets, and `tests/e2e/case-task-pane.spec.ts` opens `/tasks/:id`
+
+- **GIVEN** a notification that links to `/apps/dossiq/tasks/<uuid>`
+- **WHEN** the handler opens it
+- **THEN** the `TaskDetail` page reads that task from the engine and shows its state, its verbs and its leaves
+
+### Requirement: A task form keeps what you typed (REQ-TM-DRAFT-01)
+
+The task form and the case edit form SHALL keep the user's unsaved input when the dialog closes, the page reloads or the tab is lost, and SHALL offer it back the next time the same form opens for the same object. A user SHALL be able to save the form as a draft ("Voorlopig") without passing validation; the draft SHALL be the destination object in status draft.
+
+#### Scenario: Input survives a closed dialog
+
+- **GIVEN** a handler has filled 12 of 27 fields of a task form
+- **WHEN** they close the dialog and open the same task form again
+- **THEN** the 12 values SHALL be offered back with a note that unsaved input was restored
+- @e2e tests/e2e/task-form-draft.spec.ts
+
+#### Scenario: Save as draft skips validation
+
+- **GIVEN** a task form with two required fields left empty
+- **WHEN** the handler chooses "Opslaan als voorlopig"
+- **THEN** the object SHALL be stored in status draft with the values given
+- **AND** no required-field error SHALL be shown
+- @e2e tests/e2e/task-form-draft.spec.ts
+
+### Requirement: A planned next action is typed, owned and chained (REQ-TDP-01)
+
+A case SHALL be able to carry a planned next action: a typed record with an
+owner, a date and a state. Completing it SHALL schedule the action its type
+declares as the successor, and a type declaring no successor SHALL end the
+chain. Actions SHALL be scheduled one at a time, not created in advance.
+
+#### Scenario: Completing one action plans the next
+@e2e tests/e2e/task-dependencies-and-the-next-planned-action.spec.ts
+
+- **GIVEN** an action type whose successor is a follow-up call after ten days
+- **WHEN** the current action is completed
+- **THEN** a follow-up call SHALL be planned ten days later
+- **AND** it SHALL carry the owner its type resolves
+
+#### Scenario: A chain ends where the type says so
+@e2e exclude unit; PlannedActionChainTest
+
+- **GIVEN** an action type declaring no successor
+- **WHEN** the action is completed
+- **THEN** no further action SHALL be planned
+- **AND** the case SHALL show that no next action is planned
+
+#### Scenario: The case answers what happens next
+@e2e tests/e2e/task-dependencies-and-the-next-planned-action.spec.ts
+
+- **GIVEN** a case with a planned action
+- **WHEN** the case is opened
+- **THEN** the next planned action, its date and its owner SHALL be readable without opening the history
+
+### Requirement: A task blocked by another is released by the system (REQ-TDP-02)
+
+A task SHALL be able to declare the task that blocks it. The blocked state
+SHALL be derived from that declaration and never set by hand. A blocked task
+SHALL NOT appear in its assignee's due list while it holds. Closing the
+blocker SHALL release every task it blocked, with no person acting.
+
+#### Scenario: A blocked task stays out of the due list
+@e2e tests/e2e/task-dependencies-and-the-next-planned-action.spec.ts
+
+- **GIVEN** a task blocked by an open task
+- **WHEN** its assignee opens their due list
+- **THEN** the blocked task SHALL NOT be listed
+- **AND** the case SHALL show it as blocked, naming the blocker
+
+#### Scenario: Closing the blocker releases the task
+@e2e tests/e2e/task-dependencies-and-the-next-planned-action.spec.ts
+
+- **GIVEN** the same pair
+- **WHEN** the blocking task is closed
+- **THEN** the blocked task SHALL become due
+- **AND** it SHALL appear in its assignee's due list without anybody editing it
+
+#### Scenario: The blocked state cannot be set by hand
+@e2e exclude unit; TaskBlockedStateTest
+
+- **GIVEN** a task with no blocker
+- **WHEN** a write sets its state to blocked
+- **THEN** the write SHALL be refused
 
 ## Accessibility
 

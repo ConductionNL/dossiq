@@ -25,41 +25,40 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Turns a bezwaartermijn breach into the archive or the switch-off.
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class BezwaarArchiveTimerFiredListener implements IEventListener {
 
 	/**
 	 * Build the listener.
 	 *
-	 * @param BezwaarArchiveTrigger    $trigger        Reads and acts on the trigger.
+	 * @param BezwaarArchiveTriggerInterface    $trigger        Reads and acts on the trigger.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly BezwaarArchiveTrigger $trigger,
+		private readonly BezwaarArchiveTriggerInterface $trigger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -72,41 +71,42 @@ class BezwaarArchiveTimerFiredListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof FlowTimerFiredEvent) === false) {
 			return;
 		}
 
-		$timer     = $event->getTimer();
-		$metadata  = ($timer->getMetadata() ?? []);
+		$metadata  = TimerFire::metadataFrom(event: $event, source: BezwaarArchiveTimerInterface::METADATA_SOURCE);
 		$triggerId = (string) ($metadata['triggerId'] ?? '');
-		if ((string) $timer->getAppId() !== 'dossiq'
-			|| (string) ($metadata['source'] ?? '') !== BezwaarArchiveTimer::METADATA_SOURCE
-			|| $triggerId === ''
-			|| str_starts_with((string) $event->getRungKey(), 'slaBreached:') === false
-		) {
+		if ($metadata === null || $triggerId === '' || TimerFire::isBreach(event: $event) === false) {
 			return;
 		}
 
-		try {
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: function () use ($triggerId): void {
-					$fresh = $this->trigger->find(triggerId: $triggerId);
-					if ($fresh !== null) {
-						$this->trigger->process(trigger: $fresh);
-					}
-				}
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the admins. Nothing was written.
-			return;
-		} catch (Throwable $e) {
+		$failure = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->processTrigger(triggerId: $triggerId)
+		);
+		if ($failure !== null) {
 			$this->logger->error(
 				'Dossiq bezwaar: timer fire handling failed',
-				['trigger' => $triggerId, 'error' => $e->getMessage()]
+				['trigger' => $triggerId, 'error' => $failure->getMessage()]
 			);
 		}
 	}//end handle()
+
+	/**
+	 * Process the archive trigger as it is stored now, when it still exists.
+	 *
+	 * @param string $triggerId The trigger.
+	 *
+	 * @return void
+	 */
+	private function processTrigger(string $triggerId): void {
+		$fresh = $this->trigger->find(triggerId: $triggerId);
+		if ($fresh !== null) {
+			$this->trigger->process(trigger: $fresh);
+		}
+	}//end processTrigger()
 }//end class

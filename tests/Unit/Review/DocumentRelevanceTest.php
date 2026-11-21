@@ -24,6 +24,7 @@ use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The reviews of a case are read for the whole case, whoever asks, and only for that case.
@@ -33,6 +34,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Review\PagesSeen
  * @uses \OCA\Dossiq\Review\ReviewDepth
  */
@@ -79,7 +81,10 @@ class DocumentRelevanceTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = ['uuid' => $uuid, 'object' => $object];
 				return ($object + ['id' => ($uuid ?? 'new-1')]);
 			}

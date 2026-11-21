@@ -25,12 +25,26 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCP\IL10N;
+
 /**
  * Guard: verifies a named case field is non-empty.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RequiredFieldGuard implements GuardEvaluatorInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N                     $l10n      Translates the refusal.
+	 * @param SensitiveAnswerCheck|null $sensitive Whether a sensitive field is answered, read as the system.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+		private readonly ?SensitiveAnswerCheck $sensitive = null,
+	) {
+	}//end __construct()
+
 	/**
 	 * Evaluate the required-field guard.
 	 *
@@ -48,17 +62,47 @@ class RequiredFieldGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: false, failureMessage: 'Required-field guard missing field');
 		}
 
+		return $this->presenceVerdict(field: $field, value: $this->fieldValue(case: $case, field: $field));
+	}//end evaluate()
+
+	/**
+	 * The field's value on the case, its answered property, or true when only a sensitive answer is known to exist.
+	 *
+	 * @param array<string, mixed> $case  The case.
+	 * @param string               $field The required field.
+	 *
+	 * @return mixed The value, or null when the field is not answered.
+	 */
+	private function fieldValue(array $case, string $field): mixed {
 		$value = ($case[$field] ?? $this->answeredProperty(case: $case, field: $field));
+		// A sensitive field's answer is not in the mover's read of the case;
+		// it is checked as the system, and only its presence comes back.
+		if ($value === null && $this->sensitive?->isAnswered(caseId: (string)($case['id'] ?? ''), name: $field) === true) {
+			$value = true;
+		}
+
+		return $value;
+	}//end fieldValue()
+
+	/**
+	 * Passed when the value is filled, refused naming the field when it is empty.
+	 *
+	 * @param string $field The required field.
+	 * @param mixed  $value Its value.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function presenceVerdict(string $field, mixed $value): GuardResult {
 		if ($value === null || $value === '' || (is_array($value) === true && count($value) === 0)) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: sprintf('Vereist veld ontbreekt: %s', $field),
+				failureMessage: $this->l10n->t('Required field missing: %s', [$field]),
 				details: ['field' => $field],
 			);
 		}
 
 		return new GuardResult(passed: true, details: ['field' => $field]);
-	}//end evaluate()
+	}//end presenceVerdict()
 
 	/**
 	 * Read a case-type property the case answers in its `properties` array.

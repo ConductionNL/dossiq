@@ -47,10 +47,13 @@ use RuntimeException;
  * @covers \OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob
  * @uses \OCA\Dossiq\Service\Flow\CaseFlowActions
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
+ * @uses \OCA\Dossiq\Service\Flow\OccurrenceRows
+ * @uses \OCA\Dossiq\Service\Flow\SeriesFiringCount
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Flow\RetirementSweep
  */
 class PlannedFollowUpSweepJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

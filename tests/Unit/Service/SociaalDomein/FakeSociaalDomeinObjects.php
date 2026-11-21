@@ -25,6 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\SociaalDomein;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * A store of rows, keyed by schema slug then by uuid.
  */
@@ -43,6 +46,20 @@ class FakeSociaalDomeinObjects {
 	 * @var boolean
 	 */
 	public bool $broken = false;
+
+	/**
+	 * Schemas whose reads throw, while the others answer.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $brokenSchemas = [];
+
+	/**
+	 * Every search, by schema and whether it asked for the caller's access check.
+	 *
+	 * @var array<int, array{schema: string, rbac: bool}>
+	 */
+	public array $scopes = [];
 
 	/**
 	 * The id sequence.
@@ -90,8 +107,9 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
-		if ($this->broken === true) {
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+		$this->scopes[] = ['schema' => $schemaSlug, 'rbac' => $_rbac];
+		if ($this->broken === true || in_array($schemaSlug, $this->brokenSchemas, true) === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}
 
@@ -128,7 +146,9 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 */
-	public function find(string $id, $register = null, $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if ($this->broken === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}
@@ -146,7 +166,10 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<string, mixed> The stored object.
 	 */
-	public function saveObject(array $object, $register = null, $schema = null, ?string $uuid = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		if ($this->broken === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}

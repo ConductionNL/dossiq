@@ -34,12 +34,16 @@ use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 final class ZrcWriteStore {
 	/** @var array<int, array<string, mixed>> */
 	public array $saved = [];
 
-	public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+	public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$object['id'] = 'new-' . (count($this->saved) + 1);
 		$this->saved[] = $object;
 		return $object;
@@ -150,7 +154,6 @@ final class ZrcWritePathTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new ZrcController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			zgwService: $zgw,
 			l10n: $l10n,

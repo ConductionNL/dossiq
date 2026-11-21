@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class MailPartiesReportTest extends TestCase {
 
@@ -104,6 +105,27 @@ class MailPartiesReportTest extends TestCase {
 		self::assertSame([['address' => 'b@aannemer.nl', 'count' => 2], ['address' => 'a.jansen@gemeente.nl', 'count' => 1]], $report['recipients']);
 		self::assertSame([['domain' => 'aannemer.nl', 'count' => 3], ['domain' => 'gemeente.nl', 'count' => 3]], $report['domains']);
 	}//end testCountsPerSenderRecipientAndDomain()
+
+	/**
+	 * The whole report for a mail without a sender, one only copied to, and an address without a domain.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeReportForTheEdges(): void {
+		$this->onCase(id: 'm1', provenance: ['mail' => ['from' => '', 'to' => ['x@een.nl'], 'cc' => ['geen-domein']]]);
+		$this->onCase(id: 'm2', provenance: ['mail' => ['from' => 'y@twee.nl', 'cc' => ['x@een.nl', 'z@een.nl']]]);
+
+		self::assertSame(
+			[
+				'mails' => 2,
+				'unreadable' => 0,
+				'senders' => [['address' => 'y@twee.nl', 'count' => 1]],
+				'recipients' => [['address' => 'x@een.nl', 'count' => 2], ['address' => 'geen-domein', 'count' => 1], ['address' => 'z@een.nl', 'count' => 1]],
+				'domains' => [['domain' => 'een.nl', 'count' => 2], ['domain' => 'twee.nl', 'count' => 1]],
+			],
+			$this->report->forCase(caseId: self::CASE_ID)
+		);
+	}//end testTheWholeReportForTheEdges()
 
 	/**
 	 * REQ-WRR-003/004: a mail whose headers could not be read is counted under unreadable, not left out.

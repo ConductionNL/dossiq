@@ -1,0 +1,34 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V.
+// SPDX-License-Identifier: EUPL-1.2
+
+// The editor dialogs' form: block labels over their fields, a star after a
+// required one, bordered date inputs and the line under a refused field.
+
+@mixin required-labels {
+	.form-group label {
+		display: block;
+		margin-bottom: 4px;
+		font-weight: 500;
+	}
+
+	.form-group label.required::after {
+		content: ' *';
+		color: var(--color-error);
+	}
+}
+
+@mixin bordered-input {
+	width: 100%;
+	padding: 8px;
+	border: 2px solid var(--color-border-dark);
+	border-radius: var(--border-radius);
+}
+
+@mixin field-error {
+	.field-error {
+		display: block;
+		color: var(--color-error);
+		font-size: 12px;
+		margin-top: 4px;
+	}
+}

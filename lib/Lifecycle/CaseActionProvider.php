@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
@@ -118,19 +118,19 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
-	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
-	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
+	 * @param StatusTransitionServiceInterface $transitionEngine The single reader of a case's available moves.
+	 * @param OpenRegisterGrantsGatewayInterface $grants The reader of OpenRegister's effective grants.
+	 * @param ExternalHomeInterface $externalHome Whether the work on this case happens in another application.
 	 * @param CaseActionList $actions The acts a case offers, and what blocks them.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly StatusTransitionService $transitionEngine,
-		private readonly OpenRegisterGrantsGateway $grants,
-		private readonly ExternalHome $externalHome,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
+		private readonly OpenRegisterGrantsGatewayInterface $grants,
+		private readonly ExternalHomeInterface $externalHome,
 		private readonly CaseActionList $actions,
 		private readonly LoggerInterface $logger,
 	) {
@@ -168,44 +168,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function availableActions(array $object, string $userId): array {
-		$caseId = $this->caseIdOf(object: $object);
-		if ($caseId === '') {
-			throw new LifecycleProviderException(
-				message: 'Dossiq case lifecycle provider: the object carries no case id.'
-			);
-		}
-
+		$caseId = $this->requiredCaseId(object: $object);
 		$caller = $this->callerOf(userId: $userId);
-
-		try {
-			$available = $this->transitionEngine->getAvailableTransitions(
-				caseId: $caseId,
-				userId: $caller,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq case lifecycle provider: reading available transitions failed',
-				['exception' => $e, 'caseId' => $caseId],
-			);
-			throw new LifecycleProviderException(
-				message: 'Dossiq case lifecycle provider: available transitions could not be read.',
-				code: 0,
-				previous: $e,
-			);
-		}
-
-		// `getAvailableTransitions()` answers with an EMPTY `current` block and
-		// nothing else when it could not load the case at all — storage down,
-		// register misconfigured, object gone. That is a failure to answer, not
-		// an answer of "no moves", and the two are told apart here because only
-		// `current` distinguishes them: a case that loaded always carries its
-		// statusId, name and colour, even when its status is blank.
-		$current = ($available['current'] ?? []);
-		if (is_array($current) === false || $current === []) {
-			throw new LifecycleProviderException(
-				message: sprintf('Dossiq case lifecycle provider: case "%s" could not be read.', $caseId)
-			);
-		}
+		$available = $this->loadedTransitions(caseId: $caseId, caller: $caller);
 
 		$actions = $this->actions->publishAll(transitions: (array)($available['transitions'] ?? []));
 
@@ -240,6 +205,94 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		// instead of to the rights matrix.
 		return $this->actions->honourPaymentRule(actions: $actions, object: $object, caseId: $caseId);
 	}//end availableActions()
+
+	/**
+	 * The object's case id; an object without one cannot be answered for.
+	 *
+	 * Not a refusal: OpenRegister only calls the provider with an object it
+	 * has just read, so a payload with no identity means dossiq or
+	 * OpenRegister is broken, not that the move is disallowed.
+	 *
+	 * @param array<string, mixed> $object The object.
+	 *
+	 * @return string
+	 *
+	 * @throws LifecycleProviderException When the object carries no case id.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function requiredCaseId(array $object): string {
+		$caseId = $this->caseIdOf(object: $object);
+		if ($caseId === '') {
+			throw new LifecycleProviderException(
+				message: 'Dossiq case lifecycle provider: the object carries no case id.'
+			);
+		}
+
+		return $caseId;
+	}//end requiredCaseId()
+
+	/**
+	 * The case's available transitions, from a case that actually loaded.
+	 *
+	 * `getAvailableTransitions()` answers with an EMPTY `current` block and
+	 * nothing else when it could not load the case at all — storage down,
+	 * register misconfigured, object gone. That is a failure to answer, not
+	 * an answer of "no moves", and the two are told apart here because only
+	 * `current` distinguishes them: a case that loaded always carries its
+	 * statusId, name and colour, even when its status is blank.
+	 *
+	 * @param string      $caseId The case.
+	 * @param string|null $caller The caller, as the engine knows them.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws LifecycleProviderException When the transitions cannot be read or the case did not load.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function loadedTransitions(string $caseId, ?string $caller): array {
+		$available = $this->readTransitions(caseId: $caseId, caller: $caller);
+		$current = ($available['current'] ?? []);
+		if (is_array($current) === false || $current === []) {
+			throw new LifecycleProviderException(
+				message: sprintf('Dossiq case lifecycle provider: case "%s" could not be read.', $caseId)
+			);
+		}
+
+		return $available;
+	}//end loadedTransitions()
+
+	/**
+	 * Ask the transition engine for the case's available transitions.
+	 *
+	 * @param string      $caseId The case.
+	 * @param string|null $caller The caller, as the engine knows them.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws LifecycleProviderException When the engine fails (logged).
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function readTransitions(string $caseId, ?string $caller): array {
+		try {
+			return $this->transitionEngine->getAvailableTransitions(
+				caseId: $caseId,
+				userId: $caller,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq case lifecycle provider: reading available transitions failed',
+				['exception' => $e, 'caseId' => $caseId],
+			);
+			throw new LifecycleProviderException(
+				message: 'Dossiq case lifecycle provider: available transitions could not be read.',
+				code: 0,
+				previous: $e,
+			);
+		}
+	}//end readTransitions()
 
 	/**
 	 * The uid to resolve the caller by, or null to let the session decide.
@@ -301,62 +354,77 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @throws LifecycleProviderException When the engine could not answer at all.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function execute(array $object, string $userId, string $action, array $data): array {
-		$caseId = $this->caseIdOf(object: $object);
-		if ($caseId === '') {
-			// Not a refusal: OpenRegister only calls this with an object it
-			// has just read, so a payload with no identity means dossiq or
-			// OpenRegister is broken, not that the move is disallowed. Same
-			// reading as `availableActions()`.
-			throw new LifecycleProviderException(
-				message: 'Dossiq case lifecycle provider: the object carries no case id.'
+		$caseId = $this->requiredCaseId(object: $object);
+		$caller = $this->callerOf(userId: $userId);
+		$this->refuseBlockedMove(object: $object, caseId: $caseId);
+
+		return $this->carriedOut(move: ['object' => $object, 'caseId' => $caseId, 'action' => $action, 'caller' => $caller], data: $data);
+	}//end execute()
+
+	/**
+	 * Make the move through the transition engine as the caller, classifying a failure.
+	 *
+	 * @param array<string, mixed> $move The case `object`, its `caseId`, the transition as `action` and the `caller`.
+	 * @param array<string, mixed> $data The action's inputs: the comment and the closing result.
+	 *
+	 * @return array<string, mixed> The engine's answer.
+	 *
+	 * @throws Throwable The classified failure.
+	 */
+	private function carriedOut(array $move, array $data): array {
+		try {
+			return $this->transitionEngine->execute(
+				caseId: $move['caseId'],
+				transitionId: $move['action'],
+				comment: $this->textOf(data: $data, field: CaseActionList::COMMENT_INPUT),
+				userId: $move['caller'],
+				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
 			);
+		} catch (Throwable $e) {
+			throw $this->classify(failure: $e, move: ['object' => $move['object'], 'caseId' => $move['caseId'], 'action' => $move['action']]);
 		}
+	}//end carriedOut()
 
-		// An empty uid means OpenRegister had no session user to name. Handing
-		// that on as null lets the engine resolve the caller from IUserSession
-		// itself, which is the identity its authorization gate would use.
-		$caller = null;
-		if ($userId !== '') {
-			$caller = $userId;
-		}
-
-		// 🔴 THE BLOCK IS ENFORCED, NOT ADVISED. `availableActions()` publishes
-		// these moves disabled, and a client that posts one anyway must meet
-		// the same answer: a `blocked` flag nothing checks on the write path is
-		// a suggestion, and the first client that ignores it moves a status
-		// here that the specialist application never hears about. Thrown as a
-		// plain RuntimeException, which OpenRegister answers 422 — the move was
-		// refused, and nothing is broken.
+	/**
+	 * Refuse a move the list publishes blocked: work homed elsewhere, or leges unpaid.
+	 *
+	 * 🔴 THE BLOCK IS ENFORCED, NOT ADVISED. `availableActions()` publishes
+	 * these moves disabled, and a client that posts one anyway must meet
+	 * the same answer: a `blocked` flag nothing checks on the write path is
+	 * a suggestion, and the first client that ignores it moves a status
+	 * here that the specialist application never hears about. Thrown as a
+	 * plain RuntimeException, which OpenRegister answers 422 — the move was
+	 * refused, and nothing is broken.
+	 *
+	 * The same enforcement for the payment rule, and for the same reason:
+	 * a flag the write path does not check is a suggestion, and the first
+	 * client that posts the move anyway hands a case to a handler the
+	 * gemeente has not been paid for. Refused as a RuntimeException, which
+	 * OpenRegister answers 422 with the sentence in `error` (ADR-050).
+	 *
+	 * @param array<string, mixed> $object The case payload.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the move is blocked, carrying the sentence that says why.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function refuseBlockedMove(array $object, string $caseId): void {
 		$elsewhere = $this->externalHome->whereTheWorkIs(case: $object);
 		if ($elsewhere !== '') {
 			throw new RuntimeException($elsewhere);
 		}
 
-		// The same enforcement for the payment rule, and for the same reason:
-		// a flag the write path does not check is a suggestion, and the first
-		// client that posts the move anyway hands a case to a handler the
-		// gemeente has not been paid for. Refused as a RuntimeException, which
-		// OpenRegister answers 422 with the sentence in `error` (ADR-050).
 		$unpaid = $this->actions->whyPaymentBlocks(object: $object, caseId: $caseId);
 		if ($unpaid !== '') {
 			throw new RuntimeException($unpaid);
 		}
-
-		try {
-			return $this->transitionEngine->execute(
-				caseId: $caseId,
-				transitionId: $action,
-				comment: $this->textOf(data: $data, field: CaseActionList::COMMENT_INPUT),
-				userId: $caller,
-				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
-			);
-		} catch (Throwable $e) {
-			throw $this->classify(failure: $e, object: $object, caseId: $caseId, action: $action);
-		}
-	}//end execute()
+	}//end refuseBlockedMove()
 
 	/**
 	 * Decide which of OpenRegister's three failures the engine just had.
@@ -365,15 +433,15 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * mapping is one expression a test can drive one row at a time.
 	 *
 	 * @param Throwable $failure What the engine threw.
-	 * @param array<string, mixed> $object The case payload OpenRegister handed over.
-	 * @param string $caseId The case UUID.
-	 * @param string $action The transition id that was asked for.
+	 * @param array{object: array<string, mixed>, caseId: string, action: string} $move The case payload OpenRegister
+	 *        handed over, the case UUID and the transition id that was asked for.
 	 *
 	 * @return Throwable The refusal unchanged, or the breakage/not-found type that wraps it.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function classify(Throwable $failure, array $object, string $caseId, string $action): Throwable {
+	private function classify(Throwable $failure, array $move): Throwable {
+		['object' => $object, 'caseId' => $caseId, 'action' => $action] = $move;
 		// A guard said no, and said why. Matched by type rather than by message
 		// so the failed-guard snapshots reach the client intact.
 		if ($failure instanceof GuardFailedException) {
@@ -404,30 +472,59 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		// storage failure told as a breakage is retried, while a storage failure
 		// told as "this case was deleted" sends a handler looking for a case
 		// nobody removed.
+		$move = ['caseId' => $caseId, 'action' => $action];
 		if ($code === self::CASE_NOT_FOUND && $this->isDeleted(object: $object) === true) {
-			$this->logger->warning(
-				'Dossiq case lifecycle provider: the case a move was asked for has been deleted',
-				['caseId' => $caseId, 'action' => $action],
-			);
-
-			return new LifecycleSubjectNotFoundException(
-				message: sprintf('Dossiq case lifecycle provider: case "%s" no longer exists.', $caseId),
-				code: 0,
-				previous: $failure,
-			);
+			return $this->caseGone(failure: $failure, move: $move);
 		}
 
-		$this->logger->error(
-			'Dossiq case lifecycle provider: the move could not be applied',
-			['exception' => $failure, 'caseId' => $caseId, 'action' => $action, 'code' => $code],
+		return $this->moveBroke(failure: $failure, move: $move + ['code' => $code]);
+	}//end classify()
+
+	/**
+	 * The not-found answer for a move on a case that was deleted (logged as a warning).
+	 *
+	 * @param Throwable            $failure What the engine threw.
+	 * @param array<string, string> $move    The case id and the action.
+	 *
+	 * @return LifecycleSubjectNotFoundException
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function caseGone(Throwable $failure, array $move): LifecycleSubjectNotFoundException {
+		$this->logger->warning(
+			'Dossiq case lifecycle provider: the case a move was asked for has been deleted',
+			$move,
 		);
 
-		return new LifecycleProviderException(
-			message: sprintf('Dossiq case lifecycle provider: the move on case "%s" could not be applied.', $caseId),
+		return new LifecycleSubjectNotFoundException(
+			message: sprintf('Dossiq case lifecycle provider: case "%s" no longer exists.', $move['caseId']),
 			code: 0,
 			previous: $failure,
 		);
-	}//end classify()
+	}//end caseGone()
+
+	/**
+	 * The breakage answer for a move the engine could not apply (logged as an error).
+	 *
+	 * @param Throwable            $failure What the engine threw.
+	 * @param array<string, string> $move    The case id, the action and the engine's code.
+	 *
+	 * @return LifecycleProviderException
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function moveBroke(Throwable $failure, array $move): LifecycleProviderException {
+		$this->logger->error(
+			'Dossiq case lifecycle provider: the move could not be applied',
+			['exception' => $failure] + $move,
+		);
+
+		return new LifecycleProviderException(
+			message: sprintf('Dossiq case lifecycle provider: the move on case "%s" could not be applied.', $move['caseId']),
+			code: 0,
+			previous: $failure,
+		);
+	}//end moveBroke()
 
 	/**
 	 * Whether the payload OpenRegister handed over declares the case deleted.

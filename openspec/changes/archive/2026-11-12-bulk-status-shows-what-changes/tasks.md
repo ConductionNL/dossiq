@@ -1,0 +1,3 @@
+- [x] Common transitions, table of changes and result panel in BulkTransitionDialog
+- [x] Helpers in src/utils/bulkTransitionHelpers.js
+- [x] Tests in tests/vitest/bulkTransitionDialog.spec.js

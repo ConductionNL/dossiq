@@ -59,7 +59,7 @@
 
 				<!-- Import / Export -->
 				<NcButton type="tertiary" @click="exportWorkflow">
-					{{ t('dossiq', 'Export') }}
+					{{ t('dossiq', 'Download') }}
 				</NcButton>
 				<NcButton type="tertiary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
@@ -136,8 +136,9 @@
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowEditor from '../WorkflowEditor.vue'
-import { useObjectStore } from '../../../store/modules/object.js'
+import { objectStoreAccess } from '../../../mixins/objectStore.js'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
+import { caseTypeParts } from '../../../utils/caseTypeRows.js'
 
 export default {
 	name: 'WorkflowTab',
@@ -146,6 +147,8 @@ export default {
 		NcLoadingIcon,
 		WorkflowEditor,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		caseTypeId: {
@@ -170,11 +173,6 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
-		},
-
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
-		objectStore() {
-			return useObjectStore()
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -322,21 +320,10 @@ export default {
 			if (!this.currentTemplate) return
 
 			// Fetch type data for name mapping
-			const statusTypes =
-				(await this.objectStore.fetchCollection('statusType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
-			const roleTypes =
-				(await this.objectStore.fetchCollection('roleType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
-			const docTypes =
-				(await this.objectStore.fetchCollection('documentType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
+			const [statusTypes, roleTypes, docTypes] = await caseTypeParts(
+				this.objectStore,
+				this.caseTypeId,
+			)
 
 			const exportData = this.workflowStore.exportWorkflow(
 				this.currentTemplate,
@@ -374,21 +361,10 @@ export default {
 				const importData = JSON.parse(text)
 
 				// Fetch type data for UUID mapping
-				const statusTypes =
-					(await this.objectStore.fetchCollection('statusType', {
-						caseType: this.caseTypeId,
-						_limit: 100,
-					})) || []
-				const roleTypes =
-					(await this.objectStore.fetchCollection('roleType', {
-						caseType: this.caseTypeId,
-						_limit: 100,
-					})) || []
-				const docTypes =
-					(await this.objectStore.fetchCollection('documentType', {
-						caseType: this.caseTypeId,
-						_limit: 100,
-					})) || []
+				const [statusTypes, roleTypes, docTypes] = await caseTypeParts(
+					this.objectStore,
+					this.caseTypeId,
+				)
 
 				const result = await this.workflowStore.importWorkflow(
 					importData,

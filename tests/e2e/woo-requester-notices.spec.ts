@@ -24,6 +24,9 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { occRunQueuedJobs } from './helpers/occ.ts'
+
+const ACKNOWLEDGEMENT_JOB = 'OCA\\Dossiq\\BackgroundJob\\AcknowledgementDispatchJob'
 
 test.describe('A Woo requester hears from us, or the case says they did not', () => {
 	test.setTimeout(240_000)
@@ -69,13 +72,15 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 		})
 		const caseId = objectId(created)
 
-		// The acknowledgement runs from a queued job: wait for its first attempt.
+		// The acknowledgement runs from a queued job: wait for its first attempt,
+		// running the job by hand while it waits for a cron that may run late.
 		await expect
 			.poll(
-				async () =>
-					(await showObject(api, 'case', caseId)).acknowledgementDuty
-						?.status,
-				{ timeout: 150_000 },
+				async () => {
+					await occRunQueuedJobs(ACKNOWLEDGEMENT_JOB, caseId).catch(() => [])
+					return (await showObject(api, 'case', caseId)).acknowledgementDuty?.status
+				},
+				{ timeout: 150_000, intervals: [5_000] },
 			)
 			.toMatch(/^(pending|unmet)$/)
 

@@ -1,0 +1,178 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "prepare": "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+    },
+    {
+        "bindValue": [
+            "pattern",
+            "%openregister\\_table\\_%"
+        ]
+    },
+    {
+        "execute": {
+            "pattern": "%openregister\\_table\\_%"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table AND column_name = :column"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_85"
+        ]
+    },
+    {
+        "bindValue": [
+            "column",
+            "direction"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_85",
+            "column": "direction"
+        }
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "inbound",
+            "inkomend"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85: inkomend -> inbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "outbound",
+            "uitgaand"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85: uitgaand -> outbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "internal",
+            "intern"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85: intern -> internal (2 row(s))"
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table AND column_name = :column"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_86"
+        ]
+    },
+    {
+        "bindValue": [
+            "column",
+            "direction"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_86",
+            "column": "direction"
+        }
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_86\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "inbound",
+            "inkomend"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_86: inkomend -> inbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_86\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "outbound",
+            "uitgaand"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_86: uitgaand -> outbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_86\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "internal",
+            "intern"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_86: intern -> internal (2 row(s))"
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table AND column_name = :column"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_85_backup"
+        ]
+    },
+    {
+        "bindValue": [
+            "column",
+            "direction"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_85_backup",
+            "column": "direction"
+        }
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85_backup\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "inbound",
+            "inkomend"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85_backup: inkomend -> inbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85_backup\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "outbound",
+            "uitgaand"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85_backup: uitgaand -> outbound (2 row(s))"
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85_backup\" SET \"direction\" = ? WHERE \"direction\" = ?",
+        "params": [
+            "internal",
+            "intern"
+        ]
+    },
+    {
+        "output": "  oc_openregister_table_17_85_backup: intern -> internal (2 row(s))"
+    },
+    {
+        "output": "RenameDutchDirectionValues: inspected 3 shard table(s) with a `direction` column, updated 18 row(s)."
+    }
+]

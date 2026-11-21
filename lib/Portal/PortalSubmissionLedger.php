@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IMemcache;
@@ -45,12 +46,7 @@ use OCP\IMemcache;
  *
  * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
  */
-class PortalSubmissionLedger {
-
-	/**
-	 * The header the key arrives in.
-	 */
-	public const HEADER = 'Idempotency-Key';
+class PortalSubmissionLedger implements PortalSubmissionLedgerInterface {
 
 	/**
 	 * What a key may look like; anything else is treated as no key.
@@ -121,6 +117,17 @@ class PortalSubmissionLedger {
 	 */
 	public function claim(string $scope, string $subjectRef, string $key): array {
 		$entry = $this->entry(scope: $scope, subjectRef: $subjectRef, key: $key);
+		return $this->claimEntryOrRead(entry: $entry);
+	}//end claim()
+
+	/**
+	 * Claim the ledger entry, or read the answer or the processing mark another send left on it.
+	 *
+	 * @param string $entry The ledger entry's cache key.
+	 *
+	 * @return array{state: string, answer?: array<string, mixed>} `claimed`, `answered` with the answer, or `processing`.
+	 */
+	private function claimEntryOrRead(string $entry): array {
 		if ($this->claimEntry(entry: $entry) === true) {
 			return ['state' => 'claimed'];
 		}
@@ -140,7 +147,7 @@ class PortalSubmissionLedger {
 		}
 
 		return ['state' => 'processing'];
-	}//end claim()
+	}//end claimEntryOrRead()
 
 	/**
 	 * Claim an entry: at once on an `IMemcache`, else read-then-write.

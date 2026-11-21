@@ -62,8 +62,8 @@ import { NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
 import IntakeRequirementsModal from '../../modals/IntakeRequirementsModal.vue'
+import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { fetchIntakeRequirements } from '../../services/intakeTriageApi.js'
-import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { isCaseTypeUsable } from '../../utils/caseValidation.js'
 import { asksAnything, refusalSentence } from '../../utils/intakeRequirements.js'
@@ -78,6 +78,8 @@ export default {
 		InitiatorPickerModal,
 		IntakeRequirementsModal,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		// Declared on purpose. The mount script passes `title: widget.title`, and
@@ -106,13 +108,6 @@ export default {
 		}
 	},
 
-	computed: {
-		/** @spec openspec/specs/signalering-widgets/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
-	},
-
 	/** @spec openspec/specs/signalering-widgets/spec.md */
 	async mounted() {
 		// 🔴 THE STORES MUST BE REGISTERED BEFORE THE FETCH, OR THE WIDGET SAYS
@@ -126,7 +121,7 @@ export default {
 		// person/company picker's search and Skip's `saveObject('case')` fail
 		// the same way, so the widget could never start a case.
 		//
-		// The sibling widgets (CasesOverviewWidget, MyTasksWidget) already
+		// The sibling widget CasesOverviewWidget already
 		// await this, with the same reason in their comments; this one was the
 		// one that did not.
 		await initializeStores()
@@ -215,7 +210,7 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @param {object} extraFields Additional case fields (the requester payload)
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async startWithRequirements(caseType, extraFields = {}) {
 			if (!caseType) {
@@ -237,7 +232,7 @@ export default {
 		 *
 		 * @param {object} answers The declared fields, as answered
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		async onRequirementsAnswered(answers) {
 			const caseType = this.pendingRequirements
@@ -250,7 +245,7 @@ export default {
 		 * Close the requirements dialog without creating anything.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		cancelRequirements() {
 			this.pendingRequirements = null

@@ -54,7 +54,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -66,13 +66,15 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Rolls a date to the next ordinary day, on the engine's calendar.
  *
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class WorkingDayRoll {
 	/*
@@ -180,7 +182,7 @@ class WorkingDayRoll {
 	 *
 	 * @return boolean True when the engine calendar resolved.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function isAvailable(): bool {
 		$this->resolve();
@@ -204,7 +206,7 @@ class WorkingDayRoll {
 	 * @return boolean|null True or false from the calendar, or null when no
 	 *                      calendar is answering and the caller must degrade.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function worksOn(DateTimeInterface $moment): ?bool {
 		if ($this->isAvailable() === false) {
@@ -234,7 +236,7 @@ class WorkingDayRoll {
 	 * @return array<int, int>|null The ISO weekdays, or null when no calendar
 	 *                              is answering.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function workingWeekdays(): ?array {
 		if ($this->isAvailable() === false) {
@@ -287,7 +289,7 @@ class WorkingDayRoll {
 	 * @return DateTimeImmutable|null The end date, or null when working days
 	 *                                were asked for and the calendar is absent.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 *
 	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
 	 * stub because its argument is an arbitrary string. Here the string is
@@ -299,16 +301,25 @@ class WorkingDayRoll {
 			return $start->modify('+' . $days . ' days');
 		}
 
+		return $this->workingDayEnd(start: $start, days: $days);
+	}//end endAfter()
+
+	/**
+	 * The end of a term of working days on the organisation's calendar.
+	 *
+	 * @param DateTimeImmutable $start When the term starts.
+	 * @param int               $days  How many working days it runs.
+	 *
+	 * @return DateTimeImmutable|null The end, or null when the calendar is unavailable or refuses.
+	 */
+	private function workingDayEnd(DateTimeImmutable $start, int $days): ?DateTimeImmutable {
 		if ($this->isAvailable() === false) {
 			return null;
 		}
 
 		try {
 			return $this->calculator->add(
-				from: $start,
-				value: (float)$days,
-				unit: self::UNIT_BUSINESS_DAYS,
-				calendar: $this->calendar
+				new SlaAddition(start: $start, value: (float)$days, unit: self::UNIT_BUSINESS_DAYS, calendar: $this->calendar)
 			);
 		} catch (Throwable $e) {
 			$this->logger?->warning(
@@ -318,7 +329,7 @@ class WorkingDayRoll {
 
 			return null;
 		}
-	}//end endAfter()
+	}//end workingDayEnd()
 
 	/**
 	 * The end date N days after a start, falling back to calendar days.
@@ -334,7 +345,7 @@ class WorkingDayRoll {
 	 *
 	 * @return DateTimeImmutable The end date.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfterOrCalendarDays(DateTimeImmutable $start, int $days, string $mode): DateTimeImmutable {
 		$computed = $this->endAfter(start: $start, days: $days, mode: $mode);
@@ -366,13 +377,25 @@ class WorkingDayRoll {
 	 * @return int|null The span, or null when working days were asked for and
 	 *                  the calendar is absent.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function daysBetween(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== self::MODE_WORKING_DAYS) {
 			return $this->days->between(from: $from, to: $to);
 		}
 
+		return $this->workingDaysBetween(from: $from, to: $to);
+	}//end daysBetween()
+
+	/**
+	 * The working days between two moments on the organisation's calendar.
+	 *
+	 * @param DateTimeImmutable $from The first moment.
+	 * @param DateTimeImmutable $to   The second moment.
+	 *
+	 * @return int|null The working days, or null when the calendar is unavailable or refuses.
+	 */
+	private function workingDaysBetween(DateTimeImmutable $from, DateTimeImmutable $to): ?int {
 		if ($this->isAvailable() === false) {
 			return null;
 		}
@@ -380,10 +403,8 @@ class WorkingDayRoll {
 		try {
 			return (int)round(
 				$this->calculator->measure(
-					from: $from,
-					to: $to,
-					unit: self::UNIT_BUSINESS_DAYS,
-					calendar: $this->calendar
+					span: new CalendarSpan(from: $from, to: $to, calendar: $this->calendar),
+					unit: self::UNIT_BUSINESS_DAYS
 				)
 			);
 		} catch (Throwable $e) {
@@ -394,7 +415,7 @@ class WorkingDayRoll {
 
 			return null;
 		}
-	}//end daysBetween()
+	}//end workingDaysBetween()
 
 	/**
 	 * The first working moment at or after this one, or null.
@@ -433,10 +454,7 @@ class WorkingDayRoll {
 
 		try {
 			$answered = $this->calculator->add(
-				from: $moment,
-				value: 0.0,
-				unit: self::UNIT_BUSINESS_DAYS,
-				calendar: $this->calendar
+				new SlaAddition(start: $moment, value: 0.0, unit: self::UNIT_BUSINESS_DAYS, calendar: $this->calendar)
 			);
 		} catch (Throwable $e) {
 			$this->logger?->warning(
@@ -478,15 +496,17 @@ class WorkingDayRoll {
 			return;
 		}
 
-		try {
-			$this->calculator = $this->settings->getOpenRegisterClass(self::ENGINE_CALCULATOR);
-			$calendars = $this->settings->getOpenRegisterClass(self::ENGINE_CALENDARS);
-			if ($this->calculator === null || $calendars === null) {
-				$this->calculator = null;
-				return;
-			}
+		$this->resolveEngine();
+	}//end resolve()
 
-			$this->calendar = $calendars->resolve(null, null);
+	/**
+	 * Read the engine's calculator and calendar, or neither when the calendar is unavailable.
+	 *
+	 * @return void
+	 */
+	private function resolveEngine(): void {
+		try {
+			$this->readEngine();
 		} catch (Throwable $e) {
 			$this->logger?->warning(
 				'Dossiq termijn: the organisation calendar is unavailable',
@@ -495,5 +515,21 @@ class WorkingDayRoll {
 			$this->calculator = null;
 			$this->calendar = null;
 		}
-	}//end resolve()
+	}//end resolveEngine()
+
+	/**
+	 * Read the engine's calculator and the organisation calendar.
+	 *
+	 * @return void
+	 */
+	private function readEngine(): void {
+		$this->calculator = $this->settings->getOpenRegisterClass(self::ENGINE_CALCULATOR);
+		$calendars = $this->settings->getOpenRegisterClass(self::ENGINE_CALENDARS);
+		if ($this->calculator === null || $calendars === null) {
+			$this->calculator = null;
+			return;
+		}
+
+		$this->calendar = $calendars->resolve(null, null);
+	}//end readEngine()
 }//end class

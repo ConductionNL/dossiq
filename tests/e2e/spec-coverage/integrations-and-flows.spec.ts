@@ -181,7 +181,8 @@ test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
 		// heading: a retired route falls through to the app root, and the root
 		// has headings of its own — so a heading assertion can pass on a page
 		// that never rendered.
-		await expect(page.getByRole('button', { name: 'New flow' })).toBeVisible({
+		// The create control is a link to /flows/new, drawn as a button.
+		await expect(page.getByRole('link', { name: 'New flow' })).toBeVisible({
 			timeout: 15000,
 		})
 	})

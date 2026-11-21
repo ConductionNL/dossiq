@@ -20,19 +20,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds a migrated action's flow document.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class AutomaticActionFlowDocument {
 
@@ -49,9 +50,39 @@ class AutomaticActionFlowDocument {
 	 *
 	 * @return array<string, mixed> The flow document.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function build(array $action, string $marker, array $steps): array {
+		return $this->header(action: $action, marker: $marker) + $this->graph(steps: $steps);
+	}//end build()
+
+	/**
+	 * The flow document's name, description, owner, state, trigger and provenance.
+	 *
+	 * @param array<string, mixed> $action The stored automaticAction.
+	 * @param string               $marker The provenance marker.
+	 *
+	 * @return array<string, mixed> The document without its nodes and edges.
+	 */
+	private function header(array $action, string $marker): array {
+		return [
+			'name' => (string)($action['title'] ?? $action['slug']),
+			'description' => $this->description(action: $action),
+			'app' => AppIdentity::APP_ID,
+			'enabled' => true,
+			'trigger' => 'manual',
+			'notes' => $marker,
+		];
+	}//end header()
+
+	/**
+	 * A manual trigger, the steps in order and an end, as nodes and the edges between them.
+	 *
+	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps The action's steps.
+	 *
+	 * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>} The flow's graph.
+	 */
+	private function graph(array $steps): array {
 		$nodes = [['id' => 'trigger', 'type' => 'openregister.trigger-manual']];
 		$edges = [];
 		$previous = 'trigger';
@@ -69,17 +100,8 @@ class AutomaticActionFlowDocument {
 		$nodes[] = ['id' => 'end', 'type' => 'openregister.end'];
 		$edges[] = ['id' => $previous . '-end', 'from' => [$previous], 'to' => ['end']];
 
-		return [
-			'name' => (string)($action['title'] ?? $action['slug']),
-			'description' => $this->description(action: $action),
-			'app' => Application::APP_ID,
-			'enabled' => true,
-			'trigger' => 'manual',
-			'notes' => $marker,
-			'nodes' => $nodes,
-			'edges' => $edges,
-		];
-	}//end build()
+		return ['nodes' => $nodes, 'edges' => $edges];
+	}//end graph()
 
 	/**
 	 * The flow's description, carrying the provenance a reader needs.

@@ -36,12 +36,15 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use UnexpectedValueException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Tests for {@see CasePlanMigrationService}.
  *
  * @covers \OCA\Dossiq\Service\CasePlanDrain\CasePlanMigrationService
  * @uses   \OCA\Dossiq\Service\CasePlanDrain\CasePlanBlob
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 final class CasePlanMigrationServiceTest extends TestCase {
 
@@ -208,6 +211,120 @@ final class CasePlanMigrationServiceTest extends TestCase {
 	}//end testACaseTypeWithoutAModelIsUnmappable()
 
 	/**
+	 * Without storage configured the drain reports one unmappable row and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheDrainWithoutStorageReportsItAndReadsNothing(): void {
+		$projection = $this->createMock(CasePlanProjectionService::class);
+		$projection->expects($this->never())->method('definitionForCaseType');
+
+		foreach ([[null, '12'], [$this->objects, '']] as [$objects, $typeSchema]) {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnMap([['register', '', '7'], ['case_schema', '', '11'], ['case_type_schema', '', $typeSchema]]);
+			$service = new CasePlanMigrationService($settings, $projection, $this->createMock(LoggerInterface::class));
+
+			$this->assertSame(
+				[['caseId' => '', 'outcome' => CasePlanMigrationService::UNMAPPABLE, 'reason' => 'storage_unavailable']],
+				$service->migrateAll(dryRun: false)
+			);
+		}
+	}//end testTheDrainWithoutStorageReportsItAndReadsNothing()
+
+	/**
+	 * One case without storage, and one that does not exist, are reported as such.
+	 *
+	 * @return void
+	 */
+	public function testOneCaseWithoutStorageOrThatDoesNotExistIsReported(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnMap([['register', '', '7'], ['case_schema', '', '']]);
+		$service = new CasePlanMigrationService($settings, $this->projection(), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			['caseId' => 'populated', 'outcome' => CasePlanMigrationService::UNMAPPABLE, 'reason' => 'storage_unavailable', 'created' => 0, 'existing' => 0],
+			$service->migrateCaseById(caseId: 'populated', dryRun: false)
+		);
+		$this->assertSame(
+			['caseId' => 'nowhere', 'outcome' => CasePlanMigrationService::UNMAPPABLE, 'reason' => 'case_not_found', 'created' => 0, 'existing' => 0],
+			$this->service()->migrateCaseById(caseId: 'nowhere', dryRun: false)
+		);
+	}//end testOneCaseWithoutStorageOrThatDoesNotExistIsReported()
+
+	/**
+	 * A case without a blob is empty, and its type's model is never read.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutABlobIsEmpty(): void {
+		$projection = $this->createMock(CasePlanProjectionService::class);
+		$projection->expects($this->never())->method('definitionForCaseType');
+		$service = new CasePlanMigrationService($this->settings(layer: $this->plans), $projection, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			['caseId' => 'empty', 'outcome' => CasePlanMigrationService::EMPTY, 'reason' => 'no_blob', 'created' => 0, 'existing' => 0],
+			$service->migrateCaseById(caseId: 'empty', dryRun: false)
+		);
+	}//end testACaseWithoutABlobIsEmpty()
+
+	/**
+	 * The case file may not write the case's identity or the blob itself.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseFileMayNotWriteIdentityOrTheBlob(): void {
+		foreach (['id', 'casePlanState'] as $reserved) {
+			$report = $this->service()->migrateCase(
+				case: ['id' => 'c-1', 'caseType' => 'ct-cmmn', 'casePlanState' => ['planItemStates' => ['intake' => 'active'], 'caseFile' => [$reserved => 'x']]],
+				dryRun: true
+			);
+
+			$this->assertSame('case_file_undeclared:' . $reserved, $report['reason']);
+		}
+	}//end testTheCaseFileMayNotWriteIdentityOrTheBlob()
+
+	/**
+	 * Verified rows whose blob cannot be cleared are reported with the counts, and logged.
+	 *
+	 * @return void
+	 */
+	public function testRowsVerifiedButTheBlobNotClearedIsReportedAndLogged(): void {
+		$settings = $this->createMock(SettingsService::class);
+		// The read finds the store; by the time the blob is cleared it is gone.
+		$settings->method('getObjectService')->willReturnOnConsecutiveCalls($this->objects, null);
+		$settings->method('getOpenRegisterClass')->willReturn($this->plans);
+		$settings->method('getConfigValue')->willReturnMap([['register', '', '7'], ['case_schema', '', '11']]);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with(
+			'CasePlanMigrationService: rows verified, blob not cleared',
+			['case' => 'half', 'exception' => 'storage_unavailable']
+		);
+		$service = new CasePlanMigrationService($settings, $this->projection(), $logger);
+		$blob = $this->objects->cases['half']['casePlanState'];
+
+		$this->assertSame(
+			['caseId' => 'half', 'outcome' => CasePlanMigrationService::UNMAPPABLE, 'reason' => 'blob_not_cleared: storage_unavailable', 'created' => 2, 'existing' => 1],
+			$service->migrateCaseById(caseId: 'half', dryRun: false)
+		);
+		$this->assertSame($blob, $this->objects->cases['half']['casePlanState']);
+	}//end testRowsVerifiedButTheBlobNotClearedIsReportedAndLogged()
+
+	/**
+	 * A migrated case reports how many rows were created and how many already existed.
+	 *
+	 * @return void
+	 */
+	public function testAMigratedCaseReportsCreatedAndExistingRows(): void {
+		$this->assertSame(
+			['caseId' => 'half', 'outcome' => CasePlanMigrationService::MIGRATED, 'reason' => 'verified', 'created' => 2, 'existing' => 1],
+			$this->service()->migrateCaseById(caseId: 'half', dryRun: false)
+		);
+		$this->assertSame('', $this->objects->cases['half']['casePlanState']);
+	}//end testAMigratedCaseReportsCreatedAndExistingRows()
+
+	/**
 	 * The service under test, wired to the fixtures.
 	 *
 	 * @return CasePlanMigrationService The service.
@@ -348,7 +465,9 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				unset($register, $schema);
 
 				return ($this->cases[$id] ?? null);
@@ -364,7 +483,11 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case after the write.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				unset($register, $schema);
 				$this->cases[$objectId] = array_merge($this->cases[$objectId], $data);
 

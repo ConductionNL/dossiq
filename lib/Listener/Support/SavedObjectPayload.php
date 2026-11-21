@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCP\EventDispatcher\Event;
 /**
  * The saved object, the object before the save, and its schema.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 trait SavedObjectPayload {
 
@@ -97,13 +97,7 @@ trait SavedObjectPayload {
 	 * @return bool
 	 */
 	private function inSchema(array $object, string $configured): bool {
-		if ($configured === '') {
-			return false;
-		}
-
-		$candidate = (string) ($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && ($candidate === $configured || str_ends_with($candidate, '/'.$configured));
+		return SchemaMembership::belongsTo(object: $object, expected: $configured);
 	}//end inSchema()
 
 	/**
@@ -130,16 +124,7 @@ trait SavedObjectPayload {
 	 * @return array<string, mixed>|null
 	 */
 	private function objectArray(mixed $entity): ?array {
-		$data = null;
-		if (is_array($entity) === true) {
-			$data = $entity;
-		} else if (is_object($entity) === true && method_exists($entity, 'jsonSerialize') === true) {
-			$serialized = $entity->jsonSerialize();
-			if (is_array($serialized) === true) {
-				$data = $serialized;
-			}
-		}
-
+		$data = $this->entityData(entity: $entity);
 		if ($data === null) {
 			return null;
 		}
@@ -147,4 +132,28 @@ trait SavedObjectPayload {
 		$data['id'] = (string) ($data['id'] ?? ($data['@self']['id'] ?? ''));
 		return $data;
 	}//end objectArray()
+
+	/**
+	 * An array as it is, or what a serialisable entity serialises to when that is an array.
+	 *
+	 * @param mixed $entity The entity.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function entityData(mixed $entity): ?array {
+		if (is_array($entity) === true) {
+			return $entity;
+		}
+
+		if (is_object($entity) === false || method_exists($entity, 'jsonSerialize') === false) {
+			return null;
+		}
+
+		$serialized = $entity->jsonSerialize();
+		if (is_array($serialized) === false) {
+			return null;
+		}
+
+		return $serialized;
+	}//end entityData()
 }//end trait

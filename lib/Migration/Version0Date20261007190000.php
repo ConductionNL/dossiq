@@ -58,6 +58,19 @@ class Version0Date20261007190000 extends SimpleMigrationStep {
 			return null;
 		}
 
+		$this->createNoticeTable(schema: $schema);
+
+		return $schema;
+	}//end changeSchema()
+
+	/**
+	 * Create the term-notice table: one row per sent notice, keyed by its notice key.
+	 *
+	 * @param ISchemaWrapper $schema The schema.
+	 *
+	 * @return void
+	 */
+	private function createNoticeTable(ISchemaWrapper $schema): void {
 		$table = $schema->createTable('dossiq_term_notices');
 		$table->addColumn('id', Types::BIGINT, ['autoincrement' => true, 'notnull' => true, 'unsigned' => true]);
 		$table->addColumn('notice_key', Types::STRING, ['notnull' => true, 'length' => 64]);
@@ -68,7 +81,5 @@ class Version0Date20261007190000 extends SimpleMigrationStep {
 		$table->setPrimaryKey(['id']);
 		$table->addUniqueIndex(['notice_key'], 'dossiq_termnotice_key');
 		$table->addIndex(['instance_ref'], 'dossiq_termnotice_inst');
-
-		return $schema;
-	}//end changeSchema()
+	}//end createNoticeTable()
 }//end class

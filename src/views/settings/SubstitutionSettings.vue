@@ -58,7 +58,7 @@
 					<td>{{ sub.scope }}</td>
 					<td>{{ sub.reason }}</td>
 					<td>
-						<span :class="`status status--${sub.status}`">{{
+						<span :class="`status cn-status-badge cn-status-badge--default status--${sub.status}`">{{
 							sub.status
 						}}</span>
 					</td>
@@ -87,6 +87,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	listSubstitutions,
 	revokeSubstitution,
@@ -101,6 +102,8 @@ export default {
 		AccountSwitch,
 		SubstitutionFormModal,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -120,10 +123,6 @@ export default {
 		ownSubstitutions() {
 			return this.substitutions.filter((s) => s.absentee === this.currentUser)
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
@@ -162,51 +161,29 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../styles/_substitutionList.scss' as list;
+
 .substitution-settings {
 	padding: 20px;
 	max-width: 900px;
 }
 
-.substitution-settings__header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
-}
+@include list.list-header(substitution-settings);
 
 .substitution-settings__intro {
 	color: var(--color-text-maxcontrast);
 	margin-bottom: 16px;
 }
 
-.substitution-settings__table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.9rem;
-}
+@include list.list-table(substitution-settings);
 
-.substitution-settings__table th,
-.substitution-settings__table td {
-	text-align: left;
-	padding: 8px 10px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.status {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 0.8rem;
-}
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-success-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
-.status--ended,
-.status--revoked {
-	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
-}
+@include list.ended-status;
 </style>

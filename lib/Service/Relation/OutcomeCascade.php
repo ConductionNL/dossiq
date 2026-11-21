@@ -41,8 +41,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\ReadsLooseValues;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -51,9 +54,15 @@ use RuntimeException;
  *
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-an-outcome-cascade-runs-its-configured-steps-req-lcr-5
  */
-class OutcomeCascade {
+class OutcomeCascade implements OutcomeCascadeInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService {
+		requireObjectService as private objectService;
+	}
+	use ReadsLooseValues {
+		looseText as private text;
+	}
 
 	/**
 	 * The app config key that holds the cascades.
@@ -117,80 +126,158 @@ class OutcomeCascade {
 			throw new InvalidArgumentException("Cascade '$name' has no steps.");
 		}
 
-		$this->guardInputs(name: $name, steps: $steps, inputs: $inputs);
+		$this->guardInputs(name: $name, guarded: ['steps' => $steps, 'inputs' => $inputs]);
 
-		$target = $this->target(cascade: $cascade, targetId: $targetId);
-		foreach ($steps as $step) {
-			$target = $this->runStep(cascade: $cascade, step: $step, target: $target, targetId: $targetId, inputs: $inputs);
-		}
-
-		return $target;
+		return $this->ranOn(cascade: $cascade, run: ['targetId' => $targetId, 'steps' => $steps, 'inputs' => $inputs]);
 	}//end run()
 
 	/**
-	 * Run one step and answer the target as it stands after it.
+	 * Run every step of the cascade on its target, and answer the target as the steps left it.
 	 *
-	 * @param array<string, mixed> $cascade  The cascade.
-	 * @param mixed                $step     The step.
-	 * @param array<string, mixed> $target   The target.
-	 * @param string               $targetId The target uuid.
-	 * @param array<string, mixed> $inputs   The caller's values.
+	 * @param array<string, mixed>                                                              $cascade The cascade.
+	 * @param array{targetId: string, steps: array<int, mixed>, inputs: array<string, mixed>}   $run     The target, the cascade's steps
+	 *                                                                                                 and the caller's inputs.
 	 *
 	 * @return array<string, mixed> The target.
+	 */
+	private function ranOn(array $cascade, array $run): array {
+		$cascadeRun = $this->startRun(cascade: $cascade, targetId: $run['targetId']);
+		$cascadeRun->inputs = $run['inputs'];
+		foreach ($run['steps'] as $step) {
+			$this->runStep(run: $cascadeRun, step: $step);
+		}
+
+		return $cascadeRun->target;
+	}//end ranOn()
+
+	/**
+	 * A run of a cascade on its target, read as it stands now.
+	 *
+	 * @param array<string, mixed> $cascade  The cascade.
+	 * @param string               $targetId The target uuid.
+	 *
+	 * @return CascadeRun The run, without inputs yet.
+	 *
+	 * @throws InvalidArgumentException When the target is not found.
+	 */
+	private function startRun(array $cascade, string $targetId): CascadeRun {
+		$run = new CascadeRun();
+		$run->cascade = $cascade;
+		$run->targetId = $targetId;
+		$run->target = $this->target(cascade: $cascade, targetId: $targetId);
+
+		return $run;
+	}//end startRun()
+
+	/**
+	 * Run one step, leaving the target on the run as it stands after it.
+	 *
+	 * @param CascadeRun $run  The cascade run.
+	 * @param mixed      $step The step.
+	 *
+	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the step is of no known kind.
 	 */
-	private function runStep(array $cascade, mixed $step, array $target, string $targetId, array $inputs): array {
-		if (is_array($step) === true && is_array($step['set'] ?? null) === true) {
-			return ($this->write(
-				schemaKey: (string)$cascade['target'],
-				id: $targetId,
-				changes: $this->values(values: $step['set'], inputs: $inputs)
-			) ?? $target);
+	private function runStep(CascadeRun $run, mixed $step): void {
+		$kind = $this->stepKind(step: $step);
+		if ($kind === 'set') {
+			$this->writeTarget(run: $run, set: $step['set']);
+			return;
 		}
 
-		if (is_array($step) === true && is_array($step['setDependents'] ?? null) === true) {
-			$this->setDependents(spec: $step['setDependents'], targetId: $targetId, inputs: $inputs);
-			return $target;
+		if ($kind === 'setDependents') {
+			$this->setDependents(run: $run, spec: $step['setDependents']);
+			return;
 		}
 
-		if (is_array($step) === true && is_string($step['transition'] ?? null) === true) {
-			$this->transition(step: $step, cascade: $cascade, target: $target, targetId: $targetId);
-			return $target;
-		}
-
-		throw new InvalidArgumentException('A cascade step must be set, setDependents or transition.');
+		$this->transition(run: $run, step: $step);
 	}//end runStep()
+
+	/**
+	 * Which kind of step this is: set, setDependents or transition.
+	 *
+	 * @param mixed $step The step.
+	 *
+	 * @return string The kind.
+	 *
+	 * @throws InvalidArgumentException When the step is of no known kind.
+	 */
+	private function stepKind(mixed $step): string {
+		if (is_array($step) === false) {
+			throw $this->unknownStep();
+		}
+
+		if (is_array($step['set'] ?? null) === true) {
+			return 'set';
+		}
+
+		if (is_array($step['setDependents'] ?? null) === true) {
+			return 'setDependents';
+		}
+
+		if (is_string($step['transition'] ?? null) === true) {
+			return 'transition';
+		}
+
+		throw $this->unknownStep();
+	}//end stepKind()
+
+	/**
+	 * The refusal for a step of no known kind.
+	 *
+	 * @return InvalidArgumentException The refusal.
+	 */
+	private function unknownStep(): InvalidArgumentException {
+		return new InvalidArgumentException('A cascade step must be set, setDependents or transition.');
+	}//end unknownStep()
+
+	/**
+	 * Write a set step's values on the target, keeping the target as read when nothing came back.
+	 *
+	 * @param CascadeRun           $run The cascade run.
+	 * @param array<string, mixed> $set The values to write.
+	 *
+	 * @return void
+	 */
+	private function writeTarget(CascadeRun $run, array $set): void {
+		$run->target = ($this->write(
+			schemaKey: (string)$run->cascade['target'],
+			written: [
+				'id' => $run->targetId,
+				'changes' => $this->values(values: $set, inputs: $run->inputs),
+			]
+		) ?? $run->target);
+	}//end writeTarget()
 
 	/**
 	 * Write fields on every object that references the target through a field.
 	 *
-	 * @param array<string, mixed> $spec     `schema`, `field` and `values`.
-	 * @param string               $targetId The target uuid.
-	 * @param array<string, mixed> $inputs   The caller's values.
+	 * @param CascadeRun           $run  The cascade run.
+	 * @param array<string, mixed> $spec `schema`, `field` and `values`.
 	 *
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the step is missing its schema, field or values.
 	 */
-	private function setDependents(array $spec, string $targetId, array $inputs): void {
+	private function setDependents(CascadeRun $run, array $spec): void {
 		$schemaKey = $this->text(value: ($spec['schema'] ?? ''));
 		$field     = $this->text(value: ($spec['field'] ?? ''));
 		if ($schemaKey === '' || $field === '' || is_array($spec['values'] ?? null) === false) {
 			throw new InvalidArgumentException('A setDependents step needs schema, field and values.');
 		}
 
-		$changes    = $this->values(values: $spec['values'], inputs: $inputs);
+		$changes    = $this->values(values: $spec['values'], inputs: $run->inputs);
 		$dependents = $this->searchObjectsAsArrays(
 			objectService: $this->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
 			schema: $this->schema(key: $schemaKey),
-			filters: [$field => $targetId]
+			filters: [$field => $run->targetId]
 		);
 		foreach ($dependents as $dependent) {
 			$id = $this->text(value: ($dependent['@self']['id'] ?? ($dependent['id'] ?? '')));
 			if ($id !== '') {
-				$this->write(schemaKey: $schemaKey, id: $id, changes: $changes);
+				$this->write(schemaKey: $schemaKey, written: ['id' => $id, 'changes' => $changes]);
 			}
 		}
 	}//end setDependents()
@@ -198,25 +285,23 @@ class OutcomeCascade {
 	/**
 	 * Run a named transition on the case of the target, or of an object it references.
 	 *
-	 * @param array<string, mixed> $step     The step: `transition`, optional `via` and `viaSchema`.
-	 * @param array<string, mixed> $cascade  The cascade.
-	 * @param array<string, mixed> $target   The target.
-	 * @param string               $targetId The target uuid, for the comment.
+	 * @param CascadeRun           $run  The cascade run; its target uuid goes in the comment.
+	 * @param array<string, mixed> $step The step: `transition`, optional `via` and `viaSchema`.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When no case can be found to run it on.
 	 */
-	private function transition(array $step, array $cascade, array $target, string $targetId): void {
-		$caseField = (string)($cascade['caseField'] ?? 'case');
-		$holder    = $target;
+	private function transition(CascadeRun $run, array $step): void {
+		$caseField = (string)($run->cascade['caseField'] ?? 'case');
+		$holder    = $run->target;
 		$via       = $this->text(value: ($step['via'] ?? ''));
 		if ($via !== '') {
 			$holder = $this->findObjectAsArray(
 				objectService: $this->objectService(),
 				register: $this->settingsService->getConfigValue(key: 'register'),
 				schema: $this->schema(key: $this->text(value: ($step['viaSchema'] ?? ''))),
-				id: $this->text(value: ($target[$via] ?? ''))
+				id: $this->text(value: ($run->target[$via] ?? ''))
 			) ?? [];
 		}
 
@@ -228,22 +313,37 @@ class OutcomeCascade {
 		$this->transitions->execute(
 			caseId: $caseId,
 			transitionId: $step['transition'],
-			comment: 'Cascade from '.$targetId,
+			comment: 'Cascade from '.$run->targetId,
 		);
 	}//end transition()
 
 	/**
 	 * Refuse before writing when the steps ask for an input the caller did not give.
 	 *
-	 * @param string               $name   The cascade, for the message.
-	 * @param array<int, mixed>    $steps  The steps.
-	 * @param array<string, mixed> $inputs The caller's values.
+	 * @param string                                                        $name    The cascade, for the message.
+	 * @param array{steps: array<int, mixed>, inputs: array<string, mixed>} $guarded `steps` the steps; `inputs` the caller's values.
 	 *
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When an input is missing or not a scalar.
 	 */
-	private function guardInputs(string $name, array $steps, array $inputs): void {
+	private function guardInputs(string $name, array $guarded): void {
+		[$steps, $inputs] = [$guarded['steps'], $guarded['inputs']];
+		foreach (array_unique(self::askedInputs(steps: $steps)) as $input) {
+			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
+				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
+			}
+		}
+	}//end guardInputs()
+
+	/**
+	 * Every input the steps ask for, by `{"input": name}`, possibly repeated.
+	 *
+	 * @param array<int, mixed> $steps The steps.
+	 *
+	 * @return array<int, string> The input names.
+	 */
+	private static function askedInputs(array $steps): array {
 		$asked = [];
 		array_walk_recursive(
 			$steps,
@@ -254,12 +354,8 @@ class OutcomeCascade {
 			}
 		);
 
-		foreach (array_unique($asked) as $input) {
-			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
-				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
-			}
-		}
-	}//end guardInputs()
+		return $asked;
+	}//end askedInputs()
 
 	/**
 	 * Resolve `{"input": name}` values against the caller's inputs.
@@ -331,13 +427,13 @@ class OutcomeCascade {
 	/**
 	 * Write fields onto one object.
 	 *
-	 * @param string               $schemaKey Config key of its schema.
-	 * @param string               $id        Its uuid.
-	 * @param array<string, mixed> $changes   The fields.
+	 * @param string                                           $schemaKey Config key of its schema.
+	 * @param array{id: string, changes: array<string, mixed>} $written   `id` its uuid; `changes` the fields.
 	 *
 	 * @return array<string, mixed>|null The object after the write.
 	 */
-	private function write(string $schemaKey, string $id, array $changes): ?array {
+	private function write(string $schemaKey, array $written): ?array {
+		[$id, $changes] = [$written['id'], $written['changes']];
 		return $this->patchObjectAsArray(
 			objectService: $this->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
@@ -346,22 +442,6 @@ class OutcomeCascade {
 			changes: $changes
 		);
 	}//end write()
-
-	/**
-	 * The object service, or a refusal when OpenRegister is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
 
 	/**
 	 * The schema behind a config key, or a refusal naming the key.
@@ -384,19 +464,4 @@ class OutcomeCascade {
 
 		return $schema;
 	}//end schema()
-
-	/**
-	 * A trimmed string, or '' for anything else.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The string.
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
 }//end class

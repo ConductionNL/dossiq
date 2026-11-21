@@ -1,0 +1,42 @@
+{
+    "zgwResource": "decision",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "identificatie": "{{ title }}",
+        "notes": "{{ explanation }}",
+        "zaak": "{{ _baseUrl | replace({\"besluiten/v1/besluiten\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "besluittype": "{{ _baseUrl | replace({\"besluiten/v1/besluiten\": \"catalogi/v1/besluittypen\"}) }}/{{ decisionType }}",
+        "verantwoordelijkeOrganisatie": "{{ responsibleOrganisation }}",
+        "bestuursorgaan": "{{ governingBody }}",
+        "date": "{{ decisionDate }}",
+        "effectiveDate": "{{ effectiveDate }}",
+        "vervaldatum": "{{ expiryDate }}",
+        "publicationDate": "{{ publicationDate }}",
+        "verzenddatum": "{{ deliveryDate }}"
+    },
+    "reverseMapping": {
+        "title": "{{ identificatie }}",
+        "explanation": "{{ toelichting }}",
+        "case": "{% if zaak is defined and zaak %}{{ zaak | zgw_extract_uuid }}{% endif %}",
+        "decisionType": "{{ besluittype | zgw_extract_uuid }}",
+        "responsibleOrganisation": "{{ verantwoordelijkeOrganisatie }}",
+        "governingBody": "{{ bestuursorgaan }}",
+        "decisionDate": "{{ datum }}",
+        "effectiveDate": "{{ ingangsdatum }}",
+        "expiryDate": "{{ vervaldatum }}",
+        "publicationDate": "{{ publicatiedatum }}",
+        "deliveryDate": "{{ verzenddatum }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}

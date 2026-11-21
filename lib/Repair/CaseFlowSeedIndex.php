@@ -32,7 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\SerialisedRows;
 use RuntimeException;
 use Throwable;
 
@@ -45,12 +47,51 @@ class CaseFlowSeedIndex {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService and reads the seed markers.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
+
+	/**
+	 * Whether this run plants the demo cases.
+	 *
+	 * ONCE PER SEED VERSION, AND ONLY ON AN INSTANCE THAT OPTED IN. The cases
+	 * were looked up by title on every repair and upgrade and created again
+	 * when missing, so a demo case an operator deleted came back (and one
+	 * whose title lookup missed came back twice). The case type and its
+	 * statuses are configuration and are still completed on every run.
+	 *
+	 * @param array<string,mixed> $data The decoded seed.
+	 *
+	 * @return bool True when the demo cases are due.
+	 *
+	 * @spec openspec/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
+	 */
+	public function casesDue(array $data): bool {
+		if ($this->settingsService->getConfigValue(key: DemoDataServiceInterface::DECIDED_KEY) !== DemoDataServiceInterface::DECIDED_INSTALLED) {
+			return false;
+		}
+
+		return $this->settingsService->getConfigValue(key: CaseFlowSeedDataRepairStep::CASES_SEEDED_KEY) !== $this->seedVersion(data: $data);
+	}//end casesDue()
+
+	/**
+	 * The seed's version, as the marker records it.
+	 *
+	 * @param array<string,mixed> $data The decoded seed.
+	 *
+	 * @return string The version, `0` when the seed names none.
+	 */
+	public function seedVersion(array $data): string {
+		$version = trim((string)($data['version'] ?? ''));
+		if ($version === '') {
+			return '0';
+		}
+
+		return $version;
+	}//end seedVersion()
 
 	/**
 	 * An existing case type with this slug, or null.
@@ -68,21 +109,15 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<string,mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function caseTypeBySlug(array $schemas, string $slug): ?array {
-		$rows = $this->rows(
+		return $this->firstRow(
 			query: [
 				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType'], 'slug' => $slug],
 				'_limit' => 5,
 			]
 		);
-
-		if ($rows === []) {
-			return null;
-		}
-
-		return $rows[0];
 	}//end caseTypeBySlug()
 
 	/**
@@ -96,20 +131,31 @@ class CaseFlowSeedIndex {
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTypeByTitle(array $schemas, string $title): ?array {
-		$rows = $this->rows(
+		return $this->firstRow(
 			query: [
 				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType']],
 				'title' => $title,
 				'_limit' => 5,
 			]
 		);
+	}//end caseTypeByTitle()
+
+	/**
+	 * The first row a query finds, or null.
+	 *
+	 * @param array<string,mixed> $query The query.
+	 *
+	 * @return array<string,mixed>|null The row, or null.
+	 */
+	private function firstRow(array $query): ?array {
+		$rows = $this->rows(query: $query);
 
 		if ($rows === []) {
 			return null;
 		}
 
 		return $rows[0];
-	}//end caseTypeByTitle()
+	}//end firstRow()
 
 	/**
 	 * The titles of cases already seeded for this case type.
@@ -187,17 +233,6 @@ class CaseFlowSeedIndex {
 			return [];
 		}
 
-		$out = [];
-		foreach ($value as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
+		return (new SerialisedRows())->arrays(rows: $value);
 	}//end normalise()
 }//end class

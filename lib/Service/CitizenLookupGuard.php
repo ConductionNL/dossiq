@@ -71,6 +71,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
+use OCA\Dossiq\Service\Support\ReadsGroupMembership;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Throwable;
@@ -80,7 +82,9 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CitizenLookupGuard {
+class CitizenLookupGuard implements CitizenLookupGuardInterface {
+
+	use ReadsGroupMembership;
 
 	/**
 	 * Groups whose members may resolve a citizen identifier.
@@ -171,23 +175,7 @@ class CitizenLookupGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function isCitizenLookupAllowed(IUser $user): bool {
-		$uid = $user->getUID();
-		if ($uid === '') {
-			return false;
-		}
-
-		try {
-			foreach (self::ALLOWED_GROUPS as $group) {
-				if ($this->groupManager->isInGroup($uid, $group) === true) {
-					return true;
-				}
-			}
-
-			return $this->groupManager->isAdmin($uid);
-		} catch (Throwable $e) {
-			// An unresolvable group check is not an authorization.
-			return false;
-		}
+		return $this->inGroupsOrAdmin(uid: $user->getUID(), groups: self::ALLOWED_GROUPS);
 	}//end isCitizenLookupAllowed()
 
 	/**
@@ -202,7 +190,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return bool True when the caller holds the sensitive group.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
 	 */
 	public function maySeeSensitiveFields(IUser $user): bool {
 		$uid = $user->getUID();
@@ -231,7 +219,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return array<string, mixed> The payload, redacted when it has to be.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
 	 */
 	public function redactForCaller(IUser $user, array $payload): array {
 		if ($this->maySeeSensitiveFields(user: $user) === true) {
@@ -266,7 +254,7 @@ class CitizenLookupGuard {
 	 *
 	 * @return array<int, string> The fields, [] when none were.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function revealedFieldsFor(IUser $user): array {
 		if ($this->maySeeSensitiveFields(user: $user) === false) {

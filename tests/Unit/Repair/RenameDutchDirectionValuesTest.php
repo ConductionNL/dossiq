@@ -38,6 +38,8 @@ use ReflectionClass;
  * Unit tests for RenameDutchDirectionValues.
  *
  * @covers \OCA\Dossiq\Repair\RenameDutchDirectionValues
+ * @covers \OCA\Dossiq\Repair\Support\ReadsRegisterShards
+ * @covers \OCA\Dossiq\Repair\Support\ListsOpenRegisterTables
  */
 class RenameDutchDirectionValuesTest extends TestCase {
 

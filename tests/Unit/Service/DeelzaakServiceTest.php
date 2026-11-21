@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for DeelzaakService::getParentCase().
@@ -40,6 +41,8 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeelzaakServiceTest extends TestCase {
 
@@ -130,7 +133,9 @@ class DeelzaakServiceTest extends TestCase {
 			 *
 			 * @return object|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->store[$id]) === false) {
 					return null;
 				}

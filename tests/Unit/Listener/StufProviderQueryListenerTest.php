@@ -36,11 +36,14 @@ use OCA\Integriq\Event\StufPersonQueryEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Listener\StufProviderQueryListener
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class StufProviderQueryListenerTest extends TestCase {
 
@@ -291,7 +294,9 @@ class StufProviderQueryListenerTest extends TestCase {
 			 *
 			 * @return array|null The case type.
 			 */
-			public function find(string $id, ?string $register=null, ?string $schema=null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'caseType' && $id === 'ct-uuid-1') {
 					return (['id' => 'ct-uuid-1'] + StufProviderQueryListenerTest::CASE_TYPE);
 				}

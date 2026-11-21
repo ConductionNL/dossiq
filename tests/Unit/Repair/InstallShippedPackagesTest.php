@@ -10,7 +10,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ class InstallShippedPackagesTest extends TestCase {
 	 */
 	private function step(array $outcomes, array $import, int $imports): InstallShippedPackages {
 		$installer = $this->createMock(PackageInstaller::class);
-		$installer->method('installAutomatic')->willReturn($outcomes);
+		$installer->method('reloadInstalled')->willReturn($outcomes);
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
@@ -71,6 +71,36 @@ class InstallShippedPackagesTest extends TestCase {
 
 		$step->run($output);
 	}//end testAnInstalledPackageImportsTheRegisterAgain()
+
+	/**
+	 * The upgrade updates every installed package, an on-request one too,
+	 * not only the automatic ones.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
+	 */
+	public function testTheUpgradeUpdatesEveryInstalledPackage(): void {
+		$installer = $this->createMock(originalClassName: PackageInstaller::class);
+		$installer->expects($this->never())->method('installAutomatic');
+		$installer->expects($this->once())->method('reloadInstalled')->willReturn(
+			[['status' => PackageInstaller::INSTALLED, 'package' => 'jeugdwet', 'version' => '1.5.0', 'message' => 'ok']]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('loadConfiguration')->willReturn(['success' => true, 'result' => ['failed' => ['objects' => []]]]);
+		$lines = [];
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->method('info')->willReturnCallback(
+			static function (string $line) use (&$lines): void {
+				$lines[] = $line;
+			}
+		);
+
+		(new InstallShippedPackages(installer: $installer, settings: $settings))->run($output);
+
+		$this->assertContains(needle: 'jeugdwet 1.5.0: installed. ok', haystack: $lines);
+	}//end testTheUpgradeUpdatesEveryInstalledPackage()
 
 	/**
 	 * Every package already current: nothing is imported again.

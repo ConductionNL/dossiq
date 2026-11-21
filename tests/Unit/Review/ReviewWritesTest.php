@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\ReviewConfiguration;
 use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
@@ -37,9 +38,11 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\PagesSeen
  * @uses \OCA\Dossiq\Review\ReviewDepth
+ * @uses \OCA\Dossiq\Review\ReviewConfiguration
  */
 class ReviewWritesTest extends TestCase {
 
@@ -159,4 +162,75 @@ class ReviewWritesTest extends TestCase {
 		$this->assertSame([], $this->shared);
 		$this->assertCount(1, $this->store->all('documentReview'));
 	}//end testARefusedWriteSharesNothing()
+	/**
+	 * A stored rule of the case reconciles the whole case and answers what the reconcile did.
+	 *
+	 * @return void
+	 */
+	public function testAStoredRuleReconcilesTheWholeCase(): void {
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcile')->with('case-x')
+			->willReturn(['status' => 'reconciled', 'granted' => 2, 'revoked' => 1, 'refused' => 0]);
+		$writes = new ReviewWrites(
+			reviews: $this->createMock(DocumentRelevance::class),
+			reviewerAccess: $access,
+		);
+
+		$this->assertSame(['status' => 'reconciled', 'granted' => 2, 'revoked' => 1, 'refused' => 0], $writes->ruleStored(caseId: 'case-x'));
+	}//end testAStoredRuleReconcilesTheWholeCase()
+
+	/**
+	 * The documents just added to a case each get one unmarked review, shared once; a document
+	 * that already has a review keeps it (woo-review-triage 1.1, REQ-WRT-001).
+	 *
+	 * @return void
+	 */
+	public function testAddedDocumentsEachGetOneUnmarkedReview(): void {
+		$created = $this->writes->openReviews(caseId: 'case-x', documentRefs: ['doc-1', 'doc-2', 'doc-3', 'doc-2', '']);
+
+		$this->assertSame(2, $created);
+		$this->assertSame([['case-x', 2]], $this->shared);
+		$reviews = [];
+		foreach ($this->store->all('documentReview') as $row) {
+			$reviews[$row['documentRef']] = [$row['case'], $row['relevance']];
+		}
+
+		ksort($reviews);
+		$this->assertSame(['doc-1' => ['case-x', 'unmarked'], 'doc-2' => ['case-x', 'unmarked'], 'doc-3' => ['case-x', 'unmarked']], $reviews);
+		$this->assertSame([1, 2], $this->store->row(schema: 'documentReview', uuid: 'r-1')['pagesRequired'], 'the existing review is left as it was');
+
+		$this->assertSame(0, $this->writes->openReviews(caseId: 'case-x', documentRefs: ['doc-3']));
+		$this->assertSame([['case-x', 2], ['case-x', 0]], $this->shared);
+		$this->assertCount(3, $this->store->all('documentReview'));
+	}//end testAddedDocumentsEachGetOneUnmarkedReview()
+
+	/**
+	 * Only a case whose type switches document review on gets reviews.
+	 *
+	 * @return void
+	 */
+	public function testOnlyACaseTypeWithDocumentReviewOpensReviews(): void {
+		$this->store->seed(schema: 'caseType', uuid: 'type-on', row: ['documentReview' => ['enabled' => true]]);
+		$this->store->seed(schema: 'caseType', uuid: 'type-off', row: ['documentReview' => ['enabled' => false]]);
+		$this->store->seed(schema: 'case', uuid: 'case-on', row: ['caseType' => 'type-on']);
+		$this->store->seed(schema: 'case', uuid: 'case-off', row: ['caseType' => 'type-off']);
+		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-on', 1)->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+		$writes = new ReviewWrites(
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
+			reviewerAccess: $access,
+			configuration: new ReviewConfiguration(settingsService: $settings),
+		);
+
+		$this->assertSame(0, $writes->openReviews(caseId: 'case-off', documentRefs: ['doc-9']));
+		$this->assertSame(1, $writes->openReviews(caseId: 'case-on', documentRefs: ['doc-9']));
+
+		$cases = array_column($this->store->all('documentReview'), 'case');
+		sort($cases);
+		$this->assertSame(['case-on', 'case-x'], $cases);
+	}//end testOnlyACaseTypeWithDocumentReviewOpensReviews()
 }//end class

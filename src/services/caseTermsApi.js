@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -26,7 +26,7 @@ import { generateUrl } from '@nextcloud/router'
  * @param {string} path Path under the Nextcloud root, no leading slash.
  *
  * @return {Promise<object|null>} The body, or null when the read failed.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 async function read(path) {
 	try {
@@ -49,7 +49,7 @@ async function read(path) {
  * @param {string} caseId The case uuid.
  *
  * @return {Promise<object|null>} `{case, terms, progress}`, or null when unreadable.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function fetchCaseTerms(caseId) {
 	return read(`apps/dossiq/api/cases/${caseId}/terms`)
@@ -59,10 +59,10 @@ export function fetchCaseTerms(caseId) {
  * How old the open workload is right now, per status.
  *
  * @return {Promise<object|null>} `{generatedAt, openCases, perStatus}`, or null.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function fetchOpenWorkloadAge() {
-	return read('apps/dossiq/api/termijn/reports/open-workload-age')
+	return read('apps/dossiq/api/deadlines/reports/open-workload-age')
 }
 
 /**
@@ -79,7 +79,7 @@ export function fetchOpenWorkloadAge() {
  * @param {string} request.rationale   Why the case cannot be decided yet.
  *
  * @return {Promise<object>} `{ok, body}` — `body` carries `{message, error}` on a refusal.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 export async function requestInformation(caseId, request) {
 	try {
@@ -100,7 +100,7 @@ export async function requestInformation(caseId, request) {
  * @param {Array}  items  What came in, one line each.
  *
  * @return {Promise<object>} `{ok, body}`.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 export async function receiveInformation(caseId, items) {
 	try {

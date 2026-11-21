@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeObjectDrainInterface;
 use Throwable;
 
 /**
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
  */
-class IntakeObjectDrain {
+class IntakeObjectDrain implements IntakeObjectDrainInterface {
 
 	/**
 	 * Constructor.
@@ -76,16 +77,46 @@ class IntakeObjectDrain {
 	 */
 	public function caseFor(array $source, array $plan): array {
 		$kind = trim((string)($source[(string)($plan['caseTypeField'] ?? '')] ?? ''));
+		$caseType = $this->caseTypeOf(plan: $plan, kind: $kind);
+		if ($caseType === '') {
+			return ['findings' => [['property' => 'caseType', 'code' => 'case-type-unknown', 'message' => 'No case type is configured for "' . $kind . '".']]];
+		}
+
+		$case = $this->mappedFields(source: $source, plan: $plan);
+		$case['title'] = $this->titleOf(source: $source, plan: $plan);
+		$case['caseType'] = $caseType;
+		$case['externalReference'] = $this->idOf(source: $source);
+
+		return ['case' => $case];
+	}//end caseFor()
+
+	/**
+	 * The case type configured for a kind of source.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 * @param string               $kind The source's kind.
+	 *
+	 * @return string The case type, or the empty string when none is configured.
+	 */
+	private function caseTypeOf(array $plan, string $kind): string {
 		$path = (string)(($plan['caseTypes'] ?? [])[$kind] ?? '');
 		$caseType = '';
 		if ($path !== '') {
 			$caseType = $this->caseTypes->caseTypeFor(path: $path);
 		}
 
-		if ($caseType === '') {
-			return ['findings' => [['property' => 'caseType', 'code' => 'case-type-unknown', 'message' => 'No case type is configured for "' . $kind . '".']]];
-		}
+		return $caseType;
+	}//end caseTypeOf()
 
+	/**
+	 * The plan's fixed values, with every non-empty mapped source field added.
+	 *
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $plan   The plan.
+	 *
+	 * @return array<string, mixed> The case so far.
+	 */
+	private function mappedFields(array $source, array $plan): array {
 		$case = (array)($plan['fixed'] ?? []);
 		foreach ((array)($plan['fields'] ?? []) as $from => $to) {
 			$value = ($source[(string)$from] ?? null);
@@ -94,17 +125,26 @@ class IntakeObjectDrain {
 			}
 		}
 
+		return $case;
+	}//end mappedFields()
+
+	/**
+	 * The case title: the source's title field, else the kind's configured title, else the kind.
+	 *
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $plan   The plan, naming the field the source's kind is read from.
+	 *
+	 * @return string The title.
+	 */
+	private function titleOf(array $source, array $plan): string {
+		$kind = trim((string)($source[(string)($plan['caseTypeField'] ?? '')] ?? ''));
 		$title = trim((string)($source[(string)($plan['titleField'] ?? '')] ?? ''));
 		if ($title === '') {
 			$title = (string)(($plan['titles'] ?? [])[$kind] ?? $kind);
 		}
 
-		$case['title'] = $title;
-		$case['caseType'] = $caseType;
-		$case['externalReference'] = $this->idOf(source: $source);
-
-		return ['case' => $case];
-	}//end caseFor()
+		return $title;
+	}//end titleOf()
 
 	/**
 	 * Drain every source object.
@@ -122,71 +162,80 @@ class IntakeObjectDrain {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
 	 */
 	public function drain(array $sources, array $plan, callable $existing, callable $submit, callable $markSource, bool $apply): array {
+		$run = ['plan' => $plan, 'existing' => $existing, 'submit' => $submit, 'markSource' => $markSource, 'apply' => $apply];
 		$report = ['delivered' => [], 'already' => [], 'refused' => []];
-		$deliveredField = (string)($plan['deliveredField'] ?? '');
 
 		foreach ($sources as $source) {
-			$sourceId = $this->idOf(source: $source);
-			$caseId = trim((string)($source[$deliveredField] ?? ''));
-			if ($caseId === '') {
-				$caseId = $existing($source);
-			}
-
-			if ($caseId !== '') {
-				// Delivered before, perhaps by a run that could not mark the
-				// source. Mark it now so the next run does not search again.
-				if ($apply === true && trim((string)($source[$deliveredField] ?? '')) === '') {
-					$markSource($source, $caseId);
-				}
-
-				$report['already'][] = $sourceId;
-				continue;
-			}
-
-			$planned = $this->caseFor(source: $source, plan: $plan);
-			if (isset($planned['findings']) === true) {
-				$report['refused'][] = ['source' => $sourceId, 'findings' => $planned['findings']];
-				continue;
-			}
-
-			if ($apply === false) {
-				$report['delivered'][] = ['source' => $sourceId, 'case' => ''];
-				continue;
-			}
-
-			$this->deliver(source: $source, case: $planned['case'], submit: $submit, markSource: $markSource, report: $report);
-		}//end foreach
+			[$bucket, $entry] = $this->drainOne(source: $source, run: $run);
+			$report[$bucket][] = $entry;
+		}
 
 		return $report;
 	}//end drain()
 
 	/**
-	 * Write one case and record the outcome.
+	 * Drain one source: already delivered, refused, planned (dry run) or delivered now.
 	 *
-	 * @param array<string, mixed>                                 $source     The source object.
-	 * @param array<string, mixed>                                 $case       The case to write.
-	 * @param callable(array<string, mixed>): array<string, mixed> $submit     Writes the case.
-	 * @param callable(array<string, mixed>, string): void         $markSource Records the case id on the source.
-	 * @param array<string, array<int, mixed>>                     $report     The report, extended in place.
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $run    The plan, the `existing`, `submit` and `markSource` callables, and `apply`.
 	 *
-	 * @return void
+	 * @return array{0: string, 1: mixed} The report list it belongs on, and its entry there.
 	 */
-	private function deliver(array $source, array $case, callable $submit, callable $markSource, array &$report): void {
+	private function drainOne(array $source, array $run): array {
+		$deliveredField = (string)($run['plan']['deliveredField'] ?? '');
+		$sourceId = $this->idOf(source: $source);
+		$caseId = trim((string)($source[$deliveredField] ?? ''));
+		if ($caseId === '') {
+			$caseId = ($run['existing'])($source);
+		}
+
+		if ($caseId !== '') {
+			// Delivered before, perhaps by a run that could not mark the
+			// source. Mark it now so the next run does not search again.
+			if ($run['apply'] === true && trim((string)($source[$deliveredField] ?? '')) === '') {
+				($run['markSource'])($source, $caseId);
+			}
+
+			return ['already', $sourceId];
+		}
+
+		$planned = $this->caseFor(source: $source, plan: $run['plan']);
+		if (isset($planned['findings']) === true) {
+			return ['refused', ['source' => $sourceId, 'findings' => $planned['findings']]];
+		}
+
+		if ($run['apply'] === false) {
+			return ['delivered', ['source' => $sourceId, 'case' => '']];
+		}
+
+		return $this->deliver(source: $source, run: ['case' => $planned['case']] + $run);
+	}//end drainOne()
+
+	/**
+	 * Write the case of one source and mark the source with it.
+	 *
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $run    The case to write (`case`), `submit` (writes the case) and `markSource`
+	 *                                     (records the case id on the source).
+	 *
+	 * @return array{0: string, 1: array<string, mixed>} `delivered` or `refused`, and the report entry.
+	 */
+	private function deliver(array $source, array $run): array {
 		$sourceId = $this->idOf(source: $source);
 		try {
-			$answer = $submit($case);
+			$answer = ($run['submit'])($run['case']);
 		} catch (Throwable $e) {
 			$answer = ['findings' => [['property' => '', 'code' => 'write-failed', 'message' => $e->getMessage()]]];
 		}
 
 		$caseId = trim((string)($answer['id'] ?? ''));
 		if ($caseId === '') {
-			$report['refused'][] = ['source' => $sourceId, 'findings' => (array)($answer['findings'] ?? [])];
-			return;
+			return ['refused', ['source' => $sourceId, 'findings' => (array)($answer['findings'] ?? [])]];
 		}
 
-		$markSource($source, $caseId);
-		$report['delivered'][] = ['source' => $sourceId, 'case' => $caseId];
+		($run['markSource'])($source, $caseId);
+
+		return ['delivered', ['source' => $sourceId, 'case' => $caseId]];
 	}//end deliver()
 
 	/**

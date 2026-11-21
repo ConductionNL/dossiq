@@ -34,6 +34,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Runs the intake against an in-memory register holding the seeded type and a C1-shaped dossier.
@@ -167,6 +170,7 @@ class WooRequestIntakeTest extends TestCase {
 		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
 			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
 		);
+		$settings->method('getPortalName')->willReturn('Mijn Zuiddrecht');
 
 		return $settings;
 	}//end settingsOn()
@@ -212,18 +216,19 @@ class WooRequestIntakeTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ($_rbac === true || $_multitenancy === true) {
 					return null;
 				}
 
-				return parent::find(id: $id, register: $register, schema: $schema);
+				return parent::find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**
@@ -242,17 +247,18 @@ class WooRequestIntakeTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($_rbac === true || $_multitenancy === true) {
 					throw new RuntimeException("User 'Anonymous' does not have permission to 'create' objects");
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 			}
 		};
 		$store->rows = $seeded->rows;
@@ -316,6 +322,33 @@ class WooRequestIntakeTest extends TestCase {
 		);
 		self::assertSame('https://gemeente.test/index.php/apps/dossiq/cases/' . $result['caseId'], $result['caseUrl']);
 	}//end testARequestOpensAWooCaseForTheResident()
+
+	/**
+	 * A portal request records how the requester logged in, by the asserted
+	 * audience, and the portal's name. An unknown audience names no means,
+	 * and a request from elsewhere names neither.
+	 *
+	 * @return void
+	 */
+	public function testThePortalCaseRecordsHowTheRequesterLoggedInAndThePortal(): void {
+		$resident = $this->intake->start($this->request(overrides: ['audience' => 'client']));
+		$case = $this->store->row(schema: 'case', uuid: $resident['caseId']);
+		self::assertSame(expected: 'digid', actual: $case['intakeIdentification']);
+		self::assertSame(expected: 'Mijn Zuiddrecht', actual: $case['intakeSourceName']);
+
+		$business = $this->intake->start($this->request(overrides: ['collectionId' => null, 'audience' => 'business']));
+		self::assertSame(expected: 'eherkenning', actual: $this->store->row(schema: 'case', uuid: $business['caseId'])['intakeIdentification']);
+
+		$unknown = $this->intake->start($this->request(overrides: ['collectionId' => null, 'audience' => 'supplier']));
+		$case = $this->store->row(schema: 'case', uuid: $unknown['caseId']);
+		self::assertArrayNotHasKey(key: 'intakeIdentification', array: $case);
+		self::assertSame(expected: 'Mijn Zuiddrecht', actual: $case['intakeSourceName']);
+
+		$converted = $this->intake->start($this->request(overrides: ['collectionId' => null, 'origin' => 'pipelinq', 'audience' => 'client']));
+		$case = $this->store->row(schema: 'case', uuid: $converted['caseId']);
+		self::assertArrayNotHasKey(key: 'intakeIdentification', array: $case);
+		self::assertArrayNotHasKey(key: 'intakeSourceName', array: $case);
+	}//end testThePortalCaseRecordsHowTheRequesterLoggedInAndThePortal()
 
 	/**
 	 * A request filed for a company branch stamps the branch on the case, so a
@@ -459,13 +492,14 @@ class WooRequestIntakeTest extends TestCase {
 		$stamping = new class extends InMemoryRegister {
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
-				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$saved = parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 				if ((string)$schema !== 'case') {
 					return $saved;
 				}

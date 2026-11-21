@@ -1,0 +1,587 @@
+{
+ "_note": "tenders-run-on-the-tender-case-type 1.1 (row 2.54). The records a tender is worked with: bids (REQ-TND-007) and supplier questions (REQ-TND-004) on the tender case or its lots, one evaluation per evaluator per bid (REQ-EVA-001), and scoring formulas as data (REQ-EVA-003). The award is a decision on the case (REQ-EVA-002), so no award schema. In the register rather than the aanbesteding package because the package installer ships no schemas yet. States follow declared lifecycles; no bid, question or evaluation service decides them. Seeds the three common methods (lowest price, relative price, best price-quality ratio); a tender office adds its own as records.",
+ "components": {
+  "registers": {
+   "dossiq": {
+    "schemas": [
+     "bid",
+     "tenderQuestion",
+     "evaluation",
+     "scoringFormula"
+    ]
+   }
+  },
+  "schemas": {
+   "bid": {
+    "slug": "bid",
+    "icon": "HandCoin",
+    "version": "1.0.0",
+    "searchable": false,
+    "title": "Bid",
+    "description": "One supplier's submission (inschrijving) on a tender case or one of its lots (REQ-TND-007). Its state follows a declared lifecycle; no bid service decides it.",
+    "x-schema-org": "schema:Offer",
+    "type": "object",
+    "required": [
+     "tender",
+     "case",
+     "supplier",
+     "submittedAt",
+     "responses",
+     "state"
+    ],
+    "properties": {
+     "tender": {
+      "type": "string",
+      "description": "The tender case the bid is for.",
+      "format": "uuid",
+      "title": "Tender",
+      "facetable": true
+     },
+     "lot": {
+      "type": "string",
+      "description": "The lot (a child case of the tender) when the bid is for one lot.",
+      "format": "uuid",
+      "title": "Lot"
+     },
+     "case": {
+      "type": "string",
+      "description": "The case the bid shows on: the tender itself or the lot.",
+      "format": "uuid",
+      "title": "Case",
+      "facetable": true
+     },
+     "supplier": {
+      "type": "string",
+      "description": "The supplier who submitted the bid.",
+      "format": "uuid",
+      "title": "Supplier",
+      "facetable": true
+     },
+     "submittedAt": {
+      "type": "string",
+      "description": "When the bid was received.",
+      "format": "date-time",
+      "title": "Submitted at"
+     },
+     "submissionRef": {
+      "type": "string",
+      "description": "The reference of the bid in the tender platform (such as TenderNed, Mercell or Negometrix).",
+      "title": "Submission reference"
+     },
+     "priceAmount": {
+      "type": "number",
+      "minimum": 0,
+      "title": "Price",
+      "description": "The bid price excluding VAT, where the procedure asks for a price."
+     },
+     "responses": {
+      "type": "object",
+      "title": "Responses",
+      "description": "The supplier's response per award criterion, by criterion key."
+     },
+     "documents": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "title": "Documents",
+      "description": "The bid documents the supplier uploaded."
+     },
+     "state": {
+      "type": "string",
+      "title": "State",
+      "description": "Received, admissible, inadmissible, excluded, evaluated or withdrawn.",
+      "enum": [
+       "received",
+       "admissible",
+       "inadmissible",
+       "excluded",
+       "evaluated",
+       "withdrawn"
+      ],
+      "default": "received",
+      "facetable": true
+     },
+     "admissibilityNotes": {
+      "type": "string",
+      "title": "Admissibility notes",
+      "description": "Why the bid was found admissible, inadmissible or excluded."
+     },
+     "evaluationScore": {
+      "type": "object",
+      "title": "Evaluation score",
+      "description": "The score per award criterion, set while the bids are evaluated."
+     }
+    },
+    "authorization": {
+     "read": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "create": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "update": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "delete": [
+      "dossiq-coordinators"
+     ]
+    },
+    "configuration": {
+     "objectNameField": "submissionRef",
+     "x-openregister-lifecycle": {
+      "field": "state",
+      "initial": "received",
+      "final": [
+       "inadmissible",
+       "excluded",
+       "evaluated",
+       "withdrawn"
+      ],
+      "transitions": {
+       "admit": {
+        "from": [
+         "received"
+        ],
+        "to": "admissible",
+        "description": "The bid meets the formal requirements and goes on to evaluation."
+       },
+       "declareInadmissible": {
+        "from": [
+         "received"
+        ],
+        "to": "inadmissible",
+        "description": "The bid does not meet the formal requirements, or arrived after the closing date."
+       },
+       "exclude": {
+        "from": [
+         "admissible"
+        ],
+        "to": "excluded",
+        "description": "The supplier is excluded on a ground of exclusion."
+       },
+       "markEvaluated": {
+        "from": [
+         "admissible"
+        ],
+        "to": "evaluated",
+        "description": "Every evaluation of the bid is final."
+       },
+       "withdraw": {
+        "from": [
+         "received",
+         "admissible"
+        ],
+        "to": "withdrawn",
+        "description": "The supplier withdrew the bid before the award."
+       }
+      }
+     }
+    }
+   },
+   "tenderQuestion": {
+    "slug": "tenderQuestion",
+    "icon": "CommentQuestionOutline",
+    "version": "1.0.0",
+    "searchable": false,
+    "title": "Tender question",
+    "description": "A question a supplier asked about a tender, and the answer that becomes part of the published nota van inlichtingen (REQ-TND-004).",
+    "x-schema-org": "schema:Question",
+    "type": "object",
+    "required": [
+     "tender",
+     "submittedBy",
+     "submittedAt",
+     "question",
+     "state"
+    ],
+    "properties": {
+     "tender": {
+      "type": "string",
+      "description": "The tender case the question is about.",
+      "format": "uuid",
+      "title": "Tender",
+      "facetable": true
+     },
+     "lot": {
+      "type": "string",
+      "description": "The lot the question is about, when it concerns one lot.",
+      "format": "uuid",
+      "title": "Lot"
+     },
+     "submittedBy": {
+      "type": "string",
+      "title": "Asked by",
+      "description": "The supplier, or an anonymised handle when the procedure keeps suppliers anonymous."
+     },
+     "submittedAt": {
+      "type": "string",
+      "description": "When the question was received.",
+      "format": "date-time",
+      "title": "Asked at"
+     },
+     "question": {
+      "type": "string",
+      "title": "Question",
+      "description": "The supplier's question."
+     },
+     "answer": {
+      "type": "string",
+      "title": "Answer",
+      "description": "The answer to the question."
+     },
+     "publishedAt": {
+      "type": "string",
+      "description": "When the answer was published in the nota van inlichtingen.",
+      "format": "date-time",
+      "title": "Published at"
+     },
+     "noi": {
+      "type": "string",
+      "title": "Nota van inlichtingen",
+      "description": "The published nota van inlichtingen the answer is part of."
+     },
+     "state": {
+      "type": "string",
+      "title": "State",
+      "description": "Received, under review, answered, published or rejected.",
+      "enum": [
+       "received",
+       "under-review",
+       "answered",
+       "published",
+       "rejected"
+      ],
+      "default": "received",
+      "facetable": true
+     }
+    },
+    "authorization": {
+     "read": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "create": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "update": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "delete": [
+      "dossiq-coordinators"
+     ]
+    },
+    "configuration": {
+     "objectNameField": "question",
+     "x-openregister-lifecycle": {
+      "field": "state",
+      "initial": "received",
+      "final": [
+       "published",
+       "rejected"
+      ],
+      "transitions": {
+       "review": {
+        "from": [
+         "received"
+        ],
+        "to": "under-review",
+        "description": "Someone is preparing the answer."
+       },
+       "answer": {
+        "from": [
+         "received",
+         "under-review"
+        ],
+        "to": "answered",
+        "description": "The answer is written and waits for publication."
+       },
+       "publish": {
+        "from": [
+         "answered"
+        ],
+        "to": "published",
+        "description": "The answer is published in the nota van inlichtingen, for every supplier."
+       },
+       "reject": {
+        "from": [
+         "received",
+         "under-review"
+        ],
+        "to": "rejected",
+        "description": "The question is not answered, for instance because it came after the question deadline."
+       }
+      }
+     }
+    }
+   },
+   "evaluation": {
+    "slug": "evaluation",
+    "icon": "StarCheckOutline",
+    "version": "1.0.0",
+    "searchable": false,
+    "title": "Evaluation",
+    "description": "One evaluator's scores for one bid (REQ-EVA-001): a panel of three gives three evaluations per bid. The award itself is a decision on the case, not an evaluation.",
+    "x-schema-org": "schema:AssessAction",
+    "type": "object",
+    "required": [
+     "bid",
+     "tender",
+     "evaluator",
+     "criterionScores",
+     "state"
+    ],
+    "properties": {
+     "bid": {
+      "type": "string",
+      "description": "The bid being scored.",
+      "format": "uuid",
+      "title": "Bid",
+      "facetable": true
+     },
+     "tender": {
+      "type": "string",
+      "description": "The tender case the bid is for.",
+      "format": "uuid",
+      "title": "Tender",
+      "facetable": true
+     },
+     "evaluator": {
+      "type": "string",
+      "title": "Evaluator",
+      "description": "The user id of the evaluator."
+     },
+     "criterionScores": {
+      "type": "object",
+      "title": "Scores",
+      "description": "The score and the reasoning per award criterion, by criterion key."
+     },
+     "weightedTotal": {
+      "type": "number",
+      "title": "Weighted total",
+      "description": "The total the tender's scoring formula gives over the criterion scores."
+     },
+     "state": {
+      "type": "string",
+      "title": "State",
+      "description": "Draft, submitted, calibrated, finalised or withdrawn.",
+      "enum": [
+       "draft",
+       "submitted",
+       "calibrated",
+       "finalised",
+       "withdrawn"
+      ],
+      "default": "draft",
+      "facetable": true
+     },
+     "calibrationNotes": {
+      "type": "string",
+      "title": "Calibration notes",
+      "description": "What the panel agreed when it compared the scores."
+     },
+     "attachments": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "title": "Attachments",
+      "description": "Documents that support the scores, such as the evaluator's report."
+     }
+    },
+    "authorization": {
+     "read": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "create": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "update": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "delete": [
+      "dossiq-coordinators"
+     ]
+    },
+    "configuration": {
+     "objectNameField": "evaluator",
+     "x-openregister-lifecycle": {
+      "field": "state",
+      "initial": "draft",
+      "final": [
+       "finalised",
+       "withdrawn"
+      ],
+      "transitions": {
+       "submit": {
+        "from": [
+         "draft"
+        ],
+        "to": "submitted",
+        "description": "The evaluator hands in the scores."
+       },
+       "calibrate": {
+        "from": [
+         "submitted"
+        ],
+        "to": "calibrated",
+        "description": "The panel compared the scores and settled them."
+       },
+       "finalise": {
+        "from": [
+         "submitted",
+         "calibrated"
+        ],
+        "to": "finalised",
+        "description": "The scores are final and count towards the ranking."
+       },
+       "withdraw": {
+        "from": [
+         "draft",
+         "submitted"
+        ],
+        "to": "withdrawn",
+        "description": "The evaluation is withdrawn, for instance because the evaluator had a conflict of interest."
+       }
+      }
+     }
+    }
+   },
+   "scoringFormula": {
+    "slug": "scoringFormula",
+    "icon": "FunctionVariant",
+    "version": "1.0.0",
+    "searchable": false,
+    "title": "Scoring formula",
+    "description": "A scoring method as data (REQ-EVA-003): an arithmetic expression over named values. A new method is a new record, not a code change.",
+    "x-schema-org": "schema:HowTo",
+    "type": "object",
+    "required": [
+     "key",
+     "title",
+     "expression"
+    ],
+    "properties": {
+     "key": {
+      "type": "string",
+      "title": "Key",
+      "description": "The key a tender's award criterion names the formula by.",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+     },
+     "title": {
+      "type": "string",
+      "title": "Name",
+      "description": "The formula's name."
+     },
+     "expression": {
+      "type": "string",
+      "title": "Expression",
+      "description": "The arithmetic expression over the named values (+ - * / and max, min, round, abs).",
+      "maxLength": 2000
+     },
+     "variables": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "title": "Values",
+      "description": "The names of the values the expression uses."
+     },
+     "description": {
+      "type": "string",
+      "title": "Description",
+      "description": "What the formula does and when to use it."
+     },
+     "active": {
+      "type": "boolean",
+      "title": "Active",
+      "description": "Whether new tenders may choose the formula.",
+      "default": true
+     }
+    },
+    "authorization": {
+     "read": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "create": [
+      "dossiq-coordinators"
+     ],
+     "update": [
+      "dossiq-coordinators"
+     ],
+     "delete": [
+      "dossiq-coordinators"
+     ]
+    },
+    "configuration": {
+     "objectNameField": "title"
+    }
+   }
+  },
+  "objects": [
+   {
+    "@self": {
+     "register": "dossiq",
+     "schema": "scoringFormula",
+     "slug": "scoring-formula-lowest-price"
+    },
+    "key": "lowest-price",
+    "title": "Lowest price",
+    "expression": "maxPoints * lowestPrice / price",
+    "variables": [
+     "maxPoints",
+     "lowestPrice",
+     "price"
+    ],
+    "description": "The lowest price gets the most points; every other bid in proportion to how close it comes.",
+    "active": true
+   },
+   {
+    "@self": {
+     "register": "dossiq",
+     "schema": "scoringFormula",
+     "slug": "scoring-formula-relative-price"
+    },
+    "key": "relative-price",
+    "title": "Relative price",
+    "expression": "max(0, maxPoints * (1 - (price - lowestPrice) / lowestPrice))",
+    "variables": [
+     "maxPoints",
+     "lowestPrice",
+     "price"
+    ],
+    "description": "The lowest price gets the most points; a bid loses points by how far, in percent, it is above the lowest price, down to none.",
+    "active": true
+   },
+   {
+    "@self": {
+     "register": "dossiq",
+     "schema": "scoringFormula",
+     "slug": "scoring-formula-price-quality"
+    },
+    "key": "price-quality",
+    "title": "Best price-quality ratio",
+    "expression": "round(qualityWeight * quality + priceWeight * maxPoints * lowestPrice / price, 2)",
+    "variables": [
+     "qualityWeight",
+     "quality",
+     "priceWeight",
+     "maxPoints",
+     "lowestPrice",
+     "price"
+    ],
+    "description": "The weighted quality score plus the weighted price score, the price scored as with the lowest price.",
+    "active": true
+   }
+  ]
+ }
+}

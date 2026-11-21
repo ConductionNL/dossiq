@@ -98,8 +98,9 @@ import WorkflowNode from './components/WorkflowNode.vue'
 import WorkflowPalette from './components/WorkflowPalette.vue'
 import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
 import WorkflowValidationBanner from './components/WorkflowValidationBanner.vue'
-import { useObjectStore } from '../../store/modules/object.js'
+import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { useWorkflowStore } from '../../store/modules/workflow.js'
+import { caseTypeRows } from '../../utils/caseTypeRows.js'
 
 export default {
 	name: 'WorkflowEditor',
@@ -111,6 +112,8 @@ export default {
 		StepConfigPanel,
 		TransitionConfigPanel,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		caseTypeId: {
@@ -163,11 +166,6 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
-		},
-
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
-		objectStore() {
-			return useObjectStore()
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -242,18 +240,18 @@ export default {
 				})) || []
 
 			// Load role types
-			this.roleTypes =
-				(await this.objectStore.fetchCollection('roleType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
+			this.roleTypes = await caseTypeRows(
+				this.objectStore,
+				'roleType',
+				this.caseTypeId,
+			)
 
 			// Load document types
-			this.documentTypes =
-				(await this.objectStore.fetchCollection('documentType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
+			this.documentTypes = await caseTypeRows(
+				this.objectStore,
+				'documentType',
+				this.caseTypeId,
+			)
 
 			// Load or create workflow template
 			if (this.templateId) {
@@ -568,7 +566,7 @@ export default {
 
 		/**
 		 * Delete a status node: guards "at least one final status must
-		 * remain" (mirrors `StatusesTab.vue::deleteStatusType()`),
+		 * remain",
 		 * confirms with the user, deletes the underlying `statusType`
 		 * object, then drops it (and its steps/incident transitions) from
 		 * the working copy via `workflowStore.removeStatusNode()`.
@@ -580,47 +578,65 @@ export default {
 			const target = this.statusNodes.find((s) => s.id === statusId)
 			if (!target) return
 
-			if (target.isFinal) {
-				const otherFinals = this.statusNodes.filter(
-					(s) => s.id !== statusId && s.isFinal,
-				)
-				if (otherFinals.length === 0) {
-					this.validationErrors = [
-						{
-							type: 'error',
-							message: t(
-								'dossiq',
-								'At least one status must be marked as final',
-							),
-						},
-					]
-					return
-				}
-			}
-
-			if (
-				!confirm(
-					t(
-						'dossiq',
-						'Delete status "{name}"? This also removes its steps and transitions.',
-						{ name: target.name },
-					),
-				)
-			) {
+			if (this.isLastFinalStatus(target)) {
+				this.showValidationError(t('dossiq', 'At least one status must be marked as final'))
 				return
 			}
+			if (!this.confirmStatusDelete(target)) return
 
 			const ok = await this.objectStore.deleteObject('statusType', statusId)
 			if (!ok) {
-				this.validationErrors = [
-					{
-						type: 'error',
-						message: t('dossiq', 'Failed to delete status'),
-					},
-				]
+				this.showValidationError(t('dossiq', 'Failed to delete status'))
 				return
 			}
+			this.dropStatusNode(statusId)
+		},
 
+		/**
+		 * Whether a status is the only final one left on the canvas.
+		 *
+		 * @param {object} target The status node.
+		 * @return {boolean} True when deleting it would leave no final status.
+		 */
+		isLastFinalStatus(target) {
+			if (!target.isFinal) return false
+			return !this.statusNodes.some((s) => s.id !== target.id && s.isFinal)
+		},
+
+		/**
+		 * Ask the person to confirm deleting a status and what hangs off it.
+		 *
+		 * @param {object} target The status node.
+		 * @return {boolean} True when confirmed.
+		 */
+		confirmStatusDelete(target) {
+			return confirm(
+				t(
+					'dossiq',
+					'Delete status "{name}"? This also removes its steps and transitions.',
+					{ name: target.name },
+				),
+			)
+		},
+
+		/**
+		 * Show one blocking error in the validation banner.
+		 *
+		 * @param {string} message The translated message.
+		 * @return {void}
+		 */
+		showValidationError(message) {
+			this.validationErrors = [{ type: 'error', message }]
+		},
+
+		/**
+		 * Drop a deleted status from the working copy and the canvas, clear
+		 * its selection and mark the editor dirty.
+		 *
+		 * @param {string} statusId UUID of the deleted status
+		 * @return {void}
+		 */
+		dropStatusNode(statusId) {
 			this.workflowStore.removeStatusNode(statusId)
 			this.statusNodes = this.statusNodes.filter((s) => s.id !== statusId)
 			if (this.selectedNode === statusId) {

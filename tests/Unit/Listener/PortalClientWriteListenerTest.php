@@ -162,4 +162,30 @@ class PortalClientWriteListenerTest extends TestCase {
 
 		$this->addToAssertionCount(1);
 	}//end testARecorderThatThrowsDoesNotEscape()
+
+	/**
+	 * The mandate the resident wrote under reaches the recorder with the fields
+	 * and the moment, and only string field names are passed on.
+	 *
+	 * @return void
+	 */
+	public function testTheMandateAndOnlyStringFieldsReachTheRecorder(): void {
+		$this->acts->expects($this->once())
+			->method('recordWrite')
+			->with('case-1', PortalClientWriteEvent::ACT_AMENDMENT, ['phone', 'email'], '2026-09-27T10:00:00+02:00', ['action' => 'amend', 'for' => 'bsn:other'])
+			->willReturn(true);
+
+		$this->listener()->handle(
+			new PortalClientWriteEvent(
+				register: 'case-management',
+				schema: 'case',
+				caseId: 'case-1',
+				act: PortalClientWriteEvent::ACT_AMENDMENT,
+				fields: ['phone', 7, 'email', null],
+				identity: ['subjectRef' => 'bsn:hashed', 'audience' => 'citizen'],
+				mandate: ['action' => 'amend', 'for' => 'bsn:other'],
+				occurredAt: '2026-09-27T10:00:00+02:00',
+			)
+		);
+	}//end testTheMandateAndOnlyStringFieldsReachTheRecorder()
 }//end class

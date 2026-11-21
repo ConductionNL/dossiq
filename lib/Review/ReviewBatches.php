@@ -22,13 +22,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Review\Support\ReviewStoreSteps;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IL10N;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -47,9 +51,10 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
-class ReviewBatches {
+class ReviewBatches implements ReviewBatchesInterface {
 
 	use SearchesObjects;
+	use ReviewStoreSteps;
 
 	/**
 	 * The app config key of the batch schema.
@@ -69,27 +74,27 @@ class ReviewBatches {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The reviews the batch is written on.
-	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param WooCaseDocumentsInterface $caseDocuments Where a case's documents are.
 	 * @param ReviewConfiguration $configuration The case type's review configuration and each document's depth.
-	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
+	 * @param EngineTaskGatewayInterface $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
-	 * @param CaseReviewerAccess $reviewerAccess Who may read the case's private review records.
+	 * @param CaseReviewerAccessInterface $reviewerAccess Who may read the case's private review records.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewConfiguration $configuration,
-		private readonly EngineTaskGateway $tasks,
+		private readonly EngineTaskGatewayInterface $tasks,
 		private readonly IUserManager $userManager,
 		private readonly IL10N $l10n,
-		private readonly CaseReviewerAccess $reviewerAccess,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -149,52 +154,118 @@ class ReviewBatches {
 		$name = trim($name);
 		$this->validate(caseId: $caseId, name: $name, assignee: $assignee, documents: $documents);
 
-		$batch = $this->save(
-			batch: [
-				'case' => $caseId,
-				'name' => $name,
-				'documents' => $documents,
-				'filter' => $filter,
-				'assignee' => $assignee,
-				'status' => 'open',
-			]
-		);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => $filter, 'assignee' => $assignee, 'status' => 'open'];
+		$batch = $this->save(batch: $fields);
+		$this->stampReviews(caseId: $caseId, batchId: $this->batchIdOf(batch: $batch), documents: $documents);
+		$assigned = $this->assign(batch: $batch, written: ['userId' => $userId] + $fields);
 
+		$progress = ['assessed' => 0, 'total' => count($documents)];
+		return ['batch' => $assigned['batch'], 'taskCreated' => $assigned['taskId'] !== '', 'progress' => $progress, 'access' => $assigned['access']];
+	}//end create()
+
+	/**
+	 * The id of a stored batch.
+	 *
+	 * @param array<string, mixed> $batch The stored batch.
+	 *
+	 * @return string The batch id.
+	 */
+	private function batchIdOf(array $batch): string {
+		return (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+	}//end batchIdOf()
+
+	/**
+	 * Give a stored batch's reviewer a task, write the task on the batch and reconcile the case's reviewer access.
+	 *
+	 * @param array<string, mixed> $batch   The stored batch.
+	 * @param array<string, mixed> $written The batch as written (case, name, documents, assignee) and the creating userId.
+	 *
+	 * @return array{batch: array<string, mixed>, taskId: string, access: array{status: string, granted: int, revoked: int, refused: int}}
+	 *
+	 * @throws RefusedException When the batch cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function assign(array $batch, array $written): array {
+		$batchId = $this->batchIdOf(batch: $batch);
+		$assignment = ['caseId' => $written['case'], 'batchId' => $batchId, 'name' => $written['name']];
+		$assignment += ['assignee' => $written['assignee'], 'count' => count($written['documents'])];
+		$taskId = $this->handTask(assignment: $assignment, userId: $written['userId']);
+		$batch = $this->withTask(batch: $batch, taskId: $taskId);
+
+		return ['batch' => $batch, 'taskId' => $taskId, 'access' => $this->reconcile(caseId: $written['case'], batchId: $batchId)];
+	}//end assign()
+
+	/**
+	 * Write a batch on each of its documents' reviews, with the depth that applies to the document.
+	 *
+	 * @param string       $caseId    The case UUID.
+	 * @param string       $batchId   The batch.
+	 * @param list<string> $documents The documents.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function stampReviews(string $caseId, string $batchId, array $documents): void {
 		$reviews = $this->reviews->forCase(caseId: $caseId);
 		$reviewDepth = $this->configuration->reviewDepth(caseId: $caseId);
 		foreach ($documents as $ref) {
 			$review = ($reviews[$ref] ?? ['case' => $caseId, 'documentRef' => $ref, 'relevance' => DocumentRelevance::UNMARKED]);
 			$review['batch'] = $batchId;
-			$pageCount = null;
-			if (isset($review['pageCount']) === true && is_numeric($review['pageCount']) === true) {
-				$pageCount = (int)$review['pageCount'];
-			}
-
-			$review = array_merge(
-				$review,
-				$this->configuration->depthOfDocument(
-					reviewDepth: $reviewDepth,
-					document: ($this->caseDocuments->meta(documentId: $ref) ?? []),
-					pageCount: $pageCount,
-				)
-			);
+			$review = $this->withDepth(review: $review, reviewDepth: $reviewDepth, ref: $ref);
 			$this->reviews->save(review: $review);
 		}
+	}//end stampReviews()
 
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+	/**
+	 * A review with the depth that applies to its document and the pages it requires.
+	 *
+	 * @param array<string, mixed> $review      The review.
+	 * @param array<string, mixed> $reviewDepth The case's depth by document type.
+	 * @param string               $ref         The document.
+	 *
+	 * @return array<string, mixed> The review.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function withDepth(array $review, array $reviewDepth, string $ref): array {
+		$pageCount = null;
+		if (isset($review['pageCount']) === true && is_numeric($review['pageCount']) === true) {
+			$pageCount = (int)$review['pageCount'];
+		}
+
+		return array_merge(
+			$review,
+			$this->configuration->depthOfDocument(
+				reviewDepth: $reviewDepth,
+				document: ($this->caseDocuments->meta(documentId: $ref) ?? []),
+				pageCount: $pageCount,
+			)
+		);
+	}//end withDepth()
+
+	/**
+	 * A batch with its reviewer's task on it, saved again, when a task was created.
+	 *
+	 * @param array<string, mixed> $batch  The saved batch.
+	 * @param string               $taskId The task, or '' when none was created.
+	 *
+	 * @return array<string, mixed> The batch.
+	 *
+	 * @throws RefusedException When the batch cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function withTask(array $batch, string $taskId): array {
 		if ($taskId !== '') {
 			$batch['task'] = $taskId;
 			$batch = $this->save(batch: $batch);
 		}
 
-		return [
-			'batch' => $batch,
-			'taskCreated' => $taskId !== '',
-			'progress' => ['assessed' => 0, 'total' => count($documents)],
-			'access' => $this->reconcile(caseId: $caseId, batchId: $batchId),
-		];
-	}//end create()
+		return $batch;
+	}//end withTask()
 
 	/**
 	 * Create the batch a recall sample is judged in, and give its reviewer a task.
@@ -217,26 +288,10 @@ class ReviewBatches {
 	 */
 	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
 		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
-		$batch = $this->save(
-			batch: [
-				'case' => $caseId,
-				'name' => $name,
-				'documents' => $documents,
-				'filter' => ['recallSample' => $sampleId],
-				'assignee' => $assignee,
-				'status' => 'open',
-			]
-		);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
-		if ($taskId !== '') {
-			$batch['task'] = $taskId;
-			$batch = $this->save(batch: $batch);
-		}
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => ['recallSample' => $sampleId], 'assignee' => $assignee, 'status' => 'open'];
 
-		$this->reconcile(caseId: $caseId, batchId: $batchId);
-
-		return $batch;
+		return $this->assign(batch: $this->save(batch: $fields), written: ['userId' => $userId] + $fields)['batch'];
 	}//end createSampleBatch()
 
 	/**
@@ -279,7 +334,7 @@ class ReviewBatches {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a Review batch was stored but the reviewer access of its case could not be reconciled',
-				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'batch' => $batchId, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -289,33 +344,29 @@ class ReviewBatches {
 	/**
 	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $batchId The batch.
-	 * @param string $name The batch's name.
-	 * @param string $assignee The reviewer.
-	 * @param int $count How many documents the batch holds.
-	 * @param string $userId Who made the batch.
+	 * @param array{caseId: string, batchId: string, name: string, assignee: string, count: int} $assignment The batch and its reviewer.
+	 * @param string                                                                          $userId     Who made the batch.
 	 *
 	 * @return string The engine task uuid, or ''.
 	 */
-	private function handTask(string $caseId, string $batchId, string $name, string $assignee, int $count, string $userId): string {
+	private function handTask(array $assignment, string $userId): string {
 		$taskId = $this->tasks->mirrorImport(
 			task: [
-				'id' => self::TASK_KIND.':'.$batchId,
-				'title' => $this->l10n->t('Review the batch "%s"', [$name]),
-				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$count, $name]),
+				'id' => self::TASK_KIND.':'.$assignment['batchId'],
+				'title' => $this->l10n->t('Review the batch "%s"', [$assignment['name']]),
+				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$assignment['count'], $assignment['name']]),
 				'status' => 'available',
-				'assignee' => $assignee,
+				'assignee' => $assignment['assignee'],
 				'priority' => 'normal',
-				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $batchId]],
+				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $assignment['batchId']]],
 			],
-			caseId: $caseId,
+			caseId: $assignment['caseId'],
 			actor: $userId,
 		);
 		if ($taskId === '') {
 			$this->logger->warning(
 				'Dossiq: a Review batch was created but the engine did not take its task',
-				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId]
+				['app' => AppIdentity::APP_ID, 'case' => $assignment['caseId'], 'batch' => $assignment['batchId']]
 			);
 		}
 
@@ -361,6 +412,22 @@ class ReviewBatches {
 	 * @throws RefusedException When something is missing, unknown or taken.
 	 */
 	private function validate(string $caseId, string $name, string $assignee, array $documents): void {
+		$this->assertNamedAndAssigned(name: $name, assignee: $assignee);
+		$this->assertReviewerAdmitted(assignee: $assignee);
+		$this->assertDocumentsFree(caseId: $caseId, documents: $documents);
+	}//end validate()
+
+	/**
+	 * Refuse a batch while batches cannot be stored, or one without a name or a known reviewer.
+	 *
+	 * @param string $name     The batch name.
+	 * @param string $assignee The reviewer's user id.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When batches cannot be stored, the name is empty or the reviewer is unknown.
+	 */
+	private function assertNamedAndAssigned(string $name, string $assignee): void {
 		if ($this->isAvailable() === false) {
 			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE);
 		}
@@ -372,9 +439,19 @@ class ReviewBatches {
 		if ($assignee === '' || $this->userManager->userExists($assignee) === false) {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
+	}//end assertNamedAndAssigned()
 
-		$this->assertReviewerAdmitted(assignee: $assignee);
-
+	/**
+	 * Refuse a batch without documents, with a document of another case, or with one already in an open batch.
+	 *
+	 * @param string        $caseId    The case uuid.
+	 * @param array<string> $documents The document ids.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the documents cannot form this batch.
+	 */
+	private function assertDocumentsFree(string $caseId, array $documents): void {
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
 		}
@@ -390,17 +467,7 @@ class ReviewBatches {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-	}//end validate()
-
-	/**
-	 * Whether the batch schema can be written.
-	 *
-	 * @return bool True when OpenRegister, the batch schema and the review schema are configured.
-	 */
-	private function isAvailable(): bool {
-		return $this->reviews->isAvailable() === true
-			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
-	}//end isAvailable()
+	}//end assertDocumentsFree()
 
 	/**
 	 * The batches of a case the caller may read, as stored: what a listing shows.
@@ -466,25 +533,7 @@ class ReviewBatches {
 		}
 
 		unset($batch['@self'], $batch['id'], $batch['uuid']);
-		try {
-			$saved = $this->settingsService->getObjectService()->saveObject(
-				object: $batch,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a Review batch could not be written',
-				['app' => Application::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			throw $this->refusal(
-				rule: 'review-batch-unavailable',
-				sentence: self::UNSTORED,
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
+		$saved = $this->writeBatch(batch: $batch, uuid: $uuid);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			return (array)$saved->jsonSerialize();
@@ -494,21 +543,31 @@ class ReviewBatches {
 	}//end save()
 
 	/**
-	 * A refusal, 422 unless said otherwise.
+	 * Write a batch to OpenRegister.
 	 *
-	 * @param string $rule The rule.
-	 * @param string $sentence The static sentence.
-	 * @param int $status The status.
-	 * @param Throwable|null $previous The cause.
+	 * @param array<string, mixed> $batch The batch, without its identifiers.
+	 * @param string|null          $uuid  The batch's uuid, or null for a new batch.
 	 *
-	 * @return RefusedException The refusal.
+	 * @return mixed The saved object.
+	 *
+	 * @throws RefusedException When the batch cannot be written.
 	 */
-	private function refusal(
-		string $rule,
-		string $sentence,
-		int $status = RefusedException::STATUS_UNPROCESSABLE,
-		?Throwable $previous = null,
-	): RefusedException {
-		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
-	}//end refusal()
+	private function writeBatch(array $batch, ?string $uuid) {
+		try {
+			return $this->settingsService->getObjectService()->saveObject(
+				object: $batch,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+						),
+					uuid: $uuid
+				)
+			);
+		} catch (Throwable $e) {
+			$context = ['app' => AppIdentity::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()];
+			$this->logger->error('Dossiq: a Review batch could not be written', $context);
+			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE, previous: $e);
+		}
+	}//end writeBatch()
 }//end class

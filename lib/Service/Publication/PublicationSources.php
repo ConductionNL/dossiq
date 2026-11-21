@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooCaseDocuments;
 use RuntimeException;
 
 /**
@@ -47,11 +47,11 @@ class PublicationSources {
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settingsService The case, decision, assessment and document schemas.
-	 * @param WooCaseDocuments|null $caseDocuments   Loads a case document with its file content.
+	 * @param WooCaseDocumentsInterface|null $caseDocuments   Loads a case document with its file content.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooCaseDocumentsInterface $caseDocuments = null,
 	) {
 	}//end __construct()
 
@@ -116,20 +116,48 @@ class PublicationSources {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function delivery(object $objectService, string $register, string $caseId): array {
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		$documentSchema = $this->settingsService->getConfigValue('document_schema');
+		$location = [$objectService, $register];
+		$assessments = $this->assessmentsOf(location: $location, caseId: $caseId);
 
-		$assessments = [];
-		if (empty($assessmentSchema) === false) {
-			$assessments = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $assessmentSchema,
-				filters: ['caseRef' => $caseId, '_limit' => 500],
-			);
+		$documentLoader = $this->documentLoader(location: $location);
+
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
+	}//end delivery()
+
+	/**
+	 * The WOO assessments of a case, or none when no assessment schema is configured.
+	 *
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the dossiq register slug.
+	 * @param string                      $caseId   The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The assessments.
+	 */
+	private function assessmentsOf(array $location, string $caseId): array {
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if (empty($assessmentSchema) === true) {
+			return [];
 		}
 
-		$documentLoader = function (string $documentRef) use ($objectService, $register, $documentSchema): ?array {
+		return $this->searchObjectsAsArrays(
+			objectService: $location[0],
+			register: $location[1],
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, '_limit' => 500],
+		);
+	}//end assessmentsOf()
+
+	/**
+	 * Load one document by reference: the case upload's informatieobject, else the configured document schema's row.
+	 *
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the dossiq register slug.
+	 *
+	 * @return callable(string): (array<string, mixed>|null) The loader.
+	 */
+	private function documentLoader(array $location): callable {
+		[$objectService, $register] = $location;
+		$documentSchema = $this->settingsService->getConfigValue('document_schema');
+
+		return function (string $documentRef) use ($objectService, $register, $documentSchema): ?array {
 			// The informatieobject the case upload wrote, with its file read in.
 			if ($this->caseDocuments !== null) {
 				return $this->caseDocuments->load(documentId: $documentRef);
@@ -141,9 +169,7 @@ class PublicationSources {
 
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
-
-		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
-	}//end delivery()
+	}//end documentLoader()
 
 	/**
 	 * The disclosable documents and, beside each, what the delivered set records of it.
@@ -161,43 +187,82 @@ class PublicationSources {
 	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function collectDelivery(array $assessments, callable $documentLoader): array {
 		$documents = [];
 		$items = [];
 
 		foreach ($assessments as $assessment) {
-			$classification = (string)($assessment['classification'] ?? '');
-			$originalRef = (string)($assessment['documentRef'] ?? '');
-			$deliveredRef = '';
-			if ($classification === 'openbaar') {
-				$deliveredRef = $originalRef;
-			} else if ($classification === 'deels_openbaar') {
-				// No finalized redaction yet: excluded. Never fall back to the original.
-				$deliveredRef = (string)($assessment['redactedDocumentRef'] ?? '');
-			}
+			$document = self::deliveredDocument(assessment: $assessment, documentLoader: $documentLoader);
 
-			if ($deliveredRef === '') {
-				continue;
+			if ($document !== null) {
+				$documents[] = $document;
+				$items[] = self::itemOf(assessment: $assessment, document: $document);
 			}
-
-			$document = $documentLoader($deliveredRef);
-			if ($document === null) {
-				continue;
-			}
-
-			$documents[] = $document;
-			$items[] = [
-				'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? (($assessment['@self'] ?? [])['id'] ?? ''))),
-				'classification' => $classification,
-				'deliveredRef' => $deliveredRef,
-				'originalRef' => $originalRef,
-				'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
-				'content' => (string)($document['content'] ?? ''),
-			];
-		}//end foreach
+		}
 
 		return ['documents' => $documents, 'items' => $items];
 	}//end collectDelivery()
+
+	/**
+	 * The document that goes out for an assessment, or null when none may or the loader finds none.
+	 *
+	 * @param array<string, mixed> $assessment     The document assessment.
+	 * @param callable             $documentLoader `fn(string $documentRef): ?array`.
+	 *
+	 * @return array<string, mixed>|null The delivered document.
+	 */
+	private static function deliveredDocument(array $assessment, callable $documentLoader): ?array {
+		$deliveredRef = self::deliveredRefOf(assessment: $assessment);
+		if ($deliveredRef === '') {
+			return null;
+		}
+
+		return $documentLoader($deliveredRef);
+	}//end deliveredDocument()
+
+	/**
+	 * The file that goes out for an assessment, or blank when none may.
+	 *
+	 * `openbaar` goes out as itself and `deels_openbaar` only as its finalized
+	 * redaction, never as the original; anything else never goes out.
+	 *
+	 * @param array<string, mixed> $assessment The document assessment.
+	 *
+	 * @return string The delivered document's ref, or ''.
+	 */
+	private static function deliveredRefOf(array $assessment): string {
+		$classification = (string)($assessment['classification'] ?? '');
+		if ($classification === 'openbaar') {
+			return (string)($assessment['documentRef'] ?? '');
+		}
+
+		if ($classification === 'deels_openbaar') {
+			return (string)($assessment['redactedDocumentRef'] ?? '');
+		}
+
+		return '';
+	}//end deliveredRefOf()
+
+	/**
+	 * What the delivered set records of one document that went out.
+	 *
+	 * @param array<string, mixed> $assessment The document assessment.
+	 * @param array<string, mixed> $document   The delivered document.
+	 *
+	 * @return array<string, string> The manifest item.
+	 */
+	private static function itemOf(array $assessment, array $document): array {
+		$self = ($assessment['@self'] ?? []);
+
+		return [
+			'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? ($self['id'] ?? ''))),
+			'classification' => (string)($assessment['classification'] ?? ''),
+			'deliveredRef' => self::deliveredRefOf(assessment: $assessment),
+			'originalRef' => (string)($assessment['documentRef'] ?? ''),
+			'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
+			'content' => (string)($document['content'] ?? ''),
+		];
+	}//end itemOf()
 }//end class

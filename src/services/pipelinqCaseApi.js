@@ -20,7 +20,7 @@
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
  */
 import axios from '@nextcloud/axios'
-import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 
 /**
@@ -32,18 +32,6 @@ import { generateUrl } from '@nextcloud/router'
  */
 function caseUrl(caseId, path) {
 	return generateUrl('/apps/dossiq/api/cases/{caseId}/pipelinq', { caseId }) + path
-}
-
-/**
- * The contact moments this case is a member of.
- *
- * @param {string} caseId The case uuid.
- * @return {Promise<{available: boolean, moments: Array, indicators: Array}>} The panel.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
- */
-export async function fetchContactMoments(caseId) {
-	const { data } = await axios.get(caseUrl(caseId, '/contact-moments'))
-	return data
 }
 
 /**
@@ -76,60 +64,6 @@ export async function fileContactMoment(caseId, momentId, targetCaseId) {
 		),
 		{ targetCaseId },
 	)
-	return data
-}
-
-/**
- * Take a contact moment off this case.
- *
- * @param {string} caseId The case.
- * @param {string} momentId The contact moment.
- * @return {Promise<object>} The answer.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
- */
-export async function unfileContactMoment(caseId, momentId) {
-	const { data } = await axios.delete(
-		caseUrl(caseId, '/contact-moments/' + encodeURIComponent(momentId)),
-	)
-	return data
-}
-
-/**
- * The party kinds this case's type accepts.
- *
- * @param {string} caseId The case uuid.
- * @return {Promise<{source: string, kinds: Array, available: boolean}>} The kinds.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
- */
-export async function fetchCasePartyKinds(caseId) {
-	const { data } = await axios.get(caseUrl(caseId, '/party-kinds'))
-	return data
-}
-
-/**
- * The language to write to one party of this case in.
- *
- * @param {string} caseId The case uuid.
- * @param {string} partyId The party uuid.
- * @return {Promise<{available: boolean, language: string, rule: string, stated: boolean}>} The answer.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
- */
-export async function fetchPartyLanguage(caseId, partyId) {
-	const { data } = await axios.get(
-		caseUrl(caseId, '/parties/' + encodeURIComponent(partyId) + '/language'),
-	)
-	return data
-}
-
-/**
- * The programme this case hangs under.
- *
- * @param {string} caseId The case uuid.
- * @return {Promise<{available: boolean, programme: object|null}>} The answer.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
- */
-export async function fetchCaseProgramme(caseId) {
-	const { data } = await axios.get(caseUrl(caseId, '/programme'))
 	return data
 }
 
@@ -223,176 +157,6 @@ export function refusalOf(error, fallback) {
  */
 export function kindCode(kind) {
 	return String(kind?.code || kind?.key || '')
-}
-
-/**
- * The line that says on how many other cases a moment also is.
- *
- * Counted, not named, for a case the reader may not see. '' when the moment
- * is on this case only.
- *
- * @param {object} moment The moment as the controller answered it.
- * @return {string} The line.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
- */
-export function sharedLine(moment) {
-	if (moment?.shared !== true) {
-		return ''
-	}
-
-	const named = Array.isArray(moment.alsoOnCases) ? moment.alsoOnCases.length : 0
-	const hidden = Number(moment.alsoOnHiddenCount || 0)
-
-	if (named === 0 && hidden === 0) {
-		return ''
-	}
-
-	if (hidden === 0) {
-		return n(
-			'dossiq',
-			'Also on {count} other case',
-			'Also on {count} other cases',
-			named,
-			{ count: named },
-		)
-	}
-
-	if (named === 0) {
-		return n(
-			'dossiq',
-			'Also on {count} case you may not see',
-			'Also on {count} cases you may not see',
-			hidden,
-			{ count: hidden },
-		)
-	}
-
-	return (
-		n(
-			'dossiq',
-			'Also on {count} other case',
-			'Also on {count} other cases',
-			named,
-			{ count: named },
-		)
-		+ ' '
-		+ n(
-			'dossiq',
-			'and {count} you may not see',
-			'and {count} you may not see',
-			hidden,
-			{ count: hidden },
-		)
-	)
-}
-
-/**
- * The sentence for the language to write to a party in.
- *
- * An unset preference is said as unset, naming what is used instead.
- *
- * @param {object|null} answer The controller's answer.
- * @return {string} The sentence, '' when there is no answer yet.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
- */
-export function languageLine(answer) {
-	if (!answer || typeof answer.language !== 'string' || answer.language === '') {
-		return ''
-	}
-
-	const language = languageName(answer.language)
-
-	if (answer.available !== true) {
-		return t(
-			'dossiq',
-			'Writing language: {language}. No preference can be read on this instance.',
-			{ language },
-		)
-	}
-
-	if (answer.stated === true) {
-		return t('dossiq', 'Writing language: {language}. Asked for by the party.', {
-			language,
-		})
-	}
-
-	if (answer.rule === 'instanceDefault') {
-		return t(
-			'dossiq',
-			'Writing language: {language}. No preference recorded, so the default language of this instance.',
-			{ language },
-		)
-	}
-
-	return t('dossiq', 'Writing language: {language}. No preference recorded.', {
-		language,
-	})
-}
-
-/**
- * A language tag as a name a handler reads, the tag itself when unknown.
- *
- * @param {string} tag The BCP 47 tag.
- * @return {string} The name.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
- */
-export function languageName(tag) {
-	const names = {
-		nl: t('dossiq', 'Dutch'),
-		en: t('dossiq', 'English'),
-		de: t('dossiq', 'German'),
-		fr: t('dossiq', 'French'),
-		fy: t('dossiq', 'Frisian'),
-	}
-	const key = String(tag || '')
-		.toLowerCase()
-		.split('-')[0]
-	return names[key] || String(tag || '')
-}
-
-/**
- * The sentence for a programme's progress, with the mode that produced it.
- *
- * An uncomputable figure says so with pipelinq's reason, and is never zero.
- *
- * @param {object|null} progress The progress the controller answered.
- * @return {string} The sentence.
- * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
- */
-export function progressLine(progress) {
-	if (!progress || progress.available === false) {
-		return t('dossiq', 'Progress cannot be read on this instance.')
-	}
-
-	if (
-		progress.computable !== true
-		|| progress.progress === null
-		|| progress.progress === undefined
-	) {
-		const reason = String(progress.sentence || '')
-		return reason === ''
-			? t('dossiq', 'Progress cannot be computed.')
-			: t('dossiq', 'Progress cannot be computed: {reason}', { reason })
-	}
-
-	const percent = Number(progress.progress)
-	const modes = {
-		manual: t('dossiq', '{percent} percent done, entered by hand.', { percent }),
-		fromTasks: t(
-			'dossiq',
-			'{percent} percent done, measured by the closed tasks of the programme.',
-			{ percent },
-		),
-		fromEffort: t(
-			'dossiq',
-			'{percent} percent done, measured by the hours booked against the estimate.',
-			{ percent },
-		),
-	}
-
-	return (
-		modes[progress.mode] || t('dossiq', '{percent} percent done.', { percent })
-	)
 }
 
 /**

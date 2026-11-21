@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for the planned action service.
@@ -145,10 +146,13 @@ class PlannedActionServiceTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saved = array_merge($object, ['id' => ($uuid ?? 'new-action')]);
 				$this->writes[] = ['uuid' => $uuid, 'object' => $saved];
 

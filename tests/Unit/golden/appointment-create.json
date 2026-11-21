@@ -1,0 +1,54 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "success": false,
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "no case": {
+        "status": 400,
+        "body": {
+            "success": false,
+            "error": "caseId required"
+        },
+        "calls": []
+    },
+    "no write access on the case": {
+        "status": 403,
+        "body": {
+            "success": false,
+            "error": "Not authorized"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "booked with every field": {
+        "status": 200,
+        "body": {
+            "success": true,
+            "appointment": {
+                "id": "apt-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "bookAppointment case-1 {\"productId\":\"p-1\",\"locationId\":\"l-1\",\"dateTime\":\"2026-12-01T10:00\",\"duration\":45,\"citizenName\":\"Sanne\",\"citizenEmail\":\"s@example.org\",\"citizenPhone\":\"0612345678\",\"notes\":\"ramp\"}"
+        ]
+    },
+    "booked with the defaults": {
+        "status": 200,
+        "body": {
+            "success": true,
+            "appointment": {
+                "id": "apt-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "bookAppointment case-1 {\"productId\":null,\"locationId\":null,\"dateTime\":null,\"duration\":30,\"citizenName\":\"\",\"citizenEmail\":\"\",\"citizenPhone\":null,\"notes\":null}"
+        ]
+    }
+}

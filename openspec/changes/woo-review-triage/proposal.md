@@ -19,7 +19,7 @@ Woo capability programme, round 1, wave 3. Rows 19.7, 19.8, 19.9, 19.10, 19.11 a
 Implements Ruben's decision D1. Before D1 these rows were planned on opencatalogi, and the gap texts
 still name opencatalogi's model (`#wooAssessment`, its `batch` parent, `publishBatch`). This change
 translates them onto dossiq's: the Woo case is the container, `wooDocumentAssessment` is the
-disclosure verdict, and the publishable set is what `WooPublicationService::publish()` selects.
+disclosure verdict, and the publishable set is what `OutcomePublisher::publish()` selects.
 
 ## Summary
 

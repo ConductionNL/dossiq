@@ -1,0 +1,20 @@
+{
+	"$comment": "A read-only access link for Sanne de Vries on the open Lindelaan Woo request (Openbare verlichting fietspad Lindelaan), so the Toegang card on the simple People tab (DqZaakBetrokkenen) reads \"Link for Sanne de Vries\" with SV, \"Read only, without an account\" and an Expires pill (people-tab-access-card task 2.1). The board draws 15 November; the link expires two weeks after the set is loaded so the pill keeps reading as a live link. Pieter, the case's assignee, made it, so he sees the row. The share is example data only: no OpenRegister access link is minted for it, so it has no accessLinkId and a revoke from the card answers with its error text.",
+	"objects": [
+		{
+			"key": "woo-fietspad-besluitklaar-link-sanne",
+			"register": "dossiq",
+			"schema": "caseShare",
+			"data": {
+				"caseId": "{{object:woo-fietspad-besluitklaar.id}}",
+				"shareType": "link",
+				"permissionLevel": "bekijken",
+				"capabilities": "read",
+				"label": "Sanne de Vries",
+				"status": "active",
+				"expiresAt": "{{datetime:14 17:00}}",
+				"createdBy": "{{cast:pieter.uid}}"
+			}
+		}
+	]
+}

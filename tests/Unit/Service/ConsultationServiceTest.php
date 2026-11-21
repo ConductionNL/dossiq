@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
@@ -36,6 +37,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * ObjectService stub matching the named-arg signatures used in ConsultationService.
@@ -71,7 +74,7 @@ interface ConsultationObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function find(string $id, string $register, string $schema): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Save or update an object.
@@ -101,12 +104,15 @@ interface ConsultationObjectServiceStub {
  * Unit tests for ConsultationService.
  *
  * @covers \OCA\Dossiq\Service\ConsultationService
- *
+ * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationStatusRules
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -158,20 +164,22 @@ class ConsultationServiceTest extends TestCase {
 			settingsService: $this->settings,
 			logger: $this->logger,
 			adviceDelegation: $this->adviceDelegation,
-			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph($repository),
-			dates: $this->caseDates(),
-			// A REAL ObligationService over the same mocked SettingsService,
-			// not a double. Every assertion in this file is about behaviour
-			// the advice request keeps now that the blocking is one declared
-			// mechanism, and a double would let that behaviour be asserted
-			// against a stub of itself.
-			obligations: new ObligationService(
-				settingsService: $this->settings,
-				declaration: new ObligationDeclaration(),
-				dates: $this->caseDates(),
-				logger: $this->logger,
+			records: new ConsultationRecords(
+				repository: $repository,
+				dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
+				// A REAL ObligationService over the same mocked SettingsService,
+				// not a double. Every assertion in this file is about behaviour
+				// the advice request keeps now that the blocking is one declared
+				// mechanism, and a double would let that behaviour be asserted
+				// against a stub of itself.
+				obligations: new ObligationService(
+					settingsService: $this->settings,
+					declaration: new ObligationDeclaration(),
+					dates: $this->caseDates(),
+					logger: $this->logger,
+				),
 			),
+			dates: $this->caseDates(),
 		);
 
 	}//end setUp()
@@ -355,5 +363,108 @@ class ConsultationServiceTest extends TestCase {
 		);
 
 	}//end testApproveExtensionRejectsInvalidDateFormat()
+
+	/**
+	 * A move the declared status graph does not allow is refused, naming both statuses.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAMoveTheStatusGraphDoesNotAllowIsRefused(): void {
+		$objectService = $this->createMock(originalClassName: ConsultationObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'con-uuid', 'status' => 'closed']);
+		$objectService->expects($this->never())->method('saveObject');
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
+
+		$this->expectException(exception: \RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Invalid status transition: closed -> open');
+
+		$this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'open');
+
+	}//end testAMoveTheStatusGraphDoesNotAllowIsRefused()
+
+	/**
+	 * A stored status outside the graph does not constrain the move, and closing stamps closedAt.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAStoredStatusOutsideTheGraphDoesNotConstrainTheMove(): void {
+		$objectService = new class {
+
+			/**
+			 * The patches written, in order.
+			 *
+			 * @var array<int, ObjectPatch>
+			 */
+			public array $patches = [];
+
+			/**
+			 * The stored consultation.
+			 *
+			 * @param string                 $id      The object id.
+			 * @param ObjectFindOptions|null $options Ignored.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				return ['id' => $id, 'status' => 'legacy'];
+			}
+
+			/**
+			 * Record a partial write.
+			 *
+			 * @param ObjectPatch $patch The patch.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(ObjectPatch $patch): array {
+				$this->patches[] = $patch;
+				return ['id' => $patch->objectId] + $patch->data;
+			}
+
+			/**
+			 * No rows.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 * @param mixed                ...$scope Ignored.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function searchObjects(array $query, mixed ...$scope): array {
+				return [];
+			}
+		};
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
+
+		$result = $this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'closed');
+
+		$this->assertSame(expected: ['id' => 'con-uuid', 'status' => 'closed'], actual: $result);
+		$this->assertCount(expectedCount: 1, haystack: $objectService->patches);
+		$this->assertSame(expected: 'con-uuid', actual: $objectService->patches[0]->objectId);
+		$this->assertSame(expected: 'closed', actual: $objectService->patches[0]->data['status']);
+		$this->assertArrayHasKey(key: 'closedAt', array: $objectService->patches[0]->data);
+
+	}//end testAStoredStatusOutsideTheGraphDoesNotConstrainTheMove()
+
+	/**
+	 * Only a request flagged mandatory with the boolean true, and not answered, closed or withdrawn, blocks.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testOnlyAnUnansweredMandatoryRequestBlocks(): void {
+		$this->assertTrue(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'received']));
+		$this->assertTrue(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true]));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'withdrawn']));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['mandatory' => 'true', 'status' => 'open']));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['status' => 'open']));
+
+	}//end testOnlyAnUnansweredMandatoryRequestBlocks()
 
 }//end class

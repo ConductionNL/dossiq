@@ -280,3 +280,92 @@ what was received.
 - **WHEN** the aanvulling is received
 - **THEN** the term SHALL resume
 - **AND** the record SHALL carry what was received and when
+
+### Requirement: Suspending from the case page MUST offer the case type's pause reasons
+
+When the case type declares pause reasons, the Opschorten form SHALL offer them in a picker with an Other entry, SHALL show the picked reason's legal basis under the days, and SHALL post the picked reason's key. The server SHALL store a declared key on the pause and SHALL refuse a key the case type does not declare. Without declared reasons, the form SHALL keep the free-text reason.
+
+#### Scenario: A handler picks a declared reason
+
+- **GIVEN** a case whose case type declares the pause reason "Wacht op machtiging van de verzoeker" with legal basis "Awb 4:5, hersteltermijn"
+- **WHEN** the handler opens Opschorten and picks that reason
+- **THEN** the days field shows "Awb 4:5, hersteltermijn" under it
+- **AND** Opschorten can be confirmed without free text
+- **AND** the pause is registered with that reason's key, and its name as the rationale
+
+#### Scenario: A handler writes their own reason
+
+- **GIVEN** the same case type
+- **WHEN** the handler picks Other
+- **THEN** the free-text reason shows and must be filled before Opschorten can be confirmed
+- **AND** the pause is registered with no reason key, as before
+
+#### Scenario: A case type without pause reasons
+
+- **GIVEN** a case whose case type declares no pause reasons
+- **WHEN** the handler opens Opschorten
+- **THEN** the form shows the free-text reason and the days, as before
+
+#### Scenario: An undeclared key is refused
+
+- **GIVEN** a case whose case type does not declare the key "made-up"
+- **WHEN** a client posts Opschorten with `pauseReason: "made-up"`
+- **THEN** the server answers 422 with code `pause_reason_not_declared`
+- **AND** no pause is registered
+
+### Requirement: A pause reason can carry its default days
+
+A pause reason MAY declare `defaultDays`, a positive whole number. The Opschorten form SHALL fill "Days the applicant
+is given" with it when the handler picks that reason; a reason without it, and Other, SHALL leave the days as they
+were. Zero, a negative or a non-number SHALL read as no default.
+
+#### Scenario: A reason with 28 days
+
+- **GIVEN** the case type's reason "Wacht op machtiging" declares 28 default days
+- **WHEN** the handler picks it in Opschorten
+- **THEN** the days read 28, and the handler can change them before confirming
+
+### Requirement: An expired pause SHALL resume the term by itself and tell the handler (REQ-TERM-080)
+
+When a paused term reaches the end of its pause days without an answer, the system SHALL set the
+term back to `lopend` by itself, record a `TermijnGebeurtenis` of type `hervat` that says it
+resumed because the pause ended, and send the case's handler a notification that names the case
+and the new end date. A handler who resumes the term earlier SHALL be handled as REQ-TERM-002
+describes, and no automatic resume SHALL follow.
+
+Rows: `8.10` (dossiq matrix).
+
+#### Scenario: The pause runs out
+@e2e exclude The resume runs on an engine timer fire from cron, which a browser run cannot bring forward; tests/Unit/Listener/TermijnTimerFiredListenerTest.php and tests/Unit/Service/TermResumedAfterExpiryTest.php drive the fire and assert the status, the hervat event and its notice.
+
+- **GIVEN** a term paused for 14 days on 1 July with no answer from the applicant
+- **WHEN** 15 July passes
+- **THEN** the term's `status` is `lopend` again and a `hervat` event says it resumed because the pause ended
+- **AND** the handler gets a notification naming the case and its new end date
+
+#### Scenario: A handler resumed earlier
+@e2e exclude The late helper fire comes from cron; tests/Unit/Listener/TermijnTimerFiredListenerTest.php fires it on a resumed term and asserts no second hervat event and no notice.
+
+- **GIVEN** a 14-day pause that the handler resumed after 8 days
+- **WHEN** the original pause end passes
+- **THEN** no second `hervat` event is recorded and no notification is sent
+
+### Requirement: An extension's end date is rolled and reaches the case (REQ-OTE-03)
+
+`DeadlineExtensionService` SHALL roll a requested end date with the
+Algemene termijnenwet roll (`rollTermEndFor()`, with the instance's
+definition) before it checks the declared extension period and before it
+stores `endDateCurrent`. It SHALL keep the requested date as
+`endDateBeforeRoll` on the instance. The days impact SHALL be counted to the
+rolled date. The rolled date SHALL reach the case's `deadline` (REQ-OTE-01), as
+the new end of a pause and of a resume does.
+
+#### Scenario: A Sunday sent to termijn#verleng lands on Monday
+@e2e exclude a date roll behind the verleng route; covered by tests/Unit/Service/DeadlineExtensionLimitTest.php
+
+- **GIVEN** a running term instance with `endDateCurrent` 2026-11-02
+- **WHEN** POST `/api/termijn/instances/{id}/verleng` is called with `newEinddatum` 2026-11-15, a Sunday, and a rationale
+- **THEN** the instance's `endDateCurrent` SHALL be 2026-11-16
+- **AND** `endDateBeforeRoll` SHALL be 2026-11-15
+- **AND** the case `deadline` SHALL be 2026-11-16
+

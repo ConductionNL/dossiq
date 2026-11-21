@@ -21,15 +21,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Kcc\RoutingRuleService;
+use OCA\Dossiq\Controller\Support\ReadsKccBodies;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,24 +46,26 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class KccRoutingController extends Controller {
+	use ReadsKccBodies;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param RoutingRuleService $routingRuleService The routing-rule service.
+	 * @param RoutingRuleServiceInterface $routingRuleService The routing-rule service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
 	public function __construct(
 		IRequest $request,
-		private RoutingRuleService $routingRuleService,
+		private RoutingRuleServiceInterface $routingRuleService,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -72,7 +75,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function index(): JSONResponse {
 		$unauthorized = $this->requireAuthenticated();
@@ -101,7 +104,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -129,7 +132,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
@@ -157,7 +160,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function destroy(string $id): JSONResponse {
@@ -182,7 +185,7 @@ class KccRoutingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function evaluate(): JSONResponse {
 		$unauthorized = $this->requireAuthenticated();
@@ -234,24 +237,4 @@ class KccRoutingController extends Controller {
 
 		return null;
 	}//end requireAdmin()
-
-	/**
-	 * Read the JSON / form body parameters, excluding routing params.
-	 *
-	 * @return array<string, mixed> The body parameters.
-	 */
-	private function bodyParams(): array {
-		$params = $this->request->getParams();
-		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
-		return $params;
-	}//end bodyParams()
-
-	/**
-	 * Build a 401 Unauthorized response.
-	 *
-	 * @return JSONResponse
-	 */
-	private function unauthorized(): JSONResponse {
-		return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
-	}//end unauthorized()
 }//end class

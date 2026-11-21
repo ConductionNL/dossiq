@@ -26,7 +26,7 @@
  * derivation would eventually offer a move the write refuses, and the handler
  * would meet that disagreement as a button that fails after they press it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import {
@@ -66,8 +66,8 @@ export const TERM_GESTURES = [
 	{
 		act: 'reopen',
 		flag: 'canReopen',
-		label: 'Reopen',
-		reason: 'Only a closed case can be reopened.',
+		label: 'Reopen or restore from the archive',
+		reason: 'Only for a finished or archived case.',
 	},
 ]
 
@@ -125,6 +125,12 @@ function gestureReason(gesture, state) {
  * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
  */
 function gestureExplainer(gesture, state) {
+	if (gesture.act === 'suspend') {
+		return 'The term stands still until the answer is in.'
+	}
+	if (gesture.act === 'reopen') {
+		return 'Only for a finished or archived case.'
+	}
 	if (gesture.act !== 'extend') {
 		return ''
 	}
@@ -143,16 +149,16 @@ export const ENDING_ACTS = [
 	{
 		act: 'finish',
 		label: 'Finish',
-		explainer: 'The case reached its result. The result decides what is kept.',
+		explainer: 'Choose the result type. The end date and the archive outcome are recorded.',
 	},
 	{
 		act: 'abort',
-		label: 'Abort',
-		explainer: 'An intrekking. There is a result, and it is not a besluit.',
+		label: 'Break off',
+		explainer: 'The case stops without a decision. Asks for a reason.',
 	},
 	{
 		act: 'archive',
-		label: 'Archive',
+		label: 'Archive it',
 		explainer: 'The case moves to the retention rule its result type carries.',
 	},
 ]
@@ -172,7 +178,7 @@ function yes(value) {
  *
  * @param {Array<object>} transitions The `/available-transitions` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function transitionEntries(transitions) {
 	return (Array.isArray(transitions) ? transitions : [])
@@ -188,6 +194,7 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			toStatusName: String(row.toStatusName ?? ''),
 			// Copied from the engine's answer, never derived here: whether
 			// the move closes the case, and the results it may close with.
 			closesCase: row.closesCase === true,
@@ -219,7 +226,7 @@ function resultChoices(rows) {
  *
  * @param {object|null} state The `/lifecycle` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function gestureEntries(state) {
 	// An unreadable state offers the gestures ENABLED rather than hiding them.
@@ -247,7 +254,7 @@ function gestureEntries(state) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function endingEntries(acts) {
 	const verdicts = Array.isArray(acts?.acts) ? acts.acts : []
@@ -277,6 +284,11 @@ function endingEntries(acts) {
 				? String(verdict.reason ?? '')
 				: 'What you may do with this case could not be read.',
 			role: verdict ? String(verdict.role ?? '') : '',
+			// Finish and abort close with one of the case type's results, the
+			// same list the act refuses against. Archive takes the result the
+			// case already has.
+			resultTypes:
+				ending.act === 'archive' ? [] : resultChoices(acts?.resultTypes),
 		}
 	})
 }
@@ -291,13 +303,12 @@ function endingEntries(acts) {
  * `archiefstatus: gearchiveerd` and no marker is in every working lens, and
  * offering Restore on it would be a button that takes nothing back.
  *
- * It sits with the state acts rather than with the ending acts because it is
- * the one act on this menu that UNDOES something, and the ending acts are
- * ordered last precisely so a hurried handler does not meet them first.
+ * It is its own entry rather than an ending act because it is the one act on
+ * this menu that UNDOES something.
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function archiveStateEntries(acts) {
 	if (!yes(acts?.archived)) {
@@ -311,9 +322,8 @@ function archiveStateEntries(acts) {
 		{
 			kind: 'state',
 			id: 'unarchive',
-			label: 'Restore from the archive',
-			explainer:
-				'The case comes back into the working lists and can be edited again.',
+			label: 'Reopen or restore from the archive',
+			explainer: 'Only for a finished or archived case.',
 			// Restoring asks the same role archiving does, so the verdict on
 			// `archive` is the verdict on this. An absent verdict disables it
 			// and says so, exactly as the ending acts do: this one writes an
@@ -328,59 +338,107 @@ function archiveStateEntries(acts) {
 }
 
 /**
+ * The label and explainer of each act that depends on the case's own state.
+ */
+const STATE_ACTS = {
+	'release-hold': { label: 'Take off hold', explainer: 'You pick the case up again before its date.' },
+	hold: { label: 'Hold', explainer: 'Park it internally, the term keeps running.' },
+	promote: { label: 'Promote to case', explainer: 'The term starts now. The case leaves your drafts.' },
+}
+
+/**
  * Hold, release and promote, which depend on the case's own state.
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function stateEntries(acts) {
-	const held = yes(acts?.held)
-	const draft = yes(acts?.draft)
-	const entries = []
-
-	if (held) {
-		entries.push({
-			kind: 'state',
-			id: 'release-hold',
-			label: 'Take off hold',
-			explainer: 'You pick the case up again before its date.',
-			disabled: false,
-			reason: '',
-		})
-	} else {
-		entries.push({
-			kind: 'state',
-			id: 'hold',
-			label: 'Hold',
-			explainer:
-				'You park the case until a date. The statutory term keeps running.',
-			disabled: false,
-			reason: '',
-		})
+	const entries = [stateEntry(yes(acts?.held) ? 'release-hold' : 'hold')]
+	if (yes(acts?.draft)) {
+		entries.push(stateEntry('promote'))
 	}
-
-	if (draft) {
-		entries.push({
-			kind: 'state',
-			id: 'promote',
-			label: 'Promote to case',
-			explainer: 'The term starts now. The case leaves your drafts.',
-			disabled: false,
-			reason: '',
-		})
-	}
-
 	return entries
+}
+
+/**
+ * One state act as a menu entry.
+ *
+ * @param {string} id The act, a key of STATE_ACTS.
+ * @return {object} The entry.
+ */
+function stateEntry(id) {
+	return { kind: 'state', id, label: STATE_ACTS[id].label, explainer: STATE_ACTS[id].explainer, disabled: false, reason: '' }
+}
+
+/**
+ * The order of the acts after the transitions, as board DqVolgendeStap draws
+ * them: finishing straight after the moves, then the acts on the term and on
+ * the handler's own time, then the acts that end or undo.
+ *
+ * @type {Array<string>}
+ */
+export const ACT_ORDER = [
+	'finish',
+	'suspend',
+	'extend',
+	'hold',
+	'release-hold',
+	'promote',
+	'resume',
+	'abort',
+	'archive',
+	'unarchive',
+	'reopen',
+]
+
+/**
+ * The icon each act shows in the menu, by act id; a transition shows an arrow.
+ *
+ * @type {Object<string, string>}
+ */
+export const ACT_ICONS = {
+	transition: 'ArrowRight',
+	finish: 'FlagOutline',
+	suspend: 'PauseCircleOutline',
+	extend: 'CalendarClock',
+	hold: 'TimerSandEmpty',
+	'release-hold': 'TimerSandEmpty',
+	promote: 'ArrowUpBoldCircle',
+	resume: 'Play',
+	abort: 'StopCircleOutline',
+	archive: 'ArchiveOutline',
+	unarchive: 'Restore',
+	reopen: 'History',
+	remedy: 'ScaleBalance',
+}
+
+/**
+ * The icon of one menu entry, '' when it has none.
+ *
+ * @param {object} entry One menu entry.
+ * @return {string} A registered icon name.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function iconFor(entry) {
+	if (entry?.kind === 'transition') {
+		return ACT_ICONS.transition
+	}
+	if (entry?.kind === 'always') {
+		return String(entry.icon ?? '')
+	}
+	if (entry?.kind === 'remedy') {
+		return ACT_ICONS.remedy
+	}
+
+	return ACT_ICONS[String(entry?.id ?? '')] ?? ''
 }
 
 /**
  * The whole menu, in the order a handler reads it.
  *
- * Transitions first, because moving the case along is the ordinary act.
- * Then the statutory gestures over the term, then the three ways to end it,
- * then the state acts. Ending last on purpose: the irreversible acts are not
- * the ones a hurried handler should meet at the top of a list.
+ * Transitions first, because moving the case along is the ordinary act, then
+ * the acts the case type allows in every phase, then the rest in ACT_ORDER.
  *
  * @param {object} answers The three server answers.
  * @param {Array<object>} [answers.transitions] The `/available-transitions` list.
@@ -388,17 +446,59 @@ function stateEntries(acts) {
  * @param {object|null} [answers.acts] The `/acts` answer, carrying both the
  *   role-gated ending acts and the case type's always-available ones.
  * @return {Array<object>} The menu entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function buildActsMenu({ transitions, state, acts } = {}) {
+	const rank = (entry) => {
+		const at = ACT_ORDER.indexOf(entry.id)
+		return at === -1 ? ACT_ORDER.length : at
+	}
+	// Reopen and Restore are one entry, as board DqVolgendeStap draws it:
+	// an archived case refuses every write until it is restored, so on an
+	// archived case the entry restores, and otherwise it reopens.
+	const restore = archiveStateEntries(acts)
+	const gestures = gestureEntries(state)
+		.filter((entry) => restore.length === 0 || entry.id !== 'reopen')
+	const acting = [
+		...gestures,
+		...endingEntries(acts),
+		...stateEntries(acts),
+		...restore,
+	].sort((a, b) => rank(a) - rank(b))
+
 	return [
 		...transitionEntries(transitions),
 		...alwaysAvailableEntries(acts),
-		...gestureEntries(state),
-		...endingEntries(acts),
-		...stateEntries(acts),
-		...archiveStateEntries(acts),
+		...acting,
+		...remedyEntries(acts),
 	]
+}
+
+/**
+ * The remedies the case type declares against its decisions, last in the
+ * menu as board DqVolgendeStap draws "Bezwaar registreren".
+ *
+ * The server answers whether each is open now (a decision was made known)
+ * and says why not; the label and description are the case type's own, so
+ * nothing here names a procedure.
+ *
+ * @param {object|null} acts The `/acts` answer.
+ * @return {Array<object>} The entries.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003
+ */
+function remedyEntries(acts) {
+	const declared = Array.isArray(acts?.remedies) ? acts.remedies : []
+
+	return declared
+		.filter((remedy) => String(remedy?.id ?? '').trim() !== '')
+		.map((remedy) => ({
+			kind: 'remedy',
+			id: String(remedy.id).trim(),
+			label: String(remedy.label ?? remedy.id).trim(),
+			explainer: String(remedy.description ?? '').trim(),
+			disabled: remedy.available === false,
+			reason: remedy.available === false ? String(remedy.reason ?? '').trim() : '',
+		}))
 }
 
 /**
@@ -416,7 +516,7 @@ export function buildActsMenu({ transitions, state, acts } = {}) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 function alwaysAvailableEntries(acts) {
 	const declared = Array.isArray(acts?.alwaysAvailable) ? acts.alwaysAvailable : []
@@ -428,6 +528,7 @@ function alwaysAvailableEntries(acts) {
 			id: String(act.id).trim(),
 			label: String(act.label ?? act.id).trim(),
 			explainer: String(act.description ?? '').trim(),
+			icon: String(act.icon ?? '').trim(),
 			// Shown and disabled with the guard's own sentence, never hidden:
 			// an act that vanishes tells the reader the system cannot do it,
 			// where one shown with its reason tells them who to ask.
@@ -445,7 +546,7 @@ function alwaysAvailableEntries(acts) {
  *
  * @param {object} entry One menu entry.
  * @return {{reason: boolean, result: boolean, until: boolean, days: boolean}} What to ask for.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function inputsFor(entry) {
 	const id = String(entry?.id ?? '')
@@ -475,7 +576,7 @@ export function inputsFor(entry) {
  *
  * @param {object} entry One menu entry.
  * @return {string} The path after `/api/case/{id}/`, empty for a transition.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function endpointFor(entry) {
 	if (!entry || entry.kind === 'transition') {

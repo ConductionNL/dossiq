@@ -35,7 +35,7 @@ const BASE_URL = generateUrl('/apps/dossiq/api/external/brk')
  * @return {Promise<{lookupStatus: string, parcel: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 export async function lookupParcel(
 	kadastraleGemeenteCode,
@@ -58,7 +58,7 @@ export async function lookupParcel(
  * @return {Promise<{lookupStatus: string, parcel: object, dormant: boolean, extras: object}>}
  *   The lookup result envelope.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 export async function lookupParcelById(id) {
 	const response = await axios.get(`${BASE_URL}/parcel/${encodeURIComponent(id)}`)
