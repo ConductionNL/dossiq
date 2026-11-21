@@ -938,3 +938,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `UsesClass` attribute in each file that covers or uses the service. Own test:
         `tests/Unit/Service/Sharing/FederatedShareSnapshotTest` (4); letting one foreign document through
         turns 3 tests red (checked).
+  - [x] 8an `DeadlineReportingService` (1: ExcessiveClassComplexity 55 against 50). Three per-type pieces
+        that read no store moved onto the class the service already used for per-type figures,
+        `Reporting/PerTypeRows`: the quarterly CSV, header and one line per case type (`csv()`, with
+        `csvHeader()` and `csvLine()`; `quarterlyReportAsCsv()` stays public and delegates), the counted
+        figures of one tally (`counts()`, was `typeCounts()`) and the average duration to one decimal
+        (`averageDays()`, used by the per-type reduction and by the KPI figures). Bodies moved unchanged.
+        Moving onto a class the service already held adds no coupling. Its constructor, interface and
+        container binding are unchanged. phpmd: zero findings on both files under both rulesets; over the
+        whole of `lib/` the class reads 50, which the rule (reported above its maximum of 50) does not
+        report.
+        Characterisation: the existing `DeadlineReportingServiceTest` (the CSV of a report and of a row with
+        no share, the per-type reduction, the KPI summary), `StatutoryTermParityTest`,
+        `DeadlineReportingControllerContractTest` and `ReportingToolsTest`, green before and unchanged after.
+        Own tests: 2 added to `tests/Unit/Service/Reporting/PerTypeRowsTest` (4 in all); writing a missing
+        share as 0 instead of blank turns 2 tests red (checked).
