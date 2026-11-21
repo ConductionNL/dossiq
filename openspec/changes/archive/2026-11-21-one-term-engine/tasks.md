@@ -68,10 +68,13 @@ group lands on `development` as its own PR.
 
 ## 5. Verify and deliver
 
-- [ ] 5.1 Per PR: php -l, phpcs and phpstan on the changed PHP, eslint on the
+- [x] 5.1 Per PR: php -l, phpcs and phpstan on the changed PHP, eslint on the
   changed JS, the touched unit tests; once before push
   `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` with `TMPDIR` inside the
   clone, `npm run lint`, `npm run test:l10n`.
+  - Done 21 Nov: the PRs of groups 1 to 4 merged on `development`; the archive
+    PR ran `composer check:strict` (the same PHPUnit failures as `development`),
+    `npm run lint` and `npm run test:l10n` once.
 - [x] 5.2 Boards (fixed in ConductionNL/design-system#172): DqMijnWerk's week strip draws the term ending today as late,
   and DqTermijnen's "Verlopen" tile says "Beslis vandaag of verdaag". Reported
   to the design-system owner; not edited here. Done in design-system#172.

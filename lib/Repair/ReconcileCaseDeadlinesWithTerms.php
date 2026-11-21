@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Writes every case's deadline from its statutory term, once.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -76,7 +76,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function getName(): string {
 		return 'Write every Dossiq case deadline from its statutory term';
@@ -89,7 +89,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -118,7 +118,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return array<int, string>|null The case uuids read, or null when unreadable.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	private function reconcileAsSystem(?object $objectService, array &$counts): ?array {
 		$caseIds = null;
@@ -139,7 +139,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return array<int, string>|null The case uuids read, or null when unreadable.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	private function reconcileAll(array &$counts): ?array {
 		$caseIds = $this->casesWithAStatutoryTerm();
@@ -162,7 +162,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq case deadline repair complete', $counts);

@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+ * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
  */
 
 declare(strict_types=1);

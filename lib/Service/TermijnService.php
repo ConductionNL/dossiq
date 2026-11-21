@@ -94,7 +94,7 @@ class TermijnService implements TermijnServiceInterface {
 	 * @param CaseDeadlineMirror|null $mirror Writes a statutory term's end date onto its case after
 	 *        every save of that term, so the case list and the case page read one date (REQ-OTE-01).
 	 *        Optional so a test build that never chose it saves terms exactly as before.
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -142,7 +142,7 @@ class TermijnService implements TermijnServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function createTermijnInstance(
 		string $caseId,
@@ -403,7 +403,7 @@ class TermijnService implements TermijnServiceInterface {
 	 * @return array<string, mixed>|null The stored instance, or null when the store refused.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
 		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
@@ -429,7 +429,7 @@ class TermijnService implements TermijnServiceInterface {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function updateTermijnInstance(string $termInstanceId, array $patch): ?array {
 		$current = $this->getTermijnInstance(termInstanceId: $termInstanceId);
@@ -459,7 +459,7 @@ class TermijnService implements TermijnServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	private function followCase(?array $instance): void {
 		$this->mirror?->followInstance(instance: $instance);

@@ -224,7 +224,7 @@ class WorkQueueServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function testTheAdministeredCalendarCountsTheBusinessDays(): void {
 		$calendar = $this->createMock(WorkingDayRoll::class);
@@ -513,7 +513,7 @@ class WorkQueueServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	public function testComputeQueueReadsAPausedTerm(): void {
 		$this->objects->saveObject(

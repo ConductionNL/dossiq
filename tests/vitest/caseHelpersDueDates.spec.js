@@ -5,7 +5,7 @@
  * The per-case deadline questions a list asks: overdue, due today, due
  * tomorrow, the overdue text, and days elapsed or remaining.
  *
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {

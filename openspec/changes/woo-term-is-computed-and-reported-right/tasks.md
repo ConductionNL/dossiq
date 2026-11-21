@@ -8,7 +8,7 @@ from `today`.
 
 > **Moved, 2026-10-09.** Sections 1 to 3 (the rolled case deadline, rolled API
 > end dates, the Woo extension through the term engine) are built under
-> `openspec/changes/one-term-engine` (Ruben's one-term-engine decision of
+> `openspec/changes/archive/2026-11-21-one-term-engine` (Ruben's one-term-engine decision of
 > 2026-10-09), which supersedes them: the case deadline follows the statutory
 > term instance rather than a generalised `CaseInheritedDeadlineListener`, and
 > `deadlineBeforeRoll` on the case is not added (the instance keeps

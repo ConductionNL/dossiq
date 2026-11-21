@@ -312,7 +312,7 @@ class TermDefinitions {
 	 *
 	 * @return DateTimeImmutable The counted end date.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function countedEndDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		$mode = self::countingModeOf(definitie: $definitie);

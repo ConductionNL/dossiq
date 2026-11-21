@@ -182,7 +182,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testCalculateRefusesWithoutADefinition(): void {
 		$service = new WOODeadlineService(
@@ -206,7 +206,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testExtendDeadlineExtendsTheStatutoryTerm(): void {
 		$this->extensions->expects(self::once())->method('extendStatutoryTermOfCase')
@@ -234,7 +234,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testTheExtensionCountsFromTheUnrolledOriginalEnd(): void {
 		$base = null;
@@ -257,7 +257,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testExtendDeadlineRefusesASecondExtension(): void {
 		$this->extensions->method('extendStatutoryTermOfCase')

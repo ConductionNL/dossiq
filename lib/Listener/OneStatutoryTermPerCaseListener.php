@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: the four
  *                                       kinds and the reading of an absent one.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  *
  * @template-implements IEventListener<Event>
  */
@@ -86,7 +86,7 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function handle(Event $event): void {
 		$entity = $this->createdTermInstance(event: $event);
@@ -110,7 +110,7 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 *
 	 * @return ObjectEntity|null
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function createdTermInstance(Event $event): ?ObjectEntity {
 		if ($event instanceof ObjectCreatedEvent === false) {
@@ -134,7 +134,7 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function withdrawEarlier(string $caseId, string $writtenId): void {
 		try {

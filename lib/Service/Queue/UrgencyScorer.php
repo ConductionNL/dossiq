@@ -308,7 +308,7 @@ class UrgencyScorer {
 	 *
 	 * @return int Signed business-day offset.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	private function businessDaysBetween(DateTimeImmutable $today, DateTimeImmutable $target): int {
 		if ($today->format('Y-m-d') === $target->format('Y-m-d')) {
@@ -400,7 +400,7 @@ class UrgencyScorer {
 	 *
 	 * @return int|null The unsigned count, or null.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	private function administeredBusinessDays(DateTimeImmutable $earlier, DateTimeImmutable $later): ?int {
 		$counted = $this->calendar?->daysBetween(from: $earlier, to: $later, mode: WorkingDayRoll::MODE_WORKING_DAYS);

@@ -11,7 +11,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -200,7 +200,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testFollowInstanceMovesTheCaseOnlyForAStatutoryTerm(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
@@ -217,7 +217,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnEmptyCaseIdHasNoDeadline(): void {
 		self::assertNull($this->mirror->deadlineFor('  '));
@@ -228,7 +228,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnUnreadableStoreLeavesTheCaseAndLogs(): void {
 		$broken = new class {
@@ -277,7 +277,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnUnconfiguredCaseSchemaWritesNothing(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
@@ -299,7 +299,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testARefusedWriteIsLoggedAndAnsweredFalse(): void {
 		$store = new class extends FakeTermijnStore {
@@ -334,7 +334,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testACaseSchemaGoneBeforeTheWriteWritesNothing(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);

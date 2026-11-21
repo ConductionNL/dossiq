@@ -253,7 +253,7 @@ class QueueCaseFacts {
 	 *
 	 * @return string|null The nearest active deadline, or null.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	private function nearestActiveTermDeadline(array $location, string $caseId): ?string {
 		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
@@ -282,7 +282,7 @@ class QueueCaseFacts {
 	 *
 	 * @return string|null The nearest active deadline, or null.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	private function nearestOpenEnd(array $instances): ?string {
 		$nearest = null;
@@ -314,7 +314,7 @@ class QueueCaseFacts {
 	 *
 	 * @return bool True when the term is open.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	private function isOpenTerm(array $instance): bool {
 		return (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === true);

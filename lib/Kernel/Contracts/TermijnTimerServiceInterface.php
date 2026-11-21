@@ -69,7 +69,7 @@ interface TermijnTimerServiceInterface {
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string;
 

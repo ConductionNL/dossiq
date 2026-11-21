@@ -100,7 +100,7 @@ interface IntakeTermStartInterface {
 	 *
 	 * @return DateTimeImmutable When its term starts.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 */
 	public function termStartFor(array $case): DateTimeImmutable;
 }//end interface

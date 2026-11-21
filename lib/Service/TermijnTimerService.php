@@ -219,7 +219,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -369,7 +369,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return DateTimeImmutable The anchor, at midnight in the administered zone.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 */
 	private function anchorFor(DateTimeImmutable $start): DateTimeImmutable {
 		$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');

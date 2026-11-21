@@ -212,7 +212,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testTheTermStartIsTheStampOrDerivedFromTheArrival(): void {
 		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
@@ -235,7 +235,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testAnUnreadableStampFallsBackToTheArrival(): void {
 		$logger = $this->createMock(LoggerInterface::class);
@@ -257,7 +257,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testWithoutACalendarTheTermStartsAtArrival(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
