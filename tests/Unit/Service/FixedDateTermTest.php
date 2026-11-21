@@ -34,6 +34,7 @@ use Psr\Log\NullLogger;
  * REQ-TERM-064: a case type's term is a lead time or a fixed date.
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\Term\TermsByKind
  * @covers \OCA\Dossiq\Service\TermDeclarationReader
  * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\TermKind

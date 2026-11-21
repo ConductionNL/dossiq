@@ -45,7 +45,6 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
-use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -62,7 +61,6 @@ use RuntimeException;
  *   wires like PagesSeen and SourceCollectionReturn beside it, so a publish with nothing
  *   to disclose by record publishes the decision alone. Splitting the publish
  *   step to save one class would put the refusal and its exception in two places.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
@@ -116,6 +114,13 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 	private readonly CatalogTransport $transport;
 
 	/**
+	 * Says whether the disclosable documents may go out: every file read, none under an access exception.
+	 *
+	 * @var DisclosableDocumentCheck
+	 */
+	private readonly DisclosableDocumentCheck $documentCheck;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
@@ -129,6 +134,8 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
 	 *        so the decision is published alone; without it an empty disclosable set is refused as before.
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -145,6 +152,7 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 		$this->caseLedger = ($caseLedger ?? new CasePublicationState(settingsService: $settingsService, logger: $logger));
 		$this->sources    = new PublicationSources(settingsService: $settingsService, caseDocuments: $caseDocuments);
 		$this->transport  = new CatalogTransport(settingsService: $settingsService, apiClient: $apiClient, logger: $logger, caseLedger: $this->caseLedger);
+		$this->documentCheck = new DisclosableDocumentCheck();
 	}//end __construct()
 
 	/**
@@ -348,6 +356,8 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 	 * @return array<string, mixed> `{refusal}` or `{objectService, register, decisionSchema, case, decision, delivery}`.
 	 *
 	 * @throws RuntimeException When the decision or case cannot be loaded.
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function publicationSource(string $caseId, string $decisionId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -363,7 +373,7 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 		);
 
 		$delivery = $this->sources->delivery(objectService: $objectService, register: $register, caseId: $caseId);
-		$refusal = $this->documentRefusal(documents: $delivery['documents']);
+		$refusal = $this->documentCheck->refusal(documents: $delivery['documents']);
 		if ($refusal !== null) {
 			return ['refusal' => $refusal];
 		}
@@ -489,75 +499,6 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 
 		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $source['caseId'], publicationId: $publicationId);
 	}//end returnToDossier()
-
-	/**
-	 * The disclosable documents whose file could not be read.
-	 *
-	 * Each of them would go out as a publication entry without its file, so a
-	 * publication with one of them is refused instead.
-	 *
-	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
-	 *
-	 * @return list<string> Their names.
-	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 */
-	private function unreadable(array $documents): array {
-		$names = [];
-		foreach ($documents as $document) {
-			if (empty($document['content']) === true) {
-				$names[] = (string)($document['fileName'] ?? ($document['title'] ?? ($document['id'] ?? '')));
-			}
-		}
-
-		return $names;
-	}//end unreadable()
-
-	/**
-	 * The refusal a set of disclosable documents earns: one whose file cannot be read, or one under an access
-	 * exception. Null when the set may go out.
-	 *
-	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
-	 *
-	 * @return array{available: false, reason: string, documents: list<string>}|null The refusal.
-	 *
-	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
-	 */
-	private function documentRefusal(array $documents): ?array {
-		$unreadable = $this->unreadable(documents: $documents);
-		if ($unreadable !== []) {
-			return ['available' => false, 'reason' => 'documents_unreadable', 'documents' => $unreadable];
-		}
-
-		$restricted = $this->restricted(documents: $documents);
-		if ($restricted !== []) {
-			return ['available' => false, 'reason' => 'documents_restricted', 'documents' => $restricted];
-		}
-
-		return null;
-	}//end documentRefusal()
-
-	/**
-	 * The disclosable documents that name their only readers: an access exception and a publication contradict
-	 * each other, so the publication is refused until the exception is lifted.
-	 *
-	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
-	 *
-	 * @return list<string> Their names.
-	 *
-	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
-	 */
-	private function restricted(array $documents): array {
-		$value = new AccessExceptionValue();
-		$names = [];
-		foreach ($documents as $document) {
-			if ($value->exceptionOf(record: $document) !== null) {
-				$names[] = (string)($document['fileName'] ?? ($document['title'] ?? ($document['id'] ?? '')));
-			}
-		}
-
-		return $names;
-	}//end restricted()
 
 	/**
 	 * The in-scope documents with required pages nobody has seen yet.

@@ -82,6 +82,8 @@ interface RedactionProposalObjectServiceStub {
  * Unit tests for WOODocumentAssessmentService.
  *
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  *
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -977,4 +979,41 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->expectExceptionMessage('OpenRegister is not available');
 		$service(null, $config)->partlyPublicWithoutCopy('case-1');
 	}//end testPartlyPublicDocumentsWithoutACopyAreNamed()
+
+	/**
+	 * The partly public assessments of a case are its own rows judged partly public, and none without a store.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testThePartlyPublicAssessmentsAreTheCasesOwn(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-1']);
+		$register->seed('wooDocumentAssessment', 'a-2', ['caseRef' => 'case-1', 'classification' => 'openbaar', 'documentRef' => 'doc-2']);
+		$register->seed('wooDocumentAssessment', 'a-3', ['caseRef' => 'case-2', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-3']);
+		$register->seed('wooDocumentAssessment', 'a-4', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-4']);
+
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
+		$service = function (?object $objects, array $config): WOODocumentAssessmentService {
+			$settings = $this->createMock(originalClassName: SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+
+			return new WOODocumentAssessmentService(
+				settingsService: $settings,
+				userSession: $this->userSession,
+				logger: $this->logger,
+				refusalGrounds: new WooRefusalGrounds(settingsService: $settings, logger: $this->logger)
+			);
+		};
+
+		$rows = $service($register, $config)->partlyPublicAssessments(caseId: 'case-1');
+		$this->assertSame(expected: ['doc-1', 'doc-4'], actual: array_column($rows, 'documentRef'));
+		$this->assertSame(expected: [0, 1], actual: array_keys($rows), message: 'A list, not the keys of the read.');
+		$this->assertSame(expected: [], actual: $service($register, ['register' => 'dossiq'])->partlyPublicAssessments(caseId: 'case-1'));
+		$this->assertSame(expected: [], actual: $service(null, $config)->partlyPublicAssessments(caseId: 'case-1'));
+	}//end testThePartlyPublicAssessmentsAreTheCasesOwn()
 }//end class

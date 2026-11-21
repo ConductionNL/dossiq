@@ -36,6 +36,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @uses \OCA\Dossiq\Service\DocumentUpload
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels

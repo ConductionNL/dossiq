@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Syncs the timer of every open advice request once.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmAdviceTimers implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -68,7 +68,7 @@ class ArmAdviceTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function getName(): string {
 		return 'Arm OpenRegister engine timers for open Dossiq advice requests';
@@ -81,7 +81,7 @@ class ArmAdviceTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {

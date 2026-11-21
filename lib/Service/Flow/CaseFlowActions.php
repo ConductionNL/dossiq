@@ -53,8 +53,6 @@ use Throwable;
  * Start an allowed flow for a case, and plan a follow-up case.
  *
  * @spec openspec/specs/workflow-definition-engine/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseFlowActions implements CaseFlowActionsInterface {
 
@@ -503,6 +501,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 * @param array<string, mixed> $caseRow The case.
 	 *
 	 * @return array<int, string> The flow uuids.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function flowIdsOfType(StartableFlowLookup $lookup, array $caseRow): array {
 		$caseTypeId = (string)($caseRow['caseType'] ?? '');
@@ -511,38 +511,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			return [];
 		}
 
-		return $this->flowIdsOf(declared: ($caseType['startableFlows'] ?? []));
+		return $lookup->flowIdsOf(declared: ($caseType['startableFlows'] ?? []));
 	}//end flowIdsOfType()
-
-	/**
-	 * The flow uuids in a case type's `startableFlows`.
-	 *
-	 * @param mixed $declared The property as stored.
-	 *
-	 * @return array<int, string> The uuids.
-	 */
-	private function flowIdsOf(mixed $declared): array {
-		if (is_array($declared) === false) {
-			return [];
-		}
-
-		$uuids = [];
-		foreach ($declared as $entry) {
-			// An entry is a plain uuid, but a hand-edited case type may carry the
-			// object shape an OpenRegister picker writes, so both are read.
-			$uuid = $entry;
-			if (is_array($entry) === true) {
-				$uuid = ($entry['id'] ?? '');
-			}
-
-			$uuid = trim((string)$uuid);
-			if ($uuid !== '') {
-				$uuids[] = $uuid;
-			}
-		}
-
-		return $uuids;
-	}//end flowIdsOf()
 
 	/**
 	 * Publish the flow so a schedule may run it.
@@ -600,6 +570,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 * @param string              $id     The object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function fetch(StartableFlowLookup $lookup, string $schema, string $id): ?array {
 		if ($id === '') {
@@ -614,32 +586,6 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 			return null;
 		}
 
-		return $this->asArray(found: $found);
+		return $lookup->asArray(found: $found);
 	}//end fetch()
-
-	/**
-	 * An object as an array, or null when there is none.
-	 *
-	 * @param mixed $found What the ObjectService answered.
-	 *
-	 * @return array<string, mixed>|null The object, or null.
-	 */
-	private function asArray(mixed $found): ?array {
-		if ($found === null) {
-			return null;
-		}
-
-		if (is_array($found) === true) {
-			return $found;
-		}
-
-		if (method_exists($found, 'jsonSerialize') === true) {
-			$serialized = $found->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return (array)$found;
-	}//end asArray()
 }//end class

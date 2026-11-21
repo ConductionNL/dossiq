@@ -56,6 +56,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Review\BatchSelection

@@ -46,6 +46,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
+ * @uses \OCA\Dossiq\Service\Flow\OccurrenceRows
+ * @uses \OCA\Dossiq\Service\Flow\SeriesFiringCount
  */
 class CaseFlowActionsTest extends TestCase {
 

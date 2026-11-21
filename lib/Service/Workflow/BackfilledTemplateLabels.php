@@ -279,4 +279,19 @@ class BackfilledTemplateLabels {
 
 		return $heal($entry);
 	}//end healedEntry()
+
+	/**
+	 * Whether a stored template has an id and carries the backfill's cast-of-a-map marker.
+	 *
+	 * @param string               $id       The template id.
+	 * @param array<string, mixed> $template The stored template.
+	 *
+	 * @return bool True when the template is to be healed.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function castMarked(string $id, array $template): bool {
+		return $id !== '' && str_contains((string)json_encode($template), self::CAST_OF_A_MAP) === true;
+	}//end castMarked()
 }//end class

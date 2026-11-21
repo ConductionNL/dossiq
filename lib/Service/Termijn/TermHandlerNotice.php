@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Notifies a case's assignee on the term rungs its definition names.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 class TermHandlerNotice {
 	use SearchesObjects;
@@ -76,7 +76,7 @@ class TermHandlerNotice {
 	 *
 	 * @return bool True when a notification went out.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function tell(array $instance, int $threshold): bool {
 		try {

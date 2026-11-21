@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\PropertyDefinitionRecord;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -53,8 +54,7 @@ use Throwable;
  * Migrates subsidieRegeling objects onto caseType + propertyDefinition.
  *
  * @spec openspec/changes/archive/2026-09-09-subsidieregeling-is-a-casetype/proposal.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -124,17 +124,27 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	];
 
 	/**
+	 * Builds one propertyDefinition record.
+	 *
+	 * @var PropertyDefinitionRecord
+	 */
+	private readonly PropertyDefinitionRecord $definitionRecord;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsServiceInterface $settingsService Schema/register bridge
 	 * @param IAppConfig      $appConfig       App configuration (register + schema ids)
 	 * @param LoggerInterface $logger          Logger
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->definitionRecord = new PropertyDefinitionRecord(enumValues: self::INTERIM_FREQUENCIES);
 	}
 
 	/**
@@ -538,6 +548,8 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @param string         $propertySchema The propertyDefinition schema id.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveDefinitions(MigratedScheme $migrated, string $propertySchema): void {
 		$scheme = $migrated->scheme;
@@ -551,37 +563,17 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				continue;
 			}
 
-			$definition = $this->propertyDefinition(property: $property, type: $type, caseTypeId: $caseTypeId, value: $scheme[$property]);
+			$definition = $this->definitionRecord->record(
+				property: $property,
+				type: $type,
+				caseTypeId: $caseTypeId,
+				value: $scheme[$property]
+			);
 
 			$objectService->saveObject(
 				$definition,
 				new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $propertySchema))
 			);
 		}
-	}
-
-	/**
-	 * One propertyDefinition record.
-	 *
-	 * @param string $property   The property name.
-	 * @param string $type       The property type.
-	 * @param string $caseTypeId The case type it belongs to.
-	 * @param mixed  $value      The scheme's value, the default.
-	 *
-	 * @return array<string, mixed> The record.
-	 */
-	private function propertyDefinition(string $property, string $type, string $caseTypeId, mixed $value): array {
-		$definition = [
-			'name' => $property,
-			'caseType' => $caseTypeId,
-			'propertyType' => $type,
-			'defaultValue' => (string) $value,
-		];
-
-		if ($type === 'enum') {
-			$definition['enumValues'] = self::INTERIM_FREQUENCIES;
-		}
-
-		return $definition;
 	}
 }

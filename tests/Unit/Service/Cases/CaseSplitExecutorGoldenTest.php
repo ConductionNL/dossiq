@@ -48,6 +48,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * Golden test for CaseSplitExecutor.
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore

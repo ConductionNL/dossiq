@@ -73,6 +73,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooGatherAdd
  * @covers \OCA\Dossiq\Woo\WooPickRefused
  * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses   \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentDefaults
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore

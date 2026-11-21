@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
  *   service account's refusal: a fire from cron writes as that account or not at all.
@@ -115,7 +115,7 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof FlowTimerFiredEvent) === false) {

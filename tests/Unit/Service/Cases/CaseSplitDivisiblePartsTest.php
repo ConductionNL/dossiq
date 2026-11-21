@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * The parts a split may divide, answered before anything is chosen.
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy
  * @uses \OCA\Dossiq\Exception\RefusedException

@@ -42,7 +42,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use DateTimeInterface;
 /**
  * The calendar days between two moments, with or without a sign.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class DayCount {
 	/**
@@ -70,7 +70,7 @@ class DayCount {
 	 *
 	 * @return int Whole days, zero or more.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public function between(DateTimeInterface $from, DateTimeInterface $to): int {
 		return (int)$from->diff($to)->days;
@@ -88,7 +88,7 @@ class DayCount {
 	 *
 	 * @return int Whole days, negative when `$to` precedes `$from`.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public function signed(DateTimeInterface $from, DateTimeInterface $to): int {
 		return (int)$from->diff($to)->format('%r%a');

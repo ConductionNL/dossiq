@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Flow\CaseFlowActions
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
+ * @uses \OCA\Dossiq\Service\Flow\OccurrenceRows
+ * @uses \OCA\Dossiq\Service\Flow\SeriesFiringCount
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @uses \OCA\Dossiq\Service\Flow\RetirementSweep

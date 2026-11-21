@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service;
 /**
  * Builds the shared fields of a term timer's engine configuration.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 final class TermTimerFields {
 
@@ -58,7 +58,7 @@ final class TermTimerFields {
 	 *
 	 * @return array<string, string> The fields.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function subject(array $instance, string $label): array {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -80,7 +80,7 @@ final class TermTimerFields {
 	 *
 	 * @return array<string, string> The metadata.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function metadata(array $instance, string $kind): array {
 		return [

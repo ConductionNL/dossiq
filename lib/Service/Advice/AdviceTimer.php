@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Keeps one engine timer per open advice request in step with the request.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class AdviceTimer implements AdviceTimerInterface {
 
@@ -122,7 +122,7 @@ class AdviceTimer implements AdviceTimerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $advice): string {
 		$adviceId = self::idOf(advice: $advice);
@@ -157,7 +157,7 @@ class AdviceTimer implements AdviceTimerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function syncOpen(array $advice, string $status): string {
 		$deadline = $this->dates->tryParse($advice['deadline'] ?? null);
@@ -176,7 +176,7 @@ class AdviceTimer implements AdviceTimerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function rearm(array $advice, DateTimeImmutable $deadline): string {
 		$adviceId = self::idOf(advice: $advice);

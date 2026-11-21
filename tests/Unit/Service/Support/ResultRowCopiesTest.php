@@ -60,6 +60,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @covers \OCA\Dossiq\Service\Relation\CaseRelationStore
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionRows
  *
  * @spec openspec/specs/case-management/spec.md
  * @uses \OCA\Dossiq\Service\Support\SerialisedResult

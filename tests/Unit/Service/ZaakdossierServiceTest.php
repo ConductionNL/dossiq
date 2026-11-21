@@ -111,6 +111,7 @@ interface DossierObjectServiceStub {
  * Unit tests for ZaakdossierService.
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @uses \OCA\Dossiq\Service\DocumentUpload
  *
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser

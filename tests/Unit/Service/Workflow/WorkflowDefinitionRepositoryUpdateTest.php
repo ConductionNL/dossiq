@@ -35,6 +35,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * Covers the read-modify-write an update has to be.
  *
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionRows
  */
 class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 

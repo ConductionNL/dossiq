@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use RuntimeException;
+
 /**
  * A document as it was handed in for upload: the case, the file and its metadata.
  *
@@ -43,4 +45,31 @@ final class DocumentUpload {
 		public readonly array $metadata,
 	) {
 	}//end __construct()
+
+	/**
+	 * Check the required upload input and return the document type.
+	 *
+	 * @return string The document type uuid.
+	 *
+	 * @throws RuntimeException When the case, file name or type is missing.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function requireType(): string {
+		if (trim($this->caseId) === '') {
+			throw new RuntimeException('caseId is required');
+		}
+
+		if (trim($this->fileName) === '') {
+			throw new RuntimeException('bestandsnaam is required');
+		}
+
+		$type = (string)($this->metadata['informatieobjecttype'] ?? '');
+		if ($type === '') {
+			throw new RuntimeException('informatieobjecttype is required');
+		}
+
+		return $type;
+	}//end requireType()
 }//end class

@@ -35,6 +35,7 @@ use Psr\Log\NullLogger;
  * REQ-TERM-063: an internal target is clocked apart and never shown to the citizen.
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\Term\TermsByKind
  * @covers \OCA\Dossiq\Service\TermKind
  * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions

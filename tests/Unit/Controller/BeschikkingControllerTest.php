@@ -43,6 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Controller\BeschikkingController
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\ComposeRequestBody
  */
 class BeschikkingControllerTest extends TestCase {
 	/**
@@ -216,6 +217,24 @@ class BeschikkingControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
 		$this->assertStringNotContainsString('secret', (string)json_encode($failed->getData()));
 	}//end testSuccessorRefusalCarriesItsStatusAndAFailureLeaksNothing()
+
+	/**
+	 * A read of the original that fails is a generic 500 that leaks nothing, and nothing is issued.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAFailedReadOfTheOriginalIsAGeneric500(): void {
+		$this->authenticate();
+		$this->service->method('find')->willThrowException(new \RuntimeException('secret detail'));
+		$this->service->expects($this->never())->method('issueSuccessor');
+
+		$failed = $this->controller->successor('besch-1');
+
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $failed->getStatus());
+		$this->assertStringNotContainsString(needle: 'secret', haystack: (string)json_encode($failed->getData()));
+	}//end testAFailedReadOfTheOriginalIsAGeneric500()
 
 	/**
 	 * An unauthenticated show request returns 401.

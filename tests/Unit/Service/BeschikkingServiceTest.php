@@ -1162,4 +1162,31 @@ class BeschikkingServiceTest extends TestCase {
 		self::assertSame(['Gedeeltelijk toegekend.'], $successor['decision']);
 		self::assertSame($original['caseId'], $successor['caseId']);
 	}//end testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences()
+
+	/**
+	 * A successor is written from the original's template unless the handler
+	 * names another, and from the default template when the original names none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testASuccessorIsWrittenFromTheOriginalsTemplate(): void {
+		$original = $this->composeWmo();
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$successor = $this->service->issueSuccessor($original['id'], 'amendment');
+		self::assertSame(expected: 'tpl-wmo-v1', actual: $successor['templateId'], message: 'The original\'s template.');
+
+		$this->objects->store['beschikking'][$successor['id']]['currentStatus'] = 'sent';
+		$named = $this->service->issueSuccessor($successor['id'], 'withdrawal', [], 'tpl-other');
+		self::assertSame(expected: 'tpl-other', actual: $named['templateId'], message: 'The template the handler named.');
+
+		$second = $this->composeWmo();
+		$this->objects->store['beschikking'][$second['id']]['currentStatus'] = 'sent';
+		$this->objects->store['beschikking'][$second['id']]['templateId'] = '  ';
+		$fallback = $this->service->issueSuccessor($second['id'], 'withdrawal', ['decision' => ['text' => 'Ingetrokken.']]);
+		self::assertSame(expected: 'tpl-default', actual: $fallback['templateId'], message: 'No template on the original: compose chooses.');
+		self::assertSame(expected: ['text' => 'Ingetrokken.'], actual: $fallback['decision']);
+		self::assertNull(actual: $fallback['rationale'] ?? null, message: 'A rationale the handler did not write is not carried.');
+	}//end testASuccessorIsWrittenFromTheOriginalsTemplate()
 }//end class

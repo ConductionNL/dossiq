@@ -49,7 +49,7 @@ interface BezwaarArchiveTriggerInterface {
 	 *
 	 * @return array<string, mixed>|null The trigger, or null when it does not exist or nothing is configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $triggerId): ?array;
 
@@ -60,7 +60,7 @@ interface BezwaarArchiveTriggerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function process(array $trigger): string;
 }//end interface

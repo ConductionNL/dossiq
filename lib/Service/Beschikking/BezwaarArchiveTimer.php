@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Keeps one engine timer per active bezwaar trigger in step with the trigger.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 
@@ -97,7 +97,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $trigger): string {
 		$triggerId = (string) ($trigger['id'] ?? ($trigger['uuid'] ?? ($trigger['@self']['id'] ?? '')));

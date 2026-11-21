@@ -324,7 +324,7 @@ class TermijnService implements TermijnServiceInterface {
 	 *
 	 * @return array<string, mixed>|null The instance carrying `engineTimerId`, or null.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function armEngineTimer(array $instance, array $definitie): ?array {
 		if ($this->timerService === null) {

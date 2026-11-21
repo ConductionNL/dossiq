@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Keeps one engine timer per case on the milestone it waits on.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class MilestoneStallTimer implements MilestoneStallTimerInterface {
 
@@ -106,7 +106,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $case): string {
 		$caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));

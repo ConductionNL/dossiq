@@ -37,8 +37,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
-use DateTimeInterface;
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -50,8 +48,7 @@ use Throwable;
  * Counts a series' firings and reads the cases it opened.
  *
  * @spec openspec/specs/workflow-definition-engine/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class PlannedSeriesLedger {
 
@@ -77,22 +74,18 @@ class PlannedSeriesLedger {
 	private const PAGE = 200;
 
 	/**
-	 * Config-key prefix for how many occurrences a series has created.
+	 * Reads a store answer as the occurrences it holds.
 	 *
-	 * @var string
+	 * @var OccurrenceRows
 	 */
-	private const FIRED_KEY = 'planned_series_fired_';
+	private readonly OccurrenceRows $occurrenceRows;
 
 	/**
-	 * Config-key prefix for the last firing this app has already counted.
+	 * Counts a series' firings, one per firing.
 	 *
-	 * The sweep runs hourly and a flow's `lastRunAt` does not change between
-	 * firings, so counting on every pass would spend a yearly series in a day.
-	 * The stamp is what makes one firing one increment.
-	 *
-	 * @var string
+	 * @var SeriesFiringCount
 	 */
-	private const SEEN_KEY = 'planned_series_seen_';
+	private readonly SeriesFiringCount $firingCount;
 
 	/**
 	 * Constructor.
@@ -102,14 +95,18 @@ class PlannedSeriesLedger {
 	 * @param PlannedFollowUpDocument $document Reads a planned follow-up's flow.
 	 * @param IAppConfig $appConfig Remembers how often a series has fired.
 	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settingsService,
 		private readonly PlannedFollowUpDocument $document,
-		private readonly IAppConfig $appConfig,
+		IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->occurrenceRows = new OccurrenceRows();
+		$this->firingCount = new SeriesFiringCount(appConfig: $appConfig);
 	}//end __construct()
 
 	/**
@@ -121,24 +118,10 @@ class PlannedSeriesLedger {
 	 * @return integer The count including the firing just observed.
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function firedCount(string $flowId, mixed $lastRunAt): int {
-		$stamp = '';
-		if ($lastRunAt instanceof DateTimeInterface === true) {
-			$stamp = $lastRunAt->format('Y-m-d H:i:s');
-		}
-
-		$seen = $this->appConfig->getValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), '');
-		$fired = (int)$this->appConfig->getValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), '0');
-		if ($seen === $stamp) {
-			return $fired;
-		}
-
-		$fired++;
-		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), $stamp);
-		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), (string)$fired);
-
-		return $fired;
+		return $this->firingCount->count(flowId: $flowId, lastRunAt: $lastRunAt);
 	}//end firedCount()
 
 	/**
@@ -154,6 +137,7 @@ class PlannedSeriesLedger {
 	 * @return array<int, array{id: string, title: string}> The occurrences.
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function occurrencesOf(string $flowId, bool $single): array {
 		if ($single === true) {
@@ -162,7 +146,7 @@ class PlannedSeriesLedger {
 			return [];
 		}
 
-		return $this->shape(rows: $this->rowsOf(flowId: $flowId));
+		return $this->occurrenceRows->occurrences(answer: $this->rowsOf(flowId: $flowId));
 	}//end occurrencesOf()
 
 	/**
@@ -170,9 +154,12 @@ class PlannedSeriesLedger {
 	 *
 	 * @param string $flowId The series flow's uuid.
 	 *
-	 * @return array<int, mixed> The rows.
+	 * @return mixed The store's answer, or an empty list.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function rowsOf(string $flowId): array {
+	private function rowsOf(string $flowId): mixed {
 		$scope = $this->seriesScope();
 		if ($scope === null) {
 			return [];
@@ -188,7 +175,7 @@ class PlannedSeriesLedger {
 			return [];
 		}
 
-		return $this->resultsOf(rows: $rows);
+		return $rows;
 	}//end rowsOf()
 
 	/**
@@ -225,65 +212,6 @@ class PlannedSeriesLedger {
 			'limit' => self::PAGE,
 		];
 	}//end seriesQuery()
-
-	/**
-	 * The rows of a findAll() answer, paginated or not.
-	 *
-	 * @param mixed $rows The answer.
-	 *
-	 * @return array<int, mixed> The rows.
-	 */
-	private function resultsOf(mixed $rows): array {
-		if (is_array($rows) === true && isset($rows['results']) === true) {
-			return (array)$rows['results'];
-		}
-
-		return (array)$rows;
-	}//end resultsOf()
-
-	/**
-	 * The rows as `{id, title}` pairs, dropping anything with no id.
-	 *
-	 * @param array<int, mixed> $rows The raw rows.
-	 *
-	 * @return array<int, array{id: string, title: string}> The occurrences.
-	 */
-	private function shape(array $rows): array {
-		$occurrences = [];
-		foreach ($rows as $row) {
-			$case = $this->asArray(row: $row);
-			$id = trim((string)($case['id'] ?? ''));
-			if ($id === '') {
-				continue;
-			}
-
-			$occurrences[] = ['id' => $id, 'title' => (string)($case['title'] ?? '')];
-		}
-
-		return $occurrences;
-	}//end shape()
-
-	/**
-	 * One `findAll()` row as an array, entity or not.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed> The payload.
-	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialized = $row->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return (array)$row;
-	}//end asArray()
 
 	/**
 	 * Every planned-follow-up flow, whichever app stored it.

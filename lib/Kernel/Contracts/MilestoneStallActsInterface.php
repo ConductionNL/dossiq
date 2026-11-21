@@ -42,7 +42,7 @@ interface MilestoneStallActsInterface {
 	 *
 	 * @return array<string, mixed>|null The case, or null when it does not exist or nothing is configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $caseId): ?array;
 
@@ -54,7 +54,7 @@ interface MilestoneStallActsInterface {
 	 *
 	 * @return bool True when a notification went out.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function notifyIfStalled(array $case, string $identifier = ''): bool;
 }//end interface

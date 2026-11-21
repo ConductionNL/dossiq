@@ -44,6 +44,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @uses \OCA\Dossiq\Service\DocumentUpload
  *
  * @spec openspec/specs/case-management/spec.md
  * @uses \OCA\Dossiq\Service\Custody\DossierRegister

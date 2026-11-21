@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Reads a timer fire and runs its work as the background service account.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 final class TimerFire {
 
@@ -50,7 +50,7 @@ final class TimerFire {
 	 *
 	 * @return array<string, mixed>|null The metadata, or null for another app's or another source's timer.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public static function metadataFrom(FlowTimerFiredEvent $event, string $source): ?array {
 		$timer    = $event->getTimer();
@@ -71,7 +71,7 @@ final class TimerFire {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public static function isBreach(FlowTimerFiredEvent $event): bool {
 		return str_starts_with((string) $event->getRungKey(), 'slaBreached:');
@@ -88,7 +88,7 @@ final class TimerFire {
 	 *
 	 * @return Throwable|null The failure for the listener to log, or null.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public static function runAsAccount(BackgroundServiceAccount $account, callable $operation): ?Throwable {
 		try {

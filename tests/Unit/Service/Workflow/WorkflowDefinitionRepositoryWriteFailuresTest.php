@@ -29,6 +29,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * writes a fragment over a stored row.
  *
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionRows
  */
 class WorkflowDefinitionRepositoryWriteFailuresTest extends TestCase {
 
