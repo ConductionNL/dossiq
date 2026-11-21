@@ -131,7 +131,7 @@ final class RulesFloorProposalTest extends TestCase {
 
 		$this->assertSame(
 			expected: ['spans' => [], 'source' => 'rules_only_fallback', 'llmAvailable' => true, 'llmError' => 'down'],
-			actual: $this->proposal(available: true, answer: new HermiqAssistantException('down', 503), logger: $logger)
+			actual: $this->proposal(available: true, answer: new HermiqAssistantException(message: 'down', statusCode: 503), logger: $logger)
 				->build(ruleSpans: [], ask: self::ASK)
 		);
 	}//end testAFailingAssistantFallsBackToTheRules()
