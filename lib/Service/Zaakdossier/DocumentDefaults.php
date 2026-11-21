@@ -188,11 +188,54 @@ class DocumentDefaults {
 	 * @param array<string, mixed> $row The row.
 	 *
 	 * @return string The uuid, or ''.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function idOf(array $row): string {
+	public function idOf(array $row): string {
 		$self = (array)($row['@self'] ?? []);
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
 	}//end idOf()
+
+	/**
+	 * The record after a second write: size, format and integrity follow the file.
+	 *
+	 * @param array<string, mixed> $record The stored record.
+	 * @param File                 $node   The file as written.
+	 *
+	 * @return array<string, mixed> The record to store.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function refreshed(array $record, File $node): array {
+		$record['bestandsomvang'] = $node->getSize();
+		$record['format'] = $node->getMimeType();
+		$record['integrity'] = $this->integrityOf(node: $node);
+		$record['fileId'] = $node->getId();
+
+		return $record;
+	}//end refreshed()
+
+	/**
+	 * The record after a rename: the file name, and the title when it was still derived.
+	 *
+	 * @param array<string, mixed>                     $record The stored record.
+	 * @param array{previous: string, current: string} $names  The file name before and the file's new name.
+	 *
+	 * @return array<string, mixed> The record to store.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function renamed(array $record, array $names): array {
+		$record['fileName'] = $names['current'];
+		if ((string)($record['title'] ?? '') === pathinfo($names['previous'], PATHINFO_FILENAME)) {
+			$record['title'] = pathinfo($names['current'], PATHINFO_FILENAME);
+		}
+
+		return $record;
+	}//end renamed()
 
 	/**
 	 * The sha256 integrity block of a file, empty above the size limit.

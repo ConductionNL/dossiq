@@ -1161,3 +1161,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and end-to-end deadline tests (131), green before and unchanged after but for one `@uses` line in the two
         files that cover the service without it.
         Own test: `tests/Unit/Service/Money/PayoutRequestTest` (2).
+  - [x] 8bb `Zaakdossier/DocumentProjectionService` (1: ExcessiveClassComplexity 52 against 50). What a write and a
+        rename change on a stored record read no store, so they moved onto `Zaakdossier/DocumentDefaults`, the class
+        that already says what a new file's record holds: size, format, integrity and file id after a second write
+        (`refreshed()`, whose integrity it already computed) and the file name, with the title when it was still
+        derived from the old name (`renamed()`, was the first half of `renameRecord()`, which now only saves). The
+        service's private `idOf()` was a copy of the one on `DocumentDefaults`; that one is public now and the copy
+        is gone. Bodies moved unchanged. Moving onto a class the service already held adds no coupling. Its
+        constructor, interface and container binding are unchanged. phpmd: zero findings on both files under both
+        rulesets, and the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `DocumentProjectionServiceTest` (a second write refreshes and creates
+        nothing, a rename follows and a hand-set title survives, moves between cases), `DocumentJoinHomingTest`,
+        `CaseFolderLockTest`, `CaseFolderNodeListenerTest`, `WooGatherAddTest` and the dossier suite (476), green
+        before and unchanged after.
+        Own test: `tests/Unit/Service/Zaakdossier/DocumentDefaultsRecordUpdatesTest` (3).
