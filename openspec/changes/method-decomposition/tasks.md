@@ -1010,7 +1010,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `weeklyThroughput()` stays public and delegates, so its callers, the constructor and the
         container binding are unchanged. The calculator no longer references `DateInterval`, so
         CouplingBetweenObjects stays 5. phpmd: zero findings on both files under both rulesets; over
-        the whole of `lib/` the class reads 47.
+        the whole of `lib/` the class reads 46 (47 when first recorded, read from a stale pdepend cache).
         Characterisation: the existing `ProcessingTimeCalculatorTest` (the weeks, none without
         completions, the ISO week year), `ProcessingTimeCalculatorFamilyTest` and
         `ProcessingTimeReportServiceEdgesTest`, green before and unchanged after but for one `@uses` line
@@ -1034,3 +1034,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         but for one `@uses` line.
         Own test: `tests/Unit/Service/Sync/DottedPathTest` (2); answering a missing step with '' instead of
         null turns 1 test red (checked).
+  - [x] 8at `Repair/MigrateWorkflowDefinitions` (1: ExcessiveClassComplexity 54 against 50). Two pieces
+        that read no store moved onto the template helpers the step already holds: whether a stored
+        template has an id and carries the cast-of-a-map marker onto `Workflow/BackfilledTemplateLabels`,
+        whose marker it reads (`castMarked()`, was `carriesCastMarker()`), and the statuses in their
+        order onto `Workflow/BackfilledTemplateShape` (`ordered()`, was `sortedByOrder()`). Bodies moved
+        unchanged. `statusesById()` repeated the search and the id filter `orderedStatuses()` already
+        had; it now calls `searchStatuses()` and `statusesWithId()` and keeps its own warning, the same
+        rows by the same rule. Moving onto classes the step already held adds no coupling (the inherited
+        CouplingBetweenObjects 14 is unchanged). Its constructor and the repair step registration are
+        unchanged. phpmd: zero new findings under both rulesets; over the whole of `lib/` the class reads
+        49, measured with pdepend's cache cleared (`~/.cache/pdepend`), which otherwise answers for a file
+        as it was.
+        Characterisation: the existing `MigrateWorkflowDefinitionsGoldenTest` and
+        `MigrateWorkflowDefinitionsLabelsTest` (a basis template healed from the statuses by id, an
+        unmarked template left alone, the steps in status order), green before and unchanged after.
+        Own tests: `testStatusesArePutInTheirOrder` in `BackfilledTemplateShapeTest` and
+        `tests/Unit/Service/Workflow/BackfilledTemplateCastMarkerTest` (1); reversing the order and
+        dropping the id check turn 4 tests red (checked).

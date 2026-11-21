@@ -131,4 +131,25 @@ class BackfilledTemplateShape {
 			. substr($hex, 16, 4) . '-'
 			. substr($hex, 20, 12);
 	}//end uuid()
+
+	/**
+	 * The statuses sorted by their order.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The statuses.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses, in order.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function ordered(array $statuses): array {
+		usort(
+			$statuses,
+			static function (array $a, array $b): int {
+				return (int)($a['order'] ?? 0) <=> (int)($b['order'] ?? 0);
+			},
+		);
+
+		return $statuses;
+	}//end ordered()
 }//end class
