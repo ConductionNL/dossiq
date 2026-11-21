@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Reporting\ProcessingTimeSeriesPublisher;
 use OCA\Dossiq\Service\Reporting\ProcessingTimeSteps;
 use OCA\Dossiq\Service\Reporting\ReportPeriod;
 use OCA\Dossiq\Service\Reporting\RiskMeasure;
+use OCA\Dossiq\Service\Reporting\WeeklyThroughput;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -42,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(ProcessingTimeReportService::class)]
 #[UsesClass(AtRiskScan::class)]
+#[UsesClass(WeeklyThroughput::class)]
 #[UsesClass(CaseDateNormaliser::class)]
 #[UsesClass(DayCount::class)]
 #[UsesClass(LanguageMapText::class)]

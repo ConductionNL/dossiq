@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Reporting\ProcessingTimeCalculator
  * @uses \OCA\Dossiq\Service\Reporting\SlaTally
+ * @uses \OCA\Dossiq\Service\Reporting\WeeklyThroughput
  * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ProcessingTimeCalculatorFamilyTest extends TestCase {
