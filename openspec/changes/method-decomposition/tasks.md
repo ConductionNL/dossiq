@@ -853,3 +853,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         case type), green before and unchanged after but for one `@uses` line. Own test:
         `tests/Unit/Repair/Support/PropertyDefinitionRecordTest` (2); giving the enum values to every
         type but the enum turns 3 tests red (checked).
+  - [x] 8ai `WOODocumentAssessmentService` (1: ExcessiveClassComplexity 52 against 50). Which assessment
+        rows judged a case's document partly public moved to the new `Assessment/PartlyPublicRows`: the
+        case's own partly public rows as a list (`rowsOf()`, the filter `partlyPublicAssessments()`
+        applied inline) and the count with the documents still waiting for a redacted copy (`tally()`,
+        with `isPartlyPublicOf()`). Bodies moved unchanged; the classification is the class's
+        `PARTLY_PUBLIC`. To keep the coupling from rising, the one save of an assessment moved onto the
+        value object it already took, `AssessmentBatchTarget::save()`, which takes `ObjectSaveOptions` and
+        `ObjectFindTarget` with it: CouplingBetweenObjects goes from 17 to 16 (an inherited finding, not
+        suppressed, and still above 13). The service builds the rows reader in its constructor, so its
+        constructor, interface and container binding are unchanged. phpmd: no finding on the three files
+        except that inherited coupling.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `WOODocumentAssessmentServiceTest` for `partlyPublicAssessments()` (only the case's own rows, as a
+        list, none without a schema or a store), beside the existing `testPartlyPublicDocumentsWithoutACopyAreNamed`.
+        Unchanged and green after but for two `@uses` lines in each of the 15 files that cover or use the
+        service. Own tests: `tests/Unit/Service/Assessment/PartlyPublicRowsTest` (2) and one added to
+        `AssessmentBatchTargetTest` for the save; counting a row of another case turns 2 tests red (checked).
