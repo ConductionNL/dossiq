@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Custody\DossierRegister;
@@ -304,7 +305,6 @@ class InformatieobjectStatusLifecycle {
 		);
 	}//end requireApprovalCleared()
 
-
 	/**
 	 * Apply a bulk status transition, returning a per-id success/failure list.
 	 *
@@ -340,4 +340,30 @@ class InformatieobjectStatusLifecycle {
 	private function requireRegister(): array {
 		return $this->dossierRegister->context();
 	}//end requireRegister()
+
+	/**
+	 * Refuse a document that is missing or definitief.
+	 *
+	 * @param array<string, mixed>|null $current The stored document, or null.
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return array<string, mixed> The stored document.
+	 *
+	 * @throws RuntimeException When the document does not exist.
+	 * @throws DomainException When the document is definitief and therefore immutable.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function requireEditable(?array $current, string $infoObjectId): array {
+		if ($current === null) {
+			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
+		}
+
+		if ((string)($current['status'] ?? '') === 'final') {
+			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
+		}
+
+		return $current;
+	}//end requireEditable()
 }//end class

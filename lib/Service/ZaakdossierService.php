@@ -31,7 +31,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
@@ -45,7 +44,6 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Service orchestrating the ZGW DRC zaakdossier.
@@ -55,8 +53,6 @@ use RuntimeException;
  * dossier around it.
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ZaakdossierService implements ZaakdossierServiceInterface {
 	use SearchesObjects;
@@ -153,12 +149,13 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * @throws \RuntimeException When OpenRegister is unavailable or required fields/config missing.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function uploadDocument(string $caseId, string $fileName, string $content, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
 
 		$upload = new DocumentUpload(caseId: $caseId, fileName: $fileName, content: $content, metadata: $metadata);
-		$type = $this->requireUploadType(upload: $upload);
+		$type = $upload->requireType();
 		$classification = $this->resolveUploadClassification(type: $type, metadata: $metadata);
 
 		$store = new InformatieobjectStore(
@@ -268,34 +265,6 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadSummary()
-
-	/**
-	 * Check the required upload input and return the document type.
-	 *
-	 * @param DocumentUpload $upload The upload: its case, file name and submitted metadata.
-	 *
-	 * @return string The document type uuid.
-	 *
-	 * @throws \RuntimeException When the case, file name or type is missing.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
-	 */
-	private function requireUploadType(DocumentUpload $upload): string {
-		if (trim($upload->caseId) === '') {
-			throw new RuntimeException('caseId is required');
-		}
-
-		if (trim($upload->fileName) === '') {
-			throw new RuntimeException('bestandsnaam is required');
-		}
-
-		$type = (string)($upload->metadata['informatieobjecttype'] ?? '');
-		if ($type === '') {
-			throw new RuntimeException('informatieobjecttype is required');
-		}
-
-		return $type;
-	}//end requireUploadType()
 
 	/**
 	 * The confidentiality an upload gets: the submitted one, or the type default.
@@ -689,6 +658,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * @throws \DomainException When the document is definitief and therefore immutable.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function updateMetadata(string $infoObjectId, array $metadata): array {
 		[$objectService, $register] = $this->requireRegister();
@@ -696,9 +666,9 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoObjectId);
 
-		$current = $this->requireEditableDocument(current: $current, infoObjectId: $infoObjectId);
+		$current = $this->statusLifecycle->requireEditable(current: $current, infoObjectId: $infoObjectId);
 
-		$updateData = $this->editableFields(metadata: $metadata);
+		$updateData = $this->normaliser->editableFields(metadata: $metadata);
 		$updateData = $this->withCorrespondentEdit(infoObjectId: $infoObjectId, current: $current, metadata: $metadata, updateData: $updateData);
 
 		if (empty($updateData) === true) {
@@ -736,65 +706,6 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			)
 		);
 	}//end withCorrespondentEdit()
-
-	/**
-	 * Refuse a document that is missing or definitief.
-	 *
-	 * @param array<string, mixed>|null $current The stored document, or null.
-	 * @param string $infoObjectId The informatieobject UUID.
-	 *
-	 * @return array<string, mixed> The stored document.
-	 *
-	 * @throws \RuntimeException When the document does not exist.
-	 * @throws \DomainException When the document is definitief and therefore immutable.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
-	 */
-	private function requireEditableDocument(?array $current, string $infoObjectId): array {
-		if ($current === null) {
-			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
-		}
-
-		if ((string)($current['status'] ?? '') === 'final') {
-			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
-		}
-
-		return $current;
-	}//end requireEditableDocument()
-
-	/**
-	 * The editable metadata fields present in the request, normalised.
-	 *
-	 * @param array<string, mixed> $metadata The submitted metadata.
-	 *
-	 * @return array<string, mixed> The fields to update.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
-	 */
-	private function editableFields(array $metadata): array {
-		$allowed = [
-			'title',
-			'description',
-			'informatieobjecttype',
-			'vertrouwelijkheidaanduiding',
-			'direction',
-			'keywords',
-		];
-		$updateData = [];
-		foreach ($allowed as $field) {
-			if (array_key_exists($field, $metadata) === false) {
-				continue;
-			}
-
-			$updateData[$field] = match ($field) {
-				'direction' => $this->normaliser->direction(value: $metadata[$field]),
-				'keywords' => $this->normaliser->keywords(value: $metadata[$field]),
-				default => $metadata[$field],
-			};
-		}
-
-		return $updateData;
-	}//end editableFields()
 
 	/**
 	 * Fetch a single informatieobject as an array.
