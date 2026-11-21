@@ -1002,3 +1002,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         other failed successor instead of an exception left to the framework; the class complexity
         stays 50. Test: `testAFailedReadOfTheOriginalIsAGeneric500` in `BeschikkingControllerTest`,
         which errors on the old code (checked).
+  - [x] 8ar `Reporting/ProcessingTimeCalculator` (1: ExcessiveClassComplexity 57 against 50). The
+        weekly throughput moved to the new `Reporting/WeeklyThroughput`: the records closed per ISO week
+        over the trailing weeks (`rows()`, was the body of `weeklyThroughput()`), with the end dates that
+        carry one (`endDatesOf()`), the zero bucket per week (`emptyWeeks()`), the counting
+        (`countedWeeks()`) and the Monday of a date (`mondayOf()`). Bodies moved unchanged.
+        `weeklyThroughput()` stays public and delegates, so its callers, the constructor and the
+        container binding are unchanged. The calculator no longer references `DateInterval`, so
+        CouplingBetweenObjects stays 5. phpmd: zero findings on both files under both rulesets; over
+        the whole of `lib/` the class reads 47.
+        Characterisation: the existing `ProcessingTimeCalculatorTest` (the weeks, none without
+        completions, the ISO week year), `ProcessingTimeCalculatorFamilyTest` and
+        `ProcessingTimeReportServiceEdgesTest`, green before and unchanged after but for one `@uses` line
+        or `UsesClass` attribute in the last two.
+        Own test: `tests/Unit/Service/Reporting/WeeklyThroughputTest` (3); moving the Monday a day turns 5
+        tests red (checked).
