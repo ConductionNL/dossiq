@@ -351,17 +351,18 @@ class BeschikkingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function successor(string $id): JSONResponse {
-		$refusal = $this->successorRefusal(id: $id);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$body = $this->request->getParams();
-
 		try {
-			return $this->issueSuccessorOf(id: $id, body: $body);
+			// The refusal reads the original, so a read that fails is answered
+			// here like any other failed successor, not left to the framework.
+			$answer = $this->successorRefusal(id: $id);
+			if ($answer !== null) {
+				return $answer;
+			}
+
+			return $this->issueSuccessorOf(id: $id, body: $this->request->getParams());
 		} catch (RefusedException $refusal) {
 			return $this->refused(op: 'successor', e: $refusal);
 		} catch (Throwable $failure) {
@@ -392,6 +393,10 @@ class BeschikkingController extends Controller {
 	 * @param string $id The original beschikking id.
 	 *
 	 * @return JSONResponse|null The refusal, or null when the successor may be issued.
+	 *
+	 * @throws Throwable When the original or its case access cannot be read; successor() answers it as a 500.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function successorRefusal(string $id): ?JSONResponse {
 		$user = $this->userSession->getUser();

@@ -997,3 +997,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         after but for one `@uses` line in each.
         Own test: `tests/Unit/Controller/Support/ComposeRequestBodyTest` (2); letting one more field
         through turns 2 tests red (checked).
+        Gate 49 named `successorRefusal()`, which reads the original outside any try. `successor()` now
+        runs the refusal inside its existing try, so a read that fails is the same generic 500 as any
+        other failed successor instead of an exception left to the framework; the class complexity
+        stays 50. Test: `testAFailedReadOfTheOriginalIsAGeneric500` in `BeschikkingControllerTest`,
+        which errors on the old code (checked).
