@@ -966,3 +966,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         but for one `@uses` line in each.
         Own tests: 2 added to `tests/Unit/Service/Flow/StartableFlowLookupTest` (3 in all); keeping the
         blanks around a uuid turns 2 tests red (checked).
+  - [x] 8ap `Pause/PauseChaseService` (1: ExcessiveClassComplexity 56 against 50). What a step reads as
+        and the basis it is recorded under follow from the reason and the reminder number the step
+        already carries, so they moved onto `Pause/PauseStep`: the reminder sentence (`chasedSentence()`),
+        the escalation sentence (`escalatedSentence()`) and the legal basis, Awb 4:5 when none is declared
+        (`basis()`, was `basisOf()`). Bodies moved unchanged, reading the step's own reason and number.
+        `recordChased()` lost its `$reason` parameter, which only the sentence read and which was always
+        the step's own reason. Moving onto a class the service already held adds no coupling. Its
+        constructor, interface and container binding are unchanged. phpmd: zero findings on both files
+        under both rulesets, and over the whole of `lib/`.
+        Characterisation: the existing `PauseChaseServiceSweepTest` (the exact chased and escalated
+        sentences and their Awb 4:5 basis, a nameless reason by its key, an escalation without a target)
+        and `PauseChaseServiceTest`, green before and unchanged after but for one `@uses` line in each file
+        that reaches the step.
+        Own test: `tests/Unit/Service/Pause/PauseStepTest` (3); changing the fallback basis turns 2 tests
+        red (checked).
