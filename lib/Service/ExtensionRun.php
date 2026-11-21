@@ -28,7 +28,7 @@ namespace OCA\Dossiq\Service;
  * One verlenging: what was asked, under which mode, and what the term was
  * before it. It never leaves DeadlineExtensionService.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 final class ExtensionRun {
 	/**

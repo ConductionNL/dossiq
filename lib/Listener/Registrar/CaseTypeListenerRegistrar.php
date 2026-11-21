@@ -87,7 +87,7 @@ class CaseTypeListenerRegistrar {
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-types/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
@@ -151,7 +151,7 @@ class CaseTypeListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function registerTermListeners(IRegistrationContext $context): void {
 		// UPDATE ONLY. No term exists before the case does; the bind that

@@ -72,7 +72,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @param ReceiptMoment $receipt Tells a receipt from a draft save: a draft binds no
 	 *        term, and sending it does (decision 180).
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnServiceInterface $termService,
@@ -105,7 +105,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
@@ -314,7 +314,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function bindTheOtherClocks(CreatedCase $created, ?array $plannedDefinition = null): void {

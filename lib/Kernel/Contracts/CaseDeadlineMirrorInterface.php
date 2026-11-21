@@ -60,7 +60,7 @@ interface CaseDeadlineMirrorInterface {
 	 *
 	 * @throws RefusedException When the terms of the case could not be read.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function deadlineFor(string $caseId): ?string;
 
@@ -74,7 +74,7 @@ interface CaseDeadlineMirrorInterface {
 	 *
 	 * @return bool True when the case was written.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function follow(string $caseId): bool;
 
@@ -88,7 +88,7 @@ interface CaseDeadlineMirrorInterface {
 	 *
 	 * @return bool True when the case was written.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function followInstance(?array $instance): bool;
 
@@ -99,7 +99,7 @@ interface CaseDeadlineMirrorInterface {
 	 *
 	 * @return bool True for a statutory term, including one written before kinds existed.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function isStatutory(array $instance): bool;
 }//end interface

@@ -56,7 +56,7 @@ interface WOODeadlineServiceInterface {
 	 *
 	 * @throws RefusedException When there is no term to extend, or the extension is refused
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function extendDeadline(string $caseId, string $reason): array;
 }//end interface

@@ -111,7 +111,7 @@ export function generateIdentifier() {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseOverdue(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
@@ -126,7 +126,7 @@ export function isCaseOverdue(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueToday(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
@@ -141,7 +141,7 @@ export function isCaseDueToday(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueTomorrow(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
@@ -156,7 +156,7 @@ export function isCaseDueTomorrow(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {string|null} Overdue text or null if not overdue
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getCaseOverdueText(caseObj, isFinal = false) {
 	if (!isCaseOverdue(caseObj, isFinal)) return null
@@ -232,7 +232,7 @@ export function getDaysElapsed(startDate) {
  * @param {string} deadline ISO date string
  * @return {number} Days remaining (negative if overdue)
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getDaysRemaining(deadline) {
 	return daysUntilDeadline(deadline) ?? 0

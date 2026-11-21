@@ -74,7 +74,8 @@ The three widgets below SHALL render in the My work view of My Work and SHALL
 NOT render on the Dashboard. The Dashboard's KPI cards, status/type charts, and
 Stalled Cases panel stay on `/dashboard`. The My team view of My Work MAY show
 copies of the team-wide ones, and each copy MUST equal the Dashboard's
-definition.
+definition. A case whose deadline is today SHALL be listed as due today, not
+as overdue (REQ-OTE-05).
 
 #### Scenario: My Work shows open tasks, deadlines and open cases
 @e2e exclude A manifest property, asserted in dashboardWorkTables.spec.js and landingViews.spec.js.

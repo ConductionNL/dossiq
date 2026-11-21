@@ -328,7 +328,7 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 * @return string The end date as `Y-m-d`.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfter(
 		DateTimeImmutable $start,

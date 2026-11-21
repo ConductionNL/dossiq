@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+ * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Re-arms every running beslistermijn timer once, so it breaches the day after the last day.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+ * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
  */
 class RearmBeslistermijnTimers implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -87,7 +87,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function getName(): string {
 		return 'Re-arm Dossiq decision term timers so they breach the day after the last day';
@@ -100,7 +100,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -123,7 +123,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 	 *
 	 * @return array{0: array<int, array<string, mixed>>|null, 1: array<string, int>} The rows read, or null when unreadable, and the counts.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	private function rearmedAsSystem(): array {
 		$rows = null;
@@ -150,7 +150,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq term timer re-arm complete', $counts);

@@ -345,7 +345,7 @@ class WorkingDayRoll {
 	 *
 	 * @return DateTimeImmutable The end date.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfterOrCalendarDays(DateTimeImmutable $start, int $days, string $mode): DateTimeImmutable {
 		$computed = $this->endAfter(start: $start, days: $days, mode: $mode);

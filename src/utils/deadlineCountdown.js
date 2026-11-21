@@ -83,7 +83,7 @@ export function daysUntilDeadline(deadline, now = new Date()) {
  * @return {boolean} True only when the deadline's day is before today; false
  *   when there is no readable deadline.
  *
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isOverdue(deadline, now = new Date()) {
 	const days = daysUntilDeadline(deadline, now)

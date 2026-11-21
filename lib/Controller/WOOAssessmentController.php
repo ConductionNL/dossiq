@@ -162,7 +162,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	#[NoAdminRequired]
 	public function extendDeadline(string $id): JSONResponse {

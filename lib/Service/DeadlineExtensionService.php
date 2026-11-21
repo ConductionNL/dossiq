@@ -151,7 +151,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 * @throws RefusedException When the case has no running statutory term, or it has had
 	 *         every extension it allows (409), or a declared period refuses it (422).
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days, ?\Closure $baseOf = null): array {
 		$mirror = $this->termMirror();
@@ -314,7 +314,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function applyExtension(ExtensionRun $run): array {
 		$this->assertExtensionInput(rationale: $run->rationale, newEndDate: $run->requestedEndDate);
@@ -488,7 +488,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 *
 	 * @return string The end date the term actually gets (YYYY-MM-DD).
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
+	 * @spec openspec/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
 	 */
 	private function rolledEndDate(string $endDate): string {
 		if ($this->timerService === null) {

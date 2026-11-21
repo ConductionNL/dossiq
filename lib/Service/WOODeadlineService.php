@@ -20,7 +20,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
- * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+ * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -74,7 +74,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 * @param DeadlineExtensionService|null $extensions The one extension path, with its
 	 *        ceiling and its roll. Required for {@see extendDeadline()}.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -103,7 +103,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 * @throws \InvalidArgumentException If the date is invalid
 	 * @throws RefusedException When no Woo term definition is administered
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function calculate(string $receiptDate): array {
 		$receipt = $this->dates->parse($receiptDate, 'receiptDate');
@@ -159,7 +159,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 *
 	 * @throws RefusedException When there is no term to extend, or the extension is refused
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function extendDeadline(string $caseId, string $reason): array {
 		$this->refuseWithoutReason(reason: $reason);
@@ -299,7 +299,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 *
 	 * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	private function resolveWarningDeadline(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -334,7 +334,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 *
 	 * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	private function deadlineOf(array $case): array {
 		$caseData = (array)$case;

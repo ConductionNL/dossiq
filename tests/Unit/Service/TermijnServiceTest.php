@@ -310,7 +310,7 @@ class TermijnServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testACaseDeadlineFollowsItsTermAfterAPause(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'title' => 'Dakkapel', 'deadline' => '2026-07-13']);
@@ -333,7 +333,7 @@ class TermijnServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAPlannedEndDoesNotMoveTheCase(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-07-13']);

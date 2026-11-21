@@ -444,6 +444,34 @@ change it before planning.
 - GIVEN today is Monday and the organisation is closed on Tuesday
 - THEN "Wanneer" reads Wednesday 10:00
 
+### Requirement: The urgency score reads every open term (REQ-OTE-06)
+
+The work queue's urgency score SHALL take a case's deadline from the nearest
+end date among its term instances that are `lopend`, `verlengd`, `paused` or
+`exceeded`, so a paused or extended term counts with the end date it has
+now. Only when the case has none SHALL it read the case's `deadline`.
+
+#### Scenario: A paused term keeps its case in the queue
+@e2e exclude a scoring query; covered by tests/Unit/Service/WorkQueueServiceTest.php
+
+- **GIVEN** a case whose only statutory term is `paused`, ending in 4 working days
+- **WHEN** the work queue is computed
+- **THEN** the case's days until the deadline SHALL be 4, read from that term
+
+### Requirement: One front-end helper decides days left and overdue (REQ-OTE-07)
+
+Every surface that shows days left or overdue for a case or a term SHALL get
+both from `src/utils/deadlineCountdown.js`: whole days between the reader's
+local today and the deadline's day, overdue only when that is below zero. No
+component SHALL subtract dates for this itself.
+
+#### Scenario: Every surface agrees on the last day
+@e2e exclude a pure function; covered by tests/vitest/deadlineCountdown.spec.js
+
+- **GIVEN** a deadline of today
+- **WHEN** the case list, the case helpers, the terms panel, the dashboard and the Woo panel ask for days left
+- **THEN** each SHALL get 0 and not overdue
+
 ## Non-Functional Requirements
 
 - **Performance**: My Work reuses the index self-fetch; it MUST page/limit like
