@@ -183,9 +183,17 @@ final class ProofOfTransferExportTest extends TestCase {
 	public function testNothingIsWrittenWithoutAStoreOrBothSchemas(): void {
 		$rows = [['caseId' => 'case-a']];
 
-		$this->assertSame(expected: 0, actual: $this->export(store: null, config: ['archief_bewijs_schema' => '31', 'case_document_schema' => '32'])->export(register: '5'));
-		$this->assertSame(expected: 0, actual: $this->export(store: $this->store(rows: $rows), config: ['case_document_schema' => '32'])->export(register: '5'));
-		$this->assertSame(expected: 0, actual: $this->export(store: $this->store(rows: $rows), config: ['archief_bewijs_schema' => '31'])->export(register: '5'));
+		$schemas = ['archief_bewijs_schema' => '31', 'case_document_schema' => '32'];
+
+		$this->assertSame(expected: 0, actual: $this->export(store: null, config: $schemas)->export(register: '5'));
+		$this->assertSame(
+			expected: 0,
+			actual: $this->export(store: $this->store(rows: $rows), config: ['case_document_schema' => '32'])->export(register: '5')
+		);
+		$this->assertSame(
+			expected: 0,
+			actual: $this->export(store: $this->store(rows: $rows), config: ['archief_bewijs_schema' => '31'])->export(register: '5')
+		);
 		$this->assertSame(expected: [], actual: $this->saved);
 	}//end testNothingIsWrittenWithoutAStoreOrBothSchemas()
 
