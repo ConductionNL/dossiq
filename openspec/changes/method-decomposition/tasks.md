@@ -1017,3 +1017,6 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         or `UsesClass` attribute in the last two.
         Own test: `tests/Unit/Service/Reporting/WeeklyThroughputTest` (3); moving the Monday a day turns 5
         tests red (checked).
+        The new file does date arithmetic, so it has its own row in
+        `docs/research/date-arithmetic-audit-2026-09-14.md` (verdict neither: chart buckets, not a term),
+        which `EveryTermOnTheCalendarTest` asks for.
