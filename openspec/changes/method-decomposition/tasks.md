@@ -974,7 +974,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `recordChased()` lost its `$reason` parameter, which only the sentence read and which was always
         the step's own reason. Moving onto a class the service already held adds no coupling. Its
         constructor, interface and container binding are unchanged. phpmd: zero findings on both files
-        under both rulesets, and over the whole of `lib/`.
+        under both rulesets; over the whole of `lib/` the class reads 50, which the rule (reported above
+        its maximum of 50) does not report.
         Characterisation: the existing `PauseChaseServiceSweepTest` (the exact chased and escalated
         sentences and their Awb 4:5 basis, a nameless reason by its key, an escalation without a target)
         and `PauseChaseServiceTest`, green before and unchanged after but for one `@uses` line in each file
