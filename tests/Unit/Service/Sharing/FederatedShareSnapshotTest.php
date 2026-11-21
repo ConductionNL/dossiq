@@ -138,7 +138,7 @@ final class FederatedShareSnapshotTest extends TestCase {
 		self::assertSame(expected: 'revoked', actual: $revoked['status']);
 		self::assertSame(expected: 'bob', actual: $revoked['revokedBy']);
 		self::assertSame(expected: 'case-1', actual: $revoked['caseId']);
-		self::assertNotFalse(actual: \DateTime::createFromFormat(\DateTimeInterface::ATOM, $revoked['revokedAt']));
+		self::assertNotFalse(condition: \DateTime::createFromFormat(\DateTimeInterface::ATOM, $revoked['revokedAt']));
 
 		$entity = new class implements JsonSerializable {
 			/**
