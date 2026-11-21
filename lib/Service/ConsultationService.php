@@ -29,8 +29,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ConsultationServiceInterface;
 use OCA\Dossiq\Service\Consultation\ConsultationRecords;
+use OCA\Dossiq\Service\Consultation\ConsultationStatusRules;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
-use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -46,9 +46,8 @@ use RuntimeException;
  * status transitions, advice responses, deadline extensions, and dependency
  * cycle detection per Awb 3:5-3:9.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class ConsultationService implements ConsultationServiceInterface {
 
@@ -56,45 +55,18 @@ class ConsultationService implements ConsultationServiceInterface {
 	use RequiresObjectService;
 
 	/**
-	 * Valid consultation statuses.
-	 */
-	private const VALID_STATUSES = [
-		'open',
-		'received',
-		'in_handling',
-		'advice_uitgebracht',
-		'closed',
-		'withdrawn',
-	];
-
-	/**
-	 * Valid advice response types.
-	 */
-	private const VALID_RESPONSES = [
-		'positive',
-		'positief_with_terms',
-		'negative',
-		'non_from_application',
-	];
-
-	/**
-	 * Allowed status transitions (from => [allowed-to, ...]).
-	 */
-	private const STATUS_TRANSITIONS = [
-		'open' => ['received', 'withdrawn'],
-		'received' => ['in_handling', 'withdrawn'],
-		'in_handling' => ['advice_uitgebracht', 'withdrawn'],
-		'advice_uitgebracht' => ['closed'],
-		'closed' => [],
-		'withdrawn' => [],
-	];
-
-	/**
 	 * The Adviseringsbeheer settings.
 	 *
 	 * @var ConsultationTerms
 	 */
 	private ConsultationTerms $terms;
+
+	/**
+	 * The status graph, the advice types and the blocking rule.
+	 *
+	 * @var ConsultationStatusRules
+	 */
+	private ConsultationStatusRules $rules;
 
 	/**
 	 * Constructor.
@@ -115,6 +87,7 @@ class ConsultationService implements ConsultationServiceInterface {
 		?ConsultationTerms $terms = null,
 	) {
 		$this->terms = ($terms ?? new ConsultationTerms(settingsService: $settingsService));
+		$this->rules = new ConsultationStatusRules();
 	}//end __construct()
 
 	/**
@@ -340,21 +313,10 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	private function assertValidTransition(string $consultationId, string $newStatus): void {
-		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-			throw new RuntimeException('Invalid status: ' . $newStatus);
-		}
+		$this->rules->assertKnownStatus(newStatus: $newStatus);
 
-		// Transition validation against the declared status graph. Only a
-		// recognised current status constrains the move; a consultation whose
-		// stored status is absent or unknown may be set to any valid status so
-		// the graph never wedges an object that predates it.
 		$consultation = $this->getConsultation(consultationId: $consultationId);
-		$current = (string)($consultation['status'] ?? '');
-		if (array_key_exists($current, self::STATUS_TRANSITIONS) === true
-			&& in_array($newStatus, self::STATUS_TRANSITIONS[$current], true) === false
-		) {
-			throw new RuntimeException('Invalid status transition: ' . $current . ' -> ' . $newStatus);
-		}
+		$this->rules->assertMove(current: (string)($consultation['status'] ?? ''), newStatus: $newStatus);
 	}//end assertValidTransition()
 
 	/**
@@ -388,7 +350,7 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function submitResponse(string $consultationId, array $response): array {
-		$advies = $this->validAdvice(response: $response);
+		$advies = $this->rules->adviceOf(response: $response);
 
 		$objectService = $this->requireObjectService();
 
@@ -406,26 +368,6 @@ class ConsultationService implements ConsultationServiceInterface {
 
 		return ['id' => $consultationId, 'advice' => $advies, 'status' => 'advice_uitgebracht'];
 	}//end submitResponse()
-
-	/**
-	 * The advice type of a response.
-	 *
-	 * @param array<string, mixed> $response Response data (advies, toelichting, voorwaarden)
-	 *
-	 * @return mixed The advice type.
-	 *
-	 * @throws \RuntimeException If invalid response type
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
-	 */
-	private function validAdvice(array $response): mixed {
-		$advies = $response['advice'] ?? '';
-		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
-			throw new RuntimeException('Invalid advice type: ' . $advies);
-		}
-
-		return $advies;
-	}//end validAdvice()
 
 	/**
 	 * The fields an advice response writes onto the consultation.
@@ -526,13 +468,7 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function consultationBlocks(array $consultation): bool {
-		if (($consultation['mandatory'] ?? false) !== true) {
-			return false;
-		}
-
-		$status = (string)($consultation['status'] ?? '');
-
-		return in_array($status, ['advice_uitgebracht', 'closed', 'withdrawn'], true) === false;
+		return $this->rules->blocks(consultation: $consultation);
 	}//end consultationBlocks()
 
 	/**
@@ -596,21 +532,12 @@ class ConsultationService implements ConsultationServiceInterface {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function placeAdviceObligation(string $consultationId, array $data): void {
-		if (($data['mandatory'] ?? false) !== true) {
+		$obligation = $this->rules->mirroringObligation(consultationId: $consultationId, data: $data);
+		if ($obligation === null) {
 			return;
 		}
 
-		$this->records->obligations->place(
-			obligation: [
-				'case' => (string)($data['parentCase'] ?? ''),
-				'kind' => ObligationService::KIND_ADVICE,
-				'title' => (string)($data['subject'] ?? 'Advice request'),
-				'placedOn' => (string)($data['assignee'] ?? ''),
-				'placedOnGroup' => (string)($data['adviceAuthority'] ?? ''),
-				'dueAt' => substr((string)($data['latestResponseDate'] ?? ''), 0, 10),
-				'source' => $consultationId,
-			],
-		);
+		$this->records->obligations->place(obligation: $obligation);
 	}//end placeAdviceObligation()
 
 	/**
