@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Sharing;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
+use OCA\Dossiq\Service\Sharing\FederatedShareSnapshot;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
@@ -45,6 +46,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  */
 #[CoversClass(FederatedCaseShareService::class)]
 #[UsesClass(OpenRegisterSharingGateway::class)]
+#[UsesClass(FederatedShareSnapshot::class)]
 final class FederatedCaseShareServiceTest extends TestCase {
 	private const CONFIG = [
 		'register' => '5',

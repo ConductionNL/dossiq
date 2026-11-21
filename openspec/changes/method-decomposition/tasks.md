@@ -916,3 +916,25 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         green before and unchanged after but for two `@uses` lines in each file that covers the importer.
         Own tests: `tests/Unit/Service/Import/RecordImportAnswerTest` (2) and
         `tests/Unit/Service/Term/PeriodDaysTest` (1); listing no failed rows turns 6 tests red (checked).
+  - [x] 8am `Sharing/FederatedCaseShareService` (1: ExcessiveClassComplexity 55 against 50). What a
+        federated share's snapshot record says without a store moved to the new
+        `Sharing/FederatedShareSnapshot`: the refusal of requested fields outside the federation allow-list
+        (`fieldRefusal()`), the record built from the loaded case and the request, with only the fields the
+        case has and only its own documents (`record()`, with `fieldSnapshot()`, was the second half of
+        `buildShareData()` and `buildFieldSnapshot()`), and the case a stored snapshot names
+        (`caseIdOf()`, the second half of `readShareCaseId()`), a snapshot marked revoked (`revoked()`) and
+        a saved snapshot read back as a record (`recordOf()`), both from `storeRevokedShare()`. The one-line
+        `isFederatedShareConfigured()` is inlined where it was called. Bodies and refusal sentences moved
+        unchanged. The allow-list check takes the `CaseSharingService` reference with it and the revoked
+        marking takes `DateTime`, so CouplingBetweenObjects goes from 13 to 12 (moving only the record made
+        it 14). Measured over the whole of `lib/`, as `composer phpmd` runs it, the class reads 49: a
+        whole-tree run counts it higher than a run on the file alone (52 against 48 before the last two
+        moves), so the whole-tree number is the one checked. The service builds the
+        snapshot in its constructor, so its constructor and the container binding are unchanged. phpmd:
+        zero findings on both files under both rulesets.
+        Characterisation: the existing `FederatedCaseShareServiceTest` (the activated record, the refusals
+        before any read, a foreign document, the case of an array, entity and caseless record) and
+        `CaseSharingServiceFederationTest`, green before and unchanged after but for one `@uses` line or
+        `UsesClass` attribute in each file that covers or uses the service. Own test:
+        `tests/Unit/Service/Sharing/FederatedShareSnapshotTest` (4); letting one foreign document through
+        turns 3 tests red (checked).
