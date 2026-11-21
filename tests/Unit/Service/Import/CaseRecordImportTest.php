@@ -50,6 +50,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * in an in-memory register, with the term engine played by doubles.
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @uses \OCA\Dossiq\Service\Import\RecordImportAnswer
+ * @uses \OCA\Dossiq\Service\Term\PeriodDays
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore

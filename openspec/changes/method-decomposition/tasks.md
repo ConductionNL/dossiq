@@ -900,3 +900,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         before and unchanged after but for one `@uses` line in each file that covers or uses the service.
         Own test: `tests/Unit/Service/Calendar/PlannedEventFieldsTest` (2); naming blank participants turns
         2 tests red (checked).
+  - [x] 8al `Import/CaseRecordImport` (1: ExcessiveClassComplexity 55 against 50). Two parts that read and
+        write nothing moved out. The answer of one declared import is the new `Import/RecordImportAnswer`:
+        the answer opened under its key and source app with nothing counted (`opened()`, with
+        `NOTHING_YET`) and each record's outcome counted on it (`counted()`, with `COUNTS`). A case type's
+        ISO extension period read as days is the new `Term/PeriodDays` (`days()`, was the private
+        `days()`), which takes `DateTimeImmutable` and `DateInterval` with it; its row in
+        `docs/research/date-arithmetic-audit-2026-09-14.md` moved with it, verdict unchanged. Bodies moved
+        unchanged. The importer builds both in its constructor (the period reader over the `DayCount` the
+        constructor already takes), so its constructor signature, interface and container binding are
+        unchanged. phpmd: zero findings on the three files under both rulesets.
+        Characterisation: the existing `CaseRecordImportGoldenTest` (every run across its skips, stops,
+        failures and counts, including no, an unreadable and a month extension period) and
+        `CaseRecordImportTest` (the P14D extension counted as 14 days), with the command and upgrade tests,
+        green before and unchanged after but for two `@uses` lines in each file that covers the importer.
+        Own tests: `tests/Unit/Service/Import/RecordImportAnswerTest` (2) and
+        `tests/Unit/Service/Term/PeriodDaysTest` (1); listing no failed rows turns 6 tests red (checked).
