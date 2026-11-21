@@ -45,7 +45,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use DateTime;
-use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
@@ -57,11 +56,18 @@ use Psr\Log\LoggerInterface;
  * Creates and revokes redacted, field-scoped federated case-share snapshots.
  *
  * @psalm-suppress UnusedClass
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class FederatedCaseShareService {
+	/**
+	 * Builds the redacted snapshot record from a loaded case.
+	 *
+	 * @var FederatedShareSnapshot
+	 */
+	private readonly FederatedShareSnapshot $snapshot;
+
 	/**
 	 * Constructor.
 	 *
@@ -69,6 +75,8 @@ class FederatedCaseShareService {
 	 * @param OpenRegisterSharingGateway $gateway OpenRegister resolution for the sharing surface
 	 * @param LoggerInterface $logger The logger
 	 * @param TenantAuditTrailService $auditTrailService Audit-trail emitter for cross-org actions
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -76,6 +84,7 @@ class FederatedCaseShareService {
 		private readonly LoggerInterface $logger,
 		private readonly TenantAuditTrailService $auditTrailService,
 	) {
+		$this->snapshot = new FederatedShareSnapshot();
 	}//end __construct()
 
 	/**
@@ -203,11 +212,12 @@ class FederatedCaseShareService {
 	 *                                                                     and share schema, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function federatedShareConfig(array $sharedFields): array {
-		$invalidFields = array_diff($sharedFields, CaseSharingService::FEDERATION_ALLOWED_FIELDS);
-		if (count($invalidFields) > 0) {
-			return ['error' => 'Field(s) not shareable across a federation boundary: ' . implode(', ', $invalidFields)];
+		$refusal = $this->snapshot->fieldRefusal(sharedFields: $sharedFields);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
@@ -231,38 +241,15 @@ class FederatedCaseShareService {
 	 * @return array The snapshot record, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function buildShareData(FederatedShareRequest $request, FederatedShareStore $store, string $caseSchema): array {
-		$caseId = $request->caseId;
-		$sharedFields = $request->sharedFields;
-		$sharedDocuments = $request->sharedDocuments;
-
-		$caseData = $this->loadCaseForFederatedShare(store: $store, caseId: $caseId, caseSchema: (int)$caseSchema);
+		$caseData = $this->loadCaseForFederatedShare(store: $store, caseId: $request->caseId, caseSchema: (int)$caseSchema);
 		if ($caseData === null) {
 			return ['error' => 'Case not found'];
 		}
 
-		// Build the redacted snapshot — allow-listed fields present on the case only.
-		$fieldSnapshot = $this->buildFieldSnapshot(caseData: $caseData, sharedFields: $sharedFields);
-
-		// Only document references already attached to the case may cross.
-		$caseDocuments = (array)($caseData['documents'] ?? []);
-		$validDocuments = array_values(array_intersect($sharedDocuments, $caseDocuments));
-		$invalidDocuments = array_diff($sharedDocuments, $caseDocuments);
-		if (count($invalidDocuments) > 0) {
-			return ['error' => 'Document(s) not attached to this case: ' . implode(', ', $invalidDocuments)];
-		}
-
-		return [
-			'caseId' => $caseId,
-			'remoteCloudId' => $request->remoteCloudId,
-			'sharedFields' => array_values($sharedFields),
-			'sharedDocuments' => $validDocuments,
-			'fieldSnapshot' => $fieldSnapshot,
-			'permissionLevel' => $request->permissionLevel,
-			'status' => 'pending',
-			'createdBy' => $request->createdBy,
-		];
+		return $this->snapshot->record(request: $request, caseData: $caseData);
 	}//end buildShareData()
 
 	/**
@@ -553,23 +540,12 @@ class FederatedCaseShareService {
 	 * @return string|null The caseId, or null when not found
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function readShareCaseId(FederatedShareStore $store, string $shareId): ?string {
 		$shareObj = $store->objectService->find($shareId, new ObjectFindOptions(register: (int)$store->register, schema: (int)$store->shareSchema));
-		if ($shareObj === null) {
-			return null;
-		}
 
-		$shareData = $shareObj;
-		if (is_array($shareObj) === false) {
-			$shareData = $shareObj->jsonSerialize();
-		}
-
-		if (isset($shareData['caseId']) === true) {
-			return (string)$shareData['caseId'];
-		}
-
-		return null;
+		return $this->snapshot->caseIdOf(stored: $shareObj);
 	}//end readShareCaseId()
 
 	/**
@@ -615,29 +591,6 @@ class FederatedCaseShareService {
 
 		return $this->gateway->toArray(value: $caseObj);
 	}//end loadCaseForFederatedShare()
-
-	/**
-	 * Project the requested fields that are actually present on the case.
-	 *
-	 * The caller has already rejected any field outside
-	 * {@see CaseSharingService::FEDERATION_ALLOWED_FIELDS}, so this only drops
-	 * fields the case does not carry.
-	 *
-	 * @param array<string, mixed> $caseData The case data
-	 * @param array<string> $sharedFields Requested case field names
-	 *
-	 * @return array<string, mixed> The redacted snapshot
-	 */
-	private function buildFieldSnapshot(array $caseData, array $sharedFields): array {
-		$fieldSnapshot = [];
-		foreach ($sharedFields as $field) {
-			if (array_key_exists($field, $caseData) === true) {
-				$fieldSnapshot[$field] = $caseData[$field];
-			}
-		}
-
-		return $fieldSnapshot;
-	}//end buildFieldSnapshot()
 
 	/**
 	 * Mint the outgoing OCM share for a persisted snapshot through the OR leaf.

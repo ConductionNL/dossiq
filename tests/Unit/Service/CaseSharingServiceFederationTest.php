@@ -159,6 +159,7 @@ final class CsfFakeFederatedShare {
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShareRecord
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
+ * @uses \OCA\Dossiq\Service\Sharing\FederatedShareSnapshot
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
 class CaseSharingServiceFederationTest extends TestCase {

@@ -916,3 +916,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         green before and unchanged after but for two `@uses` lines in each file that covers the importer.
         Own tests: `tests/Unit/Service/Import/RecordImportAnswerTest` (2) and
         `tests/Unit/Service/Term/PeriodDaysTest` (1); listing no failed rows turns 6 tests red (checked).
+  - [x] 8am `Sharing/FederatedCaseShareService` (1: ExcessiveClassComplexity 55 against 50). What a
+        federated share's snapshot record says without a store moved to the new
+        `Sharing/FederatedShareSnapshot`: the refusal of requested fields outside the federation allow-list
+        (`fieldRefusal()`), the record built from the loaded case and the request, with only the fields the
+        case has and only its own documents (`record()`, with `fieldSnapshot()`, was the second half of
+        `buildShareData()` and `buildFieldSnapshot()`), and the case a stored snapshot names
+        (`caseIdOf()`, the second half of `readShareCaseId()`). Bodies and refusal sentences moved
+        unchanged. The allow-list check takes the `CaseSharingService` reference with it, so
+        CouplingBetweenObjects stays at 13 (moving only the record made it 14). The service builds the
+        snapshot in its constructor, so its constructor and the container binding are unchanged. phpmd:
+        zero findings on both files under both rulesets.
+        Characterisation: the existing `FederatedCaseShareServiceTest` (the activated record, the refusals
+        before any read, a foreign document, the case of an array, entity and caseless record) and
+        `CaseSharingServiceFederationTest`, green before and unchanged after but for one `@uses` line or
+        `UsesClass` attribute in each file that covers or uses the service. Own test:
+        `tests/Unit/Service/Sharing/FederatedShareSnapshotTest` (3); letting one foreign document through
+        turns 3 tests red (checked).
