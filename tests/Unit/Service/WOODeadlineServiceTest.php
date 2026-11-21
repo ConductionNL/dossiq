@@ -356,7 +356,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	public function testCheckAndWarnCountsAPassedDeadlineAsOverdue(): void {
-		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
+		$objectServiceMock = $this->createMock(originalClassName: WOODeadlineObjectServiceStub::class);
 		$objectServiceMock->method('find')->willReturn([
 			'id' => 'case-uuid-001',
 			'deadline' => '2000-01-01',
@@ -370,9 +370,9 @@ class WOODeadlineServiceTest extends TestCase {
 
 		$result = $this->service->checkAndWarn('case-uuid-001', 'j.dejong');
 
-		$this->assertTrue($result['isOverdue']);
-		$this->assertLessThan(0, $result['daysRemaining']);
-		$this->assertTrue($result['warned']);
+		$this->assertTrue(condition: $result['isOverdue']);
+		$this->assertLessThan(expected: 0, actual: $result['daysRemaining']);
+		$this->assertTrue(condition: $result['warned']);
 	}//end testCheckAndWarnCountsAPassedDeadlineAsOverdue()
 
 }//end class

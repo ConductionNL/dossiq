@@ -74,7 +74,14 @@ class TimedJobDeadlineThresholdTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWLIST = [
-		'PauseChaseJob' => 'the reminder sweep on a suspended term. Its PRIMARY path is already the engine: openspec/changes/pause-reason-with-chasing arms one preBreach rung per reminder on the hersteltermijn helper that phase 1 of openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers introduced, and TermijnTimerFiredListener consumes the fire. This job is the fallback while OpenRegister remains an OPTIONAL runtime dependency, because armHersteltermijn() arms nothing without it; it retires when the phase that makes the engine required lands. The job itself computes no threshold: it calls PauseChaseService::sweep(), and the interval arithmetic lives in ChaseSchedule against the count the instance carries',
+		'PauseChaseJob' => 'the reminder sweep on a suspended term. Its PRIMARY path is already the engine: '
+			. 'openspec/changes/pause-reason-with-chasing arms one preBreach rung per reminder on the hersteltermijn helper that '
+			. 'phase 1 of openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers introduced, '
+			. 'and TermijnTimerFiredListener consumes the fire. '
+			. 'This job is the fallback while OpenRegister remains an OPTIONAL runtime dependency, because '
+			. 'armHersteltermijn() arms nothing without it; it retires when the phase that makes the engine required lands. '
+			. 'The job itself computes no threshold: it calls PauseChaseService::sweep(), and the interval arithmetic lives '
+			. 'in ChaseSchedule against the count the instance carries',
 	];
 
 	/**
