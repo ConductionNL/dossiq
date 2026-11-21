@@ -60,8 +60,7 @@ use Throwable;
  * Decides whether a deleted case may be destroyed, then has it destroyed.
  *
  * @spec openspec/specs/case-management/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class CaseDestructionService implements CaseDestructionServiceInterface {
 

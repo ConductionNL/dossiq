@@ -58,11 +58,8 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — this is the one class that
- *  is supposed to know every step of the intake path, which is what makes every
- *  other class in it able to know only its own.
- *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,

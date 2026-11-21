@@ -86,8 +86,7 @@ class MigrateTenantsCommand extends Command {
 	 * @return int Symfony command exit code.
 	 *
 	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$dryRun = ($input->getOption('dry-run') === true);

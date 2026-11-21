@@ -39,10 +39,7 @@ namespace OCA\Dossiq\Service\Email;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) — the ten parameters are the ten
- *  facts a mail message carries. Each is readonly and named at the call site, so a
- *  half-built message cannot be constructed.
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 final class InboundMessage {
 

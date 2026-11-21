@@ -203,8 +203,7 @@ class InternalHandover {
 	 * @return array<string, mixed> The trailing fields of the record.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `doorzending` is the declaration stored on the record.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function recordAct(string $reason, bool $doorzending, string $initiatedBy, array $emptied): array {
 		$now = (new DateTimeImmutable())->format('c');

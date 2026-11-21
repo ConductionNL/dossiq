@@ -1590,8 +1590,7 @@ class ZrcController extends ZgwController {
 	 * @param string $uuid The zaak UUID to delete
 	 *
 	 * @return JSONResponse
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named constructor on a value object.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function destroyCase(string $uuid): JSONResponse {
 		$refusal = $this->caseDeleteRefusal(uuid: $uuid);

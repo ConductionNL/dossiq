@@ -226,11 +226,9 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 	 * @param string $decisionUrl The besluit URL to match OIOs against
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
-	 *  constructor on a value object, not a service call. Injecting it would put a
-	 *  collaborator in four controllers to answer one question about their own config.
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function deleteOiosForDecision(string $decisionUrl): void {
 		$target = $this->oioTarget(orphans: 'the OIOs of ' . $decisionUrl . ' are being left behind as orphans');
@@ -255,11 +253,9 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
-	 *  constructor on a value object, not a service call. Injecting it would put a
-	 *  collaborator in four controllers to answer one question about their own config.
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
 		$target = $this->oioTarget(orphans: 'the OIO for ' . $ioUrl . ' is being left behind as an orphan');
