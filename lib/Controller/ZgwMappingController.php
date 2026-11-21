@@ -27,10 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Repair\LoadDefaultZgwMappings;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
+use OCA\Dossiq\Repair\RepairHelperFactory;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -44,15 +44,15 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for managing ZGW API mapping configurations.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingController extends Controller {
 	/**
 	 * Constructor for the ZgwMappingController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param ZgwMappingService $zgwMappingService The ZGW mapping service
-	 * @param SettingsService $settingsService The settings service
+	 * @param ZgwMappingServiceInterface $zgwMappingService The ZGW mapping service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
 	 * @param IL10N $l10n The localization service
 	 *
@@ -60,12 +60,12 @@ class ZgwMappingController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ZgwMappingService $zgwMappingService,
-		private readonly SettingsService $settingsService,
+		private readonly ZgwMappingServiceInterface $zgwMappingService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -73,7 +73,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function index(): JSONResponse {
@@ -92,7 +92,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function show(string $resourceKey): JSONResponse {
@@ -122,7 +122,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::isSearchable() is a named
 	 *  constructor on a value object, not a service call. Injecting it would put a
 	 *  collaborator in four controllers to answer one question about their own config.
@@ -161,12 +161,7 @@ class ZgwMappingController extends Controller {
 
 		$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $params);
 
-		return new JSONResponse(
-			[
-				'success' => true,
-				'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-			]
-		);
+		return $this->savedMapping(resourceKey: $resourceKey);
 	}//end update()
 
 	/**
@@ -176,7 +171,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function destroy(string $resourceKey): JSONResponse {
@@ -196,7 +191,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function reset(string $resourceKey): JSONResponse {
@@ -210,7 +205,7 @@ class ZgwMappingController extends Controller {
 			);
 		}
 
-		$loader = new LoadDefaultZgwMappings(
+		$loader = (new RepairHelperFactory())->defaultZgwMappings(
 			zgwMappingService: $this->zgwMappingService,
 			settingsService: $this->settingsService,
 			logger: $this->logger,
@@ -219,11 +214,22 @@ class ZgwMappingController extends Controller {
 
 		$this->zgwMappingService->resetToDefault(resourceKey: $resourceKey, defaults: $defaults);
 
+		return $this->savedMapping(resourceKey: $resourceKey);
+	}//end reset()
+
+	/**
+	 * The mapping of a resource as it is stored now, as a success answer.
+	 *
+	 * @param string $resourceKey The resource key.
+	 *
+	 * @return JSONResponse
+	 */
+	private function savedMapping(string $resourceKey): JSONResponse {
 		return new JSONResponse(
 			[
 				'success' => true,
 				'mapping' => $this->zgwMappingService->getMapping($resourceKey),
 			]
 		);
-	}//end reset()
+	}//end savedMapping()
 }//end class

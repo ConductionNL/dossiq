@@ -11,14 +11,14 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
+use OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar
  */
 class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 
@@ -72,7 +72,7 @@ class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testACreatedOrUpdatedTermInstanceIsFollowedByItsCase(): void {
 		$data   = ['case' => 'case-1', 'kind' => 'statutory', 'endDateCurrent' => '2026-11-02'];
@@ -92,7 +92,7 @@ class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnyOtherObjectIsLeftAlone(): void {
 		$mirror = $this->createMock(CaseDeadlineMirror::class);
@@ -106,7 +106,7 @@ class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testItIsRegisteredAfterCreateAndUpdate(): void {
 		$registered = [];

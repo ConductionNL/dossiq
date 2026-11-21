@@ -105,20 +105,33 @@ class TermEventEntry {
 			return;
 		}
 
-		$message = trim($rationale);
-		if ($message === '') {
-			$message = 'Termijngebeurtenis vastgelegd';
-		}
-
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: $type,
-			basis: $basis,
-			occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: self::eventSentence(rationale: $rationale),
+				instance: $instance,
+				event: $type,
+				basis: $basis,
+				occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			)
 		);
 	}//end recordEvent()
+
+	/**
+	 * The sentence a handler reads for a term event: the rationale, or a plain default.
+	 *
+	 * @param string $rationale The sentence the caller supplied.
+	 *
+	 * @return string The sentence.
+	 */
+	private static function eventSentence(string $rationale): string {
+		$message = trim($rationale);
+		if ($message === '') {
+			return 'Termijngebeurtenis vastgelegd';
+		}
+
+		return $message;
+	}//end eventSentence()
 
 	/**
 	 * Record the start of a term that writes no TermijnGebeurtenis of its own.
@@ -159,46 +172,37 @@ class TermEventEntry {
 		}
 
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: 'start',
-			basis: '',
-			occurredAt: (string)($instance['startDate'] ?? ''),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: $message,
+				instance: $instance,
+				event: 'start',
+				basis: '',
+				occurredAt: (string)($instance['startDate'] ?? ''),
+			)
 		);
 	}//end recordStart()
 
 	/**
 	 * Write one entry of the term-event kind.
 	 *
-	 * @param string               $caseId     The case the term hangs on.
-	 * @param string               $message    The sentence a handler reads.
-	 * @param array<string, mixed> $instance   The term instance, as stored.
-	 * @param string               $event      The event type.
-	 * @param string               $basis      The legal basis, '' when there is none.
-	 * @param string               $occurredAt When it happened.
+	 * @param TermEventLine $line The case, sentence, term instance, event, basis and moment.
 	 *
 	 * @return void
 	 */
-	private function write(
-		string $caseId,
-		string $message,
-		array $instance,
-		string $event,
-		string $basis,
-		string $occurredAt,
-	): void {
+	private function write(TermEventLine $line): void {
+		$instance = $line->instance;
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $line->caseId,
 			kind: TimelineKinds::TERM_EVENT,
-			message: $message,
+			message: $line->message,
 			fields: [
-				'event' => $event,
+				'event' => $line->event,
 				'term' => (string)($instance['kind'] ?? TermKind::STATUTORY),
-				'occurredAt' => $occurredAt,
+				'occurredAt' => $line->occurredAt,
 				'dueAt' => $this->dueAt(instance: $instance),
 				'startedAt' => (string)($instance['startDate'] ?? ''),
-				'basis' => $basis,
+				'basis' => $line->basis,
 				'termijnId' => (string)($instance['id'] ?? ''),
 			],
 			visibility: CaseTimeline::INTERNAL,

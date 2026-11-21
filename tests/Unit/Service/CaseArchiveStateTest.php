@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseArchiveState;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -110,15 +111,14 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Archive an object.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> The marker.
 			 */
-			public function archive(string $id, string $reason, string $register, string $schema): array {
-				$this->calls[] = ['verb' => 'archive', 'id' => $id, 'reason' => $reason, 'register' => $register, 'schema' => $schema];
+			public function archiveWith(ObjectStateRequest $request): array {
+				$id = $request->identifier;
+				$reason = (string)$request->reason;
+				$this->calls[] = ['verb' => 'archive', 'id' => $id, 'reason' => $reason, 'register' => (string)$request->register, 'schema' => (string)$request->schema];
 
 				return ['uuid' => $id, 'archived' => ['by' => 'anna', 'at' => '2026-09-12T09:00:00+00:00', 'reason' => $reason]];
 			}
@@ -126,15 +126,13 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Restore an object.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> The cleared marker.
 			 */
-			public function unarchive(string $id, string $reason, string $register, string $schema): array {
-				$this->calls[] = ['verb' => 'unarchive', 'id' => $id, 'reason' => $reason, 'register' => $register, 'schema' => $schema];
+			public function unarchiveWith(ObjectStateRequest $request): array {
+				$id = $request->identifier;
+				$this->calls[] = ['verb' => 'unarchive', 'id' => $id, 'reason' => (string)$request->reason, 'register' => (string)$request->register, 'schema' => (string)$request->schema];
 
 				return ['uuid' => $id, 'archived' => null];
 			}
@@ -275,14 +273,11 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Refuse the way the platform refuses.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> Never returns.
 			 */
-			public function archive(string $id, string $reason, string $register, string $schema): array {
+			public function archiveWith(ObjectStateRequest $request): array {
 				throw new RuntimeException('Schema "Case" does not declare x-openregister-archive, so its objects cannot be archived.');
 			}
 		};
@@ -297,4 +292,75 @@ class CaseArchiveStateTest extends TestCase {
 			$this->assertSame(expected: 'archive-state-refused', actual: $e->getRule());
 		}
 	}//end testThePlatformsRefusalIsCarriedThroughWordsAndAll()
+
+	/**
+	 * A `@self` that is not a block carries no marker.
+	 *
+	 * @return void
+	 */
+	public function testASelfThatIsNotABlockCarriesNoMarker(): void {
+		$state = $this->state(handler: $this->handler());
+
+		$this->assertSame(expected: [], actual: $state->markerOn(case: ['@self' => 'archived']));
+		$this->assertFalse(condition: $state->isArchived(case: ['@self' => 'archived']));
+	}//end testASelfThatIsNotABlockCarriesNoMarker()
+
+	/**
+	 * A refusal the handler raises itself reaches the caller as it was raised,
+	 * not rewrapped as a platform failure.
+	 *
+	 * @return void
+	 */
+	public function testARefusalFromTheHandlerIsPassedOnUnchanged(): void {
+		$refusal = new RefusedException(rule: 'case-locked', sentence: 'The case is locked.', status: RefusedException::STATUS_FORBIDDEN);
+		$handler = new class ($refusal) {
+			/**
+			 * @param RefusedException $refusal What to throw.
+			 */
+			public function __construct(private RefusedException $refusal) {
+			}
+
+			/**
+			 * Refuse with the given refusal.
+			 *
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function unarchiveWith(ObjectStateRequest $request): array {
+				throw $this->refusal;
+			}
+		};
+
+		try {
+			$this->state(handler: $handler)->clear(caseId: 'case-1', reason: 'Heropend');
+			$this->fail(message: 'the refusal must reach the caller');
+		} catch (RefusedException $e) {
+			$this->assertSame(expected: $refusal, actual: $e);
+			$this->assertSame(expected: 'case-locked', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_FORBIDDEN, actual: $e->getStatus());
+		}
+	}//end testARefusalFromTheHandlerIsPassedOnUnchanged()
+
+	/**
+	 * A handler that answers something other than an array answers nothing.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayAnswerIsAnEmptyAnswer(): void {
+		$handler = new class {
+			/**
+			 * Answer an entity rather than an array.
+			 *
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
+			 *
+			 * @return object The entity.
+			 */
+			public function archiveWith(ObjectStateRequest $request): object {
+				return (object)['uuid' => $request->identifier];
+			}
+		};
+
+		$this->assertSame(expected: [], actual: $this->state(handler: $handler)->mark(caseId: 'case-1', reason: 'Afgehandeld'));
+	}//end testANonArrayAnswerIsAnEmptyAnswer()
 }//end class

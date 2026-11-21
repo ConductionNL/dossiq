@@ -250,11 +250,7 @@ class StalledCaseDetector {
 
 		[$reachedBy, $reachedOn] = $this->reached(caseId: $candidate->caseId);
 
-		$projected = $this->schedule->project(
-			definitions: $definitions,
-			caseStart: $candidate->startDate,
-			reached: $reachedOn
-		);
+		$projected = $this->schedule->project(definitions: $definitions, caseStart: $candidate->startDate, reached: $reachedOn);
 
 		// The first unreached milestone is what the case waits on; when every
 		// milestone is reached the case is complete, not stalled.
@@ -263,6 +259,27 @@ class StalledCaseDetector {
 			return null;
 		}
 
+		return $this->stallRowFor(
+			situation: ['candidate' => $candidate, 'window' => $window],
+			milestone: ['definition' => $definition, 'projected' => $projected]
+		);
+	}//end evaluateStall()
+
+	/**
+	 * The report row for the milestone a case waits on, or null when it is not past its grace days.
+	 *
+	 * @param array{candidate: StallCandidate, window: StallWindow} $situation The case, its type and its start; today and
+	 *                                                                        the grace days.
+	 * @param array{definition: array<string, mixed>, projected: array<string, DateTimeImmutable>} $milestone The first
+	 *        unreached milestone, and the scheduled deadlines by milestone identifier.
+	 *
+	 * @return array<string, mixed>|null Stall row, or null when on track.
+	 */
+	private function stallRowFor(array $situation, array $milestone): ?array {
+		$candidate = $situation['candidate'];
+		$window = $situation['window'];
+		$definition = $milestone['definition'];
+		$projected = $milestone['projected'];
 		// Its deadline comes from the SCHEDULE, which reads `dependsOn`,
 		// rather than from this milestone's own duration counted off the
 		// case start.
@@ -280,7 +297,7 @@ class StalledCaseDetector {
 			'deadline' => $deadline->format('Y-m-d'),
 			'daysOverdue' => $daysOverdue,
 		];
-	}//end evaluateStall()
+	}//end stallRowFor()
 
 	/**
 	 * A case type's milestone definitions, ordered by their numeric `order`.

@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
+use OCA\Dossiq\Controller\Support\AnswersRegisterUnavailable;
+use OCA\Dossiq\Kernel\Contracts\MunicipalRoleSetServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,19 +52,20 @@ use Throwable;
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 class MunicipalRoleSetController extends Controller {
+	use AnswersRegisterUnavailable;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string                  $appName The app name.
 	 * @param IRequest                $request The HTTP request.
-	 * @param MunicipalRoleSetService $roleSet The shipped role set.
+	 * @param MunicipalRoleSetServiceInterface $roleSet The shipped role set.
 	 * @param LoggerInterface         $logger  Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MunicipalRoleSetService $roleSet,
+		private readonly MunicipalRoleSetServiceInterface $roleSet,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -85,10 +87,7 @@ class MunicipalRoleSetController extends Controller {
 					// ADR-102: the register being unreachable is not an empty
 					// set, and reporting it as one would tell an administrator
 					// that dossiq ships no roles.
-					return new JSONResponse(
-						['error' => 'The register is not available'],
-						Http::STATUS_SERVICE_UNAVAILABLE
-					);
+					return $this->registerUnavailable();
 				}
 
 				return new JSONResponse($offer);

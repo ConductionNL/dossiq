@@ -87,10 +87,7 @@ test.describe('pipelinq on the case', () => {
 		})
 		await clickHeaderAction(page, 'cn-action-log-contact')
 		const dialog = page.locator('[data-testid="log-contact-dialog"]')
-		await dialog
-			.locator('[data-testid="log-contact-summary"]')
-			.getByRole('textbox')
-			.fill(summary)
+		await dialog.locator('textarea[data-testid="log-contact-summary"]').fill(summary)
 		await dialog.locator('[data-testid="log-contact-confirm"]').click()
 		await expect(
 			dialog.locator('[data-testid="log-contact-saved"]'),

@@ -31,7 +31,7 @@
   It reads the case from the ROUTE, because an open-modal action forwards its
   props verbatim and `@objectId` would arrive as that literal string.
 
-  @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -85,6 +85,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { useEngineTaskStore } from '../store/modules/engineTask.js'
 import {
 	defaultReminderDate,
@@ -104,17 +105,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case to remind about. Absent when the manifest opened the
-		 * dialog: an `open-modal` action carries no object context, so the
-		 * route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 
@@ -122,7 +113,7 @@ export default {
 	 * The engine task store, which is where a reminder actually lives.
 	 *
 	 * @return {object} The store, exposed to the options API half.
-	 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	setup() {
 		return { tasks: useEngineTaskStore() }
@@ -143,7 +134,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -151,7 +142,7 @@ export default {
 
 		/**
 		 * @return {string} The chosen date as YYYY-MM-DD, or the empty string.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		isoDate() {
 			if (!this.date) {
@@ -169,7 +160,7 @@ export default {
 
 		/**
 		 * @return {object} The form, in the shape the helpers read.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		form() {
 			return {
@@ -182,7 +173,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the reminder may be sent.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		canConfirm() {
 			return (
@@ -205,7 +196,7 @@ export default {
 		 * close the dialog and hope.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {

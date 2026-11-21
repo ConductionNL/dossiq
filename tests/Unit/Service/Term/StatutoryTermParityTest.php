@@ -56,7 +56,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCP\AppFramework\Http;
@@ -90,6 +90,12 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
+ * @uses \OCA\Dossiq\Service\InformationRequestRun
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\ExtensionRun
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class StatutoryTermParityTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -396,7 +402,7 @@ class StatutoryTermParityTest extends TestCase {
 			assessmentService: $this->createMock(WOODocumentAssessmentService::class),
 			deadlineService: $deadlines,
 			decisionService: $this->createMock(WOODecisionService::class),
-			publicationService: $this->createMock(WooPublicationService::class),
+			publicationService: $this->createMock(originalClassName: OutcomePublisher::class),
 			anonymisationAssist: $this->createMock(WOOAnonymisationAssistService::class),
 			userSession: $this->signedIn(),
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),

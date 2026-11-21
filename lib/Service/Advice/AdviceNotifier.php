@@ -35,8 +35,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -79,26 +80,40 @@ class AdviceNotifier {
 		string $message = '',
 	): void {
 		try {
-			$notification = $this->notificationManager->createNotification();
-			$notification
-				->setApp(Application::APP_ID)
-				->setUser($userId)
-				->setDateTime(new DateTime())
-				->setObject('advice', $objectId)
-				->setSubject($subject, ['object' => $objectId]);
-
-			if ($message !== '') {
-				$notification->setMessage('plain', ['message' => $message]);
-			}
-
-			$this->notificationManager->notify($notification);
+			$this->notificationManager->notify(
+				$this->notificationFor(userId: $userId, about: ['subject' => $subject, 'objectId' => $objectId, 'message' => $message])
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to send advice notification: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 	}//end sendUserNotification()
+
+	/**
+	 * The advice notification for a user, with its message when there is one.
+	 *
+	 * @param string                                                  $userId Recipient user UID.
+	 * @param array{subject: string, objectId: string, message: string} $about  The subject key, the object UUID and the message.
+	 *
+	 * @return INotification The notification, not yet sent.
+	 */
+	private function notificationFor(string $userId, array $about): INotification {
+		$notification = $this->notificationManager->createNotification();
+		$notification
+			->setApp(AppIdentity::APP_ID)
+			->setUser($userId)
+			->setDateTime(new DateTime())
+			->setObject('advice', $about['objectId'])
+			->setSubject($about['subject'], ['object' => $about['objectId']]);
+
+		if ($about['message'] !== '') {
+			$notification->setMessage('plain', ['message' => $about['message']]);
+		}
+
+		return $notification;
+	}//end notificationFor()
 
 	/**
 	 * Fire the notification that matches a status transition.
@@ -121,28 +136,52 @@ class AdviceNotifier {
 		string $summary='',
 	): void {
 		if ($to === 'requested') {
-			$advisor = (string)($current['advisor'] ?? '');
-			if ($advisor !== '') {
-				$this->sendUserNotification(
-					userId: $advisor,
-					subject: 'advies_aangevraagd',
-					objectId: $adviceId,
-					message: (string)($current['subject'] ?? '')
-				);
-			}
+			$this->notifyRequested(current: $current, adviceId: $adviceId);
 
 			return;
 		}
 
 		if ($to === 'received' && $callerId !== '') {
-			$this->sendUserNotification(
-				userId: $callerId,
-				subject: 'advies_ontvangen',
-				objectId: $adviceId,
-				message: $summary
-			);
+			$this->notifyReceived(callerId: $callerId, advice: ['id' => $adviceId, 'summary' => $summary]);
 		}
 	}//end fireTransitionNotification()
+
+	/**
+	 * Tell the caller their requested advice was received.
+	 *
+	 * @param string                           $callerId Who asked for the advice.
+	 * @param array{id: string, summary: string} $advice   The advice id, and its conclusion and text.
+	 *
+	 * @return void
+	 */
+	private function notifyReceived(string $callerId, array $advice): void {
+		$this->sendUserNotification(
+			userId: $callerId,
+			subject: 'advies_ontvangen',
+			objectId: $advice['id'],
+			message: $advice['summary']
+		);
+	}//end notifyReceived()
+
+	/**
+	 * Tell the advisor an advice was requested of them, when the advice names one.
+	 *
+	 * @param array<string, mixed> $current  The advice as it stands.
+	 * @param string               $adviceId The advice id.
+	 *
+	 * @return void
+	 */
+	private function notifyRequested(array $current, string $adviceId): void {
+		$advisor = (string)($current['advisor'] ?? '');
+		if ($advisor !== '') {
+			$this->sendUserNotification(
+				userId: $advisor,
+				subject: 'advies_aangevraagd',
+				objectId: $adviceId,
+				message: (string)($current['subject'] ?? '')
+			);
+		}
+	}//end notifyRequested()
 
 	/**
 	 * Notify the adviseur that an advice request was created.

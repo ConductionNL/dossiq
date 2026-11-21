@@ -30,6 +30,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
 use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 
@@ -219,7 +220,7 @@ class WorkingDayRollTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function testALeadTimeFallsBackToCalendarDaysWithoutACalendar(): void {
 		$thursday = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
@@ -282,22 +283,19 @@ class FakeRollCalculator {
 	/**
 	 * Answer the fixed instant.
 	 *
-	 * @param \DateTimeInterface $from The date asked about.
-	 * @param float $value The amount, zero for a roll.
-	 * @param string $unit The unit.
-	 * @param object $calendar The calendar.
+	 * @param SlaAddition $addition The date asked about, the amount (zero for a roll), the unit and the calendar.
 	 *
 	 * @return DateTimeImmutable The answer.
 	 */
-	public function add(\DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
-		if ($value === 0.0) {
+	public function add(SlaAddition $addition): DateTimeImmutable {
+		if ($addition->value === 0.0) {
 			return $this->answering;
 		}
 
 		// A working-day walk, the way the seeded nl-national calendar does it:
 		// step a day at a time and count only the ones that are not a weekend.
-		$cursor = DateTimeImmutable::createFromInterface($from);
-		$left = (int)$value;
+		$cursor = $addition->start;
+		$left = (int)$addition->value;
 		while ($left > 0) {
 			$cursor = $cursor->modify('+1 day');
 			if ((int)$cursor->format('N') < 6) {

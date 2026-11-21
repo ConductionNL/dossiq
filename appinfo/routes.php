@@ -139,6 +139,7 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseTypePhases#index',     'url' => '/api/case-types/{id}/phases',           'verb' => 'GET'],
     ['name' => 'caseTypeTerms#index',      'url' => '/api/case-types/{id}/terms',            'verb' => 'GET'],
+    ['name' => 'caseTypeRules#index',      'url' => '/api/case-types/{id}/rules',            'verb' => 'GET'],
     ['name' => 'caseTypeRights#index',     'url' => '/api/case-types/{id}/rights-by-role',   'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
@@ -153,6 +154,8 @@ $extra = [
     ['name' => 'caseNextStatus#show',          'url' => '/api/cases/{caseId}/next-status', 'verb' => 'GET'],
     // The instalments of the payment schedules on a case's decisions, with their states and totals (grant-cases-from-application-to-settlement).
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
+    // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
+    ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -202,6 +205,7 @@ $extra = [
     ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
     ['name' => 'caseGoal#index',                     'url' => '/api/cases/{caseId}/goals',                     'verb' => 'GET'],
     ['name' => 'caseGoal#create',                    'url' => '/api/cases/{caseId}/goals',                     'verb' => 'POST'],
+    ['name' => 'caseGoal#close',                     'url' => '/api/cases/{caseId}/goals/{goalId}/close',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
@@ -209,6 +213,9 @@ $extra = [
         // chosen ground, logged, and kept in the reader's session.
     ['name' => 'householdCases#index',  'url' => '/api/cases/{caseId}/household-cases',        'verb' => 'GET'],
     ['name' => 'householdCases#lookUp', 'url' => '/api/cases/{caseId}/household-cases/lookup', 'verb' => 'POST'],
+
+        // The OpenAPI document of dossiq's own API (ApiContract), public, served under /api/v1/ too.
+    ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard
@@ -442,13 +449,6 @@ $extra = [
         // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
-        // a-case-note-reaches-the-neighbouring-register: sending ONE note to a
-        // neighbouring ZGW register, as a zaakinformatieobject of a reserved
-        // type. A deliberate act rather than a hook on save, because note
-        // storage is OpenRegister's entirely and it dispatches no note-saved
-        // event dossiq could listen for; `notes#mention` above is called the
-        // same way, after the note is already stored.
-    ['name' => 'notes#push', 'url' => '/api/cases/{caseId}/notes/push', 'verb' => 'POST'],
 
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
@@ -616,6 +616,8 @@ $extra = [
         //
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
+        // The anonymised variant of the list export (social-domain-consent-and-safeguards, REQ-SDC-ANON-01).
+    ['name' => 'caseAnonymisedExport#export', 'url' => '/api/cases/anonymised-export', 'verb' => 'POST'],
 
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
@@ -715,6 +717,12 @@ $extra = [
     ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // Advice from the decision table a case type names (REQ-LHS-CASE-01): ask on a case, then accept or deviate with a reason.
+        // @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+    ['name' => 'decisionAdvice#form',      'url' => '/api/decision-advice/case/{caseId}/form', 'verb' => 'GET'],
+    ['name' => 'decisionAdvice#recommend', 'url' => '/api/decision-advice/recommend', 'verb' => 'POST'],
+    ['name' => 'decisionAdvice#override',  'url' => '/api/decision-advice/override',  'verb' => 'POST'],
+
         // Checklist templates (admin).
     ['name' => 'checklistTemplate#index',   'url' => '/api/checklists',       'verb' => 'GET'],
     ['name' => 'checklistTemplate#create',  'url' => '/api/checklists',       'verb' => 'POST'],
@@ -730,6 +738,8 @@ $extra = [
         // A checklist run on a case: submit one, read them all.
     ['name' => 'taskChecklist#submit', 'url' => '/api/cases/{id}/checklist-results', 'verb' => 'POST'],
     ['name' => 'taskChecklist#runs',   'url' => '/api/cases/{id}/checklist-results', 'verb' => 'GET'],
+    // An external inspector's run is a portal task (inspection-checklists-onto-task 4.3).
+    ['name' => 'externalInspectionRun#assign', 'url' => '/api/cases/{id}/checklist-runs/external', 'verb' => 'POST'],
         // deprecated alias: /api/cases/{id}/checklist-results, remove after the
         // next major. The offline field-inspection leaf replays to the old URL.
     ['name' => 'taskChecklist#submitLegacyPath', 'url' => '/api/vth/cases/{id}/inspection-result',  'verb' => 'POST'],
@@ -739,6 +749,8 @@ $extra = [
         // and had no door, so a photo or a voice memo reached nobody and the
         // fieldEvidence page read a schema nothing wrote.
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
+        // The sync frame's conflict card keeps the device's text or the office's.
+    ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
         // Per-case advice requests, on any case type.
     ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
@@ -800,6 +812,9 @@ $extra = [
     // The account the background jobs (the termijn reminder sweep) write as. Admin only.
     ['name' => 'backgroundServiceAccount#show', 'url' => '/api/settings/background-service-account', 'verb' => 'GET'],
     ['name' => 'backgroundServiceAccount#save', 'url' => '/api/settings/background-service-account', 'verb' => 'PUT'],
+    // Which groups may see each contributed dashboard widget. Admin only.
+    ['name' => 'widgetAudience#show', 'url' => '/api/settings/widget-audience', 'verb' => 'GET'],
+    ['name' => 'widgetAudience#save', 'url' => '/api/settings/widget-audience', 'verb' => 'PUT'],
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
@@ -900,6 +915,9 @@ $extra = [
     ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
     ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
+    // The person a form named, such as a second signer, signs or refuses from the portal
+    // (obligations-placed-at-intake); portaliq forwards with a signed X-Portal-Subject assertion.
+    ['name' => 'portalObligation#settle', 'url' => '/api/portal/obligations/settle', 'verb' => 'POST'],
     // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
@@ -917,6 +935,9 @@ $extra = [
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
+    // The external inspector completes their inspection task (inspection-checklists-onto-task 4.3):
+    // portaliq forwards the task's completeVia action here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalInspection#complete', 'url' => '/api/portal/inspectie/checklist', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are
@@ -1213,6 +1234,7 @@ $extra = [
         // (case-money-is-configuration, REQ-DQM-003). Named for what they do.
     ['name' => 'accrualNotice#register',     'url' => '/api/notices-of-default',                       'verb' => 'POST'],
     ['name' => 'accrualNotice#show',         'url' => '/api/notices-of-default/{id}',                  'verb' => 'GET'],
+    ['name' => 'caseNoticesOfDefault#index', 'url' => '/api/cases/{caseId}/notices-of-default',       'verb' => 'GET'],
     ['name' => 'accruingAmount#show',        'url' => '/api/accruing-amounts/{id}',                    'verb' => 'GET'],
     ['name' => 'accruingAmount#settle',      'url' => '/api/accruing-amounts/{id}/settle',             'verb' => 'POST'],
     ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
@@ -1242,11 +1264,6 @@ $extra = [
     ['name' => 'deadlineReporting#quarterlyReportLegacyPath',     'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#annualStatementLegacyPath',     'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
     ['name' => 'deadlineReporting#firstResponseReportLegacyPath', 'url' => '/api/termijn/reports/eerste-reactie',   'verb' => 'GET'],
-        // IV3/BBV taakveld reference list, for the case-type classification
-        // picker. The quarterly IV3 cost report that used to sit alongside it
-        // is gone under ADR-081 — Shillinq is the only statutory reporter. The
-        // URL is unchanged because the settings picker calls it directly.
-    ['name' => 'iv3Taakveld#taakvelden',             'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
 
         // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
@@ -1352,7 +1369,8 @@ $extra = [
 // Preferred path: the OpenRegister AppHost owns the canonical route table.
 // `class_exists()` autoloads without fatalling when the class is unavailable.
 if (class_exists('OCA\OpenRegister\AppHost\Routes') === true) {
-    return \OCA\OpenRegister\AppHost\Routes::standard($extra);
+    // Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+    return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(\OCA\OpenRegister\AppHost\Routes::standard($extra));
 }
 
 // Fallback: openregister is not installed. Reproduce `Routes::standard()`
@@ -1397,4 +1415,4 @@ foreach ($canonicalRoutes as $canonicalRoute) {
 $mergedRoutes   = array_merge($mergedRoutes, $extra);
 $mergedRoutes[] = $catchAllRoute;
 
-return ['routes' => $mergedRoutes];
+return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(['routes' => $mergedRoutes]);

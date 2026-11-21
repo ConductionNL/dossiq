@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -120,7 +120,7 @@ class ReconcileCaseDeadlinesWithTermsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function testWithoutOpenRegisterTheStepSkips(): void {
 		$settings = $this->createMock(SettingsService::class);
@@ -147,7 +147,7 @@ class ReconcileCaseDeadlinesWithTermsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
 	 */
 	public function testAnUnreadableTermListSkipsWithAWarning(): void {
 		$broken = new class extends FakeTermijnStore {

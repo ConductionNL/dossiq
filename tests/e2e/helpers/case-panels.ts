@@ -46,10 +46,10 @@ import { dismissSupportDialog } from './nav.ts'
  * panel body IS the tab body.
  */
 export const CASE_PANELS = {
-	data: { tab: /^(Overview|Overzicht)\b/, section: 'case-section-case-core' },
+	data: { tab: /^(Overview|Overzicht)\b/, section: 'cn-section-case-core' },
 	locations: {
 		tab: /^(Overview|Overzicht)\b/,
-		section: 'case-section-case-location-map',
+		section: 'cn-section-case-location-map',
 	},
 	// The Files tab IS the case folder: one widget, no sections. It pointed at
 	// `/^Documents$/` until 2026-09-13, a tab that had already been renamed, so
@@ -63,27 +63,27 @@ export const CASE_PANELS = {
 	// call does not type-check. Pointing it at Files keeps the suite
 	// compiling; the spec belongs with whoever retired the list.
 	documents: { tab: /^(Files|Bestanden)\b/, section: null },
-	parties: { tab: /^(People|Betrokkenen)\b/, section: 'case-section-case-roles' },
+	parties: { tab: /^(People|Betrokkenen)\b/, section: 'cn-section-case-roles' },
 	communication: {
 		tab: /^Contact\b/,
-		section: 'case-section-case-communication',
+		section: 'cn-section-case-communication',
 	},
 	conversations: {
 		tab: /^Contact\b/,
-		section: 'case-section-case-conversations',
+		section: 'cn-section-case-conversations',
 	},
 	customerRecord: {
 		tab: /^Contact\b/,
-		section: 'case-section-linked-contact-moments',
+		section: 'cn-section-linked-contact-moments',
 	},
-	programme: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-programme' },
+	programme: { tab: /^(Related|Gerelateerd)\b/, section: 'cn-section-case-programme' },
 	email: { tab: /^(Email|E-mail)\b/, section: null },
-	tasks: { tab: /^(Tasks|Taken)\b/, section: 'case-section-case-tasks' },
-	appointments: { tab: /^(Tasks|Taken)\b/, section: 'case-section-case-calendar' },
+	tasks: { tab: /^(Tasks|Taken)\b/, section: 'cn-section-case-tasks' },
+	appointments: { tab: /^(Tasks|Taken)\b/, section: 'cn-section-case-calendar' },
 	besluiten: { tab: /^(Decisions|Besluiten)\b/, section: null },
-	relatedCases: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-related' },
-	subCases: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-sub-cases' },
-	objects: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-objects' },
+	relatedCases: { tab: /^(Related|Gerelateerd)\b/, section: 'cn-section-case-related' },
+	subCases: { tab: /^(Related|Gerelateerd)\b/, section: 'cn-section-case-sub-cases' },
+	objects: { tab: /^(Related|Gerelateerd)\b/, section: 'cn-section-case-objects' },
 } as const
 
 export type CasePanel = keyof typeof CASE_PANELS
@@ -142,4 +142,24 @@ export async function openCasePanel(page: Page, panel: CasePanel): Promise<Locat
 		`the ${panel} section did not render inside its tab`,
 	).toBeVisible({ timeout: 30_000 })
 	return body
+}
+
+/**
+ * Open the case sidebar and return it.
+ *
+ * The sidebar starts closed and its own toggle is hidden; the page opens it
+ * from the header's More menu.
+ *
+ * @param page The Playwright page, on a case.
+ * @return The open sidebar.
+ */
+export async function openCaseSidebar(page: Page): Promise<Locator> {
+	const sidebar = page.locator('.app-sidebar')
+	if ((await sidebar.isVisible()) === false) {
+		await dismissSupportDialog(page)
+		await page.getByRole('button', { name: 'More', exact: true }).first().click()
+		await page.getByRole('menuitem', { name: 'Open sidebar' }).click()
+	}
+	await expect(sidebar).toBeVisible({ timeout: 15_000 })
+	return sidebar
 }

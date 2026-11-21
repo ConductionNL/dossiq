@@ -53,7 +53,8 @@
     - Spec ref: specs/burger-notifications/spec.md, REQ-TERM-020 (modified)
     - Test: tests/Unit/Service/CaseTypeAcknowledgementTest.php (`testAFormsCaseOwesOneUnlessTheCaseTypeSwitchesItOff`, `testTheShippedSchemaDefaultIsTheListTheCodeApplies`), tests/Unit/Service/AcknowledgementDutyTest.php (`testACaseTypeSwitchesTheFormsAcknowledgementOff`, `testADraftIsNotConfirmedUntilItIsSent`, `testAnAddressThatFailsValidationIsNeverMailed`)
     - Upgrade: existing instances start sending acknowledgements for forms intake. See CHANGELOG.md
-    - [ ] (live pass, decision 139) Check a case type saved before this change: when its stored `acknowledgement.intakeChannels` holds the old default list, it keeps sending none for forms until `forms` is added
+    - [x] (live pass, decision 139) Check a case type saved before this change: when its stored `acknowledgement.intakeChannels` holds the old default list, it keeps sending none for forms until `forms` is added
+      - Live pass 2026-11-20 (throwaway rig, NC 34.0.6 with dossiq development 5b6450ef77 and openregister main ce0543d6): tests/e2e/forms-acknowledgement-follows-the-case-type.spec.ts passed 2/2. A forms case of a case type that stores the old list (email, website, zgw-api) records acknowledgementDuty not-required; with forms added it owes one.
 - [x] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
   - [x] 4.3a The case type's own intake form: `IntakeFormBindingCheck::unmetRequirements` adds a `required-unmapped` finding for every `requiredBeforeCreation` property the mapping does not fill, on a case type that is not a draft; the save is refused by the same listener
     - Test: tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php `testPublishingReChecksTheFormAgainstTheIntakeRequirements`, tests/Unit/Service/Intake/IntakeFormBindingCheckTest.php

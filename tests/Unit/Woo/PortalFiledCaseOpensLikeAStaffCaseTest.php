@@ -50,6 +50,8 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Files a Woo request through the intake and reads what the case became.
@@ -69,6 +71,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class PortalFiledCaseOpensLikeAStaffCaseTest extends TestCase {
 
@@ -185,13 +188,14 @@ class PortalFiledCaseOpensLikeAStaffCaseTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): mixed {
-				$row = $this->inner->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$row = $this->inner->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac, _multitenancy: $_multitenancy);
 				if ($schema !== 'case') {
 					return $row;
 				}

@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\LhsController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\LhsLookupService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -111,6 +112,13 @@ class LhsControllerContractTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The owning-case resolver mock.
+	 *
+	 * @var OwningCaseResolver|MockObject
+	 */
+	private OwningCaseResolver $owningCaseResolver;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var LhsController
@@ -132,6 +140,7 @@ class LhsControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$this->owningCaseResolver = $this->createMock(OwningCaseResolver::class);
 
 		$this->controller = new LhsController(
 			appName: 'dossiq',
@@ -142,6 +151,7 @@ class LhsControllerContractTest extends TestCase {
 			groupManager: $this->groupManager,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,
+			owningCaseResolver: $this->owningCaseResolver,
 		);
 	}//end setUp()
 
@@ -159,6 +169,17 @@ class LhsControllerContractTest extends TestCase {
 
 		return $user;
 	}//end signIn()
+
+	/**
+	 * Let the override per-case guard pass: the stored recommendation
+	 * resolves to a case the caller may mutate.
+	 *
+	 * @return void
+	 */
+	private function allowOverrideOnCase(): void {
+		$this->owningCaseResolver->method('resolve')->willReturn('case-1');
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+	}//end allowOverrideOnCase()
 
 	/**
 	 * Answer request parameters from the supplied map.
@@ -438,6 +459,7 @@ class LhsControllerContractTest extends TestCase {
 	 */
 	public function testOverrideDoesNotTrustAClaimedManagerRole(): void {
 		$this->signIn(uid: 'inspector1');
+		$this->allowOverrideOnCase();
 		$this->withParams([
 			'recommendation' => ['id' => 'rec-1'],
 			'intervention' => 'last onder dwangsom',
@@ -482,6 +504,7 @@ class LhsControllerContractTest extends TestCase {
 	 */
 	public function testOverrideHonoursADeclaredManagerRoleForAnAdmin(): void {
 		$this->signIn(uid: 'coordinator');
+		$this->allowOverrideOnCase();
 		$this->withParams([
 			'recommendation' => ['id' => 'rec-1'],
 			'intervention' => 'last onder dwangsom',
@@ -522,6 +545,7 @@ class LhsControllerContractTest extends TestCase {
 	 */
 	public function testOverrideMapsTheManagerRoleRefusalTo403(): void {
 		$this->signIn();
+		$this->allowOverrideOnCase();
 		$this->withParams([
 			'recommendation' => ['id' => 'rec-1'],
 			'intervention' => 'last onder dwangsom',
@@ -544,6 +568,7 @@ class LhsControllerContractTest extends TestCase {
 	 */
 	public function testOverrideMapsAnyOtherEngineRefusalTo422(): void {
 		$this->signIn();
+		$this->allowOverrideOnCase();
 		$this->withParams([
 			'recommendation' => ['id' => 'rec-1'],
 			'intervention' => 'last onder dwangsom',
@@ -558,4 +583,114 @@ class LhsControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 		$this->assertSame(['error' => 'Motivatie moet minimaal 20 tekens bevatten'], $response->getData());
 	}//end testOverrideMapsAnyOtherEngineRefusalTo422()
+
+	/**
+	 * `override` gates on the case stored on the recommendation — read via the
+	 * owning-case resolver, not from the request — and refuses with 403 when
+	 * the caller may not mutate that case. The engine is never reached.
+	 *
+	 * @return void
+	 */
+	public function testOverrideRefusesACallerWithoutAccessToTheStoredCaseWith403(): void {
+		$user = $this->signIn(uid: 'outsider');
+		$this->withParams([
+			'recommendationId' => 'rec-1',
+			'caseId' => 'case-the-caller-owns',
+			'intervention' => 'waarschuwing',
+			'justification' => 'Gemotiveerde afwijking van de interventieladder.',
+		]);
+		$this->owningCaseResolver->expects($this->once())
+			->method('resolve')
+			->with('rec-1', 'lhs_recommendation_schema', 'case')
+			->willReturn('case-1');
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseMutationAccess')
+			->with('case-1', $user)
+			->willReturn(false);
+		$this->lhsService->expects($this->never())->method('override');
+
+		$response = $this->controller->override();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testOverrideRefusesACallerWithoutAccessToTheStoredCaseWith403()
+
+	/**
+	 * A recommendation whose case cannot be resolved (unknown id, no `case`)
+	 * DENIES rather than falling through to the engine.
+	 *
+	 * @return void
+	 */
+	public function testOverrideFailsClosedWhenTheOwningCaseCannotBeResolved(): void {
+		$this->signIn();
+		$this->withParams([
+			'recommendationId' => 'rec-unknown',
+			'intervention' => 'waarschuwing',
+			'justification' => 'Gemotiveerde afwijking van de interventieladder.',
+		]);
+		$this->owningCaseResolver->method('resolve')->willReturn(null);
+		$this->caseAccessGuard->expects($this->never())->method('hasCaseMutationAccess');
+		$this->lhsService->expects($this->never())->method('override');
+
+		$response = $this->controller->override();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testOverrideFailsClosedWhenTheOwningCaseCannotBeResolved()
+
+	/**
+	 * The lookup refuses a caller without a session with 401.
+	 *
+	 * @return void
+	 */
+	public function testLookupRefusesAnUnauthenticatedCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->lhsLookupService->expects($this->never())->method('lookup');
+
+		$response = $this->controller->lookup();
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'Authenticatie vereist'], $response->getData());
+	}//end testLookupRefusesAnUnauthenticatedCallerWith401()
+
+	/**
+	 * The lookup needs both axes, and answers the cell.
+	 *
+	 * @return void
+	 */
+	public function testLookupNeedsBothAxesAndAnswersTheCell(): void {
+		$this->signIn();
+		$this->withParams(['behaviour' => 'onverschillig', 'gevolg' => '']);
+		$this->lhsLookupService->expects($this->never())->method('lookup');
+
+		$response = $this->controller->lookup();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'gedrag en gevolg zijn verplicht'], $response->getData());
+	}//end testLookupNeedsBothAxesAndAnswersTheCell()
+
+	/**
+	 * The lookup answers the cell, a refusal as 400 and a failure as a logged 500.
+	 *
+	 * @return void
+	 */
+	public function testLookupAnswersTheCellOrItsFailure(): void {
+		$this->signIn();
+		$this->withParams(['behaviour' => 'onverschillig', 'gevolg' => 'aanzienlijk']);
+		$this->lhsLookupService->method('lookup')->with('onverschillig', 'aanzienlijk')->willReturnOnConsecutiveCalls(
+			['cell' => 'B2'],
+			$this->throwException(new \RuntimeException('Onbekende cel')),
+			$this->throwException(new \LogicException('kapot'))
+		);
+		$this->logger->expects($this->once())->method('error')->with('Dossiq LHS lookup failed: kapot');
+
+		$this->assertSame(['cell' => 'B2'], $this->controller->lookup()->getData());
+
+		$refused = $this->controller->lookup();
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $refused->getStatus());
+		$this->assertSame(['error' => 'Onbekende cel'], $refused->getData());
+
+		$failed = $this->controller->lookup();
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['error' => 'LHS opzoeken mislukt'], $failed->getData());
+	}//end testLookupAnswersTheCellOrItsFailure()
 }//end class

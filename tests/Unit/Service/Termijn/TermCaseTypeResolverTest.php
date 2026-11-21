@@ -25,6 +25,8 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class TermCaseTypeResolverTest extends TestCase {
 
@@ -143,6 +145,41 @@ class TermCaseTypeResolverTest extends TestCase {
 		self::assertSame(expected: TermCaseTypeResolver::UNRESOLVED, actual: $result['byRow'][4]['key']);
 		self::assertSame(expected: ['ti-5'], actual: $result['unresolved']);
 	}//end testEachTermResolvesThroughItsCaseThenItsDefinition()
+
+	/**
+	 * The whole answer, keyed and ordered as the rows were, for every path.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeAnswerForEveryPath(): void {
+		$this->seedTypesReachedOnlyByDefinition();
+		$this->objects->seed('caseType', ['id' => 'ct-untitled', 'identifier' => 'naamloos']);
+		$this->objects->seed('case', ['id' => 'case-9', 'caseType' => 'ct-untitled']);
+
+		$result = $this->resolver()->resolve(rows: [
+			7 => ['id' => 'ti-7', 'case' => 'case-9', 'deadlineDefinition' => 'td-sloop'],
+			2 => ['id' => 'ti-2', 'case' => 'case-gone', 'deadlineDefinition' => 'td-klein'],
+			4 => ['id' => 'ti-4', 'deadlineDefinition' => 'td-gone'],
+			0 => ['case' => 'case-gone'],
+			3 => ['id' => 'ti-3', 'case' => 'case-3', 'deadlineDefinition' => 'td-sloop'],
+			5 => ['id' => 'ti-5', 'deadlineDefinition' => 'td-woo'],
+		]);
+
+		self::assertSame(
+			expected: [
+				'byRow' => [
+					7 => ['key' => 'naamloos', 'title' => ''],
+					2 => ['key' => 'omgevingsvergunning-kleinbouw', 'title' => 'Omgevingsvergunning kleine bouwactiviteit'],
+					4 => ['key' => 'nergens', 'title' => ''],
+					0 => ['key' => TermCaseTypeResolver::UNRESOLVED, 'title' => ''],
+					3 => ['key' => 'melding', 'title' => 'Melding'],
+					5 => ['key' => 'woo-verzoek', 'title' => 'Woo-verzoek'],
+				],
+				'unresolved' => [''],
+			],
+			actual: $result
+		);
+	}//end testTheWholeAnswerForEveryPath()
 
 	/**
 	 * Three batched searches for any number of rows, never one per row.
@@ -277,4 +314,24 @@ class TermCaseTypeResolverTest extends TestCase {
 		$this->expectException(exception: RuntimeException::class);
 		$this->resolver(store: $failing)->resolve(rows: [['id' => 'ti-1', 'case' => 'case-1']]);
 	}//end testAFailedReadThrows()
+
+	/**
+	 * A case type with no identifier, no slug and no string id is reported
+	 * under the unresolved key, though the term itself resolved through its
+	 * case and keeps the case type's title.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutAKeyIsReportedUnderTheUnresolvedKey(): void {
+		$this->objects->seed('caseType', ['id' => 7, 'identifier' => '  ', 'title' => 'Naamloos']);
+		$this->objects->seed('case', ['id' => 'case-7', 'caseType' => '7']);
+
+		$result = $this->resolver()->resolve(rows: [['id' => 'ti-7', 'case' => 'case-7']]);
+
+		self::assertSame(
+			expected: [0 => ['key' => TermCaseTypeResolver::UNRESOLVED, 'title' => 'Naamloos']],
+			actual: $result['byRow']
+		);
+		self::assertSame(expected: [], actual: $result['unresolved'], message: 'A term its case resolved is not listed as unresolved.');
+	}//end testACaseTypeWithoutAKeyIsReportedUnderTheUnresolvedKey()
 }//end class

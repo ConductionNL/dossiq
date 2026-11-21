@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionDiff {
 
@@ -81,10 +81,23 @@ class CaseVersionDiff {
 	 *
 	 * @return array<string, mixed> The differences, and whether the case can land.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function between(array $case, string $sourceId, string $targetId): array {
+		return $this->differences(case: $case, versions: [$sourceId, $targetId]);
+	}//end between()
+
+	/**
+	 * How one version differs from another, for this case.
+	 *
+	 * @param array<string, mixed>        $case     The case as it stands.
+	 * @param array{0: string, 1: string} $versions The version it is on, and the version asked about.
+	 *
+	 * @return array<string, mixed> The differences, and whether the case can land.
+	 */
+	private function differences(array $case, array $versions): array {
+		[$sourceId, $targetId] = $versions;
 		$sourceStatuses = $this->statusesByName(caseTypeId: $sourceId);
 		$targetStatuses = $this->statusesByName(caseTypeId: $targetId);
 		$sourceFields = $this->fieldNames(caseTypeId: $sourceId);
@@ -115,7 +128,7 @@ class CaseVersionDiff {
 			'refusals' => $this->refusalsFor(statusName: $statusName, mapped: $mapped),
 			'canMove' => ($mapped !== []),
 		];
-	}//end between()
+	}//end differences()
 
 	/**
 	 * The statuses of one version, keyed by their comparable name.
@@ -193,7 +206,7 @@ class CaseVersionDiff {
 	 *
 	 * @return array<int, string> The refusals, empty when the move is possible.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function refusalsFor(string $statusName, array $mapped): array {
 		if ($mapped !== []) {
@@ -244,8 +257,8 @@ class CaseVersionDiff {
 	 *
 	 * @return array<int, string> The ones with an answer on this case.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function answeredAmong(array $case, array $names): array {
 		$filled = [];

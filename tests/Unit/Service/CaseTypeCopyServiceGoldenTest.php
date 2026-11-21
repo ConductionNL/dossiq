@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for CaseTypeCopyService.
@@ -52,6 +54,8 @@ use Psr\Log\AbstractLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeCopyServiceGoldenTest extends TestCase {
 
@@ -222,7 +226,9 @@ class GoldenCopyObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, $register = null, $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->calls[] = ['find' => ['id' => $id, 'register' => $register, 'schema' => $schema]];
 		if (($this->behaviour['findThrows'] ?? false) === true) {
 			throw new \RuntimeException('find failed');
@@ -277,7 +283,9 @@ class GoldenCopyObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, $register = null, $schema = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->calls[] = ['saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		if (in_array($schema, ($this->behaviour['saveThrows'] ?? []), true) === true) {
 			throw new \RuntimeException('write failed for ' . $schema);

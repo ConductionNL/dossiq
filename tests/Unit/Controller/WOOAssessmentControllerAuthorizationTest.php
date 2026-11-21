@@ -47,7 +47,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -57,6 +57,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService (named-argument safe).
@@ -71,7 +72,7 @@ interface WooCaseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -121,7 +122,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	private $decisionService;
 
 	/**
-	 * @var WooPublicationService|\PHPUnit\Framework\MockObject\MockObject
+	 * @var OutcomePublisher|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private $publicationService;
 
@@ -143,7 +144,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->deadlineService = $this->createMock(WOODeadlineService::class);
 		$this->decisionService = $this->createMock(WOODecisionService::class);
-		$this->publicationService = $this->createMock(WooPublicationService::class);
+		$this->publicationService = $this->createMock(originalClassName: OutcomePublisher::class);
 		$this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 
 		$this->settingsService->method('getObjectService')->willReturn($this->objectService);
@@ -303,7 +304,9 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(int|string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => 'case-1', 'assignee' => 'alice'];
 			}
 

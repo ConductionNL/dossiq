@@ -28,14 +28,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -44,9 +44,18 @@ use Psr\Log\LoggerInterface;
  * Importing the shipped register into OpenRegister, and reconciling what the
  * import does not carry.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ConfigurationImport {
+	/**
+	 * The answer when OpenRegister is not there to import into.
+	 *
+	 * @var array{success: false, message: string}
+	 */
+	private const OPENREGISTER_MISSING = [
+		'success' => false,
+		'message' => 'OpenRegister is not installed or enabled',
+	];
 
 	/**
 	 * The ADR-037 register-fragment merger.
@@ -125,29 +134,17 @@ class ConfigurationImport {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
 		if ($this->openRegister->isAvailable() === false) {
-			return [
-				'success' => false,
-				'message' => 'OpenRegister is not installed or enabled',
-			];
+			return self::OPENREGISTER_MISSING;
 		}
 
 		try {
-			$configurationService = $this->container->get(
-				'OCA\OpenRegister\Service\ConfigurationService'
-			);
+			$configurationService = $this->container->get('OCA\OpenRegister\Service\ConfigurationService');
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Could not access ConfigurationService',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Could not access ConfigurationService: ' . $e->getMessage(),
-			];
+			return $this->unreachableServiceAnswer(exception: $e);
 		}
 
 		$effective = $this->readEffectiveConfiguration();
@@ -155,45 +152,31 @@ class ConfigurationImport {
 			return $effective['error'];
 		}
 
-		$configData = $effective['data'];
+		return $this->importAnswer(configurationService: $configurationService, import: ['data' => $effective['data'], 'force' => $force]);
+	}//end loadConfiguration()
+
+	/**
+	 * Import the effective configuration through OpenRegister, and answer the import or why it failed.
+	 *
+	 * @param object                          $configurationService OpenRegister's ConfigurationService.
+	 * @param array{data: array, force: bool} $import               The effective configuration, and whether to force
+	 *                                                              re-import regardless of version.
+	 *
+	 * @return array Import result
+	 */
+	private function importAnswer($configurationService, array $import): array {
+		$configData = $import['data'];
 		$configVersion = ($configData['info']['version'] ?? '0.0.0');
 
 		try {
 			$importResult = $configurationService->importFromApp(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				data: $configData,
 				version: $configVersion,
-				force: $force,
+				force: $import['force'],
 			);
 
-			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
-			$this->reconcileSchemaConfig();
-
-			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
-			// MERGE THEM HERE. Importing the register creates the schemas, but the
-			// `x-openregister-*` blocks declared alongside them in
-			// dossiq_register.json do not survive onto the live schema. Without
-			// this call a FRESH instance never gets them: `isTerminalStatus` never
-			// materialises, so every completed task keeps reading false and the
-			// widgets filtering on it keep showing finished work, and
-			// `daysUntilDue` does not exist to extend, so due-date columns render
-			// blank. Both failures are silent. The e2e suite caught it on a clean
-			// CI install after passing on a dev box where the reconcile had been
-			// run by hand. Idempotent, so it is safe on every import.
-			$this->reconcileSchemaDeclarativeConfig();
-
-			$this->logger->info(
-				'Dossiq: Configuration imported and reconciled',
-				['version' => $configVersion, 'configured' => $configuredCount]
-			);
-
-			return [
-				'success' => true,
-				'message' => 'Configuration imported and auto-configured (' . $configuredCount . ' schemas mapped)',
-				'version' => $configVersion,
-				'configured' => $configuredCount,
-				'result' => $importResult,
-			];
+			return $this->reconciledAnswer(importResult: $importResult, configVersion: $configVersion);
 		} catch (\Throwable $e) {
 			// 🔴 `\Throwable`, NOT `\Exception`. A declaration this app ships
 			// that OpenRegister's entity setters refuse arrives here as a
@@ -208,16 +191,84 @@ class ConfigurationImport {
 			// this app declares in a fragment was absent and none of the
 			// `*_schema` config keys was ever written. A 500 says nothing
 			// about which declaration is wrong; the shape below names it.
-			$this->logger->error(
-				'Dossiq: Configuration import failed',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Import failed: ' . $e->getMessage(),
-			];
+			return $this->importFailedAnswer(exception: $e);
 		}//end try
-	}//end loadConfiguration()
+	}//end importAnswer()
+
+	/**
+	 * Auto-configure and reconcile the imported schemas, and answer the import.
+	 *
+	 * @param array  $importResult  What OpenRegister imported.
+	 * @param string $configVersion The imported configuration version.
+	 *
+	 * @return array Import result
+	 */
+	private function reconciledAnswer(array $importResult, string $configVersion): array {
+		$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
+		$this->reconcileSchemaConfig();
+
+		// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
+		// MERGE THEM HERE. Importing the register creates the schemas, but the
+		// `x-openregister-*` blocks declared alongside them in
+		// dossiq_register.json do not survive onto the live schema. Without
+		// this call a FRESH instance never gets them: `isTerminalStatus` never
+		// materialises, so every completed task keeps reading false and the
+		// widgets filtering on it keep showing finished work, and
+		// `daysUntilDue` does not exist to extend, so due-date columns render
+		// blank. Both failures are silent. The e2e suite caught it on a clean
+		// CI install after passing on a dev box where the reconcile had been
+		// run by hand. Idempotent, so it is safe on every import.
+		$this->reconcileSchemaDeclarativeConfig();
+
+		$this->logger->info(
+			'Dossiq: Configuration imported and reconciled',
+			['version' => $configVersion, 'configured' => $configuredCount]
+		);
+
+		return [
+			'success' => true,
+			'message' => 'Configuration imported and auto-configured (' . $configuredCount . ' schemas mapped)',
+			'version' => $configVersion,
+			'configured' => $configuredCount,
+			'result' => $importResult,
+		];
+	}//end reconciledAnswer()
+
+	/**
+	 * The answer, logged, when the ConfigurationService cannot be reached.
+	 *
+	 * @param \Exception $exception Why it could not.
+	 *
+	 * @return array Import result
+	 */
+	private function unreachableServiceAnswer(\Exception $exception): array {
+		$this->logger->error(
+			'Dossiq: Could not access ConfigurationService',
+			['exception' => $exception->getMessage()]
+		);
+		return [
+			'success' => false,
+			'message' => 'Could not access ConfigurationService: ' . $exception->getMessage(),
+		];
+	}//end unreachableServiceAnswer()
+
+	/**
+	 * The answer, logged, when the import or the reconcile threw.
+	 *
+	 * @param \Throwable $exception What threw.
+	 *
+	 * @return array Import result
+	 */
+	private function importFailedAnswer(\Throwable $exception): array {
+		$this->logger->error(
+			'Dossiq: Configuration import failed',
+			['exception' => $exception->getMessage()]
+		);
+		return [
+			'success' => false,
+			'message' => 'Import failed: ' . $exception->getMessage(),
+		];
+	}//end importFailedAnswer()
 
 	/**
 	 * Read dossiq_register.json and deep-merge the ADR-037 register fragments
@@ -229,7 +280,7 @@ class ConfigurationImport {
 	 *
 	 * @return array{data?: array, error?: array}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function readEffectiveConfiguration(): array {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
@@ -237,12 +288,7 @@ class ConfigurationImport {
 			$this->logger->error(
 				'Dossiq: Configuration file not found at ' . $configPath
 			);
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Configuration file not found',
-				],
-			];
+			return $this->configurationError(message: 'Configuration file not found');
 		}
 
 		$configContent = file_get_contents($configPath);
@@ -250,12 +296,7 @@ class ConfigurationImport {
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
 			$this->logger->error('Dossiq: Invalid JSON in configuration file');
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Invalid JSON in configuration file',
-				],
-			];
+			return $this->configurationError(message: 'Invalid JSON in configuration file');
 		}
 
 		// ADR-037: deep-merge any modular register fragments from
@@ -283,6 +324,22 @@ class ConfigurationImport {
 
 		return ['data' => $configData];
 	}//end readEffectiveConfiguration()
+
+	/**
+	 * The caller-facing failure of reading the configuration.
+	 *
+	 * @param string $message What went wrong.
+	 *
+	 * @return array{error: array{success: false, message: string}}
+	 */
+	private function configurationError(string $message): array {
+		return [
+			'error' => [
+				'success' => false,
+				'message' => $message,
+			],
+		];
+	}//end configurationError()
 
 	/**
 	 * Reconcile every `*_schema` appconfig key directly from OpenRegister.

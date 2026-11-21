@@ -106,6 +106,52 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 	}//end testSeriesShapes()
 
 	/**
+	 * Every field of every series, and a report holding only some blocks.
+	 *
+	 * @return void
+	 */
+	public function testSeriesInFull(): void {
+		$publisher = $this->publisher(service: null);
+
+		self::assertSame(
+			[
+				[
+					'seriesKey' => 'dossiq-sla-compliance-by-type',
+					'title'     => 'Compliance by Case Type',
+					'chartType' => 'doughnut',
+					'labels'    => ['Permit', 'Objection'],
+					'datasets'  => [3, 1],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-processing-time-distribution',
+					'title'     => 'Processing Time Distribution',
+					'chartType' => 'bar',
+					'labels'    => ['0-7', '8-14'],
+					'datasets'  => [['name' => 'Cases', 'data' => [2, 0]]],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-monthly-trend',
+					'title'     => 'Monthly SLA Trend',
+					'chartType' => 'line',
+					'labels'    => ['2026-05', '2026-06'],
+					'datasets'  => [['name' => 'SLA Compliance %', 'data' => [null, 50]]],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-weekly-throughput',
+					'title'     => 'Throughput (cases closed per week)',
+					'chartType' => 'line',
+					'labels'    => ['W23 2026'],
+					'datasets'  => [['name' => 'Cases closed', 'data' => [4]]],
+				],
+			],
+			$publisher->seriesOf(report: $this->report())
+		);
+
+		$partial = $publisher->seriesOf(report: ['trend' => [['month' => '2026-06', 'rate' => 50]], 'throughput' => [['weekLabel' => 'W1', 'count' => 1]]]);
+		self::assertSame(['dossiq-sla-monthly-trend', 'dossiq-sla-weekly-throughput'], array_column($partial, 'seriesKey'));
+	}//end testSeriesInFull()
+
+	/**
 	 * Empty blocks publish nothing.
 	 *
 	 * @return void

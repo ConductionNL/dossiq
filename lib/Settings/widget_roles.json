@@ -1,0 +1,11 @@
+{
+    "about": "The groups that may see each dashboard widget dossiq contributes to Nextcloud's dashboard (case-widgets-declare-who-may-see-them, REQ-DWV-001). The app setting widget_roles overrides an entry; an empty list means everybody.",
+    "widgets": {
+        "procest_cases_overview_widget": [],
+        "dossiq_my_open_work_widget": [],
+        "procest_deadline_alerts_widget": [],
+        "procest_task_reminders_widget": [],
+        "procest_stalled_cases_widget": [],
+        "procest_start_case_widget": []
+    }
+}

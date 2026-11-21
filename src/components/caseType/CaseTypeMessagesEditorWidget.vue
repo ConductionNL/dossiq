@@ -10,21 +10,12 @@
 
 <script>
 import EmailTemplateAdmin from '../../views/casetypes/components/EmailTemplateAdmin.vue'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 
 export default {
 	name: 'CaseTypeMessagesEditorWidget',
 	components: { EmailTemplateAdmin },
 
-	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
-	},
+	mixins: [caseTypeWidget],
 }
 </script>

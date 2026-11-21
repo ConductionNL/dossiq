@@ -306,4 +306,37 @@ class CaseTaskControllerTest extends TestCase {
 
 		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testNoSessionIsRefused()
+
+	/**
+	 * Every other refusal keeps its code as message and error, with the status its reason maps to.
+	 *
+	 * @return void
+	 */
+	public function testOtherRefusalsKeepTheirCodeAndStatus(): void {
+		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$codes = ['task_not_found', 'case_not_found:case-7', 'storage_unavailable', 'locked', ''];
+		$this->completion->method('complete')->willReturnCallback(
+			static function () use (&$codes): array {
+				throw new RuntimeException((string)array_shift($codes));
+			}
+		);
+
+		$answers = [];
+		for ($i = 0; $i < 5; $i++) {
+			$response = $this->controller()->complete(taskId: 'task-1');
+			$answers[] = [$response->getStatus(), $response->getData()];
+		}
+
+		$this->assertSame(
+			expected: [
+				[Http::STATUS_NOT_FOUND, ['message' => 'task_not_found', 'error' => 'task_not_found']],
+				[Http::STATUS_NOT_FOUND, ['message' => 'case_not_found:case-7', 'error' => 'case_not_found']],
+				[Http::STATUS_SERVICE_UNAVAILABLE, ['message' => 'storage_unavailable', 'error' => 'storage_unavailable']],
+				[Http::STATUS_BAD_REQUEST, ['message' => 'locked', 'error' => 'locked']],
+				[Http::STATUS_BAD_REQUEST, ['message' => 'That could not be done', 'error' => 'refused']],
+			],
+			actual: $answers
+		);
+	}//end testOtherRefusalsKeepTheirCodeAndStatus()
 }//end class

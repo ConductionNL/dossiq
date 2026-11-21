@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -31,6 +32,9 @@ use OCA\Dossiq\Review\PagesSeen;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for WOO decision tests (OpenRegister object-first signature).
@@ -47,7 +51,7 @@ interface WOODecisionObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -103,6 +107,11 @@ class WOODecisionServiceTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * @var ContractDecisionDelegationService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ContractDecisionDelegationService $delegation;
+
+	/**
 	 * @var WOODecisionService
 	 */
 	private WOODecisionService $service;
@@ -117,12 +126,15 @@ class WOODecisionServiceTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$this->delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
 
 		$this->service = new WOODecisionService(
 			$this->settingsService,
 			$this->assessmentService,
 			$this->userSession,
 			$this->logger,
+			decisionDelegation: $this->delegation,
 		);
 	}//end setUp()
 
@@ -160,7 +172,7 @@ class WOODecisionServiceTest extends TestCase {
 			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
 		);
 		$this->settingsService->expects($this->never())->method('getObjectService');
-		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, pagesSeen: $pagesSeen);
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, pagesSeen: $pagesSeen, decisionDelegation: $this->delegation);
 
 		$this->assertSame(['doc-7' => [7]], $service->unseenPages(caseId: 'case-001'));
 		$this->assertSame([], $this->service->unseenPages(caseId: 'case-001'));
@@ -268,7 +280,7 @@ class WOODecisionServiceTest extends TestCase {
 		$drafts->expects($this->exactly(2))->method('draft')->willReturnCallback(
 			static fn (string $caseId, string $purpose): array => array_merge($drafted, ['reason' => $caseId . '/' . $purpose])
 		);
-		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $drafts);
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $drafts, decisionDelegation: $this->delegation);
 
 		$result = $service->assembleDecision('case-uuid-002');
 
@@ -378,11 +390,11 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->assertSame(
 			expected: [$decisionOf['case-new']],
-			actual: $store->find(id: 'case-new', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-new', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 		$this->assertSame(
 			expected: ['decision-before', $decisionOf['case-earlier']],
-			actual: $store->find(id: 'case-earlier', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-earlier', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 	}//end testTheRecordedDecisionIsListedOnItsCase()
 
@@ -443,8 +455,12 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
-				return $this->store->find(id: $id, register: $register, schema: $schema);
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
+				return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**
@@ -466,8 +482,11 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
-				$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$row = $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 				if ($schema !== 'decision') {
 					return $row;
 				}
@@ -504,4 +523,114 @@ class WOODecisionServiceTest extends TestCase {
 		return $store;
 	}//end assembleForCases()
 
+	/**
+	 * A fully assessed case whose store records what is saved; answers the store.
+	 *
+	 * @return \PHPUnit\Framework\MockObject\MockObject The object-service double.
+	 */
+	private function assessedCase() {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+
+		$objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([
+			['documentRef' => 'doc-001', 'classification' => 'openbaar', 'weigeringsgronden' => []],
+			['documentRef' => 'doc-002', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.5']],
+		]);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', 'case'],
+		]);
+
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+
+		return $objectServiceMock;
+	}//end assessedCase()
+
+	/**
+	 * The decision is raised in decidiq as a woo-decision about the case, with the tally.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testTheDecisionIsRaisedInDecidiq(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->method('saveObject')->willReturn(new class {
+			public function getUuid(): string {
+				return 'decision-uuid-001';
+			}
+		});
+
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->expects($this->once())->method('raiseDecision')
+			->with(
+				'woo-decision',
+				'case-uuid-001',
+				[
+					'subjectRegister' => 'dossiq',
+					'subjectSchema' => 'case',
+					'subjectId' => 'case-uuid-001',
+					'subjectLabel' => 'Besluit op een Woo-verzoek',
+				],
+				$this->callback(static function (array $context): bool {
+					return $context['actorId'] === 'j.dejong'
+						&& $context['summary']['openbaar'] === 1
+						&& $context['summary']['niet_openbaar'] === 1
+						&& $context['weigeringsgronden'] === ['5.1.5']
+						&& $context['assessmentCount'] === 2;
+				})
+			)
+			->willReturn('decidiq-decision-7');
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, decisionDelegation: $delegation);
+		$result = $service->assembleDecision('case-uuid-001');
+
+		$this->assertSame('decidiq-decision-7', $result['decisionRef']);
+		$this->assertSame('decision-uuid-001', $result['decisionId']);
+	}//end testTheDecisionIsRaisedInDecidiq()
+
+	/**
+	 * When decidiq refuses the raise, nothing is recorded and the case is not made ready.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testARefusedRaiseRecordsNothing(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willThrowException(new \RuntimeException('decidiq is not installed'));
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, decisionDelegation: $delegation);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable: decidiq is not installed');
+		$service->assembleDecision('case-uuid-001');
+	}//end testARefusedRaiseRecordsNothing()
+
+	/**
+	 * Without the decision seam no decision is assembled at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-decisions-to-decidiq/specs/dossiq-decisions-to-decidiq/spec.md#requirement-req-ddtd-001-no-local-decision-authoring
+	 */
+	public function testWithoutTheSeamNothingIsRecorded(): void {
+		$objectServiceMock = $this->assessedCase();
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable: the decision seam is not wired');
+		$service->assembleDecision('case-uuid-001');
+	}//end testWithoutTheSeamNothingIsRecorded()
 }//end class

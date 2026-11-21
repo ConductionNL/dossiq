@@ -26,7 +26,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\NotesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
 use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Http;
@@ -66,11 +65,6 @@ class NotesControllerTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
-	 * @var NotePush|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private NotePush $notePush;
-
-	/**
 	 * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private CaseAccessGuard $caseAccessGuard;
@@ -98,14 +92,6 @@ class NotesControllerTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
-		// The two collaborators the note PUSH needs
-		// (a-case-note-reaches-the-neighbouring-register). Doubled here rather
-		// than left out: the constructor takes them, and the mention arms in
-		// this file must keep passing without knowing anything about the push.
-		$this->notePush = $this->getMockBuilder(NotePush::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['push'])
-			->getMock();
 		$this->caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['hasCaseMutationAccess', 'hasCaseReadAccess'])
@@ -117,7 +103,6 @@ class NotesControllerTest extends TestCase {
 			mentionSvc: $this->service,
 			userSession: $this->userSession,
 			logger: $this->logger,
-			notePush: $this->notePush,
 			caseAccessGuard: $this->caseAccessGuard,
 			userManager: $this->userManager,
 		);
@@ -130,7 +115,7 @@ class NotesControllerTest extends TestCase {
 	 */
 	private function withReadableCaseAndKnownUsers(): void {
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
 	}//end withReadableCaseAndKnownUsers()
 
 	/**
@@ -262,7 +247,7 @@ class NotesControllerTest extends TestCase {
 		$user = $this->mockUser('outsider', 'Outsider');
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
-		$this->userManager->method('userExists')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
 		$this->caseAccessGuard->expects($this->once())
 			->method('hasCaseReadAccess')
 			->with(caseId: 'case-1', user: $user)
@@ -284,8 +269,8 @@ class NotesControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($this->mockUser());
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'ghost', 'carol']]);
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')
-			->willReturnCallback(static fn (string $uid): bool => $uid !== 'ghost');
+		$this->userManager->method('get')
+			->willReturnCallback(fn (string $uid): ?IUser => ($uid === 'ghost' ? null : $this->mockUser($uid, $uid)));
 		$this->service->expects($this->once())
 			->method('notifyMention')
 			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
@@ -297,6 +282,28 @@ class NotesControllerTest extends TestCase {
 	}//end testMentionSkipsUsersThatDoNotExist()
 
 	/**
+	 * Mentioned users who may not read the case are not notified.
+	 *
+	 * @return void
+	 */
+	public function testMentionSkipsUsersWhoCannotReadTheCase(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'outsider', 'carol']]);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->caseAccessGuard->method('hasCaseReadAccess')
+			->willReturnCallback(static fn (string $caseId, IUser $user): bool => $caseId === 'case-1' && $user->getUID() !== 'outsider');
+		$this->service->expects($this->once())
+			->method('notifyMention')
+			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
+			->willReturn(2);
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['notified' => 2], $response->getData());
+	}//end testMentionSkipsUsersWhoCannotReadTheCase()
+
+	/**
 	 * When no mentioned user exists, nobody is notified and the answer says so.
 	 *
 	 * @return void
@@ -305,7 +312,7 @@ class NotesControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($this->mockUser());
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['ghost']]);
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')->willReturn(false);
+		$this->userManager->method('get')->willReturn(null);
 		$this->service->expects($this->never())->method('notifyMention');
 
 		$response = $this->controller->mention();
@@ -313,59 +320,26 @@ class NotesControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['notified' => 0], $response->getData());
 	}//end testMentionOfOnlyUnknownUsersNotifiesNobody()
+
 	/**
-	 * A caller with no mutation access to the case cannot send its notes.
-	 *
-	 * Sending a note to another organisation is externally visible and not
-	 * undoable, so the guard is mutation access rather than read, and it runs
-	 * before the note is even looked at.
+	 * A failing mention dispatch is a logged 500 carrying the message.
 	 *
 	 * @return void
 	 */
-	public function testACallerWithoutMutationAccessCannotPushANote(): void {
-		$this->userSession->method('getUser')->willReturn($this->mockUser('outsider', 'Outsider'));
-		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
-		$this->notePush->expects($this->never())->method('push');
-
-		$response = $this->controller->push('someone-elses-case');
-
-		$this->assertSame(403, $response->getStatus());
-	}//end testACallerWithoutMutationAccessCannotPushANote()
-
-	/**
-	 * A caller who may change the case gets the push outcome back verbatim.
-	 *
-	 * Without this arm a controller that refused everything would satisfy the
-	 * arm above.
-	 *
-	 * @return void
-	 */
-	public function testACallerWithMutationAccessGetsTheOutcome(): void {
-		$this->userSession->method('getUser')->willReturn($this->mockUser('handler', 'Handler'));
-		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->request->method('getParams')->willReturn(
-			['note' => ['id' => 1, 'message' => 'Kort', 'visibility' => 'public']]
-		);
-		$this->notePush->method('push')->willReturn(
-			[
-				'outcome' => 'failed',
-				'reason' => 'the register said no',
-				'receiverUrl' => '',
-				'caseRecord' => 'lost',
-			]
+	public function testAFailingMentionDispatchIsALoggedServerError(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('alice', 'Alice'));
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->request->method('getParams')->willReturn(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
+		$this->service->method('notifyMention')->willThrowException(new \RuntimeException('bus down'));
+		$this->logger->expects($this->once())->method('error')->with(
+			'Failed to dispatch note mention notifications: bus down',
+			['app' => 'dossiq']
 		);
 
-		$response = $this->controller->push('my-own-case');
+		$response = $this->controller->mention();
 
-		// 200 for a FAILED push, on purpose: the caller asked what happened and
-		// every answer here is a real answer. A 500 for a refused push would be
-		// this app reporting its own failure rather than the note's.
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame('failed', $response->getData()['outcome']);
-		$this->assertSame('the register said no', $response->getData()['reason']);
-		// VERBATIM means the whole answer, including whether the case was told.
-		// A controller that forwarded the outcome and dropped this would hand
-		// the caller a failure that reads as though the case now carries it.
-		$this->assertSame('lost', $response->getData()['caseRecord']);
-	}//end testACallerWithMutationAccessGetsTheOutcome()
+		$this->assertSame(500, $response->getStatus());
+		$this->assertSame(['error' => 'Could not dispatch mention notifications: bus down'], $response->getData());
+	}//end testAFailingMentionDispatchIsALoggedServerError()
 }//end class

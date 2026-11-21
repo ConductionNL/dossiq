@@ -33,17 +33,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Recycle\CaseDestructionService;
-use OCA\Dossiq\Service\Recycle\CaseRecycleService;
-use OCA\Dossiq\Service\Recycle\RetentionClocks;
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -51,6 +52,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -59,13 +61,12 @@ use Throwable;
 /**
  * Lists deleted cases, restores one, and destroys one as a second act.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the recycle, destruction,
  * retention and access services each own one rule of the gesture; the
  * translator says the list's window note and a refusal in the reader's language.
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) — constructor DI: every
- * parameter is a distinct collaborator used by this controller.
  */
 class CaseRecycleController extends Controller {
 
@@ -86,10 +87,10 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param CaseRecycleService $recycle The window, the lens and the restore
-	 * @param CaseDestructionService $destruction The destroying role and the act
-	 * @param RetentionClocks $clocks The two clocks, read apart
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization for the clocks read
+	 * @param CaseRecycleServiceInterface $recycle The window, the lens and the restore
+	 * @param CaseDestructionServiceInterface $destruction The destroying role and the act
+	 * @param RetentionClocksInterface $clocks The two clocks, read apart
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization for the clocks read
 	 * @param IGroupManager $groupManager Reads whether the caller is an administrator
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
@@ -98,10 +99,10 @@ class CaseRecycleController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseRecycleService $recycle,
-		private readonly CaseDestructionService $destruction,
-		private readonly RetentionClocks $clocks,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseRecycleServiceInterface $recycle,
+		private readonly CaseDestructionServiceInterface $destruction,
+		private readonly RetentionClocksInterface $clocks,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -123,7 +124,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse The rows, each with the date its window ends.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function deleted(): JSONResponse {
@@ -132,29 +133,8 @@ class CaseRecycleController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$limit = (int)$this->request->getParam('limit', CaseRecycleService::PAGE_SIZE);
-		$offset = (int)$this->request->getParam('offset', 0);
-		$search = (string)$this->request->getParam('search', '');
-
 		try {
-			// `=== true` and not a cast: IGroupManager::isAdmin() carries no
-			// return type, so a double that answers null would otherwise reach
-			// a bool parameter and turn a read into a 500.
-			$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
-
-			$page = $this->recycle->deletedCases(
-				limit: $limit,
-				offset: $offset,
-				forUser: $user->getUID(),
-				isAdmin: $isAdmin,
-				search: $search
-			);
-			$page['results'] = array_map(
-				fn (array $row): array => ($row + ['windowNote' => $this->windowNote(row: $row)]),
-				($page['results'] ?? [])
-			);
-
-			return new JSONResponse($page);
+			return new JSONResponse($this->deletedPage(user: $user));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: the deleted lens failed: ' . $e->getMessage());
 
@@ -166,13 +146,43 @@ class CaseRecycleController extends Controller {
 	}//end deleted()
 
 	/**
+	 * The page of deleted cases the caller may see, each row saying what is left of its window.
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function deletedPage(IUser $user): array {
+		// `=== true` and not a cast: IGroupManager::isAdmin() carries no
+		// return type, so a double that answers null would otherwise reach
+		// a bool parameter and turn a read into a 500.
+		$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
+
+		$page = $this->recycle->deletedCases(
+			limit: (int)$this->request->getParam('limit', CaseRecycleServiceInterface::PAGE_SIZE),
+			offset: (int)$this->request->getParam('offset', 0),
+			forUser: $user->getUID(),
+			isAdmin: $isAdmin,
+			search: (string)$this->request->getParam('search', '')
+		);
+		$page['results'] = array_map(
+			fn (array $row): array => ($row + ['windowNote' => $this->windowNote(row: $row)]),
+			($page['results'] ?? [])
+		);
+
+		return $page;
+	}//end deletedPage()
+
+	/**
 	 * Get a deleted case back, inside its window.
 	 *
 	 * @param string $caseId The case UUID
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function restore(string $caseId): JSONResponse {
@@ -189,7 +199,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function destructionPreview(string $caseId): JSONResponse {
@@ -206,7 +216,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function destroy(string $caseId): JSONResponse {
@@ -228,17 +238,13 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function clocks(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -299,7 +305,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return string The note, or an empty string when the window is unknown
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function windowNote(array $row): string {
 		if (($row['lapsed'] ?? null) === true) {
@@ -320,7 +326,7 @@ class CaseRecycleController extends Controller {
 	 *
 	 * @return string The sentence
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function refusalSentence(string $code): string {
 		return match ($code) {

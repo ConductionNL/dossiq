@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
 /**
  * Reconstructs per-status dwell intervals and ranks the resulting bottlenecks.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class DwellTimeAnalyzer {
 	/**
@@ -83,7 +83,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return string One of {@see WorkingClock}'s CLOCK_* constants.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function clock(): string {
 		if ($this->clock === null) {
@@ -162,7 +162,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeDwellIntervals(
 		array $recordsByCase,
@@ -173,22 +173,34 @@ class DwellTimeAnalyzer {
 	): array {
 		$window = new DwellWindow(now: $now, start: $periodFrom->setTime(0, 0, 0), end: $periodTo->setTime(23, 59, 59));
 
+		return $this->intervalsIn(window: $window, cases: ['records' => $recordsByCase, 'rows' => $casesById]);
+	}//end computeDwellIntervals()
+
+	/**
+	 * The dwell intervals of every case with records, inside the window.
+	 *
+	 * @param DwellWindow          $window The period and "now".
+	 * @param array<string, mixed> $cases  The status records by case id (`records`) and the case rows by id (`rows`).
+	 *
+	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
+	 */
+	private function intervalsIn(DwellWindow $window, array $cases): array {
 		$intervals = [];
-		foreach ($recordsByCase as $caseId => $records) {
+		foreach ($cases['records'] as $caseId => $records) {
 			if (count($records) === 0) {
 				continue;
 			}
 
 			$dwell = new CaseDwell(
 				caseId: (string)$caseId,
-				closedAt: $this->closedAtOf(row: ($casesById[$caseId] ?? []), now: $now),
+				closedAt: $this->closedAtOf(row: ($cases['rows'][$caseId] ?? []), now: $window->now),
 				window: $window
 			);
 			$intervals = array_merge($intervals, $this->dwellIntervalsForCase(dwell: $dwell, records: $records));
 		}
 
 		return $intervals;
-	}//end computeDwellIntervals()
+	}//end intervalsIn()
 
 	/**
 	 * A case's close moment: its end date, "now" when that does not parse, or null while open.
@@ -218,7 +230,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function dwellIntervalsForCase(CaseDwell $dwell, array $records): array {
 		$count = count($records);
@@ -239,7 +251,7 @@ class DwellTimeAnalyzer {
 	 * @param CaseDwell   $dwell The case, its close moment and the window.
 	 * @param StatusVisit $visit The visit.
 	 *
-	 * @return array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}|null
+	 * @return array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool, enteredAt: string}|null
 	 */
 	private function visitInterval(CaseDwell $dwell, StatusVisit $visit): ?array {
 		$statusId = $visit->statusId();
@@ -261,6 +273,8 @@ class DwellTimeAnalyzer {
 			'hours' => $measured['wallHours'],
 			'workingHours' => $measured['workingHours'],
 			'open' => $dwell->isOpenAt(visit: $visit),
+			// The week the visit counts in on the dwell heatmap (REQ-CRS-36).
+			'enteredAt' => $enteredAt->format(DATE_ATOM),
 		];
 	}//end visitInterval()
 
@@ -292,7 +306,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array{workingHours: float, wallHours: float} The two numbers.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function measure(DateTimeImmutable $enteredAt, DateTimeImmutable $exitedAt): array {
 		if ($this->clock !== null) {
@@ -315,7 +329,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, p90Hours: float, meanHours: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function aggregateDwellStats(array $intervals, array $statusTypeIndex): array {
 		$byStatus = [];
@@ -367,7 +381,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<int, array<string, mixed>> One row per actor, longest median first.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function aggregateDwellStatsByActor(array $intervals): array {
 		$byActor = [];
@@ -411,7 +425,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<string, float|int> The summary.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function summarise(array $workingHours, array $wallHours): array {
 		sort($workingHours);
@@ -442,7 +456,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, score: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function rankBottlenecks(array $dwellStats): array {
 		$ranked = [];
@@ -472,22 +486,10 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function statusLabel(string $statusId, array $statusTypeIndex): string {
-		if (isset($statusTypeIndex[$statusId]) === false) {
-			return $statusId;
-		}
-
-		$entry = $statusTypeIndex[$statusId];
-
-		// A status name is translatable, so the row carries a language map.
-		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
-		if ($name === '') {
-			return $statusId;
-		}
-
-		return $name;
+		return (new StatusLabels(text: $this->text, statusTypeIndex: $statusTypeIndex))->labelOf(statusId: $statusId);
 	}//end statusLabel()
 
 	/**
@@ -532,7 +534,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return float
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private static function percentile(array $sorted, float $percentile): float {
 		$count = count($sorted);

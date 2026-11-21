@@ -14,6 +14,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notification;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\NotificationPreferencesInterface;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceAddress;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceWrite;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -160,14 +163,26 @@ class NotificationRouting {
 			return null;
 		}
 
+		return $this->entryFor(entries: $entries, wanted: ['schema' => $schema, 'notification' => $notification]);
+	}//end effectiveOne()
+
+	/**
+	 * The first entry for the schema and notification, or null.
+	 *
+	 * @param array<int, array<string, mixed>>           $entries The effective entries.
+	 * @param array{schema: string, notification: string} $wanted  The schema and the notification.
+	 *
+	 * @return array<string, mixed>|null The entry.
+	 */
+	private function entryFor(array $entries, array $wanted): ?array {
 		foreach ($entries as $entry) {
-			if (($entry['schema'] ?? null) === $schema && ($entry['notification'] ?? null) === $notification) {
+			if (($entry['schema'] ?? null) === $wanted['schema'] && ($entry['notification'] ?? null) === $wanted['notification']) {
 				return $entry;
 			}
 		}
 
 		return null;
-	}//end effectiveOne()
+	}//end entryFor()
 
 	/**
 	 * Whether this person's daily work digest is switched on.
@@ -238,17 +253,17 @@ class NotificationRouting {
 	 */
 	public function setDigestEnabled(string $userId, bool $enabled): bool {
 		$service = $this->service();
-		if ($service === null || $userId === '' || method_exists($service, 'setOverride') === false) {
+		if ($service instanceof NotificationPreferencesInterface === false || $userId === '') {
 			return false;
 		}
 
 		try {
-			$service->setOverride(
-				userId: $userId,
-				schemaSlug: self::DIGEST_SCHEMA,
-				notificationKey: self::DIGEST_NOTIFICATION,
-				override: ['enabled' => $enabled],
-				scope: null
+			$service->storeOverride(
+				write: new PreferenceWrite(
+					party: $userId,
+					address: new PreferenceAddress(schemaSlug: self::DIGEST_SCHEMA, notificationKey: self::DIGEST_NOTIFICATION),
+					value: ['enabled' => $enabled]
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq notifications: the digest switch was not routed: ' . $e->getMessage());

@@ -147,7 +147,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 		// and `not.toContainText(/Loading/i)` over the whole panel would be
 		// satisfied by whichever half resolved first.
 		const panel = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
 		)
 		await expect(panel).toBeVisible({ timeout: 20000 })
 		await expect(panel).not.toContainText(/Loading/i, { timeout: 30000 })

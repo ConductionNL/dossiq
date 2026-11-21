@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SuspendTermHandlerInterface;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\TermijnService;
 use Psr\Log\LoggerInterface;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
  */
-class SuspendTermHandler implements ActionHandlerInterface {
+class SuspendTermHandler implements ActionHandlerInterface, SuspendTermHandlerInterface {
 
 	/**
 	 * Constructor.
@@ -69,32 +70,24 @@ class SuspendTermHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'case_not_found');
 		}
 
-		$days = (int)($actionConfig['durationDays'] ?? 0);
-		if ($days <= 0) {
+		if ((int)($actionConfig['durationDays'] ?? 0) <= 0) {
 			return new ActionResult(succeeded: false, error: 'duration_required');
 		}
 
+		return $this->guarded(caseId: $caseId, actionConfig: $actionConfig);
+	}//end handle()
+
+	/**
+	 * Suspend the term, turning a refusal into the step's error and a failure into a logged generic one.
+	 *
+	 * @param string               $caseId       The case.
+	 * @param array<string, mixed> $actionConfig The step's config, with a positive duration.
+	 *
+	 * @return ActionResult The outcome.
+	 */
+	private function guarded(string $caseId, array $actionConfig): ActionResult {
 		try {
-			$instance = $this->terms->getTermijnInstanceForZaak($caseId);
-			if ($instance === null) {
-				return new ActionResult(succeeded: false, error: 'no_term_on_this_case');
-			}
-
-			if ((string)($instance['status'] ?? '') === 'paused') {
-				return new ActionResult(succeeded: false, error: 'term_already_paused');
-			}
-
-			$paused = $this->pauses->registerPauze(
-				termInstanceId: (string)($instance['id'] ?? ($instance['uuid'] ?? '')),
-				durationDays: $days,
-				rationale: (string)($actionConfig['rationale'] ?? ''),
-				pauseReason: (string)($actionConfig['pauseReason'] ?? '')
-			);
-
-			return new ActionResult(
-				succeeded: true,
-				data: ['endDate' => (string)($paused['endDateCurrent'] ?? '')]
-			);
+			return $this->suspend(caseId: $caseId, actionConfig: $actionConfig);
 		} catch (RefusedException $e) {
 			return new ActionResult(succeeded: false, error: $e->getMessage());
 		} catch (Throwable $e) {
@@ -105,5 +98,45 @@ class SuspendTermHandler implements ActionHandlerInterface {
 
 			return new ActionResult(succeeded: false, error: 'suspend_term_failed');
 		}//end try
-	}//end handle()
+	}//end guarded()
+
+	/**
+	 * Suspend the case's running term, refusing when there is none or it is already paused.
+	 *
+	 * @param string               $caseId       The case.
+	 * @param array<string, mixed> $actionConfig The step's config.
+	 *
+	 * @return ActionResult The outcome.
+	 */
+	private function suspend(string $caseId, array $actionConfig): ActionResult {
+		$instance = $this->terms->getTermijnInstanceForZaak($caseId);
+		if ($instance === null) {
+			return new ActionResult(succeeded: false, error: 'no_term_on_this_case');
+		}
+
+		if ((string)($instance['status'] ?? '') === 'paused') {
+			return new ActionResult(succeeded: false, error: 'term_already_paused');
+		}
+
+		return $this->pause(instance: $instance, actionConfig: $actionConfig);
+	}//end suspend()
+
+	/**
+	 * Register the pause for the configured days, rationale and reason.
+	 *
+	 * @param array<string, mixed> $instance     The running term instance.
+	 * @param array<string, mixed> $actionConfig The step's config.
+	 *
+	 * @return ActionResult The success, carrying the new end date.
+	 */
+	private function pause(array $instance, array $actionConfig): ActionResult {
+		$paused = $this->pauses->registerPauze(
+			termInstanceId: (string)($instance['id'] ?? ($instance['uuid'] ?? '')),
+			durationDays: (int)($actionConfig['durationDays'] ?? 0),
+			rationale: (string)($actionConfig['rationale'] ?? ''),
+			pauseReason: (string)($actionConfig['pauseReason'] ?? '')
+		);
+
+		return new ActionResult(succeeded: true, data: ['endDate' => (string)($paused['endDateCurrent'] ?? '')]);
+	}//end pause()
 }//end class

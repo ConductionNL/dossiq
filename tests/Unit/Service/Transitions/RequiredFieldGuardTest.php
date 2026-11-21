@@ -165,6 +165,43 @@ class RequiredFieldGuardTest extends TestCase {
 	}//end testFailsOnAnUnansweredCaseTypeProperty()
 
 	/**
+	 * A property answering another field does not satisfy the required one,
+	 * however filled it is.
+	 *
+	 * @return void
+	 */
+	public function testAnotherFieldsAnswerDoesNotSatisfyTheGuard(): void {
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'stemuitslag'],
+			case: ['properties' => ['stray', ['name' => 'agendapunt', 'value' => 'aangenomen']]],
+			userId: 'u',
+		);
+
+		self::assertFalse(condition: $result->passed);
+		self::assertSame(expected: 'Required field missing: stemuitslag', actual: $result->failureMessage);
+		self::assertSame(expected: ['field' => 'stemuitslag'], actual: $result->details);
+	}//end testAnotherFieldsAnswerDoesNotSatisfyTheGuard()
+
+	/**
+	 * Stray and unrelated entries are stepped over, and the answer listed
+	 * after them still passes the guard.
+	 *
+	 * @return void
+	 */
+	public function testTheAnswerAfterStrayEntriesStillPasses(): void {
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'stemuitslag'],
+			case: ['properties' => [42, ['name' => 'agendapunt', 'value' => ''], ['name' => 'stemuitslag', 'value' => 'verworpen']]],
+			userId: 'u',
+		);
+
+		self::assertTrue(condition: $result->passed);
+		self::assertSame(expected: ['field' => 'stemuitslag'], actual: $result->details);
+	}//end testTheAnswerAfterStrayEntriesStillPasses()
+
+	/**
 	 * A column on the case still wins over the properties array.
 	 *
 	 * @return void

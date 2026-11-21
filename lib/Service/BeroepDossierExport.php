@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\BeroepDossierExportInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -46,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
-class BeroepDossierExport {
+class BeroepDossierExport implements BeroepDossierExportInterface {
 	/**
 	 * Constructor.
 	 *
@@ -89,37 +90,43 @@ class BeroepDossierExport {
 		$sequence = 0;
 		foreach ($documents as $document) {
 			$sequence++;
-
-			$title = trim((string)($document['title'] ?? 'document'));
-			$source = trim((string)($document['document'] ?? ''));
-
-			$displayTitle = 'document';
-			if ($title !== '') {
-				$displayTitle = $title;
-			}
-
-			$entries[] = [
-				'sequence' => $sequence,
-				'filename' => $this->buildFilename(sequence: $sequence, title: $title, source: $source),
-				'title' => $displayTitle,
-				'source' => $source,
-				'sourceCase' => (string)($document['_sourceCase'] ?? ''),
-			];
+			$entries[] = $this->entryOf(document: $document, sequence: $sequence);
 		}
 
 		if ($entries === []) {
-			$this->logger->info(
-				'BeroepDossierExport: dossier export requested for a case with no documents',
-				['case' => $caseId]
-			);
+			$this->logger->info('BeroepDossierExport: dossier export requested for a case with no documents', ['case' => $caseId]);
+		}
+
+		return ['case' => $caseId, 'documentCount' => count($entries), 'entries' => $entries];
+	}//end buildPlan()
+
+	/**
+	 * The export entry of one document.
+	 *
+	 * @param array<string, mixed> $document The caseDocument record.
+	 * @param int                  $sequence The 1-based export sequence.
+	 *
+	 * @return array{sequence: int, filename: string, title: string, source: string, sourceCase: string} The entry.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function entryOf(array $document, int $sequence): array {
+		$title = trim((string)($document['title'] ?? 'document'));
+		$source = trim((string)($document['document'] ?? ''));
+
+		$displayTitle = 'document';
+		if ($title !== '') {
+			$displayTitle = $title;
 		}
 
 		return [
-			'case' => $caseId,
-			'documentCount' => count($entries),
-			'entries' => $entries,
+			'sequence' => $sequence,
+			'filename' => $this->buildFilename(sequence: $sequence, named: ['title' => $title, 'source' => $source]),
+			'title' => $displayTitle,
+			'source' => $source,
+			'sourceCase' => (string)($document['_sourceCase'] ?? ''),
 		];
-	}//end buildPlan()
+	}//end entryOf()
 
 	/**
 	 * Build a stable, sequentially numbered export filename.
@@ -128,13 +135,13 @@ class BeroepDossierExport {
 	 * and the original file extension (when present on the source URI) is
 	 * preserved, defaulting to `.pdf` for court submission.
 	 *
-	 * @param int $sequence The 1-based export sequence.
-	 * @param string $title The document title.
-	 * @param string $source The source document URI.
+	 * @param int                                  $sequence The 1-based export sequence.
+	 * @param array{title: string, source: string} $named    `title` the document title; `source` the source document URI.
 	 *
 	 * @return string The export filename, e.g. `01-primair-besluit.pdf`.
 	 */
-	private function buildFilename(int $sequence, string $title, string $source): string {
+	private function buildFilename(int $sequence, array $named): string {
+		[$title, $source] = [$named['title'], $named['source']];
 		$slug = strtolower($title);
 		$slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
 		$slug = trim($slug, '-');

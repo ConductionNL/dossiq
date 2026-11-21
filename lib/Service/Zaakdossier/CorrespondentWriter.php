@@ -39,7 +39,7 @@ use Throwable;
  * the failure is logged rather than thrown, because the act that triggered
  * this was filing a document and that document is already on the case.
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class CorrespondentWriter {
 	use SearchesObjects;
@@ -84,13 +84,40 @@ class CorrespondentWriter {
 	 *
 	 * @return array<string, mixed> The fields to patch, [] when the edit names neither.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function applyEdit(string $documentId, array $current, array $metadata, string $direction): array {
+		$edited = $this->editedCorrespondents(current: $current, metadata: $metadata);
+		if ($edited === null) {
+			return [];
+		}
+
+		$caseId = $this->caseOf(documentId: $documentId);
+		$resolved = $this->resolveFor(
+			caseId: $caseId,
+			sender: $edited['sender'],
+			recipients: $edited['recipients'],
+			direction: $direction,
+		);
+
+		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
+
+		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
+	}//end applyEdit()
+
+	/**
+	 * The sender and recipients after the edit, or null when the edit names neither.
+	 *
+	 * @param array<string, mixed> $current  The stored document.
+	 * @param array<string, mixed> $metadata The submitted edit.
+	 *
+	 * @return array{sender: mixed, recipients: mixed}|null The submitted value of each, else the stored one.
+	 */
+	private function editedCorrespondents(array $current, array $metadata): ?array {
 		$namesSender = array_key_exists('sender', $metadata);
 		$namesRecipients = array_key_exists('recipients', $metadata);
 		if ($namesSender === false && $namesRecipients === false) {
-			return [];
+			return null;
 		}
 
 		$sender = ($current['sender'] ?? null);
@@ -103,18 +130,8 @@ class CorrespondentWriter {
 			$recipients = $metadata['recipients'];
 		}
 
-		$caseId = $this->caseOf(documentId: $documentId);
-		$resolved = $this->resolveFor(
-			caseId: $caseId,
-			sender: $sender,
-			recipients: $recipients,
-			direction: $direction,
-		);
-
-		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
-
-		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
-	}//end applyEdit()
+		return ['sender' => $sender, 'recipients' => $recipients];
+	}//end editedCorrespondents()
 
 	/**
 	 * The case a document is filed on, read from its joins.
@@ -123,7 +140,7 @@ class CorrespondentWriter {
 	 *
 	 * @return string The case uuid, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	private function caseOf(string $documentId): string {
 		try {
@@ -155,7 +172,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function resolveFor(string $caseId, mixed $sender, mixed $recipients, string $direction): array {
 		return $this->rules->resolve(
@@ -174,7 +191,7 @@ class CorrespondentWriter {
 	 *
 	 * @return string The party's identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	public function partyHolding(string $caseId, string $address): string {
 		if (trim($address) === '') {
@@ -198,7 +215,7 @@ class CorrespondentWriter {
 	 *
 	 * @return array<int, string> The identifiers, [] when no role answered.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	public function addressedParties(string $caseId, array $roles): array {
 		$parties = $this->partiesOf(caseId: $caseId);
@@ -240,11 +257,27 @@ class CorrespondentWriter {
 	 *
 	 * @return array<int, array<string, mixed>> The documents, named and narrowed.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
 	 */
 	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
 		$parties = $this->partiesOf(caseId: $caseId);
+
+		return $this->labels->label(documents: $this->described(documents: $documents, reader: ['correspondent' => $correspondent, 'parties' => $parties]));
+	}//end describeAll()
+
+	/**
+	 * The documents that mention the correspondent, each with its correspondents described.
+	 *
+	 * @param array<int, mixed>                                            $documents The documents.
+	 * @param array{correspondent: string, parties: array<int|string, mixed>} $reader    The correspondent to filter on ('' for
+	 *                                                                                all), and the case's parties.
+	 *
+	 * @return array<int, array<string, mixed>> The described documents.
+	 */
+	private function described(array $documents, array $reader): array {
+		$parties = $reader['parties'];
+		$correspondent = $reader['correspondent'];
 		$described = [];
 		foreach ($documents as $document) {
 			if (is_array($document) === false) {
@@ -261,8 +294,8 @@ class CorrespondentWriter {
 			);
 		}
 
-		return $this->labels->label(documents: $described);
-	}//end describeAll()
+		return $described;
+	}//end described()
 
 	/**
 	 * Record one dispatch per correspondent of a document.
@@ -278,13 +311,44 @@ class CorrespondentWriter {
 	 *
 	 * @return int How many dispatch rows were created.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-014-a-dispatch-record-is-written-per-correspondent
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-014-a-dispatch-record-is-written-per-correspondent
 	 */
 	public function recordDispatches(string $caseId, string $documentId, array $correspondents): int {
 		if (trim($documentId) === '') {
 			return 0;
 		}
 
+		return $this->dispatchedTo(document: ['caseId' => $caseId, 'documentId' => $documentId], correspondents: $correspondents);
+	}//end recordDispatches()
+
+	/**
+	 * Write one dispatch of the document per wanted correspondent.
+	 *
+	 * @param array{caseId: string, documentId: string}             $document       The case, and the informatieobject uuid.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents What the document names.
+	 *
+	 * @return int How many dispatch rows were created.
+	 */
+	private function dispatchedTo(array $document, array $correspondents): int {
+		$written = 0;
+		foreach (self::wantedDispatches(correspondents: $correspondents) as [$party, $role]) {
+			$dispatch = new Dispatch(caseId: $document['caseId'], documentId: $document['documentId'], party: $party, role: $role);
+			if ($this->writeDispatch(dispatch: $dispatch) === true) {
+				$written++;
+			}
+		}
+
+		return $written;
+	}//end dispatchedTo()
+
+	/**
+	 * The party and role of every dispatch a document's correspondents ask for, sender first.
+	 *
+	 * @param array{sender?: string, recipients?: array<int, string>} $correspondents What the document names.
+	 *
+	 * @return array<int, array{0: string, 1: string}> Party and role pairs.
+	 */
+	private static function wantedDispatches(array $correspondents): array {
 		$wanted = [];
 		$sender = trim((string)($correspondents['sender'] ?? ''));
 		if ($sender !== '') {
@@ -298,19 +362,8 @@ class CorrespondentWriter {
 			}
 		}
 
-		if ($wanted === []) {
-			return 0;
-		}
-
-		$written = 0;
-		foreach ($wanted as [$party, $role]) {
-			if ($this->writeDispatch(caseId: $caseId, documentId: $documentId, party: $party, role: $role) === true) {
-				$written++;
-			}
-		}
-
-		return $written;
-	}//end recordDispatches()
+		return $wanted;
+	}//end wantedDispatches()
 
 	/**
 	 * The party links of a case, [] when OpenRegister cannot answer.
@@ -330,60 +383,22 @@ class CorrespondentWriter {
 	/**
 	 * Write one dispatch row, unless the document already has that one.
 	 *
-	 * @param string $caseId The case.
-	 * @param string $documentId The informatieobject uuid.
-	 * @param string $party The party's identifier.
-	 * @param string $role `afzender` or `geadresseerde`.
+	 * @param Dispatch $dispatch The party, role, document and case.
 	 *
 	 * @return bool True when a row was created.
 	 */
-	private function writeDispatch(string $caseId, string $documentId, string $party, string $role): bool {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('dispatch_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+	private function writeDispatch(Dispatch $dispatch): bool {
+		$store = $this->dispatchStore();
+		if ($store === null) {
 			return false;
 		}
 
 		try {
-			$existing = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: [
-					'document' => $documentId,
-					'involvedParty' => $party,
-					'relationshipType' => $role,
-					'_limit' => 1,
-				],
-			);
-			if ($existing !== []) {
+			if ($this->hasDispatch(store: $store, dispatch: $dispatch) === true) {
 				return false;
 			}
 
-			$row = [
-				'document' => $documentId,
-				'case' => $caseId,
-				'involvedParty' => $party,
-				'relationshipType' => $role,
-			];
-			// The date says which act this row records, and only one of the
-			// two is true: a sender was received from, an addressee was sent
-			// to. Writing both would make every dispatch read as a round trip.
-			if ($role === DocumentCorrespondents::ROLE_SENDER) {
-				$row['receiveDate'] = date('Y-m-d');
-			}
-
-			if ($role === DocumentCorrespondents::ROLE_RECIPIENT) {
-				$row['sendDate'] = date('Y-m-d');
-			}
-
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $row,
-			);
+			$this->saveDispatch(store: $store, dispatch: $dispatch);
 		} catch (Throwable) {
 			// The document is already on the case and already names the
 			// party; a missing audit row is not worth losing that write.
@@ -392,4 +407,56 @@ class CorrespondentWriter {
 
 		return true;
 	}//end writeDispatch()
+
+	/**
+	 * Where dispatch rows are stored, null when that is not configured.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function dispatchStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue('dispatch_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end dispatchStore()
+
+	/**
+	 * Whether the document already has this dispatch.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The dispatch store.
+	 * @param Dispatch                                                        $dispatch The dispatch.
+	 *
+	 * @return bool True when a row exists.
+	 */
+	private function hasDispatch(array $store, Dispatch $dispatch): bool {
+		$existing = $this->searchObjectsAsArrays(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: $dispatch->lookup(),
+		);
+
+		return $existing !== [];
+	}//end hasDispatch()
+
+	/**
+	 * Store the dispatch row, dated today.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The dispatch store.
+	 * @param Dispatch                                                        $dispatch The dispatch.
+	 *
+	 * @return void
+	 */
+	private function saveDispatch(array $store, Dispatch $dispatch): void {
+		$this->saveObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $dispatch->row(today: date('Y-m-d')),
+		);
+	}//end saveDispatch()
 }//end class

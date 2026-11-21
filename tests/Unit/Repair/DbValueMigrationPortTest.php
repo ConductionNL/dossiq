@@ -135,4 +135,107 @@ class DbValueMigrationPortTest extends TestCase {
 		$this->assertSame(expected: [], actual: $port->shardTables());
 		$this->assertSame(expected: ['DbValueMigrationPort: could not list tables.'], actual: $warnings);
 	}//end testShardTablesListsOpenRegisterTablesOrNone()
+
+	/**
+	 * An unreadable column listing is logged with its table and yields no columns.
+	 *
+	 * @return void
+	 */
+	public function testColumnsOfLogsAndReturnsNoneWhenTheListingFails(): void {
+		$logged = [];
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			callback: static function (string $message, array $context) use (&$logged): void {
+				$logged[] = [$message, $context];
+			}
+		);
+		$db = $this->createMock(originalClassName: IDBConnection::class);
+		$db->method('prepare')->willThrowException(exception: new \RuntimeException('gone'));
+
+		$port = new DbValueMigrationPort(db: $db, logger: $logger, decisions: new RenameDutchValueDecisions());
+
+		$this->assertSame(expected: [], actual: $port->columnsOf(table: 'oc_openregister_table_1_2'));
+		$this->assertSame(
+			expected: [['DbValueMigrationPort: could not read columns.', ['table' => 'oc_openregister_table_1_2', 'exception' => 'gone']]],
+			actual: $logged
+		);
+	}//end testColumnsOfLogsAndReturnsNoneWhenTheListingFails()
+
+	/**
+	 * A database platform that wraps identifiers in double quotes.
+	 *
+	 * @return object The platform.
+	 */
+	private function quotingPlatform(): object {
+		return new class {
+			/**
+			 * Quote one identifier.
+			 *
+			 * @param string $identifier The identifier.
+			 *
+			 * @return string The quoted identifier.
+			 */
+			public function quoteSingleIdentifier(string $identifier): string {
+				return '"' . $identifier . '"';
+			}//end quoteSingleIdentifier()
+		};
+	}//end quotingPlatform()
+
+	/**
+	 * A rewrite quotes table and column, binds new then old, and returns the rows changed.
+	 *
+	 * @return void
+	 */
+	public function testRewriteUpdatesTheExactValueAndReturnsTheRowCount(): void {
+		$calls = [];
+		$db = $this->createMock(originalClassName: IDBConnection::class);
+		$db->method('getDatabasePlatform')->willReturn(value: $this->quotingPlatform());
+		$db->method('executeStatement')->willReturnCallback(
+			callback: static function (string $sql, array $params) use (&$calls): int {
+				$calls[] = [$sql, $params];
+				return 4;
+			}
+		);
+
+		$port = new DbValueMigrationPort(
+			db: $db,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			decisions: new RenameDutchValueDecisions()
+		);
+
+		$this->assertSame(expected: 4, actual: $port->rewrite(table: 'oc_t', column: 'status', old: 'open', new: 'opened'));
+		$this->assertSame(
+			expected: [['UPDATE "oc_t" SET "status" = ? WHERE "status" = ?', ['opened', 'open']]],
+			actual: $calls
+		);
+	}//end testRewriteUpdatesTheExactValueAndReturnsTheRowCount()
+
+	/**
+	 * A failing rewrite leaves the value, logs the statement and reports no rows.
+	 *
+	 * @return void
+	 */
+	public function testAFailingRewriteIsLoggedAndCountsNothing(): void {
+		$logged = [];
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			callback: static function (string $message, array $context) use (&$logged): void {
+				$logged[] = [$message, $context];
+			}
+		);
+		$db = $this->createMock(originalClassName: IDBConnection::class);
+		$db->method('getDatabasePlatform')->willReturn(value: $this->quotingPlatform());
+		$db->method('executeStatement')->willThrowException(exception: new \RuntimeException('locked'));
+
+		$port = new DbValueMigrationPort(db: $db, logger: $logger, decisions: new RenameDutchValueDecisions());
+
+		$this->assertSame(expected: 0, actual: $port->rewrite(table: 'oc_t', column: 'kind', old: 'a', new: 'b'));
+		$this->assertSame(
+			expected: [[
+				'DbValueMigrationPort: statement failed; leaving the value as it was.',
+				['sql' => 'UPDATE "oc_t" SET "kind" = ? WHERE "kind" = ?', 'exception' => 'locked'],
+			]],
+			actual: $logged
+		);
+	}//end testAFailingRewriteIsLoggedAndCountsNothing()
 }//end class

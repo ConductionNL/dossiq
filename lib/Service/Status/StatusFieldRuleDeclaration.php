@@ -41,12 +41,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Status;
 
+use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
+
 /**
  * Reads a status type's field rules and writes them in OpenRegister's shape.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusFieldRuleDeclaration {
+	use OrdersRuleBlocks;
 
 	/**
 	 * The field may not be left empty while the case sits in this status.
@@ -235,29 +238,4 @@ class StatusFieldRuleDeclaration {
 
 		return null;
 	}//end conditionOf()
-
-	/**
-	 * The block with its kinds in the order OpenRegister lists them.
-	 *
-	 * Order changes nothing about what is enforced. It makes the block
-	 * DIFFABLE: the projector only writes when the block differs from the live
-	 * one, and two blocks that differ only in key order would rewrite the
-	 * schema on every publish and log a change that did not happen.
-	 *
-	 * @param array<string, array<int, array<string, mixed>>> $block The gathered block.
-	 *
-	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function inPublishedOrder(array $block): array {
-		$ordered = [];
-		foreach (self::RULES as $kind) {
-			if (($block[$kind] ?? []) !== []) {
-				$ordered[$kind] = $block[$kind];
-			}
-		}
-
-		return $ordered;
-	}//end inPublishedOrder()
 }//end class

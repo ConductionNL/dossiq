@@ -24,16 +24,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
-use OCA\Dossiq\Service\ProcessMining\ReportRequest;
-use OCA\Dossiq\Service\ProcessMiningService;
+use OCA\Dossiq\Controller\Support\AllowsGroupMembers;
+use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportAnswerInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportRequestInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,11 +49,13 @@ use Throwable;
 /**
  * Process-mining bottleneck REST surface.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  *
  * @psalm-suppress UnusedClass
  */
 class ProcessMiningController extends Controller {
+	use AllowsGroupMembers;
+
 	/**
 	 * Groups that may read the process-mining report — same gate shape as
 	 * the same allowed-group shape the retired IV3 report used: it spans the
@@ -67,20 +70,20 @@ class ProcessMiningController extends Controller {
 	 * @param IRequest             $request              Incoming request.
 	 * @param IUserSession         $userSession          Current user session.
 	 * @param IGroupManager        $groupManager         Group manager (for RBAC check).
-	 * @param ProcessMiningService $processMiningService Report aggregation service.
+	 * @param ProcessMiningServiceInterface $processMiningService Report aggregation service.
 	 * @param LoggerInterface      $logger               PSR-3 logger.
-	 * @param ReportRequest        $requests             Checks the query and builds the filters.
-	 * @param ReportAnswer         $answers              Shapes the JSON body and the CSV.
+	 * @param ReportRequestInterface        $requests             Checks the query and builds the filters.
+	 * @param ReportAnswerInterface         $answers              Shapes the JSON body and the CSV.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly ProcessMiningService $processMiningService,
+		private readonly ProcessMiningServiceInterface $processMiningService,
 		private readonly LoggerInterface $logger,
-		private readonly ReportRequest $requests,
-		private readonly ReportAnswer $answers,
+		private readonly ReportRequestInterface $requests,
+		private readonly ReportAnswerInterface $answers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -100,7 +103,7 @@ class ProcessMiningController extends Controller {
 	 *                                          controller/beheerder/admin role, or 400 on
 	 *                                          invalid parameters.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
 	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	#[NoAdminRequired]
@@ -172,23 +175,4 @@ class ProcessMiningController extends Controller {
 
 		return null;
 	}//end ensureAllowed()
-
-	/**
-	 * Check whether the given user id belongs to an allowed group (or is an
-	 * NC admin, defensive default) — same shape as
-	 * the retired IV3 report's isAllowed().
-	 *
-	 * @param string $uid The Nextcloud user id.
-	 *
-	 * @return bool
-	 */
-	private function isAllowed(string $uid): bool {
-		foreach (self::ALLOWED_GROUPS as $group) {
-			if ($this->groupManager->isInGroup($uid, $group) === true) {
-				return true;
-			}
-		}
-
-		return $this->groupManager->isAdmin($uid) === true;
-	}//end isAllowed()
 }//end class

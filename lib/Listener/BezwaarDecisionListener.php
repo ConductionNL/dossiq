@@ -36,10 +36,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -75,12 +75,12 @@ class BezwaarDecisionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
 	 * @param LoggerInterface $logger Logger.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
@@ -102,7 +102,7 @@ class BezwaarDecisionListener implements IEventListener {
 	 * queue took to drain. The revert is a single bounded saveObject() on the
 	 * object already being written.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatedEvent === false) {
@@ -110,33 +110,52 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->updatedObject(event: $event);
+			$object = $this->objectionToRevert(event: $event);
 			if ($object === null) {
-				return;
-			}
-
-			if ($this->isObjectionSchema(object: $object) === false) {
-				return;
-			}
-
-			$status = (string)($object['status'] ?? '');
-			if ($status !== self::PROTECTED_STATUS) {
-				return;
-			}
-
-			if ($this->hasPublishedDecision(objection: $object) === true) {
 				return;
 			}
 
 			// Guard violated — revert.
 			$this->revertStatus(objection: $object, event: $event);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq bezwaar-decision: guard derivation swallowed '
-				. 'exception: ' . $e->getMessage()
-			);
+			$this->logger->debug('Dossiq bezwaar-decision: guard derivation swallowed exception: ' . $e->getMessage());
 		}//end try
 	}//end handle()
+
+	/**
+	 * The updated bezwaar that entered the protected status without a published decision, or null.
+	 *
+	 * @param Event $event The update.
+	 *
+	 * @return array<string, mixed>|null The bezwaar to revert, or null when the guard holds.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function objectionToRevert(Event $event): ?array {
+		$object = $this->updatedObject(event: $event);
+		if ($object === null || $this->isObjectionSchema(object: $object) === false) {
+			return null;
+		}
+
+		if ($this->hasProtectedStatus(object: $object) === false || $this->hasPublishedDecision(objection: $object) === true) {
+			return null;
+		}
+
+		return $object;
+	}//end objectionToRevert()
+
+	/**
+	 * Whether the bezwaar is in the protected "Decision on objection" status.
+	 *
+	 * @param array<string, mixed> $object The bezwaar payload.
+	 *
+	 * @return bool
+	 */
+	private function hasProtectedStatus(array $object): bool {
+		$status = (string)($object['status'] ?? '');
+
+		return $status === self::PROTECTED_STATUS;
+	}//end hasProtectedStatus()
 
 	/**
 	 * Decide whether the bezwaar has at least one published
@@ -147,54 +166,13 @@ class BezwaarDecisionListener implements IEventListener {
 	 * @return bool
 	 */
 	private function hasPublishedDecision(array $objection): bool {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$probe = $this->objectionObject(objection: $objection, schemaKey: 'bezwaar_decision_schema');
+		if ($probe === null) {
 			return true;
 		}
 
-		$register = $this->settingsService->getConfigValue(
-			key: 'register'
-		);
-		$decisionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_decision_schema'
-		);
-		if ($register === '' || $decisionSchema === '') {
-			return true;
-		}
-
-		$objectionId = (string)($objection['id'] ?? ($objection['uuid'] ?? ''));
-		if ($objectionId === '') {
-			return true;
-		}
-
-		// A bezwaarDecision is "decided" either when it carries the legacy
-		// local `status:published` (historical records) OR when it has been
-		// delegated to decidesk and carries a `decisionRef` (the besluit is the
-		// decidesk outcome — dossiq-delegate-remaining-decisions-to-decidesk,
-		// REQ-PDRD-001/REQ-PDRD-003). Both satisfy the published-decision guard.
-		// OpenRegister's ObjectService::findAll() takes ONE config array. This
-		// call used to pass ($register, $decisionSchema, $filters)
-		// positionally, which is a TypeError against `array $config` — and the
-		// catch below turned that TypeError into "allow by default", so this
-		// guard has never once blocked a transition.
-		//
-		// BOUNDED on purpose. This runs on the write path of every bezwaar
-		// update, so an unbounded findAll() would list and materialise every
-		// decision row on the register on each save — the
-		// OpenRegisterFlowResolver failure mode. A bezwaar carries one
-		// decision, occasionally a handful; self::DECISION_PROBE_LIMIT is two
-		// orders of magnitude of headroom.
 		try {
-			$all = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $decisionSchema,
-						'objectionProceeding' => $objectionId,
-					],
-					'limit' => self::DECISION_PROBE_LIMIT,
-				]
-			);
+			$all = $this->findDecisions(probe: $probe);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq bezwaar-decision: lookup failed — allowing '
@@ -211,12 +189,91 @@ class BezwaarDecisionListener implements IEventListener {
 			return true;
 		}
 
+		return $this->probeWasCutShort(decisions: $all, objectionId: $probe->objectionId);
+	}//end hasPublishedDecision()
+
+	/**
+	 * Where the guard reads or writes this objection, or null when it cannot.
+	 *
+	 * Null without an object service, a register, the schema or the
+	 * objection's id; the guard then leaves the save alone.
+	 *
+	 * @param array<string, mixed> $objection The objection payload.
+	 * @param string               $schemaKey The config key of the schema read or written.
+	 *
+	 * @return ObjectionObject|null
+	 */
+	private function objectionObject(array $objection, string $schemaKey): ?ObjectionObject {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$target = new ObjectionObject();
+		$target->objectService = $objectService;
+		$target->register = $this->settingsService->getConfigValue(key: 'register');
+		$target->schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$target->objectionId = (string)($objection['id'] ?? ($objection['uuid'] ?? ''));
+		if ($target->isComplete() === false) {
+			return null;
+		}
+
+		return $target;
+	}//end objectionObject()
+
+	/**
+	 * The decisions on this objection, at most DECISION_PROBE_LIMIT of them.
+	 *
+	 * A bezwaarDecision is "decided" either when it carries the legacy
+	 * local `status:published` (historical records) OR when it has been
+	 * delegated to decidesk and carries a `decisionRef` (the besluit is the
+	 * decidesk outcome — dossiq-delegate-remaining-decisions-to-decidesk,
+	 * REQ-PDRD-001/REQ-PDRD-003). Both satisfy the published-decision guard.
+	 * OpenRegister's ObjectService::findAll() takes ONE config array. This
+	 * call used to pass ($register, $decisionSchema, $filters)
+	 * positionally, which is a TypeError against `array $config` — and the
+	 * catch around this call turned that TypeError into "allow by default", so this
+	 * guard has never once blocked a transition.
+	 *
+	 * BOUNDED on purpose. This runs on the write path of every bezwaar
+	 * update, so an unbounded findAll() would list and materialise every
+	 * decision row on the register on each save — the
+	 * OpenRegisterFlowResolver failure mode. A bezwaar carries one
+	 * decision, occasionally a handful; self::DECISION_PROBE_LIMIT is two
+	 * orders of magnitude of headroom.
+	 *
+	 * @param ObjectionObject $probe The objection and the decision schema.
+	 *
+	 * @return mixed The rows the object service answers.
+	 */
+	private function findDecisions(ObjectionObject $probe): mixed {
+		return $probe->objectService->findAll(
+			[
+				'filters' => [
+					'register' => $probe->register,
+					'schema' => $probe->schema,
+					'objectionProceeding' => $probe->objectionId,
+				],
+				'limit' => self::DECISION_PROBE_LIMIT,
+			]
+		);
+	}//end findDecisions()
+
+	/**
+	 * Whether a page without a decided decision was cut short by the bound.
+	 *
+	 * @param array<int, mixed> $decisions   The probed decision rows.
+	 * @param string            $objectionId The objection.
+	 *
+	 * @return bool True when the probe hit its bound, so the guard fails open.
+	 */
+	private function probeWasCutShort(array $decisions, string $objectionId): bool {
 		// A FULL page means the bound, not the data, ended the scan: a decided
 		// decision may sit past it. Reverting here would block a legitimate
 		// transition on a bezwaar with an improbable number of decisions, so
 		// the guard fails open — the same policy the rest of this listener
 		// applies to a lookup it cannot complete.
-		if (count($all) >= self::DECISION_PROBE_LIMIT) {
+		if (count($decisions) >= self::DECISION_PROBE_LIMIT) {
 			$this->logger->warning(
 				'Dossiq bezwaar-decision: decision probe hit its bound of '
 				. self::DECISION_PROBE_LIMIT . ' rows — allowing the transition '
@@ -227,7 +284,7 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		return false;
-	}//end hasPublishedDecision()
+	}//end probeWasCutShort()
 
 	/**
 	 * Scan bezwaarDecision rows for one that counts as decided.
@@ -275,46 +332,53 @@ class BezwaarDecisionListener implements IEventListener {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->objectionObject(objection: $objection, schemaKey: 'bezwaar_schema');
+		if ($target === null) {
 			return;
 		}
 
-		$register = $this->settingsService->getConfigValue(
-			key: 'register'
-		);
-		$objectionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
-		if ($register === '' || $objectionSchema === '') {
-			return;
-		}
+		$this->writeBackStatus(target: $target, previous: $previous);
+	}//end revertStatus()
 
-		$objectionId = (string)($objection['id'] ?? ($objection['uuid'] ?? ''));
-		if ($objectionId === '') {
-			return;
-		}
-
+	/**
+	 * Write the previous status back onto the bezwaar, logging the outcome.
+	 *
+	 * @param ObjectionObject $target   Where the bezwaar is stored.
+	 * @param string          $previous The status to restore.
+	 *
+	 * @return void
+	 */
+	private function writeBackStatus(ObjectionObject $target, string $previous): void {
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $objectionSchema,
-				id: (string)$objectionId,
+				objectService: $target->objectService,
+				register: $target->register,
+				schema: $target->schema,
+				id: $target->objectionId,
 				changes: ['status' => $previous]
 			);
-			$this->logger->warning(
-				'Dossiq bezwaar-decision: blocked transition into "'
-				. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
-				. 'reverted to "' . $previous . '"',
-				['bezwaarId' => $objectionId]
-			);
+			$this->logReverted(objectionId: $target->objectionId, previous: $previous);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar-decision: revert failed: ' . $e->getMessage()
-			);
+			$this->logger->error('Dossiq bezwaar-decision: revert failed: ' . $e->getMessage());
 		}
-	}//end revertStatus()
+	}//end writeBackStatus()
+
+	/**
+	 * Log a blocked transition that was reverted.
+	 *
+	 * @param string $objectionId The bezwaar id.
+	 * @param string $previous    The status restored.
+	 *
+	 * @return void
+	 */
+	private function logReverted(string $objectionId, string $previous): void {
+		$this->logger->warning(
+			'Dossiq bezwaar-decision: blocked transition into "'
+			. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
+			. 'reverted to "' . $previous . '"',
+			['bezwaarId' => $objectionId]
+		);
+	}//end logReverted()
 
 	/**
 	 * Whether the object belongs to the `bezwaar` schema.

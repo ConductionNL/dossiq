@@ -38,6 +38,14 @@
 			:fields="textsAndAccessFields">
 		</CnSettingsFieldsSection>
 
+		<CnSettingsFieldsSection
+			id="section-notification-texts"
+			appId="dossiq"
+			:name="t('dossiq', 'Notification texts')"
+			:columns="1"
+			valuesPath="config"
+			:fields="notificationTextFields" />
+
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
@@ -107,6 +115,21 @@
 				:saveInline="true"
 				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
 				:fields="backgroundAccountFields" />
+
+			<CnSettingsFieldsSection
+				id="section-widget-audience"
+				:name="t('dossiq', 'Dashboard widgets')"
+				:description="
+					t(
+						'dossiq',
+						'Which groups see each Dossiq widget on the dashboard. An administrator outside the groups does not see it either.',
+					)
+				"
+				:url="widgetAudienceUrl"
+				:saveAll="true"
+				:saveLabel="t('dossiq', 'Save')"
+				:savedMessage="t('dossiq', 'Saved. The widgets follow the new groups the next time the dashboard is opened.')"
+				:fields="widgetAudienceFields" />
 
 			<CnSettingsFieldsSection
 				id="section-mailbox"
@@ -351,7 +374,9 @@
 			</CnSettingsSection>
 		</template>
 
-		<template #tab-vth>
+		<template v-for="pkg in packageTabs" :key="pkg.id" #[`tab-${pkg.id}`]>
+			<PackageAdminTab :pkg="pkg" />
+			<template v-if="pkg.id === 'vth'">
 			<CnSettingsSection
 				id="section-intake-activities"
 				:actionsInTitle="true"
@@ -427,7 +452,7 @@
 					:name="t('dossiq', 'Inspection checklists')"
 					:loading="!storesReady">
 					<template v-if="storesReady" #actions>
-						<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+						<NcButton variant="secondary" @click="openNewChecklist">
 							<template #icon>
 								<Plus :size="20" />
 							</template>
@@ -483,6 +508,7 @@
 						:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
 				</CnSettingsSection>
 			</div>
+			</template>
 		</template>
 
 		<template #tab-substitution>
@@ -701,6 +727,43 @@
 				:fields="queueUrgencyFields" />
 
 			<CnSettingsSection
+				id="section-role-acts"
+				:name="t('dossiq', 'What each role may do')"
+				:description="
+					t(
+						'dossiq',
+						'The groups dossiq creates, with what membership allows. A member who holds only that role is refused anything not listed.',
+					)
+				">
+				<table class="dq-role-acts" data-testid="dossiq-role-acts">
+					<thead>
+						<tr>
+							<th scope="col">
+								{{ t('dossiq', 'Group') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Allows') }}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="row in roleActRows" :key="row.group">
+							<th scope="row">
+								<code>{{ row.group }}</code>
+							</th>
+							<td>
+								<ul class="dq-role-acts__list">
+									<li v-for="act in row.acts" :key="act">
+										{{ act }}
+									</li>
+								</ul>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</CnSettingsSection>
+
+			<CnSettingsSection
 				:name="t('dossiq', 'Mandate matrix: administration')"
 				:description="
 					t(
@@ -768,6 +831,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import AdviceSettingsFacts from './components/AdviceSettingsFacts.vue'
 import DependencyAppsList from './components/DependencyAppsList.vue'
+import PackageAdminTab from './components/PackageAdminTab.vue'
 import SearchIndexFacts from './components/SearchIndexFacts.vue'
 import SettingsFactsList from './components/SettingsFactsList.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
@@ -786,6 +850,7 @@ import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
 import { INTEGRIQ_CONNECTIONS_PATH } from '../../utils/integriqConnections.js'
+import { packageTabsOf } from '../../utils/packageAdminTab.js'
 import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 import {
 	aiFields,
@@ -797,6 +862,7 @@ import {
 	houseStyleFields,
 	kadasterFields,
 	menuStructureFields,
+	notificationTextFields,
 	paymentCallbackFields,
 	queueOrderFields,
 	queueUrgencyFields,
@@ -805,6 +871,8 @@ import {
 	sharedMailboxFields,
 	storeRegistryFields,
 	textsAndAccessFields,
+	WIDGET_AUDIENCE_URL,
+	widgetAudienceFields,
 } from './adminFields.js'
 import {
 	publicationRows,
@@ -812,6 +880,7 @@ import {
 	wooRefusalGroundColumns,
 	wooRefusalGroundSource,
 } from './adminSettingsBlocks.js'
+import { roleActRows } from './roleActs.js'
 
 export default {
 	name: 'AdminRoot',
@@ -841,6 +910,7 @@ export default {
 		SubstitutionAdmin,
 		AdviceSettingsFacts,
 		DependencyAppsList,
+		PackageAdminTab,
 		SearchIndexFacts,
 		SettingsFactsList,
 	},
@@ -890,10 +960,23 @@ export default {
 			}),
 
 			publicationSettings: loadState('dossiq', 'publicationSettings', {}),
+			/** The installed packages that declare an admin tab, with what each installed. */
+			packageTabs: loadState('dossiq', 'packageAdminTabs', []),
+			roleActs: loadState('dossiq', 'roleActs', []),
 		}
 	},
 
 	computed: {
+		/**
+		 * The roles card's rows: each provisioned group with its acts in words.
+		 *
+		 * @return {Array<{group: string, acts: Array<string>}>} The rows.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control/spec.md#requirement-each-application-role-states-what-its-members-may-do-req-crs-14
+		 */
+		roleActRows() {
+			return roleActRows(this.t, this.roleActs)
+		},
+
 		/**
 		 * The tabs of the page, in the order the board draws them. Every
 		 * section the page had before sits on one of them. Integrations and
@@ -901,6 +984,7 @@ export default {
 		 *
 		 * @return {Array<{id: string, label: string, count?: number}>} The tabs.
 		 * @spec openspec/specs/admin-settings/spec.md
+		 * @spec openspec/changes/vth-cases-run-end-to-end
 		 */
 		adminTabs() {
 			return this.withCounts([
@@ -912,7 +996,9 @@ export default {
 				},
 				{ id: 'mail', label: this.t('dossiq', 'Mail') },
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
-				{ id: 'vth', label: this.t('dossiq', 'VTH') },
+				// One tab per installed package that declares one (package.json
+				// `adminTab`); a package not installed here has none.
+				...packageTabsOf(this.packageTabs),
 				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
 				// The settings set once or by a specialist: ZGW, KCC, StUF, Store,
 				// first run, prerequisites, terms, mandates, archiving, reports.
@@ -1212,6 +1298,16 @@ export default {
 		},
 
 		/**
+		 * The administrator's own text per notification kind (REQ-CRS-13).
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+		 */
+		notificationTextFields() {
+			return notificationTextFields(this.t.bind(this))
+		},
+
+		/**
 		 * The menu structure choice.
 		 *
 		 * @return {Array<object>} The fields.
@@ -1219,6 +1315,25 @@ export default {
 		 */
 		menuStructureFields() {
 			return menuStructureFields(this.t.bind(this))
+		},
+
+		/**
+		 * The groups per contributed dashboard widget, one field each.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+		 */
+		widgetAudienceFields() {
+			return widgetAudienceFields(this.t.bind(this))
+		},
+
+		/**
+		 * Where the widget audience is read and saved.
+		 *
+		 * @return {string} The endpoint.
+		 */
+		widgetAudienceUrl() {
+			return WIDGET_AUDIENCE_URL
 		},
 
 		/**
@@ -1528,7 +1643,7 @@ export default {
 
 	/**
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 	 */
 	async created() {
 		fetchAdminTabCounts().then((counts) => {
@@ -1540,6 +1655,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open the checklist editor on a new checklist. The checklist card sits
+		 * in a package tab drawn per package, so its ref is a list.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/vth-cases-run-end-to-end
+		 */
+		openNewChecklist() {
+			const editor = [].concat(this.$refs.checklists ?? [])[0]
+			editor?.openEditor(null)
+		},
+
 		/**
 		 * Add the known counts to the tabs.
 		 *
@@ -1602,7 +1729,7 @@ export default {
 		/**
 		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.
 		 *
-		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async onReimported() {
 			this.storesReady = false
@@ -1614,6 +1741,26 @@ export default {
 </script>
 
 <style>
+/* The roles card (REQ-CRS-14): a group per row, its acts as a list. */
+.dq-role-acts {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.dq-role-acts th,
+.dq-role-acts td {
+	padding: calc(var(--default-grid-baseline) * 2);
+	border-bottom: 1px solid var(--color-border);
+	text-align: start;
+	vertical-align: top;
+}
+
+.dq-role-acts__list {
+	margin: 0;
+	padding-inline-start: calc(var(--default-grid-baseline) * 4);
+	list-style: disc;
+}
+
 /* A card whose text is its body, drawn as body text 16px under the title
    (DqBeheerGeavanceerd "Beslistabellen (DMN)"); the card's gap is 14px. */
 .dq-settings-body-text {

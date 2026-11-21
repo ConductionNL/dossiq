@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
 use OCA\Dossiq\Service\CaseType\InheritedRowValues;
 use OCA\Dossiq\Service\CaseType\RowOrigins;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -51,7 +52,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeResolver {
+class CaseTypeResolver implements CaseTypeResolverInterface {
 	/**
 	 * How deep a chain of parents may run, the type itself included.
 	 *
@@ -77,6 +78,13 @@ class CaseTypeResolver {
 	 * Marks a row that belongs to no type at all.
 	 */
 	public const ORIGIN_SHARED = 'shared';
+
+	/**
+	 * The schemas whose rows with no case type count for every case type.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SHARED_ROW_SCHEMAS = ['property_definition_schema'];
 
 	/**
 	 * The fields a child falls back to its parent for when it leaves them empty.
@@ -200,11 +208,7 @@ class CaseTypeResolver {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function statusTypesFor(string $caseTypeId): array {
-		return ($this->ownLifecycle(caseTypeId: $caseTypeId) ?? $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'status_type_schema',
-			includeShared: false
-		));
+		return ($this->ownLifecycle(caseTypeId: $caseTypeId) ?? $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'status_type_schema'));
 	}//end statusTypesFor()
 
 	/**
@@ -233,7 +237,13 @@ class CaseTypeResolver {
 		}
 
 		$origin = (new RowOrigins())->originFor(isOwn: true);
-		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(row: $row, origin: $origin, ancestor: $own), array_values($rows)));
+		return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(
+			row: $row,
+			tagging: [
+				'origin' => $origin,
+				'ancestor' => $own,
+			]
+		), array_values($rows)));
 	}//end ownLifecycle()
 
 	/**
@@ -246,11 +256,7 @@ class CaseTypeResolver {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function resultTypesFor(string $caseTypeId): array {
-		return $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'result_type_schema',
-			includeShared: false
-		);
+		return $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'result_type_schema');
 	}//end resultTypesFor()
 
 	/**
@@ -269,11 +275,7 @@ class CaseTypeResolver {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function propertyDefinitionsFor(string $caseTypeId): array {
-		return $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'property_definition_schema',
-			includeShared: true
-		);
+		return $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'property_definition_schema');
 	}//end propertyDefinitionsFor()
 
 	/**
@@ -388,9 +390,21 @@ class CaseTypeResolver {
 			$title = $this->titleOf(caseTypeId: $caseTypeId);
 		}
 
+		return $this->cycleNames(title: $title, ids: [$caseTypeId, $parentCaseTypeId]);
+	}//end cycleFor()
+
+	/**
+	 * The titles from the type round its parent chain back to itself.
+	 *
+	 * @param string                      $title The title the type is named by.
+	 * @param array{0: string, 1: string} $ids   The type being saved, and the parent it wants.
+	 *
+	 * @return array<int, string> The titles of the loop.
+	 */
+	private function cycleNames(string $title, array $ids): array {
 		$names = [$title];
-		foreach ($this->chainFor(caseTypeId: $parentCaseTypeId) as $ancestor) {
-			if ($this->store->rowId(row: $ancestor) === trim($caseTypeId)) {
+		foreach ($this->chainFor(caseTypeId: $ids[1]) as $ancestor) {
+			if ($this->store->rowId(row: $ancestor) === trim($ids[0])) {
 				// The loop closes on the type itself: name it by the title it
 				// is being saved with, not by the stored one.
 				$names[] = $title;
@@ -406,7 +420,7 @@ class CaseTypeResolver {
 		}
 
 		return $names;
-	}//end cycleFor()
+	}//end cycleNames()
 
 	/**
 	 * Rows of one schema for the whole chain, the nearest declaration winning.
@@ -415,15 +429,16 @@ class CaseTypeResolver {
 	 * is the only key both ends can be authored with: ids are minted per
 	 * install, so a child could not name the parent row it is overriding.
 	 *
-	 * @param string  $caseTypeId    CaseType UUID.
-	 * @param string  $schemaKey     The settings key naming the schema.
-	 * @param boolean $includeShared Whether rows with no case type count.
+	 * Rows with no case type count for the schemas in SHARED_ROW_SCHEMAS.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 * @param string $schemaKey  The settings key naming the schema.
 	 *
 	 * @return array<int, array<string, mixed>> The merged rows.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared): array {
+	private function inheritedRows(string $caseTypeId, string $schemaKey): array {
 		$chain = $this->chainFor(caseTypeId: $caseTypeId);
 		if ($chain === []) {
 			return [];
@@ -440,14 +455,16 @@ class CaseTypeResolver {
 				$key    = $this->mergeKey(row: $row);
 				$tagged = $this->tag(
 					row: $row,
-					origin: $origin,
-					ancestor: $ancestor
+					tagging: [
+						'origin' => $origin,
+						'ancestor' => $ancestor,
+					]
 				);
 				$merged[$key] = $origins->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
 		}
 
-		if ($includeShared === true) {
+		if (in_array($schemaKey, self::SHARED_ROW_SCHEMAS, true) === true) {
 			$merged = $this->withSharedRows(merged: $merged, schemaKey: $schemaKey);
 		}
 
@@ -466,7 +483,7 @@ class CaseTypeResolver {
 		foreach ($this->store->sharedRows(schemaKey: $schemaKey) as $row) {
 			$key = $this->mergeKey(row: $row);
 			if (isset($merged[$key]) === false) {
-				$merged[$key] = $this->tag(row: $row, origin: self::ORIGIN_SHARED, ancestor: []);
+				$merged[$key] = $this->tag(row: $row, tagging: ['origin' => self::ORIGIN_SHARED, 'ancestor' => []]);
 			}
 		}
 
@@ -476,15 +493,16 @@ class CaseTypeResolver {
 	/**
 	 * Stamp a row with where it came from.
 	 *
-	 * @param array<string, mixed> $row      The row.
-	 * @param string               $origin   own, inherited or shared.
-	 * @param array<string, mixed> $ancestor The case type it was declared on.
+	 * @param array<string, mixed>                                  $row     The row.
+	 * @param array{origin: string, ancestor: array<string, mixed>} $tagging `origin` own, inherited or shared; `ancestor` the case type it was
+	 *                                                                       declared on.
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function tag(array $row, string $origin, array $ancestor): array {
+	private function tag(array $row, array $tagging): array {
+		[$origin, $ancestor] = [$tagging['origin'], $tagging['ancestor']];
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
 		$row['originCaseTypeTitle'] = $this->text->textOf(value: ($ancestor['title'] ?? null));
@@ -550,10 +568,5 @@ class CaseTypeResolver {
 
 		return $this->text->textOr(value: ($row['title'] ?? null), fallback: $caseTypeId);
 	}//end titleOf()
-
-
-
-
-
 
 }//end class

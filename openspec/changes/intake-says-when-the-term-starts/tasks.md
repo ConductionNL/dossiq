@@ -53,6 +53,14 @@ change was being built, so the engine calendar answers rather than
     portaliq's surface, not dossiq's, so the moment-after-submitting
     rendering is not in this change. dossiq now supplies everything that
     screen needs; portaliq drawing it is the other half.
+  - UPDATE 17 Nov (Q-dossiq-d179-2 decided: the schema marks the flag).
+    `case.receivedOutsideWorkingHours` now carries
+    `x-openregister.confirmation`, so the submit response carries the stored
+    flag beside the three moments and the screen branches on what the case
+    says rather than re-deriving it (D-3).
+    `IntakeConfirmationTextTest::testTheSubmitResponseCarriesTheFlag` reddens
+    when the mark is dropped. portaliq's `momentLines` adds the sentence from
+    it in its own PR. Still open: the live e2e pass (decision 139).
   - `tests/vitest/intakeConfirmation.spec.js` is NOT written, and this line
     is the reason rather than an omission: the surface this change adds is a
     declarative `data` widget over three schema fields, so there is no

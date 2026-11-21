@@ -29,15 +29,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkflowLifecycleGuardInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfillCaseType;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\Workflow\BackfillTarget;
-use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
-use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -46,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * Backfill workflowTemplate objects from implicit statusType ordering.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateWorkflowDefinitions implements IRepairStep {
 
@@ -61,18 +65,18 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings service
-	 * @param WorkflowDefinitionService $workflowService The workflow definition service
+	 * @param SettingsServiceInterface $settingsService The settings service
+	 * @param WorkflowDefinitionServiceInterface $workflowService The workflow definition service
 	 * @param LoggerInterface $logger The logger interface
-	 * @param WorkflowLifecycleGuard $lifecycle Says whether a stored definition is a draft.
+	 * @param WorkflowLifecycleGuardInterface $lifecycle Says whether a stored definition is a draft.
 	 * @param BackfilledTemplateShape $shape Builds the steps and transitions of a basis template from the ordered status types.
 	 * @param BackfilledTemplateLabels $labels Names a basis template, and heals one stored as "Array".
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
-		private WorkflowDefinitionService $workflowService,
+		private SettingsServiceInterface $settingsService,
+		private WorkflowDefinitionServiceInterface $workflowService,
 		private LoggerInterface $logger,
-		private readonly WorkflowLifecycleGuard $lifecycle,
+		private readonly WorkflowLifecycleGuardInterface $lifecycle,
 		private readonly BackfilledTemplateShape $shape = new BackfilledTemplateShape(),
 		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
@@ -96,7 +100,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -152,7 +156,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list caseTypes',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Could not list caseTypes — skipping workflow backfill.');
 			return $counts;
@@ -186,6 +190,18 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_SKIPPED;
 		}
 
+		return $this->migrateType(target: $target, type: $type);
+	}//end migrateCaseType()
+
+	/**
+	 * Give a caseType without a flow a basis template and pin it to it.
+	 *
+	 * @param BackfillTarget   $target The register and schemas.
+	 * @param BackfillCaseType $type   The caseType with its versions.
+	 *
+	 * @return string One of the OUTCOME_* constants.
+	 */
+	private function migrateType(BackfillTarget $target, BackfillCaseType $type): string {
 		$template = $this->buildTemplateFor(target: $target, caseType: $type);
 		if ($template === null) {
 			return self::OUTCOME_NONE;
@@ -202,7 +218,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		}
 
 		return self::OUTCOME_MIGRATED;
-	}//end migrateCaseType()
+	}//end migrateType()
 
 	/**
 	 * Save a new basis template.
@@ -216,13 +232,12 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		try {
 			$created = $target->objectService->saveObject(
 				object: $template,
-				register: $target->register,
-				schema: $target->schemas->template,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->template))
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to save template',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -250,32 +265,56 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		$statuses = null;
 		foreach ($caseType->versions as $template) {
 			$id = (string)($template['id'] ?? '');
-			if ($id === '' || str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === false) {
+			if ($this->carriesCastMarker(id: $id, template: $template) === false) {
 				continue;
 			}
 
 			$statuses ??= $this->statusesById(target: $target, caseTypeId: (string)($caseType->row['id'] ?? ''));
 			$changes = $this->labels->healed(template: $template, caseType: $caseType->row, statusesById: $statuses);
-			if ($changes === []) {
-				continue;
-			}
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $target->objectService,
-					register: $target->register,
-					schema: $target->schemas->template,
-					id: $id,
-					changes: $changes,
-				);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: workflow backfill could not heal the labels of a basis template',
-					['app' => Application::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
-				);
-			}
+			$this->patchHealed(target: $target, healed: ['id' => $id, 'changes' => $changes]);
 		}//end foreach
 	}//end healBackfilled()
+
+	/**
+	 * Whether a stored template has an id and carries the backfill's cast-of-a-map marker.
+	 *
+	 * @param string $id The template id.
+	 * @param array<string, mixed> $template The stored template.
+	 *
+	 * @return bool True when the template is to be healed.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function carriesCastMarker(string $id, array $template): bool {
+		return $id !== '' && str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === true;
+	}//end carriesCastMarker()
+
+	/**
+	 * Write a template's healed labels through the partial write; nothing when nothing was healed.
+	 *
+	 * @param BackfillTarget $target The register and schemas.
+	 * @param array{id: string, changes: array<string, mixed>} $healed The template id and the healed fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function patchHealed(BackfillTarget $target, array $healed): void {
+		['id' => $id, 'changes' => $changes] = $healed;
+		if ($changes === []) {
+			return;
+		}
+
+		try {
+			$this->patchObjectAsArray(objectService: $target->objectService, register: $target->register,
+				schema: $target->schemas->template, id: $id, changes: $changes);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: workflow backfill could not heal the labels of a basis template',
+				['app' => AppIdentity::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+			);
+		}
+	}//end patchHealed()
 
 	/**
 	 * The statuses of a case type, by id; empty when they cannot be read.
@@ -296,7 +335,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: workflow backfill could not read the statuses to heal a basis template',
-				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
@@ -325,14 +364,15 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		try {
 			$target->objectService->saveObject(
 				object: $this->withPin(row: $caseType->row, pin: ['workflowDefinition' => $caseType->templateId]),
-				register: $target->register,
-				schema: $target->schemas->caseType,
-				uuid: $caseType->id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->caseType),
+					uuid: $caseType->id
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to pin caseType',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}
 
@@ -368,7 +408,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			'version' => 1,
 			'isActive' => true,
 			'isDraft' => false,
-			'lifecycleStatus' => WorkflowDefinitionService::STATUS_PUBLISHED,
+			'lifecycleStatus' => WorkflowDefinitionServiceInterface::STATUS_PUBLISHED,
 			'steps' => json_encode($steps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			'transitions' => json_encode($transitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			'nodePositions' => '',
@@ -385,20 +425,45 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 */
 	private function orderedStatuses(BackfillTarget $target, string $caseTypeId): array {
 		try {
-			$statusRows = $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $target->schemas->status,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$statusRows = $this->searchStatuses(target: $target, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list statusTypes',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}
 
+		return $this->sortedByOrder(statuses: $this->statusesWithId(statusRows: $statusRows));
+	}//end orderedStatuses()
+
+	/**
+	 * Search a case type's statuses.
+	 *
+	 * @param BackfillTarget $target     The register and schemas.
+	 * @param string         $caseTypeId The case type.
+	 *
+	 * @return array<int, mixed> The raw rows.
+	 *
+	 * @throws \Throwable When the search fails.
+	 */
+	private function searchStatuses(BackfillTarget $target, string $caseTypeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schemas->status,
+			filters: ['caseType' => $caseTypeId, '_limit' => 500],
+		);
+	}//end searchStatuses()
+
+	/**
+	 * The rows that read as an array and carry an id.
+	 *
+	 * @param array<int, mixed> $statusRows The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses.
+	 */
+	private function statusesWithId(array $statusRows): array {
 		$statuses = [];
 		foreach ($statusRows as $raw) {
 			$row = $this->objectToArrayOrNull(value: $raw);
@@ -407,6 +472,17 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			}
 		}
 
+		return $statuses;
+	}//end statusesWithId()
+
+	/**
+	 * The statuses sorted by their order.
+	 *
+	 * @param array<int, array<string, mixed>> $statuses The statuses.
+	 *
+	 * @return array<int, array<string, mixed>> The statuses, in order.
+	 */
+	private function sortedByOrder(array $statuses): array {
 		usort(
 			$statuses,
 			static function (array $a, array $b): int {
@@ -415,7 +491,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		);
 
 		return $statuses;
-	}//end orderedStatuses()
+	}//end sortedByOrder()
 
 	/**
 	 * Pin the open cases of a caseType to its new template at version 1.
@@ -436,14 +512,15 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 							'workflowVersion' => 1,
 						]
 					),
-					register: $target->register,
-					schema: $target->schemas->cases,
-					uuid: (string)$case['id'],
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->cases),
+						uuid: (string)$case['id']
+					)
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(
 					'Dossiq: workflow backfill failed to pin case',
-					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+					['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 				);
 			}
 		}//end foreach
@@ -468,7 +545,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to list cases',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}

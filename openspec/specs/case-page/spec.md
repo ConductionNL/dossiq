@@ -194,3 +194,92 @@ The sub-cases table SHALL show each sub-case's status by name as a toned pill an
 
 #### Scenario: two sub-cases
 - **THEN** the rows read "In behandeling" / "Ontvangen" and "Lars de Koning" / "Pieter Jansen", never a uuid or a uid
+
+### Requirement: A case type declares its Overview cards
+A case type MAY list `overviewSections`. A case of that type SHALL show one card per section on the Overview tab. A row SHALL read the named case property, then the case field, and SHALL show a dash when neither holds a text or a number. A case type without sections SHALL keep its Overview as it was.
+
+#### Scenario: A complaint
+- GIVEN a case of type Klacht behandeling with a hearing date in its properties
+- WHEN the Overview tab opens
+- THEN the Hoorgesprek card shows that date, and the priority and locations cards are left out
+
+#### Scenario: A case type without sections
+- GIVEN a case type with no `overviewSections`
+- WHEN the Overview tab opens
+- THEN no section card is drawn
+
+### Requirement: A grant passes through its advances
+The Subsidie case type SHALL hold the status Voorschotten between In behandeling and Beschikt, reachable from In behandeling and leading to Beschikt. Beschikt SHALL stay a closed status.
+
+#### Scenario: A granted case with advances
+- GIVEN a grant in In behandeling
+- WHEN the handler starts the advances
+- THEN the case stands at Voorschotten and can still move to Beschikt
+
+### Requirement: The case's incidents are rows on the Taken tab
+
+The Taken tab's Incidents card SHALL list a case's incidents as rows ordered by `eventDate` ascending. Each row SHALL show
+the description, the event date, the reporter, the owner and the recording date, plus the state as a toned pill. Add
+SHALL open the incident form for this case.
+
+#### Scenario: an incident reported late
+- **GIVEN** an incident on 5 Oct, recorded on 15 Oct
+- **WHEN** the Taken tab opens
+- **THEN** its row reads the description, then "5 okt · gemeld door … · vastgelegd 15 okt", with an amber "Open" pill
+
+### Requirement: The priority card explains the priority
+
+The Overview's priority card SHALL show the case's priority as a pill in its
+title row and, as label-left rows, the derived priority with the impact and
+urgency it came from, whether it was overridden ("No" when it was not) and the
+floor a rule raised it to. It SHALL end with the line on how the priority is set.
+
+#### Scenario: a case nobody overrode
+- GIVEN a case with priority `high`, derived `high` from impact `medium` and urgency `high`, and no override
+- WHEN the Overview tab shows
+- THEN the Priority card's title row carries the pill "High"
+- AND its rows read "Derived: High, from impact medium and urgency high" and "Overridden: No"
+
+### Requirement: The priority can be overridden from its card
+
+The priority card SHALL carry an "Override priority" action on a case that is
+not archived. It SHALL open a form asking the override and its reason and SHALL
+save only those two fields on the case.
+
+#### Scenario: a handler overrides the priority
+- GIVEN an open case
+- WHEN the handler chooses "Override priority", picks Urgent and gives a reason
+- THEN the case is PATCHed with `priorityOverride` and `priorityOverrideReason` only
+
+### Requirement: The Locaties card is a short map with zoom and fit
+
+The case's Locaties card SHALL draw its map 120px high with zoom and fit-all
+buttons and without locate or fullscreen buttons.
+
+#### Scenario: The card's map
+@e2e exclude The map's controls are asserted in the change's vitest (task 1.2); the example location of task 2.1 is example data, checked by ZuiddrechtLindelaanLocationTest.
+
+- **GIVEN** a case with a location
+- **WHEN** the Locaties card renders
+- **THEN** its map SHALL be 120px high with zoom and fit-all buttons
+- **AND** it SHALL show no locate and no fullscreen button
+
+### Requirement: The simple People tab lists the case's access links
+
+The simple profile's People tab SHALL end with a Toegang card that lists the case's access links from the link list the Sharing tab reads. Each row SHALL show the holder's initials in a 32px circle, "Link for {label}", what the holder may do, and a pill for a revoked, expired or paused link or the date a live link expires. A live or paused link SHALL end in an icon button that revokes it. The card's Share button SHALL open the sidebar Sharing tab.
+
+#### Scenario: a live link with an end date
+
+- GIVEN a case with a read-only link for "Sanne de Vries" that expires on 15 November
+- WHEN a handler the case is assigned to opens the Betrokkenen tab
+- THEN the Toegang card shows "Link voor Sanne de Vries" with SV at 32px, "Alleen lezen, zonder account · de link kan eindigen", the pill "Verloopt 15 nov" and the button "Link intrekken"
+
+#### Scenario: a reader the case is not assigned to
+
+- GIVEN a colleague the case is not assigned to
+- THEN the Toegang card says only the people the case is assigned to can see its links
+
+#### Scenario: Share
+
+- WHEN the handler clicks "Delen"
+- THEN the case's sidebar opens on the Delen tab

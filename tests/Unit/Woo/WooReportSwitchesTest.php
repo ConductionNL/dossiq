@@ -25,6 +25,8 @@ use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -46,7 +48,7 @@ class WooReportSwitchesTest extends TestCase {
 	 *
 	 * @return WooReportSwitches The switches.
 	 */
-	private function switches(array $stored, array $groups = ['woo-leiding' => ['lead']]): WooReportSwitches {
+	private function switches(array $stored, array $groups = ['woo-leiding' => ['lead']], ?IUserSession $session = null): WooReportSwitches {
 		$config = $this->createMock(IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => ($stored[$key] ?? $default)
@@ -58,7 +60,7 @@ class WooReportSwitchesTest extends TestCase {
 			static fn (string $uid, string $gid): bool => in_array($uid, ($groups[$gid] ?? []), true)
 		);
 
-		return new WooReportSwitches(appConfig: $config, groupManager: $groupManager);
+		return new WooReportSwitches(appConfig: $config, groupManager: $groupManager, userSession: $session);
 	}//end switches()
 
 	/**
@@ -169,4 +171,75 @@ class WooReportSwitchesTest extends TestCase {
 			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
 		);
 	}//end testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes()
+	/**
+	 * A session signed in as the given user, or signed out for null.
+	 *
+	 * @param string|null $uid The user id, null for no user.
+	 *
+	 * @return IUserSession The session.
+	 */
+	private function sessionOf(?string $uid): IUserSession {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$user    = null;
+		if ($uid !== null) {
+			$user = $this->createMock(originalClassName: IUser::class);
+			$user->method('getUID')->willReturn($uid);
+		}
+
+		$session->method('getUser')->willReturn($user);
+
+		return $session;
+	}//end sessionOf()
+
+	/**
+	 * Nothing is offered without a signed-in user or without a session at all.
+	 *
+	 * @return void
+	 */
+	public function testNothingIsOfferedWithoutASignedInUser(): void {
+		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
+		$none = ['throughput' => false, 'parties' => false];
+
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on, session: $this->sessionOf(uid: null))->offeredToCurrentUser());
+		$this->assertSame(expected: $none, actual: $this->switches(stored: $on)->offeredToCurrentUser());
+	}//end testNothingIsOfferedWithoutASignedInUser()
+
+	/**
+	 * The throughput report is offered only to a reader while it is on; the parties report to everyone while it is on.
+	 *
+	 * @return void
+	 */
+	public function testTheMenuOffersEachReportByItsOwnRule(): void {
+		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'true'];
+
+		$this->assertSame(
+			expected: ['throughput' => true, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+		);
+		$this->assertSame(
+			expected: ['throughput' => false, 'parties' => true],
+			actual: $this->switches(stored: $on, session: $this->sessionOf(uid: 'clerk'))->offeredToCurrentUser()
+		);
+
+		$off = [WooReportSwitches::THROUGHPUT => 'false', WooReportSwitches::READERS => 'woo-leiding', WooReportSwitches::PARTIES => 'no'];
+		$this->assertSame(
+			expected: ['throughput' => false, 'parties' => false],
+			actual: $this->switches(stored: $off, session: $this->sessionOf(uid: 'lead'))->offeredToCurrentUser()
+		);
+	}//end testTheMenuOffersEachReportByItsOwnRule()
+
+	/**
+	 * A boolean is its own answer; strings are read case- and space-insensitively.
+	 *
+	 * @return void
+	 */
+	public function testTruthyReadsBooleansAndYesWords(): void {
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: true));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: false));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: ' ON '));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 'Yes'));
+		$this->assertTrue(condition: WooReportSwitches::truthy(value: 1));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: 'ja'));
+		$this->assertFalse(condition: WooReportSwitches::truthy(value: null));
+	}//end testTruthyReadsBooleansAndYesWords()
 }//end class

@@ -141,6 +141,7 @@ import { getLanguage, translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import {
 	caseTypeProperties,
 	caseTypeWithTranslations,
@@ -157,6 +158,8 @@ export default {
 	name: 'CaseTypeTranslationsWidget',
 
 	components: { NcButton, NcLoadingIcon, NcTextField },
+
+	mixins: [caseTypeWidget],
 
 	props: {
 		/**
@@ -195,16 +198,6 @@ export default {
 		 */
 		summary() {
 			return this.content?.mode === 'summary'
-		},
-
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
 		},
 
 		/**

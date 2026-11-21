@@ -1,0 +1,160 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "You are not signed in."
+        },
+        "calls": []
+    },
+    "no access to the merged case": {
+        "status": 403,
+        "body": {
+            "error": "You cannot merge these cases."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a"
+        ]
+    },
+    "no access to the surviving case": {
+        "status": 403,
+        "body": {
+            "error": "You cannot merge these cases."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b"
+        ]
+    },
+    "merged": {
+        "status": 200,
+        "body": {
+            "operation": {
+                "id": "op-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "merged without an operation": {
+        "status": 200,
+        "body": {
+            "operation": []
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: same-case": {
+        "status": 400,
+        "body": {
+            "code": "same-case",
+            "error": "Pick a different case to merge this one into."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: unknown-case": {
+        "status": 404,
+        "body": {
+            "code": "unknown-case",
+            "error": "One of these cases no longer exists."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: final-status": {
+        "status": 409,
+        "body": {
+            "code": "final-status",
+            "error": "This case is closed, so it cannot be merged away."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: signed-beschikking": {
+        "status": 409,
+        "body": {
+            "code": "signed-beschikking",
+            "error": "This case carries a signed decision, so it cannot be merged away."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: already-merged": {
+        "status": 409,
+        "body": {
+            "code": "already-merged",
+            "error": "This case was already merged into another one."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: survivor-already-merged": {
+        "status": 409,
+        "body": {
+            "code": "survivor-already-merged",
+            "error": "The case you picked was itself merged into another one."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: platform-unavailable": {
+        "status": 503,
+        "body": {
+            "code": "platform-unavailable",
+            "error": "Merging is unavailable right now."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: platform-refused": {
+        "status": 409,
+        "body": {
+            "code": "platform-refused",
+            "error": "These cases could not be merged."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    },
+    "refused: something-new": {
+        "status": 409,
+        "body": {
+            "code": "something-new",
+            "error": "These cases could not be merged."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-a",
+            "hasCaseMutationAccess case-b",
+            "requestMerge [\"case-a\",\"case-b\",\"duplicate\",\"behandelaar\"]"
+        ]
+    }
+}

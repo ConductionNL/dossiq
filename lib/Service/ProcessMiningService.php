@@ -17,8 +17,8 @@
  *
  * This class is the orchestrator only. The read path lives in
  * {@see ProcessMiningDataLoader}; each metric family lives in its own
- * calculator ({@see DwellTimeAnalyzer}, {@see TransitionMatrixBuilder},
- * {@see ThroughputTrendCalculator}). What remains here is the report
+ * calculator ({@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer}, {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder},
+ * {@see \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator}). What remains here is the report
  * assembly: resolving the reporting period, grouping the loaded cases per
  * case type, and handing each group to the calculators.
  *
@@ -40,29 +40,36 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
+use OCA\Dossiq\Service\ProcessMining\CaseStatusRecords;
+use OCA\Dossiq\Service\ProcessMining\DwellHeatmap;
 use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
-use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
-use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
-class ProcessMiningService {
+class ProcessMiningService implements ProcessMiningServiceInterface {
+	/**
+	 * Groups and orders the status records of the cases in scope.
+	 *
+	 * @var CaseStatusRecords
+	 */
+	private readonly CaseStatusRecords $statusRecords;
+
 	/**
 	 * Constructor.
 	 *
@@ -71,6 +78,7 @@ class ProcessMiningService {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
+	 * @param DwellHeatmap $heatmap Statuses against weeks, shaded by median dwell.
 	 *
 	 * @return void
 	 */
@@ -80,7 +88,9 @@ class ProcessMiningService {
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 		private readonly PhaseSummary $phases = new PhaseSummary(),
+		private readonly DwellHeatmap $heatmap = new DwellHeatmap(),
 	) {
+		$this->statusRecords = new CaseStatusRecords(dates: $this->dates);
 	}//end __construct()
 
 	/**
@@ -91,7 +101,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed> The structured response body.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
@@ -106,7 +116,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function buildReport(array $params): array {
 		$window = $this->windowOf(params: $params);
@@ -185,7 +195,7 @@ class ProcessMiningService {
 		$statusTypes = $this->dataLoader->loadStatusTypes();
 		$records = $this->dataLoader->loadStatusRecords();
 		$run = $window + [
-			'recordsByCase' => $this->groupRecordsByCase(records: $records, cases: $casesById),
+			'recordsByCase' => $this->statusRecords->byCase(records: $records, cases: $casesById),
 			'statusTypeIndex' => $this->dataLoader->indexById(rows: $statusTypes),
 		];
 		$caseTypeIndex = $this->dataLoader->indexByIdAndSlug(rows: $caseTypes);
@@ -213,7 +223,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function caseTypeReport(array $group, array $run): array {
 		$recordsForThisGroup = array_intersect_key($run['recordsByCase'], array_flip(array_keys($group['cases'])));
@@ -247,7 +257,7 @@ class ProcessMiningService {
 	 * @param array<string, mixed> $scope The case type's cases (cases), the moment of reading (now)
 	 *                                    and the StatusType rows by id (statusTypeIndex).
 	 *
-	 * @return array<string, mixed> dwellTime, dwellTimeCompleted, dwellDaysHeld, dwellByAssignee and bottlenecks.
+	 * @return array<string, mixed> dwellTime, dwellTimeCompleted, dwellDaysHeld, dwellByAssignee, bottlenecks and dwellHeatmap.
 	 */
 	private function dwellOf(array $intervals, array $scope): array {
 		$dwellStats = $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $scope['statusTypeIndex']);
@@ -272,13 +282,15 @@ class ProcessMiningService {
 			// would drift from the by-phase one beside it.
 			'dwellByAssignee' => $this->analysers->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
 			'bottlenecks' => $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats),
+			// Statuses against weeks, each cell the median (REQ-CRS-36).
+			'dwellHeatmap' => $this->heatmap->grid(intervals: $intervals, dwellStats: $dwellStats),
 		];
 	}//end dwellOf()
 
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit).
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::computeDwellIntervals()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::computeDwellIntervals()}.
 	 *
 	 * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
 	 * @param array<string, array<string, mixed>> $casesById Case rows, keyed by id.
@@ -288,7 +300,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeDwellIntervals(
 		array $recordsByCase,
@@ -309,14 +321,14 @@ class ProcessMiningService {
 	/**
 	 * Aggregate dwell-time intervals per status into median/p90/mean stats.
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::aggregateDwellStats()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::aggregateDwellStats()}.
 	 *
 	 * @param array<int, array{caseId: string, statusId: string, hours: float}> $intervals Dwell intervals.
 	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, p90Hours: float, meanHours: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function aggregateDwellStats(array $intervals, array $statusTypeIndex): array {
 		return $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
@@ -325,13 +337,13 @@ class ProcessMiningService {
 	/**
 	 * Rank statuses by bottleneck severity: median dwell time x visit volume.
 	 *
-	 * Delegates to {@see DwellTimeAnalyzer::rankBottlenecks()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer::rankBottlenecks()}.
 	 *
 	 * @param array<int, array<string, mixed>> $dwellStats Per-status dwell stats.
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, score: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function rankBottlenecks(array $dwellStats): array {
 		return $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
@@ -340,7 +352,7 @@ class ProcessMiningService {
 	/**
 	 * Build the from→to transition frequency matrix and detect rework loops.
 	 *
-	 * Delegates to {@see TransitionMatrixBuilder::computeTransitionMatrix()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder::computeTransitionMatrix()}.
 	 *
 	 * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
 	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
@@ -348,7 +360,7 @@ class ProcessMiningService {
 	 * @return array{matrix: array<int, array{from: string, fromName: string, to: string,
 	 *                toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
 		return $this->analysers->transitionBuilder->computeTransitionMatrix(
@@ -360,13 +372,13 @@ class ProcessMiningService {
 	/**
 	 * Walk one case's chronologically sorted statusRecords into from→to pairs.
 	 *
-	 * Delegates to {@see TransitionMatrixBuilder::computeCaseTransitions()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder::computeCaseTransitions()}.
 	 *
 	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
 	 *
 	 * @return array<int, array{from: string, to: string, isRework: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeCaseTransitions(array $sortedRecords): array {
 		return $this->analysers->transitionBuilder->computeCaseTransitions(sortedRecords: $sortedRecords);
@@ -375,7 +387,7 @@ class ProcessMiningService {
 	/**
 	 * Weekly throughput trend: cases closed (by `endDate`) per ISO week.
 	 *
-	 * Delegates to {@see ThroughputTrendCalculator::computeThroughputTrend()}.
+	 * Delegates to {@see \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator::computeThroughputTrend()}.
 	 *
 	 * @param array<string, array<string, mixed>> $cases Case rows, keyed by id.
 	 * @param DateTimeImmutable $from Inclusive period start.
@@ -383,7 +395,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{week: string, count: int}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
 		return $this->analysers->throughputCalculator->computeThroughputTrend(cases: $cases, from: $from, to: $to);
@@ -438,114 +450,5 @@ class ProcessMiningService {
 
 		return $groups;
 	}//end groupCasesByType()
-
-	/**
-	 * Group and chronologically sort statusRecords by their `case` field,
-	 * restricted to the cases in scope; a case without records is read from
-	 * its own status history.
-	 *
-	 * @param array<int, array<string, mixed>>    $records Raw statusRecord rows.
-	 * @param array<string, array<string, mixed>> $cases   The cases in scope, by id.
-	 *
-	 * @return array<string, array<int, array<string, mixed>>>
-	 */
-	private function groupRecordsByCase(array $records, array $cases): array {
-		$grouped = [];
-		foreach ($records as $record) {
-			$caseId = (string)($record['case'] ?? '');
-			if ($caseId === '' || isset($cases[$caseId]) === false) {
-				continue;
-			}
-
-			$grouped[$caseId][] = $record;
-		}
-
-		// A case without status records (example data, an imported case) is read from its own status history.
-		foreach (array_diff_key($cases, $grouped) as $caseId => $case) {
-			$fromHistory = $this->recordsFromHistory(caseId: (string)$caseId, case: $case);
-			if ($fromHistory !== []) {
-				$grouped[$caseId] = $fromHistory;
-			}
-		}
-
-		foreach ($grouped as $caseId => $rows) {
-			usort(
-				$rows,
-				function (array $left, array $right): int {
-					$leftAt = $this->extractTimestamp(record: $left);
-					$rightAt = $this->extractTimestamp(record: $right);
-					if ($leftAt === null || $rightAt === null) {
-						return 0;
-					}
-
-					return ($leftAt <=> $rightAt);
-				}
-			);
-			$grouped[$caseId] = $rows;
-		}
-
-		return $grouped;
-	}//end groupRecordsByCase()
-
-	/**
-	 * Status records read off a case's own status history: one per entry, at the moment it entered that status.
-	 *
-	 * @param string               $caseId The case id.
-	 * @param array<string, mixed> $case   The case; `statusHistory` as a list or as JSON text.
-	 *
-	 * Each is held by the person the entry names, else by the case's handler:
-	 * a history entry carries no actor of its own, and time nobody holds would
-	 * read as "not recorded" in the per-handler table.
-	 *
-	 * @return array<int, array{case: string, statusType: string, createdAt: string, actor: string}>
-	 *
-	 * @spec openspec/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
-	 */
-	private function recordsFromHistory(string $caseId, array $case): array {
-		$history = ($case['statusHistory'] ?? []);
-		if (is_string($history) === true) {
-			$history = json_decode($history, true);
-		}
-
-		$holder = trim((string)($case['assignee'] ?? ''));
-		$records = [];
-		foreach ((array)$history as $entry) {
-			if (is_array($entry) === false) {
-				continue;
-			}
-
-			$status = (string)($entry['status'] ?? '');
-			$moment = (string)($entry['enteredAt'] ?? '');
-			if ($status === '' || $moment === '') {
-				continue;
-			}
-
-			$actor = trim((string)($entry['actor'] ?? ($entry['by'] ?? '')));
-			if ($actor === '') {
-				$actor = $holder;
-			}
-
-			$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $actor];
-		}
-
-		return $records;
-	}//end recordsFromHistory()
-
-	/**
-	 * Extract a record's creation timestamp — either the flattened
-	 * `createdAt` key or OpenRegister's `@self.created` metadata block.
-	 *
-	 * @param array<string, mixed> $record A statusRecord row.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function extractTimestamp(array $record): ?DateTimeImmutable {
-		$raw = ($record['createdAt'] ?? ($record['@self']['created'] ?? ($record['@self']['createdAt'] ?? null)));
-		if (is_string($raw) === false || $raw === '') {
-			return null;
-		}
-
-		return $this->dates->tryParse($raw);
-	}//end extractTimestamp()
 
 }//end class

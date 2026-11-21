@@ -34,16 +34,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\ReadsCaseActEvents;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Activity\CaseActivityStamp;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCP\Comments\CommentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
-use Throwable;
 
 /**
  * Stamps `lastActivityAt` on the case the work was done on.
@@ -55,6 +55,7 @@ use Throwable;
 class CaseLastActivityListener implements IEventListener {
 
 	use SavedObjectPayload;
+	use ReadsCaseActEvents;
 
 	/**
 	 * The case schema's slug.
@@ -80,12 +81,12 @@ class CaseLastActivityListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseActivityStamp        $stamp        Writes the date onto the case.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param CaseActivityStampInterface        $stamp        Writes the date onto the case.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly CaseActivityStamp $stamp,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseActivityStampInterface $stamp,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 
@@ -170,7 +171,7 @@ class CaseLastActivityListener implements IEventListener {
 	 * @return string The case uuid, or ''.
 	 */
 	private function caseWithoutDate(array $after): string {
-		if (trim((string)($after[CaseActivityStamp::FIELD] ?? '')) !== '') {
+		if (trim((string)($after[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return '';
 		}
 
@@ -196,46 +197,4 @@ class CaseLastActivityListener implements IEventListener {
 
 		return (string)$after['id'];
 	}//end caseWithMovedStatus()
-
-	/**
-	 * The object a new note was written on.
-	 *
-	 * @param CommentsEvent $event The comment event.
-	 *
-	 * @return string The object uuid, or ''.
-	 */
-	private function notedObject(CommentsEvent $event): string {
-		try {
-			$comment = $event->getComment();
-			if ($event->getEvent() !== 'add' || $comment->getObjectType() !== self::NOTE_OBJECT_TYPE) {
-				return '';
-			}
-
-			return trim($comment->getObjectId());
-		} catch (Throwable) {
-			return '';
-		}
-	}//end notedObject()
-
-	/**
-	 * The case a completed task was on.
-	 *
-	 * A task withdrawn (`terminated`, `disabled`) is not work done.
-	 *
-	 * @param TaskTerminalEvent $event The engine's terminal event.
-	 *
-	 * @return string The case uuid, or ''.
-	 */
-	private function completedTaskCase(TaskTerminalEvent $event): string {
-		try {
-			$task = $event->getTask();
-			if ($event->isCommitted() === false || (string)$task->getState() !== 'completed') {
-				return '';
-			}
-
-			return trim((string)($task->getObjectUuid() ?? ''));
-		} catch (Throwable) {
-			return '';
-		}
-	}//end completedTaskCase()
 }//end class

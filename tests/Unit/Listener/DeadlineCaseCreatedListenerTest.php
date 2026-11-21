@@ -11,7 +11,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectActivatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -37,6 +38,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses   \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses   \OCA\Dossiq\Service\Support\ReferencedUuid
+ * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeadlineCaseCreatedListenerTest extends TestCase {
 
@@ -144,6 +148,41 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 			'The planned end and the internal target start on the same day as the statutory term.'
 		);
 	}//end testARequestReceivedOnSundayStartsOnMonday()
+
+	/**
+	 * The term is resolved with the case's own case type, so a pick the case
+	 * type makes (REQ-CMP-CT-03) can apply on creation.
+	 *
+	 * @return void
+	 */
+	public function testTheResolutionContextNamesTheCaseType(): void {
+		$contexts   = [];
+		$resolution = $this->createMock(TermResolutionInterface::class);
+		$resolution->method('resolve')->willReturnCallback(
+			static function (string $caseType, array $context) use (&$contexts): ?array {
+				$contexts[] = $context;
+				return null;
+			}
+		);
+		$terms = $this->createMock(TermijnService::class);
+		$terms->method('createTermijnInstance')->willReturn(['id' => 't1']);
+		$schemaSlugs = $this->createMock(ObjectSchemaSlugResolver::class);
+		$schemaSlugs->method('resolveFromPayload')->willReturn('case');
+		$caseTypeSlugs = $this->createMock(CaseTypeSlugResolver::class);
+		$caseTypeSlugs->method('toSlug')->willReturn('omgevingsvergunning-regulier');
+
+		$listener = new DeadlineCaseCreatedListener(
+			termService: $terms,
+			slugResolver: $schemaSlugs,
+			caseTypeSlugs: $caseTypeSlugs,
+			logger: $this->createMock(LoggerInterface::class),
+			resolution: $resolution,
+		);
+		$listener->handle(self::created(['caseType' => 'ct-uuid']));
+
+		self::assertCount(1, $contexts);
+		self::assertSame('ct-uuid', $contexts[0]['caseTypeId']);
+	}//end testTheResolutionContextNamesTheCaseType()
 
 	/**
 	 * A stamp already on the case is used as it stands.

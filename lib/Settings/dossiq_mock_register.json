@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.6",
+    "version": "1.3.7",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -1236,7 +1236,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -1533,6 +1533,70 @@
                 "type": "string",
                 "title": "Validation Report ID",
                 "description": "Reference to the signature validation report"
+              },
+              "level": {
+                "type": "string",
+                "title": "Signature level",
+                "description": "The signature level filinq signed at: SES, AdES or QES."
+              },
+              "signingRequestId": {
+                "type": "string",
+                "title": "Signing request",
+                "description": "Filinq's signing request this signature concluded."
+              }
+            }
+          },
+          "signing": {
+            "type": "object",
+            "title": "Signing request",
+            "description": "The signature asked of filinq: requested while filinq has not concluded it, concluded when signed, not-concluded when it was declined, cancelled or expired. A not-concluded request can be asked again.",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "requested",
+                  "concluded",
+                  "not-concluded"
+                ],
+                "title": "Signing state",
+                "description": "requested, concluded or not-concluded."
+              },
+              "requestId": {
+                "type": "string",
+                "title": "Signing request ID",
+                "description": "Filinq's id for the signing request."
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Requested at",
+                "description": "When the signature was asked of filinq."
+              },
+              "concludedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Concluded at",
+                "description": "When filinq concluded the request."
+              },
+              "outcome": {
+                "type": "string",
+                "title": "Outcome",
+                "description": "Filinq's status for the concluded request: signed, declined, cancelled or expired."
+              },
+              "level": {
+                "type": "string",
+                "title": "Signature level",
+                "description": "The signature level asked for: SES, AdES or QES."
+              },
+              "tspProvider": {
+                "type": "string",
+                "title": "Provider named",
+                "description": "The provider the caller named; filinq chooses its own."
+              },
+              "signatory": {
+                "type": "string",
+                "title": "Signatory",
+                "description": "Nextcloud UID of the person asked to sign."
               }
             }
           },
@@ -3570,7 +3634,7 @@
             "$ref": "caseType",
             "onDelete": "CASCADE",
             "title": "Case Type",
-            "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine."
+            "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be projected onto the case plan in OpenRegister when a case starts."
           },
           "version": {
             "type": "integer",
@@ -4244,7 +4308,7 @@
           },
           "iv3TaskField": {
             "type": "string",
-            "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+            "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
             "title": "IV3 Task Field"
           }
         }
@@ -6372,10 +6436,10 @@
       "dwangsomUitbetaling": {
         "slug": "dwangsomUitbetaling",
         "icon": "BankTransfer",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:PaymentAction",
-        "title": "Dwangsom Uitbetaling",
-        "description": "Payment signal towards the burger after the dwangsom is locked.",
+        "title": "Payout",
+        "description": "Payment towards the applicant once the accruing amount is settled.",
         "type": "object",
         "required": [
           "penaltyPaymentCalculation",
@@ -10157,10 +10221,10 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Message",
         "title": "Notice of default",
-        "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
+        "description": "Notice from the applicant that a deadline has lapsed. Checked against the deadline before an accruing amount starts.",
         "type": "object",
         "required": [
           "deadlineInstance",
@@ -11208,10 +11272,10 @@
       "penaltyPaymentCalculation": {
         "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:MonetaryAmount",
-        "title": "Dwangsom Berekening",
-        "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
+        "title": "Accruing amount",
+        "description": "Daily-accruing amount after a lapsed deadline. Tracks the current day, the rate band, the cumulative amount in EUR cents and the cap.",
         "type": "object",
         "required": [
           "noticeOfDefault",
@@ -11221,7 +11285,7 @@
           "noticeOfDefault": {
             "type": "string",
             "title": "Default Notice Reference",
-            "description": "Ingebrekestelling that started the calculation",
+            "description": "Notice of default that started the calculation",
             "facetable": true
           },
           "deadlineInstance": {
@@ -11295,7 +11359,7 @@
           "rateBands": {
             "type": "array",
             "title": "Rate bands",
-            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the Awb 4:17 bands (23, 35, 45 euro).",
+            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the statutory bands (23, 35, 45 euro).",
             "items": {
               "type": "object",
               "properties": {
@@ -14407,16 +14471,17 @@
             "type": "string",
             "enum": [
               "cases_per_month",
+              "storage_mb",
               "storage_gb",
               "active_users",
               "api_calls_per_hour"
             ],
-            "description": "Quota dimension",
+            "description": "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade",
             "title": "Quota Type"
           },
           "limit": {
             "type": "integer",
-            "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
+            "description": "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there",
             "title": "Limit"
           },
           "currentUsage": {
@@ -23743,8 +23808,8 @@
           "id": "e49e1630-c474-4b28-94f7-7785ba5a5fab"
         },
         "tenantRef": "cfa02b0b-750d-4beb-8cad-8f1fb9c888aa",
-        "quotaType": "storage_gb",
-        "limit": 2,
+        "quotaType": "storage_mb",
+        "limit": 2048,
         "currentUsage": 0,
         "resetAt": "2026-03-02T09:00:00+00:00",
         "softLimitWarningPercent": 80,

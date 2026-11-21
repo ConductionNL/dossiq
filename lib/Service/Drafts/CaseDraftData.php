@@ -65,20 +65,47 @@ class CaseDraftData {
 	 */
 	public function build(array $declaration, array $case, callable $related): array {
 		$data = $this->fields(fields: (array)($declaration['fields'] ?? []), row: $case);
-		foreach ((array)($declaration['lists'] ?? []) as $list) {
+		$data = $this->withLists(data: $data, lists: ['declared' => (array)($declaration['lists'] ?? []), 'related' => $related]);
+
+		return $this->withSummaries(data: $data, summaries: (array)($declaration['summaries'] ?? []));
+	}//end build()
+
+	/**
+	 * The data with each declared list of related rows set at its path.
+	 *
+	 * @param array<string, mixed>                                      $data  The data so far.
+	 * @param array{declared: array<int, mixed>, related: callable} $lists The declared lists, and how related rows are read.
+	 *
+	 * @return array<string, mixed> The data with its lists.
+	 */
+	private function withLists(array $data, array $lists): array {
+		$related = $lists['related'];
+		foreach ($lists['declared'] as $list) {
 			$list = (array)$list;
 			$rows = $related((string)($list['schemaKey'] ?? ''), (string)($list['caseField'] ?? 'case'));
 			$data = $this->set(target: $data, path: (string)($list['to'] ?? 'items'), value: $this->rows(list: $list, rows: $rows));
 		}
 
-		foreach ((array)($declaration['summaries'] ?? []) as $summary) {
+		return $data;
+	}//end withLists()
+
+	/**
+	 * The data with each declared summary set at its path.
+	 *
+	 * @param array<string, mixed> $data      The data so far.
+	 * @param array<int, mixed>    $summaries The declared summaries.
+	 *
+	 * @return array<string, mixed> The data with its summaries.
+	 */
+	private function withSummaries(array $data, array $summaries): array {
+		foreach ($summaries as $summary) {
 			$summary = (array)$summary;
 			$rows = (array)($this->read(row: $data, path: (string)($summary['over'] ?? '')) ?? []);
 			$data = $this->set(target: $data, path: (string)($summary['to'] ?? ''), value: $this->summarise(summary: $summary, rows: $rows));
 		}
 
 		return $data;
-	}//end build()
+	}//end withSummaries()
 
 	/**
 	 * A value at a dot path, or null.

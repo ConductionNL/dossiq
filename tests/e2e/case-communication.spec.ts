@@ -45,8 +45,8 @@ import { clickHeaderAction } from './helpers/nav.ts'
  * past it.
  */
 const FORM_FIELDS = [
-	'log-contact-channel-phone',
-	'log-contact-direction-inbound',
+	'log-contact-channel',
+	'log-contact-direction',
 	'log-contact-start',
 	'log-contact-summary',
 	'log-contact-caller',
@@ -224,16 +224,17 @@ test.describe('Case detail — the Communication tab', () => {
 		// inbound phone call.
 		const call = rows.filter({ hasText: EARLIER_SUMMARY })
 		await expect(call).toHaveCount(1)
-		await expect(call).toContainText('phone')
-		await expect(call).toContainText('inbound')
-		// The date column renders the start time; asserting the YEAR-MONTH is
-		// enough to prove the cell is bound without pinning a locale format.
-		await expect(call).toContainText(/2026/)
+		await expect(call).toContainText(/phone/i)
+		await expect(call).toContainText(/inbound/i)
+		// The date column renders the start time. A date in the current year
+		// reads without its year ("May 4", "4 mei"), so the day and month prove
+		// the cell is bound.
+		await expect(call).toContainText(/May 4|4 mei|2026/i)
 
 		const mail = rows.filter({ hasText: LATER_SUMMARY })
 		await expect(mail).toHaveCount(1)
-		await expect(mail).toContainText('email')
-		await expect(mail).toContainText('outbound')
+		await expect(mail).toContainText(/e-?mail/i)
+		await expect(mail).toContainText(/outbound/i)
 
 		// The other case's contact exists and is filtered out. Without the
 		// filter this widget would list every contact moment on the instance,
@@ -367,14 +368,10 @@ test.describe('Case detail — the Communication tab', () => {
 		const dialog = page.locator('[data-testid="log-contact-dialog"]')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		// Phone and inbound are the dialog's defaults; clicked anyway so the
-		// test does not lean on a default it does not name.
-		await dialog.locator('[data-testid="log-contact-channel-phone"]').click()
-		await dialog.locator('[data-testid="log-contact-direction-inbound"]').click()
-		await dialog
-			.locator('[data-testid="log-contact-summary"]')
-			.getByRole('textbox')
-			.fill(TYPED_SUMMARY)
+		// Channel and direction are selects that open on Phone and Inbound.
+		await expect(dialog).toContainText('Phone')
+		await expect(dialog).toContainText('Inbound')
+		await dialog.locator('textarea[data-testid="log-contact-summary"]').fill(TYPED_SUMMARY)
 
 		await dialog.locator('[data-testid="log-contact-confirm"]').click()
 		await expect(
@@ -430,7 +427,7 @@ test.describe('Case detail — the Communication tab', () => {
 		const widget = await openCommunicationTab(page, formCaseId)
 		const row = widget.locator('tbody tr').filter({ hasText: TYPED_SUMMARY })
 		await expect(row).toHaveCount(1, { timeout: 20_000 })
-		await expect(row).toContainText('phone')
-		await expect(row).toContainText('inbound')
+		await expect(row).toContainText(/phone/i)
+		await expect(row).toContainText(/inbound/i)
 	})
 })

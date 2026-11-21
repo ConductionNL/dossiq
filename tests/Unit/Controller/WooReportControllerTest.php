@@ -29,6 +29,7 @@ use OCA\Dossiq\Tests\Support\RecordingAuditTrailMapper;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCA\Dossiq\Woo\WooThroughputReport;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
@@ -51,6 +52,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Csv\CsvWriter
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Woo\ReportPeriod
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */
@@ -354,4 +357,20 @@ class WooReportControllerTest extends TestCase {
 		$this->assertCount(1 + count($json), $lines);
 		$this->assertCount(2, $this->trail->rows);
 	}//end testTheCsvHasTheSameRows()
+
+	/**
+	 * The page's Download CSV action is a plain link, which carries no CSRF token.
+	 *
+	 * @return void
+	 */
+	public function testTheCsvLinkNeedsNoCsrfToken(): void {
+		foreach (['throughput', 'throughputLegacyPath'] as $method) {
+			$attributes = (new \ReflectionMethod(WooReportController::class, $method))->getAttributes(NoCSRFRequired::class);
+			$this->assertCount(
+				expectedCount: 1,
+				haystack: $attributes,
+				message: $method.' answers 412 to the Download CSV link when it asks for a CSRF token'
+			);
+		}
+	}//end testTheCsvLinkNeedsNoCsrfToken()
 }//end class

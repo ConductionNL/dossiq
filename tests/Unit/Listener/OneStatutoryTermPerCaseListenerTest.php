@@ -12,14 +12,14 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
+use OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
@@ -32,7 +32,8 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener
  * @uses \OCA\Dossiq\Service\TermKind
- * @uses \OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\DeadlineTimerRegistrar
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class OneStatutoryTermPerCaseListenerTest extends TestCase {
 

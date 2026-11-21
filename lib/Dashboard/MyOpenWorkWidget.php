@@ -22,21 +22,24 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\Service\Queue\PersonalQueueService;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
+use OCA\Dossiq\Service\Dashboard\WidgetAudience;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCP\Dashboard\IButtonWidget;
+use OCP\Dashboard\IConditionalWidget;
 use OCP\Dashboard\IIconWidget;
 use OCP\Dashboard\IReloadableWidget;
 use OCP\Dashboard\Model\WidgetButton;
 use OCP\Dashboard\Model\WidgetItems;
 use OCP\IL10N;
+use OCP\IUserSession;
 
 /**
  * The person's open work as summary rows, with a button to My work.
@@ -44,9 +47,9 @@ use OCP\IL10N;
  * It reads the queue through the same service the My work page uses, so the
  * widget and the page cannot disagree about what is open.
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
-class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget {
+class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget, IConditionalWidget {
 
 	/**
 	 * How often a host reloads the items, in seconds.
@@ -60,26 +63,41 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 * Constructor.
 	 *
 	 * @param IL10N                $l10n    Translations.
-	 * @param PersonalQueueService $queue   The one personal queue.
+	 * @param PersonalQueueServiceInterface $queue   The one personal queue.
 	 * @param OpenWorkSummary      $summary Counts the queue into summary rows, and holds the links.
+	 * @param WidgetAudience       $audience    The groups that may see the widget.
+	 * @param IUserSession         $userSession The signed-in user.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
-		private readonly PersonalQueueService $queue,
+		private readonly PersonalQueueServiceInterface $queue,
 		private readonly OpenWorkSummary $summary,
+		private readonly WidgetAudience $audience,
+		private readonly IUserSession $userSession,
 	) {
 	}//end __construct()
+
+	/**
+	 * Whether the signed-in user is in the widget's audience; outside it the dashboard never lists the widget.
+	 *
+	 * @return bool True when the widget is offered to this user.
+	 *
+	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 */
+	public function isEnabled(): bool {
+		return $this->audience->admits(widgetId: $this->getId(), userId: $this->userSession->getUser()?->getUID());
+	}//end isEnabled()
 
 	/**
 	 * The widget's id.
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getId(): string {
 		// A new widget, so it takes the app's current id. The seven older ones
@@ -92,7 +110,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The title.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('My work');
@@ -103,7 +121,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return int The order.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getOrder(): int {
 		return 11;
@@ -114,7 +132,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The class.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -125,7 +143,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconUrl(): string {
 		return $this->summary->links()->iconUrl();
@@ -136,7 +154,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string|null The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->summary->links()->myWorkUrl();
@@ -147,7 +165,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function load(): void {
 	}//end load()
@@ -164,11 +182,16 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return WidgetItems The items.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
+	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
 		// The interface passes a cursor and a limit; the summary has at most two rows.
 		unset($since, $limit);
+		if ($this->audience->admits(widgetId: $this->getId(), userId: $userId) === false) {
+			return new WidgetItems([], '');
+		}
+
 		$queue = $this->queue->forPerson(userId: $userId);
 		$rows = array_filter(
 			(array)($queue['items'] ?? []),
@@ -188,7 +211,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return list<WidgetButton> The buttons.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getWidgetButtons(string $userId): array {
 		// The button is the same for everyone.
@@ -203,7 +226,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return int Seconds.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getReloadInterval(): int {
 		return self::RELOAD_SECONDS;

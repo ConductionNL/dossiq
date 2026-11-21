@@ -56,7 +56,7 @@ function localMidnight(value) {
  * @return {number|null} Positive when the deadline is ahead, negative when it
  *   has passed, 0 on the day itself; null when there is no readable deadline.
  *
- * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+ * @spec openspec/specs/signalering-widgets/spec.md
  */
 export function daysUntilDeadline(deadline, now = new Date()) {
 	const due = localMidnight(deadline)
@@ -83,7 +83,7 @@ export function daysUntilDeadline(deadline, now = new Date()) {
  * @return {boolean} True only when the deadline's day is before today; false
  *   when there is no readable deadline.
  *
- * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ * @spec openspec/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isOverdue(deadline, now = new Date()) {
 	const days = daysUntilDeadline(deadline, now)

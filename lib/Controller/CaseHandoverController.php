@@ -29,18 +29,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\AnswersCaseNotYours;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,9 +57,11 @@ use Throwable;
 /**
  * The internal handover: hand on, accept, refuse back, and what is outstanding.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseHandoverController extends Controller {
+	use AnswersCaseNotYours;
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -65,25 +69,25 @@ class CaseHandoverController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request     The request.
-	 * @param CaseTransferService $transfers   The one door to every case move.
-	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
+	 * @param CaseTransferServiceInterface $transfers   The one door to every case move.
+	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IGroupManager       $groups      The teams a caller belongs to.
 	 * @param IUserSession        $userSession The session.
 	 * @param LoggerInterface     $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTransferService $transfers,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseTransferServiceInterface $transfers,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -93,7 +97,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The transfer record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 */
 	#[NoAdminRequired]
 	public function hand(string $caseId): JSONResponse {
@@ -102,6 +106,26 @@ class CaseHandoverController extends Controller {
 			return $this->notYours();
 		}
 
+		$fields = $this->handoverFields();
+		if ($fields instanceof JSONResponse) {
+			return $fields;
+		}
+
+		try {
+			return $this->handToTeam(caseId: $caseId, user: $user, team: $fields[0], reason: $fields[1]);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'hand', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'hand', e: $e);
+		}
+	}//end hand()
+
+	/**
+	 * The team and reason a handover names, or the refusal when either is blank.
+	 *
+	 * @return array{0: string, 1: string}|JSONResponse
+	 */
+	private function handoverFields(): array|JSONResponse {
 		$team = trim((string)$this->request->getParam('team', ''));
 		$reason = trim((string)$this->request->getParam('reason', ''));
 		if ($team === '' || $reason === '') {
@@ -111,22 +135,33 @@ class CaseHandoverController extends Controller {
 			);
 		}
 
-		try {
-			return new JSONResponse(
-				$this->transfers->handToTeam(
-					caseId: $caseId,
-					targetTeam: $team,
-					reason: $reason,
-					initiatedBy: $user->getUID(),
-					doorzending: ($this->request->getParam('doorzending', false) === true),
-				)
-			);
-		} catch (RefusedException $e) {
-			return $this->refused(op: 'hand', e: $e);
-		} catch (Throwable $e) {
-			return $this->broke(op: 'hand', e: $e);
-		}
-	}//end hand()
+		return [$team, $reason];
+	}//end handoverFields()
+
+	/**
+	 * Hand a case to another team.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The user handing it over.
+	 * @param string $team The receiving team.
+	 * @param string $reason Why the case is moving.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the handover is refused.
+	 * @throws Throwable When the handover fails.
+	 */
+	private function handToTeam(string $caseId, IUser $user, string $team, string $reason): JSONResponse {
+		return new JSONResponse(
+			$this->transfers->handToTeam(
+				caseId: $caseId,
+				targetTeam: $team,
+				reason: $reason,
+				initiatedBy: $user->getUID(),
+				doorzending: ($this->request->getParam('doorzending', false) === true),
+			)
+		);
+	}//end handToTeam()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.
@@ -136,7 +171,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The settled record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $transferId): JSONResponse {
@@ -164,7 +199,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The settled record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $transferId): JSONResponse {
@@ -203,7 +238,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The outstanding handovers.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function outstanding(string $team): JSONResponse {
@@ -223,26 +258,6 @@ class CaseHandoverController extends Controller {
 	}//end outstanding()
 
 	/**
-	 * The caller, when they may write this case.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
-	}//end writerOf()
-
-	/**
 	 * The teams a caller belongs to.
 	 *
 	 * @param IUser $user The caller.
@@ -252,18 +267,6 @@ class CaseHandoverController extends Controller {
 	private function teamsOf(IUser $user): array {
 		return array_map('strval', $this->groups->getUserGroupIds($user));
 	}//end teamsOf()
-
-	/**
-	 * One answer for "this case is not yours", so none of the four differ.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot move this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.

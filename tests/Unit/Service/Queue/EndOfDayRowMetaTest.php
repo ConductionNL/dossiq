@@ -32,6 +32,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for {@see EndOfDayRowMeta}.
@@ -61,7 +62,9 @@ class EndOfDayRowMetaTest extends TestCase {
 			 *
 			 * @return object The object.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->objects[$id]) === false) {
 					throw new DoesNotExistException('not found');
 				}
@@ -124,6 +127,26 @@ class EndOfDayRowMetaTest extends TestCase {
 	}//end testACaseNamesItsNumberAndStatus()
 
 	/**
+	 * A status name stored as a language map reads as its Dutch text, not "Array".
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAStatusNameStoredAsALanguageMapReadsAsText(): void {
+		$meta = $this->meta(
+			objects: [
+				'c1' => ['identifier' => '2026-4836', 'title' => 'Bezwaar parkeerboete Havenstraat', 'status' => 's1'],
+				's1' => ['name' => ['en' => 'In progress', 'nl' => 'In behandeling']],
+			]
+		);
+
+		$facts = $meta->factsOf(item: ['subjectType' => 'case', 'subjectId' => 'c1']);
+
+		$this->assertSame(expected: '2026-4836 · In behandeling', actual: $meta->openLine(facts: $facts));
+	}//end testAStatusNameStoredAsALanguageMapReadsAsText()
+
+	/**
 	 * A task names the number and title of the case it is on.
 	 *
 	 * @return void
@@ -161,4 +184,34 @@ class EndOfDayRowMetaTest extends TestCase {
 		$this->assertSame(expected: '11:15', actual: $meta->recordedLine(facts: $task, time: '11:15'));
 		$this->assertSame(expected: '', actual: $meta->openLine(facts: $missing));
 	}//end testWhatCannotBeReadIsLeftOut()
+
+	/**
+	 * A task whose engine read throws is left without a case rather than
+	 * taking the error up: the row names only the time, and the fault is
+	 * logged at debug.
+	 *
+	 * @return void
+	 */
+	public function testATaskWhoseEngineReadThrowsNamesNoCase(): void {
+		$gateway = $this->createMock(originalClassName: EngineTaskGateway::class);
+		$gateway->method('find')->willThrowException(new \RuntimeException('engine down'));
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default=''): string => $default
+		);
+
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters=[]): string => vsprintf($text, array_values($parameters))
+		);
+
+		$meta = new EndOfDayRowMeta(settings: $settings, tasks: $gateway, l10n: $l10n, logger: new NullLogger());
+
+		$facts = $meta->factsOf(item: ['subjectType' => 'task', 'subjectId' => 't-broken']);
+
+		$this->assertSame(expected: '', actual: $facts['number']);
+		$this->assertSame(expected: '', actual: $meta->openLine(facts: $facts));
+	}//end testATaskWhoseEngineReadThrowsNamesNoCase()
 }//end class

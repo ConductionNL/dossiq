@@ -32,6 +32,7 @@ use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Dry run by default, writes with --apply, exits 0 only when nothing is pending.
@@ -92,7 +93,10 @@ class DrainIntakeObjectsCommandTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['object' => $object, 'schema' => $schema, 'uuid' => $uuid];
 				return $object;
 			}
@@ -110,7 +114,12 @@ class DrainIntakeObjectsCommandTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The answer.
 			 */
-			public function submit(array $destination, ?array $mapping, array $payload, ?IUser $subject = null): array {
+			public function submit(object $submission, ?string $idempotencyKey = null): array {
+				$destination = $submission->writes[0];
+				$mapping = ($destination['mapping'] ?? null);
+				unset($destination['mapping']);
+				$payload = $submission->payload;
+				$subject = $submission->subject;
 				$this->submits[] = ['destination' => $destination, 'payload' => $payload];
 				return ['id' => 'case-new', 'reference' => '2026-0001'];
 			}

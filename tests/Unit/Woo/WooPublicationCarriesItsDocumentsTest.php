@@ -32,11 +32,11 @@ use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCP\App\IAppManager;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -48,12 +48,12 @@ use Psr\Log\LoggerInterface;
  * Publish a case with every kind of assessment, as the handler.
  *
  * @covers \OCA\Dossiq\Woo\WooCaseDocuments
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @covers \OCA\Dossiq\Service\Support\FindsFilesById
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses   \OCA\Dossiq\Woo\WooResultLink
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses   \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses   \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
@@ -222,9 +222,9 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 	 *
 	 * @param object|null $fileService OpenRegister's file service, or null.
 	 *
-	 * @return WooPublicationService
+	 * @return OutcomePublisher
 	 */
-	private function service(?object $fileService): WooPublicationService {
+	private function service(?object $fileService): OutcomePublisher {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getFileService')->willReturn($fileService);
@@ -254,15 +254,15 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnArgument(0);
 		$logger = $this->createMock(LoggerInterface::class);
 
-		return new WooPublicationService(
-			$settings,
-			$client,
-			new WooCategoryMapper(),
-			$apps,
-			$logger,
-			null,
-			new WooCaseLedger(settingsService: $settings, logger: $logger, urlGenerator: $urls),
-			new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
+		return new OutcomePublisher(
+			settingsService: $settings,
+			apiClient: $client,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $logger,
+			dossierReturn: null,
+			caseLedger: new CasePublicationState(settingsService: $settings, logger: $logger, urlGenerator: $urls),
+			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
 		);
 	}//end service()
 }//end class

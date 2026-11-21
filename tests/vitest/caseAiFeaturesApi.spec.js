@@ -125,6 +125,67 @@ describe('caseAiFeaturesApi', () => {
 		expect(query.get('caseType[aiFeatures][document-summary]')).toBe('case')
 	})
 
+	it('asks nothing more for a case without a case type', async () => {
+		answer({ '/objects/dossiq/case/': { id: 'c-1' } })
+
+		await expect(fetchCaseFeatures('c-1')).resolves.toEqual([])
+		expect(axios.get).toHaveBeenCalledTimes(1)
+	})
+
+	it('sends every declared slug, in declaration order, and reads a body without features as none', async () => {
+		answer({
+			'/objects/dossiq/case/': { object: { id: 'c-1', caseType: 'ct-1' } },
+			'/objects/dossiq/caseType/': {
+				id: 'ct-1',
+				aiFeatures: { b: 'case', a: 'case', c: 'intake' },
+			},
+			'/api/assistant/ai-features': { features: 'none' },
+		})
+
+		await expect(fetchCaseFeatures('c-1')).resolves.toEqual([])
+		const urls = axios.get.mock.calls.map(([url]) => url)
+		expect(urls[0]).toContain('/objects/dossiq/case/c-1')
+		expect(urls[1]).toContain('/objects/dossiq/caseType/ct-1')
+		expect(urls[2]).toBe(
+			'/apps/dossiq/api/assistant/ai-features?surface=case&caseType%5BaiFeatures%5D%5Bb%5D=case&caseType%5BaiFeatures%5D%5Ba%5D=case',
+		)
+	})
+
+	it('answers null when the case type or the features cannot be read', async () => {
+		answer({
+			'/objects/dossiq/case/': { id: 'c-1', caseType: 'ct-1' },
+			'/objects/dossiq/caseType/': new Error('404'),
+		})
+		await expect(fetchCaseFeatures('c-1')).resolves.toBeNull()
+
+		answer({
+			'/objects/dossiq/case/': { id: 'c-1', caseType: 'ct-1' },
+			'/objects/dossiq/caseType/': { id: 'ct-1', aiFeatures: { a: 'case' } },
+			'/api/assistant/ai-features': new Error('502'),
+		})
+		await expect(fetchCaseFeatures('c-1')).resolves.toBeNull()
+	})
+
+	it('reads every shape of reference', () => {
+		expect(referenceId({ id: 0 })).toBe('0')
+		expect(referenceId({ id: null, uuid: ' u-1 ' })).toBe('u-1')
+		expect(referenceId({})).toBe('')
+		expect(referenceId(7)).toBe('7')
+		expect(referenceId(undefined)).toBe('')
+		expect(referenceId(' ct-4 ')).toBe('ct-4')
+	})
+
+	it('reads a missing feature, a non-true availability and a half answer', () => {
+		expect(whereItRuns(null)).toBe('Unavailable: hermiq does not offer this feature here.')
+		expect(whereItRuns({ available: 'true', provider: 'P', residency: 'R' }))
+			.toBe('Unavailable: hermiq does not offer this feature here.')
+		expect(whereItRuns({ available: true, provider: 'P' }))
+			.toBe('hermiq did not say which provider runs this, or where.')
+		expect(whereItRuns({ available: true, provider: ' ', residency: 'R' }))
+			.toBe('hermiq did not say which provider runs this, or where.')
+		expect(whereItRuns({ available: true, provider: ' P ', residency: ' R ' })).toBe('P, runs in R')
+	})
+
 	it('answers null, not an empty list, when the features cannot be read', async () => {
 		answer({ '/objects/dossiq/case/': new Error('403') })
 

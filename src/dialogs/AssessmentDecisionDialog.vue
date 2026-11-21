@@ -235,6 +235,7 @@ import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import GenerateDocumentDialog from './GenerateDocumentDialog.vue'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { nextStepOf } from '../utils/caseNextStep.js'
 
@@ -250,6 +251,71 @@ const PAGE_REFRESH = 'cn:page:refresh'
 function sentenceOf(failure, fallback) {
 	const data = failure?.response?.data
 	return String(data?.message || data?.error || fallback)
+}
+
+/**
+ * Read the documents of a case with their assessments.
+ *
+ * @param {{register: string, schema: string, caseField?: string}} source Where the assessments live.
+ * @param {string} caseId The case.
+ * @return {Promise<Array<object>>} The documents.
+ */
+async function readAssessedDocuments(source, caseId) {
+	const { data } = await axios.get(
+		generateUrl(
+			`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
+		),
+		{
+			params: {
+				[source.caseField || 'case']: caseId,
+				_limit: 500,
+			},
+		},
+	)
+	return data?.results || []
+}
+
+/**
+ * How many documents carry each assessment, and each refusal ground.
+ *
+ * @param {Array<object>} rows The documents.
+ * @param {string} field The field holding a document's assessment.
+ * @return {{tally: object, grounds: object}} The counts per value and per ground code.
+ */
+function assessmentCounts(rows, field) {
+	const tally = {}
+	const grounds = {}
+	for (const row of rows) {
+		const value = String(row?.[field] ?? '')
+		tally[value] = (tally[value] ?? 0) + 1
+		countGrounds(grounds, row?.weigeringsgronden)
+	}
+	return { tally, grounds }
+}
+
+/**
+ * Add one document's refusal grounds to the count per ground code.
+ *
+ * @param {object} grounds The count per ground code.
+ * @param {unknown} weigeringsgronden The document's grounds: codes or `{code}` rows.
+ */
+function countGrounds(grounds, weigeringsgronden) {
+	for (const ground of Array.isArray(weigeringsgronden) ? weigeringsgronden : []) {
+		const code = groundCode(ground)
+		if (code !== '') {
+			grounds[code] = (grounds[code] ?? 0) + 1
+		}
+	}
+}
+
+/**
+ * The code of one refusal ground: a bare code or a `{code}` row.
+ *
+ * @param {unknown} ground The ground.
+ * @return {string} Its code, or '' when it has none.
+ */
+function groundCode(ground) {
+	return String(ground?.code ?? ground ?? '')
 }
 
 export default {
@@ -268,16 +334,9 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialogTokenAware],
 
+	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
 		title: {
 			type: String,
@@ -468,16 +527,6 @@ export default {
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
-		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		heading() {
 			return t('dossiq', this.title)
 		},
@@ -633,33 +682,11 @@ export default {
 				return
 			}
 
-			const field = source.classificationField || 'classification'
 			try {
-				const { data } = await axios.get(
-					generateUrl(
-						`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
-					),
-					{
-						params: {
-							[source.caseField || 'case']: this.targetCaseId,
-							_limit: 500,
-						},
-					},
-				)
-				const tally = {}
-				const grounds = {}
-				for (const row of data?.results || []) {
-					const value = String(row?.[field] ?? '')
-					tally[value] = (tally[value] ?? 0) + 1
-					for (const ground of Array.isArray(row?.weigeringsgronden) ? row.weigeringsgronden : []) {
-						const code = String(ground?.code ?? ground ?? '')
-						if (code !== '') {
-							grounds[code] = (grounds[code] ?? 0) + 1
-						}
-					}
-				}
-				this.tally = tally
-				this.groundTally = grounds
+				const rows = await readAssessedDocuments(source, this.targetCaseId)
+				const counts = assessmentCounts(rows, source.classificationField || 'classification')
+				this.tally = counts.tally
+				this.groundTally = counts.grounds
 			} catch {
 				this.countsError = t(
 					'dossiq',

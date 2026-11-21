@@ -171,4 +171,27 @@ class ArchiveRequesterNoticeTest extends TestCase {
 
 		(new ArchiveRequesterNotice(store: $store, sender: $this->sender))->tell(caseId: 'case-2');
 	}//end testACaseWithoutAResultOrNumberStillReads()
+
+	/**
+	 * A case with neither a number nor a title is named as the request, and
+	 * its result explanation is still passed on.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutANumberOrTitleIsNamedAsTheRequest(): void {
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$store->method('loadCase')->willReturn(['id' => 'case-3', 'title' => '  ', 'resultPublicDescription' => ' Uw verzoek is toegewezen. ']);
+		$this->sender->expects($this->once())
+			->method('send')
+			->with(
+				$this->anything(),
+				$this->anything(),
+				['subject' => 'Uw zaak is afgehandeld', 'body' => "Wij hebben uw zaak over uw verzoek afgehandeld.\n\nUw verzoek is toegewezen."],
+				$this->anything(),
+				$this->anything(),
+			)
+			->willReturn(['status' => 'sent', 'channel' => 'email']);
+
+		(new ArchiveRequesterNotice(store: $store, sender: $this->sender))->tell(caseId: 'case-3');
+	}//end testACaseWithoutANumberOrTitleIsNamedAsTheRequest()
 }//end class

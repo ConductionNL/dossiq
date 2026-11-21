@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermKind;
@@ -46,22 +47,11 @@ use Throwable;
 /**
  * Which statutory term decides a case's deadline, and the write that applies it.
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
-class CaseDeadlineMirror {
+class CaseDeadlineMirror implements CaseDeadlineMirrorInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The case property the write-back sets.
-	 *
-	 * NOT `deadline` itself. `deadline` is declared readOnly, and OpenRegister
-	 * refuses an update that changes a readOnly value, so a patch naming it
-	 * would be answered 422. This field is ordinary; changing it is what makes
-	 * the save happen, and the pre-persist listener then writes `deadline`
-	 * inside that save, after validation, where readOnly does not apply.
-	 */
-	public const FIELD = 'statutoryDeadline';
 
 	/**
 	 * Constructor.
@@ -90,7 +80,7 @@ class CaseDeadlineMirror {
 	 *
 	 * @return array<string, mixed>|null The deciding instance, or null when there is no statutory one.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public static function decidingInstance(array $instances): ?array {
 		$newest = null;
@@ -120,7 +110,7 @@ class CaseDeadlineMirror {
 	 *
 	 * @return bool True for a statutory term, including one written before kinds existed.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function isStatutory(array $instance): bool {
 		return self::kindIsStatutory(instance: $instance);
@@ -151,7 +141,7 @@ class CaseDeadlineMirror {
 	 *
 	 * @return bool True when the case was written.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function followInstance(?array $instance): bool {
 		if ($instance === null || $this->isStatutory(instance: $instance) === false) {
@@ -167,7 +157,7 @@ class CaseDeadlineMirror {
 	 * @param array<string, mixed> $instance The instance.
 	 *
 	 * @return string The current end date.
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public static function endOf(array $instance): string {
 		$end = trim((string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? '')));
@@ -187,7 +177,7 @@ class CaseDeadlineMirror {
 	 *
 	 * @throws RefusedException When the terms of the case could not be read.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function deadlineFor(string $caseId): ?string {
 		if (trim($caseId) === '') {
@@ -215,7 +205,7 @@ class CaseDeadlineMirror {
 	 *
 	 * @return bool True when the case was written.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function follow(string $caseId): bool {
 		try {

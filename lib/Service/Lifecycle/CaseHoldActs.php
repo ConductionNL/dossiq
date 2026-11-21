@@ -48,9 +48,11 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * Puts a case on hold until a date, and takes it off again.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseHoldActs {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * The date a held case returns on.
@@ -92,20 +94,26 @@ class CaseHoldActs {
 	 * @throws RefusedException When the reason is empty, the date is unreadable,
 	 *                          or the date is not in the future.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function hold(string $caseId, string $reason, string $until): array {
 		$case = $this->load(caseId: $caseId);
-		if (trim($reason) === '') {
-			throw new RefusedException(
-				rule: 'reason-required',
-				sentence: 'Say why the case is being held.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		self::assertReason(reason: $reason);
 
-		$wake = $this->wakeDate(named: $until);
+		return $this->held(case: $case, hold: ['caseId' => $caseId, 'reason' => $reason, 'until' => $this->wakeDate(named: $until)]);
+	}//end hold()
 
+	/**
+	 * Put the case on hold until its wake date, journal it and save it.
+	 *
+	 * @param array<string, mixed>  $case The case.
+	 * @param array<string, string> $hold The `caseId`, the `reason` and the wake date as `until`.
+	 *
+	 * @return array<string, mixed> The held answer.
+	 */
+	private function held(array $case, array $hold): array {
+		$reason = $hold['reason'];
+		$wake = $hold['until'];
 		$case[self::UNTIL_FIELD] = $wake;
 		$case[self::REASON_FIELD] = $reason;
 		$case = $this->journal->append(
@@ -114,16 +122,47 @@ class CaseHoldActs {
 		);
 		$this->store->saveCase(case: $case);
 
+		return self::heldAnswer(caseId: $hold['caseId'], case: $case);
+	}//end held()
+
+	/**
+	 * Refuse a hold without a reason.
+	 *
+	 * @param string $reason Why the case is not being worked.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the reason is empty.
+	 */
+	private static function assertReason(string $reason): void {
+		if (trim($reason) === '') {
+			throw new RefusedException(
+				rule: 'reason-required',
+				sentence: 'Say why the case is being held.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertReason()
+
+	/**
+	 * The hold as it was recorded on the held case.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $case   The case, with its hold date and reason.
+	 *
+	 * @return array<string, mixed> The hold.
+	 */
+	private static function heldAnswer(string $caseId, array $case): array {
 		return [
 			'caseId' => $caseId,
 			'held' => true,
-			'heldUntil' => $wake,
-			'holdReason' => $reason,
+			'heldUntil' => $case[self::UNTIL_FIELD],
+			'holdReason' => $case[self::REASON_FIELD],
 			// Named in the answer because it is the property somebody will
 			// doubt, and the answer is the cheapest place to settle it.
 			'deadline' => (string)($case['deadline'] ?? ($case['plannedEndDate'] ?? '')),
 		];
-	}//end hold()
+	}//end heldAnswer()
 
 	/**
 	 * Take the case off hold before its date.
@@ -135,7 +174,7 @@ class CaseHoldActs {
 	 *
 	 * @throws RefusedException When the case is not held.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function release(string $caseId, string $reason): array {
 		$case = $this->load(caseId: $caseId);
@@ -166,7 +205,7 @@ class CaseHoldActs {
 	 *
 	 * @return bool True when the wake date is still ahead.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isHeld(array $case): bool {
 		$wake = $this->dates->tryParse(value: ($case[self::UNTIL_FIELD] ?? ''));
@@ -189,7 +228,7 @@ class CaseHoldActs {
 	 *
 	 * @throws RefusedException When it is missing, unreadable, or not ahead.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function wakeDate(string $named): string {
 		if (trim($named) === '') {
@@ -222,28 +261,4 @@ class CaseHoldActs {
 
 		return $wake->format('Y-m-d');
 	}//end wakeDate()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind both acts in this class
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 }//end class

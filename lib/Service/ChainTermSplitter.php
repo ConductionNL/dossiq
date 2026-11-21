@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ namespace OCA\Dossiq\Service;
 /**
  * Splitting a chain term over its steps, and recomputing what is left (REQ-TERM-065).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class ChainTermSplitter {
 	/**
@@ -65,7 +65,7 @@ class ChainTermSplitter {
 	 *
 	 * @return array<int, int> One day count per step, summing to $termDays.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function split(int $termDays, array $shares): array {
 		$steps = count($shares);
@@ -113,18 +113,39 @@ class ChainTermSplitter {
 	 *         What is left, the day count for each step still to come, and
 	 *         whether the chain has nothing left to give.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function recompute(int $termDays, array $shares, array $consumed): array {
+		$remaining = max(0, (max(0, $termDays) - self::spent(consumed: $consumed)));
+
+		return $this->stepsAhead(remaining: $remaining, ahead: array_slice(array_values($shares), count($consumed)));
+	}//end recompute()
+
+	/**
+	 * The days the finished steps used.
+	 *
+	 * @param array<int, int> $consumed Days actually used, one per finished step.
+	 *
+	 * @return int The days spent; a negative count spends nothing.
+	 */
+	private static function spent(array $consumed): int {
 		$spent = 0;
 		foreach ($consumed as $days) {
 			$spent += max(0, (int)$days);
 		}//end foreach
 
-		$remaining = max(0, (max(0, $termDays) - $spent));
-		$done = count($consumed);
-		$ahead = array_slice(array_values($shares), $done);
+		return $spent;
+	}//end spent()
 
+	/**
+	 * What is left split over the steps still to come.
+	 *
+	 * @param int               $remaining The days left of the chain term.
+	 * @param array<int, float> $ahead     The shares of the steps still to come.
+	 *
+	 * @return array{remainingDays: int, steps: array<int, int>, exhausted: bool}
+	 */
+	private function stepsAhead(int $remaining, array $ahead): array {
 		if (count($ahead) === 0) {
 			return ['remainingDays' => $remaining, 'steps' => [], 'exhausted' => ($remaining === 0)];
 		}
@@ -134,7 +155,7 @@ class ChainTermSplitter {
 			'steps' => $this->split(termDays: $remaining, shares: $ahead),
 			'exhausted' => ($remaining === 0),
 		];
-	}//end recompute()
+	}//end stepsAhead()
 
 	/**
 	 * The weight of every step, with undeclared steps sharing what is left.
@@ -155,6 +176,20 @@ class ChainTermSplitter {
 			return $values;
 		}
 
+		$each = $this->undeclaredWeight(values: $values, declared: $declared);
+
+		return $this->filledWeights(values: $values, each: $each);
+	}//end weights()
+
+	/**
+	 * The weight each undeclared step gets.
+	 *
+	 * @param array<int, float> $values   Every step's share, zero when undeclared.
+	 * @param array<int, float> $declared The declared shares.
+	 *
+	 * @return float
+	 */
+	private function undeclaredWeight(array $values, array $declared): float {
 		// Steps that declare nothing divide whatever the declared ones leave
 		// under a hundred, and get an equal sliver when they leave nothing.
 		$claimed = array_sum($declared);
@@ -165,6 +200,18 @@ class ChainTermSplitter {
 			$each = ($left / $undeclared);
 		}
 
+		return $each;
+	}//end undeclaredWeight()
+
+	/**
+	 * Every step's declared share, or the undeclared weight when it declares none.
+	 *
+	 * @param array<int, float> $values Every step's share, zero when undeclared.
+	 * @param float             $each   The weight of an undeclared step.
+	 *
+	 * @return array<int, float>
+	 */
+	private function filledWeights(array $values, float $each): array {
 		$weights = [];
 		foreach ($values as $share) {
 			if ($share > 0.0) {
@@ -176,5 +223,5 @@ class ChainTermSplitter {
 		}//end foreach
 
 		return $weights;
-	}//end weights()
+	}//end filledWeights()
 }//end class

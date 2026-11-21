@@ -9,7 +9,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\PersonListenerRegistrar;
+use OCA\Dossiq\Listener\CaseReadStateTriggersListener;
 use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
 use OCA\Dossiq\Listener\RoleTypeVocabularyListener;
@@ -100,6 +101,30 @@ class PersonListenerRegistrarTest extends TestCase {
 			actual: ($registered[CaseSchemaVocabularyListener::class] ?? []),
 		);
 	}//end testACaseSchemaUpdateReachesTheVocabulary()
+
+	/**
+	 * OpenRegister's per-object read-state question reaches the case-type narrowing, by name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	 */
+	public function testTheReadStateQuestionReachesTheCaseTypeNarrowing(): void {
+		$registered = [];
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener) use (&$registered): void {
+				$registered[$listener][] = $event;
+			}
+		);
+
+		(new PersonListenerRegistrar())->register(context: $context);
+
+		$this->assertSame(
+			expected: ['OCA\OpenRegister\Event\ObjectReadStatePropertiesEvent'],
+			actual: ($registered[CaseReadStateTriggersListener::class] ?? []),
+		);
+	}//end testTheReadStateQuestionReachesTheCaseTypeNarrowing()
 
 	/**
 	 * The three events are the ones OpenRegister raises for a person link.

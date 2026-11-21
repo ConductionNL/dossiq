@@ -14,6 +14,10 @@
 			"reason": "Suspends the case term through DeadlinePauseService and asks nobody for anything. In a macro the step after it (dossiq.askPerson) is what asks the handler, and that node is covered by its own queue source."
 		},
 		{
+			"mechanism": "flow:DossiqTxRaiseDecisionNode",
+			"reason": "Hands the case to the decision app as a delegated decision of a configured type. Dossiq asks nobody itself: the decision app's request puts it on the decision maker's queue, and Decidiq's request-decision step carries that mechanism."
+		},
+		{
 			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
 			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and Decidiq's request-decision step carries that mechanism."
 		},

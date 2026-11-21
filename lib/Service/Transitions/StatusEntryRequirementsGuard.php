@@ -75,7 +75,21 @@ class StatusEntryRequirementsGuard implements GuardEvaluatorInterface {
 		}
 
 		$requirements = ($this->caseTypes->read(caseTypeId: $caseTypeId)['entryRequirements'][$target] ?? []);
-		foreach ((array)$requirements as $requirement) {
+
+		return $this->firstUnmet(requirements: (array)$requirements, subject: ['case' => $case, 'userId' => $userId]);
+	}//end evaluate()
+
+	/**
+	 * The refusal of the first applying requirement whose document is missing, or a pass.
+	 *
+	 * @param array<mixed>                                     $requirements The requirements of the status being entered.
+	 * @param array{case: array<string, mixed>, userId: string} $subject      The case and the acting user.
+	 *
+	 * @return GuardResult The first unmet requirement's refusal, or a pass.
+	 */
+	private function firstUnmet(array $requirements, array $subject): GuardResult {
+		$case = $subject['case'];
+		foreach ($requirements as $requirement) {
 			$requirement = (array)$requirement;
 			$documentType = trim((string)($requirement['documentType'] ?? ''));
 			if ($documentType === '' || $this->applies(requirement: $requirement, case: $case) === false) {
@@ -85,7 +99,7 @@ class StatusEntryRequirementsGuard implements GuardEvaluatorInterface {
 			$result = $this->documents->evaluate(
 				guardConfig: ['type' => 'requiredDocument', 'documentType' => $documentType],
 				case: $case,
-				userId: $userId
+				userId: $subject['userId']
 			);
 			if ($result->passed === false) {
 				return $result;
@@ -93,7 +107,7 @@ class StatusEntryRequirementsGuard implements GuardEvaluatorInterface {
 		}
 
 		return new GuardResult(passed: true);
-	}//end evaluate()
+	}//end firstUnmet()
 
 	/**
 	 * Whether a requirement applies to the case: no condition, or one that holds or cannot be evaluated.

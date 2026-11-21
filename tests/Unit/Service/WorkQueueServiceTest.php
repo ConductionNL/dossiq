@@ -43,6 +43,9 @@ use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
@@ -54,10 +57,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyScoreRun
  * @covers \OCA\Dossiq\Service\Queue\QueueScoringRun
  * @covers \OCA\Dossiq\Service\Queue\CaseQueueSource
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -162,7 +167,6 @@ class WorkQueueServiceTest extends TestCase {
 	 */
 	private function seedOpenCase(array $fields): void {
 		$this->objects->saveObject(
-			'case',
 			array_merge(
 				[
 					'assignee' => 'jan',
@@ -172,7 +176,8 @@ class WorkQueueServiceTest extends TestCase {
 					'isDraft' => false,
 				],
 				$fields
-			)
+			),
+			new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
 		);
 	}//end seedOpenCase()
 
@@ -219,7 +224,7 @@ class WorkQueueServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function testTheAdministeredCalendarCountsTheBusinessDays(): void {
 		$calendar = $this->createMock(WorkingDayRoll::class);
@@ -426,7 +431,8 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComputeQueueOnlyReturnsCallersOpenItems(): void {
-		$this->objects->saveObject('case', [
+		$this->objects->saveObject(
+		[
 			'id' => 'case-1',
 			'title' => 'Jan open case',
 			'assignee' => 'jan',
@@ -435,8 +441,11 @@ class WorkQueueServiceTest extends TestCase {
 			'isDraft' => false,
 			'deadline' => '2026-07-16',
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('case', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'case-2',
 			'title' => 'Jan closed case',
 			'assignee' => 'jan',
@@ -445,15 +454,20 @@ class WorkQueueServiceTest extends TestCase {
 			'statusHiddenInLists' => false,
 			'isDraft' => false,
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('case', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'case-3',
 			'title' => 'Marie open case',
 			'assignee' => 'marie',
 			'endDate' => '',
 			'deadline' => '2026-07-14',
 			'priority' => 'normal',
-		]);
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
 
@@ -466,7 +480,8 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComputeQueuePrefersActiveTermijnDeadlineOverCaseField(): void {
-		$this->objects->saveObject('case', [
+		$this->objects->saveObject(
+		[
 			'id' => 'case-1',
 			'title' => 'Case with termijn',
 			'assignee' => 'jan',
@@ -475,13 +490,18 @@ class WorkQueueServiceTest extends TestCase {
 			'isDraft' => false,
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('deadlineInstance', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'ti-1',
 			'case' => 'case-1',
 			'status' => 'lopend',
 			'endDateCurrent' => '2026-07-14',
-		]);
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance'))
+		);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
 
@@ -493,10 +513,11 @@ class WorkQueueServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	public function testComputeQueueReadsAPausedTerm(): void {
-		$this->objects->saveObject('case', [
+		$this->objects->saveObject(
+		[
 			'id' => 'case-1',
 			'title' => 'Paused case',
 			'assignee' => 'jan',
@@ -505,19 +526,27 @@ class WorkQueueServiceTest extends TestCase {
 			'isDraft' => false,
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('deadlineInstance', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'ti-1',
 			'case' => 'case-1',
 			'status' => 'paused',
 			'endDateCurrent' => '2026-07-20',
-		]);
-		$this->objects->saveObject('deadlineInstance', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'ti-2',
 			'case' => 'case-1',
 			'status' => 'completed',
 			'endDateCurrent' => '2026-07-14',
-		]);
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance'))
+		);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
 
@@ -528,7 +557,8 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComputeQueueExcludesTerminalTasksAndSortsByScore(): void {
-		$this->objects->saveObject('case', [
+		$this->objects->saveObject(
+		[
 			'id' => 'case-1',
 			'title' => 'Distant case',
 			'assignee' => 'jan',
@@ -537,23 +567,31 @@ class WorkQueueServiceTest extends TestCase {
 			'isDraft' => false,
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('caseTask', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'task-1',
 			'title' => 'Overdue task',
 			'assignee' => 'jan',
 			'status' => 'active',
 			'dueDate' => '2026-07-01',
 			'priority' => 'normal',
-		]);
-		$this->objects->saveObject('caseTask', [
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask'))
+		);
+		$this->objects->saveObject(
+		[
 			'id' => 'task-2',
 			'title' => 'Completed task',
 			'assignee' => 'jan',
 			'status' => 'completed',
 			'dueDate' => '2026-07-01',
 			'priority' => 'normal',
-		]);
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask'))
+		);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
 
@@ -568,14 +606,17 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComputeQueueReturnsEmptyForUnknownUser(): void {
-		$this->objects->saveObject('case', [
+		$this->objects->saveObject(
+		[
 			'id' => 'case-1',
 			'assignee' => 'jan',
 			'endDate' => '',
 			'statusHiddenInLists' => false,
 			'isDraft' => false,
 			'priority' => 'normal',
-		]);
+		],
+		new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'))
+		);
 
 		$items = $this->service->computeQueue('nobody', new DateTimeImmutable('2026-07-13'));
 
@@ -726,7 +767,7 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseTypesOwnThresholdWins(): void {
-		$this->objects->saveObject('caseType', ['id' => 'woo', 'queueCriticalDays' => 10]);
+		$this->objects->saveObject(['id' => 'woo', 'queueCriticalDays' => 10], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
 		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'woo', 'deadline' => '2026-07-23']);
 		$this->seedOpenCase(['id' => 'case-2', 'caseType' => 'other', 'deadline' => '2026-07-23']);
 
@@ -743,7 +784,7 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEmptyOverrideFallsBack(): void {
-		$this->objects->saveObject('caseType', ['id' => 'melding', 'queueWarningDays' => 12, 'queueCriticalDays' => null]);
+		$this->objects->saveObject(['id' => 'melding', 'queueWarningDays' => 12, 'queueCriticalDays' => null], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
 		// 3 working days on is Thursday 07-16; 12 working days on is Wednesday 07-29.
 		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'melding', 'deadline' => '2026-07-16']);
 		$this->seedOpenCase(['id' => 'case-2', 'caseType' => 'melding', 'deadline' => '2026-07-29']);
@@ -761,7 +802,7 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheTermWarningFieldsDoNotSteerTheTier(): void {
-		$this->objects->saveObject('caseType', ['id' => 'bezwaar', 'statutoryWarningDays' => 20, 'plannedWarningDays' => 20]);
+		$this->objects->saveObject(['id' => 'bezwaar', 'statutoryWarningDays' => 20, 'plannedWarningDays' => 20], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
 		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'bezwaar', 'deadline' => '2026-07-29']);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
@@ -775,10 +816,10 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComputeWorkloadCountsOpenCasesPerHandler(): void {
-		$this->objects->saveObject('case', ['id' => 'c1', 'assignee' => 'jan', 'endDate' => '']);
-		$this->objects->saveObject('case', ['id' => 'c2', 'assignee' => 'jan', 'endDate' => '']);
-		$this->objects->saveObject('case', ['id' => 'c3', 'assignee' => 'marie', 'endDate' => '']);
-		$this->objects->saveObject('case', ['id' => 'c4', 'assignee' => 'jan', 'endDate' => '2026-06-01']);
+		$this->objects->saveObject(['id' => 'c1', 'assignee' => 'jan', 'endDate' => ''], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c2', 'assignee' => 'jan', 'endDate' => ''], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c3', 'assignee' => 'marie', 'endDate' => ''], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c4', 'assignee' => 'jan', 'endDate' => '2026-06-01'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
 
 		$workload = $this->service->computeWorkload();
 
@@ -929,7 +970,7 @@ class WorkQueueServiceTest extends TestCase {
 			['id' => 't5', 'status' => 'lopend', 'endDateCurrent' => ''],
 			['id' => 't6', 'status' => 'lopend', 'endDateCurrent' => '2026-07-02', 'case' => 'case-2'],
 		] as $term) {
-			$this->objects->saveObject('deadlineInstance', ($term + ['case' => 'case-1']));
+			$this->objects->saveObject($term + ['case' => 'case-1'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance')));
 		}
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
@@ -948,9 +989,9 @@ class WorkQueueServiceTest extends TestCase {
 		$warnings = [];
 		$store    = new FailingWorkQueueStore();
 		$store->failOn = ['deadlineInstance'];
-		$store->saveObject('case', ['id' => 'case-1', 'assignee' => 'jan', 'deadline' => '2026-07-20', 'statusHiddenInLists' => false, 'isDraft' => false]);
-		$store->saveObject('case', ['id' => 'case-2', 'assignee' => 'jan', 'statusHiddenInLists' => false, 'isDraft' => false]);
-		$store->saveObject('deadlineInstance', ['id' => 't1', 'case' => 'case-1', 'status' => 'lopend', 'endDateCurrent' => '2026-07-14']);
+		$store->saveObject(['id' => 'case-1', 'assignee' => 'jan', 'deadline' => '2026-07-20', 'statusHiddenInLists' => false, 'isDraft' => false], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject(['id' => 'case-2', 'assignee' => 'jan', 'statusHiddenInLists' => false, 'isDraft' => false], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject(['id' => 't1', 'case' => 'case-1', 'status' => 'lopend', 'endDateCurrent' => '2026-07-14'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance')));
 
 		$failed = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadline', 'id');
 
@@ -974,17 +1015,17 @@ class WorkQueueServiceTest extends TestCase {
 	public function testTheCaseTypeIsReadOncePerTypeAndAFailureFallsBack(): void {
 		$warnings = [];
 		$store    = new FailingWorkQueueStore();
-		$store->saveObject('caseType', ['id' => 'wide', 'queueCriticalDays' => 10]);
+		$store->saveObject(['id' => 'wide', 'queueCriticalDays' => 10], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
 		$case = static fn (string $id, mixed $type): array => [
 			'id' => $id, 'assignee' => 'jan', 'caseType' => $type, 'deadline' => '2026-07-23', 'statusHiddenInLists' => false, 'isDraft' => false,
 		];
-		$store->saveObject('case', $case('by-id', 'wide'));
-		$store->saveObject('case', $case('by-id-again', 'wide'));
-		$store->saveObject('case', $case('by-object-id', ['id' => 'wide']));
-		$store->saveObject('case', $case('by-object-uuid', ['uuid' => 'wide']));
-		$store->saveObject('case', $case('empty-object', []));
-		$store->saveObject('case', $case('a-number', 7));
-		$store->saveObject('case', $case('unknown', 'gone'));
+		$store->saveObject($case('by-id', 'wide'), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('by-id-again', 'wide'), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('by-object-id', ['id' => 'wide']), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('by-object-uuid', ['uuid' => 'wide']), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('empty-object', []), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('a-number', 7), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$store->saveObject($case('unknown', 'gone'), new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
 
 		$tiers = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadlineTier', 'id');
 
@@ -1040,10 +1081,10 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheWaitingOnCountIsScopedToAHandler(): void {
-		$this->objects->saveObject('case', ['id' => 'c1', 'assignee' => 'jan', 'waitingOn' => 'applicant']);
-		$this->objects->saveObject('case', ['id' => 'c2', 'assignee' => 'marie', 'waitingOn' => 'third_party']);
-		$this->objects->saveObject('case', ['id' => 'c3', 'assignee' => 'jan']);
-		$this->objects->saveObject('case', ['id' => 'c4', 'assignee' => 'jan', 'endDate' => '2026-01-01']);
+		$this->objects->saveObject(['id' => 'c1', 'assignee' => 'jan', 'waitingOn' => 'applicant'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c2', 'assignee' => 'marie', 'waitingOn' => 'third_party'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c3', 'assignee' => 'jan'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
+		$this->objects->saveObject(['id' => 'c4', 'assignee' => 'jan', 'endDate' => '2026-01-01'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case')));
 
 		$all = $this->service->countByWaitingOn();
 		$jan = $this->service->countByWaitingOn('jan');
@@ -1064,8 +1105,8 @@ class WorkQueueServiceTest extends TestCase {
 	 */
 	public function testATaskIsScoredOnItsDueDate(): void {
 		$this->config['queue_critical_days'] = '10';
-		$this->objects->saveObject('caseTask', ['id' => 't1', 'assignee' => 'jan', 'title' => 'Bel terug', 'status' => 'active', 'dueDate' => '2026-07-23', 'case' => 'case-9', 'priority' => 'high']);
-		$this->objects->saveObject('caseTask', ['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'dueDate' => '']);
+		$this->objects->saveObject(['id' => 't1', 'assignee' => 'jan', 'title' => 'Bel terug', 'status' => 'active', 'dueDate' => '2026-07-23', 'case' => 'case-9', 'priority' => 'high'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask')));
+		$this->objects->saveObject(['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'dueDate' => ''], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask')));
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
 
@@ -1100,8 +1141,8 @@ class WorkQueueServiceTest extends TestCase {
 	 */
 	public function testGoldenQueueWorld(): void {
 		$this->config['queue_critical_days'] = '2';
-		$this->objects->saveObject('caseType', ['id' => 'wide', 'queueCriticalDays' => 10, 'queueWarningDays' => 15]);
-		$this->objects->saveObject('caseType', ['id' => 'narrow', 'queueWarningDays' => 4]);
+		$this->objects->saveObject(['id' => 'wide', 'queueCriticalDays' => 10, 'queueWarningDays' => 15], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
+		$this->objects->saveObject(['id' => 'narrow', 'queueWarningDays' => 4], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseType')));
 		$this->seedOpenCase(['id' => 'a', 'title' => 'Alpha', 'identifier' => 'Z-1', 'caseType' => 'wide', 'deadline' => '2026-07-20', 'priority' => 'HIGH', 'startDate' => '2026-06-01', 'status' => 's1']);
 		$this->seedOpenCase(['id' => 'b', 'identifier' => 'Z-2', 'caseType' => ['id' => 'wide'], 'deadline' => '2026-07-01', 'priority' => 'low', 'waitingOn' => 'applicant']);
 		$this->seedOpenCase(['id' => 'c', 'caseType' => 'narrow', 'deadline' => '2026-07-16', 'priority' => 'urgent', 'waitingOn' => ' thirdParty ']);
@@ -1109,10 +1150,10 @@ class WorkQueueServiceTest extends TestCase {
 		$this->seedOpenCase(['id' => 'e', 'caseType' => 'missing', 'deadline' => 'not a date']);
 		$this->seedOpenCase(['id' => 'f', 'endDate' => '2026-07-01', 'deadline' => '2026-07-14']);
 		$this->seedOpenCase(['id' => 'g', 'assignee' => 'marie', 'deadline' => '2026-07-14']);
-		$this->objects->saveObject('deadlineInstance', ['id' => 't1', 'case' => 'a', 'status' => 'lopend', 'endDateCurrent' => '2026-07-15']);
-		$this->objects->saveObject('caseTask', ['id' => 'k1', 'assignee' => 'jan', 'title' => 'Call', 'status' => 'active', 'dueDate' => '2026-07-14', 'case' => 'a', 'priority' => 'urgent']);
-		$this->objects->saveObject('caseTask', ['id' => 'k2', 'assignee' => 'jan', 'status' => 'completed', 'dueDate' => '2026-07-14']);
-		$this->objects->saveObject('caseTask', ['id' => 'k3', 'assignee' => 'jan', 'status' => 'active']);
+		$this->objects->saveObject(['id' => 't1', 'case' => 'a', 'status' => 'lopend', 'endDateCurrent' => '2026-07-15'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'deadlineInstance')));
+		$this->objects->saveObject(['id' => 'k1', 'assignee' => 'jan', 'title' => 'Call', 'status' => 'active', 'dueDate' => '2026-07-14', 'case' => 'a', 'priority' => 'urgent'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask')));
+		$this->objects->saveObject(['id' => 'k2', 'assignee' => 'jan', 'status' => 'completed', 'dueDate' => '2026-07-14'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask')));
+		$this->objects->saveObject(['id' => 'k3', 'assignee' => 'jan', 'status' => 'active'], new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'caseTask')));
 		$covered = [
 			['id' => 'cov-1', 'title' => 'Covered', 'caseType' => 'narrow', 'endDate' => '', 'deadline' => '2026-07-10', 'coveredFor' => ['absentee' => 'anouk']],
 			['id' => 'a', 'coveredFor' => ['absentee' => 'piet']],
@@ -1174,7 +1215,9 @@ class FakeWorkQueueStore {
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		return ($this->store[(string)$schema][$id] ?? null);
 	}//end find()
 
@@ -1186,7 +1229,8 @@ class FakeWorkQueueStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$schema = $options->target->schema;
 		$this->store[$schema][(string)$object['id']] = $object;
 		return $object;
 	}//end saveObject()
@@ -1258,13 +1302,15 @@ class FailingWorkQueueStore extends FakeWorkQueueStore {
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->finds[(string) $schema][] = $id;
 		if (in_array((string) $schema, $this->failOn, true) === true) {
 			throw new \RuntimeException('down');
 		}
 
-		return parent::find($id, $register, $schema);
+		return parent::find($id, $options);
 	}//end find()
 
 	/**

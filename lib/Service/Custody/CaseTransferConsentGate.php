@@ -84,6 +84,13 @@ class CaseTransferConsentGate {
 	public const CONSENT_UNCHECKED = 'consent-unchecked';
 
 	/**
+	 * The case type flag that makes every share with an outside party need a consent naming it.
+	 *
+	 * @var string
+	 */
+	public const SHARING_FLAG = 'requiresConsentForSharing';
+
+	/**
 	 * How many consents one case read takes at most.
 	 *
 	 * @var int
@@ -160,8 +167,22 @@ class CaseTransferConsentGate {
 			}
 		}
 
-		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
-		$candidates = $this->consentsFor(caseId: $caseId, receiver: $receiver);
+		return $this->consentVerdict(transfer: ['caseId' => $caseId, 'receiver' => $receiver, 'atDate' => $atDate, 'crosses' => $crosses]);
+	}//end assess()
+
+	/**
+	 * The verdict of the recorded consents for a hand-off that is not settled inside one organisation.
+	 *
+	 * @param array<string, mixed> $transfer The `caseId`, the trimmed `receiver`, the `atDate` (ISO 8601, or empty for now)
+	 *                                       and whether it `crosses` an organisation.
+	 *
+	 * @return array<string, mixed> The verdict, and the scope when there is one.
+	 */
+	private function consentVerdict(array $transfer): array {
+		$receiver = $transfer['receiver'];
+		$crosses = $transfer['crosses'];
+		$moment = $this->instant(value: $transfer['atDate']) ?? new DateTimeImmutable();
+		$candidates = $this->consentsFor(caseId: $transfer['caseId'], receiver: $receiver);
 		$scan = $this->scanConsents(candidates: $candidates, moment: $moment);
 		if ($scan['covering'] !== null) {
 			return $this->verdict(outcome: $this->granted(consent: $scan['covering']), crosses: $crosses);
@@ -170,7 +191,7 @@ class CaseTransferConsentGate {
 		$refusal = $this->refusals->uncovered(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
 
 		return $this->verdict(outcome: $refusal, crosses: $crosses);
-	}//end assess()
+	}//end consentVerdict()
 
 	/**
 	 * The outcome of a move inside one organisation, or null when it needs a consent check.
@@ -183,7 +204,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return Outcome|null The outcome, or null to check the recorded consents.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	private function insideOutcome(string $caseId): ?array {
 		try {
@@ -313,6 +334,53 @@ class CaseTransferConsentGate {
 	}//end scopeOf()
 
 	/**
+	 * Whether the case may be shared with this outside party.
+	 *
+	 * Only a case whose case type sets `requiresConsentForSharing` asks for a
+	 * consent; it then needs one that names the party and covers today, read
+	 * exactly as a hand-off reads it. A case type that cannot be read refuses:
+	 * a share that cannot be checked does not leave.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $party  Who it would be shared with.
+	 *
+	 * @return array{
+	 *     allowed: bool,
+	 *     rule: string,
+	 *     sentence: string,
+	 *     consent: array<string, mixed>|null,
+	 *     scope: array<int, string>,
+	 *     until: string,
+	 *     crossesOrganisation: bool
+	 * } The verdict, worded for a share.
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-consent-is-recorded-and-revoked-on-the-case-req-sdc-consent-01
+	 */
+	public function assessSharing(string $caseId, string $party): array {
+		try {
+			$required = $this->caseTypeFlag(caseId: trim($caseId), flag: self::SHARING_FLAG);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq consent: the case type could not be read for the sharing rule',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return $this->verdict(outcome: $this->refusals->notShared(refusal: $this->refusals->unchecked()), crosses: true);
+		}
+
+		if ($required === false) {
+			return $this->verdict(outcome: $this->granted(consent: null), crosses: true);
+		}
+
+		$verdict = $this->assess(caseId: $caseId, sourceOrganisation: '', receivingOrg: $party);
+		if ($verdict['allowed'] === true) {
+			return $verdict;
+		}
+
+		return array_replace($verdict, ['sentence' => $this->refusals->notShared(refusal: $verdict)['sentence']]);
+	}//end assessSharing()
+
+	/**
 	 * Whether this case's type demands consent for a move inside the organisation.
 	 *
 	 * Declared on the case type rather than decided here, under ADR-031: an
@@ -326,7 +394,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return bool Whether an internal move needs consent too.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function consentRequiredInside(string $caseId): bool {
 		return (($this->insideOutcome(caseId: $caseId)['allowed'] ?? false) === false);
@@ -341,41 +409,91 @@ class CaseTransferConsentGate {
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read, or the case has none.
 	 *
-	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	private function readInsideRule(string $caseId): bool {
+		return $this->caseTypeFlag(caseId: $caseId, flag: 'consentRequiredInsideOrganisation');
+	}//end readInsideRule()
+
+	/**
+	 * One boolean flag of the case's case type.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $flag   The case type property.
+	 *
+	 * @return bool Whether the case type sets it to true.
+	 *
+	 * @throws RuntimeException When the case or its case type cannot be read.
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
+	 */
+	private function caseTypeFlag(string $caseId, string $flag): bool {
 		if ($caseId === '') {
 			throw new RuntimeException('No case id');
 		}
 
-		[$objectService, $register] = $this->context();
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'case_schema'),
-			id: $caseId,
-		);
-		if ($case === null) {
-			throw new RuntimeException('Case not found');
-		}
+		$context = $this->dossierRegister()->context();
+		$case = $this->readCase(context: $context, caseId: $caseId);
 
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseTypeId === '') {
 			throw new RuntimeException('Case has no case type');
 		}
 
+		return (($this->readCaseType(context: $context, caseTypeId: $caseTypeId)[$flag] ?? false) === true);
+	}//end caseTypeFlag()
+
+	/**
+	 * Read the case.
+	 *
+	 * @param array{0: object, 1: string} $context The OpenRegister object service and the dossier register.
+	 * @param string                      $caseId  The trimmed case id.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RuntimeException When the case is not found.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function readCase(array $context, string $caseId): array {
+		$case = $this->findObjectAsArray(
+			objectService: $context[0],
+			register: $context[1],
+			schema: $this->dossierRegister()->schema(key: 'case_schema'),
+			id: $caseId,
+		);
+		if ($case === null) {
+			throw new RuntimeException('Case not found');
+		}
+
+		return $case;
+	}//end readCase()
+
+	/**
+	 * Read the case type.
+	 *
+	 * @param array{0: object, 1: string} $context    The OpenRegister object service and the dossier register.
+	 * @param string                      $caseTypeId The case type id.
+	 *
+	 * @return array<string, mixed> The case type.
+	 *
+	 * @throws RuntimeException When the case type is not found.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function readCaseType(array $context, string $caseTypeId): array {
 		$caseType = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'case_type_schema'),
+			objectService: $context[0],
+			register: $context[1],
+			schema: $this->dossierRegister()->schema(key: 'case_type_schema'),
 			id: $caseTypeId,
 		);
 		if ($caseType === null) {
 			throw new RuntimeException('Case type not found');
 		}
 
-		return (($caseType['consentRequiredInsideOrganisation'] ?? false) === true);
-	}//end readInsideRule()
+		return $caseType;
+	}//end readCaseType()
 
 	/**
 	 * The consents recorded for a case that name this receiver.
@@ -392,11 +510,11 @@ class CaseTransferConsentGate {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'consent_schema'),
+				schema: $this->dossierRegister()->schema(key: 'consent_schema'),
 				filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE],
 			);
 		} catch (Throwable $e) {
@@ -408,6 +526,18 @@ class CaseTransferConsentGate {
 			return [];
 		}
 
+		return $this->namingReceiver(rows: $rows, receiver: $receiver);
+	}//end consentsFor()
+
+	/**
+	 * The consent rows whose recipient parties name this receiver.
+	 *
+	 * @param array<int, array<string, mixed>> $rows     The recorded consents.
+	 * @param string                           $receiver The receiving organisation.
+	 *
+	 * @return array<int, array<string, mixed>> The candidates.
+	 */
+	private function namingReceiver(array $rows, string $receiver): array {
 		$named = [];
 		foreach ($rows as $row) {
 			foreach ((array)($row['recipientParties'] ?? []) as $party) {
@@ -419,7 +549,7 @@ class CaseTransferConsentGate {
 		}
 
 		return $named;
-	}//end consentsFor()
+	}//end namingReceiver()
 
 	/**
 	 * Shape one verdict.
@@ -465,43 +595,12 @@ class CaseTransferConsentGate {
 
 		return $date;
 	}//end instant()
-
 	/**
-	 * The object service and the register, or an exception.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
+	 * @return DossierRegister The register reader.
 	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class

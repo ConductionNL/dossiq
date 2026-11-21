@@ -227,7 +227,7 @@ async function seedParentWithChildren(options: {
  */
 function subCasesSection(page) {
 	return page.locator(
-		'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+		'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-sub-cases"]',
 	)
 }
 
@@ -377,7 +377,7 @@ async function openSubCasesSectionOrSkip(page, onCase?: string) {
 		// satisfied by the neighbouring table and this test would pass with the
 		// sub-cases list missing entirely.
 		const panel = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-sub-cases"]',
 		)
 		await expect
 			.poll(
@@ -702,7 +702,7 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 		// The sub-case is a case: it opens as one, on its own Related tab.
 		await openSubCasesSectionOrSkip(page, childId)
 		const related = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
 		)
 
 		// THE PARENT BY NAME, and the way BACK rather than a label.

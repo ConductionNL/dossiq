@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use ZipArchive;
 /**
  * Builds a manifest-bearing, type-foldered ZIP export of a dossier.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
  */
 class ZipManifestBuilder {
 	/**
@@ -86,7 +86,7 @@ class ZipManifestBuilder {
 	 *
 	 * @return string The manifest.csv content.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function buildManifest(array $documents): string {
 		$handle = fopen('php://temp', 'r+');
@@ -119,7 +119,7 @@ class ZipManifestBuilder {
 	 *
 	 * @return array<int, array<string, mixed>> The clearance-filtered list.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function filterByClearance(?IUser $user, array $documents): array {
 		if ($user === null) {
@@ -146,49 +146,14 @@ class ZipManifestBuilder {
 	 *
 	 * @throws \RuntimeException When the ZIP archive cannot be created.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T04
 	 */
 	public function buildZip(string $targetPath, ?IUser $user, array $documents, string $layout = self::LAYOUT_PER_TYPE): array {
 		$candidateCount = count($documents);
 		$included = $this->filterByClearance(user: $user, documents: $documents);
 		$excluded = ($candidateCount - count($included));
 
-		$zip = new ZipArchive();
-		if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
-			throw new RuntimeException('Could not create ZIP archive at ' . $targetPath);
-		}
-
-		// Manifest.csv at the archive root.
-		$zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
-
-		$usedNames = [];
-		foreach ($included as $doc) {
-			$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
-			$fileName = (string)($doc['fileName'] ?? '');
-			if ($infoId === '' || $fileName === '') {
-				continue;
-			}
-
-			$entryName = $this->buildEntryName(
-				doc: $doc,
-				fileName: $fileName,
-				layout: $layout,
-				usedNames: $usedNames,
-			);
-
-			try {
-				// Read one file at a time; content is released before the next iteration.
-				$content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
-				$zip->addFromString($entryName, $content);
-				unset($content);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
-				);
-			}
-		}//end foreach
-
-		$zip->close();
+		$this->writeArchive(run: new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout), included: $included);
 
 		return [
 			'path' => $targetPath,
@@ -198,30 +163,96 @@ class ZipManifestBuilder {
 	}//end buildZip()
 
 	/**
+	 * Write the manifest and every included document into the archive, and close it.
+	 *
+	 * @param DossierZipRun                    $run      The archive being written.
+	 * @param array<int, array<string, mixed>> $included The documents the user is cleared for.
+	 *
+	 * @return void
+	 */
+	private function writeArchive(DossierZipRun $run, array $included): void {
+		// Manifest.csv at the archive root.
+		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
+		foreach ($included as $doc) {
+			$this->addDocument(run: $run, doc: $doc);
+		}
+
+		$run->zip->close();
+	}//end writeArchive()
+
+	/**
+	 * Create (or overwrite) the archive at a path.
+	 *
+	 * @param string $targetPath Filesystem path to write the ZIP to.
+	 *
+	 * @return ZipArchive The open archive.
+	 *
+	 * @throws \RuntimeException When the ZIP archive cannot be created.
+	 */
+	private static function openArchive(string $targetPath): ZipArchive {
+		$zip = new ZipArchive();
+		if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
+			throw new RuntimeException('Could not create ZIP archive at ' . $targetPath);
+		}
+
+		return $zip;
+	}//end openArchive()
+
+	/**
+	 * Write one document's file into the archive; a document without an id or file name is left out.
+	 *
+	 * @param DossierZipRun        $run The archive being written.
+	 * @param array<string, mixed> $doc The document.
+	 *
+	 * @return void
+	 */
+	private function addDocument(DossierZipRun $run, array $doc): void {
+		$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
+		$fileName = (string)($doc['fileName'] ?? '');
+		if ($infoId === '' || $fileName === '') {
+			return;
+		}
+
+		$entryName = $this->buildEntryName(run: $run, doc: $doc);
+
+		try {
+			// Read one file at a time; content is released before the next iteration.
+			$content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
+			$run->zip->addFromString($entryName, $content);
+			unset($content);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
+			);
+		}
+	}//end addDocument()
+
+	/**
 	 * Compute the unique in-archive entry name for a document.
 	 *
-	 * @param array<string, mixed> $doc The document record.
-	 * @param string $fileName The base filename.
-	 * @param string $layout self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
-	 * @param array<string, int> $usedNames Reference of already-used names for de-duplication.
+	 * Records the name in the run's already-used names for de-duplication.
+	 *
+	 * @param DossierZipRun        $run The archive being written, with its layout (self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT).
+	 * @param array<string, mixed> $doc The document record, with its base `fileName`.
 	 *
 	 * @return string The unique entry name.
 	 */
-	private function buildEntryName(array $doc, string $fileName, string $layout, array &$usedNames): string {
+	private function buildEntryName(DossierZipRun $run, array $doc): string {
+		$fileName = (string)($doc['fileName'] ?? '');
 		$prefix = '';
-		if ($layout === self::LAYOUT_PER_TYPE) {
+		if ($run->layout === self::LAYOUT_PER_TYPE) {
 			$type = (string)($doc['informatieobjecttype'] ?? 'unknown');
 			$prefix = $this->sanitizeFolderName(name: $type) . '/';
 		}
 
 		$entry = $prefix . $this->sanitizeFileName(name: $fileName);
 
-		if (isset($usedNames[$entry]) === false) {
-			$usedNames[$entry] = 0;
+		if (isset($run->usedNames[$entry]) === false) {
+			$run->usedNames[$entry] = 0;
 			return $entry;
 		}
 
-		$usedNames[$entry]++;
+		$run->usedNames[$entry]++;
 
 		$base = $fileName;
 		$extension = '';
@@ -231,7 +262,7 @@ class ZipManifestBuilder {
 			$extension = substr($fileName, $dot);
 		}
 
-		return $prefix . $this->sanitizeFileName(name: $base) . '_' . $usedNames[$entry] . $extension;
+		return $prefix . $this->sanitizeFileName(name: $base) . '_' . $run->usedNames[$entry] . $extension;
 	}//end buildEntryName()
 
 	/**

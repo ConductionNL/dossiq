@@ -21,14 +21,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -44,7 +44,7 @@ use ReflectionParameter;
  * stays with dossiq, as before the handoff. A refusal is an error, because
  * finance looked at the payout and said no.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutRequester {
 	/**
@@ -76,15 +76,32 @@ class PayoutRequester {
 	 *
 	 * @throws RuntimeException When the finance app refuses the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function request(array $payout): ?array {
 		if (class_exists(PayableRaisedEvent::class) === false) {
 			return null;
 		}
 
-		$arguments = [
-			'sourceApp' => Application::APP_ID,
+		$arguments = $this->baseArguments(payout: $payout);
+		$arguments = $this->withDeclaredArguments(arguments: $arguments, payout: $payout);
+
+		$event = new PayableRaisedEvent(...$arguments);
+		$this->dispatcher->dispatchTyped($event);
+
+		return self::answer(handled: $event->isHandled(), reply: ['result' => $event->getResult(), 'error' => $event->getError()]);
+	}//end request()
+
+	/**
+	 * The payout command's arguments every finance app version declares.
+	 *
+	 * @param array<string, mixed> $payout The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function baseArguments(array $payout): array {
+		return [
+			'sourceApp' => AppIdentity::APP_ID,
 			'amount' => ((int)$payout['amountCents']) / 100,
 			'payeeName' => (string)$payout['payeeName'],
 			'payeeIban' => (string)$payout['iban'],
@@ -95,6 +112,17 @@ class PayoutRequester {
 			'correlationId' => (string)($payout['correlationId'] ?? ''),
 			'dueOn' => (string)($payout['dueOn'] ?? ''),
 		];
+	}//end baseArguments()
+
+	/**
+	 * Add the newer arguments the installed finance app declares.
+	 *
+	 * @param array<string, mixed> $arguments The named arguments so far.
+	 * @param array<string, mixed> $payout    The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function withDeclaredArguments(array $arguments, array $payout): array {
 		// An older shillinq lacks the newer parameters, and an unknown named
 		// argument is a fatal error, so each one goes only where it is declared.
 		$accepted = $this->acceptedParameters();
@@ -108,11 +136,8 @@ class PayoutRequester {
 			}
 		}
 
-		$event = new PayableRaisedEvent(...$arguments);
-		$this->dispatcher->dispatchTyped($event);
-
-		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
-	}//end request()
+		return $arguments;
+	}//end withDeclaredArguments()
 
 	/**
 	 * The parameter names the installed finance app's payout command declares.
@@ -136,7 +161,7 @@ class PayoutRequester {
 	 *
 	 * @throws RuntimeException When the finance app refuses, for example because it already approved the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function cancel(string $reference, string $reason): ?array {
 		if (class_exists(PayableCancelRequestedEvent::class) === false) {
@@ -144,27 +169,27 @@ class PayoutRequester {
 		}
 
 		$event = new PayableCancelRequestedEvent(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			reference: $reference,
 			reason: $reason,
 		);
 		$this->dispatcher->dispatchTyped($event);
 
-		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
+		return self::answer(handled: $event->isHandled(), reply: ['result' => $event->getResult(), 'error' => $event->getError()]);
 	}//end cancel()
 
 	/**
 	 * Read a command's answer.
 	 *
-	 * @param bool                      $handled Whether a listener accepted it.
-	 * @param array<string, mixed>|null $result  The answer.
-	 * @param string|null               $error   The refusal.
+	 * @param bool                                                         $handled Whether a listener accepted it.
+	 * @param array{result: array<string, mixed>|null, error: string|null} $reply   `result` the answer; `error` the refusal.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when nobody answered.
 	 *
 	 * @throws RuntimeException When the command was refused.
 	 */
-	private static function answer(bool $handled, ?array $result, ?string $error): ?array {
+	private static function answer(bool $handled, array $reply): ?array {
+		[$result, $error] = [$reply['result'], $reply['error']];
 		if ($handled === true && $result !== null) {
 			return [
 				'payableId' => (string)($result['payableId'] ?? ''),

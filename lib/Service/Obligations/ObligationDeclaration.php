@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ namespace OCA\Dossiq\Service\Obligations;
 /**
  * Reads the obligation kinds a case type declares.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ObligationDeclaration {
 
@@ -89,13 +89,27 @@ class ObligationDeclaration {
 	public const BLOCKS_CLOSING = 'closing';
 
 	/**
+	 * A refused or lapsed obligation stays open and blocking.
+	 *
+	 * @var string
+	 */
+	public const WHEN_UNMET_STAY = 'stay';
+
+	/**
+	 * A refused or lapsed obligation is withdrawn, releasing the case.
+	 *
+	 * @var string
+	 */
+	public const WHEN_UNMET_WITHDRAW = 'withdraw';
+
+	/**
 	 * The obligation kinds this case type declares, keyed by kind.
 	 *
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
 	 * @return array<string, array<string, mixed>> The declarations.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function kindsFor(array $caseType): array {
 		$declared = ($caseType['obligationKinds'] ?? null);
@@ -121,6 +135,7 @@ class ObligationDeclaration {
 				'settledBy' => (string)($row['settledBy'] ?? ''),
 				'blocks' => $this->blocksOf(row: $row),
 				'term' => $this->termOf(row: $row),
+				'whenUnmet' => $this->whenUnmetOf(row: $row),
 			];
 		}
 
@@ -134,7 +149,7 @@ class ObligationDeclaration {
 	 *
 	 * @return array<int, string> Status ids, or the closing token.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function blocksOf(array $row): array {
 		$blocks = ($row['blocks'] ?? null);
@@ -168,7 +183,7 @@ class ObligationDeclaration {
 	 *
 	 * @return int|null The term, or null when the kind declares none.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function termOf(array $row): ?int {
 		$term = ($row['term'] ?? null);
@@ -185,6 +200,26 @@ class ObligationDeclaration {
 	}//end termOf()
 
 	/**
+	 * What one declared kind does when it is refused or its due date passes.
+	 *
+	 * Anything but `withdraw` reads as `stay`: an unknown value keeps the
+	 * case blocked rather than releasing it.
+	 *
+	 * @param array<string, mixed> $row The declaration row.
+	 *
+	 * @return string `stay` or `withdraw`.
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
+	 */
+	private function whenUnmetOf(array $row): string {
+		if (($row['whenUnmet'] ?? null) === self::WHEN_UNMET_WITHDRAW) {
+			return self::WHEN_UNMET_WITHDRAW;
+		}
+
+		return self::WHEN_UNMET_STAY;
+	}//end whenUnmetOf()
+
+	/**
 	 * Whether an obligation row still blocks what it was placed against.
 	 *
 	 * An unknown state BLOCKS. A row whose state nobody recognises is a row
@@ -195,7 +230,7 @@ class ObligationDeclaration {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function isBlocking(array $obligation): bool {
 		$state = trim((string)($obligation['state'] ?? self::STATE_OPEN));
@@ -212,7 +247,7 @@ class ObligationDeclaration {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function blocksStatus(array $obligation, string $statusId, bool $isClosing): bool {
 		if ($this->isBlocking(obligation: $obligation) === false) {
@@ -224,17 +259,29 @@ class ObligationDeclaration {
 			return $isClosing;
 		}
 
+		return $this->listsStatus(blocks: $blocks, target: ['statusId' => $statusId, 'isClosing' => $isClosing]);
+	}//end blocksStatus()
+
+	/**
+	 * Whether the obligation's `blocks` list names the destination status, or closing when it closes.
+	 *
+	 * @param array<int, mixed>                        $blocks The `blocks` list.
+	 * @param array{statusId: string, isClosing: bool} $target The destination status, and whether it closes the case.
+	 *
+	 * @return bool True when the list names it.
+	 */
+	private function listsStatus(array $blocks, array $target): bool {
 		foreach ($blocks as $entry) {
 			$value = trim((string)$entry);
-			if ($value === self::BLOCKS_CLOSING && $isClosing === true) {
+			if ($value === self::BLOCKS_CLOSING && $target['isClosing'] === true) {
 				return true;
 			}
 
-			if ($value !== '' && $value === $statusId) {
+			if ($value !== '' && $value === $target['statusId']) {
 				return true;
 			}
 		}
 
 		return false;
-	}//end blocksStatus()
+	}//end listsStatus()
 }//end class

@@ -220,4 +220,35 @@ class ReportViewsTest extends TestCase {
 		$missing = $this->views->shape(report: [...$report, 'caseTypeFilter' => 'none'], view: 'byAssignee');
 		self::assertSame([], $missing['byAssignee']);
 	}//end testShapeFocusesAndNarrows()
+
+	/**
+	 * The heatmap view is the focused type's status-by-week grid, and an empty grid for a type the report lacks (REQ-CRS-36).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/process-mining-bottlenecks/spec.md
+	 */
+	public function testHeatmapViewIsTheFocusedTypesGrid(): void {
+		$grid = ['columns' => ['2026-W12'], 'rows' => [['statusId' => 'review', 'label' => 'Review', 'values' => [100.0]]]];
+		$caseTypes = $this->caseTypes();
+		$caseTypes[0]['dwellHeatmap'] = $grid;
+		$report = ['clock' => WorkingClock::CLOCK_CALENDAR, 'caseTypeFilter' => $caseTypes[0]['id'], 'caseTypes' => $caseTypes];
+
+		self::assertSame($grid, $this->views->shape(report: $report, view: 'heatmap')['heatmap']);
+		self::assertSame(
+			['columns' => [], 'rows' => []],
+			$this->views->shape(report: [...$report, 'caseTypeFilter' => 'none', 'caseTypes' => []], view: 'heatmap')['heatmap']
+		);
+	}//end testHeatmapViewIsTheFocusedTypesGrid()
+
+	/**
+	 * Non-numeric medians, such as a numeric string, give a zero headline
+	 * rather than a value of the wrong type.
+	 *
+	 * @return void
+	 */
+	public function testANonNumericMedianGivesAZeroHeadline(): void {
+		self::assertSame(0, $this->views->headlineHours(row: ['medianWorkingHours' => '3', 'medianHours' => '65']));
+		self::assertSame(2.5, $this->views->headlineHours(row: ['medianWorkingHours' => null, 'medianHours' => 2.5]));
+	}//end testANonNumericMedianGivesAZeroHeadline()
 }//end class

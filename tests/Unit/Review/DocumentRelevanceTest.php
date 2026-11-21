@@ -24,6 +24,7 @@ use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The reviews of a case are read for the whole case, whoever asks, and only for that case.
@@ -80,7 +81,10 @@ class DocumentRelevanceTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = ['uuid' => $uuid, 'object' => $object];
 				return ($object + ['id' => ($uuid ?? 'new-1')]);
 			}

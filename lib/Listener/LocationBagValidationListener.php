@@ -40,9 +40,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\External\IntegrationMode;
-use OCA\Dossiq\Service\Registry\BagObjectReader;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
+use OCA\Dossiq\Kernel\Contracts\LocationBagValidationListenerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -60,7 +63,9 @@ use Throwable;
  *
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
-class LocationBagValidationListener implements IEventListener {
+class LocationBagValidationListener implements IEventListener, LocationBagValidationListenerInterface {
+
+	use SavedObjectPayload;
 
 	/**
 	 * The refusal code a location dialog shows its own title and text for:
@@ -81,11 +86,6 @@ class LocationBagValidationListener implements IEventListener {
 	private const NUMMERAANDUIDING_PATTERN = '/^\d{16}$/';
 
 	/**
-	 * The value of `integration.bag.check` that switches the check on.
-	 */
-	public const CHECK_ON = 'on';
-
-	/**
 	 * The field on the location that says whether the BAG confirmed it.
 	 */
 	public const CHECK_FIELD = 'bagCheck';
@@ -103,16 +103,16 @@ class LocationBagValidationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
-	 * @param IntegrationMode $integrationMode Reads `integration.bag.check`.
-	 * @param BagObjectReader $bagReader Asks integriq whether the BAG holds an object.
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
+	 * @param IntegrationModeInterface $integrationMode Reads `integration.bag.check`.
+	 * @param BagObjectReaderInterface $bagReader Asks integriq whether the BAG holds an object.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly IntegrationMode $integrationMode,
-		private readonly BagObjectReader $bagReader,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly IntegrationModeInterface $integrationMode,
+		private readonly BagObjectReaderInterface $bagReader,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -128,15 +128,7 @@ class LocationBagValidationListener implements IEventListener {
 	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-			return;
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
 
 	/**
@@ -148,18 +140,8 @@ class LocationBagValidationListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		try {
-			$payload = $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: location BAG validation could not read the object payload: ' . $e->getMessage()
-			);
-			return;
-		}//end try
-
-		if ($this->isLocationSchema(object: $payload) === false
-			|| (string)($payload['source'] ?? '') !== 'bag'
-		) {
+		$payload = $this->bagLocation(entity: $entity);
+		if ($payload === null) {
 			return;
 		}
 
@@ -169,6 +151,49 @@ class LocationBagValidationListener implements IEventListener {
 			return;
 		}
 
+		$event->setErrors($this->refusal(outcome: $outcome, payload: $payload));
+		$event->stopPropagation();
+	}//end inspect()
+
+	/**
+	 * The payload of a location that names its BAG address, or null for anything else.
+	 *
+	 * @param ObjectEntity $entity The object being saved.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 */
+	private function bagLocation(ObjectEntity $entity): ?array {
+		try {
+			$payload = $entity->jsonSerialize();
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Dossiq: location BAG validation could not read the object payload: ' . $e->getMessage()
+			);
+			return null;
+		}//end try
+
+		if ($this->isLocationSchema(object: $payload) === false
+			|| (string)($payload['source'] ?? '') !== 'bag'
+		) {
+			return null;
+		}
+
+		return $payload;
+	}//end bagLocation()
+
+	/**
+	 * The errors of a refused location: the message, the outcome code and, where it has one, the refusal code.
+	 *
+	 * @param string               $outcome The validation outcome.
+	 * @param array<string, mixed> $payload The location payload.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 */
+	private function refusal(string $outcome, array $payload): array {
 		$errors = [
 			'message' => $this->buildMessage(code: $outcome),
 			'codes' => [$outcome],
@@ -182,9 +207,8 @@ class LocationBagValidationListener implements IEventListener {
 			$errors['addressId'] = trim((string)($payload['addressDesignationId'] ?? ''));
 		}
 
-		$event->setErrors($errors);
-		$event->stopPropagation();
-	}//end inspect()
+		return $errors;
+	}//end refusal()
 
 	/**
 	 * Whether the supplied payload belongs to the `location` schema.
@@ -194,17 +218,7 @@ class LocationBagValidationListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isLocationSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('location_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return $this->inSchema(object: $object, configured: $this->settingsService->getConfigValue('location_schema'));
 	}//end isLocationSchema()
 
 	/**
@@ -229,6 +243,17 @@ class LocationBagValidationListener implements IEventListener {
 			return self::NOT_CHECKED;
 		}
 
+		return $this->bagOutcome(id: $id);
+	}//end validate()
+
+	/**
+	 * The outcome of asking the BAG for a nummeraanduiding.
+	 *
+	 * @param string $id The nummeraanduiding id.
+	 *
+	 * @return string
+	 */
+	private function bagOutcome(string $id): string {
 		$answer = $this->bagReader->read('nummeraanduiding', $id);
 		if ($answer['available'] === false || $answer['simulated'] === true) {
 			$this->logger->warning(
@@ -243,7 +268,7 @@ class LocationBagValidationListener implements IEventListener {
 		}
 
 		return self::CHECKED;
-	}//end validate()
+	}//end bagOutcome()
 
 	/**
 	 * The refusal code for a check that got no clear answer.
@@ -259,8 +284,8 @@ class LocationBagValidationListener implements IEventListener {
 	 */
 	private static function uncheckedCode(string $reason): string {
 		return match ($reason) {
-			BagObjectReader::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
-			BagObjectReader::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
+			BagObjectReaderInterface::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
+			BagObjectReaderInterface::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
 			default => 'nummeraanduidingId.unchecked',
 		};
 	}//end uncheckedCode()

@@ -23,7 +23,7 @@
   It reads the case from the ROUTE, because an open-modal action forwards its
   props verbatim and `@objectId` would arrive as that literal string.
 
-  @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+  @spec openspec/specs/workflow-definition-engine/spec.md
 -->
 <template>
 	<CnDialog
@@ -130,8 +130,9 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import {
-	caseActionRefusal,
+	caseActionRefusalOf,
 	earliestFollowUpDate,
 	endOptions,
 	isPlanComplete,
@@ -151,17 +152,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case to plan a follow-up for. Absent when the manifest opened
-		 * the dialog: an `open-modal` action carries no object context, so the
-		 * route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -186,14 +177,6 @@ export default {
 
 	computed: {
 		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/workflow-definition-engine/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
-		/**
 		 * @return {string} The chosen date as YYYY-MM-DD, or the empty string.
 		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
@@ -210,7 +193,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether a repeat was chosen.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		repeats() {
 			return (this.recurrence?.id ?? 'none') !== 'none'
@@ -218,7 +201,7 @@ export default {
 
 		/**
 		 * @return {string} The chosen end date as YYYY-MM-DD, or the empty string.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		isoUntil() {
 			if (!this.until) {
@@ -233,7 +216,7 @@ export default {
 
 		/**
 		 * @return {object} The plan as the server reads it.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		plan() {
 			const end = this.repeats ? (this.end?.id ?? 'open') : 'open'
@@ -250,7 +233,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the plan may be sent.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		canConfirm() {
 			return this.busy === false && isPlanComplete(this.plan, this.earliest)
@@ -305,7 +288,7 @@ export default {
 		 * Post the plan.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm || !this.targetCaseId) {
@@ -330,9 +313,7 @@ export default {
 				emit(PAGE_REFRESH)
 				this.$emit('close')
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}

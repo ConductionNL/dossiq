@@ -4444,19 +4444,69 @@
 			}
 		},
 		{
-			"key": "lhs-advies-molenweg",
+			"key": "schuur-molenweg-3",
 			"register": "dossiq",
-			"schema": "lhsRecommendation",
+			"schema": "case",
 			"lookups": {
-				"case": {
-					"schema": "case",
+				"caseType": {
+					"schema": "caseType",
 					"where": {
-						"title": "Schuur Molenweg 3"
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
-				"case": "{{lookup:case}}",
+				"title": "Legalisatie schuur Molenweg 3",
+				"description": "In de achtertuin van Molenweg 3 staat een schuur die zonder vergunning is gebouwd. De eigenaar vraagt alsnog een vergunning aan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-9}}",
+				"receivedAt": "{{datetime:-9 11:15}}",
+				"currentStatusEnteredAt": "{{datetime:-9 11:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-9 11:15}}"
+					}
+				],
+				"initiatorType": "person",
+				"initiatorDisplayName": "Eigenaar van Molenweg 3",
+				"tags": [
+					"molenweg"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Molenweg 3, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "Eigenaar van Molenweg 3"
+					}
+				]
+			}
+		},
+		{
+			"key": "lhs-advies-molenweg",
+			"register": "dossiq",
+			"schema": "lhsRecommendation",
+			"data": {
+				"case": "{{object:schuur-molenweg-3.id}}",
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
@@ -4524,6 +4574,63 @@
 			}
 		},
 		{
+			"key": "jeugdwet-gezin-oosthaven",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-jeugdwet"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Melding ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Onderzoek"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Melding Jeugdwet gezin Oosthaven",
+				"description": "De huisarts meldt zorgen over een kind van 9 jaar: slaapproblemen en schoolverzuim. Ouders staan open voor ondersteuning.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "phone",
+				"confidentiality": "vertrouwelijk",
+				"startDate": "{{date:-15}}",
+				"receivedAt": "{{datetime:-15 10:20}}",
+				"currentStatusEnteredAt": "{{datetime:-14 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-15 10:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-14 09:00}}"
+					}
+				],
+				"tags": [
+					"voorbeeld"
+				],
+				"legalBasis": "Jeugdwet artikel 2.3",
+				"initiatorDisplayName": "Huisarts, met toestemming van de ouders",
+				"deadline": "{{date:20}}"
+			}
+		},
+		{
 			"key": "jeugdwet-doc-melding-huisarts",
 			"register": "dossiq",
 			"schema": "informatieobject",
@@ -4551,7 +4658,7 @@
 			"register": "dossiq",
 			"schema": "zaakinformatieobject",
 			"data": {
-				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"case": "{{object:jeugdwet-gezin-oosthaven.id}}",
 				"informatieobject": "{{object:jeugdwet-doc-melding-huisarts.id}}",
 				"registrationDate": "{{datetime:-15 10:25}}"
 			}
@@ -4584,7 +4691,7 @@
 			"register": "dossiq",
 			"schema": "zaakinformatieobject",
 			"data": {
-				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"case": "{{object:jeugdwet-gezin-oosthaven.id}}",
 				"informatieobject": "{{object:jeugdwet-doc-medisch-verslag.id}}",
 				"registrationDate": "{{datetime:-13 14:00}}"
 			}
@@ -4617,7 +4724,7 @@
 			"register": "dossiq",
 			"schema": "zaakinformatieobject",
 			"data": {
-				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"case": "{{object:jeugdwet-gezin-oosthaven.id}}",
 				"informatieobject": "{{object:jeugdwet-doc-toestemming.id}}",
 				"registrationDate": "{{datetime:-15 10:40}}"
 			}
@@ -4650,7 +4757,7 @@
 			"register": "dossiq",
 			"schema": "zaakinformatieobject",
 			"data": {
-				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"case": "{{object:jeugdwet-gezin-oosthaven.id}}",
 				"informatieobject": "{{object:jeugdwet-doc-gesprek-ouders.id}}",
 				"registrationDate": "{{datetime:-12 16:00}}"
 			}
@@ -9716,6 +9823,44 @@
 					]
 				}
 			}
+		},
+		{
+			"key": "marleen-te-beoordelen-deze-week",
+			"data": {
+				"name": "Te beoordelen deze week",
+				"description": "Door Marleen Postma, team Vergunningen",
+				"sharedWith": [{"group": "{{cast:vergunningen.gid}}", "mode": "read"}],
+				"owner": "{{cast:marleen.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"assignedGroup": "{{cast:vergunningen.gid}}",
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false,
+						"deadline[gte]": "@today",
+						"deadline[lt]": "@today+7d"
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"notes": [
@@ -10000,9 +10145,7 @@
 			"key": "jeugdwet-zaak-behandelaar",
 			"register": "dossiq",
 			"schema": "case",
-			"where": {
-				"title": "Melding Jeugdwet gezin Oosthaven"
-			},
+			"object": "jeugdwet-gezin-oosthaven",
 			"set": {
 				"assignee": "{{cast:fatma.uid}}"
 			}
@@ -10960,7 +11103,7 @@
 		{
 			"key": "jeugdwet-inzage-medisch-verslag",
 			"data": {
-				"object": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"object": "{{object:jeugdwet-gezin-oosthaven.id}}",
 				"action": "file.downloaded",
 				"user": "{{cast:fatma.uid}}",
 				"at": "{{datetime:-11 11:05}}",

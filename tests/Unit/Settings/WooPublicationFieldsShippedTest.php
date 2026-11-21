@@ -9,7 +9,7 @@
  * schema's DECLARED properties to columns. The `decision` schema declared none
  * of the Woo fields, so:
  *
- *   - `WooPublicationService::publish()` wrote `wooPublication` and the save
+ *   - `OutcomePublisher::publish()` wrote `wooPublication` and the save
  *     dropped it. `withdraw()` then read no `publicationId` and answered
  *     `no_publication`, and a second publish created a second publication
  *     instead of updating the first;
@@ -44,21 +44,23 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The decision schema declares the Woo fields, and a publication survives a save.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -142,7 +144,11 @@ class WooPublicationFieldsShippedTest extends TestCase {
 
 		$store = $this->createMock(ObjectServiceInterface::class);
 		$store->method('find')->willReturnCallback(
-			function (int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): ?ObjectEntityInterface {
+			function (int|string $id, ?ObjectFindOptions $options = null): ?ObjectEntityInterface {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$row = ($this->rows[(string)$schema][(string)$id] ?? null);
 				if ($row === null) {
 					return null;
@@ -155,7 +161,11 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		);
 		$store->method('searchObjectsBySlug')->willReturn([['documentRef' => 'doc-001', 'classification' => 'openbaar']]);
 		$store->method('saveObject')->willReturnCallback(
-			function (array|ObjectEntityInterface $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null) use ($declared): ObjectEntityInterface {
+			function (array|ObjectEntityInterface $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($declared): ObjectEntityInterface {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				// The magic table's rule: a key the schema does not declare has no
 				// column, and is gone.
 				$kept = array_intersect_key((array)$object, array_flip(array_merge($declared, ['id'])));
@@ -196,7 +206,13 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$catalogi->method('attachDocument')->willReturn(['id' => 'ocdoc-001']);
 		$catalogi->expects($this->once())->method('updatePublication')->willReturn(['id' => 'pub-001']);
 
-		$service = new WooPublicationService($settings, $catalogi, new WooCategoryMapper(), $apps, $this->createMock(LoggerInterface::class));
+		$service = new OutcomePublisher(
+			settingsService: $settings,
+			apiClient: $catalogi,
+			publicationCategory: new PublicationCategory(),
+			appManager: $apps,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
 		$published = $service->publish('case-001', 'decision-001');
 		$this->assertTrue($published['available'], 'the publish itself should succeed');

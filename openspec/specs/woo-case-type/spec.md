@@ -127,38 +127,70 @@ The system MUST provide intake fields specific to WOO requests as property defin
 - **AND** flag any missing required fields for manual completion
 
 ### Requirement: WOO deadline tracking and extension
-The system MUST enforce WOO-mandated response deadlines with support for statutory extension.
+The system MUST enforce WOO-mandated response deadlines with support for
+statutory extension, through the generic term engine and not through a clock of
+its own. A Woo request's statutory term MUST be a term instance bound through
+the seeded definition `td-woo-verzoek` (28 days, Woo art. 4.4 lid 1, one
+extension of 14 days under lid 2), starting at the case's `termStartsAt`
+(REQ-OTE-02) and rolled by the Algemene termijnenwet. The case `deadline` MUST
+follow that instance (REQ-OTE-01). The extension route MUST NOT write
+`expectedResolution`, `deadlineVerlengd` or `verdagingReden` on the case.
 
 #### Scenario: Calculate initial response deadline
-- **GIVEN** a WOO request with ontvangstdatum "2026-03-15"
+@e2e exclude the bind runs in a create listener; covered by tests/Unit/Service/WOODeadlineServiceTest.php
+
+- **GIVEN** a WOO request received on "2026-03-16", a Monday and a working day
 - **WHEN** the case is created
-- **THEN** the system MUST set the case deadline to 28 calendar days: "2026-04-12"
+- **THEN** its statutory term instance MUST be bound through `td-woo-verzoek`
+- **AND** the case deadline MUST be 28 calendar days later, "2026-04-13"
 - **AND** display the deadline in the `DeadlinePanel.vue` component
-- **AND** store the deadline as an ISO 8601 duration (P28D) on the case type's processing time
+
+#### Scenario: A Woo term ending on a holiday rolls
+@e2e exclude a calendar roll; covered by tests/Unit/Service/WOODeadlineServiceTest.php
+
+- **GIVEN** an organisation calendar that marks 2026-12-25 and 2026-12-26 as holidays
+- **WHEN** a Woo request received on Friday 2026-11-27 is created
+- **THEN** the case `deadline` MUST be Monday 2026-12-28
 
 #### Scenario: Warning thresholds
-- **GIVEN** a WOO case with a deadline of "2026-04-12"
-- **WHEN** 14 days remain (2026-03-29), the `DeadlinePanel` MUST show a yellow warning
-- **AND** when 7 days remain (2026-04-05), the panel MUST show a red urgent alert
-- **AND** when the deadline has passed, the panel MUST show "Termijn verlopen" in red
+@e2e exclude a front-end threshold on a fixed date; covered by tests/vitest/deadlineCountdown.spec.js
+
+- **GIVEN** a WOO case with a deadline of "2026-04-13"
+- **WHEN** 14 days remain, the `DeadlinePanel` MUST show a yellow warning
+- **AND** when 7 days remain, the panel MUST show a red urgent alert
+- **AND** only from the day after the deadline MUST the panel show "Termijn verlopen" in red
 
 #### Scenario: Request deadline extension (verdaging)
-- **GIVEN** a WOO case approaching its deadline with extensionCount === 0
-- **WHEN** the case worker clicks "Request Extension" in the `DeadlinePanel`
-- **THEN** a dialog MUST appear requesting a mandatory reason for the extension
-- **AND** the deadline MUST be extended by 14 calendar days (P14D)
-- **AND** the extension MUST be logged in the audit trail
-- **AND** the verzoeker MUST be notified of the extension with the reason
+@e2e exclude the extension goes through DeadlineExtensionService behind the route; covered by tests/Unit/Service/WOODeadlineServiceTest.php and tests/Unit/Controller/WOOAssessmentControllerTest.php
+
+- **GIVEN** a WOO case whose term instance has `endDateCurrent` 2026-11-02, the original end of its four weeks, and `countExtensions` 0
+- **WHEN** the case worker extends with the reason "Zienswijzen van derden"
+- **THEN** the case's statutory instance MUST be extended to 2026-11-16, the original end plus 14 days, rolled
+- **AND** the instance's `countExtensions` MUST be 1 and the case `deadline` MUST be 2026-11-16
+
+#### Scenario: The extension counts from the original end, unrolled
+@e2e exclude a calendar roll; covered by tests/Unit/Service/WOODeadlineServiceTest.php and tests/Unit/Service/DeadlineExtensionLimitTest.php
+
+- **GIVEN** a WOO request received on Saturday 2026-05-02, whose four weeks end on Saturday 2026-05-30 and roll to Monday 2026-06-01
+- **WHEN** the case worker extends it
+- **THEN** the 14 days MUST count from the original end as counted, Saturday 2026-05-30, not from the rolled Monday (Ruben, 2026-10-09)
+- **AND** the requested end Saturday 2026-06-13 MUST then be rolled by the Algemene termijnenwet, to Monday 2026-06-15
+- **AND** `endDateBeforeRoll` MUST read 2026-06-13
+- **AND** the term's event list MUST hold a `verleng` event with that reason
 
 #### Scenario: Only one extension allowed
-- **GIVEN** a WOO case that has already been extended once (extensionCount === 1)
-- **THEN** the "Request Extension" button MUST be disabled
-- **AND** the `DeadlinePanel` MUST show "Verdaging: reeds verdaagd"
+@e2e exclude as above
+
+- **GIVEN** a WOO case that has already been extended once
+- **WHEN** the case worker extends again
+- **THEN** the route MUST answer 409 naming the one-extension rule
+- **AND** the cap MUST be read from the term instance, so it holds when the case schema drops undeclared keys
 
 #### Scenario: Extension resets warning thresholds
-- **GIVEN** a WOO case with original deadline "2026-04-12" extended to "2026-04-26"
-- **THEN** the warning threshold MUST recalculate to 14 days before "2026-04-26"
-- **AND** the urgent alert threshold MUST recalculate to 7 days before "2026-04-26"
+@e2e exclude a front-end threshold; covered by tests/vitest/deadlineCountdown.spec.js
+
+- **GIVEN** a WOO case with original deadline "2026-04-13" extended to "2026-04-27"
+- **THEN** the warning thresholds MUST count down to "2026-04-27", the new case `deadline`
 
 ### Requirement: Document collection and inventory
 The system MUST support searching, collecting, and inventorying documents relevant to a WOO request.
@@ -455,3 +487,49 @@ The Woo request's screens MUST say where the case is in words and dates the read
 - **GIVEN** a Woo request whose decision is recorded, at the status Publicatie
 - **WHEN** the handler opens the case
 - **THEN** the what-now card MUST NOT read "Wat nu? Behandelen" or "Daarna: het besluit"
+
+### Requirement: A handler searches the organisation's sources from a Woo case (REQ-WOO-012)
+A Woo request case MUST offer Gather documents. It MUST search the sources the
+instance has in one go: Nextcloud files through the platform's unified search,
+documents on other cases through OpenRegister, and each source integriq
+connects. Each source MUST answer with the searcher's own access. Results MUST
+be listed per source with name, location, date and a snippet, and a source that
+cannot answer MUST say why instead of showing no results.
+
+#### Scenario: Search files and other cases at once
+- **GIVEN** a Woo case in the status "Zoeken documenten" and files about the
+  subject in two team folders the handler can read
+- **WHEN** the handler opens Gather documents and searches on the subject
+- **THEN** the dialog MUST list those files under Files
+- **AND** matching documents on other cases MUST be listed under Cases
+
+#### Scenario: A source that is not connected
+- **GIVEN** an instance without a Microsoft Graph connection in integriq
+- **WHEN** the handler opens Gather documents
+- **THEN** SharePoint, Teams and mail MUST be shown as not connected, with the
+  reason
+- **AND** the other sources MUST still be searchable
+
+### Requirement: Picked results become documents on the case (REQ-WOO-013)
+The handler MUST be able to add picked results to the case. A file or a fetched
+item MUST land in the case folder and so become a document on the case,
+outstanding for assessment. A document of another case MUST be linked, not
+copied. Each pick MUST succeed or be refused on its own, with the reason.
+
+#### Scenario: Two files added, one refused
+- **GIVEN** three picked results, one of them a file the handler may not read
+- **WHEN** the handler presses Add selected
+- **THEN** two documents MUST appear on the case and in the outstanding list
+  for assessment
+- **AND** the third MUST be reported as refused, naming why
+
+### Requirement: Every gathered document records where it was found (REQ-WOO-014)
+A document added through Gather documents MUST record its source, its location,
+the search terms, when it was searched and by whom. The record MUST be written
+once, at the add.
+
+#### Scenario: Provenance is on the document
+- **GIVEN** a document added from a SharePoint search on "bouwvergunning 2024"
+- **WHEN** a colleague opens the document's properties on the case
+- **THEN** they MUST see the source SharePoint, the site and folder, the terms
+  and the date of the search

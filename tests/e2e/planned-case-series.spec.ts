@@ -174,7 +174,7 @@ test.describe('A planned follow-up that repeats', () => {
 			.first()
 			.click()
 		return strip.locator(
-			'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
 		)
 	}
 

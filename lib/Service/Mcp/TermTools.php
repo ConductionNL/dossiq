@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mcp;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\TermToolsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\DeadlineExtensionService;
@@ -45,7 +46,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
-class TermTools {
+class TermTools implements TermToolsInterface {
 
 	use ToolEnvelopes;
 
@@ -103,12 +104,25 @@ class TermTools {
 			return $this->error(code: 'invalid_date', message: $e->getMessage());
 		}
 
+		return $this->extended(deadlineId: $deadlineId, extension: ['rationale' => $rationale, 'endDate' => $endDate, 'documentLink' => $documentLink]);
+	}//end extendDeadline()
+
+	/**
+	 * Ask the owning service to extend the term; its refusal is answered as an error envelope.
+	 *
+	 * @param string                                                        $deadlineId The term instance id.
+	 * @param array{rationale: string, endDate: string, documentLink: string} $extension  Why, the new end date and the
+	 *                                                                                  document that grounds it.
+	 *
+	 * @return array<string, mixed> The extended term, or an error envelope.
+	 */
+	private function extended(string $deadlineId, array $extension): array {
 		try {
-			return $this->extension->requestExtension($deadlineId, $rationale, $endDate, $documentLink);
+			return $this->extension->requestExtension($deadlineId, $extension['rationale'], $extension['endDate'], $extension['documentLink']);
 		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
-	}//end extendDeadline()
+	}//end extended()
 
 	/**
 	 * Pause a term for a number of days (opschorting).

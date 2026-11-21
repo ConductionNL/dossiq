@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Settings;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\SettingValueRulesInterface;
 use OCA\Dossiq\Service\TenantConfigurationService;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Dossiq\Service\TenantConfigurationService;
  *
  * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
  */
-class SettingValueRules {
+class SettingValueRules implements SettingValueRulesInterface {
 	public const RULE_UNKNOWN_ZONE = 'unknown-timezone';
 	public const RULE_OUT_OF_RANGE = 'setting-out-of-range';
 
@@ -47,17 +48,6 @@ class SettingValueRules {
 	private const NUMBERS = [
 		'queue_in_sight_days' => ['max' => 180.0, 'whole' => true],
 		'queue_resident_wait_weight' => ['max' => 50.0, 'whole' => false],
-	];
-
-	/**
-	 * The settings that take one of a fixed set of values.
-	 *
-	 * @var array<string, list<string>>
-	 */
-	public const CHOICES = [
-		'date_format' => ['DD-MM-YYYY', 'YYYY-MM-DD', 'D MMMM YYYY'],
-		'feature_new_case_page' => ['true', 'false'],
-		'publication_date_rule' => ['', 'first-wednesday', 'decision-date'],
 	];
 
 	/**
@@ -75,7 +65,7 @@ class SettingValueRules {
 		$this->assertKnownZone(data: $data);
 
 		foreach (self::NUMBERS as $key => $rule) {
-			if (array_key_exists($key, $data) === true && $this->inBounds(value: $data[$key], max: $rule['max'], whole: $rule['whole']) === false) {
+			if (array_key_exists($key, $data) === true && $this->inBounds(value: $data[$key], rule: $rule) === false) {
 				throw new RefusedException(rule: self::RULE_OUT_OF_RANGE, sentence: $key.': 0 - '.$rule['max'], status: 400);
 			}
 		}
@@ -106,13 +96,13 @@ class SettingValueRules {
 	/**
 	 * Whether a posted number lies within 0 and its bound.
 	 *
-	 * @param mixed $value The posted value.
-	 * @param float $max   The upper bound.
-	 * @param bool  $whole Whether it must be a whole number.
+	 * @param mixed                          $value The posted value.
+	 * @param array{max: float, whole: bool} $rule  The upper bound, and whether it must be a whole number.
 	 *
 	 * @return bool
 	 */
-	private function inBounds(mixed $value, float $max, bool $whole): bool {
+	private function inBounds(mixed $value, array $rule): bool {
+		['max' => $max, 'whole' => $whole] = $rule;
 		if (is_numeric($value) === false) {
 			return false;
 		}

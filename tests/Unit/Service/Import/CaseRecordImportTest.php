@@ -42,6 +42,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Runs the import over opencatalogi's own request shape (tests/Fixtures/opencatalogi-woo-requests.json)
@@ -49,6 +51,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @covers \OCA\Dossiq\Service\Import\RecordImportReferences
@@ -57,6 +60,8 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
+ * @uses \OCA\Dossiq\Service\Term\CarriedTerm
  */
 class CaseRecordImportTest extends TestCase {
 
@@ -558,12 +563,13 @@ class CaseRecordImportTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($schema === 'wooRequest' && ($object['status'] ?? '') === 'received') {
 					throw new RuntimeException('migratedTo is not a property of wooRequest');
 				}
@@ -572,7 +578,7 @@ class CaseRecordImportTest extends TestCase {
 					unset($object['migratedTo'], $object['migratedAt']);
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 			}
 		};
 		$store->rows = $this->store->rows;

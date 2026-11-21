@@ -29,9 +29,11 @@ use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class TenantAuditTrailServiceTest extends TestCase {
 	use MakesTenantAnchors;
@@ -74,7 +76,9 @@ class TenantAuditTrailServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$entity = new ObjectEntity();
 				$entity->setUuid($id);
 				$entity->setSchema($schema);

@@ -116,6 +116,7 @@ class FakeMenuCaseTypeObjectService {
  *
  * @covers \OCA\Dossiq\Service\MenuCaseTypesService
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeMenuEntry
  * @uses \OCA\Dossiq\Service\CaseType\SupersededCaseTypes
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
@@ -421,4 +422,103 @@ class MenuCaseTypesServiceTest extends TestCase {
 
 		$this->assertSame(expected: [['id' => 'new', 'title' => 'Aanvraag']], actual: $service->visibleCaseTypes());
 	}//end testAnExpandedSupersededByIsNotFollowed()
+
+	/**
+	 * A menu entry carries its icon trimmed, and none when it is empty or not text.
+	 *
+	 * @return void
+	 */
+	public function testTheIconOfAnEntry(): void {
+		$this->assertSame(
+			[
+				['id' => 'a', 'title' => 'Aanvraag', 'icon' => 'mdi-file'],
+				['id' => 'b', 'title' => 'Bezwaar'],
+				['id' => 'c', 'title' => 'Klacht'],
+				['id' => 'd', 'title' => 'Melding'],
+			],
+			$this->service(
+				[
+					['id' => 'a', 'title' => 'Aanvraag', 'icon' => '  mdi-file '],
+					['id' => 'b', 'title' => 'Bezwaar', 'icon' => ['mdi-x']],
+					['id' => 'c', 'title' => 'Klacht', 'icon' => '   '],
+					['id' => 'd', 'title' => 'Melding'],
+				]
+			)->visibleCaseTypes()
+		);
+	}//end testTheIconOfAnEntry()
+
+	/**
+	 * The uuid is `uuid`, else `id` (an integer id as text), else `@self.id`;
+	 * an empty one is passed over, a row without any is left out, and the
+	 * first row of a uuid wins.
+	 *
+	 * @return void
+	 */
+	public function testTheUuidOfARow(): void {
+		$this->assertSame(
+			[
+				['id' => '7', 'title' => 'Aanvraag'],
+				['id' => 'u-b', 'title' => 'Bezwaar'],
+				['id' => 's-k', 'title' => 'Klacht'],
+				['id' => 'i-m', 'title' => 'Melding'],
+			],
+			$this->service(
+				[
+					['uuid' => 'u-b', 'id' => 'i-b', 'title' => 'Bezwaar'],
+					['uuid' => 'u-b', 'title' => 'Bezwaar, again'],
+					['id' => 7, 'title' => 'Aanvraag'],
+					['uuid' => '', 'id' => '', '@self' => ['id' => 's-k'], 'title' => 'Klacht'],
+					['uuid' => '', 'id' => 'i-m', '@self' => ['id' => 's-m'], 'title' => 'Melding'],
+					['title' => 'Nameless'],
+					['@self' => 'not-an-array', 'title' => 'Selfless'],
+				]
+			)->visibleCaseTypes()
+		);
+	}//end testTheUuidOfARow()
+
+	/**
+	 * Case types are found by identifier, current versions only.
+	 *
+	 * @return void
+	 */
+	public function testByIdentifier(): void {
+		$service = $this->service(
+			[
+				['id' => 'a', 'title' => 'Aanvraag', 'identifier' => 'AV'],
+				['id' => 'old', 'title' => 'Bezwaar', 'identifier' => 'BZ', 'supersededBy' => 'b'],
+				['id' => 'b', 'title' => 'Bezwaar', 'identifier' => 'BZ'],
+				['id' => 'k', 'title' => 'Klacht'],
+			]
+		);
+
+		$this->assertSame(
+			['AV' => ['id' => 'a', 'title' => 'Aanvraag'], 'BZ' => ['id' => 'b', 'title' => 'Bezwaar']],
+			$service->byIdentifier(['AV', 'BZ', ''])
+		);
+		$this->assertSame([], $service->byIdentifier([]));
+	}//end testByIdentifier()
+
+	/**
+	 * A case type found by identifier carries its description when it has one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/saved-filters-manage-and-defaults
+	 */
+	public function testByIdentifierCarriesTheDescription(): void {
+		$service = $this->service(
+			[
+				['id' => 'k', 'title' => 'Klacht', 'identifier' => 'KL', 'description' => 'Een klacht over gedrag'],
+				['id' => 'b', 'title' => 'Bezwaar', 'identifier' => 'BZ', 'description' => '  '],
+			]
+		);
+
+		$this->assertSame(
+			[
+				'BZ' => ['id' => 'b', 'title' => 'Bezwaar'],
+				'KL' => ['id' => 'k', 'title' => 'Klacht', 'description' => 'Een klacht over gedrag'],
+			],
+			$service->byIdentifier(['KL', 'BZ'])
+		);
+	}//end testByIdentifierCarriesTheDescription()
 }//end class

@@ -721,13 +721,14 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
 	})
 
@@ -781,12 +782,10 @@ describe('what this change does NOT move', () => {
 		// first such addition, `Integrations`
 		// (pluggable-integration-registry) the second, `Contacts`
 		// (contacts-domain) the third and the `Organisations` right after it
-		// (contacts-you-can-find) the fourth, and `Deleted cases`
-		// (case-recycle-window) the fifth; every entry this change was
-		// about is unmoved, in the same order. `Deleted cases` spends no
-		// top-level slot: `menu-layout.json` relocates it under `My work`
-		// beside `All cases`, which is where a handler looks for the case
-		// they just deleted.
+		// (contacts-you-can-find) the fourth; every entry this change was
+		// about is unmoved, in the same order. `Deleted cases`
+		// (case-recycle-window) came and went again: cases are archival and
+		// never deleted (cases-are-archival-no-delete).
 		//
 		// ONE ENTRY IS LABELLED `Organisations`: the KvK companies. The second
 		// one, `TenantsMenu` (the multitenancy tenant), retired with dossiq's
@@ -805,7 +804,6 @@ describe('what this change does NOT move', () => {
 			'Contacts',
 			'Organisations',
 			'All cases',
-			'Deleted cases',
 			'Objects',
 			'Tasks',
 			'Close out your day',

@@ -24,7 +24,7 @@ CaseType
 └── subCaseTypes[]       — Allowed sub-case types
 ```
 
-**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`)
+**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`), OIO Sag og Dokument (Denmark)
 **Feature tier**: MVP (core type CRUD, statuses, deadlines, draft/published, validity), V1 (result types, role types, property definitions, document types, decision types, confidentiality, suspension/extension)
 
 ## Data Model
@@ -2059,13 +2059,14 @@ values, 8px 16px apart, without an inset of its own inside the card.
 
 ### Requirement: Status and result names are strong text, a status with its colour dot
 
-The Statussen and Resultaten tables SHALL draw their names as strong text without an underline, the Statussen names
-with a dot in the status colour, and the archival action in sentence case.
+The Statussen and Resultaten tables SHALL draw their names as links without an underline (14px, the link colour), the
+Statussen names with a dot in the status colour, and the archival action in sentence case.
 
 #### Scenario: DqZaaktypeStatussen
 
 - **WHEN** an administrator opens the Statussen tab
-- **THEN** "Ontvangen" has a blue dot and no underline, and a result's archival action reads "Vernietigen"
+- **THEN** "Ontvangen" has a blue dot and reads in the link colour without an underline, and a result's archival
+  action reads "Vernietigen"
 
 ### Requirement: The Rules tab is headed and adds a rule from the start
 
@@ -2206,6 +2207,380 @@ The app SHALL answer `GET /api/packages` with every shipped package, its version
 - **GIVEN** a package id that is not shipped
 - **WHEN** an administrator posts to `/api/packages/{id}/install`
 - **THEN** the response SHALL be 422 with the installer's message
+
+### Requirement: A case type's side history shows what people changed
+
+The side History card of a case type SHALL leave out the entries System wrote (refreshes, upgrades, example-set upkeep). The case type's All history tab SHALL keep every entry.
+
+#### Scenario: DqZaaktype after a window refresh
+- GIVEN Lars de Koning published version 4 and changed the variants, and the daily refresh saved the case type as System since
+- WHEN the case type opens on Fasen en taken
+- THEN its History card lists "Versie 4 gepubliceerd" and "Varianten gewijzigd" by Lars de Koning, and no System edit
+
+### Requirement: An adopted case type gets the fields it lacks and keeps the ones it has (REQ-CT-ADOPT-01)
+
+When a package adopts a case type the instance already holds, the installer SHALL add each case-type field the package ships that the stored row does not have (no such key, or null), with references pointed at this instance's ids. It SHALL NOT change a field the stored row has, an empty one included. The fields SHALL be written only after the install is recorded, so a failed install leaves the adopted row as it was. Other adopted rows (statuses, roles, results, flows) SHALL stay as they are.
+
+#### Scenario: A seeded case type gets the record import the package adds
+
+- **GIVEN** an instance holding the case type `wmo-melding` without `recordImports`, written by the register seed
+- **WHEN** the Wmo-melding package is installed or upgraded
+- **THEN** the stored case type SHALL carry the package's `recordImports`
+- **AND** its title and every other field it already had SHALL be unchanged
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+#### Scenario: A field the administrator emptied stays empty
+
+- **GIVEN** an adopted case type whose `description` is an empty string
+- **WHEN** a package that ships a description is installed
+- **THEN** the description SHALL stay empty
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+### Requirement: A package can ship example rows
+
+A shipped package MAY declare an `examples` part. Its `examples/*.json` files
+SHALL follow the seed file rules, and the installer SHALL write their rows
+with the package, after the seed rows, recorded in the shipped-set ledger
+like every other row.
+
+#### Scenario: Example rows install with the package
+- GIVEN an instance that loaded example data
+- AND a package that declares `examples` with one case row
+- WHEN the package is installed
+- THEN the case is written and recorded under the package
+
+#### Scenario: Dates are relative to the install day
+- GIVEN an example row whose `startDate` is `{{date:-3}}`
+- WHEN the package is installed
+- THEN the case's `startDate` is the date three days before the install day
+
+### Requirement: Example rows install only where example data is wanted
+
+The installer SHALL write a package's example rows only when the setup
+wizard's example data decision (`demo_data_decided`) is `installed`. On any
+other instance, never asked or "None" chosen, it SHALL install the package
+without them and log one line.
+
+#### Scenario: A production install gets no example case
+- GIVEN an instance whose operator chose "None" for example data
+- WHEN a package with an `examples` part is installed
+- THEN the case type is written and the example case is not
+
+#### Scenario: An instance with example data gets the example case
+- GIVEN an instance whose operator loaded example data
+- WHEN a package with an `examples` part is installed
+- THEN the example case is written with the package
+
+### Requirement: The Zuiddrecht set does not depend on an on-request package
+
+The Zuiddrecht example-set fragment SHALL NOT look up a case type or a role
+type that only an on-request package ships. Example data of such a case type
+SHALL ship with its package.
+
+#### Scenario: The set installs without the on-request packages
+- GIVEN an instance without bezwaar-beroep, jeugdwet and aanbesteding
+- WHEN the Zuiddrecht set is checked
+- THEN no lookup of dossiq's fragment refers to a key only those packages ship
+
+### Requirement: A rights row grants to the caller's own team
+
+A case type rights row SHALL accept department `$ownTeam`, granting its actions on the cases assigned to a team the caller is a member of, resolved when access is checked.
+
+#### Scenario: an intaker sees only their own team's cases
+
+- **GIVEN** case type Omgevingsvergunning regulier with a row Intaker, `$ownTeam`, read
+- **AND** user A, an Intaker in team Vergunningen
+- **WHEN** A lists cases
+- **THEN** A sees the Vergunningen cases of that type and none of team Toezicht
+- @e2e exclude {access is enforced in OpenRegister; covered by PHPUnit with the real permission handler}
+
+### Requirement: A rights row can be limited to statuses
+
+A rights row SHALL accept `statuses`. Its edit verbs SHALL apply only while the case is in one of them; its read verbs SHALL apply in every status.
+
+#### Scenario: an intaker edits in the first phase only
+
+- **GIVEN** a row Intaker, `$ownTeam`, read and update, statuses [Ontvangen]
+- **WHEN** A edits a case in Ontvangen and one in In behandeling
+- **THEN** the first edit succeeds and the second is refused
+- **AND** A still reads the case in In behandeling
+- @e2e exclude {covered by PHPUnit with the real permission handler}
+
+### Requirement: Documents have their own rights per role
+
+A rights row SHALL accept `documentActions` (`read`, `add`, `delete`), enforced on the case's files.
+
+#### Scenario: an inspector reads documents and adds none
+
+- **GIVEN** a row Toezichthouder, `*`, read, documents read
+- **WHEN** an inspector lists a case's files and then uploads one
+- **THEN** the files are listed and the upload is refused
+- @e2e exclude {enforced in OpenRegister's file access; covered by PHPUnit through its FilesController}
+
+### Requirement: The Overview reads decisions from the mandate register
+
+The Overview's Rights card SHALL show per role the decision right from the active mandates for this case type: the highest ceiling as "Tot € <amount>", "Onbeperkt" without a ceiling, "Nee" without a mandate. The tenant setup checklist SHALL mark "Mandaten ingesteld" when the organisation has an active mandate.
+
+#### Scenario: the permit case type's Rights card
+
+- **GIVEN** the rows above and an active mandate for Vergunningverlener with ceiling 5,000,000 cents for this case type
+- **THEN** the card reads Intaker · Eigen team · Fase 1 · Nee · Toevoegen; Vergunningverlener · Alle · Alle fasen · Tot € 50.000 · Alles; Toezichthouder · Alle · Nee · Nee · Lezen
+- @e2e exclude {projection covered by PHPUnit and the card by vitest; the board pixel pass checks the drawn card}
+
+### Requirement: A procedure ships as a package on disk (REQ-CT-46)
+
+The app SHALL install case definition packages from `lib/Settings/packages/<id>/`. A package SHALL carry a `package.json` manifest with `id` (equal to its directory name), `title`, `version` (major.minor.patch), `requires` (a list of capability names), `parts` (a non-empty list of `case-type`, `flows`, `seed`, `settings`) and optionally `install` (`auto`, the default, or `on-request`). Every row a package carries SHALL have a fixed UUID `id`, used once in the package. The installer SHALL refuse a package that breaks any of these rules, naming each break, and SHALL write nothing for it.
+
+#### Scenario: An invalid package is refused with its errors
+@e2e exclude the installer has no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnInvalidPackageIsRefusedWithItsErrors
+
+- **GIVEN** a package whose manifest names another id, a version `1`, an unknown part, a row without an id and a seed file without rows
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `refused` and list each break
+- **AND** it SHALL write no row
+
+### Requirement: A package whose capability is missing is refused by name (REQ-CT-47)
+
+The installer SHALL refuse a package when this instance lacks a capability the package requires, or one its parts imply, or an app it names as `app:<app id>`, before writing a row, and SHALL name every missing capability.
+
+#### Scenario: A package needs a capability this instance does not have
+@e2e exclude the installer has no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingCapabilityIsRefusedByName
+
+- **GIVEN** a package that requires `term` and `app:decidiq`, on an instance that provides neither
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `refused` naming `term` and `app:decidiq`
+- **AND** it SHALL write no row
+
+### Requirement: A package is written whole or not at all (REQ-CT-48)
+
+The installer SHALL write every row of a package in one run. When any row fails, or a part's schema is not configured, or a row cannot be recorded in the shipped-set ledger, it SHALL take back every row that run created, across all parts. It SHALL NOT write a package when the shipped-set ledger is not configured.
+
+#### Scenario: A refused row takes the whole package back
+@e2e exclude a store refusal cannot be provoked from the browser; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testARefusedRowTakesTheWholePackageBack
+
+- **GIVEN** a package with a case type, statuses, a role, a flow and a seed row
+- **AND** the store refuses the flow
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `error` with the store's reason
+- **AND** no case type, status, role, flow, seed or ledger row from it SHALL remain
+
+### Requirement: Every installed row is recorded, and a reinstall changes nothing (REQ-CT-49)
+
+The installer SHALL record every row it writes in the shipped-set ledger, with the package id as the set and the package version as the set version, and SHALL record the package itself with its version and a digest of its files. Installing a package at the version already recorded, with the digest already recorded, SHALL write nothing. Installing a newer version, or the same version whose files differ from the recorded digest, or a package whose record carries no digest, SHALL write the rows the instance does not hold. For every row it already holds in dossiq's register, after the write and the ledger record succeeded, it SHALL write the shipped version when the ledger records the row under this package and the row still hashes to its stamp, and SHALL stamp it with the version; it SHALL keep a row edited here, a row another set or nobody shipped, and a row it cannot read, and SHALL log each kept row by id. A row whose content already is what the package ships SHALL not be written. The outcome SHALL report how many rows were refreshed and the ids of the rows kept. The `InstallShippedPackages` repair step SHALL, on install and on upgrade, install every package whose `install` is `auto` and every package already installed here whatever its `install` mode; a package marked `on-request` that was never installed SHALL install only when an administrator asks (`occ dossiq:package:install <id>`).
+
+#### Scenario: A package installs and is recorded
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAPackageWritesEveryRowAndRecordsEachInTheLedger and live by the packages workflow, which installs on a clean instance and reads the rows back
+
+- **GIVEN** a clean instance and the fixture package
+- **WHEN** the installer installs it
+- **THEN** every row SHALL be readable from its schema
+- **AND** every row SHALL have a ledger row naming the package and its version
+
+#### Scenario: A newer version keeps a local edit
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone and ::testANewerVersionKeepsARowEditedHereAndNamesIt
+
+- **GIVEN** an installed package whose case type was edited here
+- **WHEN** a newer version that adds a role and changes the case type installs
+- **THEN** the role SHALL be written
+- **AND** the edited case type SHALL keep the edit
+- **AND** the outcome SHALL name the case type as kept
+
+#### Scenario: An upgrade updates an installed on-request package
+@e2e exclude no user interface; proven by tests/Unit/Repair/InstallShippedPackagesTest.php::testTheUpgradeUpdatesEveryInstalledPackage and tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit
+
+- **GIVEN** an on-request package installed at 1.0.0, with one row edited here
+- **WHEN** the app upgrades and ships version 1.1.0 of it
+- **THEN** the repair step SHALL install 1.1.0
+- **AND** the rows nobody edited SHALL hold what 1.1.0 ships
+- **AND** the edited row SHALL keep the edit
+
+#### Scenario: An on-request package nobody installed
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse
+
+- **GIVEN** an on-request package never installed here
+- **WHEN** the repair step runs
+- **THEN** nothing of it SHALL be written
+
+#### Scenario: A newer version refreshes the rows nobody edited
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testANewerVersionRefreshesRowsNobodyEdited
+
+- **GIVEN** an installed package nobody edited here
+- **WHEN** a newer version that changes the case type description and renames a status installs
+- **THEN** the case type and the status SHALL hold what the newer version ships
+- **AND** their ledger rows SHALL name the newer version
+- **AND** a row the newer version did not change SHALL not be written
+
+### Requirement: A case type a seeder already wrote is adopted, not duplicated (REQ-CT-51)
+
+A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and, when none exists, for a case type with the same `title` that carries no identifier (a seeder that keyed its case types by slug, such as the VTH seeder, never set one). When one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).
+
+#### Scenario: An existing case type is adopted and nothing is written
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten
+
+- **GIVEN** an instance where a seeder wrote the fixture case type, its statuses, role, flow and property under random ids
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+- **AND** each existing row SHALL have a ledger row naming the package and its version
+
+#### Scenario: An adopted case type gets only the rows it lacks
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds
+
+- **GIVEN** an instance where a seeder wrote only the fixture case type and its statuses
+- **WHEN** the installer installs the fixture package
+- **THEN** the role, flow and property SHALL be written pointing at the existing case type
+- **AND** the flow's transitions SHALL name the existing statuses
+
+#### Scenario: Another identifier is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted
+
+- **GIVEN** a case type with the same title but another identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it
+
+#### Scenario: A case type without an identifier is adopted by its title
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierIsAdoptedByTitle
+
+- **GIVEN** an instance where a seeder wrote the fixture case type without an identifier, with its statuses, role, flow and property
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+
+#### Scenario: A case type without an identifier and another title is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierAndAnotherTitleIsNotAdopted
+
+- **GIVEN** a case type with another title and no identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it
+
+### Requirement: A package setting may name another app's schema (REQ-CT-53)
+
+A schema id differs per instance, so a package SHALL NOT ship one. A value in `settings.json` MAY instead name a schema as `{"schema": {"app": "<app id>", "register": "<slug>" or ["<slug>", "<older slug>"], "slug": "<schema slug>"}}`. The installer SHALL resolve it at install time to the id of that schema in the first named register that holds it, and store the id. When the app is not installed or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, write no row and no setting, and record nothing, so the next install tries again. A reference without an app, a register and a slug SHALL make the package invalid (decision 198).
+
+#### Scenario: A reference is stored as the schema's id here
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere
+
+- **GIVEN** the neutral settings package, whose setting names `fixture-app`'s schema `fixture_source`
+- **AND** `fixture-app` is installed and its register holds that schema with id 60
+- **WHEN** the installer installs the package
+- **THEN** the setting SHALL hold `60`
+
+#### Scenario: A missing schema refuses the package and names the app
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp
+
+- **GIVEN** `fixture-app`'s register does not hold `fixture_source`
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused, naming `fixture-app` and `fixture_source`
+- **AND** no setting SHALL be written and nothing recorded
+
+### Requirement: A package that writes no rows is recorded at its version (REQ-CT-54)
+
+The installer SHALL record every installed package once in the shipped-set ledger, as a row whose target schema is `package` and whose target object is the package id, updated in place on a newer version. A package that writes no rows, such as a settings-only package, SHALL therefore report `current` on a second install of the same version and show its installed version in the catalogue.
+
+#### Scenario: A settings-only package is current on the second install
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall
+
+- **GIVEN** the neutral settings package was installed
+- **WHEN** the installer installs it again
+- **THEN** the outcome SHALL be current and no setting SHALL be applied again
+
+### Requirement: A seed file may write into another app's register (REQ-CT-55)
+
+A package seed file SHALL name the schema its rows go to either by a settings key of this app, or by the owning app, the register slug (or the slugs that register has had, newest first) and the schema slug. For the second form the installer SHALL find the register and schema on this instance and write the rows there, record each row in the shipped-set ledger, and on a failed install take each row back out of the register it went into. When the app is not installed, or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, and write nothing. A seed file MAY name one property (`match`) by which a row this instance already holds under another id is recognised; such a row SHALL be adopted, not written a second time, and every row of that file SHALL carry the property.
+
+#### Scenario: Seed rows land in the other app's register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister
+
+- **GIVEN** the neutral shared-seed package, whose seed file names `fixture_source` of `fixture-app` in register `fixture-register`
+- **AND** `fixture-app` is installed and the register holds the schema
+- **WHEN** the installer installs the package
+- **THEN** both rows SHALL be written into that register and schema
+- **AND** the ledger SHALL hold one row for each, naming the package
+
+#### Scenario: The other app is missing
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage
+
+- **GIVEN** `fixture-app` is not installed
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the outcome SHALL be refused, naming `fixture-app:fixture_source`
+- **AND** no row SHALL be written
+
+#### Scenario: A row held under another id is adopted by the match property
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn
+
+- **GIVEN** the other register already holds a row with key `fixture.first` under another id
+- **WHEN** the installer installs the shared-seed package
+- **THEN** that row SHALL be adopted and left as it is
+- **AND** only the second row SHALL be written
+
+#### Scenario: A failed install takes a row back from the other register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister
+
+- **GIVEN** the store refuses the second row
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the first row SHALL be deleted from the other app's register
+- **AND** the ledger SHALL hold no row for the package
+
+### Requirement: A seed file may recognise a row by a flag or by several properties (REQ-CT-56)
+
+The `match` of a package seed file SHALL be one property name or a list of property names. A row this instance already holds SHALL be adopted when it is equal to the package row on every property named. A matched value SHALL be a text, a whole number or a flag; a flag and a number SHALL be compared by meaning, so a flag the store answers as `1` or `"true"` counts as set. A file that matches on a flag alone SHALL adopt the row that has the flag set whatever that row is called, so an instance that replaced a shipped default gets no second one. A `match` that names no property, or a row that lacks a named property, SHALL make the package invalid.
+
+#### Scenario: An instance that replaced the default gets no second one
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled
+
+- **GIVEN** a seed file that matches on `active` and ships one row with `active` true
+- **AND** the register holds a row under another id and another name with `active` true
+- **WHEN** the installer installs the package
+- **THEN** the existing row SHALL be adopted and left as it is
+- **AND** no row SHALL be written
+
+#### Scenario: A row with the flag cleared is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsNotAdoptedByARowWithTheFlagCleared
+
+- **GIVEN** the register holds only a row with `active` false
+- **WHEN** the installer installs the package
+- **THEN** the package row SHALL be written beside it
+
+#### Scenario: A row is adopted only when every matched property is equal
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual
+
+- **GIVEN** a seed file that matches on `row` and `column`
+- **AND** the register holds a row for A and 1, and a row for B and 2
+- **WHEN** the installer installs a package that ships A and 1, and A and 2
+- **THEN** the row for A and 1 SHALL be adopted
+- **AND** the row for A and 2 SHALL be written
+
+#### Scenario: A match that names no property is refused
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid
+
+- **GIVEN** a seed file whose `match` is an empty list, a flag, or a list holding something that is not a property name
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused and the errors SHALL say what `match` must name
+
+### Requirement: The Velden table describes each field in words
+
+The Velden table on a case type's Fields tab SHALL read Veld, Soort and Invullen: the field's name, the kind of
+answer in words and whether it is required, optional or read only.
+
+#### Scenario: A choice list
+
+- **GIVEN** a field "Soort bouwwerk" with six options, required
+- **THEN** its row reads Soort bouwwerk · Keuzelijst, 6 opties · Verplicht
+
+### Requirement: A row the store filled in is still untouched
+
+A package upgrade SHALL refresh a row whose keys the package ships are as the
+package shipped them, whatever properties the store filled in on save, and
+SHALL keep the values of keys the package does not ship. A row with a shipped
+key edited here SHALL be kept.
+
+#### Scenario: Properties filled in on save
+- GIVEN a case type the store saved with properties the package never named
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version
+
+#### Scenario: A field filled in here
+- GIVEN a case type with a field set here that the package does not ship
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version and keeps that field's value
 
 ## UI References
 

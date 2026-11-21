@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Lifecycle\DossierDocumentStore
  */
 class CaseArchiveReadinessTest extends TestCase {
 
@@ -116,6 +117,133 @@ class CaseArchiveReadinessTest extends TestCase {
 		$this->assertSame(['id' => 'documents', 'met' => false, 'count' => 2, 'total' => 3], $checklist['documents']);
 		$this->assertSame(['id' => 'openTasks', 'met' => false, 'count' => 1], $checklist['openTasks']);
 	}//end testAFinishedCaseIsReadItemByItem()
+
+	/**
+	 * A case without documents has all of them final; a document store that
+	 * cannot be read says it does not know.
+	 *
+	 * @return void
+	 */
+	public function testNoDocumentsAreAllFinalAndAnUnreadableStoreIsUnknown(): void {
+		$none = $this->byId($this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: []));
+		$this->assertSame(['id' => 'documents', 'met' => true, 'count' => 0, 'total' => 0], $none['documents']);
+
+		$broken = $this->createMock(SettingsService::class);
+		$broken->method('getObjectService')->willReturn(
+			new class {
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<int, mixed> Never returns.
+				 */
+				public function searchObjects(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjects()
+
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function searchObjectsPaginated(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjectsPaginated()
+
+				/**
+				 * @param mixed ...$arguments Any query.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function buildSearchQuery(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end buildSearchQuery()
+			}
+		);
+		$broken->method('getConfigValue')->willReturn('configured');
+		$session = $this->createMock(IUserSession::class);
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $broken,
+			tasks: $this->createMock(EngineTaskInbox::class),
+			userSession: $session,
+			endings: $this->createMock(CaseEndingActs::class)
+		);
+		$unknown = $this->byId($readiness->checklist(caseId: 'case-1', case: []));
+		$this->assertSame(['id' => 'documents', 'met' => null], $unknown['documents']);
+	}//end testNoDocumentsAreAllFinalAndAnUnreadableStoreIsUnknown()
+
+	/**
+	 * A decision store that cannot be read leaves the decision date out but
+	 * still counts the decisions the case names.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDecisionStoreLeavesTheDateOut(): void {
+		$broken = $this->createMock(originalClassName: SettingsService::class);
+		$broken->method('getObjectService')->willReturn(
+			new class {
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<int, mixed> Never returns.
+				 */
+				public function searchObjects(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjects()
+
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function searchObjectsPaginated(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjectsPaginated()
+
+				/**
+				 * @param mixed ...$arguments Any query.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function buildSearchQuery(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end buildSearchQuery()
+			}
+		);
+		$broken->method('getConfigValue')->willReturn('configured');
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $broken,
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
+		);
+
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1', 'd-2']]));
+
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 2], actual: $checklist['decision']);
+	}//end testAnUnreadableDecisionStoreLeavesTheDateOut()
+
+	/**
+	 * Without a configured document store the documents item says it does not
+	 * know, and no decision date is looked up.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredDocumentStoreIsUnknown(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('');
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $settings,
+			tasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class)
+		);
+
+		$checklist = $this->byId(checklist: $readiness->checklist(caseId: 'case-1', case: ['decisions' => ['d-1']]));
+
+		$this->assertSame(expected: ['id' => 'documents', 'met' => null], actual: $checklist['documents']);
+		$this->assertSame(expected: ['id' => 'decision', 'met' => true, 'count' => 1], actual: $checklist['decision']);
+	}//end testAnUnconfiguredDocumentStoreIsUnknown()
 
 	/**
 	 * The decision item carries the date of the latest decision.

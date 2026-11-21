@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -90,7 +90,7 @@ class RecipientAllowlist {
 	 */
 	public function entriesFor(string $fromAddress): array {
 		$configured = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY,
 			'',
 		);
@@ -142,15 +142,9 @@ class RecipientAllowlist {
 			return false;
 		}
 
-		if ($this->isOpen(entries: $entries) === true) {
-			return true;
-		}
-
-		if (in_array($address, $caseContacts, true) === true) {
-			return true;
-		}
-
-		return $this->matchesEntry(address: $address, entries: $entries);
+		return $this->isOpen(entries: $entries) === true
+			|| in_array($address, $caseContacts, true) === true
+			|| $this->matchesEntry(address: $address, entries: $entries) === true;
 	}//end permits()
 
 	/**

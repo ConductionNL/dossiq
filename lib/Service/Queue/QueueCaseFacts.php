@@ -175,30 +175,46 @@ class QueueCaseFacts {
 			return $profile;
 		}
 
+		return $this->withThresholdsOf(
+			profile: $profile,
+			caseType: ['objectService' => $objectService, 'register' => $register, 'schema' => $caseTypeSchema, 'id' => $caseTypeId]
+		);
+	}//end profileForCaseType()
+
+	/**
+	 * The profile with the thresholds of the case type it reads; the profile as it is when the read fails or finds none.
+	 *
+	 * @param UrgencyProfile                                                         $profile  The instance profile.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the case type is
+	 *                                                                                          stored, and its id.
+	 *
+	 * @return UrgencyProfile The profile for that type.
+	 */
+	private function withThresholdsOf(UrgencyProfile $profile, array $caseType): UrgencyProfile {
 		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseTypeSchema,
-				id: $caseTypeId
+			$row = $this->findObjectAsArray(
+				objectService: $caseType['objectService'],
+				register: $caseType['register'],
+				schema: $caseType['schema'],
+				id: $caseType['id']
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'WorkQueue: case type read failed, scoring with the instance thresholds',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+				['caseType' => $caseType['id'], 'error' => $e->getMessage()]
 			);
 			return $profile;
 		}
 
-		if ($caseType === null) {
+		if ($row === null) {
 			return $profile;
 		}
 
 		return $profile->withCaseTypeThresholds(
-			criticalDays: ($caseType['queueCriticalDays'] ?? null),
-			warningDays: ($caseType['queueWarningDays'] ?? null)
+			criticalDays: ($row['queueCriticalDays'] ?? null),
+			warningDays: ($row['queueWarningDays'] ?? null)
 		);
-	}//end profileForCaseType()
+	}//end withThresholdsOf()
 
 	/**
 	 * Resolve a case's nearest active termijn deadline, falling back to the
@@ -215,7 +231,7 @@ class QueueCaseFacts {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function resolveCaseDeadline(object $objectService, string $register, string $caseId, string $fallback): ?string {
-		$nearest = $this->nearestActiveTermDeadline(objectService: $objectService, register: $register, caseId: $caseId);
+		$nearest = $this->nearestActiveTermDeadline(location: [$objectService, $register], caseId: $caseId);
 		if ($nearest !== null) {
 			return $nearest;
 		}
@@ -232,15 +248,14 @@ class QueueCaseFacts {
 	 * (running, extended, paused or exceeded), or null when termijn tracking
 	 * is not configured, the case has none, or the lookup fails.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseId Case id.
+	 * @param array{0: object, 1: string} $location OpenRegister ObjectService and the register slug/id.
+	 * @param string                      $caseId   Case id.
 	 *
 	 * @return string|null The nearest active deadline, or null.
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
-	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
+	private function nearestActiveTermDeadline(array $location, string $caseId): ?string {
 		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
 		if ($termSchema === '' || $caseId === '') {
 			return null;
@@ -248,8 +263,8 @@ class QueueCaseFacts {
 
 		try {
 			$instances = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $location[0],
+				register: $location[1],
 				schema: $termSchema,
 				filters: ['case' => $caseId]
 			);
@@ -257,6 +272,19 @@ class QueueCaseFacts {
 			return null;
 		}
 
+		return $this->nearestOpenEnd(instances: $instances);
+	}//end nearestActiveTermijnDeadline()
+
+	/**
+	 * The nearest `endDateCurrent` among the open term instances.
+	 *
+	 * @param array<int, array<string, mixed>> $instances The case's term instances.
+	 *
+	 * @return string|null The nearest active deadline, or null.
+	 *
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 */
+	private function nearestOpenEnd(array $instances): ?string {
 		$nearest = null;
 		foreach ($instances as $instance) {
 			// EVERY OPEN TERM, not only a running one (REQ-OTE-06). A paused
@@ -264,7 +292,7 @@ class QueueCaseFacts {
 			// by the extension, so both are the dates a handler is judged on.
 			// Filtered here rather than in the query, because a list of
 			// statuses is not a filter every store reads the same way.
-			if (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === false) {
+			if ($this->isOpenTerm(instance: $instance) === false) {
 				continue;
 			}
 
@@ -277,5 +305,18 @@ class QueueCaseFacts {
 		}
 
 		return $nearest;
-	}//end nearestActiveTermijnDeadline()
+	}//end nearestOpenEnd()
+
+	/**
+	 * Whether a term instance is open: running, extended, paused or exceeded.
+	 *
+	 * @param array<string, mixed> $instance The term instance.
+	 *
+	 * @return bool True when the term is open.
+	 *
+	 * @spec openspec/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 */
+	private function isOpenTerm(array $instance): bool {
+		return (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === true);
+	}//end isOpenTerm()
 }//end class

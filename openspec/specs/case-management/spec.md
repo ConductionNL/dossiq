@@ -14,7 +14,7 @@ retrofit_extensions:
 
 Case management is the core capability of Dossiq. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.
 
-**Standards**: CMMN 1.1 (CasePlanModel), Schema.org (`Project`), ZGW (`Zaak`)
+**Standards**: CMMN 1.1 (CasePlanModel), Schema.org (`Project`), ZGW (`Zaak`), OIO Sag og Dokument (Denmark)
 **Feature tier**: MVP (core case CRUD, list, detail, status, deadline), V1 (sub-cases, confidentiality, result types, document checklist, suspension)
 
 ## Consolidated Lifecycle (dossiq-adopt-or-abstractions)
@@ -830,7 +830,7 @@ The system SHOULD support parent/child case hierarchies. A sub-case MUST be a fu
 
 ---
 
-### REQ-CM-19: Confidentiality Levels
+### Requirement: REQ-CM-19: Confidentiality Levels
 
 The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
@@ -2070,6 +2070,25 @@ list. dossiq SHALL NOT implement a soft delete of its own.
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for a soft-delete implementation
 - **THEN** none SHALL exist
+
+### Requirement: The deleted lens MUST list every deleted case the caller may see
+
+The deleted lens SHALL read the soft-deleted rows of the case schema only, keep the rows the caller may see, and page after that, so a deleted case is listed however many other objects were deleted on the instance, and the total equals the number of rows the pages hold.
+
+Synced from `deleted-cases-read-the-case-table` (archived 2026-11-20). `cases-are-archival-no-delete` retires the deleted lens; this requirement goes with REQ-CRW-01 when that change is archived.
+
+#### Scenario: Other apps deleted more objects than one page holds
+
+- **GIVEN** 60 soft-deleted objects of other schemas and 1 soft-deleted case
+- **WHEN** an administrator opens Deleted cases
+- **THEN** the case is listed
+- **AND** the total is 1
+
+#### Scenario: A handler searches the deleted cases
+
+- **GIVEN** two deleted cases, ZAAK-2026-0009 and ZAAK-2026-0010
+- **WHEN** the handler searches for "0010"
+- **THEN** only ZAAK-2026-0010 is listed
 
 ### Requirement: Restoring and destroying are separate, recorded acts (REQ-CRW-02)
 
@@ -3506,6 +3525,313 @@ lists and the Followers section on the People tab SHALL stay.
 - **WHEN** you press the bell beside the Follow control and reload
 - **THEN** the case SHALL still be followed
 - **AND** the bell SHALL read notifications off
+
+### Requirement: An action on the case page answers with a card notice
+
+An action endpoint a case page card calls SHALL answer its result as a `notice` `{ variant, role, title, text }`
+the card shows in place of a toast: `role` is `alert` for an error and `status` otherwise, and the texts are in the
+reader's language. A task is cancelled through the task engine only, behind the write guard on the task's own case.
+
+#### Scenario: Task completed
+
+- **WHEN** a handler completes the task "Documenten beoordelen"
+- **THEN** the answer carries a success notice titled "Taak Documenten beoordelen afgerond."
+
+#### Scenario: Cancel refused by the engine
+
+- **WHEN** a handler cancels a task the engine will not cancel
+- **THEN** the answer is 409 with an error notice titled "Annuleren geweigerd voor <task>:" and the engine's reason as
+  its text
+- **AND** the task stays open
+
+#### Scenario: Cancel without write access
+
+- **WHEN** a signed-in user without write access on the task's case cancels it
+- **THEN** the answer is 403 and the engine is not asked
+
+### Requirement: A reader who is not the handler can claim the case to edit it
+
+The case page SHALL read the record rights, so its edit controls are off while `@self.can.update` is false. While
+`@self.can.update` is false and `@self.can["claim-as-handler"]` is true, the banner row SHALL show "Voeg jezelf toe als
+behandelaar om te kunnen bewerken" with one button that runs the declared action `claim-as-handler` on the case and
+reads the page again.
+
+#### Scenario: A group member opens a case they do not handle
+
+- **GIVEN** a case whose `@self.can` is `{ update: false, "claim-as-handler": true }` for the reader
+- **WHEN** the reader opens the case
+- **THEN** the edit controls are off and the banner offers "Voeg mij toe als behandelaar"
+- **AND** pressing it runs `claim-as-handler` on the case, after which the page follows the new rights
+
+#### Scenario: The handler opens the case
+
+- **GIVEN** a case whose `@self.can.update` is true for the reader
+- **THEN** the banner does not show and every edit control is there
+
+### Requirement: Objects is reached from the Cases menu
+
+The simple profile SHALL list Objects in the Cases part of the menu, at `/objects`. Each row SHALL be one case on an object: the object first, then its type, the case and the status of that case.
+
+#### Scenario: A handler starts at the object
+@e2e exclude a menu entry and columns declared in the manifest; objectsIndexLook reads them
+
+- **GIVEN** a building linked to two cases
+- **WHEN** a handler opens Objecten under Zaken
+- **THEN** the list shows two rows for that building, each with its case, the case number and the status
+- **AND** View case opens that row's case
+
+### Requirement: The custody chain reads as rows with the current holder marked
+
+The Archiving tab SHALL draw each holding as a row with the unit's initials, the unit, its period (both ends for a closed holding) and a pill saying whether the unit holds the case now or handed it over.
+
+#### Scenario: a case handed from the KCC to the Woo team
+@e2e exclude covered by tests/vitest/caseCustodyPanel.spec.js; the live chain needs example holdings
+
+- **GIVEN** a case held by the KCC from 3 okt 14:10 to 14:18 and since then by Team Woo en informatie
+- **WHEN** the handler opens the Archiving tab
+- **THEN** the KCC row SHALL read "Van 3 okt 14:10 tot 3 okt 14:18" with the pill "Overgedragen"
+- **AND** the Woo row SHALL read "In handen sinds 3 okt" with the pill "Houder nu"
+- **AND** the "Overgedragen" pill and the initials SHALL use the soft ink, and a request's "Overdragen" SHALL be a secondary button next to "Houden, met reden"
+
+### Requirement: Drafts stay out of the staff lists until a handler asks for them (REQ-CM-79)
+
+No staff list SHALL show a colleague's draft by default; a reader's own drafts stay in their lists, as OpenRegister keeps them. The exclusion is OpenRegister's: a list, a count and a search leave out every object in the status draft unless the query carries `_drafts`. dossiq SHALL spell that exclusion out on no page and in no lens, so that a list and the count beside it cannot disagree.
+
+The Cases page SHALL carry exactly one chip that asks for drafts, With drafts. Its filter SHALL be the open cases (`isFinalStatus: false`, `statusHiddenInLists: false`) with `_drafts: "any"`, which shows drafts beside the rest. It SHALL NOT be the default chip and SHALL sit behind the overflow chip, beside My drafts.
+
+The chip SHALL change what the list shows and never what the reader may read: a draft the reader has no access to stays out of the list with the chip on.
+
+#### Scenario: A colleague's draft is not in the work list
+- **GIVEN** a case in the status draft that a colleague saved and the handler may read
+- **WHEN** the handler opens Cases under All
+- **THEN** the draft is not in the list and not in its count
+- e2e: `tests/e2e/cases-with-drafts.spec.ts` "a draft shows under With drafts only"
+
+#### Scenario: The handler asks for drafts
+<!-- @e2e exclude Second half of the e2e above, which picks the chip and reads the same list; the query parameter itself is asserted by caseListLenses.spec.js. -->
+- **GIVEN** the same draft
+- **WHEN** the handler picks With drafts
+- **THEN** the list shows the open cases and the draft among them
+
+#### Scenario: The handler's own draft
+<!-- @e2e exclude OpenRegister keeps the caller's own drafts in every list (form-destination, "The owner still sees their own drafts"); proven there. dossiq adds no condition to it. -->
+- **GIVEN** a draft the handler saved themselves
+- **WHEN** the handler opens Cases under All
+- **THEN** their own draft is in the list, with or without the chip
+
+#### Scenario: Somebody else's private draft
+<!-- @e2e exclude Access rule of OpenRegister (DraftStatusPolicy), not of this chip; proven there. The chip sends one query parameter, asserted by caseListLenses.spec.js. -->
+- **GIVEN** a draft the handler may not read
+- **WHEN** the handler picks With drafts
+- **THEN** that draft is not in the list
+
+### Requirement: A case that changes hands leaves every list showing it at once (REQ-CM-CLAIM-02)
+
+After a claim, a reassignment, a bulk transition, a read-state change, a follow change or an attention change succeeds, dossiq SHALL announce it as `cn:objects-changed` for register `dossiq` and schema `case` and on the `cn:page:refresh` bus channel, so the index pages and the dashboard lists on screen read their cases again. A refused gesture SHALL announce nothing.
+
+#### Scenario: A claimed case leaves the queue
+@e2e exclude mutates a shared instance: claiming rewrites demo data other suites read; covered by caseClaimAction.spec.js
+- **GIVEN** an unclaimed case on the Queue page
+- **WHEN** a handler claims it from its row
+- **THEN** the Queue reads its cases again and no longer shows it
+
+### Requirement: A case carries a per-user read state (REQ-URS-01)
+
+dossiq SHALL render openregister's per-user read state on `#Cases` and
+`#Queue`, and SHALL offer mark as read and mark as unread on a case and on
+a single message. dossiq SHALL NOT store a read state of its own.
+
+#### Scenario: what moved overnight is visible from the list
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a queue of cases, three of which changed since the handler last looked
+- **WHEN** they open the queue
+- **THEN** those three SHALL read unread
+
+#### Scenario: a handler puts a case back to unread
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a case the handler has opened
+- **WHEN** they mark it unread
+- **THEN** it SHALL read unread in the list again
+
+#### Scenario: dossiq stores no read state
+
+- **GIVEN** the dossiq tree
+- **WHEN** it is read for a per-user read marker
+- **THEN** none SHALL exist
+
+### Requirement: The case page says which of its panels holds the unread thing (REQ-URS-02)
+
+A case SHALL show which of its panels hold something unread, so a handler
+sees where to look rather than only that something changed, and reading a
+panel SHALL clear that panel's count without clearing the others.
+
+The count is rendered beside the panels rather than on the tab itself.
+`CnTabsWidget` draws a label and an icon per tab, takes no badge and does
+not emit its tab change, so an app cannot decorate a tab and cannot learn
+that one was opened. That affordance belongs in `nextcloud-vue`, where
+every list and detail page in the fleet gets it; until it lands, the
+gesture that clears a panel is the strip's own, and it makes the same
+write opening the tab will make.
+
+#### Scenario: a document waiting on a case is visible from its header
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a case with a newly added document
+- **WHEN** a handler opens the case
+- **THEN** the case page SHALL name its files as holding something unread
+
+#### Scenario: opening the case does not clear where the unread thing is
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a case whose files hold something unread
+- **WHEN** the handler opens the case
+- **THEN** the case SHALL read read
+- **AND** its files SHALL still read unread
+
+#### Scenario: reading a panel clears its own count and nothing else
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a case whose files read unread
+- **WHEN** the handler reads them
+- **THEN** the files SHALL no longer read unread
+
+### Requirement: A notification clears when its subject is opened (REQ-URS-03)
+
+When a handler opens the thing a notification was about, that notification
+SHALL clear without a separate dismissal.
+
+#### Scenario: doing the work empties the bell
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a notification about a case
+- **WHEN** the handler opens that case
+- **THEN** the notification SHALL clear
+- **AND** no separate dismissal SHALL be asked for
+
+#### Scenario: reading one panel clears only the notices about that panel
+@e2e exclude a notice is cleared by the same write that records the read, inside OpenRegister's NotificationClearingService; a browser can drive the write but cannot seed a notice for another user to see cleared. openregister's NotificationClearingServiceTest names both sides.
+
+- **GIVEN** notices about two panels of one case
+- **WHEN** the handler reads one of them
+- **THEN** only that panel's notices SHALL clear
+
+### Requirement: What makes a case unread is declared per case type (REQ-URS-04)
+
+A case type SHALL declare which changes make a case unread, defaulting to
+a status change, a new document and a new message. A change the case type
+does not name SHALL NOT make a case unread.
+
+The declaration is enforced where OpenRegister reads it, which is the
+`case` schema's `x-openregister-read-state` block: its evaluator resolves
+the annotation per schema, never per object. So the block carries the
+whole vocabulary a case type may name, and the case type's own list is
+the authoring surface over it. Narrowing per case type needs a per-object
+hook OpenRegister does not have, and that ask is recorded in this
+change's tasks.
+
+#### Scenario: a bulk correction does not light up four hundred rows
+@e2e tests/e2e/unread-state-on-the-case.spec.ts
+
+- **GIVEN** a field that is not among the declared unread changes
+- **WHEN** that field is changed in bulk
+- **THEN** no case SHALL read unread because of it
+
+#### Scenario: a status change is among the declared unread changes
+@e2e exclude the write invalidates every read state EXCEPT the actor's, so a browser signed in as one user cannot see its own row dropped; proving it needs two users, which is openregister's ReadStateServiceTest.
+
+- **GIVEN** a case type with the default declaration
+- **WHEN** a case's status changes
+- **THEN** it SHALL read unread for the handlers who have seen it before
+
+#### Scenario: a case type names a change nobody recognises
+
+- **GIVEN** a case type naming a trigger outside the vocabulary
+- **WHEN** it is published
+- **THEN** publication SHALL say so rather than drop the name in silence
+
+### Requirement: A notification preference says which layer decided it (REQ-URS-05)
+
+Every notification preference a person reads SHALL name the layer that
+decided it, and how narrowly that layer was pinned. dossiq SHALL compute
+no preference of its own: where the platform routes, the platform's
+answer is the one every reader gets, the background job included.
+
+A preference MAY be pinned to a notification domain. The domains offered
+SHALL be exactly the ones the shipped rules declare, so a stored
+preference can never be one the dispatcher has no rule to match.
+
+#### Scenario: a person sees why they are not being told
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
+
+- **GIVEN** a notification a team default switched off
+- **WHEN** the person opens their notification settings
+- **THEN** the value SHALL show as off
+- **AND** the deciding layer SHALL be named beside it as the group default
+
+#### Scenario: a person overrules the team default
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
+
+- **GIVEN** the same notification
+- **WHEN** the person switches it back on for themselves
+- **THEN** the deciding layer SHALL be named as their own value
+- **AND** the team default SHALL stay visible underneath it
+
+#### Scenario: a domain nothing declares is never offered
+
+- **GIVEN** the case type editor's notification domain field
+- **WHEN** a person opens it
+- **THEN** it SHALL offer only domains a shipped rule declares
+- @e2e exclude {an enum with no free-text path, asserted in tests/Unit/Settings/NotificationRoutingFragmentTest.php}
+
+### Requirement: The daily digest switch is a notification preference (REQ-URS-06)
+
+Switching the daily work digest off SHALL be a notification preference
+rather than a dossiq setting, so that a team lead may set the team's
+default and a person may still decide for themselves.
+
+An instance whose platform does not route notifications SHALL keep the
+behaviour it had, from the value dossiq stores itself.
+
+#### Scenario: a team lead quiets the digest for the team
+
+- **GIVEN** a group whose default for the digest is off
+- **WHEN** a member of that group is due a digest
+- **THEN** no digest SHALL be sent
+- @e2e exclude {a background job's decision, asserted in tests/Unit/Service/Queue/DigestPreferencesRoutingTest.php}
+
+#### Scenario: a person still decides for themselves
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
+
+- **GIVEN** the same group default
+- **WHEN** a member switches their own digest back on
+- **THEN** they SHALL be sent one
+
+### Requirement: dossiq fills the platform's Dutch template gaps (REQ-URS-07)
+
+dossiq SHALL write Dutch text only for platform events the platform
+reports as having none. A template that already carries text, shipped or
+edited by an administrator, SHALL be left exactly as it is.
+
+The template store serves every app on the instance, so overwriting a
+template another app uses would relabel that app's notices with no sign
+that it happened.
+
+#### Scenario: a gap is filled once
+
+- **GIVEN** a platform event the gap list names
+- **WHEN** the repair step runs twice
+- **THEN** the event SHALL be written once
+- **AND** the second run SHALL report nothing written
+- @e2e exclude {an install-time step, asserted in tests/Unit/Repair/DeclareNotificationTemplatesTest.php}
+
+#### Scenario: an administrator's wording survives an upgrade
+
+- **GIVEN** a template an administrator edited
+- **WHEN** the repair step runs
+- **THEN** the administrator's wording SHALL be left in place
+- @e2e exclude {an install-time step, asserted in tests/Unit/Repair/DeclareNotificationTemplatesTest.php}
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 

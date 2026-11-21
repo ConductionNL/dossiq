@@ -60,8 +60,9 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openableDialog } from '../mixins/openable.js'
 import { logContactMoment } from '../services/pipelinqCaseApi.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The handler writes to the applicant of a case, in the portal.
@@ -80,6 +81,30 @@ import { resolveCaseId } from '../utils/resolveCaseId.js'
  *
  * @spec openspec/specs/portal-contribution/spec.md
  */
+/**
+ * The portal account a case's messages go to.
+ *
+ * @param {object|null} kase The case.
+ * @return {string} The portal subject, or ''.
+ */
+function portalRecipient(kase) {
+	return String(kase?.portalSubject || '')
+}
+
+/**
+ * The sender fields for the current user.
+ *
+ * @param {object|null} user The current user.
+ * @return {{senderRef: string, senderType: string, senderName: string}} The sender.
+ */
+function senderOf(user) {
+	return {
+		senderRef: user?.uid || '',
+		senderType: 'medewerker',
+		senderName: user?.displayName || user?.uid || '',
+	}
+}
+
 export default {
 	name: 'PortalMessageDialog',
 	components: {
@@ -90,15 +115,9 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialogResolved, openableDialog],
+
 	props: {
-		/**
-		 * The case the message is about. May arrive as the unresolved
-		 * `@objectId` token: `open-modal` forwards props verbatim, so
-		 * `resolvedCaseId` reads the route then.
-		 */
-		caseId: { type: String, default: '' },
-		/** Whether the dialog is showing. */
-		open: { type: Boolean, default: false },
 		/** The subject of the message being answered, or '' for a new message. */
 		subject: { type: String, default: '' },
 		/** A reply already written elsewhere (the case's conversation thread), to start the message with. */
@@ -119,27 +138,6 @@ export default {
 			sending: false,
 			error: '',
 		}
-	},
-
-	computed: {
-		/**
-		 * The case id, from the prop or else from the route.
-		 *
-		 * @return {string} The case id, or ''.
-		 * @spec openspec/specs/portal-contribution/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
-		/**
-		 * Whether the dialog is on screen.
-		 *
-		 * @return {boolean}
-		 */
-		isOpen() {
-			return this.open === true
-		},
 	},
 
 	watch: {
@@ -214,51 +212,24 @@ export default {
 		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async send() {
-			this.error = ''
-			if (this.form.content.trim() === '') {
-				this.error = t('dossiq', 'Write a message first.')
+			this.error = this.sendRefusal()
+			if (this.error !== '') {
 				return
 			}
-			const recipient = String(this.kase?.portalSubject || '')
-			if (recipient === '') {
-				this.error = t(
-					'dossiq',
-					'This case has no portal account to write to. Nothing was sent.',
-				)
-				return
-			}
-			const user = getCurrentUser()
-			const payload = {
-				caseId: this.resolvedCaseId,
-				caseReference: String(this.kase?.identifier || ''),
-				recipientRef: recipient,
-				senderRef: user?.uid || '',
-				senderType: 'medewerker',
-				senderName: user?.displayName || user?.uid || '',
-				subject: this.form.subject.trim(),
-				content: this.form.content.trim(),
-				direction: 'handler_to_citizen',
-				sentAt: new Date().toISOString(),
-			}
+			await this.sendPayload(this.messagePayload())
+		},
+
+		/**
+		 * Send the message while showing that it is being sent.
+		 *
+		 * @param {object} payload The message.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/portal-contribution/spec.md
+		 */
+		async sendPayload(payload) {
 			this.sending = true
 			try {
-				const { data } = await axios.post(
-					generateUrl(
-						'/apps/openregister/api/objects/dossiq/portaalBericht',
-					),
-					payload,
-				)
-				this.$emit('sent', data)
-				// A reply saved as a draft on this case is now sent (the conversation widget clears it).
-				emit('cn:conversation:reply-sent', { objectId: this.resolvedCaseId })
-				if (this.logContactMoment === true && await this.logAsContactMoment(payload) === false) {
-					this.error = t(
-						'dossiq',
-						'The message was sent, but it could not be logged as a contact moment.',
-					)
-					return
-				}
-				this.$emit('close')
+				await this.postMessage(payload)
 			} catch {
 				this.error = t(
 					'dossiq',
@@ -267,6 +238,83 @@ export default {
 			} finally {
 				this.sending = false
 			}
+		},
+
+		/**
+		 * Why nothing is sent, or '' when the message can go.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/specs/portal-contribution/spec.md
+		 */
+		sendRefusal() {
+			if (this.form.content.trim() === '') {
+				return t('dossiq', 'Write a message first.')
+			}
+			if (portalRecipient(this.kase) === '') {
+				return t(
+					'dossiq',
+					'This case has no portal account to write to. Nothing was sent.',
+				)
+			}
+			return ''
+		},
+
+		/**
+		 * The inbox message the form describes, sent now by the current user.
+		 *
+		 * @return {object} The message.
+		 * @spec openspec/specs/portal-contribution/spec.md
+		 */
+		messagePayload() {
+			return {
+				caseId: this.resolvedCaseId,
+				caseReference: String(this.kase?.identifier || ''),
+				recipientRef: portalRecipient(this.kase),
+				...senderOf(getCurrentUser()),
+				subject: this.form.subject.trim(),
+				content: this.form.content.trim(),
+				direction: 'handler_to_citizen',
+				sentAt: new Date().toISOString(),
+			}
+		},
+
+		/**
+		 * Write the message, then follow it up.
+		 *
+		 * @param {object} payload The message.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/portal-contribution/spec.md
+		 */
+		async postMessage(payload) {
+			const { data } = await axios.post(
+				generateUrl(
+					'/apps/openregister/api/objects/dossiq/portaalBericht',
+				),
+				payload,
+			)
+			await this.afterSent(data, payload)
+		},
+
+		/**
+		 * Tell the page a message was sent, log it when asked to, and close.
+		 *
+		 * @param {object} data What the write answered.
+		 * @param {object} payload The message as it was sent.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/portal-contribution/spec.md
+		 */
+		async afterSent(data, payload) {
+			this.$emit('sent', data)
+			// A reply saved as a draft on this case is now sent (the conversation widget clears it).
+			emit('cn:conversation:reply-sent', { objectId: this.resolvedCaseId })
+			if (this.logContactMoment === true && await this.logAsContactMoment(payload) === false) {
+				this.error = t(
+					'dossiq',
+					'The message was sent, but it could not be logged as a contact moment.',
+				)
+				return
+			}
+			this.$emit('close')
 		},
 	},
 }

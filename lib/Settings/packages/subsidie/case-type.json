@@ -4,6 +4,7 @@
     "identifier": "subsidie",
     "title": "Subsidie",
     "category": "Subsidies",
+    "grantChain": true,
     "description": "Subsidieaanvraag- en verstrekkingsproces conform Awb titel 4.2 en de gemeentelijke subsidieverordening",
     "purpose": "Behandeling van subsidieaanvragen van ontvangst tot beschikking",
     "trigger": "Subsidieaanvraag van een aanvrager onder een subsidieregeling",
@@ -36,7 +37,8 @@
     "overviewCards": [
       "case-overview-sections",
       "case-grant-decisions-card",
-      "case-payment-schedule"
+      "case-payment-schedule",
+      "case-settlement"
     ],
     "sideCards": [
       "side-payment-amounts",

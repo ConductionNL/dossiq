@@ -79,24 +79,33 @@ class DrcDocumentRelations {
 		string $docUuid,
 	): array {
 		// First try by exact UUID (in case stored as UUID).
-		$results = $this->lookups->idsByField(
-			register: $register,
-			schema: $schema,
-			field: 'document',
-			value: $docUuid
-		);
+		$results = $this->idsByDocument(scope: [$register, $schema], value: $docUuid);
 		if (empty($results) === false) {
 			return $results;
 		}
 
 		// Also search by partial URL match (OIO may store full URL).
-		return $this->lookups->idsByField(
-			register: $register,
-			schema: $schema,
-			field: 'document',
-			value: '%' . $docUuid . '%'
-		);
+		return $this->idsByDocument(scope: [$register, $schema], value: '%' . $docUuid . '%');
 	}//end findOioRelationsForDocument()
+
+	/**
+	 * The ids of the OIO rows whose document field matches the value.
+	 *
+	 * @param array{0: string, 1: string} $scope The register ID and the OIO schema ID.
+	 * @param string                      $value The document value, exact or a `%` pattern.
+	 *
+	 * @return array<string> The matching OIO UUIDs.
+	 *
+	 * @throws \Throwable When the store cannot be searched.
+	 */
+	private function idsByDocument(array $scope, string $value): array {
+		return $this->lookups->idsByField(
+			register: $scope[0],
+			schema: $scope[1],
+			field: 'document',
+			value: $value
+		);
+	}//end idsByDocument()
 
 	/**
 	 * Validate OIO uniqueness: object + informatieobject + objectType (drc-003 VNG).
@@ -119,20 +128,45 @@ class DrcDocumentRelations {
 			return null;
 		}
 
+		return $this->uniquenessRefusal(relation: ['ioUrl' => $ioUrl, 'objectUrl' => $objectUrl, 'objectType' => $objectType], register: $register);
+	}//end checkOioUniqueness()
+
+	/**
+	 * The refusal of a relation stored already, or of one that could not be checked; null when it is new.
+	 *
+	 * @param array{ioUrl: string, objectUrl: string, objectType: string} $relation The informatieobject URL, the object
+	 *                                                                           URL and the object type (zaak or besluit).
+	 * @param string                                                     $register The register ID.
+	 *
+	 * @return array|null The refusal, or null when the relation is new
+	 */
+	private function uniquenessRefusal(array $relation, string $register): ?array {
+		$ioUrl = $relation['ioUrl'];
+		$objectUrl = $relation['objectUrl'];
 		try {
-			$duplicate = $this->relationExists(register: $register, ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
-		} catch (\Throwable $e) {
-			return $this->results->notVerified(
-				rule: 'drc-003',
-				object: 'document ' . $ioUrl . ' on ' . $objectUrl,
-				cause: $e->getMessage()
+			$duplicate = $this->relationExists(
+				pair: $this->pairOf(ioUrl: $ioUrl, objectUrl: $objectUrl),
+				place: ['register' => $register, 'objectType' => $relation['objectType']]
 			);
+		} catch (\Throwable $e) {
+			return $this->results->notVerified(rule: 'drc-003', object: 'document ' . $ioUrl . ' on ' . $objectUrl, cause: $e->getMessage());
 		}
 
 		if ($duplicate === false) {
 			return null;
 		}
 
+		return $this->duplicateRelationError();
+	}//end uniquenessRefusal()
+
+	/**
+	 * The refusal of an informatieobject + object + objectType combination that exists already.
+	 *
+	 * @return array The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function duplicateRelationError(): array {
 		return $this->results->error(
 			status: 400,
 			detail: 'De combinatie informatieobject + object + objectType bestaat al.',
@@ -144,7 +178,7 @@ class DrcDocumentRelations {
 				),
 			]
 		);
-	}//end checkOioUniqueness()
+	}//end duplicateRelationError()
 
 	/**
 	 * Whether the relation is stored already, as an OIO or as its ZIO or BIO.
@@ -152,18 +186,18 @@ class DrcDocumentRelations {
 	 * Drc-003a/b: a relationship created via ZRC (zaakinformatieobjecten) or BRC
 	 * (besluitinformatieobjecten) counts as a duplicate for OIO creation.
 	 *
-	 * @param string $register The register ID
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL (zaak or besluit)
-	 * @param string $objectType The object type (zaak or besluit)
+	 * @param array{document: array{0: string, 1: ?string}, object: array{0: string, 1: ?string}} $pair  The URL and the UUID of the
+	 *                                                                                              document and of the object.
+	 * @param array{register: string, objectType: string}                                       $place The register ID and the
+	 *                                                                                              object type (zaak or besluit).
 	 *
 	 * @return bool True when a stored relation was found
 	 *
 	 * @throws \Throwable When the store cannot be searched.
 	 */
-	private function relationExists(string $register, string $ioUrl, string $objectUrl, string $objectType): bool {
-		$pair = $this->pairOf(ioUrl: $ioUrl, objectUrl: $objectUrl);
-		foreach ($this->placesFor(objectType: $objectType) as [$schemaKey, $objectField]) {
+	private function relationExists(array $pair, array $place): bool {
+		$register = $place['register'];
+		foreach ($this->placesFor(objectType: $place['objectType']) as [$schemaKey, $objectField]) {
 			$schema = $this->settingsService->getConfigValue(key: $schemaKey);
 			if ($schema === '') {
 				continue;
