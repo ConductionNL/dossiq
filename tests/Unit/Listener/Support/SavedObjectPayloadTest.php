@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Listener\Support\SavedObjectPayload
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class SavedObjectPayloadTest extends TestCase {
 

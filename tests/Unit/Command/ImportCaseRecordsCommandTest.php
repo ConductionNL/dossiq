@@ -43,6 +43,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @covers \OCA\Dossiq\Command\ImportCaseRecordsCommand
  * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses   \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @uses   \OCA\Dossiq\Service\Import\RecordImportAnswer
+ * @uses   \OCA\Dossiq\Service\Term\PeriodDays
  * @uses   \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @uses   \OCA\Dossiq\Service\Import\RecordImportStore

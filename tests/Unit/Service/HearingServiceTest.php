@@ -94,6 +94,7 @@ interface HearingObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\HearingCalendarService
+ * @uses \OCA\Dossiq\Service\Calendar\PlannedEventFields
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\AppInfo\Application
  * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows

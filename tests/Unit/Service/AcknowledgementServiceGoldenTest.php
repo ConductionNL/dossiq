@@ -54,6 +54,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * Golden test for AcknowledgementService::acknowledge().
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @uses \OCA\Dossiq\Service\Notification\AcknowledgementOnCase
+ * @uses \OCA\Dossiq\Service\Notification\AcknowledgementRefusals
  * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
  * @covers \OCA\Dossiq\Service\AcknowledgementTerms
  * @covers \OCA\Dossiq\Service\AcknowledgementDelivery

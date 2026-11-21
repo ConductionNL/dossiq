@@ -31,6 +31,8 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome

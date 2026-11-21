@@ -44,6 +44,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Woo\WooCollection
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
  * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses   \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore

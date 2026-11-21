@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for HearingCalendarService.
  *
  * @covers \OCA\Dossiq\Service\HearingCalendarService
+ * @uses \OCA\Dossiq\Service\Calendar\PlannedEventFields
  *
  * @uses \OCA\Dossiq\AppInfo\Application
  * @uses \OCA\Dossiq\Service\HearingCalendarEvent

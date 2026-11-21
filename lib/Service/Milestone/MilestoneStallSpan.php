@@ -31,7 +31,7 @@ use DateTimeImmutable;
 /**
  * The milestone wait a stall timer is armed for.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 final class MilestoneStallSpan {
 

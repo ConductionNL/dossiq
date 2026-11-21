@@ -116,4 +116,39 @@ class InformatieobjectMetadataNormaliser {
 
 		return $keywords;
 	}//end keywords()
+
+	/**
+	 * The editable metadata fields present in the request, normalised.
+	 *
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 *
+	 * @return array<string, mixed> The fields to update.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function editableFields(array $metadata): array {
+		$allowed = [
+			'title',
+			'description',
+			'informatieobjecttype',
+			'vertrouwelijkheidaanduiding',
+			'direction',
+			'keywords',
+		];
+		$updateData = [];
+		foreach ($allowed as $field) {
+			if (array_key_exists($field, $metadata) === false) {
+				continue;
+			}
+
+			$updateData[$field] = match ($field) {
+				'direction' => $this->direction(value: $metadata[$field]),
+				'keywords' => $this->keywords(value: $metadata[$field]),
+				default => $metadata[$field],
+			};
+		}
+
+		return $updateData;
+	}//end editableFields()
 }//end class

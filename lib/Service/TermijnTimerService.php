@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Arms, suspends, resumes, extends and cancels engine timers for AWB terms.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 class TermijnTimerService implements TermijnTimerServiceInterface {
 
@@ -218,7 +218,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 * @spec openspec/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
@@ -451,7 +451,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return bool True when the engine suspended the timer.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function suspendBeslistermijn(array $instance, string $reason, ?DateTimeImmutable $until): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
@@ -477,7 +477,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return bool True when the engine resumed the timer.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function resumeBeslistermijn(array $instance, string $reason): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
@@ -511,7 +511,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return bool True when the engine extended the timer.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function extendBeslistermijn(array $instance, int $days, string $rationale, bool $supervisor): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
@@ -571,7 +571,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 *
 	 * @return int How many timers were cancelled.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function cancelForInstance(string $instanceId, string $reason): int {
 		$engine = $this->engineFor(timerId: $instanceId);
@@ -658,10 +658,11 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	 * @return int|null The span.
 	 *
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {
-			return (int)$from->diff($to)->days;
+			return $this->dates->daysBetween(from: $from, to: $to);
 		}
 
 		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);

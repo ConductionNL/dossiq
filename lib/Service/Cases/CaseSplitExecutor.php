@@ -45,7 +45,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseSplitExecutorInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -59,8 +58,7 @@ use Throwable;
  * Open the second case, move what the plan names, record what left.
  *
  * @spec openspec/specs/case-management/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class CaseSplitExecutor implements CaseSplitExecutorInterface {
 
@@ -123,6 +121,13 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	public const PAGE_SIZE = 500;
 
 	/**
+	 * The fields a split writes onto the second case and onto the original.
+	 *
+	 * @var CaseSplitFields
+	 */
+	private CaseSplitFields $fields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseSplitPolicy  $policy          What the case type allows to be divided.
@@ -138,6 +143,7 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 		private readonly LoggerInterface $logger,
 		private readonly CaseSplitStore $store,
 	) {
+		$this->fields = new CaseSplitFields();
 	}//end __construct()
 
 	/**
@@ -504,8 +510,8 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
 		$this->store->refuseUnreachableStatus(source: $source);
-		$payload = $this->secondCaseOf(source: $source, title: $title);
-		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
+		$payload = $this->fields->secondCase(source: $source, title: $title, sourceId: $this->store->uuidOf(row: $source));
+		$payload['relatedCases'] = $this->fields->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
 
 		return $this->takeOverStatus(
 			newCase: $this->saveSecondCase(payload: $payload),
@@ -548,54 +554,6 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 			);
 		}
 	}//end takeOverStatus()
-
-	/**
-	 * The second case's fields, taken from the first.
-	 *
-	 * @param array<string, mixed> $source The case being split.
-	 * @param string               $title  The new case's title.
-	 *
-	 * @return array<string, string> The fields.
-	 */
-	private function secondCaseOf(array $source, string $title): array {
-		$title = trim($title);
-		if ($title === '') {
-			$title = 'Split from ' . (string)($source['title'] ?? '');
-		}
-
-		return [
-			'title' => $title,
-			'caseType' => (string)($source['caseType'] ?? ''),
-			'assignedGroup' => (string)($source['assignedGroup'] ?? ''),
-			'assignee' => (string)($source['assignee'] ?? ''),
-			'impact' => (string)($source['impact'] ?? 'medium'),
-			'urgency' => (string)($source['urgency'] ?? 'medium'),
-			'splitFrom' => $this->store->uuidOf(row: $source),
-		];
-	}//end secondCaseOf()
-
-	/**
-	 * The second case's relation back to the first.
-	 *
-	 * Written as `relatedCases`, a JSON-ENCODED string of typed relations,
-	 * because that is what the schema declares and what `CaseRelationCodec`
-	 * reads. An array there stores a shape nothing reads and the Related tab
-	 * is empty on every split.
-	 *
-	 * @param string $sourceId The case being split.
-	 * @param string $actor    Who split it.
-	 *
-	 * @return string The encoded relations.
-	 */
-	private function relationBack(string $sourceId, string $actor): string {
-		$relation = [
-			'caseId' => $sourceId,
-			'aardRelatie' => CaseSplitPlan::RELATION,
-			'toelichting' => 'Split from this case by ' . $actor,
-		];
-
-		return (string)json_encode([$relation]);
-	}//end relationBack()
 
 	/**
 	 * Write the second case.
@@ -647,7 +605,7 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 			$case,
 			[
 				'splitInto' => $split['newId'],
-				'splitMovedItems' => $this->movedItems(case: $case, references: $split['references']),
+				'splitMovedItems' => $this->fields->movedItems(case: $case, references: $split['references']),
 				'splitNote' => $note,
 			]
 		);
@@ -683,24 +641,6 @@ class CaseSplitExecutor implements CaseSplitExecutorInterface {
 			);
 		}
 	}//end saveOriginal()
-
-	/**
-	 * The original's earlier moved items followed by these, stamped now.
-	 *
-	 * @param array<string, mixed>             $case       The case as it was read.
-	 * @param array<int, array<string, mixed>> $references The plan's reference entries.
-	 *
-	 * @return array<int, array<string, mixed>> The moved items.
-	 */
-	private function movedItems(array $case, array $references): array {
-		$now = ['movedAt' => (new DateTimeImmutable())->format('c')];
-		$existing = array_filter((array)($case['splitMovedItems'] ?? []), 'is_array');
-
-		return array_merge(
-			array_values($existing),
-			array_map(static fn (mixed $reference): array => array_merge((array)$reference, $now), array_values($references))
-		);
-	}//end movedItems()
 
 	/**
 	 * The chosen ids of one part.

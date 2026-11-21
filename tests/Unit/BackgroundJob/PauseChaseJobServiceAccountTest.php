@@ -79,6 +79,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
+ * @uses \OCA\Dossiq\Service\Pause\PauseStep
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */

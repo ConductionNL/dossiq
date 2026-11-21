@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * What moves, what stays, what is on both, and what is refused.
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -327,6 +328,46 @@ class CaseSplitExecutorTest extends TestCase {
 		self::assertSame(CaseSplitPlan::RELATION, $decoded[0]['aardRelatie']);
 		self::assertSame('case-1', (string)$answer['case']['splitFrom']);
 	}//end testTheNewCaseNamesTheOriginal()
+
+	/**
+	 * Without a title the second case is named after the first, and it takes the first's handling fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testTheSecondCaseTakesTheFirstsFields(): void {
+		$this->store->seed(
+			schema: 'case',
+			uuid: 'case-2',
+			row: [
+				'title' => 'Overlast',
+				'caseType' => 'ct-1',
+				'assignedGroup' => 'team-a',
+				'assignee' => 'ann',
+				'urgency' => 'high',
+			],
+		);
+		$this->store->seed(schema: 'caseDocument', uuid: 'doc-9', row: ['case' => 'case-2', 'title' => 'doc-9']);
+
+		$answer = $this->executor()->split(caseId: 'case-2', title: '  ', chosen: ['documents' => ['doc-9']], actor: 'jan');
+		$case = $answer['case'];
+
+		self::assertSame(expected: 'Split from Overlast', actual: $case['title']);
+		self::assertSame(expected: 'ct-1', actual: $case['caseType']);
+		self::assertSame(expected: 'team-a', actual: $case['assignedGroup']);
+		self::assertSame(expected: 'ann', actual: $case['assignee']);
+		self::assertSame(expected: 'medium', actual: $case['impact']);
+		self::assertSame(expected: 'high', actual: $case['urgency']);
+		self::assertSame(
+			expected: 'Split from this case by jan',
+			actual: json_decode((string)$case['relatedCases'], true)[0]['toelichting'],
+		);
+
+		$moved = $this->store->row(schema: 'case', uuid: 'case-2')['splitMovedItems'];
+		self::assertSame(expected: 'doc-9', actual: $moved[0]['id']);
+		self::assertNotFalse(condition: \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sP', (string)$moved[0]['movedAt']));
+	}//end testTheSecondCaseTakesTheFirstsFields()
 
 	/**
 	 * A planned move naming a row outside the selection moves nothing.

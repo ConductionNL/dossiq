@@ -35,11 +35,10 @@ use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Review\DisclosureAssessmentValidator;
 use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Service\Assessment\PartlyPublicRows;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,9 +49,7 @@ use RuntimeException;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of
- *  small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterface {
 
@@ -87,6 +84,13 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	private readonly DisclosureAssessmentValidator $validator;
 
 	/**
+	 * Reads which assessment rows judged a case's document partly public.
+	 *
+	 * @var PartlyPublicRows
+	 */
+	private readonly PartlyPublicRows $partlyPublicRows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -115,6 +119,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	) {
 		$this->refusalGrounds       = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 		$this->validator            = new DisclosureAssessmentValidator(refusalGrounds: $this->refusalGrounds);
+		$this->partlyPublicRows     = new PartlyPublicRows();
 		$this->outstandingDocuments = ($outstanding ?? new OutstandingDocuments(
 			settingsService: $settingsService,
 			caseDocuments: $caseDocuments,
@@ -252,6 +257,8 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function storeAssessment(array $assessment, AssessmentBatchTarget $target): array {
 		$existing = $this->existingAssessments(assessment: $assessment, target: $target);
@@ -266,7 +273,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			$uuid = (string)($existing[0]['id'] ?? $existing[0]['uuid'] ?? null);
 		}
 
-		return $this->saveAssessment(assessment: $assessment, target: $target, uuid: $uuid);
+		return $target->save(assessment: $assessment, uuid: $uuid);
 	}//end storeAssessment()
 
 	/**
@@ -303,27 +310,6 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			reference: (string)$assessment['documentRef']
 		);
 	}//end refusalOn()
-
-	/**
-	 * Save the assessment, new or over the stored one.
-	 *
-	 * @param array<string, mixed>  $assessment The stamped assessment.
-	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
-	 * @param string|null           $uuid       The stored assessment's uuid, or null to create.
-	 *
-	 * @return array<string, mixed> `{saved, created, documentRef}`.
-	 */
-	private function saveAssessment(array $assessment, AssessmentBatchTarget $target, ?string $uuid): array {
-		$saved = $target->objectService->saveObject(
-			object: $assessment,
-			options: new ObjectSaveOptions(
-				target: new ObjectFindTarget(register: $target->register, schema: $target->schema),
-				uuid: $uuid
-			)
-		);
-
-		return ['saved' => $saved, 'created' => (int)($uuid === null), 'documentRef' => (string)$assessment['documentRef']];
-	}//end saveAssessment()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.
@@ -492,6 +478,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @return array<int, array<string, mixed>> The assessments.
 	 *
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function partlyPublicAssessments(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -508,13 +495,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
 		);
 
-		return array_values(
-			array_filter(
-				$rows,
-				static fn (array $row): bool => (string)($row['caseRef'] ?? '') === $caseId
-					&& (string)($row['classification'] ?? '') === 'deels_openbaar'
-			)
-		);
+		return $this->partlyPublicRows->rowsOf(rows: $rows, caseId: $caseId);
 	}//end partlyPublicAssessments()
 
 	/**
@@ -531,6 +512,7 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function partlyPublicWithoutCopy(string $caseId): array {
 		$objectService = $this->requireObjectService();
@@ -546,46 +528,8 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
 		);
 
-		return $this->redactionTally(rows: $rows, caseId: $caseId);
+		return $this->partlyPublicRows->tally(rows: $rows, caseId: $caseId);
 	}//end partlyPublicWithoutCopy()
-
-	/**
-	 * How many of the rows are the case's partly public documents, and which of them have no redacted copy.
-	 *
-	 * @param array<int, array<string, mixed>> $rows   The assessments read.
-	 * @param string                           $caseId The case UUID.
-	 *
-	 * @return array{partlyPublic: int, waiting: list<string>} The count and the documents still waiting.
-	 */
-	private function redactionTally(array $rows, string $caseId): array {
-		$partlyPublic = 0;
-		$waiting = [];
-		foreach ($rows as $row) {
-			if ($this->isPartlyPublicOf(row: $row, caseId: $caseId) === false) {
-				continue;
-			}
-
-			$partlyPublic++;
-			if ((string)($row['redactedDocumentRef'] ?? '') === '') {
-				$waiting[] = (string)($row['documentRef'] ?? '');
-			}
-		}
-
-		return ['partlyPublic' => $partlyPublic, 'waiting' => $waiting];
-	}//end redactionTally()
-
-	/**
-	 * Whether an assessment is on the case and judged its document partly public.
-	 *
-	 * @param array<string, mixed> $row    The assessment.
-	 * @param string               $caseId The case UUID.
-	 *
-	 * @return bool True for a partly public assessment of the case.
-	 */
-	private function isPartlyPublicOf(array $row, string $caseId): bool {
-		return (string)($row['caseRef'] ?? '') === $caseId
-			&& (string)($row['classification'] ?? '') === 'deels_openbaar';
-	}//end isPartlyPublicOf()
 
 	/**
 	 * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment

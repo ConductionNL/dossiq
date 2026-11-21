@@ -76,4 +76,19 @@ class BackfilledTemplateShapeTest extends TestCase {
 		self::assertSame('Stap', $shape->steps(statuses: [['id' => 's-1']])[0]['title']);
 		self::assertSame('Door', $shape->transitions(statuses: [['id' => 's-1'], ['id' => 's-2']])[0]['label']);
 	}//end testANamelessStatusFallsBack()
+
+	/**
+	 * Statuses are put in their order; one without an order counts as 0.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testStatusesArePutInTheirOrder(): void {
+		$ordered = (new BackfilledTemplateShape())->ordered(
+			statuses: [['id' => 'c', 'order' => 3], ['id' => 'a', 'order' => '1'], ['id' => 'none'], ['id' => 'b', 'order' => 2]]
+		);
+
+		self::assertSame(expected: ['none', 'a', 'b', 'c'], actual: array_column($ordered, 'id'));
+	}//end testStatusesArePutInTheirOrder()
 }//end class

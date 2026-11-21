@@ -370,7 +370,7 @@ class MilestoneServiceStalledTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function testWaitingOnNamesTheMilestoneBeforeItIsLate(): void {
 		$today = (new \DateTimeImmutable('today'))->format('Y-m-d');

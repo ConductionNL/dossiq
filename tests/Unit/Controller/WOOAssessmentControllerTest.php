@@ -55,6 +55,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Cases\HandlerActsAsSystem
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException

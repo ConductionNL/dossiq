@@ -78,8 +78,6 @@ use RuntimeException;
  * trade. The fourteen are each injected and each named, so the class is
  * readable even where it is wide.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingService implements BeschikkingServiceInterface {
 
@@ -100,10 +98,11 @@ class BeschikkingService implements BeschikkingServiceInterface {
 
 	/**
 	 * The kinds a successor may be: a wijzigingsbeschikking or an intrekkingsbeschikking.
+	 * Kept as an alias; the request owns the list.
 	 *
 	 * @var array<int, string>
 	 */
-	public const SUCCESSOR_KINDS = ['amendment', 'withdrawal'];
+	public const SUCCESSOR_KINDS = SuccessorRequest::KINDS;
 
 	/**
 	 * A signing request filinq took and has not concluded.
@@ -767,18 +766,21 @@ class BeschikkingService implements BeschikkingServiceInterface {
 	 * @throws RefusedException 422 for an unknown kind; 409 when the original is
 	 *                          still a draft or has already been replaced.
 	 * @throws \RuntimeException 'not_found' when the original does not exist.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function issue(SuccessorRequest $request): array {
-		$this->refuseAnUnknownKind(kind: $request->kind);
+		$request->assertKnownKind();
 
 		$original = $this->repository->requireBeschikking(decisionId: $request->originalId);
 		$this->refuseASuccessorOfADraft(original: $original);
 		$this->refuseASecondSuccessor(original: $original);
 
 		$successor = $this->compose(
-			caseId: $this->successorCaseIdOf(original: $original),
-			templateId: ($request->templateId ?? $this->successorTemplateOf(original: $original)),
-			overrides: $this->successorFields(original: $original, request: $request),
+			caseId: $request->caseIdFrom(original: $original),
+			templateId: $request->templateFrom(original: $original),
+			overrides: $request->fieldsFrom(original: $original),
 		);
 
 		$original['id'] = $request->originalId;
@@ -787,25 +789,6 @@ class BeschikkingService implements BeschikkingServiceInterface {
 
 		return $successor;
 	}//end issue()
-
-	/**
-	 * Refuse a kind that is neither a wijzigings- nor an intrekkingsbeschikking.
-	 *
-	 * @param string $kind The successor kind.
-	 *
-	 * @return void
-	 *
-	 * @throws RefusedException 422 for an unknown kind.
-	 */
-	private function refuseAnUnknownKind(string $kind): void {
-		if (in_array($kind, self::SUCCESSOR_KINDS, true) === false) {
-			throw new RefusedException(
-				rule: 'successor-kind-unknown',
-				sentence: 'A correction is either a wijzigingsbeschikking or an intrekkingsbeschikking.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-	}//end refuseAnUnknownKind()
 
 	/**
 	 * Refuse a successor to a beschikking that has not been signed.
@@ -851,61 +834,6 @@ class BeschikkingService implements BeschikkingServiceInterface {
 			sentence: 'This beschikking has already been replaced by '.$reference.'. Correct that beschikking instead.',
 		);
 	}//end refuseASecondSuccessor()
-
-	/**
-	 * The fields the successor is composed with.
-	 *
-	 * The addressee carries over unless the correction names another: the
-	 * person who received the original is who the correction is for.
-	 *
-	 * @param array<string, mixed> $original The stored original.
-	 * @param SuccessorRequest     $request  The kind, the original's id and what the handler wrote.
-	 *
-	 * @return array<string, mixed> The compose overrides.
-	 */
-	private function successorFields(array $original, SuccessorRequest $request): array {
-		$overrides = $request->overrides;
-		$fields = [
-			'decisionType' => $request->kind,
-			'supersedes' => $request->originalId,
-			'addressee' => (array)($overrides['addressee'] ?? ($original['addressee'] ?? [])),
-		];
-
-		foreach (['rationale', 'decision'] as $field) {
-			if (array_key_exists($field, $overrides) === true) {
-				$fields[$field] = $overrides[$field];
-			}
-		}
-
-		return $fields;
-	}//end successorFields()
-
-	/**
-	 * The case the original belongs to, which the successor belongs to as well.
-	 *
-	 * @param array<string, mixed> $original The stored original.
-	 *
-	 * @return string The case id.
-	 */
-	private function successorCaseIdOf(array $original): string {
-		return (string)($original['caseId'] ?? '');
-	}//end successorCaseIdOf()
-
-	/**
-	 * The template the original was written from, or null to let compose choose.
-	 *
-	 * @param array<string, mixed> $original The stored original.
-	 *
-	 * @return string|null The template id.
-	 */
-	private function successorTemplateOf(array $original): ?string {
-		$templateId = trim((string)($original['templateId'] ?? ''));
-		if ($templateId === '') {
-			return null;
-		}
-
-		return $templateId;
-	}//end successorTemplateOf()
 
 	/**
 	 * Flag required-but-empty fields with `_required` markers.

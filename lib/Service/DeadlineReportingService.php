@@ -52,11 +52,11 @@ use RuntimeException;
  *
  * The annual payout statement is AnnualPayoutStatement and the KPI counters
  * are TermDashboardFigures::tally(); this service reads the instances and
- * puts the reports together.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * puts the reports together. The counted figures, the average duration and
+ * the CSV of one case type's tally are PerTypeRows'.
  *
  * @spec openspec/specs/termijn-reporting/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	use SearchesObjects;
@@ -440,6 +440,8 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	 * @param array<string, mixed> $b The raw tally.
 	 *
 	 * @return array<string, mixed> The reported aggregate.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function reducedType(array $b): array {
 		// $byType entries are only created when a row is counted, so
@@ -449,58 +451,15 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 		// in the denominator, and a share of nothing is null, no figure.
 		$binnenPct = $this->outcomes->shareMet(met: $b['met'], missed: $b['missed']);
 
-		$avgDur = $this->averageDays(durations: $b['doorlooptijdenDagen']);
+		$avgDur = $this->perTypeRows->averageDays(durations: $b['doorlooptijdenDagen']);
 
 		return [
 			'title' => $b['title'],
 			'totaal' => $total,
 			'binnenTermijnPct' => $binnenPct,
 			'gemiddeldeDoorlooptijdDagen' => $avgDur,
-		] + $this->typeCounts(b: $b, binnenPct: $binnenPct);
+		] + $this->perTypeRows->counts(b: $b, binnenPct: $binnenPct);
 	}//end reducedType()
-
-	/**
-	 * The counted figures of one zaaktype's aggregate.
-	 *
-	 * @param array<string, mixed> $b         The raw tally, with the number of terms counted as `totaal`.
-	 * @param float|null           $binnenPct The share of decided terms that were met.
-	 *
-	 * @return array<string, mixed> The counted figures.
-	 */
-	private function typeCounts(array $b, ?float $binnenPct): array {
-		return [
-			'verlengingen' => $b['verlengingen'],
-			'overschrijdingen' => $b['overschrijdingen'],
-			'ingebrekestellingen' => $b['ingebrekestellingen'],
-			'dwangsomTotalCents' => $b['dwangsomTotalCents'],
-			// The listing selects terms by start date in the quarter, so every
-			// counted term arrived in it.
-			'received' => $b['totaal'],
-			'met' => $b['met'],
-			'missed' => $b['missed'],
-			'running' => $b['running'],
-			'suspended' => $b['suspended'],
-			'metShare' => $binnenPct,
-		];
-	}//end typeCounts()
-
-	/**
-	 * The average of the durations in days, to one decimal; 0.0 when there are none.
-	 *
-	 * @param array<int, int|float> $durations The durations in days.
-	 *
-	 * @return float The average.
-	 */
-	private function averageDays(array $durations): float {
-		$avg = 0.0;
-
-		$count = count($durations);
-		if ($count > 0) {
-			$avg = round(array_sum($durations) / $count, 1);
-		}
-
-		return $avg;
-	}//end averageDays()
 
 	/**
 	 * Generate an annual dwangsom audit report.
@@ -552,6 +511,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	 * @return array<string, mixed> The figures.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function kpiFigures(array $totals): array {
 		$dwTotal = 0;
@@ -561,7 +521,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 		return [
 			'totalZaken' => $totals['total'],
 			'withinTermijnPercent' => $withinTermPercent,
-			'avgDurationDays' => $this->averageDays(durations: $totals['durations']),
+			'avgDurationDays' => $this->perTypeRows->averageDays(durations: $totals['durations']),
 			'overrunCount' => $totals['overrun'],
 			'dwangsomTotalCents' => $dwTotal,
 		];
@@ -620,60 +580,12 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	 * @return string
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function quarterlyReportAsCsv(array $report): string {
-		$lines = [implode(',', $this->csvHeader())];
-		foreach ((array)($report['perType'] ?? []) as $type => $row) {
-			$lines[] = $this->csvLine(type: (string)$type, row: $row);
-		}
-
-		return implode("\n", $lines);
+		return $this->perTypeRows->csv(perType: (array)($report['perType'] ?? []));
 	}//end quarterlyReportAsCsv()
-
-	/**
-	 * The columns of the quarterly CSV.
-	 *
-	 * @return array<int, string> The header.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
-	 */
-	private function csvHeader(): array {
-		return [
-			'caseType',
-			'totaal',
-			'binnenTermijnPct',
-			'gemiddeldeDoorlooptijdDagen',
-			'verlengingen',
-			'overschrijdingen',
-			'ingebrekestellingen',
-			'dwangsomTotalCents',
-		];
-	}//end csvHeader()
-
-	/**
-	 * One case type's line of the quarterly CSV.
-	 *
-	 * @param string $type The case type.
-	 * @param mixed  $row  Its tally.
-	 *
-	 * @return string The line.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
-	 */
-	private function csvLine(string $type, $row): string {
-		$line = [
-			$type,
-			(string)($row['totaal'] ?? 0),
-			(string)($row['binnenTermijnPct'] ?? ''),
-			(string)($row['gemiddeldeDoorlooptijdDagen'] ?? 0),
-			(string)($row['verlengingen'] ?? 0),
-			(string)($row['overschrijdingen'] ?? 0),
-			(string)($row['ingebrekestellingen'] ?? 0),
-			(string)($row['dwangsomTotalCents'] ?? 0),
-		];
-
-		return implode(',', $line);
-	}//end csvLine()
 
 	/**
 	 * Resolve a quarter spec (YYYY-Qn) to its from/until date bounds.

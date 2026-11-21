@@ -142,4 +142,29 @@ final class ZgwRuleResultsTest extends TestCase {
 			$this->results()->fieldImmutableError(fieldName: 'identificatie')
 		);
 	}//end testAnImmutableFieldIsRefusedByName()
+
+	/**
+	 * A refusal of one field is a 400 with the detail, and the field's code and reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testOneFieldIsRefusedWithItsCodeAndReason(): void {
+		$this->assertSame(
+			expected: [
+				'valid' => false,
+				'status' => 400,
+				'detail' => 'De combinatie is niet uniek.',
+				'invalidParams' => [['name' => 'identificatie', 'code' => 'identificatie-niet-uniek', 'reason' => 'De combinatie bestaat al.']],
+				'enrichedBody' => [],
+			],
+			actual: $this->results()->fieldRefusal(
+				fieldName: 'identificatie',
+				code: 'identificatie-niet-uniek',
+				detail: 'De combinatie is niet uniek.',
+				reason: 'De combinatie bestaat al.'
+			)
+		);
+	}//end testOneFieldIsRefusedWithItsCodeAndReason()
 }//end class

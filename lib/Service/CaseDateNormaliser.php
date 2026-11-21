@@ -32,6 +32,7 @@ use DateTimeInterface;
 use DateTimeZone;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -413,6 +414,45 @@ class CaseDateNormaliser implements CaseDateNormaliserInterface {
 	public function fromParts(int $year, int $month, int $day): DateTimeImmutable {
 		return $this->now()->setDate($year, $month, $day)->setTime(0, 0, 0);
 	}//end fromParts()
+
+	/**
+	 * The whole calendar days between two moments, never negative.
+	 *
+	 * Asks {@see DayCount::between()}, the one place days are counted, so a
+	 * class that already reads its dates through this normaliser counts days
+	 * without taking DayCount as one more collaborator. Each moment is read in
+	 * its own zone, as DayCount reads it; a caller that means calendar dates
+	 * apart sets both to midnight first.
+	 *
+	 * @param DateTimeInterface $from One moment.
+	 * @param DateTimeInterface $to   The other.
+	 *
+	 * @return int Whole days, zero or more.
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function daysBetween(DateTimeInterface $from, DateTimeInterface $to): int {
+		return (new DayCount())->between(from: $from, to: $to);
+	}//end daysBetween()
+
+	/**
+	 * The whole calendar days the second moment lies after the first.
+	 *
+	 * Negative when it lies before: days left until a deadline
+	 * (`signedDaysBetween(from: $today, to: $deadline)`, negative once it has
+	 * passed). Asks {@see DayCount::signed()}, for the same reason as
+	 * {@see daysBetween()}.
+	 *
+	 * @param DateTimeInterface $from The moment counted from.
+	 * @param DateTimeInterface $to   The moment counted to.
+	 *
+	 * @return int Whole days, negative when `$to` precedes `$from`.
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function signedDaysBetween(DateTimeInterface $from, DateTimeInterface $to): int {
+		return (new DayCount())->signed(from: $from, to: $to);
+	}//end signedDaysBetween()
 
 	/**
 	 * The zone the engine working calendar counts in, when it states one.

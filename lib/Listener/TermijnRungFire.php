@@ -28,7 +28,7 @@ namespace OCA\Dossiq\Listener;
 /**
  * One rung of a term timer that fired, for a known term instance.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 final class TermijnRungFire {
 

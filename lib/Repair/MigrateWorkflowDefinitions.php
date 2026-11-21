@@ -48,8 +48,6 @@ use Psr\Log\LoggerInterface;
  * Backfill workflowTemplate objects from implicit statusType ordering.
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateWorkflowDefinitions implements IRepairStep {
 
@@ -260,12 +258,14 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @return void
 	 *
 	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function healBackfilled(BackfillTarget $target, BackfillCaseType $caseType): void {
 		$statuses = null;
 		foreach ($caseType->versions as $template) {
 			$id = (string)($template['id'] ?? '');
-			if ($this->carriesCastMarker(id: $id, template: $template) === false) {
+			if ($this->labels->castMarked(id: $id, template: $template) === false) {
 				continue;
 			}
 
@@ -274,20 +274,6 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			$this->patchHealed(target: $target, healed: ['id' => $id, 'changes' => $changes]);
 		}//end foreach
 	}//end healBackfilled()
-
-	/**
-	 * Whether a stored template has an id and carries the backfill's cast-of-a-map marker.
-	 *
-	 * @param string $id The template id.
-	 * @param array<string, mixed> $template The stored template.
-	 *
-	 * @return bool True when the template is to be healed.
-	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
-	 */
-	private function carriesCastMarker(string $id, array $template): bool {
-		return $id !== '' && str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === true;
-	}//end carriesCastMarker()
 
 	/**
 	 * Write a template's healed labels through the partial write; nothing when nothing was healed.
@@ -323,15 +309,12 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param string         $caseTypeId The case type.
 	 *
 	 * @return array<string, array<string, mixed>> The statuses.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function statusesById(BackfillTarget $target, string $caseTypeId): array {
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $target->schemas->status,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			);
+			$rows = $this->searchStatuses(target: $target, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: workflow backfill could not read the statuses to heal a basis template',
@@ -341,12 +324,8 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		}
 
 		$byId = [];
-		foreach ($rows as $raw) {
-			$row = $this->objectToArrayOrNull(value: $raw);
-			$id = (string)(($row ?? [])['id'] ?? '');
-			if ($row !== null && $id !== '') {
-				$byId[$id] = $row;
-			}
+		foreach ($this->statusesWithId(statusRows: $rows) as $row) {
+			$byId[(string)$row['id']] = $row;
 		}
 
 		return $byId;
@@ -422,6 +401,8 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param string         $caseTypeId The case type.
 	 *
 	 * @return array<int, array<string, mixed>> The statuses.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function orderedStatuses(BackfillTarget $target, string $caseTypeId): array {
 		try {
@@ -434,7 +415,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return [];
 		}
 
-		return $this->sortedByOrder(statuses: $this->statusesWithId(statusRows: $statusRows));
+		return $this->shape->ordered(statuses: $this->statusesWithId(statusRows: $statusRows));
 	}//end orderedStatuses()
 
 	/**
@@ -474,24 +455,6 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return $statuses;
 	}//end statusesWithId()
-
-	/**
-	 * The statuses sorted by their order.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses The statuses.
-	 *
-	 * @return array<int, array<string, mixed>> The statuses, in order.
-	 */
-	private function sortedByOrder(array $statuses): array {
-		usort(
-			$statuses,
-			static function (array $a, array $b): int {
-				return (int)($a['order'] ?? 0) <=> (int)($b['order'] ?? 0);
-			},
-		);
-
-		return $statuses;
-	}//end sortedByOrder()
 
 	/**
 	 * Pin the open cases of a caseType to its new template at version 1.

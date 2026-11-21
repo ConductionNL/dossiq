@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Syncs the timer of every active bezwaar trigger once.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmBezwaarArchiveTimers implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -71,7 +71,7 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function getName(): string {
 		return 'Arm OpenRegister engine timers for running Dossiq bezwaartermijnen';
@@ -84,7 +84,7 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -109,7 +109,7 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 *
 	 * @return array<string, int> The armed, due and failed counts.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function syncAll(RepairSchema $target): array {
 		$counts = ['armed' => 0, 'due' => 0, 'failed' => 0];
@@ -137,7 +137,7 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq bezwaartermijn timer migration complete', $counts);

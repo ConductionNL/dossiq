@@ -42,7 +42,7 @@ interface DsoDeadlineActsInterface {
 	 *
 	 * @return array<string, mixed>|null The case, or null when it does not exist or nothing is configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $caseId): ?array;
 
@@ -53,7 +53,7 @@ interface DsoDeadlineActsInterface {
 	 *
 	 * @return bool True when the marker was written now.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function markOverdue(array $case): bool;
 
@@ -65,7 +65,7 @@ interface DsoDeadlineActsInterface {
 	 *
 	 * @return string NOTIFIED or SKIPPED.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function notify(array $case, string $subject): string;
 }//end interface

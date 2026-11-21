@@ -42,6 +42,8 @@ use RuntimeException;
  * Tests for PlannedSeriesLedger::occurrencesOf().
  *
  * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
+ * @uses \OCA\Dossiq\Service\Flow\OccurrenceRows
+ * @uses \OCA\Dossiq\Service\Flow\SeriesFiringCount
  */
 class PlannedSeriesOccurrencesTest extends TestCase {
 
