@@ -50,6 +50,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Woo\WooCaseDocuments
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState

@@ -54,6 +54,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds

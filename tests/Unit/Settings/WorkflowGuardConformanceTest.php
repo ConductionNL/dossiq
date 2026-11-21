@@ -85,6 +85,8 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
  * @uses   \OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard
  * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses   \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses   \OCA\Dossiq\Service\ZgwRulesBase
  * @uses   \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
