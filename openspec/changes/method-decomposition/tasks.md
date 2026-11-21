@@ -871,3 +871,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Unchanged and green after but for two `@uses` lines in each of the 15 files that cover or use the
         service. Own tests: `tests/Unit/Service/Assessment/PartlyPublicRowsTest` (2) and one added to
         `AssessmentBatchTargetTest` for the save; counting a row of another case turns 2 tests red (checked).
+  - [x] 8aj `Workflow/WorkflowDefinitionRepository` (1: ExcessiveClassComplexity 54 against 50). What the
+        repository does to rows without a store moved to the new `Workflow/DefinitionRows`: the versions
+        newest first with what is no row dropped (`newestFirst()`, with `normalizedRows()`), the ids rows
+        carry (`idsOf()`) and the array-valued JSON-text properties encoded again for a write
+        (`withJsonEncoded()`, was `encodeJsonProperties()`). Bodies moved unchanged; the new class
+        coerces a row through the same `SearchesObjects::objectToArrayOrNull()` the repository's
+        `normalize()` calls, and `normalize()` stays for the reads and writes that keep it (and for
+        `ResultRowCopiesTest`, which pins it). The repository builds the rows reader in its constructor,
+        so its constructor and every caller are unchanged. phpmd: zero findings on both files under both
+        rulesets.
+        Characterisation: the existing `WorkflowDefinitionRepositoryReadsTest` (versions newest first,
+        status type ids without the rows that have none), `...WriteFailuresTest` (decoded JSON properties
+        encoded again) and `...UpdateTest`, with the rest of `tests/Unit/Service/Workflow`, green before
+        and unchanged after but for one `@uses` line in each file that covers or uses the repository.
+        Own test: `tests/Unit/Service/Workflow/DefinitionRowsTest` (3); sorting oldest first turns 2 tests
+        red (checked).
