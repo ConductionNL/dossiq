@@ -64,6 +64,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\FilinqRedactionClient
  * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
  * @uses \OCA\Dossiq\Service\WOOAnonymisationAssistService
+ * @uses \OCA\Dossiq\Service\Redaction\RulesFloorProposal
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Support\FleetAppId
