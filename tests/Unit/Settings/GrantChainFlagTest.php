@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Checks the grantChain flag on the case type schema and in the subsidie package.
  */
-class SubsidieGrantChainTest extends TestCase {
+class GrantChainFlagTest extends TestCase {
 
 	/**
 	 * The repository root.
@@ -82,9 +82,9 @@ class SubsidieGrantChainTest extends TestCase {
 	public function testTheCaseTypeDeclaresTheFlagOffByDefault(): void {
 		$caseType = (array)self::json(path: 'lib/Settings/register.d/99-case-type-grant-chain.json')['components']['schemas']['caseType'];
 
-		$this->assertSame(['grantChain'], array_keys((array)$caseType['properties']));
-		$this->assertSame('boolean', $caseType['properties']['grantChain']['type']);
-		$this->assertFalse($caseType['properties']['grantChain']['default']);
+		$this->assertSame(expected: ['grantChain'], actual: array_keys((array)$caseType['properties']));
+		$this->assertSame(expected: 'boolean', actual: $caseType['properties']['grantChain']['type']);
+		$this->assertFalse(condition: $caseType['properties']['grantChain']['default']);
 	}//end testTheCaseTypeDeclaresTheFlagOffByDefault()
 
 	/**
@@ -98,8 +98,8 @@ class SubsidieGrantChainTest extends TestCase {
 		$version = (string)self::json(path: 'lib/Settings/register.d/99-case-type-grant-chain.json')['components']['schemas']['caseType']['version'];
 
 		$this->assertTrue(
-			version_compare($version, self::highestOtherCaseTypeVersion(except: '99-case-type-grant-chain.json'), '>'),
-			'caseType ' . $version . ' must be above every other fragment'
+			condition: version_compare($version, self::highestOtherCaseTypeVersion(except: '99-case-type-grant-chain.json'), '>'),
+			message: 'caseType ' . $version . ' must be above every other fragment'
 		);
 	}//end testTheFragmentRaisesTheCaseTypeVersion()
 
@@ -113,8 +113,8 @@ class SubsidieGrantChainTest extends TestCase {
 	public function testThePackageRunsItsCaseTypeOnTheGrantChain(): void {
 		$caseType = (array)self::json(path: 'lib/Settings/packages/subsidie/case-type.json')['caseType'];
 
-		$this->assertTrue($caseType['grantChain']);
-		$this->assertSame('1.9.0', self::json(path: 'lib/Settings/packages/subsidie/package.json')['version']);
+		$this->assertTrue(condition: $caseType['grantChain']);
+		$this->assertSame(expected: '1.9.0', actual: self::json(path: 'lib/Settings/packages/subsidie/package.json')['version']);
 	}//end testThePackageRunsItsCaseTypeOnTheGrantChain()
 
 	/**
@@ -133,6 +133,6 @@ class SubsidieGrantChainTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(['subsidie'], $setters);
+		$this->assertSame(expected: ['subsidie'], actual: $setters);
 	}//end testOnlyTheSubsidiePackageSetsTheFlag()
 }//end class

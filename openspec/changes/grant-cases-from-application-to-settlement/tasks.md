@@ -7,7 +7,7 @@
   - [ ] 1.1b Interim reports, evidence, settlement and recovery: each hangs off the execution, two references away from the case, which one `_referenced` block cannot reach (overview-cards-per-case-type 1.8).
 - [ ] 1.2 Header actions `interim-report-record` (`POST /api/subsidies/uitvoeringen/{id}/tussenrapportages`), `interim-report-assess` (`/beoordelen`), `grant-settle` (`/vaststellingen/{id}/vast`), `grant-recover`; dialogs under `src/dialogs/` named by what they do.
 - [x] 1.3 `lib/Settings/packages/subsidie/case-type.json`: set `grantChain: true`; bump the version.
-  - The flag is declared on the case type schema by `lib/Settings/register.d/99-case-type-grant-chain.json` (boolean, off by default, caseType 1.51.0, digest recorded); the subsidie package sets it (1.9.0). `tests/Unit/Settings/SubsidieGrantChainTest.php`. No widget gates on it yet: that is 1.1b and 1.2.
+  - The flag is declared on the case type schema by `lib/Settings/register.d/99-case-type-grant-chain.json` (boolean, off by default, caseType 1.51.0, digest recorded); the subsidie package sets it (1.9.0). `tests/Unit/Settings/GrantChainFlagTest.php`. No widget gates on it yet: that is 1.1b and 1.2.
 
 ## 2. Payment schedule (generic)
 
