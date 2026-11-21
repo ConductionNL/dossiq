@@ -279,12 +279,7 @@ abstract class ZgwRulesBase {
 	protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array {
 		$extractedUuid = $this->extractUuid(url: $typeUrl);
 		if ($extractedUuid === null) {
-			return $this->results->fieldRefusal(
-				fieldName: $fieldName,
-				code: 'bad-url',
-				detail: "De {$fieldName} URL is ongeldig.",
-				reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
 		return $this->storedTypeError(type: ['uuid' => $extractedUuid, 'schemaKey' => $schemaKey], fieldName: $fieldName);
@@ -314,12 +309,7 @@ abstract class ZgwRulesBase {
 				options: new ObjectFindOptions(register: $register, schema: $schema)
 			);
 		} catch (\Throwable $e) {
-			return $this->results->fieldRefusal(
-				fieldName: $fieldName,
-				code: 'bad-url',
-				detail: "De {$fieldName} URL is ongeldig.",
-				reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
 		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
@@ -358,6 +348,24 @@ abstract class ZgwRulesBase {
 
 		return null;
 	}//end draftTypeError()
+
+	/**
+	 * The refusal of a type URL that is malformed or names no type.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array The validation error.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function badTypeUrlError(string $fieldName): array {
+		return $this->results->fieldRefusal(
+			fieldName: $fieldName,
+			code: 'bad-url',
+			detail: "De {$fieldName} URL is ongeldig.",
+			reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+		);
+	}//end badTypeUrlError()
 
 	/**
 	 * Validate an informatieobject URL resolves to an existing document.
