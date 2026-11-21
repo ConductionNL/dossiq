@@ -32,6 +32,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * schemas; an unconfigured schema or a failing store answers the safe value.
  *
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionRows
  */
 class WorkflowDefinitionRepositoryReadsTest extends TestCase {
 
