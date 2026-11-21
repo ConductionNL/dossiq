@@ -34,6 +34,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\MigrateArchivalToOpenRegister
+ * @uses   \OCA\Dossiq\Repair\ProofOfTransferExport
  * @uses   \OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */

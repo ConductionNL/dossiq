@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Repair\MigrateArchivalToOpenRegister
+ * @uses   \OCA\Dossiq\Repair\ProofOfTransferExport
  */
 class MigrateArchivalHoldsAndTmloTest extends TestCase {
 
