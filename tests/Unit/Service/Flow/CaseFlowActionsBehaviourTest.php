@@ -44,6 +44,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * @uses \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
+ * @uses \OCA\Dossiq\Service\Flow\OccurrenceRows
+ * @uses \OCA\Dossiq\Service\Flow\SeriesFiringCount
  */
 class CaseFlowActionsBehaviourTest extends TestCase {
 
