@@ -19,12 +19,14 @@ import {
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
+	listObjects,
 	objectId,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
 import { occRunQueuedJobs } from './helpers/occ.ts'
+import { asResident, portaliqEnabled, residentSession } from './helpers/portal-resident.ts'
 
 const ACKNOWLEDGEMENT_JOB = 'OCA\\Dossiq\\BackgroundJob\\AcknowledgementDispatchJob'
 
@@ -118,6 +120,72 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 			const entries = JSON.stringify(await timeline.json())
 			expect(entries).not.toContain('Ontvangstbevestiging verzonden')
 		}
+
+		await api.dispose()
+	})
+
+	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-a-portal-requester-gets-the-notice-in-the-portal-inbox
+	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-duty-is-met-when-the-acknowledgement-went-out
+	test('A Woo request from the portal is acknowledged in the portal inbox', async ({
+		playwright,
+		baseURL,
+	}) => {
+		test.skip(!(await portaliqEnabled()), 'portaliq is not installed on this instance')
+
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+
+		const identifier = `${RUN_PREFIX.toLowerCase()}-woo-portal`
+		const caseType = await createObject(api, token, 'caseType', {
+			title: `${RUN_PREFIX} Woo-verzoek portaal`,
+			identifier,
+			isDraft: false,
+			processingDeadline: 'P28D',
+		})
+		await createObject(api, token, 'deadlineDefinition', {
+			caseType: identifier,
+			legalBasis: 'Woo art 4.4',
+			validFrom: '2026-01-01',
+			standardDurationDays: 28,
+		})
+
+		const subject = `${RUN_PREFIX.toLowerCase()}-inwoner`
+		const created = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Woo-verzoek uit het portaal`,
+			caseType: objectId(caseType),
+			intakeChannel: 'website',
+			portalSubject: subject,
+		})
+		const caseId = objectId(created)
+
+		await expect
+			.poll(
+				async () => {
+					await occRunQueuedJobs(ACKNOWLEDGEMENT_JOB, caseId).catch(() => [])
+					return (await showObject(api, 'case', caseId)).acknowledgementDuty?.status
+				},
+				{ timeout: 150_000, intervals: [5_000] },
+			)
+			.toBe('met')
+
+		const inbox = await listObjects(api, 'portaalBericht', { recipientRef: subject })
+		const notice = inbox.find((row: any) => row.caseId === caseId)
+		expect(notice, 'the acknowledgement is in the requester\'s portal inbox').toBeTruthy()
+		expect(notice.direction).toBe('handler_to_citizen')
+
+		const stored = await showObject(api, 'case', caseId)
+		const records = (stored.outboundCommunications ?? []) as Array<Record<string, unknown>>
+		const sent = records.find((record) => record.status === 'sent')
+		expect(sent, JSON.stringify(records)).toBeTruthy()
+		expect(sent?.channel).toBe('portal-inbox')
+		expect(sent?.messageId).toBe(objectId(notice))
+
+		// The resident reads it in the portal inbox, as the resident.
+		const session = await residentSession(api, subject)
+		expect(session, 'portaliq dev-login mints a resident session').not.toBeNull()
+		const inboxRead = await asResident(api, session!, '/inbox')
+		expect(inboxRead.status, JSON.stringify(inboxRead.body)).toBe(200)
+		expect(JSON.stringify(inboxRead.body.messages ?? [])).toContain(objectId(notice))
 
 		await api.dispose()
 	})

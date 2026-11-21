@@ -3587,10 +3587,11 @@
 						"type": "plan",
 						"title": "Case plan",
 						"subtitle": "Milestones and parts of this case",
+						"visibleWhen": {"field": "@context.caseType.handlingModel", "op": "eq", "value": "cmmn"},
 						"content": {
 							"emptyText": "This case type has no adaptive plan"
 						},
-						"_note": "The adaptive case plan (library widget type plan -> CnPlanWidget): the stages, tasks and milestones OpenRegister's case layer holds for this case on /api/cases, with the moves OpenRegister allows. dossiq holds no case engine of its own. A BPMN case has no plan rows, OpenRegister answers 404, and the widget says the case type has no adaptive plan; status moves for those are the case-stages widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan. It sits at the foot of the page and takes the full width, because a plan tree is wide."
+						"_note": "The adaptive case plan (library widget type plan -> CnPlanWidget): the stages, tasks and milestones OpenRegister's case layer holds for this case on /api/cases, with the moves OpenRegister allows. dossiq holds no case engine of its own. It shows only on a case whose case type has handlingModel cmmn (retire-cmmn-caseplanstate, a BPMN case is untouched): a BPMN case has no plan rows, so the page asks OpenRegister for none; status moves for those are the case-stages widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan. It sits at the foot of the page and takes the full width, because a plan tree is wide."
 					},
 					{
 						"id": "case-panels",

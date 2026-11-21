@@ -35,7 +35,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { openCasePanel, openCaseTab } from './helpers/case-panels.ts'
+import { caseTabsActions, openCasePanel, openCaseSidebar, openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
@@ -76,6 +76,14 @@ const TAB_LABELS = [
 	/^(Case history|Historie)\b/,
 ]
 
+/** Panels that do not fit the strip, listed in its Actions menu (board DqZaakMeer). */
+const OVERFLOW_TAB_LABELS = [
+	/(Notes|Notities)/,
+	/(People|Betrokkenen)/,
+	/(Decisions|Besluiten)/,
+	/(Related|Gerelateerd)/,
+]
+
 const OVERVIEW = /^(Overview|Overzicht)\b/
 const PEOPLE = /^(People|Betrokkenen)\b/
 const CONTACT = /^Contact\b/
@@ -93,7 +101,7 @@ const RELATED = /^(Related|Gerelateerd)\b/
 const FOLDED_SECTIONS: Array<[RegExp, string, 'registry' | 'integration']> = [
 	[OVERVIEW, 'cn-section-case-core', 'registry'],
 	[OVERVIEW, 'cn-section-case-location-map', 'registry'],
-	[PEOPLE, 'cn-section-case-roles', 'registry'],
+	[PEOPLE, 'cn-section-case-party-roles', 'registry'],
 	[CONTACT, 'cn-section-case-communication', 'registry'],
 	[TASKS, 'cn-section-case-tasks', 'registry'],
 	[TASKS, 'cn-section-case-calendar', 'integration'],
@@ -279,7 +287,11 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(
 			page.locator('.cn-kpi-card').filter({ hasText: /Case type|Zaaktype/ }),
 		).toHaveCount(1)
-		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
+		// Scoped to the tiles: the terms table on the Overview tab has a
+		// "Time left" column, which is not a second countdown.
+		await expect(
+			page.locator('.cn-kpi-card').filter({ hasText: /^(Time left|Resterende tijd)$/ }),
+		).toHaveCount(0)
 
 		// The Completed tile is GONE (case-lifecycle-on-the-page, REQ-CDV-13).
 		// It read milestone progress, milestones are configured on almost no
@@ -570,12 +582,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
-	test('the strip holds exactly five tabs, in order, and More', async ({
+	test('the strip holds exactly five tabs, in order, and the rest under Actions', async ({
 		page,
 	}) => {
 		// An exact count: asserting that five named tabs are present would
 		// pass on a strip of twelve.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -588,7 +601,17 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			l.trim(),
 		)
 		labels.forEach((label, index) => expect(label).toMatch(TAB_LABELS[index]))
-		await expect(strip.locator('.cn-tabs__more')).toBeVisible()
+
+		// Boards DqZaak and DqZaakMeer: the strip ends in Acties, and the other
+		// panels are listed at the top of that menu. The strip draws no More of
+		// its own; Meer is the page header's menu.
+		await expect(strip.locator('.cn-tabs__more')).toHaveCount(0)
+		await caseTabsActions(page).click()
+		const overflow = page.getByTestId('cn-tabs-widget-menu-tab')
+		for (const label of OVERFLOW_TAB_LABELS) {
+			await expect(overflow.filter({ hasText: label })).toHaveCount(1)
+		}
+		await page.keyboard.press('Escape')
 
 		for (const label of RETIRED_TAB_LABELS) {
 			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
@@ -650,8 +673,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			// moments and could pass on either being briefly right.
 			const state = async () =>
 				await section.evaluate((el) => {
-					const heading = el.querySelector('h3')
-					const host = el.querySelector(':scope > *:not(h3)')
+					// The section heading is an h2 since the strip took the
+					// board's look; an h3 is the heading of a card inside it.
+					const heading = el.querySelector('h2, h3')
+					const host = el.querySelector(':scope > *:not(h2):not(h3)')
 					const filled =
 						!!host && (host.textContent || '').trim().length > 0
 					if (!heading)
@@ -700,8 +725,8 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// One title on the page, and the word is files (Ruben, 2026-09-13).
 		// The tab used to be Documents, holding the ZGW document list above the
 		// case folder as two sections under two headings, three "Documents"
-		// on one screen. It is the folder now, through the files leaf, whose
-		// browser draws its own crumbs, so no section heading sits above it.
+		// on one screen. It is the folder now, through the files leaf, so no
+		// section heading sits above it.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
@@ -722,11 +747,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(panel.locator('[data-testid^="cn-section-"]')).toHaveCount(0)
 		await expect(panel.locator('.case-sections__heading')).toHaveCount(0)
 		await expect(panel.getByText(/^(Documents|Documenten)/)).toHaveCount(0)
-		// The trail runs from the user's files root down to this case's folder.
-		await expect(
-			panel.getByTestId('cn-files-browser-crumb'),
-			'the crumbs must read the whole path to the case folder',
-		).not.toHaveCount(1)
+		// Board DqZaakDocumenten draws no path above the folder: the tab opens
+		// on the case folder itself, with its own actions beside the list.
+		for (const action of [
+			/^(Add files|Bestanden toevoegen)$/,
+			/^(New folder|Nieuwe map)$/,
+			/^(Request a file from a party|Vraag een bestand aan een partij)$/,
+		]) {
+			await expect(panel.getByRole('button', { name: action })).toBeVisible()
+		}
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({
@@ -774,7 +803,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
-		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
+		await strip.getByRole('tab', { name: TASKS }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
 		// Switching BACK must not tear the first panel down, or every switch
@@ -782,7 +811,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// asserts: opening a THIRD tab would leave three panels mounted, since
 		// staying mounted is the property under test, and the count would be
 		// right while the scenario said nothing.
-		await strip.getByRole('tab', { name: 'Data', exact: true }).click()
+		await strip.getByRole('tab', { name: OVERVIEW }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
@@ -855,10 +884,8 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		})
 
 		// NcAppSidebar renders its own toggle while closed; open it when so.
-		const toggle = page.locator('.app-sidebar__toggle')
-		if (await toggle.isVisible()) await toggle.click()
-		const sidebar = page.locator('.app-sidebar')
-		await expect(sidebar).toBeVisible({ timeout: 15_000 })
+		// The sidebar starts closed; "Open sidebar" is in the header's More menu.
+		const sidebar = await openCaseSidebar(page)
 
 		// The leaf this tab renders comes from dossiq's OWN bundle
 		// (`builtinIntegrations` in @conduction/nextcloud-vue, resolved by

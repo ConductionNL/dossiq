@@ -42,6 +42,7 @@ import {
 	showObject,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
+import { asResident, portaliqEnabled, residentSession } from './helpers/portal-resident.ts'
 
 /** The case type every seeded case takes, with a term to suspend. */
 let caseType = ''
@@ -358,5 +359,54 @@ test.describe('A case records what it asked the applicant for', () => {
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
+	})
+
+	// @e2e openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#scenario-asking-puts-a-task-on-the-residents-list
+	// @e2e openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#scenario-answering-closes-the-task
+	test('the resident sees the question as a portal task, and recording the answer removes it', async ({
+		playwright,
+		baseURL,
+	}) => {
+		test.skip(!(await portaliqEnabled()), 'portaliq is not installed on this instance')
+
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+		const subject = `${RUN_PREFIX.toLowerCase()}-sanne`
+		const caseId = objectId(
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} portal task`,
+				caseType,
+				description: 'Seeded for the portal task scenario.',
+				confidentiality: 'openbaar',
+				portalSubject: subject,
+			}),
+		)
+
+		const asked = await ask(api, token, caseId, [`${RUN_PREFIX} bouwtekening`])
+		expect(asked.status(), await asked.text()).toBe(200)
+		const request = ((await requestsOn(api, caseId)).results ?? [])[0] ?? {}
+
+		const session = await residentSession(api, subject)
+		expect(session, 'portaliq dev-login mints a resident session').not.toBeNull()
+		const open = await asResident(api, session!, '/tasks')
+		expect(open.status, JSON.stringify(open.body)).toBe(200)
+		const task = (open.body.results ?? []).find(
+			(row: any) => row.title === 'Vul uw aanvraag aan',
+		)
+		expect(task, JSON.stringify(open.body)).toBeTruthy()
+		expect(String(task.dueDate ?? task.due ?? '').slice(0, 10)).toBe(
+			String(request.hersteltermijn ?? '').slice(0, 10),
+		)
+
+		const answered = await answer(api, token, caseId, [`${RUN_PREFIX} bouwtekening`], true)
+		expect(answered.status(), await answered.text()).toBe(200)
+		const after = await asResident(api, session!, '/tasks')
+		expect(
+			(after.body.results ?? []).filter(
+				(row: any) => row.title === 'Vul uw aanvraag aan' && !['completed', 'cancelled', 'closed'].includes(String(row.status ?? '')),
+			),
+		).toEqual([])
+
+		await api.dispose()
 	})
 })

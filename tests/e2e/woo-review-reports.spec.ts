@@ -36,6 +36,7 @@ import {
 	ensureCaseType,
 	getRequestToken,
 	objectId,
+	REGISTER,
 	RUN_PREFIX,
 	seedCase,
 	seedDocument,
@@ -284,6 +285,30 @@ test.describe('Review reports', () => {
 		expect(read.status()).toBe(200)
 		const rows = (await read.json()).rows
 		expect(Array.isArray(rows)).toBe(true)
+
+		// A read of one case's throughput is written on that case's audit trail,
+		// with the reader and the scope.
+		await createObject(api, token, 'wooDocumentAssessment', {
+			caseRef: caseId,
+			documentRef: `${RUN_PREFIX}-document-1`,
+			classification: 'openbaar',
+			assessedBy: ADMIN_USER,
+			assessedAt: '2026-11-12T10:00:00+01:00',
+		})
+		const caseRead = await api.get(`${THROUGHPUT}?case=${caseId}`)
+		expect(caseRead.status(), await caseRead.text()).toBe(200)
+		const trail = await api.get(
+			`/index.php/apps/openregister/api/objects/${REGISTER}/case/${caseId}/audit-trails?_limit=100`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
+		)
+		expect(trail.ok(), `audit trail -> ${trail.status()}`).toBeTruthy()
+		const trailBody = await trail.json()
+		const entries = (trailBody.results ?? trailBody ?? []) as any[]
+		const audited = entries.find(
+			(entry: any) => entry.action === 'dossiq.woo.report.throughput-read',
+		)
+		expect(audited, JSON.stringify(entries.map((e: any) => e.action))).toBeTruthy()
+		expect(audited.user).toBe(ADMIN_USER)
 
 		await navToRoute(page, '/cases')
 		await expect(

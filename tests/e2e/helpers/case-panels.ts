@@ -63,7 +63,7 @@ export const CASE_PANELS = {
 	// call does not type-check. Pointing it at Files keeps the suite
 	// compiling; the spec belongs with whoever retired the list.
 	documents: { tab: /^(Files|Bestanden)\b/, section: null },
-	parties: { tab: /^(People|Betrokkenen)\b/, section: 'cn-section-case-roles' },
+	parties: { tab: /^(People|Betrokkenen)\b/, section: 'cn-section-case-party-roles' },
 	communication: {
 		tab: /^Contact\b/,
 		section: 'cn-section-case-communication',
@@ -107,8 +107,28 @@ export async function openCaseTab(page: Page, name: RegExp): Promise<void> {
 		await tab.first().click()
 		return
 	}
-	await strip.locator('.cn-tabs__more button').first().click()
+	// The board look lists the overflow tabs at the top of the Actions menu
+	// beside the strip; the plain look draws a More menu inside it.
+	const more = strip.locator('.cn-tabs__more button')
+	if ((await more.count()) > 0) {
+		await more.first().click()
+	} else {
+		await caseTabsActions(page).click()
+	}
 	await page.getByRole('menuitem', { name }).click()
+}
+
+/**
+ * The Actions menu beside the case tab strip. In the board look it also lists
+ * the tabs that do not fit the strip (boards DqZaak and DqZaakMeer).
+ *
+ * @param page The page, already on a case.
+ * @return The menu's trigger.
+ */
+export function caseTabsActions(page: Page): Locator {
+	return caseStrip(page)
+		.locator('.cn-tabs__nav-end')
+		.getByRole('button', { name: /^(Actions|Acties)$/ })
 }
 
 /**
