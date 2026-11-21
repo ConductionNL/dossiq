@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationStatusRules
  *
  * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
  * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows

@@ -111,6 +111,7 @@ interface ConsultationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationStatusRules
  * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConsultationServiceTest extends TestCase {
@@ -377,8 +378,8 @@ class ConsultationServiceTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($objectService);
 		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('Invalid status transition: closed -> open');
+		$this->expectException(exception: \RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Invalid status transition: closed -> open');
 
 		$this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'open');
 
@@ -442,11 +443,11 @@ class ConsultationServiceTest extends TestCase {
 
 		$result = $this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'closed');
 
-		$this->assertSame(['id' => 'con-uuid', 'status' => 'closed'], $result);
-		$this->assertCount(1, $objectService->patches);
-		$this->assertSame('con-uuid', $objectService->patches[0]->objectId);
-		$this->assertSame('closed', $objectService->patches[0]->data['status']);
-		$this->assertArrayHasKey('closedAt', $objectService->patches[0]->data);
+		$this->assertSame(expected: ['id' => 'con-uuid', 'status' => 'closed'], actual: $result);
+		$this->assertCount(expectedCount: 1, haystack: $objectService->patches);
+		$this->assertSame(expected: 'con-uuid', actual: $objectService->patches[0]->objectId);
+		$this->assertSame(expected: 'closed', actual: $objectService->patches[0]->data['status']);
+		$this->assertArrayHasKey(key: 'closedAt', array: $objectService->patches[0]->data);
 
 	}//end testAStoredStatusOutsideTheGraphDoesNotConstrainTheMove()
 
@@ -458,11 +459,11 @@ class ConsultationServiceTest extends TestCase {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function testOnlyAnUnansweredMandatoryRequestBlocks(): void {
-		$this->assertTrue($this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'received']));
-		$this->assertTrue($this->service->consultationBlocks(consultation: ['mandatory' => true]));
-		$this->assertFalse($this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'withdrawn']));
-		$this->assertFalse($this->service->consultationBlocks(consultation: ['mandatory' => 'true', 'status' => 'open']));
-		$this->assertFalse($this->service->consultationBlocks(consultation: ['status' => 'open']));
+		$this->assertTrue(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'received']));
+		$this->assertTrue(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true]));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['mandatory' => true, 'status' => 'withdrawn']));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['mandatory' => 'true', 'status' => 'open']));
+		$this->assertFalse(condition: $this->service->consultationBlocks(consultation: ['status' => 'open']));
 
 	}//end testOnlyAnUnansweredMandatoryRequestBlocks()
 
