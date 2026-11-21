@@ -74,6 +74,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses   \OCA\Dossiq\Middleware\MandateDeniedException
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\ComposeRequestBody
  */
 class RefusalCarriesAStatusTest extends TestCase {
 	/**

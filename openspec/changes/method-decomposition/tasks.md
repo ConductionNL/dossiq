@@ -982,3 +982,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         that reaches the step.
         Own test: `tests/Unit/Service/Pause/PauseStepTest` (3); changing the fallback basis turns 2 tests
         red (checked).
+  - [x] 8aq `BeschikkingController` (1: ExcessiveClassComplexity 56 against 50). What a compose request
+        names without a store moved to the new `Controller/Support/ComposeRequestBody`: the template it
+        names, as a string or null (`templateId()`, was `templateIdOf()`), and the fields it sets on the
+        new decision, the addressee overrides and the three decision fields (`fields()`, was
+        `composeFieldsOf()`). Bodies moved unchanged, reading the body the request carries. `create()`
+        builds the request body inline, so the constructor and the container binding are unchanged.
+        CouplingBetweenObjects goes from 12 to 13, at its maximum. phpmd: zero findings on both files
+        under both rulesets; over the whole of `lib/` the class reads 50, which the rule (reported above
+        its maximum of 50) does not report.
+        Characterisation: the existing `BeschikkingControllerCoverageTest` (compose passes the template,
+        the addressee and the decision fields and nothing else), `BeschikkingControllerTest`,
+        `BeschikkingControllerContractTest` and `RefusalCarriesAStatusTest`, green before and unchanged
+        after but for one `@uses` line in each.
+        Own test: `tests/Unit/Controller/Support/ComposeRequestBodyTest` (2); letting one more field
+        through turns 2 tests red (checked).

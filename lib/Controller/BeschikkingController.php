@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ComposeRequestBody;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Controller\Support\RequiresSignedInUid;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
@@ -58,8 +59,6 @@ use Throwable;
  * Controller for beschikking lifecycle endpoints.
  *
  * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingController extends Controller {
 	use RequiresSignedInUid;
@@ -94,6 +93,7 @@ class BeschikkingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function create(): JSONResponse {
 		$uid = $this->requireUser();
@@ -103,13 +103,14 @@ class BeschikkingController extends Controller {
 
 		$body = (new JsonRequestBody())->read(request: $this->request);
 		$caseId = (string)($body['caseId'] ?? '');
-		$templateId = $this->templateIdOf(body: $body);
+		$compose = new ComposeRequestBody(body: $body);
+		$templateId = $compose->templateId();
 
 		if ($caseId === '') {
 			return new JSONResponse(['error' => 'zaakId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$merged = $this->composeFieldsOf(body: $body);
+		$merged = $compose->fields();
 
 		return $this->composeDecision(caseId: $caseId, compose: ['templateId' => $templateId, 'merged' => $merged]);
 	}//end create()
@@ -135,47 +136,6 @@ class BeschikkingController extends Controller {
 			return $this->fail(op: 'compose', e: $e);
 		}
 	}//end composeDecision()
-
-	/**
-	 * The template a compose request names, or null.
-	 *
-	 * @param array $body The request body.
-	 *
-	 * @return string|null The template id.
-	 */
-	private function templateIdOf(array $body): ?string {
-		$templateId = null;
-		if (isset($body['templateId']) === true) {
-			$templateId = (string)$body['templateId'];
-		}
-
-		return $templateId;
-	}//end templateIdOf()
-
-	/**
-	 * The fields a compose request sets on the beschikking: the addressee overrides and the decision fields.
-	 *
-	 * @param array $body The request body.
-	 *
-	 * @return array The fields to merge.
-	 */
-	private function composeFieldsOf(array $body): array {
-		$overrides = (array)($body['addressee'] ?? []);
-		$payload = (array)$body;
-
-		$merged = [];
-		if ($overrides !== []) {
-			$merged['addressee'] = $overrides;
-		}
-
-		foreach (['decisionType', 'rationale', 'decision'] as $field) {
-			if (isset($payload[$field]) === true) {
-				$merged[$field] = $payload[$field];
-			}
-		}
-
-		return $merged;
-	}//end composeFieldsOf()
 
 	/**
 	 * Read a beschikking. [T06]

@@ -46,6 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\BeschikkingController
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\ComposeRequestBody
  */
 class BeschikkingControllerContractTest extends TestCase {
 
