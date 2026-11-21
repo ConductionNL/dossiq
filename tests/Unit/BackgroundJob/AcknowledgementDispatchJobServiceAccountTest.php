@@ -64,6 +64,8 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\AcknowledgementService
+ * @uses \OCA\Dossiq\Service\Notification\AcknowledgementOnCase
+ * @uses \OCA\Dossiq\Service\Notification\AcknowledgementRefusals
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\CaseFieldWriter

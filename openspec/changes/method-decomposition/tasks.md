@@ -1086,3 +1086,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the 18 inherited on development.
         Own test: `tests/Unit/Service/Term/TermsByKindTest` (2); reading a truthy `overdue` as overdue
         turns 1 test red (checked).
+  - [x] 8aw `AcknowledgementService` (3: ExcessiveClassComplexity 57 against 50; CouplingBetweenObjects
+        and TooManyMethods stay, with their reasons). Two pieces that read no store moved out. What a case
+        row says about its acknowledgement went to the new `Notification/AcknowledgementOnCase`: whether
+        it is still a draft (`isDraft()`) and the duty block it carries (`duty()`, was `dutyOn()`). The
+        refusals went to the new `Notification/AcknowledgementRefusals`: a confirmation by hand that does
+        not say how (`howStated()`, was `statedHow()`) and a notice no transport took (`notSent()`, was
+        `notSentRefusal()`). Bodies moved unchanged. The service builds each where it uses it, so its
+        constructor, interface and container binding are unchanged. phpmd: zero new findings under both
+        rulesets; over the whole of `lib/` the class reads 49 (pdepend cache cleared).
+        Characterisation: the existing `AcknowledgementServiceGoldenTest`, `AcknowledgementDutyTest`,
+        `AcknowledgementControllerContractTest` and the dispatch job tests (80: a draft sends nothing, an
+        already met duty, the no-address and not-sent refusals, a confirmation by hand), green before and
+        unchanged after but for two `@uses` lines in each file that covers the service.
+        Own test: `tests/Unit/Service/Notification/AcknowledgementPiecesTest` (3); reading any case that
+        is not published as a draft turns 1 test red (checked).
