@@ -144,7 +144,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
-		$this->definitionRecord = new PropertyDefinitionRecord();
+		$this->definitionRecord = new PropertyDefinitionRecord(enumValues: self::INTERIM_FREQUENCIES);
 	}
 
 	/**
@@ -567,8 +567,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				property: $property,
 				type: $type,
 				caseTypeId: $caseTypeId,
-				value: $scheme[$property],
-				enumValues: self::INTERIM_FREQUENCIES
+				value: $scheme[$property]
 			);
 
 			$objectService->saveObject(

@@ -42,12 +42,11 @@ final class PropertyDefinitionRecordTest extends TestCase {
 	 * @return void
 	 */
 	public function testAPlainPropertyCarriesNoEnumValues(): void {
-		$record = (new PropertyDefinitionRecord())->record(
+		$record = (new PropertyDefinitionRecord(enumValues: ['a', 'b']))->record(
 			property: 'ceiling',
 			type: 'number',
 			caseTypeId: 'ct-1',
-			value: 25000,
-			enumValues: ['a', 'b']
+			value: 25000
 		);
 
 		self::assertSame(
@@ -62,12 +61,11 @@ final class PropertyDefinitionRecordTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEnumCarriesItsAllowedValues(): void {
-		$record = (new PropertyDefinitionRecord())->record(
+		$record = (new PropertyDefinitionRecord(enumValues: ['none', 'annually']))->record(
 			property: 'frequency',
 			type: 'enum',
 			caseTypeId: 'ct-1',
-			value: 'annually',
-			enumValues: ['none', 'annually']
+			value: 'annually'
 		);
 
 		self::assertSame(expected: ['none', 'annually'], actual: $record['enumValues']);

@@ -38,19 +38,30 @@ namespace OCA\Dossiq\Repair\Support;
 final class PropertyDefinitionRecord {
 
 	/**
+	 * Constructor.
+	 *
+	 * @param array<int, string> $enumValues The values an `enum` property allows.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function __construct(
+		private readonly array $enumValues,
+	) {
+	}//end __construct()
+
+	/**
 	 * One propertyDefinition record.
 	 *
-	 * @param string            $property   The property name.
-	 * @param string            $type       The property type.
-	 * @param string            $caseTypeId The case type it belongs to.
-	 * @param mixed             $value      The source's value, the default.
-	 * @param array<int, string> $enumValues The values an `enum` property allows.
+	 * @param string $property   The property name.
+	 * @param string $type       The property type.
+	 * @param string $caseTypeId The case type it belongs to.
+	 * @param mixed  $value      The source's value, the default.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function record(string $property, string $type, string $caseTypeId, mixed $value, array $enumValues): array {
+	public function record(string $property, string $type, string $caseTypeId, mixed $value): array {
 		$definition = [
 			'name' => $property,
 			'caseType' => $caseTypeId,
@@ -59,7 +70,7 @@ final class PropertyDefinitionRecord {
 		];
 
 		if ($type === 'enum') {
-			$definition['enumValues'] = $enumValues;
+			$definition['enumValues'] = $this->enumValues;
 		}
 
 		return $definition;

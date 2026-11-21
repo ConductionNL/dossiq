@@ -843,8 +843,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8ah `Repair/MigrateSubsidieRegelingToCaseType` (1: ExcessiveClassComplexity 51 against 50).
         Building one propertyDefinition record (its name, case type, type and default as text, and the
         allowed values of an enum) moved to the new `Repair/Support/PropertyDefinitionRecord`
-        (`record()`; body moved unchanged). The allowed values are now an argument instead of the
-        step's own constant, so the record says nothing about one procedure; the step passes its
+        (`record()`; body moved unchanged). The allowed values are a constructor argument instead of
+        the step's own constant, so the record says nothing about one procedure; the step passes its
         `INTERIM_FREQUENCIES`. The step builds the record in its constructor, so its constructor and
         its registration in `appinfo/info.xml` are unchanged. phpmd: zero findings on both files under
         both rulesets.
