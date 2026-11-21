@@ -72,7 +72,13 @@ final class DefinitionRowsTest extends TestCase {
 	 */
 	public function testVersionsSortNewestFirst(): void {
 		$rows = (new DefinitionRows())->newestFirst(
-			results: [['id' => 'v1', 'version' => 1], $this->entity(['id' => 'v3', 'version' => '3']), 'not a row', ['id' => 'v0'], ['id' => 'v2', 'version' => 2]]
+			results: [
+				['id' => 'v1', 'version' => 1],
+				$this->entity(row: ['id' => 'v3', 'version' => '3']),
+				'not a row',
+				['id' => 'v0'],
+				['id' => 'v2', 'version' => 2],
+			]
 		);
 
 		self::assertSame(expected: ['v3', 'v2', 'v1', 'v0'], actual: array_column($rows, 'id'));
@@ -86,7 +92,7 @@ final class DefinitionRowsTest extends TestCase {
 	public function testTheIdsAreThoseTheRowsCarry(): void {
 		self::assertSame(
 			expected: ['st-1', 'st-2'],
-			actual: (new DefinitionRows())->idsOf(rows: [['id' => 'st-1'], ['title' => 'no id'], 42, $this->entity(['id' => 'st-2']), ['id' => '']])
+			actual: (new DefinitionRows())->idsOf(rows: [['id' => 'st-1'], ['title' => 'no id'], 42, $this->entity(row: ['id' => 'st-2']), ['id' => '']])
 		);
 	}//end testTheIdsAreThoseTheRowsCarry()
 
