@@ -180,7 +180,7 @@
       `lib/Service/Kcc/CallbackRetrySchedule.php` (`tests/Unit/Service/Kcc/CallbackRetryScheduleTest.php`,
       ported from the retired test); the calculator and its test are gone; the date audit and the
       no-local-calendar control file follow.
-- [ ] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
+- [x] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
       classes; tighten the structural test's allowlist to empty.
       Partly (10 Oct, lane L7): the allowlist in `TimedJobDeadlineThresholdTest` shrank from six
       to two, then to one when 2.1 retired `WOODeadlineCheckJob`. Left: `PauseChaseJob`, the
@@ -230,6 +230,14 @@
       days (pinned by `UrgencyScorerTest` and `WorkQueueServiceTest`) ask `DayCount`, as a default
       collaborator so neither constructor's contract widens. The list is at 3: two wait on
       `method-decomposition`, `WOODeadlineService` goes with the refactor programme.
+      Part 4 of 4 (21 Nov, lane b-dossiq): the last two files ask `DayCount` through the date
+      normaliser both already hold, so neither class takes a new collaborator and neither crosses
+      the coupling limit: `CaseDateNormaliser::daysBetween()` answers `DayCount::between()`, and
+      `DeadlineExtensionService::calculateDaysImpact()` and `TermijnTimerService::spanFor()` call
+      it. Both counts were already pinned (`DeadlineExtensionLimitTest` reads the sixty days in the
+      refusal; `TermijnTimerArmGoldenTest` the armed spans); `CaseDateNormaliserTest::
+      testDaysBetweenCountsWholeDaysEitherWayRound` pins the new method. The list holds only
+      `WOODeadlineService`, so the task closes.
 
 ## Verify
 
