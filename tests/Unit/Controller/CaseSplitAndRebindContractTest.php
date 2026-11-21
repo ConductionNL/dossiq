@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\CaseRebindService
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @uses \OCA\Dossiq\Controller\Support\TranslatesRefusals
  * @uses \OCA\Dossiq\Controller\Support\CaseCaller
  */

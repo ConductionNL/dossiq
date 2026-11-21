@@ -53,6 +53,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * does once a lifecycle schema declares its initial state (openregister#5400).
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy

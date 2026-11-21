@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * What moves, what stays, what is on both, and what is refused.
  *
  * @covers \OCA\Dossiq\Service\Cases\CaseSplitExecutor
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitFields
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy
  * @uses \OCA\Dossiq\Exception\RefusedException
