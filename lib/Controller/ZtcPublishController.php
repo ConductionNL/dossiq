@@ -74,8 +74,9 @@ class ZtcPublishController extends ZgwController {
 	/**
 	 * Publish a ZTC resource by setting isDraft to false.
 	 *
-	 * Loads the existing object, sets isDraft=false, saves it back,
-	 * and returns the outbound-mapped result.
+	 * Requires the catalogi write scope. A zaaktype passes the CT-02b publish
+	 * guard first (REQ-ZBR-024). Loads the existing object, sets isDraft=false,
+	 * saves it back, and returns the outbound-mapped result.
 	 *
 	 * @param string $resource The ZGW resource name (zaaktypen, besluittypen, informatieobjecttypen).
 	 * @param string $uuid The resource UUID.
@@ -94,7 +95,12 @@ class ZtcPublishController extends ZgwController {
 		}
 
 		try {
-			return new JSONResponse(data: $this->published(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig), statusCode: Http::STATUS_CREATED);
+			$published = $this->published(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+			if ($published instanceof JSONResponse) {
+				return $published;
+			}
+
+			return new JSONResponse(data: $published, statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
 			return $this->publishFailure(e: $e);
 		}//end try
@@ -111,6 +117,10 @@ class ZtcPublishController extends ZgwController {
 			return $authError;
 		}
 
+		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
+		}
+
 		if ($this->zgwService->getObjectService() === null) {
 			return $this->zgwService->unavailableResponse();
 		}
@@ -125,11 +135,11 @@ class ZtcPublishController extends ZgwController {
 	 * @param string $uuid          The resource UUID.
 	 * @param array  $mappingConfig The resource mapping configuration.
 	 *
-	 * @return array The outbound-mapped type.
+	 * @return array|JSONResponse The outbound-mapped type, or the publish-guard refusal.
 	 *
 	 * @throws \Throwable When the type cannot be read or saved.
 	 */
-	private function published(string $resource, string $uuid, array $mappingConfig): array {
+	private function published(string $resource, string $uuid, array $mappingConfig): array|JSONResponse {
 		$existing = $this->zgwService->getObjectService()->find(
 			$uuid,
 			new ObjectFindOptions(
@@ -137,7 +147,22 @@ class ZtcPublishController extends ZgwController {
 				schema: $mappingConfig['sourceSchema']
 			)
 		);
-		$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
+		$storedData = $this->objectToArray(row: $existing);
+
+		$refusal = $this->zgwService->getBusinessRulesService()->guardPublishEndpoint(
+			resource: $resource,
+			existingObject: $storedData,
+			objectService: $this->zgwService->getObjectService(),
+			mappingConfig: $mappingConfig
+		);
+		if ($refusal !== null) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError(ruleResult: $refusal),
+				statusCode: $refusal['status']
+			);
+		}
+
+		$existingData = $this->publishedCopy(existingData: $storedData);
 
 		$object = $this->zgwService->getObjectService()->saveObject(
 			object: $existingData,
