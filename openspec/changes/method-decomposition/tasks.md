@@ -1052,3 +1052,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own tests: `testStatusesArePutInTheirOrder` in `BackfilledTemplateShapeTest` and
         `tests/Unit/Service/Workflow/BackfilledTemplateCastMarkerTest` (1); reversing the order and
         dropping the id check turn 4 tests red (checked).
+  - [x] 8au `ZgwRulesBase` (2: ExcessiveClassComplexity 53 against 50; TooManyMethods stays). The four
+        private builders of a 400 refusing one field (`badTypeUrlError()`, `badInformatieobjectUrl()`,
+        `urlError()`, `notUniqueError()`) built the same shape with their own words. That shape is now
+        one `fieldRefusal()` on `Zgw/ZgwRuleResults`, the results builder the base already holds, and
+        each call site passes its field, code, detail and reason, word for word as before. No subclass
+        overrides `error()` or `fieldError()`, so going through the builder answers the same. Moving onto a
+        class the base already held adds no coupling (12). Its constructor and every subclass are
+        unchanged. phpmd: zero findings on both files under both rulesets; over the whole of `lib/` the
+        class reads 49 (pdepend cache cleared).
+        Characterisation: `tests/Unit/Service/ZgwRulesBaseRefusalsTest` (3) pins the type URL, the
+        informatieobject URL and the external URL refusals word for word through a subclass, green on the
+        old code and on the new (checked); the existing ZGW rules tests (851, the uniqueness and
+        `invalid-resource` refusals among them) green before and after. Two refusals cannot be reached
+        through the base: `isValidUrl()` already requires a UUID at the end of the path, so an
+        informatieobject URL without one and an external URL whose last segment is no UUID are refused as
+        a bad URL first. They are kept as they were.
+        Own test: `testOneFieldIsRefusedWithItsCodeAndReason` in `ZgwRuleResultsTest`; changing one reason
+        turns 1 test red (checked).
