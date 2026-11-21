@@ -59,8 +59,7 @@ interface EmailTemplateServiceInterface {
 	 * @return array<string, array<int, string>>
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function getAvailableVariables(string $caseTypeId): array;
 

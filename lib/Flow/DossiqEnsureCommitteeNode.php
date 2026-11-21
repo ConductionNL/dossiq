@@ -194,10 +194,7 @@ class DossiqEnsureCommitteeNode implements ICallFlowNode {
      * @throws RuntimeException When the committee cannot be resolved or raised.
      *
      * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $context is IFlowNode's
-     * contract; the run's acting identity in it is applied by the engine's
-     * dispatcher now (openregister#3332), not read here.
+     * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
      */
     public function execute(FlowNodeCall $call): array {
         $items = $call->items;

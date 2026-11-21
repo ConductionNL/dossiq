@@ -80,11 +80,11 @@ use Throwable;
 /**
  * Retires the `dossiq.demo` schema fork and restores the register's identity.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec exclude No canonical spec covers repairing the damage of a defective
  *  demo import. Pointing this at the first-time-setup spec would report
  *  conformance to a requirement that says nothing about the fork.
+ *
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class RepairDemoDataSchemaFork implements IRepairStep {
 

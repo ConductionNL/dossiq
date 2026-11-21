@@ -125,13 +125,8 @@ class DeletionWindowReader {
 	 *
 	 * @return array<string, mixed>|null The window, or null.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) `DateTimeImmutable::createFromFormat`
-	 * ANSWERS false on a value that is not a date, where the constructor
-	 * throws. A value to branch on is what keeps this method from having to
-	 * swallow an exception, which is the pattern the architecture guard
-	 * `ServiceCatchReturnsNullTest` counts.
-	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function fromMarker(object $entity): ?array {
 		$marker = $this->marker(entity: $entity);

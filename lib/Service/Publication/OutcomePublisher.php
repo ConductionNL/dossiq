@@ -62,11 +62,10 @@ use RuntimeException;
  *   wires like PagesSeen and SourceCollectionReturn beside it, so a publish with nothing
  *   to disclose by record publishes the decision alone. Splitting the publish
  *   step to save one class would put the refusal and its exception in two places.
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten, for the same reason: four optional
- *   collaborators, each defaulting to the behaviour before it existed.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class OutcomePublisher implements WooPublicationServiceInterface {
 

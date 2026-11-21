@@ -291,8 +291,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         productsOrServices array-versus-string case the inline comment records). The two
         handlers themselves have no unit test; nothing constructs ZgwService in tests, so their
         orchestration is covered by the Newman ZGW collections (live pass, decision 139).
-- [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
-      waits until #3298 (which edits it) lands. Note: each controller also carries CLASS-level
+- [x] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
+      waits until #3298 (which edits it) lands.
+      Closed 21 Nov: #3298 has merged, and `lib/Controller/AcController.php` on `development`
+      carries no `@SuppressWarnings(PHPMD.*)` at all and PHPMD reports nothing for it under
+      either ruleset, so the four AcController suppressions are gone and 6a, 6b and 6c cover the
+      other three controllers. Note: each controller also carries CLASS-level
       CyclomaticComplexity/NPathComplexity suppressions, which silence every method in the file;
       removing them shows 15 hidden method findings in ZrcController and 9 in DrcController.
   - [x] 6a `ZtcController` (11 suppressions: the class-level CyclomaticComplexity,
@@ -697,3 +701,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         value, its default and its refusal message, and dates, moments (written in the tenant's
         zone) and integers. Own test: `tests/Unit/Service/Import/RecordFieldShapeTest` (3);
         cutting one character short of the space turns 3 tests red (checked).
+  - [x] 8x Thirty more stale suppressions. Each `@SuppressWarnings(PHPMD.*)` in `lib/` was lifted
+        one at a time and its file run against both rulesets the `phpmd` script runs (`phpmd.xml`
+        and hydra-gates' `phpmd-unusedparams.xml`); thirty report nothing for their rule without
+        it: StaticAccess (9), UnusedFormalParameter (7), ExcessiveParameterList (6),
+        CouplingBetweenObjects (3), BooleanArgumentFlag (3) and ExcessiveClassComplexity (2), in 28
+        files. Docblocks only; no code moved. The suppression and its explanation lines go, and
+        each touched docblock cites this change. A whole-`lib/` run of both rulesets reports the
+        same 258 findings, file by file, on `development` and on the branch, and phpcs is clean on
+        the 28 files. `scripts/debt-ratchet.js` counts 222 suppressions, down from 252.

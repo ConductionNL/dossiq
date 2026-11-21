@@ -51,10 +51,10 @@ interface ZgwBusinessRulesServiceInterface {
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function validate(
 		string $zgwApi,

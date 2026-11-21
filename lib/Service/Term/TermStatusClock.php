@@ -128,9 +128,7 @@ class TermStatusClock implements TermStatusClockInterface {
 	 * @param bool                 $inside   Whether the case's status is one the clock runs in.
 	 *
 	 * @return string What changed.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$inside` is the status test's answer, compared with the clock's
-	 *  own state; it does not switch the method between two jobs.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function stopOrStart(array $instance, bool $inside): string {
 		$stopped = (($instance['clockStoppedByStatus'] ?? false) === true);

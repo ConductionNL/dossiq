@@ -142,8 +142,7 @@ class AanvullingsverzoekResolutionService implements AanvullingsverzoekResolutio
 	 * @param boolean             $complete Whether the handler says it is complete.
 	 *
 	 * @return array<string, mixed> The recorded answer.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The handler's own answer to "is it complete?", passed on as asked.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function recordAs(AanvullingAnswerRun $run, bool $complete): array {
 		$this->refuseClosingWhileOutstanding(run: $run, complete: $complete);

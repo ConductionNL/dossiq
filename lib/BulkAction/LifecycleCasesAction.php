@@ -182,10 +182,8 @@ class LifecycleCasesAction implements StepBulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The lifecycle service
-	 * reads the acting user from the session; the job runs as that user.
-	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;

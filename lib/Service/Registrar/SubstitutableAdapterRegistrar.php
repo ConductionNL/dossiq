@@ -99,11 +99,8 @@ class SubstitutableAdapterRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) ConfiguredAdapter and FleetAppId are
-	 *      stateless resolvers, and this method IS the composition root: the one
-	 *      place a service locator is the right tool rather than a smell.
-	 *
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$context->registerService(

@@ -59,14 +59,10 @@ use Psr\Log\LoggerInterface;
 /**
  * What a move to another version would change, and the move itself.
  *
- * @SuppressWarnings(PHPMD.StaticAccess) `RefusedException::indeterminate()` is a
- *  named constructor, not a service call. It holds no state and exists so a
- *  caller cannot build a refusal with the wrong status on it. Same reading as
- *  `RefusalOutcome` and `TriageSleep`.
- *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class CaseVersionMove implements CaseVersionMoveInterface {
 

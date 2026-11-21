@@ -37,9 +37,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one line per registrar; the coupling is the list itself.
- *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
+ * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 class ListenerRegistrar {
 	/**

@@ -51,8 +51,7 @@ interface SamenwerkverzoekServiceInterface {
 	 * @throws \Exception When the user is not an administrator
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $samenwerk reserved for future ACL
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function authorizeSamenwerkMutation(array $samenwerk, IUser $user): void;
 
