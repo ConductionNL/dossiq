@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\PhaseTermService
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\Term\TermsByKind
  * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\ChainTermSplitter
  * @uses \OCA\Dossiq\Service\TermKind
