@@ -887,3 +887,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and unchanged after but for one `@uses` line in each file that covers or uses the repository.
         Own test: `tests/Unit/Service/Workflow/DefinitionRowsTest` (3); sorting oldest first turns 2 tests
         red (checked).
+  - [x] 8ak `HearingCalendarService` (1: ExcessiveClassComplexity 53 against 50). What a planned event
+        says without a calendar moved to the new `Calendar/PlannedEventFields`: its start, read from the
+        stored date with the warning when it cannot be (`start()`, was `readStart()`), and the lines of its
+        description with the participants stored as text (`description()`, was `describeHearing()`, with
+        `participantNames()`). Bodies and the log line moved unchanged. `DateTimeImmutable` goes with the
+        start, so CouplingBetweenObjects goes from 15 to 14 (an inherited finding, not suppressed). The
+        service builds the fields over its own logger in its constructor, so its constructor and the
+        container binding are unchanged. phpmd: no finding on the two files except that inherited coupling.
+        Characterisation: the existing `HearingCalendarServicePinTest` (the whole description with and
+        without type, room and names, the unreadable-date warning) and `HearingCalendarServiceTest`, green
+        before and unchanged after but for one `@uses` line in each file that covers or uses the service.
+        Own test: `tests/Unit/Service/Calendar/PlannedEventFieldsTest` (2); naming blank participants turns
+        2 tests red (checked).

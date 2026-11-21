@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Calendar\PlannedEventFields;
 use OCP\Calendar\ICalendarEventBuilder;
 use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
@@ -41,9 +41,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Writes the calendar event for a hearing.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class HearingCalendarService {
 
@@ -65,12 +64,21 @@ class HearingCalendarService {
 	private const PRINCIPAL_PREFIX = 'principals/users/';
 
 	/**
+	 * Reads the event's start and writes its description.
+	 *
+	 * @var PlannedEventFields
+	 */
+	private readonly PlannedEventFields $eventFields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ICalendarManager $calendarManager Calendar manager, writes the hearing event
 	 * @param IUserManager $userManager Resolves a participant to an account
 	 * @param IUserSession $userSession The organiser of the hearing
 	 * @param LoggerInterface $logger Logger
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly ICalendarManager $calendarManager,
@@ -78,6 +86,7 @@ class HearingCalendarService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->eventFields = new PlannedEventFields(logger: $logger);
 	}//end __construct()
 
 	/**
@@ -99,6 +108,7 @@ class HearingCalendarService {
 	 * @return string The event UID, or an empty string when nothing was written.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createEvent(array $data): string {
 		$participants = $this->plannedParticipants(data: $data);
@@ -106,7 +116,7 @@ class HearingCalendarService {
 			return '';
 		}
 
-		$start = $this->readStart(data: $data);
+		$start = $this->eventFields->start(data: $data);
 		if ($start === null) {
 			return '';
 		}
@@ -222,31 +232,6 @@ class HearingCalendarService {
 	}//end writeForAll()
 
 	/**
-	 * Read the hearing's start moment, or nothing when the date is unreadable.
-	 *
-	 * An unreadable date must not become an event at "now": a hearing on the
-	 * wrong day in someone's calendar is worse than no hearing in it.
-	 *
-	 * @param array<string, mixed> $data Hearing data.
-	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
-	 */
-	private function readStart(array $data): ?DateTimeImmutable {
-		$date = (string)($data['date'] ?? '');
-		try {
-			return new DateTimeImmutable($date);
-		} catch (\Exception $e) {
-			$this->logger->warning(
-				'Hearing has no readable date, no calendar event written: ' . $date,
-				['app' => AppIdentity::APP_ID],
-			);
-			return null;
-		}
-	}//end readStart()
-
-	/**
 	 * Serialise the hearing as one VEVENT.
 	 *
 	 * @param PlannedHearing $hearing The hearing data, its start and the participants as stored.
@@ -255,6 +240,7 @@ class HearingCalendarService {
 	 * @return string The event as ICS.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function buildEvent(PlannedHearing $hearing, array $parties): string {
 		$data = $hearing->data;
@@ -263,7 +249,7 @@ class HearingCalendarService {
 		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
 		$builder->setStartDate($start);
 		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + self::EVENT_DURATION_SECONDS));
-		$builder->setDescription($this->describeHearing(data: $data, participants: $hearing->participants));
+		$builder->setDescription($this->eventFields->description(data: $data, participants: $hearing->participants));
 
 		$location = (string)($data['location'] ?? '');
 		if ($location !== '') {
@@ -459,57 +445,4 @@ class HearingCalendarService {
 
 		return ($calendar instanceof ICalendarIsWritable && $calendar->isWritable() === false) === false;
 	}//end takesHearings()
-
-	/**
-	 * Describe the hearing in the body of the calendar event.
-	 *
-	 * The description names every planned participant, including the ones that
-	 * are a bare name rather than an account: they cannot be invited, and the
-	 * people who can be need to know they are expected too.
-	 *
-	 * @param array<string, mixed> $data Hearing data.
-	 * @param array<int, mixed> $participants Participants as stored.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
-	 */
-	private function describeHearing(array $data, array $participants): string {
-		$lines = ['Hoorgesprek over klacht ' . (string)($data['complaint'] ?? '')];
-
-		$type = (string)($data['type'] ?? '');
-		if ($type !== '') {
-			$lines[] = 'Vorm: ' . $type;
-		}
-
-		$talkUrl = (string)($data['talkRoomUrl'] ?? '');
-		if ($talkUrl !== '') {
-			$lines[] = 'Gespreksruimte: ' . $talkUrl;
-		}
-
-		$names = $this->participantNames(participants: $participants);
-		if ($names !== []) {
-			$lines[] = 'Deelnemers: ' . implode(', ', $names);
-		}
-
-		return implode("\n", $lines);
-	}//end describeHearing()
-
-	/**
-	 * The trimmed, non-empty names of the participants stored as text.
-	 *
-	 * @param array<int, mixed> $participants Participants as stored.
-	 *
-	 * @return array<int, string>
-	 */
-	private function participantNames(array $participants): array {
-		$names = [];
-		foreach ($participants as $participant) {
-			if (is_string($participant) === true && trim($participant) !== '') {
-				$names[] = trim($participant);
-			}
-		}
-
-		return $names;
-	}//end participantNames()
 }//end class
