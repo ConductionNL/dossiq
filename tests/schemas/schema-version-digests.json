@@ -668,7 +668,7 @@
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
-        "version": "1.2.0",
+        "version": "1.1.0",
         "digest": "04f5dced3feb46a84c08827545040a7f1d4427a6bd4fbcb805da9777483eb35f"
     },
     "lib/Settings/dossiq_register.json::checklistItem": {
@@ -888,8 +888,8 @@
         "digest": "611ab849220ca32bc25de056a846a9a1f46615566db21b9ec05f87b7fa3a5d10"
     },
     "lib/Settings/dossiq_register.json::wmsLayer": {
-        "version": "1.1.0",
-        "digest": "544d107d6ed2b09a71dd60dfef4fb169473e61965a5357d6e7bcf80cd9d3b7ba"
+        "version": "1.0.0",
+        "digest": "7f08c287ad6668be34d494c21f06b3e421a01ee2c3322fdee49e9e03aa93dce0"
     },
     "lib/Settings/dossiq_register.json::workflowTemplate": {
         "version": "1.4.0",
