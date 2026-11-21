@@ -1133,3 +1133,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the seven arguments in their order, absent optionals as null, an ignored suggestion with its cause) and
         `AiControllerAuditIndexTest`, green before and unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Controller/Support/SuggestionActionReportTest` (2).
+  - [x] 8az `Kcc/RoutingTableEvaluator` (1: ExcessiveClassComplexity 52 against 50). Three pieces that read no
+        store and only touch a rule's gathered conditions moved onto `Kcc/RuleConditions`, the value the evaluator
+        already builds per rule: an equality constraint, refusing a contradictory second value (`requireEqual()`, was
+        `recordEquality()`), one `after_HH:MM` / `before_HH:MM` condition folded into the window (`narrowTime()`, was
+        `recordTimeWindow()`) and the unary-test cell of the window (`timeCell()`). Bodies moved unchanged, reading
+        the conditions' own fields. Moving onto a class the evaluator already held adds no coupling. Its constructor
+        and callers are unchanged. phpmd: zero findings on both files under both rulesets but for the two inherited
+        StaticAccess findings on `RoutingRuleOrder`; over the whole of `lib/` the ExcessiveClassComplexity finding is
+        gone (pdepend cache cleared).
+        Characterisation: the existing `RoutingTableEvaluatorTest`, `RoutingTableEvaluatorEdgesTest`,
+        `KccRoutingParityTest` (the compiled table against the legacy engine, contradictory equalities and time
+        windows among them) and `RoutingRuleServiceTest`, green before and unchanged after but for one `@uses` line in
+        the first three.
+        Own test: `tests/Unit/Service/Kcc/RuleConditionsTest` (2).
