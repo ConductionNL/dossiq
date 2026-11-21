@@ -232,8 +232,8 @@ class BeschikkingControllerTest extends TestCase {
 
 		$failed = $this->controller->successor('besch-1');
 
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
-		$this->assertStringNotContainsString('secret', (string)json_encode($failed->getData()));
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $failed->getStatus());
+		$this->assertStringNotContainsString(needle: 'secret', haystack: (string)json_encode($failed->getData()));
 	}//end testAFailedReadOfTheOriginalIsAGeneric500()
 
 	/**
