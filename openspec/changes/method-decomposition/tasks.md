@@ -740,3 +740,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         before and unchanged after but for one `@uses` line in each file that builds the service.
         Own test: `tests/Unit/Service/Sharing/CaseLinkShareRecordTest` (4); keeping a document link
         id of 0 turns 2 tests red (checked).
+  - [x] 8aa `Cases/CaseSplitExecutor` (1: ExcessiveClassComplexity 52 against 50). What a split writes
+        that it can say without a store moved to the new `Cases/CaseSplitFields`: the second case's
+        fields taken from the first (`secondCase()`, which now takes the source's uuid instead of
+        asking the store), its relation back to the first (`relationBack()`) and the moved items the
+        original records (`movedItems()`, with its `movedAt` stamp, so the executor no longer couples
+        to `DateTimeImmutable`). Bodies moved unchanged. The executor keeps the reads, the moves, the
+        status take-over and the writes; it builds the fields in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files under both
+        rulesets.
+        Characterisation, green on the single class first (own commit): 1 test added to
+        `CaseSplitExecutorTest` (10 in all) for the default title, the copied and defaulted handling
+        fields, the relation note and the `movedAt` stamp, beside the golden test's moved-item shapes.
+        Unchanged and green after but for one `@uses` line in each file that builds the executor.
+        Own test: `tests/Unit/Service/Cases/CaseSplitFieldsTest` (3); defaulting impact to high turns
+        3 tests red (checked).
