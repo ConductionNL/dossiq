@@ -1101,3 +1101,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         unchanged after but for two `@uses` lines in each file that covers the service.
         Own test: `tests/Unit/Service/Notification/AcknowledgementPiecesTest` (3); reading any case that
         is not published as a draft turns 1 test red (checked).
+  - [x] 8ax `ZaakdossierService` (1: ExcessiveClassComplexity 57 against 50). Three checks that read no
+        store moved onto what they check, each a class the service already used: the required upload
+        input onto the upload itself, `DocumentUpload::requireType()` (was `requireUploadType()`); a
+        document that is missing or definitief onto the document status canon,
+        `Zaakdossier/InformatieobjectStatusLifecycle::requireEditable()` (was `requireEditableDocument()`);
+        and the editable metadata fields onto the normaliser that already normalised two of them,
+        `Zaakdossier/InformatieobjectMetadataNormaliser::editableFields()`. Bodies moved unchanged. The
+        service no longer names `RuntimeException` or `DomainException` itself; its constructor, interface
+        and container binding are unchanged, and the inherited CouplingBetweenObjects 19 is unchanged. A
+        fourth candidate, the uuid of a saved record, was left: `DocumentRecordStore` has its own reader
+        that also takes `uuid` and trims, so moving onto it would change what the service answers. phpmd:
+        zero new findings under both rulesets; over the whole of `lib/` the class reads 47 (pdepend cache
+        cleared).
+        Characterisation: the existing `ZaakdossierServiceTest` (an upload without a type, the status
+        transitions, the metadata edit with its direction and keywords), `InformatieobjectMetadataWriteTest`,
+        `DocumentCorrespondentsWriteTest` and the dossier suite (1246), green before and unchanged after but
+        for one `@uses` line in each file that covers the service.
+        Own test: `tests/Unit/Service/Zaakdossier/DossierEditAndUploadRulesTest` (3); reading a different
+        word for definitief turns 2 tests red (checked).
