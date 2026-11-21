@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Notifies the assignee of a case stalled on a milestone.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class MilestoneStallActs implements MilestoneStallActsInterface {
 	use SearchesObjects;
@@ -76,7 +76,7 @@ class MilestoneStallActs implements MilestoneStallActsInterface {
 	 *
 	 * @return bool True when a notification went out.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function notifyIfStalled(array $case, string $identifier = ''): bool {
 		$row = $this->detector->waitingOn(case: $case);

@@ -348,4 +348,31 @@ class WOODeadlineServiceTest extends TestCase {
 		$this->assertFalse($result['warned']);
 	}//end testCheckAndWarnReturnsFalseForDistantDeadline()
 
+	/**
+	 * CheckAndWarn counts a passed deadline as negative days and warns.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function testCheckAndWarnCountsAPassedDeadlineAsOverdue(): void {
+		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
+		$objectServiceMock->method('find')->willReturn([
+			'id' => 'case-uuid-001',
+			'deadline' => '2000-01-01',
+		]);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['case_schema', '', 'case'],
+		]);
+
+		$result = $this->service->checkAndWarn('case-uuid-001', 'j.dejong');
+
+		$this->assertTrue($result['isOverdue']);
+		$this->assertLessThan(0, $result['daysRemaining']);
+		$this->assertTrue($result['warned']);
+	}//end testCheckAndWarnCountsAPassedDeadlineAsOverdue()
+
 }//end class

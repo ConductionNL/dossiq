@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Archives a beschikking whose objection term ran out, and switches the trigger off.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	use SearchesObjects;
@@ -101,7 +101,7 @@ class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	 *
 	 * @return array<string, mixed>|null The trigger, or null when it does not exist or nothing is configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $triggerId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -123,7 +123,7 @@ class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function process(array $trigger): string {
 		$decisionId = (string) ($trigger['decisionId'] ?? '');

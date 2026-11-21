@@ -160,7 +160,7 @@ class StalledCaseDetector {
 	 *                                   daysOverdue, assignee), or null when the
 	 *                                   case is closed, unscheduled or complete.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function waitingOn(array $case): ?array {
 		return $this->getStallRow(row: $case, window: new StallWindow(today: new DateTimeImmutable('today'), thresholdDays: PHP_INT_MIN));

@@ -68,7 +68,7 @@ interface TermijnTimerServiceInterface {
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 * @spec openspec/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string;
@@ -82,7 +82,7 @@ interface TermijnTimerServiceInterface {
 	 *
 	 * @return int How many timers were cancelled.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function cancelForInstance(string $instanceId, string $reason): int;
 
@@ -99,7 +99,7 @@ interface TermijnTimerServiceInterface {
 	 *
 	 * @return bool True when the engine suspended the timer.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function suspendBeslistermijn(array $instance, string $reason, ?DateTimeImmutable $until): bool;
 

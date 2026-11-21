@@ -596,7 +596,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 *
 	 * @return int Absolute number of days between the current and the new deadline.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	private function calculateDaysImpact(string $current, string $newEndDate): int {
 		$currentDate = $this->dates->now();
@@ -644,7 +644,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 *
 	 * @return array<int, int> The rungs that stay recorded.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function rungsStillBehind(array $instance, string $newEndDate): array {
 		$sent = array_map('intval', (array)($instance['notificatiesVerstuurd'] ?? []));

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Throwable;
 /**
  * The guard and the case read the case timer arming steps share.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 final class CaseTimerSweeper {
 	use RunsUnderSystemIdentity;
@@ -59,7 +59,7 @@ final class CaseTimerSweeper {
 	 *
 	 * @return bool False when OpenRegister or the case schema is not available, so nothing ran.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sweep(CaseTimerSweep $sweep): bool {
 		$sweep->objectService = $this->settingsService->getObjectService();

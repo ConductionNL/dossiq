@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Syncs the milestone timer of every case once.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmMilestoneStallTimers implements IRepairStep {
 	/**
@@ -65,7 +65,7 @@ class ArmMilestoneStallTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function getName(): string {
 		return 'Arm OpenRegister engine timers for Dossiq milestone stalls';
@@ -78,7 +78,7 @@ class ArmMilestoneStallTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$counts = ['armed' => 0, 'stalled' => 0, 'failed' => 0];

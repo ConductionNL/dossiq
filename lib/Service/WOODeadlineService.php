@@ -361,15 +361,11 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 * @param DateTimeImmutable $deadline The deadline to measure against
 	 *
 	 * @return int Days remaining, negative when overdue
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
 	 */
 	private function signedDaysUntil(DateTimeImmutable $deadline): int {
-		$today = $this->dates->today();
-		$daysRemaining = (int)$today->diff($deadline)->days;
-		if ($today > $deadline) {
-			return -$daysRemaining;
-		}
-
-		return $daysRemaining;
+		return $this->dates->signedDaysBetween(from: $this->dates->today(), to: $deadline);
 	}//end signedDaysUntil()
 
 	/**
