@@ -710,3 +710,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         each touched docblock cites this change. A whole-`lib/` run of both rulesets reports the
         same 258 findings, file by file, on `development` and on the branch, and phpcs is clean on
         the 28 files. `scripts/debt-ratchet.js` counts 222 suppressions, down from 252.
+  - [x] 8y `ConsultationService` (1: ExcessiveClassComplexity 51 against 50). What an advice request
+        may be moved to the new `Consultation/ConsultationStatusRules`: the declared statuses and the
+        moves between them (`assertKnownStatus()`, `assertMove()`; a stored status outside the graph
+        still constrains nothing), the advice types (`adviceOf()`), whether a request holds its case
+        (`blocks()`) and the obligation that mirrors a mandatory request (`mirroringObligation()`).
+        Bodies and messages moved unchanged. The obligation payload moved with the blocking rule
+        because both ask whether a request is mandatory, and because the service then no longer
+        couples to `ObligationService`: the rules class alone would have pushed its
+        CouplingBetweenObjects from 13 to 14. The service builds the rules in its constructor, so its
+        constructor, interface and container binding are unchanged; `consultationBlocks()` stays
+        public and delegates. phpmd: zero findings on both files under both rulesets.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `ConsultationServiceTest` (12 in all) for a move the graph refuses, a stored status outside
+        the graph with the closing stamp, and the blocking rule. Own test:
+        `tests/Unit/Service/Consultation/ConsultationStatusRulesTest` (6); letting every stored
+        status through `assertMove()` turns 2 tests red (checked).
