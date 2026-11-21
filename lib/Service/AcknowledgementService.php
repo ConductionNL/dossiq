@@ -47,6 +47,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
+use OCA\Dossiq\Service\Notification\AcknowledgementOnCase;
+use OCA\Dossiq\Service\Notification\AcknowledgementRefusals;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -65,7 +67,6 @@ use Throwable;
  * directory, the portal's field list and the field writer. Splitting the class
  * to lower the count would spread one statutory duty over several files, which
  * is the thing this change exists to stop.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/burger-notifications/spec.md
@@ -371,10 +372,11 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
 	 * @return array<string, mixed>|null `{sent: false, reason, duty}`, or null when the acknowledgement is due.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function nothingToSend(string $caseId, array $case, array $caseType): ?array {
-		if ($this->isDraft(case: $case) === true) {
-			return ['sent' => false, 'reason' => 'draft', 'duty' => $this->dutyOn(case: $case)];
+		if ((new AcknowledgementOnCase())->isDraft(case: $case) === true) {
+			return ['sent' => false, 'reason' => 'draft', 'duty' => (new AcknowledgementOnCase())->duty(case: $case)];
 		}
 
 		if ($this->caseTypes->declaration->owesAcknowledgement(case: $case, caseType: $caseType) === false) {
@@ -384,26 +386,13 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			return ['sent' => false, 'reason' => 'not-required', 'duty' => $duty];
 		}
 
-		$duty = $this->dutyOn(case: $case);
+		$duty = (new AcknowledgementOnCase())->duty(case: $case);
 		if (($duty['status'] ?? '') === self::STATUS_MET) {
 			return ['sent' => false, 'reason' => 'already-met', 'duty' => $duty];
 		}
 
 		return null;
 	}//end nothingToSend()
-
-	/**
-	 * Whether the case is still a draft in OpenRegister.
-	 *
-	 * @param array<string, mixed> $case The case row, with its `@self` envelope when the store gives one.
-	 *
-	 * @return bool True for a draft.
-	 */
-	private function isDraft(array $case): bool {
-		$self = ($case['@self'] ?? null);
-
-		return (is_array($self) === true && ($self['status'] ?? null) === 'draft');
-	}//end isDraft()
 
 	/**
 	 * The refusal for an acknowledgement no transport took, after an internal line says so.
@@ -418,11 +407,12 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @return RefusedException The refusal, carrying the transport's sentence.
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function notSent(string $caseId, NoticeNotSentException $notice): RefusedException {
 		$this->recordNotSent(caseId: $caseId, notice: $notice);
 
-		return $this->notSentRefusal(notice: $notice);
+		return (new AcknowledgementRefusals())->notSent(notice: $notice);
 	}//end notSent()
 
 	/**
@@ -450,32 +440,6 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			visibility: CaseTimeline::INTERNAL,
 		);
 	}//end recordNotSent()
-
-	/**
-	 * The refusal for an acknowledgement no transport took.
-	 *
-	 * @param NoticeNotSentException $notice What the sender answered.
-	 *
-	 * @return RefusedException The refusal, carrying the transport's sentence.
-	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
-	 */
-	private function notSentRefusal(NoticeNotSentException $notice): RefusedException {
-		if ($notice->getReasonCode() === 'no-channel') {
-			return new RefusedException(
-				rule: 'acknowledgement-no-address',
-				sentence: 'This case carries no address, so receipt could not be confirmed. '
-					. 'Add the applicant\'s address, or record that you confirmed it another way.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return new RefusedException(
-			rule: 'acknowledgement-not-sent',
-			sentence: $notice->getMessage(),
-			status: RefusedException::STATUS_INDETERMINATE,
-		);
-	}//end notSentRefusal()
 
 	/**
 	 * Record that an attempt failed, and whether any are left.
@@ -544,10 +508,11 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @throws RefusedException When the case cannot be read.
 	 *
 	 * @spec openspec/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function recordMetAnotherWay(string $caseId, string $how, string $recordedBy): array {
 		$case = $this->readableCase(caseId: $caseId, sentence: 'We could not read the case, so nothing was recorded.');
-		$how = $this->statedHow(how: $how);
+		$how = (new AcknowledgementRefusals())->howStated(how: $how);
 
 		$metAt = (new DateTimeImmutable())->format('c');
 		$duty = ['required' => true, 'status' => self::STATUS_MET, 'metBy' => $recordedBy, 'metAt' => $metAt, 'metHow' => $how];
@@ -564,30 +529,6 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 
 		return $duty;
 	}//end recordMetAnotherWay()
-
-	/**
-	 * How receipt was confirmed, trimmed, or a refusal when it is not said.
-	 *
-	 * @param string $how How receipt was confirmed.
-	 *
-	 * @return string The trimmed answer.
-	 *
-	 * @throws RefusedException When no answer was given.
-	 *
-	 * @spec openspec/specs/burger-notifications/spec.md
-	 */
-	private function statedHow(string $how): string {
-		$how = trim($how);
-		if ($how === '') {
-			throw new RefusedException(
-				rule: 'acknowledgement-needs-a-reason',
-				sentence: 'Say how receipt was confirmed, so the case records more than a tick.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $how;
-	}//end statedHow()
 
 	/**
 	 * The outbound record of an acknowledgement a person confirmed by hand.
@@ -619,6 +560,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @return array<string, mixed> The duty, empty when the case cannot be read.
 	 *
 	 * @spec openspec/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function dutyFor(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -626,7 +568,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			return [];
 		}
 
-		return $this->dutyOn(case: $case);
+		return (new AcknowledgementOnCase())->duty(case: $case);
 	}//end dutyFor()
 
 	/**
@@ -737,22 +679,6 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 
 		return $this->caseTypes->caseTypeResolver->effectiveCaseType(caseTypeId: $reference);
 	}//end caseTypeOf()
-
-	/**
-	 * The duty block on a case row.
-	 *
-	 * @param array<string, mixed> $case The case row.
-	 *
-	 * @return array<string, mixed> The duty, empty when the case carries none.
-	 */
-	private function dutyOn(array $case): array {
-		$duty = ($case['acknowledgementDuty'] ?? null);
-		if (is_array($duty) === false) {
-			return [];
-		}
-
-		return $duty;
-	}//end dutyOn()
 
 	/**
 	 * This case's outbound communications with one more on the end.
