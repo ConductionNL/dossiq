@@ -1072,3 +1072,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         a bad URL first. They are kept as they were.
         Own test: `testOneFieldIsRefusedWithItsCodeAndReason` in `ZgwRuleResultsTest`; changing one reason
         turns 1 test red (checked).
+  - [x] 8av `CaseTermsService` (2: ExcessiveClassComplexity 55 against 50; StaticAccess on `TermKind`
+        stays). Reading a case's shaped terms by kind reads no store and no date, so it moved to the new
+        `Term/TermsByKind`: the first term of a kind (`first()`, was `firstOfKind()`) and whether any
+        phase, planned or statutory term is overdue (`overdueFlags()`, with `anyOverdue()`). Bodies moved
+        unchanged. `progressOf()` builds one, so the constructor, the interface and the container binding
+        are unchanged. CouplingBetweenObjects goes from 10 to 11. phpmd: zero findings on both files
+        under both rulesets; over the whole of `lib/` the class reads 47 (pdepend cache cleared).
+        Characterisation: the existing term tests (`PhaseTermTest`, `PlannedTermTest`,
+        `FixedDateTermTest`, `InternalTargetTest`, `TermijnKindTest` and
+        `CaseTermsServicePlannedDefinitionTest`, the progress and the overdue flags among them), green
+        before and unchanged after but for one `@uses` line in each; the one failure in that run is one of
+        the 18 inherited on development.
+        Own test: `tests/Unit/Service/Term/TermsByKindTest` (2); reading a truthy `overdue` as overdue
+        turns 1 test red (checked).

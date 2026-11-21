@@ -47,6 +47,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
 use OCA\Dossiq\Service\Term\CaseTermSources;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\Term\TermsByKind;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -62,8 +63,6 @@ use Psr\Log\LoggerInterface;
  * constants and four pure predicates over an array, with no state, no I/O and
  * nothing to inject. Making it an instance would add a constructor dependency
  * to every class that names a kind, to hide a `::` behind a `->`.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseTermsService implements CaseTermsServiceInterface {
 	/**
@@ -447,10 +446,12 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 *               statutoryOverdue: bool}
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function progressOf(array $terms, array $reading): array {
 		['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today] = $reading;
-		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
+		$byKind = new TermsByKind();
+		$statutory = $byKind->first(terms: $terms, kind: TermKind::STATUTORY);
 		$consumed = $this->consumedPercent(term: $statutory, today: $today);
 		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
 		$total = count($phases);
@@ -463,7 +464,7 @@ class CaseTermsService implements CaseTermsServiceInterface {
 			'phasesDone' => $done,
 			'phasesTotal' => $total,
 			'termConsumed' => $consumed,
-		] + $this->overdueFlags(terms: $terms);
+		] + $byKind->overdueFlags(terms: $terms);
 	}//end progressOf()
 
 	/**
@@ -505,23 +506,6 @@ class CaseTermsService implements CaseTermsServiceInterface {
 
 		return $daysLeft;
 	}//end daysLeftOf()
-
-	/**
-	 * Whether any phase, planned or statutory term is overdue.
-	 *
-	 * @param array<int, array<string, mixed>> $terms The case's terms.
-	 *
-	 * @return array{phaseOverdue: bool, plannedOverdue: bool, statutoryOverdue: bool}
-	 *
-	 * @spec openspec/specs/termijn-reporting/spec.md
-	 */
-	private function overdueFlags(array $terms): array {
-		return [
-			'phaseOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PHASE),
-			'plannedOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PLANNED),
-			'statutoryOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::STATUTORY),
-		];
-	}//end overdueFlags()
 
 	/**
 	 * Everything the case page needs about the clocks, in one read.
@@ -644,42 +628,6 @@ class CaseTermsService implements CaseTermsServiceInterface {
 
 		return 0;
 	}//end phasesDone()
-
-	/**
-	 * The first term of a kind, or null.
-	 *
-	 * @param array<int, array<string, mixed>> $terms The shaped terms.
-	 * @param string $kind The kind to look for.
-	 *
-	 * @return array<string, mixed>|null The term.
-	 */
-	private function firstOfKind(array $terms, string $kind): ?array {
-		foreach ($terms as $term) {
-			if (($term['kind'] ?? '') === $kind) {
-				return $term;
-			}
-		}//end foreach
-
-		return null;
-	}//end firstOfKind()
-
-	/**
-	 * Whether any running clock of a kind is past its end.
-	 *
-	 * @param array<int, array<string, mixed>> $terms The shaped terms.
-	 * @param string $kind The kind to look at.
-	 *
-	 * @return bool True when at least one is overdue.
-	 */
-	private function anyOverdue(array $terms, string $kind): bool {
-		foreach ($terms as $term) {
-			if (($term['kind'] ?? '') === $kind && ($term['overdue'] ?? false) === true) {
-				return true;
-			}
-		}//end foreach
-
-		return false;
-	}//end anyOverdue()
 
 	/**
 	 * Days between today and an end date, negative once it has passed.
