@@ -39,6 +39,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType
+ * @uses   \OCA\Dossiq\Repair\Support\PropertyDefinitionRecord
  */
 class MigrateSubsidieRegelingToCaseTypeTest extends TestCase {
 	/**

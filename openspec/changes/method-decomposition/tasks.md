@@ -840,3 +840,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `@uses` lines in each file that covers or uses the ledger. Own tests:
         `tests/Unit/Service/Flow/OccurrenceRowsTest` (2) and `SeriesFiringCountTest` (2); counting a
         stamp already seen turns 6 tests red (checked).
+  - [x] 8ah `Repair/MigrateSubsidieRegelingToCaseType` (1: ExcessiveClassComplexity 51 against 50).
+        Building one propertyDefinition record (its name, case type, type and default as text, and the
+        allowed values of an enum) moved to the new `Repair/Support/PropertyDefinitionRecord`
+        (`record()`; body moved unchanged). The allowed values are now an argument instead of the
+        step's own constant, so the record says nothing about one procedure; the step passes its
+        `INTERIM_FREQUENCIES`. The step builds the record in its constructor, so its constructor and
+        its registration in `appinfo/info.xml` are unchanged. phpmd: zero findings on both files under
+        both rulesets.
+        Characterisation: the existing `MigrateSubsidieRegelingToCaseTypeTest` (14 tests: the enum keeps
+        its allowed values, numeric properties keep a numeric type, every property is attached to its
+        case type), green before and unchanged after but for one `@uses` line. Own test:
+        `tests/Unit/Repair/Support/PropertyDefinitionRecordTest` (2); giving the enum values to every
+        type but the enum turns 3 tests red (checked).
