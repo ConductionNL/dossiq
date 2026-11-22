@@ -85,6 +85,7 @@ class RecordingAdviceStore {
  * @covers \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceService
  * @covers \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal
  * @covers \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceStore
+ * @uses   \OCA\Dossiq\Service\DecisionAdvice\AdviceTable
  */
 class DecisionAdviceServiceTest extends TestCase {
 
