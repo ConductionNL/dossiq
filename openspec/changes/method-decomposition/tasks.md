@@ -1229,3 +1229,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         unknown component) and `AcControllerCharacterisationTest`, green before and unchanged after but for one
         `@uses` line or `UsesClass` attribute in each.
         Own test: `tests/Unit/Controller/Support/AutorisatieScopeFieldsTest` (2).
+  - [x] 8bg `ZgwDrcRulesService` (1: ExcessiveClassComplexity 53 against 50). Drc-006, a locked document changed only
+        with its own lock id, reads the body and the stored document and no store, so it moved to the new
+        `Zgw/DrcLockRule`, built the way slice 8b builds its rule groups: the refusal (`refusal()`, was
+        `validateLock()`), the lock a stored document carries (`currentLock()`) and the missing or wrong lock id
+        (`lockRefusal()`). The two refusal builders (`lockRequiredError()`, `wrongLockError()`) built the 400 of one
+        field that `ZgwRuleResults::fieldRefusal()` builds (slice 8au), so they call it, word for word as before. The
+        service builds the rule in its constructor over its own results builder, so its constructor, the dispatcher
+        and the container are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `ZgwDrcRulesServiceTest` (drc-006 on PUT and PATCH: unlocked, not locked, the
+        missing, wrong and right lock id, the old `lock` field), the DRC rule and dispatcher tests (158), green before
+        and unchanged after but for one `@covers` line.
+        Own test: `tests/Unit/Service/Zgw/DrcLockRuleTest` (2).

@@ -62,6 +62,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\ChecksIdentificatieUnique;
 use OCA\Dossiq\Service\Zgw\DrcDocumentRelations;
+use OCA\Dossiq\Service\Zgw\DrcLockRule;
 use OCA\Dossiq\Service\Zgw\DrcObjectLinkRules;
 use Psr\Log\LoggerInterface;
 
@@ -94,15 +95,24 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	private DrcObjectLinkRules $objectLinks;
 
 	/**
+	 * The rule for changing a locked document (drc-006).
+	 *
+	 * @var DrcLockRule
+	 */
+	private DrcLockRule $lock;
+
+	/**
 	 * Constructor.
 	 *
-	 * Takes what every rules class takes and builds its two collaborators over
+	 * Takes what every rules class takes and builds its collaborators over
 	 * its own lookups, so they read in the request context it is given, and the
 	 * dispatcher and the container still see one DRC rules service.
 	 *
 	 * @param LoggerInterface $logger The logger.
 	 * @param SettingsService $settingsService The settings service.
 	 * @param FieldValidator $fieldValidator The field validator.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(LoggerInterface $logger, SettingsService $settingsService, FieldValidator $fieldValidator) {
 		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
@@ -119,6 +129,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			fieldValidator: $fieldValidator,
 			relations: $this->relations
 		);
+		$this->lock = new DrcLockRule(results: $this->results);
 	}//end __construct()
 
 	/**
@@ -270,13 +281,14 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenUpdate(
 		array $body,
 		?array $existingObject = null,
 	): array {
 		// Drc-006: Check lock requirement.
-		$lockError = $this->validateLock(body: $body, existingObject: $existingObject);
+		$lockError = $this->lock->refusal(body: $body, existingObject: $existingObject);
 		if ($lockError !== null) {
 			return $lockError;
 		}
@@ -453,98 +465,6 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			]
 		);
 	}//end validateIndicatieGebruiksrechtTrue()
-
-	/**
-	 * Validate lock requirement for document modifications (drc-006).
-	 *
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing EIO data
-	 *
-	 * @return array|null Validation error, or null if valid
-	 */
-	private function validateLock(array $body, ?array $existingObject): ?array {
-		// Check if the document is locked.
-		$existingLock = $this->currentLock(existingObject: $existingObject);
-		if ($existingLock === '' || $existingLock === false) {
-			return null;
-		}
-
-		// Drc-006: Require valid lock ID.
-		return $this->lockRefusal(requestLock: $body['lock'] ?? '', existingLock: $existingLock);
-	}//end validateLock()
-
-	/**
-	 * The lock a stored document carries, '' when there is no stored document.
-	 *
-	 * @param array|null $existingObject The existing EIO data
-	 *
-	 * @return mixed The lock id, '' or false when unlocked
-	 */
-	private function currentLock(?array $existingObject): mixed {
-		if ($existingObject === null) {
-			return '';
-		}
-
-		return $existingObject['locked'] ?? ($existingObject['lock'] ?? '');
-	}//end currentLock()
-
-	/**
-	 * Drc-006: the refusal of a modification of a locked document without its own lock id.
-	 *
-	 * @param mixed $requestLock  The lock id the request carries, '' when none
-	 * @param mixed $existingLock The lock id the document carries
-	 *
-	 * @return array|null Validation error, or null when the lock ids match
-	 */
-	private function lockRefusal(mixed $requestLock, mixed $existingLock): ?array {
-		if ($requestLock === '') {
-			return $this->lockRequiredError();
-		}
-
-		if ($requestLock !== $existingLock) {
-			return $this->wrongLockError();
-		}
-
-		return null;
-	}//end lockRefusal()
-
-	/**
-	 * The refusal of modifying a locked document without a lock id (drc-006).
-	 *
-	 * @return array Validation error
-	 */
-	private function lockRequiredError(): array {
-		return $this->error(
-			status: 400,
-			detail: 'Het document is vergrendeld. Geef een geldig lock ID mee.',
-			invalidParams: [
-				$this->fieldError(
-					fieldName: 'lock',
-					code: 'required',
-					reason: 'Het document is vergrendeld.'
-				),
-			]
-		);
-	}//end lockRequiredError()
-
-	/**
-	 * The refusal of modifying a locked document with another lock id (drc-006).
-	 *
-	 * @return array Validation error
-	 */
-	private function wrongLockError(): array {
-		return $this->error(
-			status: 400,
-			detail: 'Het opgegeven lock ID is niet geldig.',
-			invalidParams: [
-				$this->fieldError(
-					fieldName: 'lock',
-					code: 'incorrect-lock-id',
-					reason: 'Het opgegeven lock ID komt niet overeen.'
-				),
-			]
-		);
-	}//end wrongLockError()
 
 	/**
 	 * Derive vertrouwelijkheidaanduiding from informatieobjecttype (drc-005).
