@@ -1258,3 +1258,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `StepConfigPublishTest`, `WorkflowDefinitionPublishTest` and the task declaration and package draft tests
         (237), green before and unchanged after but for one `@uses` line in two.
         Own test: `tests/Unit/Service/Workflow/DefinitionLifecycleRowsTest` (2).
+  - [x] 8bi `DecisionAdvice/DecisionAdviceService` (1: ExcessiveClassComplexity 55 against 50). What the advice reads
+        off the stored decision table a case type names reads no store, so it moved to the new
+        `DecisionAdvice/AdviceTable`, a value over the table: the declared inputs with their type and the literal
+        values their rules use (`offeredInputs()`, was the loop in `form()`), the outcomes a handler can choose
+        (`outcomes()`), the entered value of every declared input, refusing a missing one (`declaredValues()`, was
+        `declaredInputs()`), the recommendation in what the table answered (`recommendation()`, was
+        `recommendationOf()`), with the column values (`entries()`) and the definition names (`names()`). Bodies and
+        refusal sentences moved unchanged; the loose-list reading went with them. The service builds one where it
+        reads a table, so its constructor, interface and container binding are unchanged. phpmd: zero findings on
+        both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole of `lib/`
+        (pdepend cache cleared).
+        Characterisation: the existing `DecisionAdviceServiceTest` (the form's inputs and outcomes, a missing input
+        refused, the recommendation stored, accepting and deviating) and `DecisionAdviceControllerTest` (29), green
+        before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Service/DecisionAdvice/AdviceTableTest` (2).
