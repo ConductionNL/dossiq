@@ -145,9 +145,10 @@ class PayoutService implements PayoutServiceInterface {
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function prepare(PayoutRequest $request, ?DateTimeImmutable $receiptDate): array {
-		$this->assertPaymentInput(iban: $request->iban, accountHolderName: $request->accountHolderName);
+		$request->assertPayable();
 
 		[$objectService, $register, $bSchema, $uSchema] = $this->configuredStore(
 			schemaKeys: [MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA, MoneyConfigKeys::PAYOUT_SCHEMA]
@@ -388,26 +389,6 @@ class PayoutService implements PayoutServiceInterface {
 	}//end caseLinkOf()
 
 	/**
-	 * Validate the caller-supplied payment input.
-	 *
-	 * @param string $iban IBAN.
-	 * @param string $accountHolderName Account holder name.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When the IBAN or the account holder name is invalid.
-	 */
-	private function assertPaymentInput(string $iban, string $accountHolderName): void {
-		if ($this->isValidIban(iban: $iban) === false) {
-			throw new RuntimeException('Invalid IBAN provided for dwangsom uitbetaling');
-		}
-
-		if (trim($accountHolderName) === '') {
-			throw new RuntimeException('rekeninghouderNaam is required');
-		}
-	}//end assertBetalingInput()
-
-	/**
 	 * Resolve the payable amount locked on a DwangsomBerekening.
 	 *
 	 * @param MoneyStore $amounts       Where the accruing amounts are stored.
@@ -587,31 +568,13 @@ class PayoutService implements PayoutServiceInterface {
 	 * @return bool
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function isValidIban(string $iban): bool {
-		$iban = strtoupper(preg_replace('/\s+/', '', $iban));
-		if (preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{8,32}$/', $iban) !== 1) {
-			return false;
-		}
+		$request = new PayoutRequest();
+		$request->iban = $iban;
 
-		$rearranged = substr($iban, 4) . substr($iban, 0, 4);
-		$expanded = '';
-		foreach (str_split($rearranged) as $ch) {
-			if (ctype_alpha($ch) === true) {
-				$expanded .= (string)(ord($ch) - 55);
-				continue;
-			}
-
-			$expanded .= $ch;
-		}
-
-		// Mod-97 over a string (PHP int can't hold this directly).
-		$remainder = '';
-		foreach (str_split($expanded) as $digit) {
-			$remainder = (string)(((int)($remainder . $digit)) % 97);
-		}
-
-		return ((int)$remainder === 1);
+		return $request->hasValidIban();
 	}//end isValidIban()
 
 	/**

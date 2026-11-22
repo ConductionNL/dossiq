@@ -103,22 +103,10 @@ class CaseCompleteness implements CaseCompletenessInterface {
 	 * @return array<int, array<string, string>> The items, malformed ones left out.
 	 *
 	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function itemsOf(array $caseType): array {
-		$declared = ($caseType[IntakeRequirements::PROPERTY]['completenessItems'] ?? []);
-		if (is_array($declared) === false) {
-			return [];
-		}
-
-		$items = [];
-		foreach ($declared as $item) {
-			$clean = $this->cleanItem(item: $item);
-			if ($clean !== null) {
-				$items[] = $clean;
-			}
-		}
-
-		return $items;
+		return (new CompletenessItems())->declaredBy(caseType: $caseType);
 	}//end itemsOf()
 
 	/**
@@ -147,45 +135,6 @@ class CaseCompleteness implements CaseCompletenessInterface {
 
 		return (string)$caseTypeId;
 	}//end caseTypeIdOf()
-
-	/**
-	 * One declared item with a trimmed key and label and its usable options, or null when malformed.
-	 *
-	 * @param mixed $item The declared entry.
-	 *
-	 * @return array<string, string>|null
-	 */
-	private function cleanItem(mixed $item): ?array {
-		if (is_array($item) === false) {
-			return null;
-		}
-
-		$key   = trim((string)($item['key'] ?? ''));
-		$label = trim((string)($item['label'] ?? ''));
-		if ($key === '' || $label === '') {
-			return null;
-		}
-
-		return array_merge(['key' => $key, 'label' => $label], $this->itemOptions(item: $item));
-	}//end cleanItem()
-
-	/**
-	 * The non-blank string options of a declared item, trimmed, in their fixed order.
-	 *
-	 * @param array<string, mixed> $item The declared item.
-	 *
-	 * @return array<string, string>
-	 */
-	private function itemOptions(array $item): array {
-		$options = [];
-		foreach (['documentType', 'documentTitleContains', 'field', 'evidence'] as $option) {
-			if (is_string($item[$option] ?? null) === true && trim($item[$option]) !== '') {
-				$options[$option] = trim($item[$option]);
-			}
-		}
-
-		return $options;
-	}//end itemOptions()
 
 	/**
 	 * The completeness answer: each item ticked, the counts and the verdict.

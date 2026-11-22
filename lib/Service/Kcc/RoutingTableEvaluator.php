@@ -337,6 +337,8 @@ class RoutingTableEvaluator {
 	 * @param array<int, array<string, mixed>> $columns  The shared column list, grown as needed.
 	 *
 	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function cellsOf(RuleConditions $gathered, array &$columns): array {
 		$cells = [];
@@ -350,7 +352,7 @@ class RoutingTableEvaluator {
 			$cells[$name] = 'true';
 		}
 
-		$timeCell = $this->timeCell(lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
+		$timeCell = $gathered->timeCell();
 		if ($timeCell !== null) {
 			$this->ensureColumn(columns: $columns, column: ['name' => 'minutesOfDay', 'type' => 'number', 'kind' => 'minutesOfDay', 'payload' => []]);
 			$cells['minutesOfDay'] = $timeCell;
@@ -372,6 +374,8 @@ class RoutingTableEvaluator {
 	 * @param RuleConditions $gathered The rule's equality cells, boolean derive columns and time window so far.
 	 *
 	 * @return bool False when the rule can never match.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function compileCondition(array $condition, RuleConditions $gathered): bool {
 		$type = (string)($condition['type'] ?? '');
@@ -384,7 +388,7 @@ class RoutingTableEvaluator {
 				$literal = strtolower($value);
 			}
 
-			return $this->recordEquality(gathered: $gathered, equality: [self::EQUALITY_COLUMNS[$type], $literal]);
+			return $gathered->requireEqual(column: self::EQUALITY_COLUMNS[$type], value: $literal);
 		}
 
 		if ($type === 'keyword') {
@@ -400,91 +404,12 @@ class RoutingTableEvaluator {
 		}
 
 		if ($type === 'time_of_day') {
-			return $this->recordTimeWindow(value: $value, gathered: $gathered);
+			return $gathered->narrowTime(value: $value);
 		}
 
 		// The legacy engine's default arm: an unknown type never matches.
 		return false;
 	}//end compileCondition()
-
-	/**
-	 * Record an equality constraint, refusing a contradictory second value.
-	 *
-	 * Two conditions demanding two DIFFERENT values of the same field can
-	 * never both hold — the legacy engine evaluated them as `false`, and one
-	 * table cell can carry only one literal, so the rule compiles to nothing.
-	 *
-	 * @param RuleConditions             $gathered The rule's conditions so far, with its equality cells.
-	 * @param array{0: string, 1: string} $equality The column name and the demanded value.
-	 *
-	 * @return bool False when the constraint is contradictory.
-	 */
-	private function recordEquality(RuleConditions $gathered, array $equality): bool {
-		[$column, $value] = $equality;
-		if (array_key_exists($column, $gathered->equalities) === true) {
-			return ($gathered->equalities[$column] === $value);
-		}
-
-		$gathered->equalities[$column] = $value;
-
-		return true;
-	}//end recordEquality()
-
-	/**
-	 * Fold one `after_HH:MM` / `before_HH:MM` condition into the rule's window.
-	 *
-	 * Several time conditions intersect, like the legacy conjunction did:
-	 * every `after` raises the lower bound, every `before` lowers the upper.
-	 *
-	 * @param string         $value    The condition value.
-	 * @param RuleConditions $gathered The rule's conditions so far, with its inclusive lower and exclusive upper bound in minutes.
-	 *
-	 * @return bool False when the value is not a time-of-day expression.
-	 */
-	private function recordTimeWindow(string $value, RuleConditions $gathered): bool {
-		if (preg_match('/^(after|before)_(\d{1,2}):(\d{2})$/', $value, $matches) !== 1) {
-			// The legacy engine's timeOfDayMatches() answers false for a
-			// malformed window, so the rule can never match.
-			return false;
-		}
-
-		$boundary = ((int)$matches[2] * 60) + (int)$matches[3];
-		if ($matches[1] === 'after') {
-			$gathered->lowerBound = max($boundary, ($gathered->lowerBound ?? $boundary));
-
-			return true;
-		}
-
-		$gathered->upperBound = min($boundary, ($gathered->upperBound ?? $boundary));
-
-		return true;
-	}//end recordTimeWindow()
-
-	/**
-	 * The unary-test cell for a compiled time window.
-	 *
-	 * @param int|null $lowerBound The inclusive lower bound, in minutes.
-	 * @param int|null $upperBound The exclusive upper bound, in minutes.
-	 *
-	 * @return string|null The cell, or null when the rule carries no window.
-	 */
-	private function timeCell(?int $lowerBound, ?int $upperBound): ?string {
-		if ($lowerBound !== null && $upperBound !== null) {
-			// An impossible window ([1020..540)) simply never matches — the
-			// same answer the legacy conjunction gave it.
-			return '[' . $lowerBound . '..' . $upperBound . ')';
-		}
-
-		if ($lowerBound !== null) {
-			return '>= ' . $lowerBound;
-		}
-
-		if ($upperBound !== null) {
-			return '< ' . $upperBound;
-		}
-
-		return null;
-	}//end timeCell()
 
 	/**
 	 * Declare a column once, keeping its derivation spec.

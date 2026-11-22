@@ -1120,3 +1120,99 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         for one `@uses` line in each file that covers the service.
         Own test: `tests/Unit/Service/Zaakdossier/DossierEditAndUploadRulesTest` (3); reading a different
         word for definitief turns 2 tests red (checked).
+  - [x] 8ay `AiController` (1: ExcessiveClassComplexity 51 against 50). What a person reports doing with a
+        suggestion reads no store, so it moved to the new `Controller/Support/SuggestionActionReport`, built over
+        the request: why the report is refused, a missing field or an unknown action or cause (`refusal()`, was
+        `recordError()` with `refuseAction()`), the suggestion and the applied value as the entry stores them, text
+        under `text` (`suggestion()`, `actualValue()`, with `asPayload()`), the reason when it is a string
+        (`reason()`, was `stringOrNull()`) and the surrounding context (`context()`, was `actionContext()`). The two
+        lists of accepted actions and causes moved with them. Bodies and refusal sentences moved unchanged.
+        `recordAction()` builds the report inline, so the constructor and the container binding are unchanged.
+        phpmd: zero findings on both files under both rulesets, and over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `AiControllerContractTest` (the required fields, the unknown action and cause,
+        the seven arguments in their order, absent optionals as null, an ignored suggestion with its cause) and
+        `AiControllerAuditIndexTest`, green before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Controller/Support/SuggestionActionReportTest` (2).
+  - [x] 8az `Kcc/RoutingTableEvaluator` (1: ExcessiveClassComplexity 52 against 50). Three pieces that read no
+        store and only touch a rule's gathered conditions moved onto `Kcc/RuleConditions`, the value the evaluator
+        already builds per rule: an equality constraint, refusing a contradictory second value (`requireEqual()`, was
+        `recordEquality()`), one `after_HH:MM` / `before_HH:MM` condition folded into the window (`narrowTime()`, was
+        `recordTimeWindow()`) and the unary-test cell of the window (`timeCell()`). Bodies moved unchanged, reading
+        the conditions' own fields. Moving onto a class the evaluator already held adds no coupling. Its constructor
+        and callers are unchanged. phpmd: zero findings on both files under both rulesets but for the two inherited
+        StaticAccess findings on `RoutingRuleOrder`; over the whole of `lib/` the ExcessiveClassComplexity finding is
+        gone (pdepend cache cleared).
+        Characterisation: the existing `RoutingTableEvaluatorTest`, `RoutingTableEvaluatorEdgesTest`,
+        `KccRoutingParityTest` (the compiled table against the legacy engine, contradictory equalities and time
+        windows among them) and `RoutingRuleServiceTest`, green before and unchanged after but for one `@uses` line in
+        the first three.
+        Own test: `tests/Unit/Service/Kcc/RuleConditionsTest` (2).
+  - [x] 8ba `Money/PayoutService` (1: ExcessiveClassComplexity 52 against 50; CouplingBetweenObjects 14 stays,
+        inherited). The two checks of the payment input read no store and only the request's own fields, so they
+        moved onto `Money/PayoutRequest`, the value the service already builds per payout: the IBAN check, length
+        and mod-97 (`hasValidIban()`, was the body of `isValidIban()`), and the refusal of an invalid IBAN or a
+        blank account holder (`assertPayable()`, was `assertPaymentInput()`). Bodies and refusal sentences moved
+        unchanged. The public `isValidIban()` stays on the service and its interface, and delegates. Moving onto a
+        class the service already held adds no coupling. Its constructor and container binding are unchanged.
+        phpmd: the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared); no
+        new findings under either ruleset.
+        Characterisation: the existing `PayoutServiceTest` (valid and invalid IBANs, the refusals before any read),
+        `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `PayoutRequesterTest` and the objection, schedule
+        and end-to-end deadline tests (131), green before and unchanged after but for one `@uses` line in the two
+        files that cover the service without it.
+        Own test: `tests/Unit/Service/Money/PayoutRequestTest` (2).
+  - [x] 8bb `Zaakdossier/DocumentProjectionService` (1: ExcessiveClassComplexity 52 against 50). What a write and a
+        rename change on a stored record read no store, so they moved onto `Zaakdossier/DocumentDefaults`, the class
+        that already says what a new file's record holds: size, format, integrity and file id after a second write
+        (`refreshed()`, whose integrity it already computed) and the file name, with the title when it was still
+        derived from the old name (`renamed()`, was the first half of `renameRecord()`, which now only saves). The
+        service's private `idOf()` was a copy of the one on `DocumentDefaults`; that one is public now and the copy
+        is gone. Bodies moved unchanged. Moving onto a class the service already held adds no coupling. Its
+        constructor, interface and container binding are unchanged. phpmd: zero findings on both files under both
+        rulesets, and the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `DocumentProjectionServiceTest` (a second write refreshes and creates
+        nothing, a rename follows and a hand-set title survives, moves between cases), `DocumentJoinHomingTest`,
+        `CaseFolderLockTest`, `CaseFolderNodeListenerTest`, `WooGatherAddTest` and the dossier suite (476), green
+        before and unchanged after.
+        Own test: `tests/Unit/Service/Zaakdossier/DocumentDefaultsRecordUpdatesTest` (3).
+  - [x] 8bc `Intake/CaseCompleteness` (1: ExcessiveClassComplexity 54 against 50). Reading the completeness items a
+        case type declares reads no store, so it moved to the new `Intake/CompletenessItems`: the items under the
+        intake requirements, malformed ones left out (`declaredBy()`, was the body of `itemsOf()`), one item with a
+        trimmed key and label (`cleanItem()`) and its usable options in their fixed order (`itemOptions()`). Bodies
+        moved unchanged. The public `itemsOf()` stays on the service and its interface, and delegates. The service
+        builds the reader where it uses it, so its constructor and container binding are unchanged. phpmd: zero
+        findings on both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole
+        of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `CaseCompletenessTest`, `CaseCompletenessCountsTest` (malformed and blank
+        items left out, the options a document or a field answers) and `CaseCompletenessControllerTest`, green
+        before and unchanged after but for one `@uses` line in each.
+        Own test: `tests/Unit/Service/Intake/CompletenessItemsTest` (2).
+  - [x] 8bd `Flow/RetiredNodeRewriter` (1: ExcessiveClassComplexity 54 against 50). Reading and writing an edge's
+        endpoints in the shape they were stored in (a single id or a list) reads no store, so it moved to the new
+        `Flow/EdgeEndpoints`: the ids an endpoint names (`idsOf()`, was `endpoints()`), one id replaced keeping the
+        endpoint's shape (`swapped()`, was `swap()`), and an edge given its new targets, one numbered edge per target
+        when a single id fans out (`withTargets()`, was `reshape()`). Bodies moved unchanged, but for `idsOf()`, whose
+        body was a copy of `External/RegisterValues::toStringArray()` (gate-122 named it once it moved) and now calls
+        it, the same answer for every input. The rewriter builds one
+        in its constructor, so its constructor signature, interface and container binding are unchanged. phpmd: zero
+        findings on both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole
+        of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `RetiredNodeRewriterTest`, `RetiredNodeRewriterEdgesTest` (bridged, fanned
+        out and orphaned edges in both endpoint shapes, a translated step chained), `RetiredNodeTranslatorTest` and
+        the repair step tests (75), green before and unchanged after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Flow/EdgeEndpointsTest` (3).
+  - [x] 8be `Lifecycle/CaseEndingActs` (1: ExcessiveClassComplexity 54 against 50; TooManyMethods stays, 29 down to
+        27). What the ending acts read off a case type's status rows reads no store, so it moved to the new
+        `Lifecycle/StatusRows`: the terminal status an act lands on, the one named when it is terminal, else the first
+        in process order (`namedTerminal()`, was the body of `terminalStatus()`), the phases skipped between the status
+        left and the one landed on (`skippedNames()`, was the body of `skippedPhases()`), whether a row is terminal
+        (`isFinal()`, was `isFinalRow()`), a row's place in the process with an unordered status last (`orderOf()`) and
+        its id (`idOf()`). Bodies moved unchanged. The acts build one over their own `LanguageMapText` in the
+        constructor, so the constructor signature and the container binding are unchanged. phpmd: no new findings
+        under either ruleset, and the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend
+        cache cleared).
+        Characterisation: the existing `CaseEndingActsTest`, `CaseEndingActsGoldenTest` (finish and abort on a named
+        and an unnamed terminal status, the skipped phases recorded, no terminal status refused) and the lifecycle,
+        acts, silence-close and admissibility suites (466), green before and unchanged after but for one `@uses`
+        line in two.
+        Own test: `tests/Unit/Service/Lifecycle/StatusRowsTest` (2).

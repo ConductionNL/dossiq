@@ -117,6 +117,8 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	 * @return array<string, mixed>|null The record as stored, or null when the file is not a case's document.
 	 *
 	 * @spec openspec/specs/document-projection/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function projectNode(File $node): ?array {
 		$case = $this->resolveCaseForNode(node: $node);
@@ -130,11 +132,11 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 		}
 
 		if (isset($record['id']) === true) {
-			$record = $this->refreshed(record: $record, node: $node);
+			$record = $this->defaults->refreshed(record: $record, node: $node);
 		}
 
 		$record['id'] = $this->store->saveRecord(record: $record);
-		$this->store->ensureJoin(caseId: $this->idOf(row: $case), recordId: (string)$record['id']);
+		$this->store->ensureJoin(caseId: $this->defaults->idOf(row: $case), recordId: (string)$record['id']);
 
 		return $record;
 	}//end projectNode()
@@ -201,6 +203,8 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	 * @param File                                                       $node The moved file.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function moveBetweenCases(array $move, File $node): void {
 		$record = $move['record'];
@@ -209,7 +213,7 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 		$targetCase = $this->resolveCaseForNode(node: $node);
 		$targetCaseId = '';
 		if ($targetCase !== null) {
-			$targetCaseId = $this->idOf(row: $targetCase);
+			$targetCaseId = $this->defaults->idOf(row: $targetCase);
 		}
 
 		if ($sourceCaseId !== '' && $sourceCaseId !== $targetCaseId) {
@@ -464,37 +468,17 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	}//end caseIdFromPath()
 
 	/**
-	 * The record after a second write: size, format and integrity follow the file.
-	 *
-	 * @param array<string, mixed> $record The stored record.
-	 * @param File $node The file as written.
-	 *
-	 * @return array<string, mixed> The record to store.
-	 */
-	private function refreshed(array $record, File $node): array {
-		$record['bestandsomvang'] = $node->getSize();
-		$record['format'] = $node->getMimeType();
-		$record['integrity'] = $this->defaults->integrityOf(node: $node);
-		$record['fileId'] = $node->getId();
-
-		return $record;
-	}//end refreshed()
-
-	/**
 	 * Follow a rename: the file name, and the title when it was still derived.
 	 *
 	 * @param array<string, mixed>                     $record The stored record.
 	 * @param array{previous: string, current: string} $names  The file name before and the file's new name.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function renameRecord(array $record, array $names): void {
-		$record['fileName'] = $names['current'];
-		if ((string)($record['title'] ?? '') === pathinfo($names['previous'], PATHINFO_FILENAME)) {
-			$record['title'] = pathinfo($names['current'], PATHINFO_FILENAME);
-		}
-
-		$this->store->saveRecord(record: $record);
+		$this->store->saveRecord(record: $this->defaults->renamed(record: $record, names: $names));
 	}//end renameRecord()
 
 	/**
@@ -519,17 +503,4 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 			$this->store->deleteRecord(recordId: $recordId);
 		}
 	}//end retireRecord()
-
-	/**
-	 * A row's uuid, from `id`, `uuid` or `@self.id`.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
-
 }//end class

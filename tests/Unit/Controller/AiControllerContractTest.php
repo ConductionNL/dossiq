@@ -55,6 +55,7 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for AiController.
  *
  * @covers \OCA\Dossiq\Controller\AiController
+ * @uses   \OCA\Dossiq\Controller\Support\SuggestionActionReport
  */
 class AiControllerContractTest extends TestCase {
 

@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Intake\CaseCompleteness
  * @uses \OCA\Dossiq\Service\Support\FilledValue
+ * @uses \OCA\Dossiq\Service\Intake\CompletenessItems
  */
 class CaseCompletenessCountsTest extends TestCase {
 
