@@ -1187,3 +1187,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         items left out, the options a document or a field answers) and `CaseCompletenessControllerTest`, green
         before and unchanged after but for one `@uses` line in each.
         Own test: `tests/Unit/Service/Intake/CompletenessItemsTest` (2).
+  - [x] 8bd `Flow/RetiredNodeRewriter` (1: ExcessiveClassComplexity 54 against 50). Reading and writing an edge's
+        endpoints in the shape they were stored in (a single id or a list) reads no store, so it moved to the new
+        `Flow/EdgeEndpoints`: the ids an endpoint names (`idsOf()`, was `endpoints()`), one id replaced keeping the
+        endpoint's shape (`swapped()`, was `swap()`), and an edge given its new targets, one numbered edge per target
+        when a single id fans out (`withTargets()`, was `reshape()`). Bodies moved unchanged. The rewriter builds one
+        in its constructor, so its constructor signature, interface and container binding are unchanged. phpmd: zero
+        findings on both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole
+        of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `RetiredNodeRewriterTest`, `RetiredNodeRewriterEdgesTest` (bridged, fanned
+        out and orphaned edges in both endpoint shapes, a translated step chained), `RetiredNodeTranslatorTest` and
+        the repair step tests (75), green before and unchanged after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Flow/EdgeEndpointsTest` (3).
