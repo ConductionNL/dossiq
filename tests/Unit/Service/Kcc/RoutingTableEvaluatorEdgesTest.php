@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Kcc\RoutingTableEvaluator
  * @uses \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
+ * @uses \OCA\Dossiq\Service\Kcc\RuleConditions
  */
 class RoutingTableEvaluatorEdgesTest extends TestCase {
 

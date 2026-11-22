@@ -51,6 +51,13 @@ use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
 class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 
 	/**
+	 * Reads and writes an edge's endpoints in the shape they were stored in.
+	 *
+	 * @var EdgeEndpoints
+	 */
+	private readonly EdgeEndpoints $endpoints;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param RetiredNodeMap             $map        The retired-node table.
@@ -58,11 +65,14 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 *                                               different config. Without it such a step is
 	 *                                               left in place and reported, never renamed
 	 *                                               with a config its replacement cannot read.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly RetiredNodeMap $map,
 		private readonly ?RetiredNodeTranslator $translator = null,
 	) {
+		$this->endpoints = new EdgeEndpoints();
 	}//end __construct()
 
 	/**
@@ -238,6 +248,8 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 * @param array<int, string> $ids   The ids of the replacing steps, the original's first.
 	 *
 	 * @return array<int, mixed> The edges.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function chain(array $edges, array $ids): array {
 		if (count($ids) < 2) {
@@ -248,8 +260,8 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 		$last = $ids[(count($ids) - 1)];
 		$out = [];
 		foreach ($edges as $edge) {
-			if (is_array($edge) === true && in_array($first, $this->endpoints(value: ($edge['from'] ?? null)), true) === true) {
-				$edge['from'] = $this->swap(value: $edge['from'], replace: ['from' => $first, 'to' => $last]);
+			if (is_array($edge) === true && in_array($first, $this->endpoints->idsOf(value: ($edge['from'] ?? null)), true) === true) {
+				$edge['from'] = $this->endpoints->swapped(value: $edge['from'], replace: ['from' => $first, 'to' => $last]);
 			}
 
 			$out[] = $edge;
@@ -267,30 +279,6 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 		return $out;
 	}//end chain()
 
-	/**
-	 * Replace one node id in an edge endpoint, keeping the endpoint's shape.
-	 *
-	 * @param mixed                          $value   The endpoint: an id or a list of ids.
-	 * @param array{from: string, to: string} $replace The id to replace, and its replacement.
-	 *
-	 * @return mixed The endpoint.
-	 */
-	private function swap(mixed $value, array $replace): mixed {
-		if (is_array($value) === false) {
-			return $replace['to'];
-		}
-
-		$swapped = [];
-		foreach ($value as $id) {
-			if ($id === $replace['from']) {
-				$id = $replace['to'];
-			}
-
-			$swapped[] = $id;
-		}
-
-		return $swapped;
-	}//end swap()
 
 	/**
 	 * Remove one step from the edge list, pointing its inbound edges at its successors.
@@ -347,11 +335,13 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 * @param RemovedStep          $removed The step being removed and its successors.
 	 *
 	 * @return array<int, mixed>|null The edges it becomes, or null when the step had no successor.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function retargeted(array $edge, RemovedStep $removed): ?array {
 		$stepId = $removed->stepId;
 		$successors = $removed->successors;
-		$targets = $this->endpoints(value: ($edge['to'] ?? null));
+		$targets = $this->endpoints->idsOf(value: ($edge['to'] ?? null));
 		if (in_array($stepId, $targets, true) === false) {
 			return [$edge];
 		}
@@ -361,7 +351,7 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 			return null;
 		}
 
-		return $this->reshape(edge: $edge, targets: $retargeted);
+		return $this->endpoints->withTargets(edge: $edge, targets: $retargeted);
 	}//end retargeted()
 
 	/**
@@ -374,9 +364,11 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 * @param string               $stepId The removed step.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function withoutSource(array $edge, string $stepId): ?array {
-		$from = $this->endpoints(value: ($edge['from'] ?? null));
+		$from = $this->endpoints->idsOf(value: ($edge['from'] ?? null));
 		if (in_array($stepId, $from, true) === false) {
 			return $edge;
 		}
@@ -398,15 +390,17 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 	 * @param string            $stepId The step.
 	 *
 	 * @return array<int, string> The successor ids, each once.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function successorsOf(array $edges, string $stepId): array {
 		$successors = [];
 		foreach ($edges as $edge) {
-			if (is_array($edge) === false || in_array($stepId, $this->endpoints(value: ($edge['from'] ?? null)), true) === false) {
+			if (is_array($edge) === false || in_array($stepId, $this->endpoints->idsOf(value: ($edge['from'] ?? null)), true) === false) {
 				continue;
 			}
 
-			foreach ($this->endpoints(value: ($edge['to'] ?? null)) as $target) {
+			foreach ($this->endpoints->idsOf(value: ($edge['to'] ?? null)) as $target) {
 				$successors[$target] = true;
 			}
 		}
@@ -415,63 +409,4 @@ class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 
 		return array_map('strval', array_keys($successors));
 	}//end successorsOf()
-
-	/**
-	 * Give an edge its new targets in the shape it was stored in.
-	 *
-	 * A list stays a list. A single id stays a single id, which means one edge
-	 * per target when the removed step fanned out to several.
-	 *
-	 * @param array<string, mixed> $edge    The edge.
-	 * @param array<int, string>   $targets Its new targets, at least one.
-	 *
-	 * @return array<int, array<string, mixed>> The edge or edges.
-	 */
-	private function reshape(array $edge, array $targets): array {
-		if (is_array($edge['to'] ?? null) === true) {
-			$edge['to'] = $targets;
-			return [$edge];
-		}
-
-		if (count($targets) === 1) {
-			$edge['to'] = $targets[0];
-			return [$edge];
-		}
-
-		$out = [];
-		foreach ($targets as $index => $target) {
-			$copy = $edge;
-			$copy['to'] = $target;
-			$copy['id'] = ((string)($edge['id'] ?? 'edge') . '-' . ($index + 1));
-			$out[] = $copy;
-		}
-
-		return $out;
-	}//end reshape()
-
-	/**
-	 * The node ids an edge endpoint names, whichever shape it was stored in.
-	 *
-	 * @param mixed $value A node id, a list of node ids, or nothing.
-	 *
-	 * @return array<int, string> The ids.
-	 */
-	private function endpoints(mixed $value): array {
-		if (is_string($value) === true && $value !== '') {
-			return [$value];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($value as $id) {
-			if (is_string($id) === true && $id !== '') {
-				$ids[] = $id;
-			}
-		}
-
-		return $ids;
-	}//end endpoints()
 }//end class
