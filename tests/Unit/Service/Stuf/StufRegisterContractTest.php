@@ -75,8 +75,12 @@ class StufRegisterContractTest extends TestCase {
 			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken', 'integriqSource' => 'src-9']
 		);
 
-		$this->assertNotNull($this->askedOnSource(sourceId: 'src-9')->getRefusal(), 'The source must resolve its endpoint, so the question is answered (here: refused for want of an identificatie).');
-		$this->assertNull($this->askedOnSource(sourceId: 'someone-elses')->getRefusal(), 'An unknown source stays unanswered.');
+		// Answered here means refused for want of an identificatie.
+		$this->assertNotNull(
+			actual: $this->askedOnSource(sourceId: 'src-9')->getRefusal(),
+			message: 'The source must resolve its endpoint, so the question is answered.'
+		);
+		$this->assertNull(actual: $this->askedOnSource(sourceId: 'someone-elses')->getRefusal(), message: 'An unknown source stays unanswered.');
 	}//end testAProviderQuestionResolvesItsEndpointFromTheSource()
 
 	/**

@@ -129,8 +129,8 @@ class StufIntegriqBridgeTest extends TestCase {
 	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
 	public function testTheBridgeForwardsNothing(): void {
-		$this->assertFalse(method_exists(StufIntegriqBridge::class, 'forwardConfirmation'));
-		$this->assertFalse(method_exists(StufIntegriqBridge::class, 'forwardProviderRequest'));
+		$this->assertFalse(condition: method_exists(object_or_class: StufIntegriqBridge::class, method: 'forwardConfirmation'));
+		$this->assertFalse(condition: method_exists(object_or_class: StufIntegriqBridge::class, method: 'forwardProviderRequest'));
 	}//end testTheBridgeForwardsNothing()
 
 	/**

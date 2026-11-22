@@ -215,16 +215,16 @@ class StufControllerCoverageTest extends TestCase {
 	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
 	public function testTheForwardingUrlsAreGone(): void {
-		$routes = (string)file_get_contents(__DIR__ . '/../../../appinfo/routes.php');
+		$routes = (string)file_get_contents(filename: __DIR__ . '/../../../appinfo/routes.php');
 		foreach (['inbound', 'inkomend', 'cases', 'persons', 'zaken', 'personen'] as $path) {
-			self::assertStringNotContainsString("'/api/stuf/" . $path . "'", $routes, 'The forwarder /api/stuf/' . $path . ' must be gone.');
+			self::assertStringNotContainsString(needle: "'/api/stuf/" . $path . "'", haystack: $routes, message: 'The forwarder /api/stuf/' . $path . ' must be gone.');
 		}
 
 		foreach (['inbound', 'inboundLegacyPath', 'cases', 'casesLegacyPath', 'persons', 'personsLegacyPath'] as $method) {
-			self::assertFalse(method_exists(StufController::class, $method), 'StufController::' . $method . ' must be gone.');
+			self::assertFalse(condition: method_exists(object_or_class: StufController::class, method: $method), message: 'StufController::' . $method . ' must be gone.');
 		}
 
-		self::assertStringContainsString("'/api/stuf/outbound'", $routes, 'The admin send stays.');
+		self::assertStringContainsString(needle: "'/api/stuf/outbound'", haystack: $routes, message: 'The admin send stays.');
 	}//end testTheForwardingUrlsAreGone()
 
 	/**
