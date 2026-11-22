@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * What a publish retires, and which route it takes.
  *
  * @covers \OCA\Dossiq\Service\WorkflowDefinitionService
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionLifecycleRows
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  * @uses \OCA\Dossiq\Service\Workflow\StepConfigCheck

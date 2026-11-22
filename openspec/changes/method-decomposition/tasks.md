@@ -1242,3 +1242,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         missing, wrong and right lock id, the old `lock` field), the DRC rule and dispatcher tests (158), green before
         and unchanged after but for one `@covers` line.
         Own test: `tests/Unit/Service/Zgw/DrcLockRuleTest` (2).
+  - [x] 8bh `WorkflowDefinitionService` (1: ExcessiveClassComplexity 54 against 50). The rows a definition's
+        lifecycle steps write are built from what the step already holds and read no store, so they moved to the new
+        `Workflow/DefinitionLifecycleRows` (next to `Workflow/DefinitionRows`, which reads stored rows): the draft row
+        with its encoded content and route (`draft()`, was `draftRow()` with `draftState()`), the draft a clone
+        starts as on its source's route with its title marked `(kopie)` (`cloned()`, was the literal in
+        `cloneDefinition()` with `cloneTitle()`), the publish payload with the authorization-enriched transitions when
+        any resolved (`published()`, was `buildPublishPayload()`), and the deprecation payload `deprecate()` and the
+        publish of a newer version both wrote (`deprecated()`). Bodies moved unchanged. The service builds one over
+        its own guard and JSON encoder in the constructor, so its constructor signature, interface and container
+        binding are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `WorkflowVariantLifecycleTest` (publish, the default route, deprecating the
+        previous active version of a route, cloning on the source's route), `WorkflowPublishRefusalTest`,
+        `StepConfigPublishTest`, `WorkflowDefinitionPublishTest` and the task declaration and package draft tests
+        (237), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/Workflow/DefinitionLifecycleRowsTest` (2).
