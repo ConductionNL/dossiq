@@ -105,43 +105,24 @@ class DocumentCorrespondents {
 	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
 	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function resolve(mixed $sender, mixed $recipients, array $parties, string $direction): array {
 		$allowed = $this->allowedFor(direction: $direction);
-		$index = $this->indexOf(parties: $parties);
+		$index = new CasePartyIndex(parties: $parties);
 
 		$one = '';
 		if ($allowed['sender'] === true) {
-			$one = $this->matchOne(value: $sender, index: $index);
+			$one = $index->match(value: $sender);
 		}
 
 		$many = [];
 		if ($allowed['recipients'] === true) {
-			$many = $this->matchMany(recipients: $recipients, index: $index);
+			$many = $index->matchAll(values: $recipients);
 		}
 
 		return ['sender' => $one, 'recipients' => $many];
 	}//end resolve()
-
-	/**
-	 * The submitted recipients as identifiers of parties of the case, each once, unmatched ones left out.
-	 *
-	 * @param mixed                 $recipients The submitted recipients: a list, or one value.
-	 * @param array<string, string> $index      The index of the case's parties.
-	 *
-	 * @return array<int, string> The identifiers.
-	 */
-	private function matchMany(mixed $recipients, array $index): array {
-		$many = [];
-		foreach ($this->asList(value: $recipients) as $candidate) {
-			$match = $this->matchOne(value: $candidate, index: $index);
-			if ($match !== '' && in_array($match, $many, true) === false) {
-				$many[] = $match;
-			}
-		}
-
-		return $many;
-	}//end matchMany()
 
 	/**
 	 * The party of the case holding an e-mail address, '' when nobody does.
@@ -155,9 +136,10 @@ class DocumentCorrespondents {
 	 * @return string The party's identifier, or ''.
 	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function partyHolding(string $address, array $parties): string {
-		return $this->matchOne(value: $address, index: $this->indexOf(parties: $parties));
+		return (new CasePartyIndex(parties: $parties))->match(value: $address);
 	}//end partyHolding()
 
 	/**
@@ -323,135 +305,9 @@ class DocumentCorrespondents {
 	 * @return string The identifier, or ''.
 	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function identifierOf(array $party): string {
-		$uuid = trim((string)($party['partyUuid'] ?? ''));
-		if ($uuid !== '') {
-			return $uuid;
-		}
-
-		return trim((string)($party['contactUid'] ?? ''));
+		return (new CasePartyIndex(parties: []))->identifierOf(party: $party);
 	}//end identifierOf()
-
-	/**
-	 * Every way one party of the case may be named, mapped to its identifier.
-	 *
-	 * @param array<int, array<string, mixed>> $parties The party links.
-	 *
-	 * @return array<string, string> Lowercased key to identifier.
-	 */
-	private function indexOf(array $parties): array {
-		$index = [];
-		foreach ($parties as $party) {
-			if (is_array($party) === true) {
-				$index = $this->withKeysOf(index: $index, party: $party);
-			}
-		}
-
-		return $index;
-	}//end indexOf()
-
-	/**
-	 * The index with one party's names added: its identifier, contact uid and address, first holder wins.
-	 *
-	 * @param array<string, string> $index The index so far.
-	 * @param array<string, mixed>  $party The party link.
-	 *
-	 * @return array<string, string> Lowercased key to identifier.
-	 */
-	private function withKeysOf(array $index, array $party): array {
-		$identifier = $this->identifierOf(party: $party);
-		if ($identifier === '') {
-			return $index;
-		}
-
-		foreach ([$identifier, (string)($party['contactUid'] ?? ''), (string)($party['email'] ?? '')] as $key) {
-			$key = mb_strtolower(trim($key));
-			if ($key !== '' && isset($index[$key]) === false) {
-				$index[$key] = $identifier;
-			}
-		}
-
-		return $index;
-	}//end withKeysOf()
-
-	/**
-	 * One submitted value as the identifier of a party of the case, or ''.
-	 *
-	 * @param mixed $value The submitted value.
-	 * @param array<string, string> $index The index of the case's parties.
-	 *
-	 * @return string The identifier, or '' when nothing matched.
-	 */
-	private function matchOne(mixed $value, array $index): string {
-		// A picker hands back the option object it was given, not its value.
-		if (is_array($value) === true) {
-			return $this->matchOption(option: $value, index: $index);
-		}
-
-		$wanted = '';
-		if (is_string($value) === true || is_numeric($value) === true) {
-			$wanted = mb_strtolower(trim((string)$value));
-		}
-
-		if ($wanted === '') {
-			return '';
-		}
-
-		return ($index[$wanted] ?? '');
-	}//end matchOne()
-
-	/**
-	 * A picker's option object as the identifier of a party of the case, or ''.
-	 *
-	 * @param array<string, mixed>  $option The option object.
-	 * @param array<string, string> $index  The index of the case's parties.
-	 *
-	 * @return string The identifier of the first key that matches, or ''.
-	 */
-	private function matchOption(array $option, array $index): string {
-		foreach (['partyUuid', 'id', 'contactUid', 'email'] as $key) {
-			$candidate = mb_strtolower(trim((string)($option[$key] ?? '')));
-			if ($candidate !== '' && isset($index[$candidate]) === true) {
-				return $index[$candidate];
-			}
-		}
-
-		return '';
-	}//end matchOption()
-
-	/**
-	 * A submitted recipients value as a list, whatever shape it arrived in.
-	 *
-	 * @param mixed $value One value, a list of them, or nothing.
-	 *
-	 * @return array<int, mixed> The candidates.
-	 */
-	private function asList(mixed $value): array {
-		if (is_array($value) === false) {
-			return $this->singleAsList(value: $value);
-		}
-
-		// An associative array is ONE option object, not a list of them.
-		if ($value !== [] && array_is_list($value) === false) {
-			return [$value];
-		}
-
-		return $value;
-	}//end asList()
-
-	/**
-	 * One submitted value that is not an array as a list: empty for nothing, else the value alone.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array<int, mixed> The candidates.
-	 */
-	private function singleAsList(mixed $value): array {
-		if ($value === null || $value === '') {
-			return [];
-		}
-
-		return [$value];
-	}//end singleAsList()
 }//end class
