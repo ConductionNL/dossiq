@@ -1273,3 +1273,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         refused, the recommendation stored, accepting and deviating) and `DecisionAdviceControllerTest` (29), green
         before and unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Service/DecisionAdvice/AdviceTableTest` (2).
+  - [x] 8bj `Review/TriageRules` (2: ExcessiveClassComplexity 55 against 50, and CouplingBetweenObjects 14 against
+        13). What the rules of a case have marked reads the case's reviews and no store, so it moved to the new
+        `Review/RuleMarkings`, a value over those reviews: each rule listed with how many documents it decided and how
+        many of its markings a reviewer overturned (`onRules()`, was the loop in `forCase()` with `decidedPerRule()`
+        and `overturnedPerRule()`), and a review as a rule marks it, its effect, the rule as source and name, and the
+        moment (`marked()`, was `markedByRule()`). Bodies moved unchanged. With the marking moment the service no
+        longer names `DateTimeImmutable` or `DateTimeInterface`, so its coupling goes from 14 to 13 (moving only the
+        counts made it 15). The service builds one where it reads the reviews, so its constructor, interface and
+        container binding are unchanged. phpmd: zero findings on both files under both rulesets; over the whole of
+        `lib/` both findings are gone (pdepend cache cleared).
+        Characterisation: the existing `TriageRulesTest` (the listing with decided and overturned counts, applying
+        rules to unmarked documents with the rule as source) and `TriageRuleControllerTest`, green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Review/RuleMarkingsTest` (2).
