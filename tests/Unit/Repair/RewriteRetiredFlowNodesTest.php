@@ -41,6 +41,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Flow\RetiredDocumentSteps
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
+ * @uses \OCA\Dossiq\Service\Flow\EdgeEndpoints
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeTranslator
  * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  * @uses \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
