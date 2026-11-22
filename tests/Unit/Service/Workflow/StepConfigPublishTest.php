@@ -49,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * Publishing refuses a step whose config breaks the validator's rules.
  *
  * @covers \OCA\Dossiq\Service\WorkflowDefinitionService
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionLifecycleRows
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  * @covers \OCA\Dossiq\Controller\WorkflowDefinitionController
  * @uses \OCA\Dossiq\Service\StepConfigValidator
