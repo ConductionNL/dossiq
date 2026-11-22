@@ -217,11 +217,18 @@ class StufControllerCoverageTest extends TestCase {
 	public function testTheForwardingUrlsAreGone(): void {
 		$routes = (string)file_get_contents(filename: __DIR__ . '/../../../appinfo/routes.php');
 		foreach (['inbound', 'inkomend', 'cases', 'persons', 'zaken', 'personen'] as $path) {
-			self::assertStringNotContainsString(needle: "'/api/stuf/" . $path . "'", haystack: $routes, message: 'The forwarder /api/stuf/' . $path . ' must be gone.');
+			self::assertStringNotContainsString(
+				needle: "'/api/stuf/" . $path . "'",
+				haystack: $routes,
+				message: 'The forwarder /api/stuf/' . $path . ' must be gone.'
+			);
 		}
 
 		foreach (['inbound', 'inboundLegacyPath', 'cases', 'casesLegacyPath', 'persons', 'personsLegacyPath'] as $method) {
-			self::assertFalse(condition: method_exists(object_or_class: StufController::class, method: $method), message: 'StufController::' . $method . ' must be gone.');
+			self::assertFalse(
+				condition: method_exists(object_or_class: StufController::class, method: $method),
+				message: 'StufController::' . $method . ' must be gone.'
+			);
 		}
 
 		self::assertStringContainsString(needle: "'/api/stuf/outbound'", haystack: $routes, message: 'The admin send stays.');
