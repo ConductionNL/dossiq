@@ -1287,3 +1287,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         rules to unmarked documents with the rule as source) and `TriageRuleControllerTest`, green before and
         unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Review/RuleMarkingsTest` (2).
+  - [x] 8bk `Zaakdossier/DocumentCorrespondents` (1: ExcessiveClassComplexity 56 against 50). Matching a submitted
+        sender or recipient to a party of the case is its own concern, so it moved to the new
+        `Zaakdossier/CasePartyIndex`, built over the case's party links: every way a party may be named, its uuid,
+        contact uid and address in any casing, first holder wins (`indexOf()`, `withKeysOf()`, now built once in the
+        constructor), one value or a picker's option object matched to a party (`match()`, was `matchOne()` with
+        `matchOption()`), the recipients matched each once whatever shape they arrived in (`matchAll()`, was
+        `matchMany()` with `asList()` and `singleAsList()`) and the identifier a party link is stored under
+        (`identifierOf()`, which the correspondents keep as a delegating public method). Bodies moved unchanged. The
+        correspondents build an index where they resolve, so their constructor and the container binding are
+        unchanged. phpmd: zero findings on both files under both rulesets, and the ExcessiveClassComplexity finding
+        is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `DocumentCorrespondentsTest`, `DocumentCorrespondentsWriteTest`,
+        `CorrespondentWriterTest`, `CorrespondentDispatchGoldenTest`, `InboundSenderIsAPartyTest` and the dossier
+        write tests (86), green before and unchanged after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Zaakdossier/CasePartyIndexTest` (2).

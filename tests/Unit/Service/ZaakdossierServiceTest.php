@@ -120,6 +120,7 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CasePartyIndex
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
  * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
  * @uses \OCA\Dossiq\Service\Custody\DossierRegister
