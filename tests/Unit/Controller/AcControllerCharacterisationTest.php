@@ -45,6 +45,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Controller\AcController
  * @covers \OCA\Dossiq\Controller\Support\ApplicatieRules
+ * @uses   \OCA\Dossiq\Controller\Support\AutorisatieScopeFields
  * @covers \OCA\Dossiq\Controller\Support\ApplicatieRepresentation
  */
 class AcControllerCharacterisationTest extends TestCase {

@@ -1216,3 +1216,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         acts, silence-close and admissibility suites (466), green before and unchanged after but for one `@uses`
         line in two.
         Own test: `tests/Unit/Service/Lifecycle/StatusRowsTest` (2).
+  - [x] 8bf `Controller/Support/ApplicatieRules` (1: ExcessiveClassComplexity 54 against 50). Ac-003, the fields an
+        autorisatie must carry for its component and scopes, reads one entry of the body and no store, so it moved to
+        the new `Controller/Support/AutorisatieScopeFields` with its table of requirements per component: the invalid
+        parameters an entry lacks, named by its position (`missingParams()`, was `missingFieldParams()`), the fields its
+        component and scopes require (`requiredFieldsFor()`), the ones it leaves empty (`missingRequiredFields()`) and
+        whether a scope names the component's domain (`scopesContain()`). Bodies and reason sentences moved unchanged.
+        `validateAutorisatieScopes()` builds one over the rules' own translator, so the constructor and the container
+        binding are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `ApplicatieRulesTest` (ac-003a to 003e by position, a complete entry, an
+        unknown component) and `AcControllerCharacterisationTest`, green before and unchanged after but for one
+        `@uses` line or `UsesClass` attribute in each.
+        Own test: `tests/Unit/Controller/Support/AutorisatieScopeFieldsTest` (2).
