@@ -1201,3 +1201,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         out and orphaned edges in both endpoint shapes, a translated step chained), `RetiredNodeTranslatorTest` and
         the repair step tests (75), green before and unchanged after but for one `@uses` line in four.
         Own test: `tests/Unit/Service/Flow/EdgeEndpointsTest` (3).
+  - [x] 8be `Lifecycle/CaseEndingActs` (1: ExcessiveClassComplexity 54 against 50; TooManyMethods stays, 29 down to
+        27). What the ending acts read off a case type's status rows reads no store, so it moved to the new
+        `Lifecycle/StatusRows`: the terminal status an act lands on, the one named when it is terminal, else the first
+        in process order (`namedTerminal()`, was the body of `terminalStatus()`), the phases skipped between the status
+        left and the one landed on (`skippedNames()`, was the body of `skippedPhases()`), whether a row is terminal
+        (`isFinal()`, was `isFinalRow()`), a row's place in the process with an unordered status last (`orderOf()`) and
+        its id (`idOf()`). Bodies moved unchanged. The acts build one over their own `LanguageMapText` in the
+        constructor, so the constructor signature and the container binding are unchanged. phpmd: no new findings
+        under either ruleset, and the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend
+        cache cleared).
+        Characterisation: the existing `CaseEndingActsTest`, `CaseEndingActsGoldenTest` (finish and abort on a named
+        and an unnamed terminal status, the skipped phases recorded, no terminal status refused) and the lifecycle,
+        acts, silence-close and admissibility suites (466), green before and unchanged after but for one `@uses`
+        line in two.
+        Own test: `tests/Unit/Service/Lifecycle/StatusRowsTest` (2).

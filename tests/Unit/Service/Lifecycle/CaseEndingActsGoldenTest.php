@@ -45,6 +45,7 @@ use ReflectionMethod;
  * Golden test for CaseEndingActs.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseEndingActs
+ * @uses \OCA\Dossiq\Service\Lifecycle\StatusRows
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
