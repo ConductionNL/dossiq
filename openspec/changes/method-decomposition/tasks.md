@@ -1175,3 +1175,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CaseFolderLockTest`, `CaseFolderNodeListenerTest`, `WooGatherAddTest` and the dossier suite (476), green
         before and unchanged after.
         Own test: `tests/Unit/Service/Zaakdossier/DocumentDefaultsRecordUpdatesTest` (3).
+  - [x] 8bc `Intake/CaseCompleteness` (1: ExcessiveClassComplexity 54 against 50). Reading the completeness items a
+        case type declares reads no store, so it moved to the new `Intake/CompletenessItems`: the items under the
+        intake requirements, malformed ones left out (`declaredBy()`, was the body of `itemsOf()`), one item with a
+        trimmed key and label (`cleanItem()`) and its usable options in their fixed order (`itemOptions()`). Bodies
+        moved unchanged. The public `itemsOf()` stays on the service and its interface, and delegates. The service
+        builds the reader where it uses it, so its constructor and container binding are unchanged. phpmd: zero
+        findings on both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole
+        of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `CaseCompletenessTest`, `CaseCompletenessCountsTest` (malformed and blank
+        items left out, the options a document or a field answers) and `CaseCompletenessControllerTest`, green
+        before and unchanged after but for one `@uses` line in each.
+        Own test: `tests/Unit/Service/Intake/CompletenessItemsTest` (2).
