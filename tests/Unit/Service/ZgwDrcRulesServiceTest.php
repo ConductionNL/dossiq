@@ -50,6 +50,7 @@ interface DrcObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ZgwDrcRulesService
  * @covers \OCA\Dossiq\Service\Zgw\DrcObjectLinkRules
  * @covers \OCA\Dossiq\Service\Zgw\DrcDocumentRelations
+ * @covers \OCA\Dossiq\Service\Zgw\DrcLockRule
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
