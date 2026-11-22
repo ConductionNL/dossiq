@@ -82,6 +82,13 @@ class CaseEndingActs {
 	public const ENDING_FIELD = 'endingAct';
 
 	/**
+	 * Reads a case type's status rows: their ids, which are final, and their process order.
+	 *
+	 * @var StatusRows
+	 */
+	private readonly StatusRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore $store Reads and writes the case, and the status record.
@@ -94,6 +101,7 @@ class CaseEndingActs {
 	 * @param CaseArchiveState $archiveState The platform's archive marker, which
 	 *                                       is the state the lists read.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -106,6 +114,7 @@ class CaseEndingActs {
 		private readonly CaseArchiveState $archiveState,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
+		$this->rows = new StatusRows(text: $this->text);
 	}//end __construct()
 
 	/**
@@ -691,18 +700,10 @@ class CaseEndingActs {
 	 * @throws RefusedException When the case type declares no terminal status.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function terminalStatus(string $caseTypeId, string $named): string {
-		$terminal = $this->terminalRows(caseTypeId: $caseTypeId);
-		foreach ($terminal as $row) {
-			if ($this->idOf(row: $row) === $named && $named !== '') {
-				return $named;
-			}
-		}
-
-		usort($terminal, fn (array $left, array $right): int => $this->orderOf(row: $left) <=> $this->orderOf(row: $right));
-
-		return $this->idOf(row: $terminal[0]);
+		return $this->rows->namedTerminal(terminal: $this->terminalRows(caseTypeId: $caseTypeId), named: $named);
 	}//end terminalStatus()
 
 	/**
@@ -715,11 +716,12 @@ class CaseEndingActs {
 	 * @throws RefusedException When the case type declares no terminal status.
 	 *
 	 * @spec exclude one step of terminalStatus(), which carries the requirement
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function terminalRows(string $caseTypeId): array {
 		$terminal = array_values(array_filter(
 			$this->statuses->rowsOf(caseTypeId: $caseTypeId),
-			fn (array $row): bool => $this->isFinalRow(row: $row),
+			fn (array $row): bool => $this->rows->isFinal(row: $row),
 		));
 		if ($terminal === []) {
 			throw new RefusedException(
@@ -746,32 +748,14 @@ class CaseEndingActs {
 	 * @return list<string> The skipped phase names, in process order.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function skippedPhases(string $caseTypeId, array $landing): array {
-		$fromStatus = (string)$landing['from'];
-		$toStatus = (string)$landing['status'];
-		$rows = $this->statuses->rowsOf(caseTypeId: $caseTypeId);
-		usort($rows, fn (array $left, array $right): int => $this->orderOf(row: $left) <=> $this->orderOf(row: $right));
-
-		$seen = false;
-		$skipped = [];
-		foreach ($rows as $row) {
-			$id = $this->idOf(row: $row);
-			if ($id === $fromStatus) {
-				$seen = true;
-				continue;
-			}
-
-			if ($id === $toStatus) {
-				break;
-			}
-
-			if ($seen === true && $this->isFinalRow(row: $row) === false) {
-				$skipped[] = $this->text->textOr(value: ($row['name'] ?? ($row['title'] ?? null)), fallback: $id);
-			}
-		}
-
-		return $skipped;
+		return $this->rows->skippedNames(
+			rows: $this->statuses->rowsOf(caseTypeId: $caseTypeId),
+			fromStatus: (string)$landing['from'],
+			toStatus: (string)$landing['status']
+		);
 	}//end skippedPhases()
 
 	/**
@@ -822,52 +806,4 @@ class CaseEndingActs {
 			);
 		}
 	}//end requireReason()
-
-	/**
-	 * Whether a statusType row is terminal.
-	 *
-	 * @param array<string, mixed> $row The statusType row.
-	 *
-	 * @return bool True when it carries isFinal.
-	 *
-	 * @spec exclude a JSON boolean coercion shared by the two readers above
-	 */
-	private function isFinalRow(array $row): bool {
-		return in_array(($row['isFinal'] ?? false), [true, 1, '1', 'true'], true);
-	}//end isFinalRow()
-
-	/**
-	 * A statusType row's place in the process.
-	 *
-	 * An unordered status sorts last rather than first, the same reading the
-	 * stages stepper uses: a status nobody placed in the process is not step
-	 * one.
-	 *
-	 * @param array<string, mixed> $row The statusType row.
-	 *
-	 * @return int The order.
-	 *
-	 * @spec exclude a sort key shared by the two readers above
-	 */
-	private function orderOf(array $row): int {
-		$order = ($row['order'] ?? null);
-		if (is_numeric($order) === false) {
-			return PHP_INT_MAX;
-		}
-
-		return (int)$order;
-	}//end orderOf()
-
-	/**
-	 * A statusType row's id, whichever shape it came back in.
-	 *
-	 * @param array<string, mixed> $row The statusType row.
-	 *
-	 * @return string The id.
-	 *
-	 * @spec exclude an id read shared by the two readers above
-	 */
-	private function idOf(array $row): string {
-		return (string)($row['id'] ?? ($row['uuid'] ?? ($row['@self']['id'] ?? '')));
-	}//end idOf()
 }//end class
