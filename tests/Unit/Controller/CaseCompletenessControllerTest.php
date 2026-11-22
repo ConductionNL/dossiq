@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\CaseCompletenessController
  * @uses \OCA\Dossiq\Service\Intake\CaseCompleteness
+ * @uses \OCA\Dossiq\Service\Intake\CompletenessItems
  */
 class CaseCompletenessControllerTest extends TestCase {
 
