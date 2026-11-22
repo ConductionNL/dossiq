@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
  * A flow edge's endpoints, read and written in the shape they were stored in.
  *
  * @covers \OCA\Dossiq\Service\Flow\EdgeEndpoints
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */

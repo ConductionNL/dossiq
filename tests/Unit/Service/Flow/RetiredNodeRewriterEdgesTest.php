@@ -31,6 +31,7 @@ use Psr\Container\ContainerInterface;
 /**
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
  * @uses \OCA\Dossiq\Service\Flow\EdgeEndpoints
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @uses \OCA\Dossiq\Service\Flow\NodeRewrite
  * @uses \OCA\Dossiq\Service\Flow\RetiredStep

@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
  * @uses \OCA\Dossiq\Service\Flow\EdgeEndpoints
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeMap
  */
 class RetiredNodeRewriterTest extends TestCase {

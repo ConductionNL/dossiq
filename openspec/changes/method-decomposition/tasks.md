@@ -1191,7 +1191,9 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         endpoints in the shape they were stored in (a single id or a list) reads no store, so it moved to the new
         `Flow/EdgeEndpoints`: the ids an endpoint names (`idsOf()`, was `endpoints()`), one id replaced keeping the
         endpoint's shape (`swapped()`, was `swap()`), and an edge given its new targets, one numbered edge per target
-        when a single id fans out (`withTargets()`, was `reshape()`). Bodies moved unchanged. The rewriter builds one
+        when a single id fans out (`withTargets()`, was `reshape()`). Bodies moved unchanged, but for `idsOf()`, whose
+        body was a copy of `External/RegisterValues::toStringArray()` (gate-122 named it once it moved) and now calls
+        it, the same answer for every input. The rewriter builds one
         in its constructor, so its constructor signature, interface and container binding are unchanged. phpmd: zero
         findings on both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole
         of `lib/` (pdepend cache cleared).

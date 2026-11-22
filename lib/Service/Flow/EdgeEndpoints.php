@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
+use OCA\Dossiq\Service\External\RegisterValues;
+
 /**
  * Reads and writes a flow edge's endpoints in their stored shape.
  *
@@ -47,22 +49,8 @@ final class EdgeEndpoints {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function idsOf(mixed $value): array {
-		if (is_string($value) === true && $value !== '') {
-			return [$value];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($value as $id) {
-			if (is_string($id) === true && $id !== '') {
-				$ids[] = $id;
-			}
-		}
-
-		return $ids;
+		// The same reading as any stored string list: a non-blank id is one, a list keeps its non-blank strings.
+		return (new RegisterValues())->toStringArray(value: $value);
 	}//end idsOf()
 
 	/**
