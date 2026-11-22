@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller\Support;
 
 use OCA\Dossiq\Controller\Support\ApplicatieRepresentation;
 use OCA\Dossiq\Controller\Support\ApplicatieRules;
+use OCA\Dossiq\Controller\Support\AutorisatieScopeFields;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -40,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(ApplicatieRules::class)]
 #[UsesClass(ApplicatieRepresentation::class)]
+#[UsesClass(AutorisatieScopeFields::class)]
 final class ApplicatieRulesTest extends TestCase {
 	/**
 	 * The fake mapper of the last rules() call.
