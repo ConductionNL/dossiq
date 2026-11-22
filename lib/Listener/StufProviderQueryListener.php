@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 class StufProviderQueryListener implements IEventListener {
 
@@ -88,7 +88,7 @@ class StufProviderQueryListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function handle(Event $event): void {
 		// Integriq's classes, optional at runtime: instanceof on an absent class is false.

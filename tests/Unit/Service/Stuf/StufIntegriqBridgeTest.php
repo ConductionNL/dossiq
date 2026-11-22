@@ -26,7 +26,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 use OCA\Dossiq\Service\Stuf\StufException;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCA\Integriq\Event\StufZdsCaseRequestedEvent;
-use OCA\Integriq\Event\StufZdsConfirmationReceivedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -122,58 +121,17 @@ class StufIntegriqBridgeTest extends TestCase {
 	}//end testNobodyAnsweringIsUnavailable()
 
 	/**
-	 * A confirmation is forwarded unchanged and integriq's answer comes back.
+	 * The bridge forwards nothing any more: confirmations and provider requests go to integriq's own URLs.
 	 *
 	 * @return void
-	 */
-	public function testAConfirmationIsForwardedAndAnswered(): void {
-		$bridge = $this->bridge(
-			static function (object $event): void {
-				if ($event instanceof StufZdsConfirmationReceivedEvent) {
-					$event->answer(statusCode: 200, body: '<Bv03/>');
-				}
-			}
-		);
-
-		$answer = $bridge->forwardConfirmation(rawXml: '<Bv01/>');
-
-		$this->assertSame(['statusCode' => 200, 'body' => '<Bv03/>'], $answer);
-		$this->assertSame('<Bv01/>', $this->events[0]->getRawXml());
-		$this->assertSame('dossiq', $this->events[0]->getSourceApp());
-	}//end testAConfirmationIsForwardedAndAnswered()
-
-	/**
-	 * An unanswered confirmation reads as null, so the caller can tell the sender to retry.
 	 *
-	 * @return void
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-reach-integriq-on-its-own-url
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
-	public function testAnUnansweredConfirmationIsNull(): void {
-		$this->assertNull($this->bridge(static fn (): null => null)->forwardConfirmation(rawXml: '<Bv01/>'));
-	}//end testAnUnansweredConfirmationIsNull()
-
-	/**
-	 * A provider request is forwarded unchanged, with its source and service, and integriq's answer comes back.
-	 *
-	 * @return void
-	 */
-	public function testAProviderRequestIsForwardedAndAnswered(): void {
-		$bridge = $this->bridge(
-			static function (object $event): void {
-				if ($event instanceof \OCA\Integriq\Event\StufProviderRequestReceivedEvent) {
-					$event->answer(statusCode: 500, body: '<Fo02/>');
-				}
-			}
-		);
-
-		$answer = $bridge->forwardProviderRequest(rawXml: '<zakLv01/>', sourceId: 'src-9', service: 'cases');
-
-		$this->assertSame(['statusCode' => 500, 'body' => '<Fo02/>'], $answer);
-		$this->assertSame('<zakLv01/>', $this->events[0]->getRawXml());
-		$this->assertSame('src-9', $this->events[0]->getSourceId());
-		$this->assertSame('cases', $this->events[0]->getService());
-		$this->assertSame('dossiq', $this->events[0]->getSourceApp());
-		$this->assertNull($this->bridge(static fn (): null => null)->forwardProviderRequest(rawXml: '<zakLv01/>', sourceId: 'src-9', service: 'cases'));
-	}//end testAProviderRequestIsForwardedAndAnswered()
+	public function testTheBridgeForwardsNothing(): void {
+		$this->assertFalse(method_exists(StufIntegriqBridge::class, 'forwardConfirmation'));
+		$this->assertFalse(method_exists(StufIntegriqBridge::class, 'forwardProviderRequest'));
+	}//end testTheBridgeForwardsNothing()
 
 	/**
 	 * Build the bridge over a dispatcher that plays integriq.

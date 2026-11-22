@@ -4,13 +4,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Tests for the StUF admin REST surface and the confirmation status mapping.
+ * Tests for the StUF admin REST surface.
  *
  * Covers the outbound vrijBericht send (its required fields, an unknown
  * endpoint, integriq's answer and both failure codes), the audit-log query
- * (its clamped limit and the optional filters it passes on) and how the
- * inbound confirmation URL maps each integriq status onto the answer the
- * zaaksysteem gets.
+ * (its clamped limit and the optional filters it passes on), and that the
+ * forwarding URLs a zaaksysteem used before integriq took the wire are gone.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -32,10 +31,9 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
- * The StUF admin endpoints and the confirmation status mapping.
+ * The StUF admin endpoints.
  *
  * @covers \OCA\Dossiq\Controller\StufController
  */
@@ -209,59 +207,25 @@ class StufControllerCoverageTest extends TestCase {
 	}//end testMessagesDefaultsAndLowerBound()
 
 	/**
-	 * Each integriq status maps onto the zaaksysteem's answer; an unknown one is a bad gateway.
-	 *
-	 * @return array<string, array{0: int, 1: int}>
-	 */
-	public static function confirmationStatuses(): array {
-		return [
-			'bad request' => [400, 400],
-			'unavailable' => [503, 503],
-			'unexpected' => [418, 502],
-		];
-	}//end confirmationStatuses()
-
-	/**
-	 * The inbound confirmation answer carries the mapped status and integriq's body as XML.
-	 *
-	 * @param int $integriq The status integriq answered with.
-	 * @param int $expected The status the zaaksysteem gets.
-	 *
-	 * @dataProvider confirmationStatuses
+	 * The confirmation and provider forwarders are gone: no route and no action serves them.
 	 *
 	 * @return void
-	 */
-	public function testInboundMapsIntegriqsStatus(int $integriq, int $expected): void {
-		$this->bridge->expects(self::once())->method('forwardConfirmation')
-			->willReturn(['statusCode' => $integriq, 'body' => '<Fo03/>']);
-
-		$response = $this->controller()->inbound();
-
-		self::assertSame(expected: $expected, actual: $response->getStatus());
-		self::assertSame(expected: '<Fo03/>', actual: $response->render());
-		self::assertSame(expected: 'text/xml; charset=utf-8', actual: $response->getHeaders()['Content-Type']);
-	}//end testInboundMapsIntegriqsStatus()
-
-	/**
-	 * Without a request body (the CLI's php://input) an empty body is forwarded.
 	 *
-	 * @return void
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-reach-integriq-on-its-own-url
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
-	public function testTheRealBodyReaderForwardsAnEmptyBody(): void {
-		$this->bridge->expects(self::once())->method('forwardConfirmation')->with('')
-			->willReturn(['statusCode' => 200, 'body' => '<Bv03/>']);
+	public function testTheForwardingUrlsAreGone(): void {
+		$routes = (string)file_get_contents(__DIR__ . '/../../../appinfo/routes.php');
+		foreach (['inbound', 'inkomend', 'cases', 'persons', 'zaken', 'personen'] as $path) {
+			self::assertStringNotContainsString("'/api/stuf/" . $path . "'", $routes, 'The forwarder /api/stuf/' . $path . ' must be gone.');
+		}
 
-		$controller = new StufController(
-			request: $this->request,
-			register: $this->register,
-			bridge: $this->bridge,
-			l10n: $this->l10n(),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			integrationStatus: $this->createMock(originalClassName: IntegrationStatusServiceInterface::class),
-		);
+		foreach (['inbound', 'inboundLegacyPath', 'cases', 'casesLegacyPath', 'persons', 'personsLegacyPath'] as $method) {
+			self::assertFalse(method_exists(StufController::class, $method), 'StufController::' . $method . ' must be gone.');
+		}
 
-		self::assertSame(expected: 200, actual: $controller->inbound()->getStatus());
-	}//end testTheRealBodyReaderForwardsAnEmptyBody()
+		self::assertStringContainsString("'/api/stuf/outbound'", $routes, 'The admin send stays.');
+	}//end testTheForwardingUrlsAreGone()
 
 	/**
 	 * An IL10N double that returns the source string.
@@ -275,27 +239,17 @@ class StufControllerCoverageTest extends TestCase {
 	}//end l10n()
 
 	/**
-	 * The controller over the doubles, reading a fixed body.
+	 * The controller over the doubles.
 	 *
 	 * @return StufController The controller.
 	 */
 	private function controller(): StufController {
-		return new class(
-			$this->request,
-			$this->register,
-			$this->bridge,
-			$this->l10n(),
-			$this->createMock(originalClassName: LoggerInterface::class),
-			$this->createMock(originalClassName: IntegrationStatusServiceInterface::class),
-		) extends StufController {
-			/**
-			 * Serve a fixed body instead of php://input.
-			 *
-			 * @return string
-			 */
-			protected function readRawBody(): string {
-				return '<Bv01/>';
-			}
-		};
+		return new StufController(
+			request: $this->request,
+			register: $this->register,
+			bridge: $this->bridge,
+			l10n: $this->l10n(),
+			integrationStatus: $this->createMock(originalClassName: IntegrationStatusServiceInterface::class),
+		);
 	}//end controller()
 }//end class

@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * matches zero rows rather than being ignored.
  *
  * @covers \OCA\Dossiq\Controller\StufController
+ * @covers \OCA\Dossiq\Listener\StufProviderQueryListener
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class StufRegisterContractTest extends TestCase {
@@ -58,22 +59,25 @@ class StufRegisterContractTest extends TestCase {
 
 
 	/**
-	 * An inbound envelope resolves its endpoint from the zender.
+	 * An integriq provider question resolves its endpoint from the integriq source.
 	 *
-	 * A real zaaksysteem sends no `X-Dossiq-Endpoint-Id` header, so the zender
-	 * lookup is the ONLY route it has. A filter that matches nothing makes every
-	 * unsolicited inbound message unroutable.
+	 * Integriq names the source the zaaksysteem posted on, and that source is
+	 * the only route back to the endpoint. A filter that matches nothing leaves
+	 * every provider question unanswered.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
-	public function testAnInboundEnvelopeResolvesItsEndpointFromTheZender(): void {
+	public function testAProviderQuestionResolvesItsEndpointFromTheSource(): void {
 		$this->register->seed(
 			StufRegisterAccess::SCHEMA_ENDPOINT,
 			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken', 'integriqSource' => 'src-9']
 		);
 
-		$this->assertSame('src-9', $this->forwardedSource(), 'The zender application must resolve its endpoint, and through it the integriq source.');
-	}//end testAnInboundEnvelopeResolvesItsEndpointFromTheZender()
+		$this->assertNotNull($this->askedOnSource(sourceId: 'src-9')->getRefusal(), 'The source must resolve its endpoint, so the question is answered (here: refused for want of an identificatie).');
+		$this->assertNull($this->askedOnSource(sourceId: 'someone-elses')->getRefusal(), 'An unknown source stays unanswered.');
+	}//end testAProviderQuestionResolvesItsEndpointFromTheSource()
 
 	/**
 	 * THE CLASS-CATCHING SWEEP.
@@ -132,48 +136,37 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	private function driveEveryRegisterPath(): void {
-		$this->forwardedSource();
+		$this->askedOnSource(sourceId: 'src-9');
 	}//end driveEveryRegisterPath()
 
 	/**
-	 * Post a provider envelope to the old cases URL and return the integriq source it was forwarded with.
+	 * Ask the provider listener a case question without an identificatie on a source.
 	 *
-	 * The zender lookup moved from the retired StufEnvelopeInspector into
-	 * StufController's forwarder (decision 199); it is the same register read.
+	 * The listener looks the endpoint up by its integriq source before it reads
+	 * the question, and refuses a question without an identificatie before it
+	 * reads any case, so the endpoint lookup is the only register read.
 	 *
-	 * @return string The source id handed to integriq.
+	 * @param string $sourceId The integriq source the question arrives on.
+	 *
+	 * @return \OCA\Integriq\Event\StufCaseQueryEvent The handled event.
+	 *
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
-	private function forwardedSource(): string {
-		$seen = null;
-		$bridge = $this->createMock(\OCA\Dossiq\Service\Stuf\StufIntegriqBridge::class);
-		$bridge->method('forwardProviderRequest')->willReturnCallback(
-			static function (string $rawXml, string $sourceId, string $service) use (&$seen): array {
-				$seen = $sourceId;
-				return ['statusCode' => 200, 'body' => '<ok/>'];
-			}
+	private function askedOnSource(string $sourceId): \OCA\Integriq\Event\StufCaseQueryEvent {
+		$settings = $this->createMock(originalClassName: \OCA\Dossiq\Service\SettingsService::class);
+		$logger   = $this->createMock(originalClassName: LoggerInterface::class);
+		$listener = new \OCA\Dossiq\Listener\StufProviderQueryListener(
+			$this->register,
+			$settings,
+			new \OCA\Dossiq\Service\Deelzaak\CaseObjectReader($settings, $logger),
+			$logger
 		);
 
-		$controller = new class(
-			$this->createMock(originalClassName: \OCP\IRequest::class),
-			$this->register,
-			$bridge,
-			$this->createMock(originalClassName: \OCP\IL10N::class),
-			$this->createMock(originalClassName: \Psr\Log\LoggerInterface::class),
-			$this->createMock(originalClassName: \OCA\Dossiq\Service\IntegrationStatusService::class),
-		) extends \OCA\Dossiq\Controller\StufController {
-			/**
-			 * Serve a fixed body instead of php://input.
-			 *
-			 * @return string
-			 */
-			protected function readRawBody(): string {
-				return '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>';
-			}//end readRawBody()
-		};
-		$controller->cases();
+		$event = new \OCA\Integriq\Event\StufCaseQueryEvent(sourceId: $sourceId, referentienummer: 'REQ-1', criteria: []);
+		$listener->handle($event);
 
-		return (string)$seen;
-	}//end forwardedSource()
+		return $event;
+	}//end askedOnSource()
 
 	/**
 	 * The status-transition extras and the audit-log filter are declared too.

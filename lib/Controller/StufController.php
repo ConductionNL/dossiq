@@ -3,27 +3,18 @@
 /**
  * Dossiq StUF Controller
  *
- * Handles BOTH directions of StUF-ZKN/BG:
- *   - INBOUND server reception: raw XML POST at /api/stuf/{zaken,personen},
- *     parses SOAP envelopes, dispatches per message type (zakLk01/zakLv01/
- *     npsLv01/edcLk01) and returns SOAP XML responses (Bv01/La01/Fo01).
- *   - OUTBOUND (admin REST): vrijBericht send, endpoint listing, audit-log
- *     query — JSON. Since decision 193 integriq sends the message: the
- *     endpoint names an integriq StUF-ZKN source in `integriqSource`, and
- *     {@see \OCA\Dossiq\Service\Stuf\StufIntegriqBridge} asks integriq's
- *     ZDS case client for it.
- *   - The async confirmation URL (`/api/stuf/inbound`, `/api/stuf/inkomend`)
- *     is a wire contract in the zaaksysteem's configuration, so for one
- *     release it forwards the raw envelope to integriq, which authenticates
- *     and records it. Point the zaaksysteem at integriq's
- *     `/api/stuf-zkn/confirmations` before the next release removes it.
+ * The admin REST surface of StUF-ZKN: vrijBericht send, endpoint listing
+ * and audit-log query, all JSON. Since decision 193 integriq sends the
+ * message: the endpoint names an integriq StUF-ZKN source in
+ * `integriqSource`, and {@see \OCA\Dossiq\Service\Stuf\StufIntegriqBridge}
+ * asks integriq's ZDS case client for it.
  *
- *   - The provider URLs (`/api/stuf/cases`, `/persons`, `/zaken`, `/personen`)
- *     forward the raw envelope to integriq for one release too (decision 199).
- *     Integriq authenticates it, asks dossiq through a typed event
- *     ({@see \OCA\Dossiq\Listener\StufProviderQueryListener}) and answers in
- *     StUF. Point the zaaksysteem at integriq's
- *     `/api/stuf-zkn/provider/{sourceId}/cases` and `/persons`.
+ * Dossiq has no StUF receiver of its own. A zaaksysteem posts confirmations
+ * to integriq's `/api/stuf-zkn/confirmations` and provider requests to
+ * `/api/stuf-zkn/provider/{sourceId}/cases` and `/persons`; integriq asks
+ * dossiq through typed events
+ * ({@see \OCA\Dossiq\Listener\StufProviderQueryListener}). The forwarding
+ * URLs that bridged the move for one release are gone.
  *
  * The controller owns only the HTTP surface.
  *
@@ -57,18 +48,13 @@ use OCA\Dossiq\Service\Stuf\StufException;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
-use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\PublicPage;
-use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
-use Psr\Log\LoggerInterface;
 
 /**
- * Controller for inbound + outbound StUF SOAP messages.
+ * Controller for the StUF admin REST surface.
  *
  * @psalm-suppress UnusedClass
  *
@@ -77,122 +63,26 @@ use Psr\Log\LoggerInterface;
 class StufController extends Controller {
 
 	/**
-	 * The case service (zakLv01, zakLk01, edcLk01): integriq's name for it.
-	 *
-	 * @var string
-	 */
-	public const SERVICE_CASES = 'cases';
-
-	/**
-	 * The person service (npsLv01).
-	 *
-	 * @var string
-	 */
-	public const SERVICE_PERSONS = 'persons';
-
-	/**
-	 * Finds the sending application in an envelope's stuurgegevens, whatever the prefix.
-	 *
-	 * @var string
-	 */
-	private const ZENDER_APPLICATION = '#<(?:\w+:)?zender>.*?<(?:\w+:)?applicatie>([^<]+)</(?:\w+:)?applicatie>.*?</(?:\w+:)?zender>#s';
-	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
 	 * @param StufRegisterAccessInterface $register The StUF endpoint and message rows.
-	 * @param StufIntegriqBridgeInterface $bridge Asks integriq to send and to record confirmations.
+	 * @param StufIntegriqBridgeInterface $bridge Asks integriq to send.
 	 * @param IL10N $l10n The localization service.
-	 * @param LoggerInterface $logger The logger.
 	 * @param IntegrationStatusServiceInterface $integrationStatus Records the StUF card's health.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-reach-integriq-on-its-own-url
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-reach-integriq-on-its-own-urls
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly StufRegisterAccessInterface $register,
 		private readonly StufIntegriqBridgeInterface $bridge,
 		private readonly IL10N $l10n,
-		private readonly LoggerInterface $logger,
 		private readonly IntegrationStatusServiceInterface $integrationStatus,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * Handle inbound StUF-ZKN SOAP messages for case operations.
-	 *
-	 * Rate-limit rationale: StUF-ZKN SOAP receivers. The caller is a municipal
-	 * middleware component on its own retry schedule, so the ceiling is
-	 * generous — dropping a StUF delivery is worse than absorbing a burst.
-	 *
-	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function cases(): DataDisplayResponse {
-		return $this->forwardProviderRequest(service: self::SERVICE_CASES);
-
-	}//end cases()
-
-	/**
-	 * Serve the deprecated Dutch URL, /api/stuf/zaken.
-	 *
-	 * Delegates to cases(). Its own method because the URL is a WIRE CONTRACT
-	 * held in the sending zaaksysteem's configuration, and because
-	 * openregister's AppHost Routes::standard() rejects duplicate route names
-	 * by `name` alone and never reads `postfix` — the two-entries-one-name form
-	 * throws at boot and takes the whole app's routing down.
-	 *
-	 * Remove once every configured sender posts to /api/stuf/cases.
-	 *
-	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 *
-	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function casesLegacyPath(): DataDisplayResponse {
-		return $this->cases();
-	}//end casesLegacyPath()
-
-	/**
-	 * Handle inbound StUF-BG SOAP messages for person operations.
-	 *
-	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function persons(): DataDisplayResponse {
-		return $this->forwardProviderRequest(service: self::SERVICE_PERSONS);
-
-	}//end persons()
-
-	/**
-	 * Serve the deprecated Dutch URL, /api/stuf/personen.
-	 *
-	 * Delegates to persons(). Its own method for the same reason
-	 * casesLegacyPath() is — see the note there.
-	 *
-	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 *
-	 * @contract exclude Deprecated path alias for persons(); behaviour covered by the persons() tests.
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function personsLegacyPath(): DataDisplayResponse {
-		return $this->persons();
-	}//end personsLegacyPath()
 
 	/**
 	 * Send a vrijBericht to the named endpoint (outbound), through integriq.
@@ -247,137 +137,6 @@ class StufController extends Controller {
 
 		return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
 	}//end outboundFailure()
-
-	/**
-	 * Receive an async confirmation from the zaaksysteem and hand it to integriq.
-	 *
-	 * Public (no user session): integriq authenticates the caller with the
-	 * WS-Security UsernameToken of the integriq source the confirmed message
-	 * went out on, records it, and answers with a Bv03 or Fo03. Dossiq only
-	 * forwards the raw bytes, for one release, because this URL is a wire
-	 * contract; with integriq unavailable the answer is 503 so the zaaksysteem
-	 * retries.
-	 *
-	 * @return DataDisplayResponse Integriq's Bv03/Fo03 with its status, or 503.
-	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-on-the-old-url-reach-integriq
-	 *
-	 * @contract exclude Forwards a WSSE SOAP webhook to integriq in process; covered by StufControllerInboundTest and integriq's receiver tests.
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function inbound(): DataDisplayResponse {
-		$answer = $this->bridge->forwardConfirmation(rawXml: $this->readRawBody());
-		if ($answer === null) {
-			$this->logger->warning(message: 'StUF inbound: integriq did not answer; the zaaksysteem is told to retry');
-			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
-		}
-
-		// Integriq answers 200, 400, 422 or 503; anything else is not a status
-		// this URL ever gave, so it reads as a bad gateway.
-		$status = match ($answer['statusCode']) {
-			Http::STATUS_OK => Http::STATUS_OK,
-			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
-			Http::STATUS_UNPROCESSABLE_ENTITY => Http::STATUS_UNPROCESSABLE_ENTITY,
-			Http::STATUS_SERVICE_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
-			default => Http::STATUS_BAD_GATEWAY,
-		};
-
-		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
-	}//end inbound()
-
-	/**
-	 * Serve the deprecated Dutch URL, /api/stuf/inkomend.
-	 *
-	 * Delegates to inbound(). It exists as its own method only because the URL
-	 * is a WIRE CONTRACT held in the upstream zaaksysteem's configuration:
-	 * renaming the path alone would turn a working webhook into a silent 404 on
-	 * somebody else's schedule.
-	 *
-	 * It cannot be expressed as a second routes.php entry reusing
-	 * `stuf#inbound` with a `postfix`, because openregister's AppHost
-	 * Routes::standard() rejects duplicates by `name` alone and never reads
-	 * `postfix` — that form throws "Duplicate route name" at boot and takes the
-	 * whole app's routing down. Measured: it failed dossiq's E2E seed.
-	 *
-	 * Remove once every configured sender posts to /api/stuf/inbound.
-	 *
-	 * @return DataDisplayResponse
-	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-on-the-old-url-reach-integriq
-	 *
-	 * @contract exclude Deprecated path alias for inbound(); the behaviour is covered by StufControllerInboundTest.
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 300, period: 60)]
-	public function inboundLegacyPath(): DataDisplayResponse {
-		return $this->inbound();
-	}//end inboundLegacyPath()
-
-	/**
-	 * Forward a StUF provider request to integriq (decision 199, one release).
-	 *
-	 * The sender's `zender.applicatie` names the stufEndpoint, as it did for the
-	 * retired dispatcher; that endpoint's `integriqSource` is the integriq source
-	 * whose WS-Security integriq checks. An unknown sender is forwarded with no
-	 * source, so integriq refuses it with the same fault as a wrong password.
-	 *
-	 * @param string $service SERVICE_CASES or SERVICE_PERSONS.
-	 *
-	 * @return DataDisplayResponse Integriq's SOAP answer, or a 503 when integriq does not answer.
-	 */
-	private function forwardProviderRequest(string $service): DataDisplayResponse {
-		$rawXml   = $this->readRawBody();
-		$sourceId = '';
-		if (preg_match(self::ZENDER_APPLICATION, $rawXml, $match) === 1) {
-			$endpoint = $this->register->findOne(
-				schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
-				filters: ['recipientApplication' => trim($match[1])]
-			);
-			$sourceId = (string)($endpoint['integriqSource'] ?? '');
-		}
-
-		$answer = $this->bridge->forwardProviderRequest(rawXml: $rawXml, sourceId: $sourceId, service: $service);
-		if ($answer === null) {
-			$this->logger->warning(message: 'StUF provider request: integriq did not answer; the zaaksysteem is told to retry');
-			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
-		}
-
-		// Integriq answers 200, 400, 401, 413 or 500; anything else reads as a bad gateway.
-		$status = match ($answer['statusCode']) {
-			Http::STATUS_OK => Http::STATUS_OK,
-			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
-			Http::STATUS_UNAUTHORIZED => Http::STATUS_UNAUTHORIZED,
-			Http::STATUS_REQUEST_ENTITY_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
-			Http::STATUS_INTERNAL_SERVER_ERROR => Http::STATUS_INTERNAL_SERVER_ERROR,
-			default => Http::STATUS_BAD_GATEWAY,
-		};
-
-		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
-	}//end forwardProviderRequest()
-
-	/**
-	 * Read the raw request body.
-	 *
-	 * A seam, and the reason this endpoint had no tests while its two siblings
-	 * did. `php://input` cannot be driven from a unit test, so the WSSE refusal
-	 * below it could never be watched to refuse — and a guard nobody has
-	 * watched refuse is a guard nobody has tested. Overriding this one method
-	 * is all a test needs; the production path is unchanged.
-	 *
-	 * `OCP\IRequest` exposes no raw-body accessor, so this cannot simply read
-	 * from the injected request.
-	 *
-	 * @return string The raw request body, or an empty string when there is none.
-	 *
-	 * @psalm-return   string
-	 * @phpstan-return string
-	 */
-	protected function readRawBody(): string {
-		return (string)file_get_contents(filename: 'php://input');
-	}//end readRawBody()
 
 	/**
 	 * List all configured StufEndpoint objects (admin REST).

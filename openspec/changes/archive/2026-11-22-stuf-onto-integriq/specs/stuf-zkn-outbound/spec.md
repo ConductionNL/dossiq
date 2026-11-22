@@ -21,17 +21,17 @@ reported as unavailable (503), never as sent.
 - WHEN an administrator sends a vrij bericht
 - THEN the answer is 503 INTEGRIQ_UNAVAILABLE
 
-### Requirement: Confirmations on the old URL reach integriq
+### Requirement: Confirmations reach integriq on its own URL
 
-For one release `/api/stuf/inbound` and `/api/stuf/inkomend` SHALL forward the raw confirmation to
-integriq with `StufZdsConfirmationReceivedEvent` and answer with integriq's status and body. With
-integriq away the answer SHALL be 503 so the zaaksysteem retries.
+A zaaksysteem SHALL post its asynchronous confirmations to integriq's `/api/stuf-zkn/confirmations`;
+integriq authenticates and records them. Dossiq SHALL NOT serve `/api/stuf/inbound` or
+`/api/stuf/inkomend`: they forwarded to integriq for one release and are removed.
 
-#### Scenario: A refusal stays a refusal
+#### Scenario: The old confirmation URL is gone
 
-- GIVEN integriq answers 422 with a Fo03
-- WHEN a confirmation arrives on /api/stuf/inbound
-- THEN dossiq answers 422 with that Fo03
+- GIVEN a dossiq release after the forwarding release
+- WHEN a confirmation is posted to /api/stuf/inbound or /api/stuf/inkomend
+- THEN no dossiq route answers it
 
 ### Requirement: A failed message still reaches the administrators
 
@@ -44,3 +44,23 @@ TIMEOUT as stuf_timeout, anything else as stuf_permanent_error.
 - GIVEN integriq concludes a dossiq vrijBericht with fout StUF064
 - WHEN the conclusion is dispatched
 - THEN the administrators get a stuf_permanent_error notification naming the endpoint
+
+## MODIFIED Requirements
+
+### Requirement: Outbound REST surface
+
+The system SHALL expose admin-gated REST endpoints to list configured endpoints
+(with their integriq link as health), query the audit log, and send a vrijBericht.
+It SHALL expose no inbound SOAP reception endpoint.
+
+#### Scenario: Endpoint listing is admin-gated
+
+- **WHEN** an unauthenticated client calls `GET /api/stuf/endpoints`
+- **THEN** the request MUST be rejected (not 404), and an authenticated admin MUST receive the endpoint list with a `health` block per endpoint
+
+## REMOVED Requirements
+
+### Requirement: Async confirmation
+
+**Reason:** integriq receives, authenticates and records the confirmation (decision 193); see
+"Confirmations reach integriq on its own URL".

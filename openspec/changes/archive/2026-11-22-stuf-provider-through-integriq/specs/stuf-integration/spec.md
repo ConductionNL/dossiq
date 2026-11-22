@@ -1,7 +1,7 @@
 # stuf-integration (delta)
 
 @e2e exclude Pure SOAP and event integration with no browser surface; covered by PHPUnit
-(StufProviderQueryListenerTest, StufControllerProviderForwardTest, StufIntegriqBridgeTest).
+(StufProviderQueryListenerTest, StufControllerCoverageTest, StufRegisterContractTest).
 
 ## ADDED Requirements
 
@@ -26,25 +26,25 @@ When the case store cannot be read the event SHALL stay unanswered, never answer
 - WHEN the event arrives
 - THEN dossiq leaves it unanswered
 
-### Requirement: Provider requests on the old URLs reach integriq
+### Requirement: Provider requests reach integriq on its own URLs
 
-For one release `/api/stuf/cases`, `/api/stuf/persons`, `/api/stuf/zaken` and `/api/stuf/personen`
-SHALL forward the raw envelope to integriq with `StufProviderRequestReceivedEvent`, naming the
-integriq source of the endpoint whose `recipientApplication` is the envelope's zender applicatie,
-and return integriq's status and body. Integriq not answering SHALL be a 503.
+A zaaksysteem SHALL post its StUF provider requests to integriq's
+`/api/stuf-zkn/provider/{sourceId}/cases` and `/persons`. Dossiq SHALL NOT serve `/api/stuf/cases`,
+`/api/stuf/persons`, `/api/stuf/zaken` or `/api/stuf/personen`: they forwarded to integriq for one
+release and are removed.
 
-#### Scenario: The Dutch cases URL
+#### Scenario: The Dutch cases URL is gone
 
-- GIVEN a zaaksysteem posts a zakLv01 to `/api/stuf/zaken`
-- WHEN the controller handles it
-- THEN integriq receives the unchanged envelope for service `cases`
+- GIVEN a dossiq release after the forwarding release
+- WHEN a zaaksysteem posts a zakLv01 to `/api/stuf/zaken`
+- THEN no dossiq route answers it
 
 ## REMOVED Requirements
 
 ### REQ-001: Inbound StUF SOAP routing + message-type dispatch
 
-**Reason:** integriq parses the envelope and dispatches by message type (decision 199). Dossiq's
-routes only forward, for one release.
+**Reason:** integriq parses the envelope and dispatches by message type (decision 199). Dossiq has
+no StUF route of its own.
 
 ### REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)
 
