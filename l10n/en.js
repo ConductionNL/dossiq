@@ -12812,6 +12812,7 @@ OC.L10N.register(
         "{shown} of {total} messages": "{shown} of {total} messages",
         "{shown} of {total} objects on cases, sorted by object": "{shown} of {total} objects on cases, sorted by object",
         "{shown} of {total} open cases in your teams": "{shown} of {total} open cases in your teams",
+        "{shown} of {total} open cases in your teams · board view by status": "{shown} of {total} open cases in your teams · board view by status",
         "{shown} of {total} open cases in your teams · sorted by deadline": "{shown} of {total} open cases in your teams · sorted by deadline",
         "{shown} of {total} open cases in your teams, board view by status": "{shown} of {total} open cases in your teams, board view by status",
         "{shown} of {total} open cases in your teams, sorted by deadline": "{shown} of {total} open cases in your teams, sorted by deadline",
