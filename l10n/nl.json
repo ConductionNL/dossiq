@@ -12937,6 +12937,7 @@
         "{shown} of {total} messages": "{shown} van {total} berichten",
         "{shown} of {total} objects on cases, sorted by object": "{shown} van {total} objecten op zaken, gesorteerd op object",
         "{shown} of {total} open cases in your teams": "{shown} van {total} lopende zaken in uw teams",
+        "{shown} of {total} open cases in your teams · sorted by deadline": "{shown} van {total} lopende zaken in uw teams · gesorteerd op termijn",
         "{shown} of {total} open cases in your teams, board view by status": "{shown} van {total} lopende zaken in uw teams · bordweergave per status",
         "{shown} of {total} open cases in your teams, sorted by deadline": "{shown} van {total} lopende zaken in uw teams · gesorteerd op termijn",
         "{shown} of {total} open cases without a handler · oldest first": "{shown} van {total} open zaken zonder behandelaar · oudste eerst",
