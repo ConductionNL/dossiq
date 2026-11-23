@@ -256,6 +256,7 @@ OC.L10N.register(
         "A kind of work that is planned on a case, and what follows it": "Een soort werk dat op een zaak wordt gepland, en wat erna komt",
         "A legal hold is on this case.": "Op deze zaak staat een juridische blokkade.",
         "A legal obligation": "Een wettelijke verplichting",
+        "A letter or decision (formal order) from a template, filled with the details of this case.": "Een brief of beschikking uit een sjabloon, gevuld met de gegevens van deze zaak.",
         "A letter or decision from a template, filled in with the details of this case.": "Een brief of beschikking uit een sjabloon, gevuld met de gegevens van deze zaak.",
         "a link is revoked by the colleague who created it.": "een link wordt ingetrokken door wie hem maakte.",
         "A list": "Een lijst",

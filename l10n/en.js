@@ -256,6 +256,7 @@ OC.L10N.register(
         "A kind of work that is planned on a case, and what follows it": "A kind of work that is planned on a case, and what follows it",
         "A legal hold is on this case.": "A legal hold is on this case.",
         "A legal obligation": "A legal obligation",
+        "A letter or decision (formal order) from a template, filled with the details of this case.": "A letter or decision (formal order) from a template, filled with the details of this case.",
         "A letter or decision from a template, filled in with the details of this case.": "A letter or decision from a template, filled in with the details of this case.",
         "a link is revoked by the colleague who created it.": "a link is revoked by the colleague who created it.",
         "A list": "A list",

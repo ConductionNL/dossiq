@@ -13,25 +13,25 @@
       "term": "statutoryTerm"
     },
     {
-      "label": "Adjournment",
+      "label": "Extension",
       "field": "statutoryExtension",
       "as": "extension",
       "from": "legalDecisionDate"
     },
     {
-      "label": "Effective date",
+      "label": "Start date",
       "field": "statutoryExtension",
       "as": "after-extension",
       "from": "legalDecisionDate"
     },
     {
-      "label": "Statement of reasons",
+      "label": "Reasoning",
       "field": "extensionReason",
       "required": true
     },
     {
       "label": "Status after generating",
-      "value": "Draft (concept)"
+      "value": "Draft"
     }
   ],
   "notes": [
