@@ -132,6 +132,9 @@ class Application extends App implements IBootstrap {
 			DossiqScannableServices::class
 		);
 
+		// Cases in the top bar's unified search, from any app.
+		$context->registerSearchProvider(\OCA\Dossiq\Search\CaseSearchProvider::class);
+
 		// App config keys read with a default, such as the top bar's search words.
 		$context->registerConfigLexicon(ConfigLexicon::class);
 
