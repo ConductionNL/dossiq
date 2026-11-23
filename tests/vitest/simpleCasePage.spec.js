@@ -393,19 +393,19 @@ describe('the tabs', () => {
 	const find = (config, id) =>
 		config.widgets.find((widget) => widget.id === id)
 
-	it('shows the six the boards draw and keeps the other panels under Acties, losing none', () => {
+	it('shows the seven the boards draw and keeps the other panels under Acties, losing none', () => {
 		const strip = tabsOf(simple)
-		expect(strip.maxVisibleTabs).toBe(6)
+		expect(strip.maxVisibleTabs).toBe(7)
 		// The six every case shows (DqZaakEmail: E-mail between Taken and
 		// Historie); a case type domain adds its own tabs behind a visibleWhen
 		// (checked under the side column).
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
-		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Email', 'History'])
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Email', 'History', 'Assistant'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'Parties', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'Parties', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
@@ -910,15 +910,16 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 	const layout = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
 	const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
 	const widget = page.configAppend.widgets.find((entry) => entry.id === 'case-assistant-chat')
-	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.label === 'AI oversight')
+	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.id === 'ai-oversight')
 	const byId = (id) => page.configAppend.widgets.find((entry) => entry.id === id)
 
 	it('places the AI chat the launcher opens, embedded, needing hermiq', () => {
 		expect(widget).toMatchObject({ type: 'ai-chat', requiredApp: 'hermiq', content: { chatAppId: 'hermiq' } })
 	})
 
-	it('gives it the AI oversight tab, under Acties until it is opened', () => {
-		expect(tab).toMatchObject({ label: 'AI oversight', overflow: true })
+	it('gives it the Assistant tab in the strip after History, as DqZaak draws it', () => {
+		expect(tab).toMatchObject({ label: 'Assistant' })
+		expect(tab.overflow).toBeUndefined()
 	})
 
 	it('stacks what the assistant did and the macros in that tab, as the board does', () => {

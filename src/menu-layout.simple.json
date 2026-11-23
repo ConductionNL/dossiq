@@ -2329,7 +2329,7 @@
 					"case-panels": {
 						"content": {
 							"ariaLabel": "Case details",
-							"maxVisibleTabs": 6,
+							"maxVisibleTabs": 7,
 							"moreLabel": "More",
 							"badgeSource": "readState",
 							"tabs": [
@@ -2654,6 +2654,16 @@
 									}
 								},
 								{
+									"id": "ai-oversight",
+									"widgetIds": [
+										"case-ai-activity",
+										"case-macros"
+									],
+									"label": "Assistant",
+									"icon": "RobotOutline",
+									"_note": "DqZaak and DqZaakAssistent: the Assistant tab, in the strip after History. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
+								},
+								{
 									"widgetId": "case-change-proposals",
 									"label": "Proposals",
 									"visibleWhen": {
@@ -2759,17 +2769,6 @@
 									"label": "Review",
 									"icon": "ClipboardCheckOutline",
 									"overflow": true
-								},
-								{
-									"id": "ai-oversight",
-									"widgetIds": [
-										"case-ai-activity",
-										"case-macros"
-									],
-									"label": "AI oversight",
-									"icon": "RobotOutline",
-									"overflow": true,
-									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
 						}
