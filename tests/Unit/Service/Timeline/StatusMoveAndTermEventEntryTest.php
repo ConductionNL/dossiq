@@ -256,11 +256,47 @@ class StatusMoveAndTermEventEntryTest extends TestCase {
 				'startedAt' => '',
 				'basis' => 'Awb 4:15',
 				'termijnId' => 'term-1',
+				'messageKey' => 'Deadline event recorded',
+				'messageVars' => [],
 			],
 			$this->calls[0]['fields']
 		);
 		self::assertSame(CaseTimeline::INTERNAL, $this->calls[0]['visibility']);
 	}//end testATermEventWithoutARationaleReadsTheDefaultSentence()
+
+	/**
+	 * A fixed sentence carries its source text, so the history reads it in the reader's language.
+	 *
+	 * @return void
+	 */
+	public function testAFixedSentenceCarriesItsTranslatableSource(): void {
+		(new TermEventEntry(timeline: $this->timeline))->recordEvent(
+			instance: ['case' => 'case-1'],
+			type: 'start',
+			basis: 'Awb 4:13',
+			rationale: 'Termijn gestart bij zaak-aanmaak',
+			moment: null,
+		);
+
+		self::assertSame('Termijn gestart bij zaak-aanmaak', $this->calls[0]['message']);
+		self::assertSame('Deadline started when the case was created', $this->calls[0]['fields']['messageKey']);
+	}//end testAFixedSentenceCarriesItsTranslatableSource()
+
+	/**
+	 * A start with a due date keys the sentence and passes the date; a sentence naming a case gets no key.
+	 *
+	 * @return void
+	 */
+	public function testAStartNamesItsDueDateAndAFreeSentenceHasNoKey(): void {
+		$entry = new TermEventEntry(timeline: $this->timeline);
+		$entry->recordStart(instance: ['case' => 'case-1', 'kind' => 'statutory', 'endDateCurrent' => '2027-01-04']);
+		$entry->recordEvent(instance: ['case' => 'case-1'], type: 'closed', basis: '', rationale: 'Termijn voltooid: zaak samengevoegd met c-2', moment: null);
+
+		self::assertSame('Wettelijke termijn gestart, uiterlijk 2027-01-04', $this->calls[0]['message']);
+		self::assertSame('Statutory deadline started, due {date}', $this->calls[0]['fields']['messageKey']);
+		self::assertSame(['date' => '2027-01-04'], $this->calls[0]['fields']['messageVars']);
+		self::assertArrayNotHasKey('messageKey', $this->calls[1]['fields']);
+	}//end testAStartNamesItsDueDateAndAFreeSentenceHasNoKey()
 
 	/**
 	 * A term event on an instance that names no case writes nothing.

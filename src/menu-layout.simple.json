@@ -2118,7 +2118,7 @@
 					},
 					"case-release": {
 						"group": "Case",
-						"label": "Let the case go"
+						"label": "Release"
 					},
 					"case-hand-over": {
 						"group": "Case",
@@ -2126,7 +2126,7 @@
 					},
 					"add-party": {
 						"group": "Case",
-						"label": "Add a party"
+						"label": "Add party"
 					},
 					"message-applicant": {
 						"group": "Case"
@@ -2157,7 +2157,7 @@
 					},
 					"plan-follow-up": {
 						"group": "Case",
-						"label": "Plan what follows"
+						"label": "Plan a follow-up"
 					},
 					"case-remind": {
 						"group": "Case"
@@ -2170,7 +2170,7 @@
 					},
 					"start-flow": {
 						"group": "Case",
-						"label": "Start a flow"
+						"label": "Start flow"
 					},
 					"case-split": {
 						"group": "Case"
@@ -2220,7 +2220,7 @@
 					},
 					"case-version-move": {
 						"group": "Case",
-						"label": "To another version"
+						"label": "Move to another version"
 					},
 					"cross-domain-lookup": {
 						"group": "Case"
@@ -2240,7 +2240,7 @@
 						"label": "Document"
 					},
 					"case-lifecycle-menu": {
-						"label": "Lifecycle: what this case can do"
+						"label": "Lifecycle: what can happen to this case"
 					},
 					"case-archive": {
 						"group": "Case"
@@ -2975,7 +2975,7 @@
 						"_note": "DqZaakHistorie: the history card draws no note form; its Add note brings the case-note-card under it into view. The content is the manifest's with `composer: separate`, and the audit trail link of r24/history-audit-trail-link, because a patch replaces the whole content key.",
 						"content": {
 							"manage": true,
-							"title": "History of the case",
+							"title": "Case history",
 							"exportName": "case-history",
 							"auditTrailLink": true,
 							"auditTrailTab": "audit",
@@ -2986,6 +2986,39 @@
 							"errorTitle": "The timeline could not be read",
 							"errorText": "OpenRegister did not answer. No empty timeline is shown; the change history in the sidebar stands apart from this.",
 							"momentFormat": "short",
+							"messageKeys": {
+								"Wettelijke termijn gestart": "Statutory deadline started",
+								"Geplande einddatum vastgelegd": "Planned end date set",
+								"Interne streefdatum vastgelegd": "Internal target date set",
+								"Fasetermijn gestart": "Phase deadline started",
+								"Termijn gestart": "Deadline started",
+								"Termijn gestart bij zaak-aanmaak": "Deadline started when the case was created",
+								"Termijngebeurtenis vastgelegd": "Deadline event recorded",
+								"Aanvulling ontvangen; termijn hervat": "Supplement received; the deadline runs again",
+								"Aanvulling ontvangen": "Supplement received",
+								"De aanvraag om aanvulling kon niet worden verzonden, dus de termijn loopt door.": "The request for a supplement could not be sent, so the deadline keeps running.",
+								"Dwangsom-berekening gestart na grace period": "Penalty calculation started after the grace period",
+								"Termijn overschreden zonder beschikking": "Deadline passed without a decision",
+								"Pauzetermijn verlopen zonder aanvulling": "Pause ended without a supplement"
+							},
+							"kindLabels": {
+								"contactmoment": "Contact moment",
+								"mail-inkomend": "Incoming email",
+								"mail-uitgaand": "Outgoing email",
+								"portaalbericht": "Message in the message box",
+								"portaalbericht-inkomend": "Message from the requester",
+								"ontvangstbevestiging": "Confirmation of receipt",
+								"statuswijziging": "Status",
+								"termijngebeurtenis": "Deadline",
+								"beschikking-verzonden": "Decision sent",
+								"avg-verzoek": "GDPR request",
+								"reactie-indiener": "Response from the requester",
+								"stopregel-gehaald": "Stopping rule met",
+								"document": "Documents",
+								"bericht": "Messages",
+								"taak": "Tasks",
+								"toewijzing": "Assignment"
+							},
 							"kindIcons": {
 								"document": "FileDocumentOutline",
 								"taak": "ClipboardCheckOutline",
@@ -3809,7 +3842,7 @@
 						"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
 						"content": {
 							"title": "Receipt confirmation",
-							"footnote": "If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.",
+							"footnote": "If the confirmation went outside dossiq, record it with Record confirmation of receipt, under More.",
 							"columns": 3,
 							"include": [
 								"receivedAt",
