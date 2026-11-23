@@ -1392,3 +1392,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Removed; phpmd reports zero findings on the three files under both rulesets (pdepend cache cleared).
         Docblock only, no code path changed, so no test was added; the suites of the three classes run unchanged.
         `phpmd.suppressWarnings` 195 to 192 (the baseline file still reads 178: development was already over it).
+  - [x] 8bs `CaseLifecycleService` (1: ExcessiveClassComplexity 57 against 50). Working out the day an extension of the
+        term lands on is its own concern, so it moved to the new `Lifecycle/ExtensionEndDate`: a named date taken once it
+        lies after the current end, else the current end plus the case type's ISO 8601 period, rolled by the
+        administered calendar when the engine bridge is wired (`resolve()`, was `resolveNewEndDate()` with
+        `requireLaterDate()` and `addPeriod()`). Bodies moved unchanged. The service builds it over the timer of its
+        own deadline services in its constructor, so its constructor signature and the container are unchanged; it no
+        longer names `DateInterval`. Complexity 45 and 13 (pdepend); phpmd: no ExcessiveClassComplexity finding with the
+        suppression gone, and no new finding on either file under both rulesets (the StaticAccess on `RowList` in
+        `readJournal()` was there before). `@SuppressWarnings(PHPMD.*)` lines in `lib/` 194 to 193.
+        Characterisation: the existing `CaseLifecycleServiceTest` and `CaseLifecycleSuspendPauseReasonTest` (the period
+        added, the named date, the date not later, the unreadable date, the case type's rule and limit), green before
+        and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Lifecycle/ExtensionEndDateTest` (3: the named date, the period with its two
+        refusals, the calendar roll of a period only).
