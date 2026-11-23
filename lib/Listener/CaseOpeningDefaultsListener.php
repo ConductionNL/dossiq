@@ -121,7 +121,10 @@ class CaseOpeningDefaultsListener implements IEventListener {
 		try {
 			$caseType = $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
-			$this->logger->debug('Dossiq: the case type of a new case could not be read for its opening defaults', ['caseType' => $caseTypeId, 'error' => $e->getMessage()]);
+			$this->logger->debug(
+				'Dossiq: the case type of a new case could not be read for its opening defaults',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
 			return;
 		}
 

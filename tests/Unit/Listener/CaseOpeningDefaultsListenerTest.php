@@ -96,7 +96,7 @@ class CaseOpeningDefaultsListenerTest extends TestCase {
 
 		return new CaseOpeningDefaultsListener(
 			settingsService: $settings,
-			resolver: new CaseTypeResolver(new CaseTypeStore($settings)),
+			resolver: new CaseTypeResolver(store: new CaseTypeStore(settingsService: $settings)),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end listener()
@@ -139,7 +139,9 @@ class CaseOpeningDefaultsListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testWhatTheWriterGaveIsKept(): void {
-		$modified = $this->create(payload: ['caseType' => ['id' => 'woo'], 'assignedGroup' => 'other-team', 'confidentiality' => 'openbaar'])->getModifiedData();
+		$modified = $this->create(
+			payload: ['caseType' => ['id' => 'woo'], 'assignedGroup' => 'other-team', 'confidentiality' => 'openbaar']
+		)->getModifiedData();
 
 		self::assertArrayNotHasKey(key: 'assignedGroup', array: $modified);
 		self::assertArrayNotHasKey(key: 'confidentiality', array: $modified);
