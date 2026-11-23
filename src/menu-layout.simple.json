@@ -2688,7 +2688,7 @@
 									"_note": "DqZaak and DqZaakAssistent: the Assistant tab, in the strip after History. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								},
 								{
-									"widgetId": "case-notes-panel",
+									"widgetId": "case-notes-tab",
 									"label": "Notes",
 									"icon": "NoteTextOutline",
 									"overflow": true,
@@ -3179,6 +3179,20 @@
 			},
 			"configAppend": {
 				"widgets": [
+					{
+						"id": "case-notes-tab",
+						"type": "integration",
+						"integrationId": "notes",
+						"title": "Notes",
+						"subtitle": "Internal, not for the applicant · stored as notes on the case in OpenRegister",
+						"_note": "Board DqZaakNotities: the Notes tab keeps its composer open above the notes, with the board's placeholder. The Email tab keeps case-notes-panel, whose composer waits behind Add note (DqZaakEmail).",
+						"props": {
+							"composer": "inline",
+							"noteRows": "authored",
+							"mentionUrl": "/apps/dossiq/api/notes/mention",
+							"addNotePlaceholder": "Write a note on this case. Use @ to mention a colleague."
+						}
+					},
 					{
 						"id": "case-overview-sections",
 						"type": "case-overview-sections",
