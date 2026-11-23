@@ -66,10 +66,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\Timer\\WorkingCalendar', f
          *
          * @param DateTimeInterface $moment The day.
          *
-         * @return bool True on a working weekday.
+         * @return bool True on a working weekday that is not a closure.
          */
         public function isWorkingDay(DateTimeInterface $moment): bool {
-            return in_array((int)$moment->format('N'), $this->getWorkingWeekdays(), true);
+            if (in_array((int)$moment->format('N'), $this->getWorkingWeekdays(), true) === false) {
+                return false;
+            }
+
+            return in_array($moment->format('Y-m-d'), (array)($this->definition['nonWorkingDates'] ?? []), true) === false;
         }//end isWorkingDay()
     }//end class
 }
