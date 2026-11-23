@@ -4,7 +4,7 @@
 			<table>
 				<thead>
 					<tr>
-						<th scope="col">{{ t('dossiq', 'ZGW Resource') }}</th>
+						<th scope="col">{{ t('dossiq', 'ZGW source') }}</th>
 						<th scope="col">{{ t('dossiq', 'Status') }}</th>
 						<th scope="col">{{ t('dossiq', 'Actions') }}</th>
 					</tr>
@@ -31,7 +31,7 @@
 									{{ t('dossiq', 'Edit') }}
 								</NcButton>
 								<NcButton type="tertiary" @click="resetMapping(key)">
-									{{ t('dossiq', 'Reset') }}
+									{{ t('dossiq', 'Set up again') }}
 								</NcButton>
 							</div>
 						</td>

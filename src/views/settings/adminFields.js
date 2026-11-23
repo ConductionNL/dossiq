@@ -26,11 +26,11 @@ export function houseStyleFields(t) {
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
 			key: 'municipality_city',
-			label: t('dossiq', 'City of the municipality'),
+			label: t('dossiq', 'Municipality city'),
 		},
 		{
 			key: 'staff_app_name',
-			label: t('dossiq', 'Name of the app for staff'),
+			label: t('dossiq', 'Name of the app for employees'),
 			placeholder: 'Dossiq',
 		},
 		themeField(t),

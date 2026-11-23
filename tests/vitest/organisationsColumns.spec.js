@@ -32,7 +32,7 @@ describe('the relation lists read their derived columns from the library', () =>
 	})
 
 	it('offers the organisations with an open case through the reverse reference', () => {
-		const chip = page('Organisations').config.quickFilters.find((q) => q.label === 'With an open case')
+		const chip = page('Organisations').config.quickFilters.find((q) => q.label === 'With open case')
 		expect(chip.filter).toEqual({ '_related[case][requester][isFinalStatus]': false })
 		expect(chip.showCount).toBe(true)
 	})
