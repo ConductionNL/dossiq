@@ -25,6 +25,8 @@ vi.mock('@nextcloud/axios', () => ({
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u, generateOcsUrl: (u) => `/ocs/${u}` }))
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn() }))
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
+const mockUser = { value: { uid: 'pieter', displayName: 'Pieter Jansen' } }
+vi.mock('@nextcloud/auth', () => ({ getCurrentUser: () => mockUser.value }))
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text, vars) => String(text).replace(/\{(\w+)\}/g, (_, key) => vars?.[key] ?? ''),
 	translatePlural: (app, one, many, count, vars) => String(count === 1 ? one : many).replace('%n', count).replace(/\{(\w+)\}/g, (_, key) => vars?.[key] ?? ''),
@@ -145,6 +147,14 @@ describe('LinkToCaseDialog', () => {
 		expect(wrapper.vm.canLink).toBe(false)
 		wrapper.vm.reason = 'Hoort bij de bouwaanvraag'
 		expect(wrapper.vm.canLink).toBe(true)
+	})
+
+	it('names the reader as the handler and offers no notice to themselves', async () => {
+		mockGet.mockImplementation(() => Promise.resolve({ data: { identifier: '2026-4833', title: 'Lindelaan', status: { name: 'Received' }, caseType: { title: 'Complaint handling' }, assignee: 'pieter' } }))
+		const wrapper = await dialog()
+
+		expect(wrapper.find('[data-testid="link-to-case-proposal"]').text()).toContain('handler Pieter Jansen')
+		expect(wrapper.find('[data-testid="link-to-case-notify"]').exists()).toBe(false)
 	})
 
 	it('reads a stored case into the row the dialog shows', () => {

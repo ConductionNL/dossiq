@@ -102,7 +102,7 @@ v-if="overridesProposal"
 			<NcCheckboxRadioSwitch v-if="senderLabel" v-model="addSender" data-testid="link-to-case-add-sender">
 				{{ t('dossiq', 'Put {name} on the case as a party, if they are not on it yet', { name: senderLabel }) }}
 			</NcCheckboxRadioSwitch>
-			<NcCheckboxRadioSwitch v-if="handlerName" v-model="notifyHandler" data-testid="link-to-case-notify">
+			<NcCheckboxRadioSwitch v-if="handlerName && !handlerIsReader" v-model="notifyHandler" data-testid="link-to-case-notify">
 				{{ t('dossiq', 'Let {name} know a message was added', { name: handlerName }) }}
 			</NcCheckboxRadioSwitch>
 
@@ -130,6 +130,7 @@ variant="primary"
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -241,6 +242,11 @@ export default {
 			return parts.filter(Boolean).join(' · ')
 		},
 
+		handlerIsReader() {
+			const me = getCurrentUser()
+			return Boolean(me && this.chosen && this.chosen.assignee === me.uid)
+		},
+
 		overridesProposal() {
 			return Boolean(this.chosen) && (!this.suggested || this.chosen.id !== this.suggested.id)
 		},
@@ -296,6 +302,12 @@ export default {
 		async loadHandler(found) {
 			this.handlerName = ''
 			if (!found || !found.assignee) {
+				return
+			}
+			const me = getCurrentUser()
+			if (me && me.uid === found.assignee) {
+				// Autocomplete never answers the reader themselves.
+				this.handlerName = me.displayName || me.uid
 				return
 			}
 			try {
@@ -357,7 +369,7 @@ export default {
 					caseId: this.chosen.id,
 					reason: this.overridesProposal ? this.reason.trim() : PROPOSAL_REASON,
 					addSender: this.addSender && Boolean(this.senderLabel),
-					notifyHandler: this.notifyHandler && Boolean(this.handlerName),
+					notifyHandler: this.notifyHandler && Boolean(this.handlerName) && !this.handlerIsReader,
 				})
 				showSuccess(t('dossiq', 'The message is on case {number}.', { number: this.chosen.identifier }))
 				emit('cn:page:refresh', {})
