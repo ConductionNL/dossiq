@@ -10595,6 +10595,7 @@
         "The task waits in the team's pool until someone in it picks it up.": "De taak wacht in de pool van het team tot iemand daaruit hem oppakt.",
         "The task whose form this document was uploaded in, when it came from one. A file uploaded inside a task is held against that task while it is open and becomes a document on the case when the task completes; this is what keeps the trail back to the work that produced it.": "De taak in wiens formulier dit document is geüpload, als het daaruit kwam. Een bestand dat binnen een taak wordt geüpload hoort bij die taak zolang zij open is en wordt een document op de zaak zodra de taak wordt afgerond; dit houdt het spoor terug naar het werk dat het opleverde.",
         "the tasks of the whole case, also those of colleagues": "de taken van de hele zaak, ook die van collega's",
+        "the tasks of the whole case, colleagues' too": "de taken van de hele zaak, ook die van collega's",
         "The team default is set.": "De teaminstelling staat.",
         "The team default was not set.": "De teaminstelling is niet gezet.",
         "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.": "Het team dat deze zaak behandelt, een Nextcloud-groep. Een team is een toewijzing, geen recht. Een zaak kan een team, een behandelaar of allebei hebben.",

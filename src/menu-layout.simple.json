@@ -3990,7 +3990,7 @@
 							"completeAny": true,
 							"cancel": true,
 							"cancelInline": true,
-							"summaryNote": "the tasks of the whole case, also those of colleagues",
+							"summaryNote": "the tasks of the whole case, colleagues' too",
 							"rowRoute": "TaskDetail",
 							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
 							"cancelUrl": "/apps/dossiq/api/case-tasks/{id}/cancel",

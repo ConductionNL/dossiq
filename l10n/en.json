@@ -10595,6 +10595,7 @@
         "The task waits in the team's pool until someone in it picks it up.": "The task waits in the team's pool until someone in it picks it up.",
         "The task whose form this document was uploaded in, when it came from one. A file uploaded inside a task is held against that task while it is open and becomes a document on the case when the task completes; this is what keeps the trail back to the work that produced it.": "The task whose form this document was uploaded in, when it came from one. A file uploaded inside a task is held against that task while it is open and becomes a document on the case when the task completes; this is what keeps the trail back to the work that produced it.",
         "the tasks of the whole case, also those of colleagues": "the tasks of the whole case, also those of colleagues",
+        "the tasks of the whole case, colleagues' too": "the tasks of the whole case, colleagues' too",
         "The team default is set.": "The team default is set.",
         "The team default was not set.": "The team default was not set.",
         "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.": "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.",
