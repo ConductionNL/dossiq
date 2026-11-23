@@ -2185,9 +2185,7 @@
 					"remedy-lodge": {
 						"group": "Case"
 					},
-					"advice-request": {
-						"group": "Case"
-					},
+					"advice-request": null,
 					"woo-publish": {
 						"group": "Publication"
 					},
@@ -7251,7 +7249,6 @@
 					"remedy-lodge",
 					"start-enforcement",
 					"advice-from-decision-table",
-					"advice-request",
 					"woo-publish",
 					"woo-withdraw",
 					"woo-publication-open",
