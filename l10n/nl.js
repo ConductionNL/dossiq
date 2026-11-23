@@ -6311,7 +6311,7 @@ OC.L10N.register(
         "Old type. Use {type} with format {format} instead.": "Oud type. Gebruik voortaan {type} met formaat {format}.",
         "Oldest": "Oudste",
         "Oldest first, with the channel of each message": "Oudste bovenaan, met het kanaal per bericht",
-        "Oldest first, with the channel per message": "Oudste eerst, met het kanaal per bericht",
+        "Oldest first, with the channel per message": "Oudste bovenaan, met het kanaal per bericht",
         "Omgevingsvergunning (regulier)": "Omgevingsvergunning (regulier)",
         "Omgevingsvergunning (uitgebreid)": "Omgevingsvergunning (uitgebreid)",
         "Omgevingsvergunning detail": "Omgevingsvergunning detail",
