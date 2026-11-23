@@ -63,7 +63,8 @@ describe('related name lookup', () => {
 		]
 		expect(formatters.caseTypeName('ct-1')).toBe('Kap')
 		expect(formatters.caseTypeName('ct-2')).toBe('Bouw')
-		expect(formatters.caseTypeName('ct-3')).toBe('ct-3')
+		// A row without a label starts the lookup; blank until it answers.
+		expect(formatters.caseTypeName('ct-3')).toBe('')
 		expect(store.fetchCollectionForOptions).toHaveBeenCalledTimes(1)
 	})
 
@@ -74,15 +75,16 @@ describe('related name lookup', () => {
 			{ id: 'ct-7' },
 			null,
 		]))
-		expect(formatters.caseTypeName('ct-9')).toBe('ct-9')
-		expect(formatters.caseTypeName('ct-8')).toBe('ct-8')
+		// While the lookup is under way the cell is blank, never the id (DqZaken).
+		expect(formatters.caseTypeName('ct-9')).toBe('')
+		expect(formatters.caseTypeName('ct-8')).toBe('')
 		await settle()
 		expect(formatters.caseTypeName('ct-9')).toBe('Negen')
 		expect(formatters.caseTypeName('ct-8')).toBe('Acht')
 		expect(formatters.caseTypeName('ct-7')).toBe('ct-7')
 		expect(store.fetchCollectionForOptions).toHaveBeenCalledTimes(1)
 		expect(store.fetchCollectionForOptions).toHaveBeenCalledWith('caseType', { _limit: 500 })
-		expect(formatters.statusTypeName('st-1')).toBe('st-1')
+		expect(formatters.statusTypeName('st-1')).toBe('')
 		expect(store.fetchCollectionForOptions).toHaveBeenCalledTimes(2)
 	})
 
