@@ -42,6 +42,8 @@ use OCP\Search\SearchResultEntry;
  * Finds cases by number or title for the unified search.
  *
  * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — `SearchResult::complete()` and `::paginated()` are the only way Nextcloud's search API builds a result.
  */
 class CaseSearchProvider implements IProvider {
 	use SearchesObjects;
@@ -92,6 +94,8 @@ class CaseSearchProvider implements IProvider {
 	 * @return integer
 	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — the parameters are the interface's; only the route decides.
 	 */
 	public function getOrder(string $route, array $routeParameters): int {
 		if (str_starts_with($route, AppIdentity::APP_ID . '.') === true) {
