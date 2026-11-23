@@ -54,6 +54,7 @@ use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\DeletedCaseLinks;
 use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 
 /**
@@ -96,6 +97,13 @@ class CaseRelationService implements CaseRelationServiceInterface {
 	public const RELATION_SAMENHANG = 'samenhang';
 
 	/**
+	 * Strips the links to a deleted case from the cases that hold one.
+	 *
+	 * @var DeletedCaseLinks
+	 */
+	private readonly DeletedCaseLinks $deletedCaseLinks;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseRelationStore $store OpenRegister reads/writes for case objects.
@@ -103,6 +111,7 @@ class CaseRelationService implements CaseRelationServiceInterface {
 	 * @param CaseHierarchyOverlapGuard $hierarchyGuard Hoofdzaak/deelzaak overlap detection.
 	 * @param CaseRelationLabels $labels What each link is called from each side.
 	 * @param SubjectLinkRule $subjectRule A case hangs as the subject under one case only, without a loop.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
@@ -111,6 +120,7 @@ class CaseRelationService implements CaseRelationServiceInterface {
 		private readonly CaseRelationLabels $labels,
 		private readonly SubjectLinkRule $subjectRule,
 	) {
+		$this->deletedCaseLinks = new DeletedCaseLinks(store: $store, codec: $codec);
 	}//end __construct()
 
 	/**
@@ -520,129 +530,11 @@ class CaseRelationService implements CaseRelationServiceInterface {
 	 * @return int Number of counterpart cases updated.
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function cleanupForDeletedCase(string $caseId): int {
-		if ($caseId === '') {
-			return 0;
-		}
-
-		$updated = array_filter(
-			$this->counterpartIdsOf(caseId: $caseId),
-			fn (string $counterpartId): bool => $this->stripCounterpart(counterpartId: $counterpartId, caseId: $caseId)
-		);
-
-		return count($updated);
+		return $this->deletedCaseLinks->strip(caseId: $caseId);
 	}//end cleanupForDeletedCase()
-
-	/**
-	 * Strip every link to a deleted case from one counterpart.
-	 *
-	 * @param string $counterpartId The counterpart.
-	 * @param string $caseId        The case being deleted.
-	 *
-	 * @return bool True when the counterpart was written.
-	 */
-	private function stripCounterpart(string $counterpartId, string $caseId): bool {
-		$counterpart = $this->store->fetchCase(caseUuid: $counterpartId);
-		if ($counterpart === null) {
-			return false;
-		}
-
-		return $this->stripLinksTo(counterpart: $counterpart, caseId: $caseId);
-	}//end stripCounterpart()
-
-	/**
-	 * Remove every relation and typed link to a case from a counterpart, saving only when one went.
-	 *
-	 * @param array<string, mixed> $counterpart The counterpart.
-	 * @param string               $caseId      The case being deleted.
-	 *
-	 * @return bool True when the counterpart was written.
-	 */
-	private function stripLinksTo(array $counterpart, string $caseId): bool {
-		$relations = $this->codec->decode(case: $counterpart);
-		$stripped  = $this->codec->removeAllForCase(relations: $relations, caseId: $caseId);
-		$links     = $this->codec->typedLinks(case: $counterpart);
-		$unlinked  = $this->codec->withoutTypedLink(links: $links, natureRelationship: null, targetId: $caseId);
-		if ([count($stripped), $unlinked] === [count($relations), $links]) {
-			return false;
-		}
-
-		$this->store->persistRelations(case: $counterpart, relations: $stripped, typedLinks: $unlinked);
-
-		return true;
-	}//end stripLinksTo()
-
-	/**
-	 * Every case that has to be touched when one case is deleted.
-	 *
-	 * Two sources, and both are needed. This case's own list names what IT
-	 * declared. `/used` names the cases that declared a link TOWARDS it, which
-	 * its own list no longer mentions now that the counterpart write is gone.
-	 * The mirror used to make that half complete by accident; without the
-	 * reverse read a link declared from the far side would survive the case it
-	 * points at.
-	 *
-	 * @param string $caseId The case being deleted.
-	 *
-	 * @return array<int, string> The counterpart uuids, de-duplicated.
-	 *
-	 * @spec openspec/specs/related-case-linking/spec.md
-	 */
-	private function counterpartIdsOf(string $caseId): array {
-		$ids = array_merge(
-			$this->declaredCounterpartIds(caseId: $caseId),
-			$this->incomingCounterpartIds(caseId: $caseId)
-		);
-
-		return array_values(
-			array_unique(
-				array_filter(
-					$ids,
-					static fn (string $ref): bool => ($ref !== '' && $ref !== $caseId)
-				)
-			)
-		);
-	}//end counterpartIdsOf()
-
-	/**
-	 * The cases a case's own relation list names.
-	 *
-	 * @param string $caseId The case being deleted.
-	 *
-	 * @return array<int, string> The ids, possibly empty or repeated.
-	 */
-	private function declaredCounterpartIds(string $caseId): array {
-		// Even when the case is already gone we still scan counterparts: the
-		// relation entries on OTHER cases are what must be cleaned up.
-		$deleted = $this->store->fetchCase(caseUuid: $caseId);
-		if ($deleted === null) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($this->codec->decode(case: $deleted) as $relation) {
-			$ids[] = (string)($relation['caseId'] ?? '');
-		}
-
-		return $ids;
-	}//end declaredCounterpartIds()
-
-	/**
-	 * The cases that declared a link towards a case, read from `/used`.
-	 *
-	 * @param string $caseId The case being deleted.
-	 *
-	 * @return array<int, string> The ids, possibly empty or repeated.
-	 */
-	private function incomingCounterpartIds(string $caseId): array {
-		$ids = [];
-		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
-			$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-		}
-
-		return $ids;
-	}//end incomingCounterpartIds()
 
 	/**
 	 * Promote a direct write to `relatedCases` into typed links (e.g. ZGW inbound).

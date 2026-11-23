@@ -1342,3 +1342,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the route read, the recorded default, the ambiguous pick, publish and deprecate), green before and unchanged
         after but for one `@uses` line in four.
         Own test: `tests/Unit/Service/Workflow/DefaultRouteTest` (3).
+  - [x] 8bo `CaseRelationService` (1: ExcessiveClassComplexity 58 against 50). Stripping the links to a deleted case
+        from the cases that hold one is its own concern, so it moved to the new `Relation/DeletedCaseLinks`: the cases
+        the deleted case named and the cases that named it (`/used`), each once and never the case itself, and a
+        counterpart written only when a relation or typed link to the deleted case went (`strip()`, was the body of
+        `cleanupForDeletedCase()` with `stripCounterpart()`, `stripLinksTo()`, `counterpartIdsOf()`,
+        `declaredCounterpartIds()` and `incomingCounterpartIds()`). Bodies moved unchanged. The public
+        `cleanupForDeletedCase()` stays on the service and its interface, and delegates. The service builds the cleanup
+        over its own store and codec in its constructor, so its constructor signature and the container are unchanged.
+        phpmd: the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared) and the
+        new file has zero findings under both rulesets.
+        Characterisation: the existing `CaseRelationServiceTest`, `CaseRelationServiceGoldenTest`, `ZrcDestroyCaseTest`
+        and the other relation tests (182 in 22 files: the counterparts declared from the other side, the case-delete
+        path), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/Relation/DeletedCaseLinksTest` (3).
