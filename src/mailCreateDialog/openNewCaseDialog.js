@@ -43,6 +43,10 @@ export function openNewCaseDialog(context) {
 			}),
 		})
 		app.use(pinia)
+		// What CnAppRoot provides on dossiq's own pages: the board look, the
+		// manifest the form's pickers read, the registry and the translations.
+		app.provide('cnLook', bundledManifest.look || 'nextcloud')
+		app.provide('cnManifest', bundledManifest)
 		app.provide('cnRegistry', registry)
 		app.provide('cnTranslate', (key) => t('dossiq', key))
 		app.config.globalProperties.t = t
