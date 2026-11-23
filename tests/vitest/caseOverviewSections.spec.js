@@ -61,7 +61,7 @@ describe('the procedure case types', () => {
 	const types = [
 		read('lib', 'Settings', 'packages', 'subsidie', 'case-type.json').caseType,
 		read('lib', 'Settings', 'packages', 'aanbesteding', 'case-type.json').caseType,
-		read('lib', 'Settings', 'dossiq_register.json').components.objects.find((row) => row.title === 'Klacht behandeling'),
+		read('lib', 'Settings', 'dossiq_register.json').components.objects.find((row) => (row.title?.nl ?? row.title) === 'Klacht behandeling'),
 	]
 
 	it('declare their sections and leave out the generic priority and locations cards', () => {
