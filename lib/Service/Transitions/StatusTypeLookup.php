@@ -83,6 +83,41 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	}//end nameFor()
 
 	/**
+	 * Whether a text is a statusType's name in any of its languages.
+	 *
+	 * A move's own label is often the name of the status it leads to, written
+	 * once in the source language; this tells such a label from one an
+	 * administrator wrote, whatever language the name is read in.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 * @param string $text         The text.
+	 *
+	 * @return bool True when the text is one of the status's names.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function isNameOf(string $statusTypeId, string $text): bool {
+		$wanted = trim($text);
+		if ($wanted === '') {
+			return false;
+		}
+
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+		$name = ($statusType['name'] ?? ($statusType['title'] ?? null));
+		if (is_array($name) === false) {
+			$name = [$name];
+		}
+
+		foreach ($name as $value) {
+			if (is_string($value) === true && trim($value) === $wanted) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isNameOf()
+
+	/**
 	 * The words a status is announced in, or '' when it is not announced.
 	 *
 	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and

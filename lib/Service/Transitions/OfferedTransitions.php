@@ -238,10 +238,18 @@ class OfferedTransitions {
 		$failed = array_values(
 			array_filter($evaluated['eval'], static fn (array $guard): bool => $guard['passed'] === false)
 		);
+		$toStatus = (string)($transition['toStatus'] ?? '');
+		$toStatusName = $this->statuses->nameOf(statusTypeId: $toStatus);
+		$label = (string)($transition['label'] ?? '');
+		// A label that is only the destination's name, in whatever language it
+		// was written, reads as that name in the reader's language.
+		if ($toStatusName !== '' && $this->statuses->isNameOf(statusTypeId: $toStatus, text: $label) === true) {
+			$label = $toStatusName;
+		}
 
 		return [
 			'id' => (string)($transition['id'] ?? ''),
-			'label' => (string)($transition['label'] ?? ''),
+			'label' => $label,
 			// Additive, and empty for every template shipped today: the
 			// documented StatusTransition shape carries no `description`. It is
 			// published so a template that does write one reaches
@@ -252,10 +260,10 @@ class OfferedTransitions {
 			// which is the only moment guidance is worth anything. Empty
 			// renders nothing rather than a blank line.
 			'explanation' => $this->moves->explanationOf(transition: $transition),
-			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			'toStatus' => $toStatus,
 			// The destination's name, so a menu can say where the move goes
 			// ("Naar Besluit") when the move's own label is only that name.
-			'toStatusName' => $this->statuses->nameOf(statusTypeId: (string)($transition['toStatus'] ?? '')),
+			'toStatusName' => $toStatusName,
 			'guardsPassed' => count($failed) === 0,
 			'failedGuards' => $failed,
 			// Whether the move closes the case and the results it may close
