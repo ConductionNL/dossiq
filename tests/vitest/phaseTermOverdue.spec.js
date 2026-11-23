@@ -230,7 +230,7 @@ describe('The Terms tab is reachable', () => {
 		expect(tab.component).toBe('CaseTermsTab')
 		expect(registrySource).toContain('CaseTermsTab: {')
 		expect(registrySource).toContain(
-			"import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'",
+			"const CaseTermsTab = lazyComponent(() => import('./views/cases/components/CaseTermsTab.vue'), 'CaseTermsTab')",
 		)
 	})
 

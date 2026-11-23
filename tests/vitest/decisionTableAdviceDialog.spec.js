@@ -261,7 +261,7 @@ describe('the case page wiring', () => {
 
 	it('registers the dialog under the name the action targets', () => {
 		const registry = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')
-		expect(registry).toContain("import DecisionTableAdviceDialog from './dialogs/DecisionTableAdviceDialog.vue'")
+		expect(registry).toContain("const DecisionTableAdviceDialog = lazyComponent(() => import('./dialogs/DecisionTableAdviceDialog.vue'), 'DecisionTableAdviceDialog')")
 		expect(registry).toMatch(/^\tDecisionTableAdviceDialog: \{\n\t\tkind: 'modal',\n\t\tcomponent: DecisionTableAdviceDialog,/m)
 	})
 
