@@ -3,7 +3,8 @@
 <template>
 	<NcModal size="normal" labelId="link-to-case-title" @close="$emit('close')">
 		<!-- In the board look, so the theme's paragraph and heading sizes, which spare only .cn-look-board, leave the board's type alone. -->
-		<div class="link-to-case cn-look-board" data-testid="link-to-case-dialog">
+		<!-- Escape closes the dialog also from the search field, which NcModal's hotkey ignores. -->
+		<div class="link-to-case cn-look-board" data-testid="link-to-case-dialog" @keydown.esc.stop="$emit('close')">
 			<p class="link-to-case__eyebrow">
 				{{ t('dossiq', 'Inbox') }}
 			</p>
