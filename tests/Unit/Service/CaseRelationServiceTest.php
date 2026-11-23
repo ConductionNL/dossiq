@@ -50,6 +50,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Relation\DeletedCaseLinks
  * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
  * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
  * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
