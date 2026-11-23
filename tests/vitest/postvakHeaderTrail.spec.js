@@ -17,6 +17,6 @@ const page = fragment.pages.find((p) => p.id === 'Postvak')
 describe('Postvak header line', () => {
 	it('names the page as its crumb before the note', () => {
 		expect(page.config.breadcrumb).toEqual({ label: page.title, route: 'Postvak' })
-		expect(page.config.headerMeta).toBe('messages for the whole organisation that belong to no case yet')
+		expect(page.config.headerMeta).toBe('messages from the whole organisation that do not belong to a case yet')
 	})
 })
