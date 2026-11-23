@@ -42,6 +42,14 @@ describe('resolveOverviewSections', () => {
 		expect(resolveOverviewSections([{ id: 'x' }], {})).toEqual([])
 	})
 
+	it('writes a stored date or date-time as a date in words, not as the stored string', () => {
+		const rows = [{ label: 'Received', field: 'receivedAt' }, { label: 'Day', field: 'day' }, { label: 'Code', field: 'code' }]
+		const [section] = resolveOverviewSections([{ id: 'a', title: 'A', rows }], { receivedAt: '2026-11-23T00:50:43+00:00', day: '2026-11-20', code: '2026-4833' })
+		const words = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+
+		expect(section.rows.map((row) => row.value)).toEqual([words('2026-11-23T00:50:43+00:00'), words('2026-11-20'), '2026-4833'])
+	})
+
 	it('shows no object as a value', () => {
 		const [section] = resolveOverviewSections([{ id: 'a', title: 'A', rows: [{ label: 'L', field: 'o' }] }], { o: { secret: 1 } })
 
