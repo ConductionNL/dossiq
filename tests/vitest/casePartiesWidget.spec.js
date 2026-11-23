@@ -129,7 +129,7 @@ describe('the Parties widget', () => {
 		const where = panels.caseTabOf('case-parties')
 
 		expect(where, 'case-parties is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('People')
+		expect(where.tab).toBe('Parties')
 		expect(where.label).toBe('Parties')
 
 		// First, above the contact moments: who is involved, then the contact

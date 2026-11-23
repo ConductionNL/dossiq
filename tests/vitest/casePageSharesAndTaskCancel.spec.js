@@ -25,7 +25,7 @@ describe('sharing outside the organisation (DqZaakBetrokkenen)', () => {
 	const card = widget('case-shares-card')
 
 	it('sits on the People tab after Access', () => {
-		const people = tabs.find((entry) => entry.label === 'People')
+		const people = tabs.find((entry) => entry.label === 'Parties')
 		expect(people.widgetIds.slice(-2)).toEqual(['case-access-card', 'case-shares-card'])
 	})
 

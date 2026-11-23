@@ -1167,9 +1167,9 @@
 						"props": {
 							"objectId": "@objectId",
 							"config": {
-								"title": "Archive this case",
-								"eyebrow": "Close off · {identifier}",
-								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"title": "Archive case",
+								"eyebrow": "Complete · {identifier}",
+								"subtitle": "The case goes to the archive and can only be read after that.",
 								"summary": {
 									"source": {
 										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
@@ -1181,10 +1181,10 @@
 								},
 								"facts": [
 									{
-										"title": "Retention under the case type",
+										"title": "Retention according to the case type",
 										"items": [
 											{
-												"label": "Archive nomination",
+												"label": "Archive designation",
 												"value": "{archiveNomination}"
 											},
 											{
@@ -1196,7 +1196,7 @@
 												"value": "{archiveActionDate|date}"
 											},
 											{
-												"label": "Archive status afterwards",
+												"label": "Archive status after archiving",
 												"value": "Archived"
 											}
 										]
@@ -1235,7 +1235,7 @@
 										},
 										"openTasks": {
 											"label": "Open tasks: {count}",
-											"detail": "no task open any more",
+											"detail": "no open tasks left",
 											"unmetDetail": "{count} still open"
 										}
 									},
@@ -1256,13 +1256,13 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
+									"hint": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step."
 								},
 								"note": {
 									"variant": "info",
 									"icon": "LockOutline",
-									"title": "Read only afterwards",
-									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+									"title": "Read-only after that",
+									"text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date."
 								},
 								"fieldsAfterNote": true,
 								"fields": [
@@ -1398,7 +1398,7 @@
 									"doneField": "besluitDocument"
 								},
 								{
-									"label": "Record the decision",
+									"label": "Record decision",
 									"doneField": "decisions"
 								}
 							]
@@ -2275,7 +2275,29 @@
 									"caseId": "@objectId",
 									"act": "suspend"
 								}
-							}
+							},
+							"actions": [
+								{
+									"label": "Extend",
+									"type": "open-modal",
+									"target": "CaseLifecycleMenuDialog",
+									"props": {
+										"caseId": "@objectId",
+										"act": "extend"
+									},
+									"hiddenIn": ["settled"]
+								},
+								{
+									"label": "Suspend deadline",
+									"type": "open-modal",
+									"target": "CaseLifecycleMenuDialog",
+									"props": {
+										"caseId": "@objectId",
+										"act": "suspend"
+									},
+									"hiddenIn": ["settled"]
+								}
+							]
 						}
 					},
 					"case-stages": {
@@ -2316,7 +2338,7 @@
 					"case-panels": {
 						"content": {
 							"ariaLabel": "Case details",
-							"maxVisibleTabs": 6,
+							"maxVisibleTabs": 7,
 							"moreLabel": "More",
 							"badgeSource": "readState",
 							"tabs": [
@@ -2656,6 +2678,16 @@
 									"_note": "PtVoorstelBeoordelen: while proposals wait on the case, Proposals is listed under More with their count. It stands after the five tabs of DqZaak (Overview, Documents, Contact, Tasks, Case history), which keep their places in the strip: where the two boards disagree, the dossiq board wins. The question goes to portaliq's own queue route, the one the panel reads, so it answers only for a reader who may review here; without waiting proposals, without the right or without portaliq the tab is absent. Needs the nextcloud-vue release that resolves @objectId in an endpoint condition and counts an endpoint's list, so it lands with that bump: on an older release the condition sends the literal token, fails safe and the tab is absent."
 								},
 								{
+									"id": "ai-oversight",
+									"widgetIds": [
+										"case-ai-activity",
+										"case-macros"
+									],
+									"label": "Assistant",
+									"icon": "RobotOutline",
+									"_note": "DqZaak and DqZaakAssistent: the Assistant tab, in the strip after History. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
+								},
+								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes",
 									"icon": "NoteTextOutline",
@@ -2663,7 +2695,7 @@
 									"unreadKey": "notes"
 								},
 								{
-									"label": "People",
+									"label": "Parties",
 									"icon": "AccountMultipleOutline",
 									"overflow": true,
 									"widgetIds": [
@@ -2746,17 +2778,6 @@
 									"label": "Review",
 									"icon": "ClipboardCheckOutline",
 									"overflow": true
-								},
-								{
-									"id": "ai-oversight",
-									"widgetIds": [
-										"case-ai-activity",
-										"case-macros"
-									],
-									"label": "AI oversight",
-									"icon": "RobotOutline",
-									"overflow": true,
-									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
 						}
@@ -2917,10 +2938,10 @@
 								"fields": { "appraisal": "archivalAction", "period": "archivalPeriod", "selectionListRow": "selectionListClass" },
 								"appraisalLabels": { "vernietigen": "Destroy", "bewaren": "Retain", "blijvend_bewaren": "Retain permanently" },
 								"periodText": "{period} after the decision",
-								"decidedBy": "The case type, when it closes",
+								"decidedBy": "The case type, on closing",
 								"selectionListLookup": { "url": "/apps/openregister/api/archival/selectielijst/resolve", "param": "url", "label": "{code}, {name}" }
 							},
-							"pendingNote": "This case is not closed yet. Its archival future is recorded once it closes. Recomputing needs the archivist role and a reason.",
+							"pendingNote": "This case is not closed yet. Its archive future is recorded as soon as it closes. Recalculating needs the archivist role and a reason.",
 							"legalHold": true,
 							"transfer": { "keepValues": ["bewaren", "blijvend_bewaren"] }
 						}
@@ -3799,7 +3820,7 @@
 									"widget": "iconLabel",
 									"widgetProps": { "icons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" } },
 									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie", "brief"],
-									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "config:portalName|Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk", "brief": "Letter" }
+									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "config:portalName|Web form", "chat": "Chat", "social_media": "Social media", "balie": "Service desk", "brief": "Letter" }
 								},
 								{
 									"key": "direction",
@@ -3990,7 +4011,7 @@
 							"completeAny": true,
 							"cancel": true,
 							"cancelInline": true,
-							"summaryNote": "the tasks of the whole case, also those of colleagues",
+							"summaryNote": "the tasks of the whole case, colleagues' too",
 							"rowRoute": "TaskDetail",
 							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
 							"cancelUrl": "/apps/dossiq/api/case-tasks/{id}/cancel",
@@ -5223,7 +5244,7 @@
 								"webformulier": "config:portalName|Web form",
 								"chat": "Chat",
 								"social_media": "Social media",
-								"balie": "Desk",
+								"balie": "Service desk",
 								"brief": "Letter"
 							},
 							"channelIcons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" },
@@ -5236,7 +5257,7 @@
 							"subjectField": "subject",
 							"noteField": "note",
 							"attachmentCountField": "attachmentCount",
-							"subtitle": "Oldest first, with the channel of each message",
+							"subtitle": "Oldest first, with the channel per message",
 							"showDirection": true,
 							"channelChips": true,
 							"headerAction": {
@@ -5405,7 +5426,7 @@
 						"id": "case-parties-card",
 						"type": "integration",
 						"integrationId": "contacts",
-						"title": "Case parties",
+						"title": "Parties",
 						"labels": {
 							"kindLabels": {
 								"person": "Contact",
@@ -5416,10 +5437,10 @@
 							}
 						},
 						"_labelsNote": "Board DqZaakBetrokkenen Partijen leads a person's details with their kind: \"Contact\" for a person, \"Organisatie\" for an organisation, \"Collega\" for a colleague or a Nextcloud user. Keyed by the link's partyKind, else its kind.",
-						"subtitle": "Everyone involved in this case, by role",
+						"subtitle": "Everyone involved in this case, per role",
 						"bodyActions": [
 							{
-								"label": "Add a party",
+								"label": "Add party",
 								"icon": "AccountPlusOutline",
 								"visibleWhen": {
 									"field": "@self.archived",
@@ -5967,7 +5988,7 @@
 						"id": "case-related-cases-card",
 						"type": "record-list",
 						"title": "Related cases",
-						"subtitle": "Typed per the RGBZ, kept in both directions",
+						"subtitle": "Typed according to the RGBZ, kept in both directions",
 						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu. Vervolg plannen is a tonal pill at the end of the Gepland vervolg heading, which stands even before anything is planned (footerAction.group and variant, nextcloud-vue feat/r24-record-list-group-action; on an older library it stays the button under the card).",
 						"headerActions": [
 							{
@@ -6144,7 +6165,7 @@
 							"footerAction": {
 								"type": "open-modal",
 								"target": "CasePlanFollowUpDialog",
-								"label": "Plan what follows",
+								"label": "Plan a follow-up",
 								"icon": "CalendarClock",
 								"group": "planned",
 								"variant": "tonal"
@@ -6624,7 +6645,7 @@
 						"id": "case-ai-activity",
 						"type": "object-list",
 						"title": "What the assistant did on this case",
-						"subtitle": "Every suggestion is recorded, also when nobody uses it",
+						"subtitle": "Every suggestion is recorded, even if nobody uses it",
 						"requiredApp": "hermiq",
 						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every AI suggestion on this case and what a person did with it, as hermiq records it for EU AI Act art. 14 (an advisory Approval: used, adapted, not used or rejected). Read through hermiq's GET /api/ai-oversight/subject, which first asks OpenRegister whether the reader may open this case (hermiq#1172): the records are readable only through their subject, not through the OpenRegister list. The rows appear once dossiq reports its suggestions to hermiq (AiOversightRecordedEvent).",
 						"content": {

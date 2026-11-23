@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('dossiq', 'Generate document')"
 		:eyebrow="eyebrow"
-		:subtitle="t('dossiq', 'A letter or decision from a template, filled in with the details of this case.')"
+		:subtitle="t('dossiq', 'A letter or decision (formal order) from a template, filled with the details of this case.')"
 		width="form"
 		:noClose="submitting"
 		@closing="onClose">

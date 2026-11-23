@@ -139,7 +139,7 @@ describe('AssessmentDecisionDialog', () => {
 		expect(wrapper.vm.proposedOutcome).toBe('deels_openbaar')
 		expect(wrapper.vm.outcomeOptions.map((option) => option.label)).toEqual([
 			'Made public',
-			'Made public in part',
+			'Partly made public',
 			'Not made public',
 		])
 		expect(wrapper.vm.outcomeOptions[1].description).toBe(

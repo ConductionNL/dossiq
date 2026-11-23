@@ -3633,7 +3633,7 @@
 								},
 								{
 									"widgetId": "case-people-panel",
-									"label": "People"
+									"label": "Parties"
 								},
 								{
 									"widgetId": "case-email-panel",
@@ -4745,7 +4745,7 @@
 						"id": "case-decisions-panel",
 						"type": "sections",
 						"title": "Decisions",
-						"subtitle": "From decidiq's decision-making, shown on the case",
+						"subtitle": "From decision making in decidiq, shown on the case",
 						"_note": "The Decisions tab: the outcomes of the case. decidiq's decisions first, then the advice a decision table gave on this case and what the handler chose (enforcement-intervention-from-the-case 3.3, REQ-LHS-CASE-01, decision 197: the advice is its own object linked from the case). Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host. The decidiq leaf is the definition that held this tab before, moved verbatim under its own id.",
 						"content": {
 							"sections": [
@@ -4760,7 +4760,7 @@
 											"surface": "sidebar-tab"
 										},
 										"title": "Decisions",
-										"subtitle": "From decidiq's decision-making, shown on the case",
+										"subtitle": "From decision making in decidiq, shown on the case",
 										"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 									}
 								},
@@ -6298,7 +6298,7 @@
 						},
 						{
 							"id": "assistant",
-							"label": "Assistant",
+							"label": "AI features",
 							"icon": "RobotOutline",
 							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, and the report group with its near-duplicates. A `component:` tab and not a `widgets[]` one for the reason the Terms tab gives. An undeclared case type makes no call to hermiq: the panel reads the case type's declaration first.",
 							"component": "CaseAiFeaturesPanel"
@@ -6653,15 +6653,15 @@
 					{
 						"id": "case-archive",
 						"type": "open-modal",
-						"label": "Archive this case",
+						"label": "Archive case",
 						"icon": "ArchiveOutline",
 						"target": "CnActionDialog",
 						"props": {
 							"objectId": "@objectId",
 							"config": {
-								"title": "Archive this case",
-								"eyebrow": "Close off · {identifier}",
-								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"title": "Archive case",
+								"eyebrow": "Complete · {identifier}",
+								"subtitle": "The case goes to the archive and can only be read after that.",
 								"summary": {
 									"source": {
 										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
@@ -6673,10 +6673,10 @@
 								},
 								"facts": [
 									{
-										"title": "Retention under the case type",
+										"title": "Retention according to the case type",
 										"items": [
 											{
-												"label": "Archive nomination",
+												"label": "Archive designation",
 												"value": "{archiveNomination}"
 											},
 											{
@@ -6688,7 +6688,7 @@
 												"value": "{archiveActionDate|date}"
 											},
 											{
-												"label": "Archive status afterwards",
+												"label": "Archive status after archiving",
 												"value": "Archived"
 											}
 										]
@@ -6727,7 +6727,7 @@
 										},
 										"openTasks": {
 											"label": "Open tasks: {count}",
-											"detail": "no task open any more",
+											"detail": "no open tasks left",
 											"unmetDetail": "{count} still open"
 										}
 									},
@@ -6748,13 +6748,13 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
+									"hint": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step."
 								},
 								"note": {
 									"variant": "info",
 									"icon": "LockOutline",
-									"title": "Read only afterwards",
-									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+									"title": "Read-only after that",
+									"text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date."
 								},
 								"fieldsAfterNote": true,
 								"fields": [
@@ -7106,7 +7106,7 @@
 								{ "value": "brief", "label": "Letter" },
 								{ "value": "email", "label": "Email" },
 								{ "value": "form", "label": "Web form" },
-								{ "value": "balie", "label": "Desk" }
+								{ "value": "balie", "label": "Service desk" }
 							],
 							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
 						},
@@ -7219,7 +7219,7 @@
 							},
 							"classifications": [
 								{ "value": "openbaar", "label": "Public", "decisionLabel": "Made public", "description": "All requested documents become public" },
-								{ "value": "deels_openbaar", "label": "Disclosed in part", "decisionLabel": "Made public in part", "description": "Some of the documents become public, in full or in part" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "decisionLabel": "Partly made public", "description": "Some of the documents become public, in full or in part" },
 								{ "value": "niet_openbaar", "label": "Not public", "decisionLabel": "Not made public", "description": "None of the documents becomes public, the reason is in the decision" }
 							]
 						},
