@@ -4008,6 +4008,7 @@
         "From Collectives, team {knowledgeBasePage:first-segment}.": "From Collectives, team {knowledgeBasePage:first-segment}.",
         "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.": "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.",
         "From decidiq's decision-making, shown on the case": "From decidiq's decision-making, shown on the case",
+        "From decision making in decidiq, shown on the case": "From decision making in decidiq, shown on the case",
         "From Employee ID": "From Employee ID",
         "From handler (user id)": "From handler (user id)",
         "From how many working days before its deadline a case of this type shows as almost due in the work queue. Leave it empty to use the instance default from the admin settings.": "From how many working days before its deadline a case of this type shows as almost due in the work queue. Leave it empty to use the instance default from the admin settings.",

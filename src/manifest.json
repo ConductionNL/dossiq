@@ -4743,7 +4743,7 @@
 						"id": "case-decisions-panel",
 						"type": "sections",
 						"title": "Decisions",
-						"subtitle": "From decidiq's decision-making, shown on the case",
+						"subtitle": "From decision making in decidiq, shown on the case",
 						"_note": "The Decisions tab: the outcomes of the case. decidiq's decisions first, then the advice a decision table gave on this case and what the handler chose (enforcement-intervention-from-the-case 3.3, REQ-LHS-CASE-01, decision 197: the advice is its own object linked from the case). Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host. The decidiq leaf is the definition that held this tab before, moved verbatim under its own id.",
 						"content": {
 							"sections": [
@@ -4758,7 +4758,7 @@
 											"surface": "sidebar-tab"
 										},
 										"title": "Decisions",
-										"subtitle": "From decidiq's decision-making, shown on the case",
+										"subtitle": "From decision making in decidiq, shown on the case",
 										"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 									}
 								},

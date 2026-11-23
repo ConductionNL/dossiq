@@ -4008,6 +4008,7 @@
         "From Collectives, team {knowledgeBasePage:first-segment}.": "Uit Collectives, team {knowledgeBasePage:first-segment}.",
         "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.": "Uit Collectives, team {knowledgeBasePage:first-segment}. Meer pagina's onder Meer, Kennis.",
         "From decidiq's decision-making, shown on the case": "Uit de besluitvorming van decidiq, op de zaak getoond",
+        "From decision making in decidiq, shown on the case": "Uit de besluitvorming van decidiq, op de zaak getoond",
         "From Employee ID": "Van medewerker-id",
         "From handler (user id)": "Van behandelaar (gebruikers-id)",
         "From how many working days before its deadline a case of this type shows as almost due in the work queue. Leave it empty to use the instance default from the admin settings.": "Vanaf hoeveel werkdagen voor de termijn een zaak van dit type als bijna in de werkvoorraad staat. Laat leeg om de standaard uit de beheerinstellingen te gebruiken.",
