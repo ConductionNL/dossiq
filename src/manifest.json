@@ -2069,7 +2069,8 @@
 						"id": "export-anonymised",
 						"label": "Export anonymised",
 						"icon": "ShieldAccountOutline",
-						"handler": "exportAnonymisedSelection"
+						"handler": "exportAnonymisedSelection",
+						"menu": true
 					}
 				],
 				"register": "dossiq",
