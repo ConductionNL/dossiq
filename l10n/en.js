@@ -5924,6 +5924,8 @@ OC.L10N.register(
         "No related cases yet": "No related cases yet",
         "No relevant information found": "No relevant information found",
         "No requester yet": "No requester yet",
+        "Nothing linked yet": "Nothing linked yet",
+        "This case type names no work instruction yet": "This case type names no work instruction yet",
         "No required documents for this case type": "No required documents for this case type",
         "No required properties for this case type": "No required properties for this case type",
         "No result recorded yet": "No result recorded yet",
