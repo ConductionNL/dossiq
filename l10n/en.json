@@ -6544,6 +6544,7 @@
         "Only used when responseType is getal or meting": "Only used when responseType is getal or meting",
         "Only what I can do unilaterally": "Only what I can do unilaterally",
         "Only what this case allows now is active. The rest is greyed out, with the reason.": "Only what this case allows now is active. The rest is greyed out, with the reason.",
+        "Only what this case allows now is on. The rest is grey, with the reason.": "Only what this case allows now is on. The rest is grey, with the reason.",
         "Only when the case type picks it": "Only when the case type picks it",
         "Only whether an open case exists elsewhere, and who to call.": "Only whether an open case exists elsewhere, and who to call.",
         "Only {names} and {last}": "Only {names} and {last}",
