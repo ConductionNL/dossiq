@@ -26,7 +26,7 @@ describe('statusTypeName', () => {
 	})
 
 	it('reads the name from its own lookup when the shared collection lacks the row', async () => {
-		expect(formatters.statusTypeName('s-b012')).toBe('s-b012')
+		expect(formatters.statusTypeName('s-b012')).toBe('')
 		await new Promise((resolve) => setTimeout(resolve, 0))
 		expect(formatters.statusTypeName('s-b012')).toBe('In behandeling')
 		expect(store.fetchCollectionForOptions).toHaveBeenCalledTimes(1)

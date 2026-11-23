@@ -210,7 +210,9 @@ const relatedFetchStarted = {}
  *
  * @param {string} type Registered object type ('caseType' / 'statusType').
  * @param {string} uuid The related object's UUID.
- * @return {string} The label, or the raw UUID while unresolved.
+ * @return {string} The label; '' while the lookup is under way, so a list
+ *   never shows ids before the names (DqZaken); the raw UUID when no lookup
+ *   can find it.
  */
 function lookupRelatedName(type, uuid) {
 	if (!uuid) return '-'
@@ -228,7 +230,7 @@ function lookupRelatedName(type, uuid) {
 	if (!relatedFetchStarted[type] && canLookUp(store, type)) {
 		startRelatedLookup(store, type)
 	}
-	return uuid
+	return relatedFetchStarted[type] && relatedLabels[type] === undefined ? '' : uuid
 }
 
 /**

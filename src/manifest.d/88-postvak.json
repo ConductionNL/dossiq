@@ -11,6 +11,7 @@
 			"route": "/postvak",
 			"type": "index",
 			"title": "Mailbox",
+			"menuEntry": "Queue",
 			"config": {
 				"sidebar": {
 					"enabled": true,
@@ -121,7 +122,8 @@
 						"widget": "badge",
 						"widgetProps": {
 							"variant": "info",
-							"textTemplate": "Looks like {value}"
+							"textTemplate": "Looks like {value}",
+							"emptyLabel": "No case"
 						}
 					},
 					{

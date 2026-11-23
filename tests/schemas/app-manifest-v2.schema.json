@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.191.0",
+	"version": "2.192.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -4337,6 +4337,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Detail pages only. Puts the active tab in the address as ?_tab=<id> so a link points at a tab of a record rather than at the record. The underscore prefix keeps it out of resolveQueryFilters(), which reads every other query key as a filter. Refused on any other page type."
+				},
+				"menuEntry": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The id of the menu entry this page marks as current when it has no entry of its own and no entry matches its route (CnAppNav). The Mailbox, reached from Team queue, names Team queue (DqPostvak)."
 				},
 				"listNavigation": {
 					"type": "boolean",
