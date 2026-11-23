@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -104,7 +105,7 @@ class ZuiddrechtProcessAnalysisHistoryTest extends TestCase {
 	 */
 	private function registerStatuses(): array {
 		$file     = __DIR__.'/../../../lib/Settings/dossiq_register.json';
-		$register = json_decode((string)file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
+		$register = SeedAsReadInDutch::resolve(value: json_decode((string)file_get_contents($file), true, 512, JSON_THROW_ON_ERROR));
 		$statuses = [];
 		foreach ($register['components']['objects'] as $object) {
 			if (($object['@self']['schema'] ?? '') === 'caseType' && isset($object['identifier']) === true) {

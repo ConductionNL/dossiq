@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -40,7 +41,7 @@ class WooStatusRolesTest extends TestCase {
 	 * @return array<string, string>
 	 */
 	private function roles(): array {
-		$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/register.d/81-woo-verzoek.json'), true);
+		$fragment = SeedAsReadInDutch::resolve(value: json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/register.d/81-woo-verzoek.json'), true));
 		$statuses = array_filter(
 			$fragment['components']['objects'],
 			fn (mixed $row): bool => is_array($row) === true && ($row['caseType'] ?? '') === self::CASE_TYPE && isset($row['role'], $row['order']) === true
