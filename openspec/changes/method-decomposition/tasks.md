@@ -1356,3 +1356,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and the other relation tests (182 in 22 files: the counterparts declared from the other side, the case-delete
         path), green before and unchanged after but for one `@uses` line in two.
         Own test: `tests/Unit/Service/Relation/DeletedCaseLinksTest` (3).
+  - [x] 8bp `DeadlineExtensionService` (1: ExcessiveClassComplexity 60 against 50). Whether an extension may go ahead,
+        and by how many days it moves the term, is its own concern, so it moved to the new `ExtensionLimits` (beside
+        `ExtensionRun`, outside the procedure-named `Termijn/` directory): the new end after the current one, the
+        ceiling of extensions that a supervisor passes, and the period the case type declares, measured to the end
+        asked for (`assertAllowed()`, was `assertExtensionAllowed()` with `assertExtensionPermitted()`,
+        `assertWithinDeclaredPeriod()`, `resolveMaxExtensions()`, `cachedDefinition()`, `definitieCache()` and
+        `definitionIn()`), and the days between two ends (`daysImpact()`, was `calculateDaysImpact()`, which
+        `rungsStillBehind()` still asks). Bodies moved unchanged. The service builds the checks over its own term
+        service, dates and declarations in its constructor, so its constructor signature and the container are
+        unchanged. phpmd: zero findings on both files under both rulesets (pdepend cache cleared).
+        Characterisation: the existing `DeadlineExtensionLimitTest`, `DeadlinePauseExtensionServiceTest` and the other
+        extension tests (226 in 17 files: the ceiling, the supervisor override, the declared period, the rolled end,
+        the requester told), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/ExtensionLimitsTest` (3).
