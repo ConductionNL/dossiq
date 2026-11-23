@@ -40,6 +40,7 @@ use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
@@ -56,16 +57,18 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
 	 *                                            inherited statuses are found too.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param TranslatedText  $reader A translatable name in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly TranslatedText $reader = new TranslatedText(),
 	) {
 	}//end __construct()
 
 	/**
-	 * A statusType's human-readable name.
+	 * A statusType's human-readable name, in the reader's language.
 	 *
 	 * @param string $statusTypeId StatusType UUID.
 	 *
@@ -76,7 +79,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	public function nameFor(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
-		return $this->text->textOf(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
+		return $this->reader->forReader(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
 	}//end nameFor()
 
 	/**

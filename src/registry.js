@@ -175,6 +175,7 @@ const DocumentMetadataDialog = lazyComponent(() => import('./modals/DocumentMeta
 const DossierExportPanel = lazyComponent(() => import('./modals/DossierExportPanel.vue'), 'DossierExportPanel')
 const FileRequestDialog = lazyComponent(() => import('./modals/FileRequestDialog.vue'), 'FileRequestDialog')
 const LinkToCaseDialog = lazyComponent(() => import('./modals/LinkToCaseDialog.vue'), 'LinkToCaseDialog')
+const NewCaseFromMessageDialog = lazyComponent(() => import('./modals/NewCaseFromMessageDialog.vue'), 'NewCaseFromMessageDialog')
 const VersionHistoryPanel = lazyComponent(() => import('./modals/VersionHistoryPanel.vue'), 'VersionHistoryPanel')
 const CaseAccessTab = lazyComponent(() => import('./views/cases/components/CaseAccessTab.vue'), 'CaseAccessTab')
 const CaseConversationsPanel = lazyComponent(() => import('./views/cases/components/CaseConversationsPanel.vue'), 'CaseConversationsPanel')
@@ -782,6 +783,13 @@ const registry = {
 		component: LinkToCaseDialog,
 		propsSchema: {},
 		_note: 'Board DqKoppelAanZaak. Opened by the inbox row action `file-on-case` (`type: open-modal`), so the index page mounts it with the row as `object` and the intake log entry as `objectId`.',
+	},
+	// @spec openspec/specs/case-email-integration/spec.md
+	NewCaseFromMessageDialog: {
+		kind: 'modal',
+		component: NewCaseFromMessageDialog,
+		propsSchema: {},
+		_note: 'Opened by the inbox row action `new-case-from-message` (`type: open-modal`) with the row as `object` and the intake log entry as `objectId`: the New case dialog seeded from the message, which files the message on the case it makes.',
 	},
 	FileRequestDialog: {
 		kind: 'modal',
