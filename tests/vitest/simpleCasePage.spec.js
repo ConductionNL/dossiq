@@ -942,7 +942,7 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('lists hermiq\'s oversight records of this case through hermiq, needing hermiq', () => {
 		const activity = byId('case-ai-activity')
-		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq', subtitle: 'Every suggestion is recorded, also when nobody uses it' })
+		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq', subtitle: 'Every suggestion is recorded, even if nobody uses it' })
 		expect(activity.content.endpointSource).toEqual({
 			url: '/apps/hermiq/api/ai-oversight/subject',
 			params: { originApp: 'dossiq', subjectId: '@objectId', limit: 25 },
