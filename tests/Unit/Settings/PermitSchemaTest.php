@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -61,7 +62,8 @@ class PermitSchemaTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheParkingCaseTypesAreSeeded(): void {
-		$seed = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/85-permits.json'), true);
+		$file = __DIR__ . '/../../../lib/Settings/register.d/85-permits.json';
+		$seed = SeedAsReadInDutch::resolve(value: json_decode((string)file_get_contents($file), true));
 		$types = [];
 		$statuses = [];
 		foreach ($seed['components']['objects'] as $object) {

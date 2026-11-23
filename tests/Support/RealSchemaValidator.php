@@ -168,6 +168,11 @@ class RealSchemaValidator {
 			}
 		}
 
+		// OpenRegister stores a translatable text as a language map ({"nl": ..., "en": ...}) as well.
+		if (($property['translatable'] ?? false) === true && ($out['type'] ?? null) === 'string') {
+			$out['type'] = ['string', 'object'];
+		}
+
 		if (isset($property['items']) === true && is_array($property['items']) === true) {
 			$out['items'] = $this->property(property: $property['items']);
 		}
