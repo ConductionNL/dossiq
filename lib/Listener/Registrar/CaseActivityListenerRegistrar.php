@@ -27,9 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Registrar;
 
+use OCA\Dossiq\Listener\CaseCreationActivityStampListener;
 use OCA\Dossiq\Listener\CaseLastActivityListener;
 use OCA\Dossiq\Listener\TransferredCaseActListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -73,5 +75,8 @@ class CaseActivityListenerRegistrar {
 			// REQ-CRS-42: the same acts reach the organisation that handed the case over.
 			$context->registerEventListener(event: $event, listener: TransferredCaseActListener::class);
 		}
+
+		// A new case gets its stamp inside the create, so the post-create stamp has nothing to write.
+		$context->registerEventListener(event: ObjectCreatingEvent::class, listener: CaseCreationActivityStampListener::class);
 	}//end register()
 }//end class

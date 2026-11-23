@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar;
+use OCA\Dossiq\Listener\CaseCreationActivityStampListener;
 use OCA\Dossiq\Listener\CaseLastActivityListener;
 use OCA\Dossiq\Listener\TransferredCaseActListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -61,11 +62,16 @@ class CaseActivityListenerRegistrarTest extends TestCase {
 				'OCA\OpenRegister\Event\TaskTerminalEvent',
 				'OCP\Comments\CommentsEvent',
 				'OCP\Comments\Events\CommentAddedEvent',
+				'OCA\OpenRegister\Event\ObjectCreatingEvent',
 			],
 			actual: array_keys($registered),
 		);
+		$creating = $registered['OCA\OpenRegister\Event\ObjectCreatingEvent'];
+		unset($registered['OCA\OpenRegister\Event\ObjectCreatingEvent']);
 		foreach ($registered as $listeners) {
 			self::assertSame(expected: [CaseLastActivityListener::class, TransferredCaseActListener::class], actual: $listeners);
 		}
+
+		self::assertSame(expected: [CaseCreationActivityStampListener::class], actual: $creating);
 	}//end testTheListenerHearsEveryKindOfWork()
 }//end class
