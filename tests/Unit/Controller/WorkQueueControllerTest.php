@@ -247,12 +247,12 @@ class WorkQueueControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testWorkloadReturns403WhenTheTeamsCannotBeReadForANonCoordinator(): void {
-		$this->userSession->method('getUser')->willReturn($this->mockUser('jan'));
+		$this->userSession->method('getUser')->willReturn($this->mockUser(uid: 'jan'));
 		$this->groupManager->method('isAdmin')->with('jan')->willReturn(false);
 		$this->teams->method('teamsOf')->willThrowException(new \RuntimeException('teams offline'));
 		$this->workQueueService->expects($this->never())->method('computeWorkload');
 
-		self::assertSame(403, $this->controller->workload()->getStatus());
+		self::assertSame(expected: 403, actual: $this->controller->workload()->getStatus());
 	}//end testWorkloadReturns403WhenTheTeamsCannotBeReadForANonCoordinator()
 
 	/**
@@ -263,7 +263,7 @@ class WorkQueueControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testWorkloadShowsATeamMemberTheirOwnTeam(): void {
-		$this->userSession->method('getUser')->willReturn($this->mockUser('pieter'));
+		$this->userSession->method('getUser')->willReturn($this->mockUser(uid: 'pieter'));
 		$this->groupManager->method('isAdmin')->willReturn(false);
 		$this->teams->method('teamsOf')->willReturn([['groupId' => 'team-a', 'name' => 'Team A']]);
 		$this->groupManager->method('displayNamesInGroup')->with('team-a')->willReturn(
@@ -277,9 +277,9 @@ class WorkQueueControllerTest extends TestCase {
 
 		$response = $this->controller->workload();
 
-		self::assertSame(200, $response->getStatus());
-		self::assertSame(['pieter', 'anouk'], array_column($response->getData()['handlers'], 'handler'));
-		self::assertSame([3, 0], array_column($response->getData()['handlers'], 'openCaseCount'));
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertSame(expected: ['pieter', 'anouk'], actual: array_column($response->getData()['handlers'], 'handler'));
+		self::assertSame(expected: [3, 0], actual: array_column($response->getData()['handlers'], 'openCaseCount'));
 	}//end testWorkloadShowsATeamMemberTheirOwnTeam()
 
 	/**

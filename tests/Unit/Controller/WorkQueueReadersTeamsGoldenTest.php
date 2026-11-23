@@ -83,7 +83,7 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 			$read->setAccessible(true);
 			$narrow = new ReflectionMethod(WorkQueueController::class, 'ofTeams');
 			$narrow->setAccessible(true);
-			$kept = $narrow->invoke($controller, $read->invoke($controller, $this->createMock(IUser::class)), $handlers);
+			$kept = $narrow->invoke($controller, $read->invoke($controller, $this->createMock(originalClassName: IUser::class)), $handlers);
 			$record[$name] = ['kept' => $kept, 'log' => $this->logLines];
 		}
 
