@@ -1302,3 +1302,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CorrespondentWriterTest`, `CorrespondentDispatchGoldenTest`, `InboundSenderIsAPartyTest` and the dossier
         write tests (86), green before and unchanged after but for one `@uses` line in four.
         Own test: `tests/Unit/Service/Zaakdossier/CasePartyIndexTest` (2).
+  - [x] 8bl `Repair/CaseFlowSeedDataRepairStep` (1: ExcessiveClassComplexity 54 against 50; and CouplingBetweenObjects
+        14 against 13, which PHPMD reported unsuppressed on development). Planting the demo cases of one seeded case type
+        is its own concern, so it moved to the new `Repair/CaseFlowSeedCases`: the case bound to its case type, its
+        status resolved by name or left out, a case planted before skipped by title, and a failed write reported
+        (`plant()`, was `seedCasesOf()` with `seedCases()`, `seedCaseRow()` and `saveSeedCase()`). Bodies moved
+        unchanged. Writing one object under one of the run's schemas is `CaseFlowSeedRun::save()`, so neither class
+        names the save options any more and the step's coupling goes from 14 to 13. The step builds the planter where
+        it seeds, so its constructor and the container are unchanged. phpmd: zero findings on the three files under
+        both rulesets.
+        Characterisation: the existing `CaseFlowSeedDataRepairStepTest` and `CaseFlowSeedRunGoldenTest` (the demo
+        cases, the deleted case not planted again, the unresolvable status, the failed case write), green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Repair/CaseFlowSeedCasesTest` (3).

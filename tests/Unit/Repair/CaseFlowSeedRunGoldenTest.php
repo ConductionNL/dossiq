@@ -39,6 +39,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * Golden tests for CaseFlowSeedDataRepairStep::run().
  *
  * @covers \OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedCases
  * @uses \OCA\Dossiq\Repair\CaseFlowSeedFile
  * @uses \OCA\Dossiq\Repair\CaseFlowSeedIndex
  * @uses \OCA\Dossiq\Repair\CaseFlowSeedPhaseBackfill

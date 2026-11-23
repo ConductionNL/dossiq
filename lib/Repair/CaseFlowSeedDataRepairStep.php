@@ -44,8 +44,6 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -55,8 +53,6 @@ use Throwable;
  * Loads `lib/Settings/case_flow_seed_data.json` into OpenRegister.
  *
  * @spec openspec/specs/case-flow-human-steps/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseFlowSeedDataRepairStep implements IRepairStep {
 
@@ -287,18 +283,15 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @param string          $caseTypeId The case type.
 	 *
 	 * @return integer The cases created.
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function seedCasesOf(CaseFlowSeedRun $run, string $caseTypeId): int {
-		$run->caseTypeId = $caseTypeId;
-
-		return $this->seedCases(
-			run: $run,
-			statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId))
-		);
+		return (new CaseFlowSeedCases(statuses: $this->statuses, index: $this->index))->plant(run: $run, caseTypeId: $caseTypeId);
 	}//end seedCasesOf()
 
 	/**
-	 * Seed one case type and its statuses; {@see seed()} plants its cases.
+	 * Seed one case type and its statuses; {@see CaseFlowSeedCases} plants its cases.
 	 *
 	 * 🔑 Idempotency is per OBJECT, not per case type. Keying the whole seed on
 	 * "does the case type exist" means a run that created the case type and then
@@ -312,6 +305,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @return string The case type id, '' when it has none.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function seedOne(CaseFlowSeedRun $run, array $caseType): string {
 		$statusTypes = ($caseType['statusTypes'] ?? []);
@@ -326,13 +320,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		}
 
 		if ($existing === null) {
-			$created = $run->objectService->saveObject(
-				object: $caseType,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(
-						register: $run->schemas['register'],
-						schema: $run->schemas['caseType']
-					))
-			);
+			$created = $run->save(schemaKey: 'caseType', object: $caseType);
 			$caseTypeId = $this->idOf(value: $created);
 			$run->counts['caseTypes']++;
 		}
@@ -434,18 +422,13 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @return integer How many were created.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function createStatuses(CaseFlowSeedRun $run, array $statuses): int {
 		$created = 0;
 		foreach ($statuses as $status) {
 			$status['caseType'] = $run->caseTypeId;
-			$saved = $run->objectService->saveObject(
-				object: $status,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(
-						register: $run->schemas['register'],
-						schema: $run->schemas['statusType']
-					))
-			);
+			$saved = $run->save(schemaKey: 'statusType', object: $status);
 
 			if ($this->idOf(value: $saved) !== '') {
 				$created++;
@@ -486,95 +469,6 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			);
 		}
 	}//end backfillPhases()
-
-	/**
-	 * Create the demo cases belonging to this case type.
-	 *
-	 * @param CaseFlowSeedRun      $run            The run, with the created case type as its `caseTypeId`.
-	 * @param array<string,string> $statusesByName Status ids, keyed by name.
-	 *
-	 * @return integer How many cases were created.
-	 *
-	 * @spec openspec/specs/case-flow-human-steps/spec.md
-	 */
-	private function seedCases(CaseFlowSeedRun $run, array $statusesByName): int {
-		$caseTypeId = $run->caseTypeId;
-		$created = 0;
-
-		$present = $this->index->caseTitlesFor(schemas: $run->schemas, caseTypeId: $caseTypeId);
-
-		foreach (($run->data['cases'] ?? []) as $case) {
-			if (is_array($case) === false) {
-				continue;
-			}
-
-			if (in_array((string)($case['title'] ?? ''), $present, true) === true) {
-				continue;
-			}
-
-			$case = $this->seedCaseRow(case: $case, caseTypeId: $caseTypeId, statusesByName: $statusesByName);
-			$created += $this->saveSeedCase(run: $run, case: $case);
-		}//end foreach
-
-		return $created;
-	}//end seedCases()
-
-	/**
-	 * The seed case as it is written: bound to the case type, its status resolved by name.
-	 *
-	 * @param array<string,mixed>  $case           The seed case.
-	 * @param string               $caseTypeId     The created case type.
-	 * @param array<string,string> $statusesByName Status ids, keyed by name.
-	 *
-	 * @return array<string,mixed> The case to write.
-	 *
-	 * @spec openspec/specs/case-flow-human-steps/spec.md
-	 */
-	private function seedCaseRow(array $case, string $caseTypeId, array $statusesByName): array {
-		$statusName = (string)($case['status'] ?? '');
-		unset($case['caseTypeSlug']);
-
-		$case['caseType'] = $caseTypeId;
-
-		// A case whose status name does not resolve is written WITHOUT a
-		// status rather than with a dangling one: an unresolvable
-		// reference reads as a real status everywhere it is displayed.
-		unset($case['status']);
-		if (isset($statusesByName[$statusName]) === true) {
-			$case['status'] = $statusesByName[$statusName];
-		}
-
-		return $case;
-	}//end seedCaseRow()
-
-	/**
-	 * Save one seed case, warning when it cannot be created.
-	 *
-	 * @param CaseFlowSeedRun     $run  The run.
-	 * @param array<string,mixed> $case The case to write.
-	 *
-	 * @return integer 1 when created, 0 otherwise.
-	 *
-	 * @spec openspec/specs/case-flow-human-steps/spec.md
-	 */
-	private function saveSeedCase(CaseFlowSeedRun $run, array $case): int {
-		try {
-			$run->objectService->saveObject(
-				object: $case,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $run->schemas['register'], schema: $run->schemas['case']))
-			);
-			return 1;
-		} catch (Throwable $e) {
-			$run->output->warning(
-				'Case-flow seed: could not create case "' . (string)($case['title'] ?? '') . '": ' . $e->getMessage()
-			);
-			return 0;
-		}
-	}//end saveSeedCase()
-
-
-
-
 
 	/**
 	 * The id of a saved object, whatever shape the store returned.
