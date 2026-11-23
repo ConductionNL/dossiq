@@ -131,19 +131,42 @@ final class InboundMessage {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function withSource(string $source): self {
+		$headers = array_merge(self::parseHeaders(source: $source), $this->headers);
+
 		return new self(
 			accountId: $this->accountId,
 			mailbox: $this->mailbox,
 			uid: $this->uid,
 			messageId: $this->messageId,
 			subject: $this->subject,
-			from: $this->from,
-			to: $this->to,
+			from: self::firstFilled(value: $this->from, fallback: ($headers['from'] ?? '')),
+			to: self::firstFilled(value: $this->to, fallback: ($headers['to'] ?? '')),
 			sentAt: $this->sentAt,
-			headers: array_merge(self::parseHeaders(source: $source), $this->headers),
+			headers: $headers,
 			source: $source,
 		);
 	}//end withSource()
+
+	/**
+	 * The value, or the fallback when the value is empty.
+	 *
+	 * Mail 5's message table carries no sender or recipient, so a row from it
+	 * leaves both empty and the source's From and To headers name them.
+	 *
+	 * @param string $value    The value the row carried.
+	 * @param string $fallback The header value.
+	 *
+	 * @return string The value to keep.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function firstFilled(string $value, string $fallback): string {
+		if (trim($value) !== '') {
+			return $value;
+		}
+
+		return trim($fallback);
+	}//end firstFilled()
 
 	/**
 	 * One header, case-insensitively.
