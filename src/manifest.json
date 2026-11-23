@@ -2334,9 +2334,9 @@
 								{
 									"id": "queue-unassigned",
 									"type": "stat",
-									"title": "Without a handler",
+									"title": "Without case handler",
 									"content": {
-										"label": "Without a handler",
+										"label": "Without case handler",
 										"caption": "{queueNewToday} came in today",
 										"format": {
 											"style": "decimal",
@@ -2435,18 +2435,18 @@
 												"value": "{title}"
 											},
 											{
-												"label": "Open now",
+												"label": "Open",
 												"value": "{open}",
 												"align": "end"
 											},
 											{
-												"label": "Queued",
+												"label": "Waiting",
 												"value": "{waiting}",
 												"align": "end",
 												"alertAbove": 0
 											}
 										],
-										"footnote": "Open with the team, and how many of those have no handler yet",
+										"footnote": "Open with the team, and how many have no case handler yet",
 										"emptyText": "No open cases"
 									}
 								}
@@ -4095,7 +4095,7 @@
 							"bulkActions": [
 								{
 									"id": "bulk-merge-pdf",
-									"label": "Merge into PDF",
+									"label": "Merge into pdf",
 									"icon": "FilePdfBox",
 									"type": "open-modal",
 									"target": "BulkDocumentActionDialog",
@@ -4117,7 +4117,7 @@
 								},
 								{
 									"id": "bulk-confidentiality",
-									"label": "Who can see this",
+									"label": "Who may see this",
 									"icon": "ShieldLockOutline",
 									"type": "open-modal",
 									"target": "BulkDocumentActionDialog",
@@ -4141,12 +4141,13 @@
 							"sideCards": [
 								{
 									"id": "visibility",
-									"title": "Who can see this: {name}",
+									"title": "Who may see this: {name}",
 									"fields": [
 										{
 											"key": "vertrouwelijkheidaanduiding",
 											"label": "Default",
 											"formatter": "confidentialityLabel",
+											"fallback": "Everyone on the case",
 											"colorMap": {
 												"vertrouwelijk": "warning",
 												"confidentieel": "warning",
@@ -4185,6 +4186,7 @@
 								{
 									"id": "checksum",
 									"title": "Checksum",
+									"emptyText": "Not computed yet",
 									"fields": [
 										{
 											"key": "integrity.value",
