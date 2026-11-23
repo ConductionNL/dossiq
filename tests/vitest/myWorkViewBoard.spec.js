@@ -20,7 +20,7 @@ const overrides = manifest.pages.find((page) => page.id === 'Cases').config.defa
 
 describe('DqAanMijToegewezen', () => {
 	it('draws no lenses of the case list, only the covering chip the board puts on the Active line', () => {
-		expect(overrides.quickFilters.map((chip) => chip.label)).toEqual(['Including work you cover'])
+		expect(overrides.quickFilters.map((chip) => chip.label)).toEqual(['Including work you cover as stand-in'])
 		expect(overrides.quickFilterPlacement).toBe('active')
 	})
 
