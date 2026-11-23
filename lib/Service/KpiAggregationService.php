@@ -285,7 +285,8 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		}
 
 		$titles = [];
-		foreach ($this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])) as $row) {
+		$rows   = $this->withAllTranslations(read: fn (): array => $this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])));
+		foreach ($rows as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
@@ -642,6 +643,60 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 
 		return $ids;
 	}//end ids()
+
+	/**
+	 * Run a read with OpenRegister answering every language of a translatable
+	 * property, so a title reaches the reader's language through textOr()
+	 * rather than OpenRegister's default language. An internal read has no
+	 * request language of its own: OpenRegister's language middleware runs on
+	 * its own routes only.
+	 *
+	 * @param callable(): array $read The read.
+	 *
+	 * @return array The read's rows.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function withAllTranslations(callable $read): array {
+		$language = $this->languageService();
+		if ($language === null) {
+			return $read();
+		}
+
+		$before = (bool)$language->shouldReturnAllTranslations();
+		$language->setReturnAllTranslations(true);
+		try {
+			return $read();
+		} finally {
+			$language->setReturnAllTranslations($before);
+		}
+	}//end withAllTranslations()
+
+	/**
+	 * OpenRegister's request-scoped language service, or null when OpenRegister
+	 * is absent or the service cannot answer for all translations.
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function languageService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return null;
+		}
+
+		try {
+			$service = $this->container->get('OCA\OpenRegister\Service\LanguageService');
+		} catch (\Throwable $e) {
+			return null;
+		}
+
+		if (method_exists($service, 'setReturnAllTranslations') === false || method_exists($service, 'shouldReturnAllTranslations') === false) {
+			return null;
+		}
+
+		return $service;
+	}//end languageService()
 
 	/**
 	 * OpenRegister's ObjectService, or null when the app is absent.

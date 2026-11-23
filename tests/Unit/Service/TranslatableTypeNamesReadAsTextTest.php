@@ -95,6 +95,97 @@ class TranslatableTypeNamesReadAsTextTest extends TestCase {
 	}//end testTheQueueFiguresNameACaseTypeByItsTitle()
 
 	/**
+	 * The team queue names a case type in the reader's language: the read asks
+	 * OpenRegister for every translation and puts its own setting back after.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 *
+	 * @return void
+	 */
+	public function testTheQueueFiguresNameACaseTypeInTheReadersLanguage(): void {
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('5');
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('isInstalled')->willReturn(true);
+		$language = new class {
+			/**
+			 * Whether every translation is answered.
+			 *
+			 * @var boolean
+			 */
+			public bool $all = false;
+
+			/**
+			 * Answer every translation, or not.
+			 *
+			 * @param boolean $all The setting.
+			 *
+			 * @return void
+			 */
+			public function setReturnAllTranslations(bool $all): void {
+				$this->all = $all;
+			}
+
+			/**
+			 * Whether every translation is answered.
+			 *
+			 * @return boolean
+			 */
+			public function shouldReturnAllTranslations(): bool {
+				return $this->all;
+			}
+		};
+		$objectService = new class ($language) {
+			/**
+			 * Constructor.
+			 *
+			 * @param object $language The language service.
+			 */
+			public function __construct(private object $language) {
+			}
+
+			/**
+			 * The stored case types, resolved to Dutch unless every translation is asked for.
+			 *
+			 * @param array<string, mixed> $config The query.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function findAll(array $config): array {
+				$title = ['nl' => 'Woo-verzoek', 'en' => 'Woo request'];
+				if ($this->language->all === false) {
+					$title = 'Woo-verzoek';
+				}
+
+				return ['results' => [['id' => 'ct-1', 'title' => $title]]];
+			}
+		};
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static fn (string $id): object => ($id === 'OCA\\OpenRegister\\Service\\LanguageService' ? $language : $objectService)
+		);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+
+		$service = new KpiAggregationService(
+			appConfig: $appConfig,
+			container: $container,
+			appManager: $appManager,
+			sources: new KpiSources(
+				engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
+				queueFigures: $this->createMock(originalClassName: QueueFigures::class),
+			),
+			l10n: $l10n,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$titles = (new ReflectionMethod(objectOrMethod: $service, method: 'caseTypeTitles'))->invoke($service, ['register' => '1']);
+
+		self::assertSame(expected: ['ct-1' => 'Woo request'], actual: $titles);
+		self::assertFalse(condition: $language->all);
+	}//end testTheQueueFiguresNameACaseTypeInTheReadersLanguage()
+
+	/**
 	 * The demo caseload finds a status by its name, so the key carries the name, not "Array".
 	 *
 	 * @return void
