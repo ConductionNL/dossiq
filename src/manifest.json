@@ -340,7 +340,7 @@
 		},
 		{
 			"id": "Analytics",
-			"label": "Processing time",
+			"label": "Lead time",
 			"icon": "ChartLine",
 			"route": "Doorlooptijd",
 			"order": 55
@@ -8988,7 +8988,7 @@
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "dashboard",
-			"title": "Processing time",
+			"title": "Lead time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the four compliance charts, the deadline list of one configured case type, the cases at risk and the breakdown, which read /api/reports/processing-time (one `view` per widget; the server shapes every figure, the browser no longer loads every case). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"gridMargin": 10,
@@ -9074,9 +9074,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Average processing time",
+						"title": "Average lead time",
 						"content": {
-							"label": "Average processing time",
+							"label": "Average lead time",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9104,9 +9104,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Within the norm",
+						"title": "Within the standard",
 						"content": {
-							"label": "Within the norm",
+							"label": "Within the standard",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9134,9 +9134,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Longer than the norm",
+						"title": "Longer than the standard",
 						"content": {
-							"label": "Longer than the norm",
+							"label": "Longer than the standard",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9164,9 +9164,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Handled",
+						"title": "Completed",
 						"content": {
-							"label": "Handled",
+							"label": "Completed",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9216,7 +9216,7 @@
 								"labelsPath": "summary.monthlyAvgDays.labels",
 								"series": [
 									{
-										"name": "Average processing time",
+										"name": "Average lead time",
 										"path": "summary.monthlyAvgDays.values"
 									}
 								]
@@ -9262,7 +9262,7 @@
 								"labelsPath": "summary.withinNormByCaseType.labels",
 								"series": [
 									{
-										"name": "Within the norm",
+										"name": "Within the standard",
 										"path": "summary.withinNormByCaseType.shares"
 									}
 								]
@@ -12949,9 +12949,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Running terms",
+						"title": "Running deadlines",
 						"content": {
-							"label": "Running terms",
+							"label": "Running deadlines",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -12975,9 +12975,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Ending this week",
+						"title": "Expires this week",
 						"content": {
-							"label": "Ending this week",
+							"label": "Expires this week",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -13001,9 +13001,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Overdue",
+						"title": "Expired",
 						"content": {
-							"label": "Overdue",
+							"label": "Expired",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -13028,9 +13028,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Penalty running",
+						"title": "Penalty payment running",
 						"content": {
-							"label": "Penalty running",
+							"label": "Penalty payment running",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
