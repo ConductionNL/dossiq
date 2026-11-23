@@ -11,7 +11,7 @@
 			"id": "FieldInspection",
 			"route": "/field-inspection",
 			"type": "dashboard",
-			"title": "Inspection in the field",
+			"title": "Field inspection",
 			"config": {
 				"description": "What an inspector sees on the phone: the day offline, a checklist with photos and the queue to synchronise",
 				"allowEdit": false,
@@ -20,7 +20,7 @@
 					{
 						"id": "inspection-frames",
 						"type": "device-frames",
-						"title": "Inspection in the field",
+						"title": "Field inspection",
 						"content": {
 							"width": 350,
 							"height": 700,
@@ -51,7 +51,7 @@
 								},
 								{
 									"key": "sync",
-									"title": "Synchronise",
+									"title": "Sync",
 									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue", "inspection-conflict"]
 								}
 							]
@@ -213,7 +213,7 @@
 					{
 						"id": "inspection-sync-queue",
 						"type": "record-list",
-						"title": "Synchronise",
+						"title": "Sync",
 						"content": {
 							"register": "dossiq",
 							"schema": "syncQueue",
