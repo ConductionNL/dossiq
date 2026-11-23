@@ -202,13 +202,16 @@ describe('the cases list', () => {
 
 	it('wraps the title, the type and the team over lines at the board widths, as DqZaken draws them', () => {
 		const byKey = Object.fromEntries(simple.columns.map((column) => [column.key, column]))
+		// The board's widths, except that Type holds a one-word case type
+		// ("Omgevingsvergunning") without breaking it and Deadline holds its
+		// English head with the sort and filter icons; Case gives the room.
 		expect(Object.fromEntries(simple.columns.map((column) => [column.key, column.width]))).toEqual({
-			title: '288px',
-			caseType: '145px',
+			title: '248px',
+			caseType: '172px',
 			status: '133px',
 			assignee: '157px',
 			assignedGroup: '141px',
-			deadline: '128px',
+			deadline: '141px',
 		})
 		for (const key of ['title', 'caseType', 'assignedGroup']) {
 			expect(byKey[key].cellClass.split(' '), key).toContain('cn-cell--wrap')
