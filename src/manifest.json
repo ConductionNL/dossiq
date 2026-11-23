@@ -2037,13 +2037,13 @@
 				"bulkActions": [
 					{
 						"id": "reassign",
-						"label": "Give to another handler",
+						"label": "Other case handler",
 						"icon": "AccountSwitchOutline",
 						"handler": "reassignSelection"
 					},
 					{
 						"id": "transition",
-						"label": "Move to another status",
+						"label": "Other status",
 						"icon": "SwapHorizontal",
 						"handler": "transitionSelection"
 					},
@@ -2061,7 +2061,7 @@
 					},
 					{
 						"id": "extend-term",
-						"label": "Extend the term",
+						"label": "Extend deadline",
 						"icon": "CalendarPlus",
 						"handler": "extendTermSelection"
 					},
@@ -2422,7 +2422,7 @@
 								{
 									"id": "queue-by-type",
 									"type": "record-list",
-									"title": "Work in stock per case type",
+									"title": "Work queue by case type",
 									"content": {
 										"endpointSource": {
 											"url": "/apps/dossiq/api/dashboard/kpis",
@@ -4248,8 +4248,41 @@
 						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. The library `timeline` widget in `manage` mode: kind chips, visibility filter, pin, follow-up, a note composer with standard text blocks and CSV export, the write controls drawn only when OpenRegister answers canManage. Reply on a resident's portal message is an entry action opening PortalMessageDialog, which closes that message's follow-up on `sent`.",
 						"content": {
 							"manage": true,
-							"title": "History of the case",
+							"title": "Case history",
 							"exportName": "case-history",
+							"messageKeys": {
+								"Wettelijke termijn gestart": "Statutory deadline started",
+								"Geplande einddatum vastgelegd": "Planned end date set",
+								"Interne streefdatum vastgelegd": "Internal target date set",
+								"Fasetermijn gestart": "Phase deadline started",
+								"Termijn gestart": "Deadline started",
+								"Termijn gestart bij zaak-aanmaak": "Deadline started when the case was created",
+								"Termijngebeurtenis vastgelegd": "Deadline event recorded",
+								"Aanvulling ontvangen; termijn hervat": "Supplement received; the deadline runs again",
+								"Aanvulling ontvangen": "Supplement received",
+								"De aanvraag om aanvulling kon niet worden verzonden, dus de termijn loopt door.": "The request for a supplement could not be sent, so the deadline keeps running.",
+								"Dwangsom-berekening gestart na grace period": "Penalty calculation started after the grace period",
+								"Termijn overschreden zonder beschikking": "Deadline passed without a decision",
+								"Pauzetermijn verlopen zonder aanvulling": "Pause ended without a supplement"
+							},
+							"kindLabels": {
+								"contactmoment": "Contact moment",
+								"mail-inkomend": "Incoming email",
+								"mail-uitgaand": "Outgoing email",
+								"portaalbericht": "Message in the message box",
+								"portaalbericht-inkomend": "Message from the requester",
+								"ontvangstbevestiging": "Confirmation of receipt",
+								"statuswijziging": "Status",
+								"termijngebeurtenis": "Deadline",
+								"beschikking-verzonden": "Decision sent",
+								"avg-verzoek": "GDPR request",
+								"reactie-indiener": "Response from the requester",
+								"stopregel-gehaald": "Stopping rule met",
+								"document": "Documents",
+								"bericht": "Messages",
+								"taak": "Tasks",
+								"toewijzing": "Assignment"
+							},
 							"auditTrailLink": true,
 							"auditTrailTab": "audit",
 							"entryActions": [
@@ -6810,7 +6843,7 @@
 					{
 						"id": "export-dossier",
 						"type": "api-call",
-						"label": "Download dossier",
+						"label": "Export file",
 						"icon": "FolderZipOutline",
 						"url": "/apps/dossiq/api/cases/@objectId/dossier/zip",
 						"method": "POST",
@@ -6913,7 +6946,7 @@
 					{
 						"id": "case-acknowledgement-met",
 						"type": "api-call",
-						"label": "Record receipt confirmed",
+						"label": "Record confirmation of receipt",
 						"icon": "CheckDecagram",
 						"url": "/apps/dossiq/api/case/@objectId/acknowledgement/met",
 						"method": "POST",
