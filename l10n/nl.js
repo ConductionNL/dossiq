@@ -935,7 +935,7 @@ OC.L10N.register(
         "Append-only custody-change audit trail": "Auditspoor van wisselingen in het beheer, dat alleen wordt toegevoegd",
         "Append-only handover notes": "Overdrachtsnotities die alleen worden toegevoegd",
         "Applicable social assistance standard amount.": "Toepasselijke bijstandsnorm.",
-        "Applicant": "Aanvrager",
+        "Applicant": "Verzoeker",
         "Applicant BSN Reference": "BSN-verwijzing van de aanvrager",
         "Applicant KvK Reference": "KvK-verwijzing van de aanvrager",
         "Application": "Aanvraag",

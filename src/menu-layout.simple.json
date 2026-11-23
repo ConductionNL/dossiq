@@ -161,7 +161,7 @@
 					},
 					"requester": {
 						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
-						"label": "Applicant"
+						"label": "Requester"
 					},
 					"confidentiality": {
 						"enumLabels": {
@@ -1455,7 +1455,7 @@
 							"ai-oversight"
 						],
 						"type": "facts",
-						"title": "Applicant",
+						"title": "Requester",
 						"_note": "DqZaak Aanvrager: the requester as a lead (initials and name) over how they logged in when the case came in through a portal (intakeIdentification), else what kind of requester, and a link to the contact or organisation page by that kind. The board draws no intake channel here; the header names the portal (headerMeta).",
 						"content": {
 							"fields": [
@@ -3234,7 +3234,7 @@
 								},
 								"requester": {
 									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
-									"label": "Applicant",
+									"label": "Requester",
 									"formatter": "requesterName",
 									"order": 4
 								},
@@ -8280,10 +8280,10 @@
 					"All": {
 						"showCount": true
 					},
-					"Mine": {
+					"My cases": {
 						"showCount": true
 					},
-					"Due this week": {
+					"Deadline this week": {
 						"showCount": true
 					},
 					"Waiting on the applicant": {
@@ -8340,7 +8340,7 @@
 							"requester": {
 								"description": "",
 								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
-								"label": "Applicant",
+								"label": "Requester",
 								"order": 3
 							},
 							"confidentiality": {
@@ -8412,8 +8412,8 @@
 			"configOrder": {
 				"quickFilters": [
 					"All",
-					"Mine",
-					"Due this week",
+					"My cases",
+					"Deadline this week",
 					"Waiting on the applicant",
 					"Woo requests",
 					"Suspended"
@@ -8572,7 +8572,7 @@
 					"All": {
 						"showCount": true
 					},
-					"Mine": {
+					"My cases": {
 						"label": "My tasks",
 						"showCount": true
 					},
@@ -8588,7 +8588,7 @@
 						"label": "Late",
 						"showCount": true
 					},
-					"Due this week": {
+					"Deadline this week": {
 						"label": "This week",
 						"showCount": true
 					}

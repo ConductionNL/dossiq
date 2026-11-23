@@ -35,7 +35,7 @@ describe('Postvak cell wording', () => {
 	})
 
 	it('names the channel and the mailbox a message came to', () => {
-		const via = columns.find((col) => col.label === 'Came in via')
+		const via = columns.find((col) => col.label === 'Received via')
 		expect(via.key).toBe('channel')
 		expect(via.widget).toBe('label')
 		expect(via.enumLabels.email).toBe('E-mail')

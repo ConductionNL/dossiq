@@ -49,7 +49,7 @@ describe('the team-queue view', () => {
 		expect(manifest.personalisation.pinnedMenu).toContain('Queue')
 		expect(full.relocations.Queue).toBe('WorkGroup')
 		const badge = simple.menu.find((item) => item.id === 'Queue')
-		expect(badge).toMatchObject({ label: 'Team queue', counterVariant: 'attention' })
+		expect(badge).toMatchObject({ label: 'Queue', counterVariant: 'attention' })
 		// The badge counts what the list shows: its team filter and its locked filters.
 		expect(badge.count.filter).toEqual({ ...view('team-queue').filters, ...view('team-queue').overrides.lockedFilters })
 	})

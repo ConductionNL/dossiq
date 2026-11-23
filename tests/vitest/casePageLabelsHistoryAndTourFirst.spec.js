@@ -4,7 +4,7 @@
  *
  * Three findings from the live review on :8098 (11 Oct).
  *
- * N-3: "Requester" and "Deadline" read English on a Dutch case page, although
+ * N-3: "Applicant" and "Deadline" read English on a Dutch case page, although
  * both have their Dutch in nl.json. nextcloud-vue copies a field override's
  * label over the translated schema title as written, and CnCountdownWidget
  * draws its label as written.

@@ -52,8 +52,8 @@ describe('default views on Cases', () => {
 	})
 
 	it('combines the Mine, Unclaimed, Overdue and Due this week chips literally', () => {
-		expect(defaults['mine-overdue']).toEqual({ ...chip('Mine'), ...chip('Overdue') })
-		expect(defaults['mine-due-this-week']).toEqual({ ...chip('Mine'), ...chip('Due this week') })
+		expect(defaults['mine-overdue']).toEqual({ ...chip('My cases'), ...chip('Overdue') })
+		expect(defaults['mine-due-this-week']).toEqual({ ...chip('My cases'), ...chip('Deadline this week') })
 		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
 	})
 })
@@ -70,7 +70,7 @@ describe('lists that were pages, as views of Cases', () => {
 	it('keeps the team queue equal to the Unclaimed chip on the reader\'s team, with its late and this-week windows', () => {
 		expect(defaults['team-queue']).toEqual({ ...chip('Unclaimed'), assignedGroup: '@myTeam' })
 		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
-		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Due this week') })
+		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Deadline this week') })
 	})
 
 	it('opens Assigned to me on the urgency order, which the Cases sort offers from the work queue', () => {

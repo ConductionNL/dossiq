@@ -194,13 +194,13 @@ describe('the simple profile', () => {
 		}
 		// The team queue is worded for the simple menu; it opens its view of Cases.
 		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
-			label: 'Team queue',
+			label: 'Queue',
 			route: 'Cases',
 			query: { savedView: 'default:team-queue' },
 		})
 		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
-			label: 'Board',
+			label: 'Work board',
 			route: 'Cases',
 			query: { _view: 'board' },
 		})
