@@ -125,7 +125,8 @@ class WorkQueueController extends Controller {
 	}//end index()
 
 	/**
-	 * Return per-handler open-case counts. Coordinator-only (NC admin).
+	 * Return per-handler open-case counts: for a coordinator (NC admin), and
+	 * for a member of a team, who sees the people of their own teams only.
 	 *
 	 * @NoAdminRequired
 	 *
@@ -140,13 +141,18 @@ class WorkQueueController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->isCoordinator(userId: $user->getUID()) === false) {
-			return new JSONResponse(['error' => 'This action requires the coordinator role'], Http::STATUS_FORBIDDEN);
+		$teamGroupIds = $this->teamGroupIds(user: $user);
+		$inATeam      = ($teamGroupIds !== null && $teamGroupIds !== []);
+		if ($inATeam === false && $this->isCoordinator(userId: $user->getUID()) === false) {
+			return new JSONResponse(
+				['error' => 'This action requires the coordinator role or a team'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		try {
 			$handlers = $this->withDisplayNames(
-				handlers: $this->ofReadersTeams(user: $user, handlers: $this->workQueueService->computeWorkload())
+				handlers: $this->ofTeams(teamGroupIds: $teamGroupIds, handlers: $this->workQueueService->computeWorkload())
 			);
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
@@ -156,25 +162,24 @@ class WorkQueueController extends Controller {
 	}//end workload()
 
 	/**
-	 * Keep the handlers who are members of one of the reader's teams, and list
-	 * a member without open cases with 0, so a free colleague shows; every
-	 * handler for a reader in no team.
+	 * Keep the handlers who are members of the given teams, a member without
+	 * open cases with 0; every handler when there are no teams (only a
+	 * coordinator gets that far without one).
 	 *
-	 * @param IUser                                                  $user     The reader.
-	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
+	 * @param array<mixed>|null                                      $teamGroupIds The teams' groups, or null when unreadable.
+	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers     The per-handler counts.
 	 *
-	 * @return array<int, array{handler: string, openCaseCount: int}> The handlers of the reader's teams.
+	 * @return array<int, array{handler: string, openCaseCount: int}> The handlers of those teams.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
 	 */
-	private function ofReadersTeams(IUser $user, array $handlers): array {
-		$teamGroupIds = $this->teamGroupIds(user: $user);
+	private function ofTeams(?array $teamGroupIds, array $handlers): array {
 		if ($teamGroupIds === null || $teamGroupIds === []) {
 			return $handlers;
 		}
 
 		return $this->withMembers(handlers: $handlers, members: $this->membersOf(groupIds: $teamGroupIds));
-	}//end ofReadersTeams()
+	}//end ofTeams()
 
 	/**
 	 * The groups of the reader's teams, or null (logged) when they cannot be read.
