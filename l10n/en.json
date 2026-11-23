@@ -3555,6 +3555,7 @@
         "Every setting says who decided it. A setting your team made is one you can still change for yourself.": "Every setting says who decided it. A setting your team made is one you can still change for yourself.",
         "Every status, result and attribute": "Every status, result and attribute",
         "Every suggestion is recorded, also when nobody uses it": "Every suggestion is recorded, also when nobody uses it",
+        "Every suggestion is recorded, even if nobody uses it": "Every suggestion is recorded, even if nobody uses it",
         "Every task has its own role, term and form. Running cases keep their version.": "Every task has its own role, term and form. Running cases keep their version.",
         "Every time this case came back to its pool because nobody accepted it within the rule's window: who had it, why it came back, who has it now. Without this the case looks as though it was never routed to the first person. An entry with outcome `kept` means the pool had nobody else, so the case stayed.": "Every time this case came back to its pool because nobody accepted it within the rule's window: who had it, why it came back, who has it now. Without this the case looks as though it was never routed to the first person. An entry with outcome `kept` means the pool had nobody else, so the case stayed.",
         "Every working day, a mail with your open cases and tasks.": "Every working day, a mail with your open cases and tasks.",

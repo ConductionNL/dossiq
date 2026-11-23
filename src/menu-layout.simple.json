@@ -6624,7 +6624,7 @@
 						"id": "case-ai-activity",
 						"type": "object-list",
 						"title": "What the assistant did on this case",
-						"subtitle": "Every suggestion is recorded, also when nobody uses it",
+						"subtitle": "Every suggestion is recorded, even if nobody uses it",
 						"requiredApp": "hermiq",
 						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every AI suggestion on this case and what a person did with it, as hermiq records it for EU AI Act art. 14 (an advisory Approval: used, adapted, not used or rejected). Read through hermiq's GET /api/ai-oversight/subject, which first asks OpenRegister whether the reader may open this case (hermiq#1172): the records are readable only through their subject, not through the OpenRegister list. The rows appear once dossiq reports its suggestions to hermiq (AiOversightRecordedEvent).",
 						"content": {
