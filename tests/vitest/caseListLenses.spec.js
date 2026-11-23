@@ -732,6 +732,12 @@ describe('bulk actions on the Cases index', () => {
 		])
 	})
 
+	it('keeps the band to the five buttons DqZaken draws and puts the anonymised export under More', () => {
+		const inline = actions().filter((action) => action.menu !== true).map((action) => action.id)
+		expect(inline).toEqual(['reassign', 'transition', 'suspend', 'resume', 'extend-term'])
+		expect(actions().find((action) => action.id === 'export-anonymised').menu).toBe(true)
+	})
+
 	it('names a handler that caseBulkActions.js exports AND the registry registers', () => {
 		// Both halves matter and neither errors on its own: a handler name
 		// with no function is a bulk action that does nothing when clicked,

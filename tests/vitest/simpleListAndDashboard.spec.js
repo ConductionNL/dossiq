@@ -173,11 +173,11 @@ describe('the cases list', () => {
 		).toContain(`"${WOO}"`)
 	})
 
-	it('shows five columns, the number and the requester under the title, each a field the case carries', () => {
+	it('shows six columns, the number and the requester under the title, each a field the case carries', () => {
 		const keys = simple.columns.map((column) =>
 			typeof column === 'string' ? column : column.key,
 		)
-		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'deadline'])
+		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'assignedGroup', 'deadline'])
 		for (const key of keys) {
 			expect(caseFields.has(key), key).toBe(true)
 		}
@@ -198,6 +198,22 @@ describe('the cases list', () => {
 			expect(now.formatter).toBe(was.formatter)
 			expect(now.widget).toBe(was.widget)
 		}
+	})
+
+	it('wraps the title, the type and the team over lines at the board widths, as DqZaken draws them', () => {
+		const byKey = Object.fromEntries(simple.columns.map((column) => [column.key, column]))
+		expect(Object.fromEntries(simple.columns.map((column) => [column.key, column.width]))).toEqual({
+			title: '288px',
+			caseType: '145px',
+			status: '133px',
+			assignee: '157px',
+			assignedGroup: '141px',
+			deadline: '128px',
+		})
+		for (const key of ['title', 'caseType', 'assignedGroup']) {
+			expect(byKey[key].cellClass.split(' '), key).toContain('cn-cell--wrap')
+		}
+		expect(byKey.assignedGroup).toMatchObject({ label: 'Team', widget: 'group' })
 	})
 
 	it('draws the handler as an avatar and the deadline in colour, red from the day after it ends', () => {
@@ -244,7 +260,7 @@ describe('the cases list', () => {
 		expect(before.showViewToggle).toBeUndefined()
 	})
 
-	it('shows a filter funnel on every column, as DqZaken draws them on Zaak, Type, Status, Behandelaar and Termijn', () => {
+	it('shows a filter funnel on every column, as DqZaken draws them on Zaak, Type, Status, Behandelaar, Team and Termijn', () => {
 		// The board is the canon (case-search-and-lists, REQ-CSL-07). The
 		// library draws the funnels unless the page sets `headerFilters: false`
 		// or a column sets `filterable: false`, so neither may appear here.
@@ -255,6 +271,7 @@ describe('the cases list', () => {
 			'Type',
 			'Status',
 			'Handler',
+			'Team',
 			'Deadline',
 		])
 		for (const column of simple.columns) {
