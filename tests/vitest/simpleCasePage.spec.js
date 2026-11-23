@@ -405,7 +405,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'Parties', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
@@ -435,13 +435,13 @@ describe('the tabs', () => {
 		expect(advice.content).toMatchObject({ register: 'dossiq', schema: 'adviesAanvraag', filter: { case: '@objectId' } })
 		// The Betrokkenen tab holds the people panel's sections as cards (DqZaakBetrokkenen).
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
-		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
+		const peopleTab = strip.tabs.find((tab) => tab.label === 'Parties')
 		// Toegang, the case's access links, and the shares outside the organisation are the simple page's own cards after them.
 		expect(peopleTab.widgetIds.slice(-2)).toEqual(['case-access-card', 'case-shares-card'])
 		expect(peopleTab.widgetIds.slice(0, -2).map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
 		// The people by role lead, as Partijen; the party model follows as Rollen (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-parties-card')
-		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Case parties')
+		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Parties')
 		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Roles')
 		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
 		expect(peopleTab.layout).toBeUndefined()

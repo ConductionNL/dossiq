@@ -2676,7 +2676,7 @@
 									"unreadKey": "notes"
 								},
 								{
-									"label": "People",
+									"label": "Parties",
 									"icon": "AccountMultipleOutline",
 									"overflow": true,
 									"widgetIds": [
@@ -5418,7 +5418,7 @@
 						"id": "case-parties-card",
 						"type": "integration",
 						"integrationId": "contacts",
-						"title": "Case parties",
+						"title": "Parties",
 						"labels": {
 							"kindLabels": {
 								"person": "Contact",
@@ -5429,10 +5429,10 @@
 							}
 						},
 						"_labelsNote": "Board DqZaakBetrokkenen Partijen leads a person's details with their kind: \"Contact\" for a person, \"Organisatie\" for an organisation, \"Collega\" for a colleague or a Nextcloud user. Keyed by the link's partyKind, else its kind.",
-						"subtitle": "Everyone involved in this case, by role",
+						"subtitle": "Everyone involved in this case, per role",
 						"bodyActions": [
 							{
-								"label": "Add a party",
+								"label": "Add party",
 								"icon": "AccountPlusOutline",
 								"visibleWhen": {
 									"field": "@self.archived",

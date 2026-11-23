@@ -3437,6 +3437,7 @@ OC.L10N.register(
         "Every year": "Every year",
         "Everyone": "Everyone",
         "Everyone involved in this case, by role": "Everyone involved in this case, by role",
+        "Everyone involved in this case, per role": "Everyone involved in this case, per role",
         "Everyone on the case": "Everyone on the case",
         "Everyone on the case sees this document again": "Everyone on the case sees this document again",
         "Everything for today is on this device: cases, checklists, history and the map. You can work without a connection.": "Everything for today is on this device: cases, checklists, history and the map. You can work without a connection.",
