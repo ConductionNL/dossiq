@@ -54,7 +54,7 @@
 		},
 		{
 			"id": "Queue",
-			"label": "Team queue",
+			"label": "Queue",
 			"order": 14,
 			"counterVariant": "attention",
 			"count": {
@@ -82,7 +82,7 @@
 		},
 		{
 			"id": "WorkflowBoard",
-			"label": "Board",
+			"label": "Work board",
 			"order": 24
 		},
 		{
@@ -530,7 +530,7 @@
 											}
 										},
 										{
-											"label": "Suspend the term",
+											"label": "Suspend deadline",
 											"type": "open-modal",
 											"target": "CaseLifecycleMenuDialog",
 											"props": {
@@ -604,7 +604,7 @@
 							{
 								"id": "simple-due-soon",
 								"type": "stat",
-								"title": "Due this week",
+								"title": "Deadline this week",
 								"content": {
 									"caption": {
 										"singular": "{count} ends today",
@@ -626,7 +626,7 @@
 										},
 										"zeroText": "nothing ends today"
 									},
-									"label": "Due this week",
+									"label": "Deadline this week",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -1494,7 +1494,7 @@
 							"fields": [
 								{
 									"path": "assignee",
-									"label": "Handler",
+									"label": "Case handler",
 									"format": "user"
 								},
 								{
@@ -1912,7 +1912,7 @@
 					{
 						"id": "side-social-history",
 						"type": "audit-trail",
-						"title": "Case history",
+						"title": "History",
 						"visibleWhen": {
 							"field": "@context.caseType.specialDataCategories",
 							"op": "notEmpty"
@@ -2268,7 +2268,7 @@
 							"caption": "Decide by {date}",
 							"startField": "startDate",
 							"action": {
-								"label": "Suspend the term",
+								"label": "Suspend deadline",
 								"type": "open-modal",
 								"target": "CaseLifecycleMenuDialog",
 								"props": {
@@ -2617,7 +2617,7 @@
 									"_note": "DqZaakTaken: the work panel's sections as the board's cards, the tasks first, then what comes next, incidents, appointments and cards."
 								},
 								{
-									"label": "Case history",
+									"label": "History",
 									"widgetIds": [
 										"case-timeline-panel",
 										"case-note-card"
@@ -3276,7 +3276,7 @@
 									"format": "date-long"
 								},
 								"assignee": {
-									"label": "Handler",
+									"label": "Case handler",
 									"order": 9
 								},
 								"assignedGroup": {
@@ -4208,7 +4208,7 @@
 								},
 								{
 									"from": "object",
-									"label": "Handler",
+									"label": "Case handler",
 									"labelPath": "@context.caseType.handlerLabel",
 									"path": "assignee",
 									"format": "user"
@@ -4845,7 +4845,7 @@
 								},
 								{
 									"key": "assignee",
-									"label": "Handler",
+									"label": "Case handler",
 									"widget": "avatar",
 									"widgetProps": {
 										"user": true
@@ -5170,7 +5170,7 @@
 						"id": "case-resident-thread",
 						"type": "conversation",
 						"headerActions": [
-							{ "label": "Log contact", "icon": "PhonePlusOutline", "visibleWhen": { "field": "@self.archived", "op": "empty" }, "action": { "type": "open-modal", "target": "LogContactDialog", "props": { "caseId": "@objectId" } } }
+							{ "label": "Record contact", "icon": "PhonePlusOutline", "visibleWhen": { "field": "@self.archived", "op": "empty" }, "action": { "type": "open-modal", "target": "LogContactDialog", "props": { "caseId": "@objectId" } } }
 						],
 						"title": "Conversation with the resident",
 						"_note": "DqZaakContact \"Gesprek met de inwoner\": the contact moments on the case as a thread, oldest first, ours on the right, with the channel on each. Answering opens the portal message dialog with the reply already written, so the answer goes to the resident through the berichtenbox.",
@@ -5209,7 +5209,7 @@
 							"showDirection": true,
 							"channelChips": true,
 							"headerAction": {
-								"label": "Log contact",
+								"label": "Record contact",
 								"icon": "PhonePlusOutline",
 								"type": "open-modal",
 								"target": "LogContactDialog",
@@ -5645,7 +5645,7 @@
 							"hideEmpty": false,
 							"overrides": {
 								"assignee": {
-									"label": "Handler"
+									"label": "Case handler"
 								},
 								"assignedGroup": {
 									"label": "Team"
@@ -6192,7 +6192,7 @@
 								},
 								{
 									"key": "assignee",
-									"label": "Handler",
+									"label": "Case handler",
 									"widget": "avatar",
 									"widgetProps": {
 										"user": true
@@ -8162,7 +8162,7 @@
 					{
 						"key": "assignee",
 						"width": "157px",
-						"label": "Handler",
+						"label": "Case handler",
 						"widget": "avatar",
 						"widgetProps": {
 							"user": true,
@@ -8280,10 +8280,10 @@
 					"All": {
 						"showCount": true
 					},
-					"Mine": {
+					"My cases": {
 						"showCount": true
 					},
-					"Due this week": {
+					"Deadline this week": {
 						"showCount": true
 					},
 					"Waiting on the applicant": {
@@ -8412,8 +8412,8 @@
 			"configOrder": {
 				"quickFilters": [
 					"All",
-					"Mine",
-					"Due this week",
+					"My cases",
+					"Deadline this week",
 					"Waiting on the applicant",
 					"Woo requests",
 					"Suspended"
@@ -8556,7 +8556,7 @@
 					},
 					{
 						"key": "assignee",
-						"label": "Handler",
+						"label": "Case handler",
 						"widget": "avatar",
 						"widgetProps": {
 							"user": true,
@@ -8572,7 +8572,7 @@
 					"All": {
 						"showCount": true
 					},
-					"Mine": {
+					"My cases": {
 						"label": "My tasks",
 						"showCount": true
 					},
@@ -8588,7 +8588,7 @@
 						"label": "Late",
 						"showCount": true
 					},
-					"Due this week": {
+					"Deadline this week": {
 						"label": "This week",
 						"showCount": true
 					}

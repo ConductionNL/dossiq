@@ -49,6 +49,6 @@ describe('the case type names its handler', () => {
 		const [card] = find(read('src/menu-layout.simple.json'), 'case-summary')
 		const row = card.content.fields.find((field) => field.path === 'assignee')
 		expect(row.labelPath).toBe('@context.caseType.handlerLabel')
-		expect(row.label).toBe('Handler')
+		expect(row.label).toBe('Case handler')
 	})
 })

@@ -46,9 +46,9 @@ describe('the Proposals tab on the simple case page', () => {
 
 	it('comes after the five tabs of DqZaak, which keep their places', () => {
 		const always = content.tabs.filter((tab) => !tab.visibleWhen && !tab.overflow).map((tab) => tab.label)
-		expect(always).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
+		expect(always).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'History'])
 		expect(content.maxVisibleTabs).toBe(always.length)
-		expect(labels.indexOf('Proposals')).toBe(labels.indexOf('Case history') + 1)
+		expect(labels.indexOf('Proposals')).toBe(labels.indexOf('History') + 1)
 	})
 
 	it('is not pinned under More: the five places decide where it goes', () => {

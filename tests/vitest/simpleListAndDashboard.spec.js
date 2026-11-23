@@ -121,8 +121,8 @@ describe('the cases list', () => {
 		const lead = simple.quickFilters.slice(0, 6)
 		expect(lead.map((lens) => lens.label)).toEqual([
 			'All',
-			'Mine',
-			'Due this week',
+			'My cases',
+			'Deadline this week',
 			'Waiting on the applicant',
 			'Woo requests',
 			'Suspended',
@@ -151,8 +151,8 @@ describe('the cases list', () => {
 					(label) =>
 						![
 							'All',
-							'Mine',
-							'Due this week',
+							'My cases',
+							'Deadline this week',
 							'Waiting on the applicant',
 							'Woo requests',
 							'Suspended',
@@ -273,7 +273,7 @@ describe('the cases list', () => {
 			'Case',
 			'Type',
 			'Status',
-			'Handler',
+			'Case handler',
 			'Team',
 			'Deadline',
 		])
@@ -877,10 +877,10 @@ describe('the landing page', () => {
 		// Live check, 5 October 2026: the tile said 58 over an empty week,
 		// because it counted overdue cases and the strip only this week.
 		const lens = original('Cases').config.quickFilters.find(
-			(item) => item.label === 'Due this week',
+			(item) => item.label === 'Deadline this week',
 		).filter
 		const tile = widget('simple-due-soon').content
-		expect(tile.label).toBe('Due this week')
+		expect(tile.label).toBe('Deadline this week')
 		expect(tile.source.filter).toEqual({
 			assignee: '@me',
 			isFinalStatus: lens.isFinalStatus,

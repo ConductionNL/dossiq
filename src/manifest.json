@@ -2096,7 +2096,7 @@
 						"label": "Team"
 					},
 					"assignee": {
-						"label": "Handler",
+						"label": "Case handler",
 						"_valuesNote": "Board DqPersoonlijkeInstellingen: a view on my own cases reads \"Mijn zaken\" in its summary, not \"Behandelaar jij\" (nc-vue valuesAlone).",
 						"values": {
 							"@me": "My cases"
@@ -2311,7 +2311,7 @@
 						"icon": "AccountGroupOutline",
 						"description": "Unclaimed cases of my team",
 						"secondary": true,
-						"name": "Team queue",
+						"name": "Queue",
 						"filters": { "assignedGroup": "@myTeam" },
 						"sort": [
 							{
@@ -2327,7 +2327,7 @@
 								"isDraft": false,
 								"isTemplate": false
 							},
-							"title": "Team queue",
+							"title": "Queue",
 							"showTitle": true,
 							"searchPlaceholder": "Search by case, number or requester",
 							"statRow": [
@@ -2874,7 +2874,7 @@
 					},
 					{
 						"value": "assignee",
-						"label": "Handler",
+						"label": "Case handler",
 						"order": "assignee"
 					},
 					{
@@ -3080,7 +3080,7 @@
 						}
 					},
 					{
-						"label": "Mine",
+						"label": "My cases",
 						"filter": {
 							"assignee": "@me",
 							"isFinalStatus": false,
@@ -3153,7 +3153,7 @@
 						}
 					},
 					{
-						"label": "Due this week",
+						"label": "Deadline this week",
 						"filter": {
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
@@ -3381,7 +3381,7 @@
 					},
 					"assignee": {
 						"order": 1.5,
-						"label": "Handler"
+						"label": "Case handler"
 					},
 					"requester": {
 						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
@@ -3622,7 +3622,7 @@
 								},
 								{
 									"widgetId": "case-timeline-panel",
-									"label": "Case history"
+									"label": "History"
 								},
 								{
 									"widgetId": "case-notes-panel",
@@ -4465,7 +4465,7 @@
 											"hideEmpty": false,
 											"overrides": {
 												"assignee": {
-													"label": "Handler"
+													"label": "Case handler"
 												},
 												"assignedGroup": {
 													"label": "Team"
@@ -5784,7 +5784,7 @@
 												},
 												{
 													"key": "assignee",
-													"label": "Handler",
+													"label": "Case handler",
 													"widget": "avatar",
 													"widgetProps": {
 														"user": true
@@ -6564,7 +6564,7 @@
 					{
 						"id": "log-contact",
 						"type": "open-modal",
-						"label": "Log contact",
+						"label": "Record contact",
 						"icon": "PhonePlusOutline",
 						"target": "LogContactDialog",
 						"props": {
@@ -7898,7 +7898,7 @@
 						"default": true
 					},
 					{
-						"label": "Mine",
+						"label": "My cases",
 						"filter": {
 							"scope": "assigned",
 							"isTerminal": false
@@ -7926,7 +7926,7 @@
 						}
 					},
 					{
-						"label": "Due this week",
+						"label": "Deadline this week",
 						"filter": {
 							"scope": "all",
 							"isTerminal": false,
@@ -8656,7 +8656,7 @@
 								},
 								{
 									"key": "assignee",
-									"label": "Handler",
+									"label": "Case handler",
 									"path": "assignee",
 									"format": "user"
 								},
@@ -8746,7 +8746,7 @@
 									"parts": [
 										{
 											"path": "assignee",
-											"label": "Handler",
+											"label": "Case handler",
 											"format": "user"
 										},
 										{
@@ -10236,7 +10236,7 @@
 							"columns": [
 								{
 									"key": "actorLabel",
-									"label": "Handler",
+									"label": "Case handler",
 									"formatter": "userName"
 								},
 								{
@@ -11588,7 +11588,7 @@
 									}
 								},
 								{
-									"label": "Handler",
+									"label": "Case handler",
 									"path": "recommendedBy",
 									"format": "user"
 								}
@@ -15733,7 +15733,7 @@
 					{
 						"id": "log-contact",
 						"type": "open-form",
-						"label": "Log contact",
+						"label": "Record contact",
 						"icon": "PhoneLogOutline",
 						"register": "dossiq",
 						"schema": "contactmoment",
@@ -16284,7 +16284,7 @@
 								}
 							],
 							"action": {
-								"label": "Log contact",
+								"label": "Record contact",
 								"icon": "PhoneLogOutline",
 								"type": "open-form",
 								"register": "dossiq",
@@ -16570,7 +16570,7 @@
 					{
 						"id": "log-contact",
 						"type": "open-form",
-						"label": "Log contact",
+						"label": "Record contact",
 						"icon": "PhoneLogOutline",
 						"register": "dossiq",
 						"schema": "contactmoment",

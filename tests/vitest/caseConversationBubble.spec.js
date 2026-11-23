@@ -32,7 +32,7 @@ describe('the conversation with the resident', () => {
 	})
 
 	it('logs a contact from beside the title, with the page action\'s own dialog', () => {
-		expect(thread.headerAction).toMatchObject({ label: 'Log contact', type: 'open-modal', target: 'LogContactDialog' })
-		expect(nl['Log contact']).toBe('Contact vastleggen')
+		expect(thread.headerAction).toMatchObject({ label: 'Record contact', type: 'open-modal', target: 'LogContactDialog' })
+		expect(nl['Record contact']).toBe('Contact vastleggen')
 	})
 })
