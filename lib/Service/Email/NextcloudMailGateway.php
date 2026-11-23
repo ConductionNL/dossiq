@@ -254,7 +254,13 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		try {
-			$source = $this->readSource(manager: $manager, account: $account, mailbox: $mailbox, uid: $uid);
+			$source = (new MailSourceReader())->read(
+				manager: $manager,
+				clientFactory: fn (): ?object => $this->service(name: self::IMAP_CLIENT_FACTORY),
+				account: $account,
+				mailbox: $mailbox,
+				uid: $uid
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: reading a message source failed',
@@ -269,45 +275,6 @@ class NextcloudMailGateway implements MailGatewayInterface {
 
 		return $source;
 	}//end source()
-
-	/**
-	 * Read a message source through whichever getSource() this Mail version has.
-	 *
-	 * Mail 5 declares getSource(Horde_Imap_Client_Socket $client, Account $account, string $mailbox, int $uid):
-	 * the caller opens the IMAP client and logs it out afterwards. Without a leading `$client` parameter the
-	 * call keeps the account, mailbox and uid form.
-	 *
-	 * @param object  $manager The Mail manager.
-	 * @param object  $account The Mail account.
-	 * @param string  $mailbox The folder.
-	 * @param integer $uid     The message uid.
-	 *
-	 * @return mixed What getSource() answered.
-	 *
-	 * @throws Throwable When Mail cannot open the client or read the message.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function readSource(object $manager, object $account, string $mailbox, int $uid): mixed {
-		$first = ((new \ReflectionMethod($manager, 'getSource'))->getParameters()[0] ?? null);
-		if ($first === null || $first->getName() !== 'client') {
-			return $manager->getSource($account, $mailbox, $uid);
-		}
-
-		$factory = $this->service(name: self::IMAP_CLIENT_FACTORY);
-		if ($factory === null || method_exists($factory, 'getClient') === false) {
-			return '';
-		}
-
-		$client = $factory->getClient($account);
-		try {
-			return $manager->getSource($client, $account, $mailbox, $uid);
-		} finally {
-			if (method_exists($client, 'logout') === true) {
-				$client->logout();
-			}
-		}
-	}//end readSource()
 
 	/**
 	 * Whether this account holds a message with that id.
