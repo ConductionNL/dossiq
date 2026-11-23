@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved views \"Woo requests\" and \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved views \"Woo requests\" and \"Deadline this week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
 	"after": [
 		"opencatalogi"
 	],
@@ -220,7 +220,7 @@
 		{
 			"user": "{{cast:pieter.uid}}",
 			"key": "pref_cn_saved_view_menu",
-			"value": "[{\"id\":\"{{view:pieter-woo-verzoeken.uuid}}\",\"page\":\"Cases\",\"name\":\"Woo requests\"},{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Termijn deze week\"}]"
+			"value": "[{\"id\":\"{{view:pieter-woo-verzoeken.uuid}}\",\"page\":\"Cases\",\"name\":\"Woo requests\"},{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Deadline this week\"}]"
 		}
 	],
 	"objects": [
@@ -9641,8 +9641,8 @@
 		{
 			"key": "zoek-lindelaan",
 			"data": {
-				"name": "Meldingen verlichting",
-				"description": "Meldingen en verzoeken over de verlichting aan de Lindelaan: zaken, objecten en documenten.",
+				"name": "Lighting reports",
+				"description": "Reports and requests about the lighting on the Lindelaan: cases, objects and documents.",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
@@ -9663,8 +9663,8 @@
 		{
 			"key": "pieter-termijn-deze-week",
 			"data": {
-				"name": "Termijn deze week",
-				"description": "Mijn zaken, termijn binnen 7 dagen",
+				"name": "Deadline this week",
+				"description": "My cases, deadline within 7 days",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
@@ -9700,8 +9700,8 @@
 		{
 			"key": "pieter-wacht-op-inwoner",
 			"data": {
-				"name": "Wacht op inwoner",
-				"description": "Status wacht op inwoner, gedeeld met team Woo",
+				"name": "Waiting for resident",
+				"description": "Status waiting for resident, shared with team Woo",
 				"sharedWith": [
 					{
 						"group": "{{cast:woo-en-informatie.gid}}",
@@ -9749,8 +9749,8 @@
 		{
 			"key": "pieter-opgeschort",
 			"data": {
-				"name": "Opgeschort",
-				"description": "Status opgeschort, alle teams",
+				"name": "Suspended",
+				"description": "Status suspended, all teams",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
@@ -9788,8 +9788,8 @@
 		{
 			"key": "anouk-woo-verzoeken-team",
 			"data": {
-				"name": "Woo-verzoeken team",
-				"description": "Door Anouk Bakker, team Woo en informatie",
+				"name": "Woo requests team",
+				"description": "By Anouk Bakker, team Woo and information",
 				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
 				"owner": "{{cast:anouk.uid}}",
 				"isPublic": false,

@@ -56,7 +56,7 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		$this->assertArrayHasKey(key: 'pieter-termijn-deze-week', array: $views);
 
 		$view = $views['pieter-termijn-deze-week'];
-		$this->assertSame(expected: 'Termijn deze week', actual: $view['name']);
+		$this->assertSame(expected: 'Deadline this week', actual: $view['name']);
 		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
 		$this->assertFalse(condition: $view['isPublic']);
 		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
@@ -95,7 +95,7 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		$this->assertArrayHasKey(key: 'pieter-wacht-op-inwoner', array: $views);
 
 		$view = $views['pieter-wacht-op-inwoner'];
-		$this->assertSame(expected: 'Wacht op inwoner', actual: $view['name']);
+		$this->assertSame(expected: 'Waiting for resident', actual: $view['name']);
 		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
 		$this->assertFalse(condition: $view['isPublic']);
 		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
