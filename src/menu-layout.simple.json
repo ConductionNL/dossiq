@@ -8120,20 +8120,21 @@
 				"columns": [
 					{
 						"key": "title",
-						"width": "328px",
+						"width": "288px",
 						"label": "Case",
-						"cellClass": "cn-cell--strong",
+						"cellClass": "cn-cell--strong cn-cell--wrap",
 						"secondary": "{identifier} · {initiatorDisplayName}"
 					},
 					{
 						"key": "caseType",
-						"width": "179px",
+						"width": "145px",
 						"label": "Type",
+						"cellClass": "cn-cell--wrap",
 						"formatter": "caseTypeName"
 					},
 					{
 						"key": "status",
-						"width": "171px",
+						"width": "133px",
 						"label": "Status",
 						"formatter": "statusTypeName",
 						"widget": "badge",
@@ -8147,7 +8148,7 @@
 					},
 					{
 						"key": "assignee",
-						"width": "178px",
+						"width": "157px",
 						"label": "Handler",
 						"widget": "avatar",
 						"widgetProps": {
@@ -8156,8 +8157,15 @@
 						}
 					},
 					{
-						"key": "deadline",
+						"key": "assignedGroup",
 						"width": "141px",
+						"label": "Team",
+						"widget": "group",
+						"cellClass": "cn-cell--wrap"
+					},
+					{
+						"key": "deadline",
+						"width": "128px",
 						"label": "Deadline",
 						"widget": "date",
 						"widgetProps": {
