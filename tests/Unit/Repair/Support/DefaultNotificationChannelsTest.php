@@ -58,7 +58,9 @@ class DefaultNotificationChannelsTest extends TestCase {
 			condition: $channels->mappingReady(output: $output, channelMapping: ['sourceRegister' => 'reg-1', 'sourceSchema' => ''])
 		);
 		$this->assertFalse(condition: $channels->mappingReady(output: $output, channelMapping: ['sourceSchema' => 'channel-s']));
-		$this->assertTrue(condition: $channels->mappingReady(output: $output, channelMapping: ['sourceRegister' => 'reg-1', 'sourceSchema' => 'channel-s']));
+		$this->assertTrue(
+			condition: $channels->mappingReady(output: $output, channelMapping: ['sourceRegister' => 'reg-1', 'sourceSchema' => 'channel-s'])
+		);
 
 		$this->assertSame(
 			expected: [
