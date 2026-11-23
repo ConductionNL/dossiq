@@ -25,13 +25,13 @@ describe('the closed stage', () => {
 
 	it('names the case and offers to tell the requester', () => {
 		const config = simple.config.primaryActionByStage.closed.props.config
-		expect(config.eyebrow).toBe('Close off · {identifier}')
+		expect(config.eyebrow).toBe('Complete · {identifier}')
 		expect(config.fields.map((field) => field.field)).toContain('notifyRequester')
 	})
 
 	it('names the retention period between the nomination and the destruction date', () => {
 		const items = simple.config.primaryActionByStage.closed.props.config.facts[0].items
-		expect(items.map((item) => item.label)).toEqual(['Archive nomination', 'Retention period', 'Destruction date', 'Archive status afterwards'])
+		expect(items.map((item) => item.label)).toEqual(['Archive designation', 'Retention period', 'Destruction date', 'Archive status after archiving'])
 		expect(items[1].value).toBe('{@self._retention.retentionPeriod|isoDuration}')
 	})
 

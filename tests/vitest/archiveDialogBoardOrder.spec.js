@@ -18,13 +18,13 @@ const ROOT = path.resolve(__dirname, '../..')
 /**
  * @param {object} node Any JSON node.
  * @param {Array<object>} found The archive dialog configs found so far.
- * @return {Array<object>} Every dialog config whose note is "Read only afterwards".
+ * @return {Array<object>} Every dialog config whose note is "Read-only after that".
  */
 function archiveConfigs(node, found = []) {
 	if (Array.isArray(node)) {
 		node.forEach((item) => archiveConfigs(item, found))
 	} else if (node && typeof node === 'object') {
-		if (node.note && node.note.title === 'Read only afterwards' && Array.isArray(node.fields)) {
+		if (node.note && node.note.title === 'Read-only after that' && Array.isArray(node.fields)) {
 			found.push(node)
 		}
 		Object.values(node).forEach((value) => archiveConfigs(value, found))

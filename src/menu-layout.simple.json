@@ -1167,9 +1167,9 @@
 						"props": {
 							"objectId": "@objectId",
 							"config": {
-								"title": "Archive this case",
-								"eyebrow": "Close off · {identifier}",
-								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"title": "Archive case",
+								"eyebrow": "Complete · {identifier}",
+								"subtitle": "The case goes to the archive and can only be read after that.",
 								"summary": {
 									"source": {
 										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
@@ -1181,10 +1181,10 @@
 								},
 								"facts": [
 									{
-										"title": "Retention under the case type",
+										"title": "Retention according to the case type",
 										"items": [
 											{
-												"label": "Archive nomination",
+												"label": "Archive designation",
 												"value": "{archiveNomination}"
 											},
 											{
@@ -1196,7 +1196,7 @@
 												"value": "{archiveActionDate|date}"
 											},
 											{
-												"label": "Archive status afterwards",
+												"label": "Archive status after archiving",
 												"value": "Archived"
 											}
 										]
@@ -1235,7 +1235,7 @@
 										},
 										"openTasks": {
 											"label": "Open tasks: {count}",
-											"detail": "no task open any more",
+											"detail": "no open tasks left",
 											"unmetDetail": "{count} still open"
 										}
 									},
@@ -1256,13 +1256,13 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
+									"hint": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step."
 								},
 								"note": {
 									"variant": "info",
 									"icon": "LockOutline",
-									"title": "Read only afterwards",
-									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+									"title": "Read-only after that",
+									"text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date."
 								},
 								"fieldsAfterNote": true,
 								"fields": [
