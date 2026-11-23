@@ -39,11 +39,14 @@ class CaseCreationActivityStampListenerTest extends TestCase {
 
 	private const SCHEMA = '41';
 
+	/**
+	 * The listener, with case schema 41 and a fixed clock.
+	 *
+	 * @return CaseCreationActivityStampListener
+	 */
 	private function listener(): CaseCreationActivityStampListener {
 		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ($key === 'case_schema' ? self::SCHEMA : $default)
-		);
+		$settings->method('getConfigValue')->willReturnMap([['case_schema', '', self::SCHEMA]]);
 		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('now')->willReturn(new DateTimeImmutable('2026-11-23T09:30:00+00:00'));
 
@@ -54,6 +57,14 @@ class CaseCreationActivityStampListenerTest extends TestCase {
 		);
 	}//end listener()
 
+	/**
+	 * An object being saved.
+	 *
+	 * @param array  $payload The object data.
+	 * @param string $schema  The schema id.
+	 *
+	 * @return ObjectEntity
+	 */
 	private function entity(array $payload, string $schema = self::SCHEMA): ObjectEntity {
 		$entity = new ObjectEntity();
 		$entity->setObject($payload);
@@ -63,6 +74,11 @@ class CaseCreationActivityStampListenerTest extends TestCase {
 		return $entity;
 	}//end entity()
 
+	/**
+	 * A case without a stamp gets one in the create's own data, next to what other listeners added.
+	 *
+	 * @return void
+	 */
 	public function testANewCaseIsStampedInsideTheCreate(): void {
 		$event = new ObjectCreatingEvent($this->entity(payload: ['title' => 'Street light']));
 		$event->setModifiedData(['priority' => 'normal']);
@@ -75,6 +91,11 @@ class CaseCreationActivityStampListenerTest extends TestCase {
 		);
 	}//end testANewCaseIsStampedInsideTheCreate()
 
+	/**
+	 * A case created with its own stamp (an import) keeps it.
+	 *
+	 * @return void
+	 */
 	public function testACaseThatCarriesAStampKeepsIt(): void {
 		$event = new ObjectCreatingEvent($this->entity(payload: ['title' => 'Imported', 'lastActivityAt' => '2025-01-01T00:00:00+00:00']));
 
@@ -83,6 +104,11 @@ class CaseCreationActivityStampListenerTest extends TestCase {
 		self::assertSame(expected: [], actual: $event->getModifiedData());
 	}//end testACaseThatCarriesAStampKeepsIt()
 
+	/**
+	 * Another schema and the post-create event are left alone.
+	 *
+	 * @return void
+	 */
 	public function testAnotherSchemaAndAnotherEventAreLeftAlone(): void {
 		$other = new ObjectCreatingEvent($this->entity(payload: ['title' => 'Task'], schema: '99'));
 		$this->listener()->handle(event: $other);

@@ -29,7 +29,8 @@ namespace OCA\Dossiq\Listener;
 use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
@@ -44,13 +45,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/case-last-activity-at/spec.md
  */
 class CaseCreationActivityStampListener implements IEventListener {
-
-	use ReadsCaseWrites;
-
-	/**
-	 * Names this check in the payload read's debug line.
-	 */
-	private const PAYLOAD_CHECK = 'activity stamp on creation';
 
 	/**
 	 * Constructor.
@@ -82,7 +76,7 @@ class CaseCreationActivityStampListener implements IEventListener {
 			return;
 		}
 
-		$case = $this->caseAsSaved(event: $event, entity: $event->getObject());
+		$case = $this->caseBeingCreated(event: $event);
 		if ($case === null || trim((string)($case[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return;
 		}
@@ -94,4 +88,26 @@ class CaseCreationActivityStampListener implements IEventListener {
 			)
 		);
 	}//end handle()
+
+	/**
+	 * The case as the create will store it, or null when the object is no case or cannot be read.
+	 *
+	 * @param ObjectCreatingEvent $event The pre-persist create event.
+	 *
+	 * @return array<string, mixed>|null The payload with the modified data on top.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) SchemaMembership::belongsTo() is a pure predicate on the payload.
+	 *
+	 * @spec openspec/specs/case-last-activity-at/spec.md
+	 */
+	private function caseBeingCreated(ObjectCreatingEvent $event): ?array {
+		$payload = (new PreSaveCheck(logger: $this->logger))->read(entity: $event->getObject(), check: 'activity stamp on creation');
+		if ($payload === null
+			|| SchemaMembership::belongsTo(object: $payload, expected: $this->settingsService->getConfigValue('case_schema')) === false
+		) {
+			return null;
+		}
+
+		return array_merge($payload, $event->getModifiedData());
+	}//end caseBeingCreated()
 }//end class
