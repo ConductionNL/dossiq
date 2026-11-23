@@ -1398,7 +1398,7 @@
 									"doneField": "besluitDocument"
 								},
 								{
-									"label": "Record the decision",
+									"label": "Record decision",
 									"doneField": "decisions"
 								}
 							]

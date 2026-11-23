@@ -22,7 +22,7 @@
 -->
 <template>
 	<CnDialog
-		:name="t('dossiq', 'Record the decision')"
+		:name="t('dossiq', 'Record decision')"
 		:eyebrow="eyebrow"
 		:subtitle="subtitle"
 		width="form"
@@ -110,7 +110,7 @@
 							</span>
 						</div>
 						<div v-if="daysLeft !== null" class="assessment-decision__field">
-							<span class="assessment-decision__label">{{ t('dossiq', 'Term') }}</span>
+							<span class="assessment-decision__label">{{ t('dossiq', 'Deadline') }}</span>
 							<span class="assessment-decision__term">
 								{{ daysLeft >= 0 ? n('dossiq', '%n day left', '%n days left', daysLeft) : n('dossiq', '%n day late', '%n days late', -daysLeft) }}
 							</span>
@@ -118,12 +118,12 @@
 					</div>
 
 					<div class="assessment-decision__field">
-						<label class="assessment-decision__label" for="assessment-decision-reasons">{{ t('dossiq', 'Reasons for the decision') }}</label>
+						<label class="assessment-decision__label" for="assessment-decision-reasons">{{ t('dossiq', 'Reasoning') }}</label>
 						<NcTextArea
 							id="assessment-decision-reasons"
 							v-model="description"
 							data-testid="assessment-decision-description"
-							:label="t('dossiq', 'Reasons for the decision')"
+							:label="t('dossiq', 'Reasoning')"
 							:labelOutside="true"
 							:rows="4"
 							resize="vertical" />
@@ -136,7 +136,7 @@
 						v-if="letterPurpose && (letterDeclaration || letterReadError)"
 						class="assessment-decision__field"
 						data-testid="assessment-decision-letter">
-						<span class="assessment-decision__label">{{ t('dossiq', 'Letter of the decision') }}</span>
+						<span class="assessment-decision__label">{{ t('dossiq', 'Decision letter') }}</span>
 						<div class="assessment-decision__letter">
 							<span class="assessment-decision__letter-icon"><FileDocumentCheckOutline :size="18" /></span>
 							<div class="assessment-decision__letter-text">
@@ -215,7 +215,7 @@
 				<template #icon>
 					<Gavel :size="20" />
 				</template>
-				{{ t('dossiq', 'Record the decision') }}
+				{{ t('dossiq', 'Record decision') }}
 			</NcButton>
 		</template>
 	</CnDialog>
