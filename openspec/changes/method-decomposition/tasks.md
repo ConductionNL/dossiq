@@ -1375,8 +1375,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         is the owner's own and the pattern loads, the register and case schema are configured, OpenRegister can scope a
         read to the owner, and the email leaf is there, the first that fails naming the refusal code (`prepare()`, was
         `prepareRun()` with `mailboxRefusal()`, `configurationRefusal()`, `objectServiceRefusal()`,
-        `emailLeafRefusal()` and `getEmailLinkService()`). Bodies moved unchanged; the catch-return-null allowlist
-        entry for `getEmailLinkService()` follows it to the new file. The service builds the readiness over its own
+        `emailLeafRefusal()` and `getEmailLinkService()`). Bodies moved unchanged, but for the leaf lookup: gate-122
+        named `getEmailLinkService()` a copy of `Access/ObjectReadGrants::service()` once it moved, so
+        `emailLeafRefusal()` now resolves the leaf itself and refuses on a throw, a non-object or no `linkEmail()`, the
+        same answer for every input. Its catch-return-null allowlist entry went with it. The service builds the readiness over its own
         collaborators in its constructor, so its constructor signature and the container are unchanged. phpmd: zero
         findings on both files under both rulesets (pdepend cache cleared).
         Characterisation: the existing `CaseEmailMatchServiceTest` (every refusal code, the run as the owner, the

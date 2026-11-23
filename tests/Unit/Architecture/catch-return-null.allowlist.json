@@ -1,8 +1,9 @@
 {
-  "ceiling": 231,
+  "ceiling": 230,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-23, email match readiness: `getEmailLinkService()` moved with the run checks into `Email/MatchRunReadiness`, and `emailLeafRefusal()` now resolves the leaf itself and refuses on a throw, so its catch no longer answers null. The ceiling went 231 to 230.",
     "2026-11-16, mandate usage reads: `getDecisionAuditTrail()` and `mandateRows()` read their rows through one private `usageRows()`, so their two catches became one. The ceiling went 232 to 231.",
     "2026-11-16, shared object service lookup: the tenant billing, configuration, onboarding and quota services drop their identical `getObjectService` copies for the `ResolvesInstalledObjectService` trait, whose site is already listed. Four sites left. The ceiling went 236 to 232.",
     "2026-11-15, method decomposition: catches moved with their code into private steps (intakeMessages, mandateRows, switched, stamp, createShare) and shared Support traits (ReadsFinalStatusIds::finalStatusIds, ResolvesInstalledObjectService::getObjectService, SearchesConfiguredSchema::configuredRows). Eleven sites became eight. The ceiling went 239 to 236.",
@@ -278,13 +279,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`tryParse()` is the read-path reader: a stored value that is not an ISO 8601 date answers null so a report can skip the row. Every WRITE path calls `parse()`, which refuses instead, and OneDateWritePathTest holds that line."
-    },
-    {
-      "file": "lib/Service/Email/MatchRunReadiness.php",
-      "method": "getEmailLinkService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getEmailLinkService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/Cases/CaseMergeStore.php",

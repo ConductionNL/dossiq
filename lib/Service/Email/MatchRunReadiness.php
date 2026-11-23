@@ -165,7 +165,7 @@ final class MatchRunReadiness {
 	}//end objectServiceRefusal()
 
 	/**
-	 * Refuse when OpenRegister's email leaf is not there to link with.
+	 * Refuse when OpenRegister's email leaf is not there, or cannot link.
 	 *
 	 * @param CaseEmailMatchRun $run The run; receives the leaf.
 	 *
@@ -173,8 +173,13 @@ final class MatchRunReadiness {
 	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function emailLeafRefusal(CaseEmailMatchRun $run): ?string {
-		$linkService = $this->getEmailLinkService();
-		if ($linkService === null || method_exists($linkService, 'linkEmail') === false) {
+		try {
+			$linkService = $this->container->get('OCA\OpenRegister\Service\EmailLinkService');
+		} catch (Throwable $e) {
+			return 'email_leaf_unavailable';
+		}
+
+		if (is_object($linkService) === false || method_exists($linkService, 'linkEmail') === false) {
 			return 'email_leaf_unavailable';
 		}
 
@@ -182,24 +187,4 @@ final class MatchRunReadiness {
 
 		return null;
 	}//end emailLeafRefusal()
-
-	/**
-	 * Resolve OpenRegister's email leaf, or null when it is not there.
-	 *
-	 * @return object|null The leaf service.
-	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
-	 */
-	private function getEmailLinkService(): ?object {
-		try {
-			$service = $this->container->get('OCA\OpenRegister\Service\EmailLinkService');
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === false) {
-			return null;
-		}
-
-		return $service;
-	}//end getEmailLinkService()
 }//end class
