@@ -8608,15 +8608,12 @@
 						"showCount": true
 					},
 					"Unclaimed": {
-						"label": "Not claimed",
 						"showCount": true
 					},
 					"Closed": {
-						"label": "Finished",
 						"showCount": true
 					},
 					"Overdue": {
-						"label": "Late",
 						"showCount": true
 					},
 					"Deadline this week": {

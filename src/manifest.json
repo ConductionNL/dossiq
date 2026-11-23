@@ -7896,7 +7896,7 @@
 				"_filterLabelsNote": "The due-date range is one chip named as the board DqTaken draws it, \"Deadline: 1 tot en met 31 oktober\", also from a link (`/tasks?dueAt=2026-10-01..2026-10-31`). The sidebar field's own title, Due between, is the filter panel's wording.",
 				"filterLabels": {
 					"dueAt": {
-						"label": "Due by"
+						"label": "Deadline"
 					}
 				},
 				"defaultFilters": { "dueAt": { "from": "@monthStart", "to": "@monthEnd" } },
