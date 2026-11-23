@@ -39,7 +39,7 @@ use ReflectionMethod;
 use RuntimeException;
 
 /**
- * Golden test for WorkQueueController::ofReadersTeams.
+ * Golden test for WorkQueueController's narrowing to the reader's teams (teamGroupIds, then ofTeams).
  *
  * @covers \OCA\Dossiq\Controller\WorkQueueController
  */
@@ -78,9 +78,12 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 		$record = [];
 		foreach ($worlds as $name => $world) {
 			$this->logLines = [];
-			$narrow = new ReflectionMethod(WorkQueueController::class, 'ofReadersTeams');
+			$controller = $this->controllerFor(teams: $world['teams'], groups: $groups);
+			$read       = new ReflectionMethod(WorkQueueController::class, 'teamGroupIds');
+			$read->setAccessible(true);
+			$narrow = new ReflectionMethod(WorkQueueController::class, 'ofTeams');
 			$narrow->setAccessible(true);
-			$kept = $narrow->invoke($this->controllerFor(teams: $world['teams'], groups: $groups), $this->createMock(IUser::class), $handlers);
+			$kept = $narrow->invoke($controller, $read->invoke($controller, $this->createMock(originalClassName: IUser::class)), $handlers);
 			$record[$name] = ['kept' => $kept, 'log' => $this->logLines];
 		}
 
