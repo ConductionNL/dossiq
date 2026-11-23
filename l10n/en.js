@@ -8208,6 +8208,7 @@ OC.L10N.register(
         "Search by name, BSN or place of residence": "Search by name, BSN or place of residence",
         "Search by name, BSN or town": "Search by name, BSN or town",
         "Search by name, KvK number or place": "Search by name, KvK number or place",
+        "Search by name, KVK number or town": "Search by name, KVK number or town",
         "Search by object type, identification or description": "Search by object type, identification or description",
         "Search by sender": "Search by sender",
         "Search by subject, department...": "Search by subject, department...",
