@@ -44,8 +44,6 @@ use Psr\Log\LoggerInterface;
  * external URL fetching, OpenRegister lookups, error builders.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
- *
- * @SuppressWarnings(PHPMD.TooManyMethods)            The total is the sum of small private steps; each method stays under the method thresholds.
  */
 abstract class ZgwRulesBase {
 	use SearchesObjects;
