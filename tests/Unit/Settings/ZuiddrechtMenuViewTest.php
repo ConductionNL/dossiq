@@ -53,7 +53,7 @@ class ZuiddrechtMenuViewTest extends TestCase {
 		$this->assertNotNull(actual: $menu);
 		$this->assertSame(
 			expected: [
-				['id' => '{{view:pieter-woo-verzoeken.uuid}}', 'page' => 'Cases', 'name' => 'Woo-verzoeken'],
+				['id' => '{{view:pieter-woo-verzoeken.uuid}}', 'page' => 'Cases', 'name' => 'Woo requests'],
 				['id' => '{{view:pieter-termijn-deze-week.uuid}}', 'page' => 'Cases', 'name' => 'Termijn deze week'],
 			],
 			actual: json_decode($menu['value'], true)
