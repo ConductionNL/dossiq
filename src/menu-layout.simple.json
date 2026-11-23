@@ -2267,6 +2267,15 @@
 							},
 							"caption": "Decide by {date}",
 							"startField": "startDate",
+							"action": {
+								"label": "Suspend deadline",
+								"type": "open-modal",
+								"target": "CaseLifecycleMenuDialog",
+								"props": {
+									"caseId": "@objectId",
+									"act": "suspend"
+								}
+							},
 							"actions": [
 								{
 									"label": "Extend",
@@ -2654,16 +2663,6 @@
 									}
 								},
 								{
-									"id": "ai-oversight",
-									"widgetIds": [
-										"case-ai-activity",
-										"case-macros"
-									],
-									"label": "Assistant",
-									"icon": "RobotOutline",
-									"_note": "DqZaak and DqZaakAssistent: the Assistant tab, in the strip after History. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
-								},
-								{
 									"widgetId": "case-change-proposals",
 									"label": "Proposals",
 									"visibleWhen": {
@@ -2677,6 +2676,16 @@
 										"field": "proposals"
 									},
 									"_note": "PtVoorstelBeoordelen: while proposals wait on the case, Proposals is listed under More with their count. It stands after the five tabs of DqZaak (Overview, Documents, Contact, Tasks, Case history), which keep their places in the strip: where the two boards disagree, the dossiq board wins. The question goes to portaliq's own queue route, the one the panel reads, so it answers only for a reader who may review here; without waiting proposals, without the right or without portaliq the tab is absent. Needs the nextcloud-vue release that resolves @objectId in an endpoint condition and counts an endpoint's list, so it lands with that bump: on an older release the condition sends the literal token, fails safe and the tab is absent."
+								},
+								{
+									"id": "ai-oversight",
+									"widgetIds": [
+										"case-ai-activity",
+										"case-macros"
+									],
+									"label": "Assistant",
+									"icon": "RobotOutline",
+									"_note": "DqZaak and DqZaakAssistent: the Assistant tab, in the strip after History. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								},
 								{
 									"widgetId": "case-notes-panel",
