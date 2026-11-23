@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\FilingFollowUpsInterface;
 use OCA\Dossiq\Controller\MailIntakeController;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -165,6 +166,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 			userSession: $this->session,
 			time: $time,
 			caseAccessGuard: $this->caseAccessGuard,
+			followUps: $this->createMock(FilingFollowUpsInterface::class),
 		);
 	}//end controller()
 

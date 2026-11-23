@@ -174,6 +174,7 @@ const DeelzaakCreateModal = lazyComponent(() => import('./modals/DeelzaakCreateM
 const DocumentMetadataDialog = lazyComponent(() => import('./modals/DocumentMetadataDialog.vue'), 'DocumentMetadataDialog')
 const DossierExportPanel = lazyComponent(() => import('./modals/DossierExportPanel.vue'), 'DossierExportPanel')
 const FileRequestDialog = lazyComponent(() => import('./modals/FileRequestDialog.vue'), 'FileRequestDialog')
+const LinkToCaseDialog = lazyComponent(() => import('./modals/LinkToCaseDialog.vue'), 'LinkToCaseDialog')
 const VersionHistoryPanel = lazyComponent(() => import('./modals/VersionHistoryPanel.vue'), 'VersionHistoryPanel')
 const CaseAccessTab = lazyComponent(() => import('./views/cases/components/CaseAccessTab.vue'), 'CaseAccessTab')
 const CaseConversationsPanel = lazyComponent(() => import('./views/cases/components/CaseConversationsPanel.vue'), 'CaseConversationsPanel')
@@ -775,6 +776,13 @@ const registry = {
 		_note: "The library's CnActionDialog acting on one record-list row. A `rowActions` open-modal entry hands the clicked row over as `row` while its declared props resolve only the page's tokens; this passes the row on as CnActionDialog's `object`, so a request URL names both the page record (`@objectId`) and the row (`@object.id`). First used by the case-goals list's Close entry (POST /api/cases/{caseId}/goals/{goalId}/close, which checks the case update right first). The configuration (fields, reason, confirm, done text) is the manifest's.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	// @spec openspec/specs/case-email-integration/spec.md
+	LinkToCaseDialog: {
+		kind: 'modal',
+		component: LinkToCaseDialog,
+		propsSchema: {},
+		_note: 'Board DqKoppelAanZaak. Opened by the inbox row action `file-on-case` (`type: open-modal`), so the index page mounts it with the row as `object` and the intake log entry as `objectId`.',
+	},
 	FileRequestDialog: {
 		kind: 'modal',
 		component: FileRequestDialog,
