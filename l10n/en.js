@@ -12602,6 +12602,7 @@ OC.L10N.register(
         "{asker} asks for this case": "{asker} asks for this case",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documents assessed",
         "{authority} was asked to collaborate on this case. The case history records it.": "{authority} was asked to collaborate on this case. The case history records it.",
+        "{avgProcessingDays} days on average": "{avgProcessingDays} days on average",
         "{candidateGroups}": "{candidateGroups}",
         "{capabilities}, without an account · the link can end": "{capabilities}, without an account · the link can end",
         "{caseId, at}: the source fields written once the case and its timer exist.": "{caseId, at}: the source fields written once the case and its timer exist.",
