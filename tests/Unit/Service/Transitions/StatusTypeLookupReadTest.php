@@ -109,6 +109,21 @@ class StatusTypeLookupReadTest extends TestCase {
 	}//end testATranslatableNameReadsInTheReadersLanguage()
 
 	/**
+	 * A text is the status's name when it is the name in any of its languages.
+	 *
+	 * @return void
+	 */
+	public function testATextIsTheNameInAnyLanguage(): void {
+		$lookup = $this->lookup(found: ['id' => 's-3', 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing']], language: 'en');
+
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-3', text: 'Hoorgesprek'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-3', text: ' Hearing '));
+		self::assertFalse(condition: $lookup->isNameOf(statusTypeId: 's-3', text: 'Plan the hearing'));
+		self::assertFalse(condition: $lookup->isNameOf(statusTypeId: 's-3', text: ''));
+		self::assertTrue(condition: $this->lookup(found: ['id' => 's-4', 'name' => 'Besluit'])->isNameOf(statusTypeId: 's-4', text: 'Besluit'));
+	}//end testATextIsTheNameInAnyLanguage()
+
+	/**
 	 * A row read from the store is returned whole, from the configured schema.
 	 *
 	 * @return void
