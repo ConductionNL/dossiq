@@ -27,6 +27,13 @@ describe('Postvak cell wording', () => {
 		expect(message.cellClass.split(' ')).toEqual(['cn-cell--strong', 'cn-cell--wrap'])
 	})
 
+	it('names a message without a proposal "Geen zaak" as a pill, and marks Team queue in the menu, as DqPostvak does', () => {
+		const proposal = columns.find((col) => col.key === 'suggestion.identifier')
+		expect(proposal.widgetProps.emptyLabel).toBe('No case')
+		expect(nl['No case']).toBe('Geen zaak')
+		expect(fragment.pages.find((p) => p.id === 'Postvak').menuEntry).toBe('Queue')
+	})
+
 	it('names the channel and the mailbox a message came to', () => {
 		const via = columns.find((col) => col.label === 'Came in via')
 		expect(via.key).toBe('channel')
