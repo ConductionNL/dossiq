@@ -334,7 +334,7 @@
 								"title": "Completed this month",
 								"content": {
 									"label": "Completed this month",
-									"caption": "avg {avgProcessingDays} days",
+									"caption": "{avgProcessingDays} days on average",
 									"route": {
 										"name": "Cases",
 										"query": {

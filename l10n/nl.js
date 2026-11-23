@@ -12602,6 +12602,7 @@ OC.L10N.register(
         "{asker} asks for this case": "{asker} vraagt om deze zaak",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documenten beoordeeld",
         "{authority} was asked to collaborate on this case. The case history records it.": "{authority} is gevraagd om samen te werken aan deze zaak. De zaakhistorie legt het vast.",
+        "{avgProcessingDays} days on average": "gemiddeld {avgProcessingDays} dagen",
         "{candidateGroups}": "{candidateGroups}",
         "{capabilities}, without an account · the link can end": "{capabilities}, zonder account · de link kan eindigen",
         "{caseId, at}: the source fields written once the case and its timer exist.": "{caseId, at}: de bronvelden die geschreven worden zodra de zaak en haar timer bestaan.",
