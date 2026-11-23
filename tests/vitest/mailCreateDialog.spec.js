@@ -17,13 +17,14 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
-import { actionFromMail, findNewCaseAction } from '../../src/mailCreateDialog/newCaseAction.js'
+import { actionFromMail, fillFromMail, findNewCaseAction, questionAnswersFromMail } from '../../src/mailCreateDialog/newCaseAction.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
 
 const mockOpenForm = vi.fn()
 vi.mock('@conduction/nextcloud-vue', () => ({
+	DYNAMIC_KEY_PREFIX: 'x-prop:',
 	CnActionButtons: defineComponent({
 		name: 'CnActionButtons',
 		props: { actions: { type: Array, default: () => [] } },
@@ -39,11 +40,15 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 	}),
 }))
 vi.mock('../../src/publicPath.js', () => ({}))
+const mockAxiosGet = vi.fn()
+vi.mock('@nextcloud/axios', () => ({ default: { get: (...args) => mockAxiosGet(...args) } }))
+vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url }))
 
 afterEach(() => {
 	delete window.OCA
 	vi.resetModules()
 	mockOpenForm.mockReset()
+	mockAxiosGet.mockReset()
 })
 
 describe('the Mail-page entry', () => {
@@ -109,5 +114,40 @@ describe('MailNewCaseHost', () => {
 		wrapper.findComponent({ name: 'CnActionButtons' }).vm.formEntry = null
 		await nextTick()
 		expect(wrapper.emitted('done')).toEqual([[null]])
+	})
+})
+
+describe('the case type\'s questions answered from the mail', () => {
+	const values = { subject: 'Havenpark permit documents', sender: 'a.bakker@example.net', senderName: 'Ahmed Bakker' }
+
+	it('fills a template the way the schema\'s mail template is filled, and keeps a placeholder the mail has no value for', () => {
+		expect(fillFromMail('{{senderName}} <{{sender}}>', values)).toBe('Ahmed Bakker <a.bakker@example.net>')
+		expect(fillFromMail('{{unknown}}', values)).toBe('{{unknown}}')
+	})
+
+	it('answers each question with a mail value under the key the form uses, and nothing else', () => {
+		const questions = [
+			{ id: 'q-name', mailValue: '{{senderName}}' },
+			{ id: 'q-email', mailValue: '{{sender}}' },
+			{ id: 'q-subject', mailValue: '{{subject}}' },
+			{ id: 'q-period' },
+			{ id: 'q-unknown', mailValue: '{{attachmentCount}}' },
+			{ id: 'q-empty', mailValue: '{{preview}}' },
+		]
+		expect(questionAnswersFromMail(questions, { ...values, preview: '' })).toEqual({
+			'x-prop:q-name': 'Ahmed Bakker',
+			'x-prop:q-email': 'a.bakker@example.net',
+			'x-prop:q-subject': 'Havenpark permit documents',
+		})
+	})
+
+	it('reads the questions of the case type the mail chose, and answers nothing without one or when they cannot be read', async () => {
+		const { mailAnswersFor } = await import('../../src/mailCreateDialog/mailAnswers.js')
+		mockAxiosGet.mockResolvedValueOnce({ data: { results: [{ id: 'q-name', mailValue: '{{senderName}}' }] } })
+		expect(await mailAnswersFor('woo-type', values)).toEqual({ 'x-prop:q-name': 'Ahmed Bakker' })
+		expect(mockAxiosGet).toHaveBeenCalledWith('/apps/openregister/api/objects/dossiq/propertyDefinition', { params: { caseType: 'woo-type', _limit: 100 } })
+		expect(await mailAnswersFor(undefined, values)).toEqual({})
+		mockAxiosGet.mockRejectedValueOnce(new Error('offline'))
+		expect(await mailAnswersFor('woo-type', values)).toEqual({})
 	})
 })

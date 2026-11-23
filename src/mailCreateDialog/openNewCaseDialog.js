@@ -14,6 +14,7 @@ import MailNewCaseHost from './MailNewCaseHost.vue'
 import bundledManifest from '../manifest.json'
 import pinia from '../pinia.js'
 import registry from '../registry.js'
+import { mailAnswersFor } from './mailAnswers.js'
 import { actionFromMail, findNewCaseAction } from './newCaseAction.js'
 
 import '@conduction/nextcloud-vue/css/index.css'
@@ -21,20 +22,21 @@ import '@conduction/nextcloud-vue/css/index.css'
 /**
  * Open the dialog.
  *
- * @param {{initialData: object}} context What the Mail panel passes: the values filled from the mail.
+ * @param {{initialData: object, mail: {values: object}}} context What the Mail panel passes: the values filled from the mail's template, and the mail's own values.
  * @return {Promise<object|null>} The created case, or null.
  */
-export function openNewCaseDialog(context) {
+export async function openNewCaseDialog(context) {
 	const action = findNewCaseAction(bundledManifest)
 	if (!action) {
-		return Promise.reject(new Error('dossiq has no New case action'))
+		throw new Error('dossiq has no New case action')
 	}
+	const answers = await mailAnswersFor(context?.initialData?.caseType, context?.mail?.values)
 	return new Promise((resolve) => {
 		const host = document.createElement('div')
 		document.body.appendChild(host)
 		const app = createApp({
 			render: () => h(MailNewCaseHost, {
-				action: actionFromMail(action, context?.initialData),
+				action: actionFromMail(action, { ...(context?.initialData || {}), ...answers }),
 				onDone: (created) => {
 					app.unmount()
 					host.remove()

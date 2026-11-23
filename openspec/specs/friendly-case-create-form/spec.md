@@ -167,6 +167,12 @@ When OpenRegister's Mail panel offers "+ New case from this mail", it SHALL open
 - **THEN** dossiq's New case dialog MUST open with the mail's title, description and channel filled in
 - **AND** saving it MUST create the case through the same path as dossiq's own New case, and the panel MUST connect the mail to it
 
+#### Scenario: The case type's questions are answered from the mail
+- **GIVEN** a case type whose questions carry a `mailValue` template, such as `{{senderName}}`, `{{sender}}` or `{{subject}}`
+- **WHEN** dossiq's dialog opens from a mail with that case type chosen
+- **THEN** each such question MUST hold its template filled from the mail's values (the placeholders of a schema's `mailObjectTemplate`, which OpenRegister passes as `mail.values`), and the person MAY change it
+- **AND** a question whose template stays empty or names a placeholder the mail has no value for MUST stay empty
+
 #### Scenario: The dialog is closed without a case
 - **GIVEN** dossiq's dialog opened from a mail
 - **WHEN** the person closes it without saving
