@@ -49,7 +49,7 @@ describe('the end-of-day page', () => {
 		const open = widget('eod-open').content
 		expect(open.presentation).toBe('notes')
 		expect(open.noteAction.urlField).toBe('notesUrl')
-		expect(open.noteAction.recordAll.label).toBe('Close out your day')
+		expect(open.noteAction.recordAll.label).toBe('Close the day')
 	})
 
 	it('keeps typed notes in the browser as the ready figure inside the notes list', () => {
