@@ -452,11 +452,13 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * The month's name in the reader's language, through the app catalogue.
 	 *
 	 * The English names are the catalogue keys, so a language without them
-	 * reads English rather than a blank.
+	 * reads English rather than a blank. The case is the language's own: the
+	 * catalogue writes "oktober" in Dutch and "October" in English, and the
+	 * tile's caption starts with the name ("October: 0").
 	 *
 	 * @param DateTimeImmutable $date Any day of the month.
 	 *
-	 * @return string The month name, lower case.
+	 * @return string The month name.
 	 */
 	private function monthName(DateTimeImmutable $date): string {
 		$names = [
@@ -474,7 +476,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 			12 => 'December',
 		];
 
-		return mb_strtolower($this->l10n->t($names[(int)$date->format('n')]));
+		return $this->l10n->t($names[(int)$date->format('n')]);
 	}//end monthName()
 
 	/**
