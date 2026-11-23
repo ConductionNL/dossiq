@@ -33,8 +33,8 @@ describe('the case Timeline tab', () => {
 	})
 
 	it('keeps the case heading and the case-history file name', () => {
-		expect(pane.content.title).toBe('History of the case')
-		expect(nl['History of the case']).toBeTruthy()
+		expect(pane.content.title).toBe('Case history')
+		expect(nl['Case history']).toBeTruthy()
 		expect(pane.content.exportName).toBe('case-history')
 	})
 

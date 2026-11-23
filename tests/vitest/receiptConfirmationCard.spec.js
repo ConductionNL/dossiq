@@ -120,7 +120,7 @@ describe('the receipt confirmation card footnote', () => {
 	it('says how to record a confirmation sent outside dossiq, in Dutch too', () => {
 		const card = findWidget(layout, 'case-acknowledgement-card')
 		const nl = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../l10n/nl.json'), 'utf8')).translations
-		expect(card.content.footnote).toBe('If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.')
+		expect(card.content.footnote).toBe('If the confirmation went outside dossiq, record it with Record confirmation of receipt, under More.')
 		expect(nl[card.content.footnote]).toBe('Ging de bevestiging buiten dossiq om, dan legt u hem vast met Ontvangst bevestigd vastleggen, onder Meer.')
 	})
 })
