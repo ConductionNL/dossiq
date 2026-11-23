@@ -125,7 +125,7 @@ const EXPECTED_TABS = [
 	['case-files', 'Files'],
 	['case-communication-panel', 'Contact'],
 	['case-work-panel', 'Tasks'],
-	['case-timeline-panel', 'Case history'],
+	['case-timeline-panel', 'History'],
 	['case-notes-panel', 'Notes'],
 	['case-people-panel', 'People'],
 	['case-email-panel', 'Email'],

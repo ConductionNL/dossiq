@@ -24,7 +24,7 @@
 -->
 <template>
 	<CnDialog
-		:name="t('dossiq', 'Log contact')"
+		:name="t('dossiq', 'Record contact')"
 		data-testid="log-contact-dialog"
 		@closing="$emit('close')">
 		<div v-if="saved === null" class="log-contact">

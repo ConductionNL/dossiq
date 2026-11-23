@@ -23,7 +23,7 @@ const nl = readJson('l10n', 'nl.json').translations
 
 describe('DqZaakHistorie note card', () => {
 	it('stacks the note card under the history card in the history tab', () => {
-		const tab = widget('case-panels').content.tabs.find((entry) => entry.label === 'Case history')
+		const tab = widget('case-panels').content.tabs.find((entry) => entry.label === 'History')
 		expect(tab.widgetIds).toEqual(['case-timeline-panel', 'case-note-card'])
 	})
 

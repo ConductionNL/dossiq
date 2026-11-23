@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 const ROOT = path.resolve(__dirname, '../..')
 const read = (file) => JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'))
 const simple = read('src/menu-layout.simple.json').pages.find((page) => page.id === 'CaseDetail')
-const tab = simple.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.label === 'Case history')
+const tab = simple.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.label === 'History')
 
 describe('the case history tab', () => {
 	it('counts the entries on the case\'s timeline', () => {

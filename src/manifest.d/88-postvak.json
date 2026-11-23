@@ -10,7 +10,7 @@
 			"id": "Postvak",
 			"route": "/postvak",
 			"type": "index",
-			"title": "Mailbox",
+			"title": "Inbox",
 			"menuEntry": "Queue",
 			"config": {
 				"sidebar": {
@@ -55,7 +55,7 @@
 				},
 				"showTitle": true,
 				"_breadcrumbNote": "DqPostvak: \"Postvak · berichten van de hele organisatie ...\", the page as its one crumb before the note (nextcloud-vue header-trail-current-once draws a crumb naming the page once).",
-				"breadcrumb": { "label": "Mailbox", "route": "Postvak" },
+				"breadcrumb": { "label": "Inbox", "route": "Postvak" },
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
 				"footerNote": "20 per page",
@@ -108,7 +108,7 @@
 					},
 					{
 						"key": "channel",
-						"label": "Came in via",
+						"label": "Received via",
 						"width": "230px",
 						"widget": "label",
 						"enum": ["email", "portal", "webform"],
@@ -128,7 +128,7 @@
 					},
 					{
 						"key": "actions",
-						"label": "Do",
+						"label": "To do",
 						"widget": "actions",
 						"widgetProps": {
 							"actions": [
@@ -157,7 +157,7 @@
 					},
 					{
 						"id": "file-on-case",
-						"label": "File on a case",
+						"label": "Link to case",
 						"variant": "secondary",
 						"type": "open-modal",
 						"target": "CnActionDialog",
