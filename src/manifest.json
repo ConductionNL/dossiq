@@ -317,7 +317,7 @@
 		},
 		{
 			"id": "EndOfDayMenu",
-			"label": "Close out your day",
+			"label": "Close the day",
 			"icon": "ClipboardCheckOutline",
 			"route": "EndOfDay",
 			"order": 34
@@ -748,10 +748,10 @@
 					{
 						"id": "kpi-open-cases",
 						"type": "stat",
-						"title": "Open Cases",
+						"title": "Open cases",
 						"_note": "openspec/specs/dashboard/spec.md DASH-001a: this card counts every case whose status is not final, and is deliberately NOT scoped to the dashboard date range. It used to be titled \"New cases\" and counted startDate inside the picker window, which answers a different question and left the dashboard with no headline for open workload at all. The spec's \"+3 today\" sub-label is not expressible here: CnStatWidget interpolates a caption only in endpointSource mode, so a second count needs a Dossiq KPI endpoint.",
 						"content": {
-							"label": "Open Cases",
+							"label": "Open cases",
 							"caption": "+{newToday} today",
 							"route": {
 								"name": "Cases"
@@ -771,9 +771,9 @@
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
-						"title": "Late",
+						"title": "Overdue",
 						"content": {
-							"label": "Late",
+							"label": "Overdue",
 							"caption": "action needed",
 							"route": {
 								"name": "Cases",
@@ -800,9 +800,9 @@
 					{
 						"id": "kpi-completed",
 						"type": "stat",
-						"title": "Completed This Month",
+						"title": "Completed this month",
 						"content": {
-							"label": "Completed This Month",
+							"label": "Completed this month",
 							"caption": "avg {avgProcessingDays} days",
 							"route": {
 								"name": "Cases",
@@ -826,9 +826,9 @@
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
-						"title": "My Tasks",
+						"title": "My tasks",
 						"content": {
-							"label": "My Tasks",
+							"label": "My tasks",
 							"caption": "{tasksDueToday} due today",
 							"route": {
 								"name": "Tasks",
@@ -883,7 +883,7 @@
 					{
 						"id": "cases-by-status",
 						"type": "chart",
-						"title": "Cases by Status",
+						"title": "Cases by status",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -915,7 +915,7 @@
 					{
 						"id": "cases-by-type",
 						"type": "chart",
-						"title": "Cases by Type",
+						"title": "Cases by type",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -1028,7 +1028,7 @@
 					{
 						"id": "stalled-cases",
 						"type": "object-table",
-						"title": "Stalled Cases",
+						"title": "Stuck cases",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -1353,7 +1353,7 @@
 							{
 								"id": "open-cases",
 								"type": "object-table",
-								"title": "Open Cases",
+								"title": "Open cases",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -1575,9 +1575,9 @@
 							{
 								"id": "kpi-open-cases",
 								"type": "stat",
-								"title": "Open Cases",
+								"title": "Open cases",
 								"content": {
-									"label": "Open Cases",
+									"label": "Open cases",
 									"caption": "+{newToday} today",
 									"route": {
 										"name": "Cases"
@@ -1597,9 +1597,9 @@
 							{
 								"id": "kpi-overdue",
 								"type": "stat",
-								"title": "Late",
+								"title": "Overdue",
 								"content": {
-									"label": "Late",
+									"label": "Overdue",
 									"caption": "action needed",
 									"route": {
 										"name": "Cases",
@@ -1626,9 +1626,9 @@
 							{
 								"id": "kpi-completed",
 								"type": "stat",
-								"title": "Completed This Month",
+								"title": "Completed this month",
 								"content": {
-									"label": "Completed This Month",
+									"label": "Completed this month",
 									"caption": "avg {avgProcessingDays} days",
 									"route": {
 										"name": "Cases",
@@ -1652,7 +1652,7 @@
 							{
 								"id": "cases-by-status",
 								"type": "chart",
-								"title": "Cases by Status",
+								"title": "Cases by status",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -1684,7 +1684,7 @@
 							{
 								"id": "cases-by-type",
 								"type": "chart",
-								"title": "Cases by Type",
+								"title": "Cases by type",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -1715,7 +1715,7 @@
 							{
 								"id": "stalled-cases",
 								"type": "object-table",
-								"title": "Stalled Cases",
+								"title": "Stuck cases",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -8157,7 +8157,7 @@
 			"id": "EndOfDay",
 			"route": "/end-of-day",
 			"type": "dashboard",
-			"title": "Close out your day",
+			"title": "Close the day",
 			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case. SINCE 20 OCTOBER 2026 THIS IS MANIFEST CONFIG (Ruben): the day lists are worked out on the server (GET /api/personal-queue/end-of-day, EndOfDayService), so Recorded today survives a reload; opened is still OpenRegister's read state. What is typed and not yet recorded stays in the browser and is the ready figure inside the notes list (nextcloud-vue record-list `presentation: notes`). The hours box is humaniq's leaf per row (`rowLeaf`), and nothing on an instance without humaniq.",
 			"config": {
 				"gridMargin": 10,
@@ -8251,7 +8251,7 @@
 										"one": "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.",
 										"other": "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow."
 									},
-									"label": "Close out your day",
+									"label": "Close the day",
 									"icon": "ClipboardCheckOutline",
 									"cancel": {
 										"label": "Cancel",
