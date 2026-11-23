@@ -71,6 +71,7 @@ class CaseCreationActivityStampListener implements IEventListener {
 	 *
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
+	#[\Override]
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent) {
 			$this->stampIfMissing(creating: $event);
