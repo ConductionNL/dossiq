@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import { formatDate } from './caseHelpers.js'
+
+/** An ISO date or date-time as the case stores it ("2026-11-23", "2026-11-23T00:50:43+00:00"). */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/
+
 /**
  * One answered property of the case, by the name of its definition. The case
  * stores them as a list of `{ name, value }` entries.
@@ -28,15 +33,18 @@ function propertyOf(caseObject, name) {
  * @param {{field?: string, value?: string}} row The declared row.
  * @param {object} caseObject The case.
  *
- * @return {string} The value, or a dash.
+ * @return {string} The value, a date in words, or a dash.
  *
  * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
  */
 function rowValue(row, caseObject) {
 	const read = row.field ? (propertyOf(caseObject, row.field) ?? caseObject[row.field]) : row.value
 	const scalar = typeof read === 'string' || typeof read === 'number'
+	if (!scalar || read === '') {
+		return '—'
+	}
 
-	return scalar && read !== '' ? String(read) : '—'
+	return typeof read === 'string' && ISO_DATE.test(read) ? formatDate(read) : String(read)
 }
 
 /**

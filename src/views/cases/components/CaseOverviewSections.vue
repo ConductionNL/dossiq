@@ -118,39 +118,45 @@ export default {
 </script>
 
 <style scoped>
+/* DqKlachten: label and value side by side in one grid, two pairs a line when
+   the section declares two columns. Each selector starts at the widget's root
+   class, so it outweighs Nextcloud's bare dt and dd rules (130px wide,
+   end-aligned, 12px padding). */
 .case-overview-sections {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
 }
 
-.case-overview-sections__card {
+.case-overview-sections .case-overview-sections__card {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 12px;
 	padding: 20px 22px;
 	border: 1px solid var(--color-border);
 	border-radius: 12px;
 	background: var(--color-main-background);
 }
 
-.case-overview-sections__head {
+.case-overview-sections .case-overview-sections__head {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
+	gap: 8px;
 }
 
-.case-overview-sections__head h3 {
+.case-overview-sections .case-overview-sections__head h3 {
 	margin: 0;
-	color: var(--color-text-maxcontrast);
+	/* The theme sets every heading's colour with !important. */
+	color: var(--color-text-maxcontrast) !important;
 	font-size: 15px;
 	font-weight: 600;
 	line-height: 1.2;
 }
 
-.case-overview-sections__pill {
-	padding: 2px 10px;
+.case-overview-sections .case-overview-sections__pill {
+	padding: 3px 10px;
 	border-radius: 12px;
 	background: var(--color-primary-element-light);
 	color: var(--color-primary-element-light-text);
@@ -158,35 +164,52 @@ export default {
 	font-weight: 600;
 }
 
-.case-overview-sections__rows {
+.case-overview-sections .case-overview-sections__rows {
 	display: grid;
-	grid-template-columns: 1fr;
-	gap: 10px 24px;
+	grid-template-columns: max-content 1fr;
+	gap: 10px 20px;
 	margin: 0;
+	padding: 0;
+	font-size: 14px;
 }
 
-.case-overview-sections__rows--two {
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.case-overview-sections .case-overview-sections__rows--two {
+	grid-template-columns: max-content 1fr max-content 1fr;
 }
 
-.case-overview-sections__rows > div {
-	display: grid;
-	grid-template-columns: minmax(90px, auto) 1fr;
-	gap: 14px;
+.case-overview-sections .case-overview-sections__rows > div {
+	display: contents;
 }
 
-.case-overview-sections__rows dt {
+.case-overview-sections .case-overview-sections__rows dt,
+.case-overview-sections .case-overview-sections__rows dd {
+	width: auto;
+	margin: 0;
+	padding: 0;
+	text-align: start;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.case-overview-sections .case-overview-sections__rows dt {
 	color: var(--color-text-maxcontrast);
+	font-weight: 400;
 }
 
-.case-overview-sections__rows dd {
-	margin: 0;
-	font-weight: 600;
+.case-overview-sections .case-overview-sections__rows dd {
+	color: var(--color-main-text);
+	font-weight: 500;
 }
 
-.case-overview-sections__note {
+.case-overview-sections .case-overview-sections__note {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+@media (max-width: 720px) {
+	.case-overview-sections .case-overview-sections__rows--two {
+		grid-template-columns: max-content 1fr;
+	}
 }
 </style>
