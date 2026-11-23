@@ -38,7 +38,7 @@ describe('the parts of a case type', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
 		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-roles', 'case-type-blueprint'])
-		expect(holds('Rights')).toEqual(['case-type-rights'])
+		expect(holds('Permissions')).toEqual(['case-type-rights'])
 		expect(holds('Phases and tasks')).not.toEqual(expect.arrayContaining(['case-type-document-types']))
 	})
 

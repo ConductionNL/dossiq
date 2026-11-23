@@ -216,7 +216,7 @@
 						}
 					},
 					{
-						"label": "Close out your day",
+						"label": "Close the day",
 						"icon": "ClipboardCheckOutline",
 						"route": "EndOfDay"
 					}
@@ -280,9 +280,9 @@
 							{
 								"id": "kpi-open-cases",
 								"type": "stat",
-								"title": "Open Cases",
+								"title": "Open cases",
 								"content": {
-									"label": "Open Cases",
+									"label": "Open cases",
 									"caption": "+{newToday} today",
 									"route": {
 										"name": "Cases"
@@ -302,9 +302,9 @@
 							{
 								"id": "kpi-overdue",
 								"type": "stat",
-								"title": "Late",
+								"title": "Overdue",
 								"content": {
-									"label": "Late",
+									"label": "Overdue",
 									"caption": "action needed",
 									"route": {
 										"name": "Cases",
@@ -331,10 +331,10 @@
 							{
 								"id": "kpi-completed",
 								"type": "stat",
-								"title": "Completed This Month",
+								"title": "Completed this month",
 								"content": {
-									"label": "Completed This Month",
-									"caption": "avg {avgProcessingDays} days",
+									"label": "Completed this month",
+									"caption": "{avgProcessingDays} days on average",
 									"route": {
 										"name": "Cases",
 										"query": {
@@ -357,7 +357,7 @@
 							{
 								"id": "cases-by-status",
 								"type": "chart",
-								"title": "Cases by Status",
+								"title": "Cases by status",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -389,7 +389,7 @@
 							{
 								"id": "cases-by-type",
 								"type": "chart",
-								"title": "Cases by Type",
+								"title": "Cases by type",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -420,7 +420,7 @@
 							{
 								"id": "stalled-cases",
 								"type": "record-list",
-								"title": "Stalled Cases",
+								"title": "Stuck cases",
 								"_note": "DqMijnTeam draws Vastgelopen zaken as rows: the title, the case number and its handler under it, how long it has been idle at the end, no chevron. The same query as the Dashboard's table; View all leads to the same list. The other team widgets are the manifest's, restated because an overlay replaces a view's widgets whole (landingViews.spec.js holds them equal).",
 								"headerLink": {
 									"label": "View all",
@@ -477,12 +477,12 @@
 							{
 								"id": "simple-first-today",
 								"type": "banner",
-								"title": "First today",
+								"title": "Today first",
 								"_note": "DqMijnWerk names ONE case: the reader's own open case furthest past its deadline, with the list of all of them, the board, Suspend the term (the case's lifecycle menu opened on that act for the named case) and Open case. The library banner reads the first row of the ordered query (`visibleWhen.source` with `order` and `extend`) as its subject; with no such case it draws nothing. `content` is still the declaration of what is past term, the same filter appinfo/attention.json carries for LaunchPad.",
 								"content": {
 									"layout": "attention",
 									"variant": "error",
-									"kicker": "First today",
+									"kicker": "Today first",
 									"title": "{subject.title}",
 									"reason": "{subject.identifier} · {subject.caseType.title} · deadline {subject.deadline|relative}.",
 									"visibleWhen": {
@@ -508,7 +508,7 @@
 									},
 									"actions": [
 										{
-											"label": "All cases past their deadline",
+											"label": "All overdue cases",
 											"route": {
 												"name": "Cases",
 												"query": {
@@ -521,7 +521,7 @@
 											}
 										},
 										{
-											"label": "Go to the board",
+											"label": "To the work board",
 											"route": {
 												"name": "Cases",
 												"query": {
@@ -671,7 +671,7 @@
 							{
 								"id": "simple-waiting",
 								"type": "stat",
-								"title": "Waiting on the applicant",
+								"title": "Waiting for resident",
 								"content": {
 									"caption": "longest: {count} days",
 									"_captionNote": "DqMijnWerk \"langste: 9 dagen\": the whole days since the case that waits longest entered its status (nextcloud-vue captionSource metric daysSinceEarliest, one list read ordered by currentStatusEnteredAt). Not currentStatusDwellDays: that is written only at a status change, so it reads 0 for a case still waiting. Without a wait of a day or more the caption is left out.",
@@ -688,7 +688,7 @@
 											"waitingOnApplicant": true
 										}
 									},
-									"label": "Waiting on the applicant",
+									"label": "Waiting for resident",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -721,9 +721,9 @@
 							{
 								"id": "simple-closed-month",
 								"type": "stat",
-								"title": "Closed this month",
+								"title": "Completed this month",
 								"content": {
-									"label": "Closed this month",
+									"label": "Completed this month",
 									"caption": "{lastMonthName}: {myCompletedLastMonth}",
 									"format": {
 										"style": "decimal",
@@ -7511,9 +7511,9 @@
 						}
 					},
 					"kpi-overdue": {
-						"title": "Late",
+						"title": "Overdue",
 						"content": {
-							"label": "Late",
+							"label": "Overdue",
 							"caption": "action needed",
 							"route": {
 								"name": "Cases",
@@ -7559,7 +7559,7 @@
 						}
 					},
 					"cases-by-status": {
-						"subtitle": "Open cases",
+						"subtitle": "Ongoing cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -7589,7 +7589,7 @@
 						}
 					},
 					"cases-by-type": {
-						"subtitle": "Open cases",
+						"subtitle": "Ongoing cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -8045,7 +8045,7 @@
 					{
 						"id": "open-end-of-day",
 						"type": "open-page",
-						"label": "Close out your day",
+						"label": "Close the day",
 						"icon": "ClipboardCheckOutline",
 						"target": "EndOfDay"
 					}
@@ -8231,7 +8231,7 @@
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
 				"defaultOrder": "deadline,receivedAt",
-				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"countText": "{shown} of {total} open cases in your teams · sorted by deadline",
 				"defaultFilters": {
 					"isFinalStatus": false,
 					"assignedGroup": "@myTeam"
@@ -8243,7 +8243,7 @@
 				"savedViewCountText": "{shown} of {total} open cases · {view} · sorted by deadline",
 				"_countTextByViewNote": "DqWerkbord, DqZakenKaart: the line under the title says what the open view shows. The board view is not sorted by deadline but grouped by status; the map gives only the count, and nextcloud-vue adds how many of them have an address on the map. Other views keep countText (nextcloud-vue countTextByView).",
 				"countTextByView": {
-					"board": "{shown} of {total} open cases in your teams, board view by status",
+					"board": "{shown} of {total} open cases in your teams · board view by status",
 					"map": "{shown} of {total} open cases in your teams"
 				},
 				"footerNote": "click a column header to sort · 20 per page",
@@ -8608,15 +8608,12 @@
 						"showCount": true
 					},
 					"Unclaimed": {
-						"label": "Not claimed",
 						"showCount": true
 					},
 					"Closed": {
-						"label": "Finished",
 						"showCount": true
 					},
 					"Overdue": {
-						"label": "Late",
 						"showCount": true
 					},
 					"Deadline this week": {
@@ -8841,7 +8838,7 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time",
+						"label": "Lead time",
 						"width": "158px",
 						"formatter": "processingTime"
 					},
@@ -8897,7 +8894,7 @@
 						"showCount": true
 					},
 					{
-						"label": "Shipped",
+						"label": "Included",
 						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
 						"filter": {
 							"supersededBy": {
@@ -9204,7 +9201,7 @@
 					{
 						"id": "side-case-type-choice-list",
 						"type": "field-list",
-						"title": "Choice list: {name|fieldTitle}",
+						"title": "Pick list: {name|fieldTitle}",
 						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
 						"tabs": ["fields"],
 						"follows": {
@@ -9468,7 +9465,7 @@
 								},
 								{
 									"id": "rights",
-									"label": "Rights",
+									"label": "Permissions",
 									"widgetIds": [
 										"case-type-rights"
 									]
@@ -9525,7 +9522,7 @@
 								{
 									"id": "history",
 									"widgetId": "case-type-history",
-									"label": "Record history"
+									"label": "History"
 								}
 							]
 						}
@@ -9627,7 +9624,7 @@
 						"title": "Rules",
 						"headerActions": [
 							{
-								"label": "Add a rule",
+								"label": "Add rule",
 								"icon": "Plus",
 								"action": {
 									"type": "navigate",

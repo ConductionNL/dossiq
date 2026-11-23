@@ -136,6 +136,6 @@ describe('the Overview Regels card', () => {
 		const card = page.configAppend.widgets.find((widget) => widget.id === 'case-type-rules-summary')
 		expect(card.type).toBe('CaseTypeRulesWidget')
 		expect(card.content).toEqual({ mode: 'summary' })
-		expect(card.headerActions[0]).toMatchObject({ label: 'Add a rule', action: { type: 'navigate', target: '/settings/case-types/@objectId#rules' } })
+		expect(card.headerActions[0]).toMatchObject({ label: 'Add rule', action: { type: 'navigate', target: '/settings/case-types/@objectId#rules' } })
 	})
 })
