@@ -57,6 +57,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  * @uses \OCA\Dossiq\Service\Workflow\StepConfigCheck
  * @uses \OCA\Dossiq\Service\Workflow\PublishCandidate
+ * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  */
 class StepConfigPublishTest extends TestCase {
 
