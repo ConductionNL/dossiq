@@ -42,11 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
 use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\Lifecycle\ExtensionEndDate;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
 use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -58,8 +58,6 @@ use RuntimeException;
  * The case lifecycle gestures the Actions menu offers.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
@@ -71,6 +69,13 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	private const JOURNAL_FIELD = 'activity';
 
 	/**
+	 * Resolves the end date an extension lands on.
+	 *
+	 * @var ExtensionEndDate
+	 */
+	private readonly ExtensionEndDate $endDates;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore $store OpenRegister reads/writes for the case
@@ -80,6 +85,8 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 * @param CaseEndingActs $endings Reads which act ended the case, so a reopen keeps it
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -88,6 +95,7 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly CaseEndingActs $endings,
 	) {
+		$this->endDates = new ExtensionEndDate(timer: $deadlines->timerService);
 	}//end __construct()
 
 	/**
@@ -319,6 +327,7 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function extend(string $caseId, string $reason, string $newEndDate = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -327,7 +336,7 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 		$caseType = $this->extendableCaseType(case: $case);
 
 		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
-		$newEnd = $this->resolveNewEndDate(
+		$newEnd = $this->endDates->resolve(
 			current: $current,
 			asked: [
 				'named' => $newEndDate,
@@ -662,101 +671,6 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		return $apply($instanceId);
 	}//end onTermInstance()
-
-	/**
-	 * The new end date an extension lands on: the one the caller named, or
-	 * the current one plus the case type's statutory period.
-	 *
-	 * @param string                               $current The current end date (Y-m-d), possibly empty
-	 * @param array{named: string, period: string} $asked   `named` an explicit new end date, or '' for the period; `period` the case type's ISO
-	 *                                                      8601 extension period.
-	 *
-	 * @return string The new end date as Y-m-d
-	 *
-	 * @throws RuntimeException When the named date is unreadable or not later,
-	 *                          or when no period is configured and none was named
-	 *
-	 * @spec openspec/specs/case-bulk-status-transition/spec.md
-	 */
-	private function resolveNewEndDate(string $current, array $asked): string {
-		[$named, $period] = [$asked['named'], $asked['period']];
-		if ($named !== '') {
-			return $this->requireLaterDate(current: $current, candidate: $named);
-		}
-
-		if ($period === '') {
-			throw new RuntimeException('extension_period_not_configured');
-		}
-
-		return $this->addPeriod(date: $current, period: $period);
-	}//end resolveNewEndDate()
-
-	/**
-	 * An explicit new end date, normalised, having checked it is later than
-	 * the current one.
-	 *
-	 * @param string $current The current end date (Y-m-d), possibly empty
-	 * @param string $candidate The date the caller named
-	 *
-	 * @return string The new end date as Y-m-d
-	 *
-	 * @throws RuntimeException When the date is unreadable or not later
-	 *
-	 * @spec openspec/specs/case-bulk-status-transition/spec.md
-	 */
-	private function requireLaterDate(string $current, string $candidate): string {
-		try {
-			$next = new DateTimeImmutable($candidate);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('new_end_date_unreadable');
-		}
-
-		if ($current !== '') {
-			try {
-				$now = new DateTimeImmutable($current);
-			} catch (\Throwable $e) {
-				$now = null;
-			}
-
-			if ($now !== null && $next <= $now) {
-				throw new RuntimeException('new_end_date_not_later');
-			}
-		}
-
-		return $next->format('Y-m-d');
-	}//end requireLaterDate()
-
-	/**
-	 * Add an ISO 8601 duration to a date.
-	 *
-	 * @param string $date The current end date (Y-m-d); today when empty
-	 * @param string $period An ISO 8601 duration such as P14D
-	 *
-	 * @return string The new end date as Y-m-d
-	 *
-	 * @throws RuntimeException When the period is not a duration this can read
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function addPeriod(string $date, string $period): string {
-		try {
-			$start = new DateTimeImmutable($date);
-		} catch (\Throwable $e) {
-			$start = new DateTimeImmutable();
-		}
-
-		try {
-			$interval = new DateInterval($period);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('extension_period_unreadable');
-		}
-
-		// The extended end date is the one a handler is judged on, so the
-		// organisation's calendar decides the day it lands on (Awt art. 1).
-		$end = $start->add($interval);
-
-		return ($this->deadlines->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
-	}//end addPeriod()
 
 	/**
 	 * Load the case, or refuse.

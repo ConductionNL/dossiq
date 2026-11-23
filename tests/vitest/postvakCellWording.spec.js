@@ -38,7 +38,7 @@ describe('Postvak cell wording', () => {
 		const via = columns.find((col) => col.label === 'Received via')
 		expect(via.key).toBe('channel')
 		expect(via.widget).toBe('label')
-		expect(via.enumLabels.email).toBe('E-mail')
+		expect(via.enumLabels.email).toBe('Email')
 		expect(via.widgetProps.textTemplate).toBe('{value}, {recipient|mailbox}')
 		for (const label of Object.values(via.enumLabels)) {
 			expect(nl[label]).toBeTruthy()

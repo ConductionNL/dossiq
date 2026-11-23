@@ -24,7 +24,7 @@
 							"order": 1,
 							"inputControl": "select",
 							"enum": ["email", "portal", "webform"],
-							"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" }
+							"enumLabels": { "email": "Email", "portal": "Portal", "webform": "Web form" }
 						}
 					}
 				},
@@ -46,7 +46,7 @@
 							"label": "Channel",
 							"allLabel": "all",
 							"labels": {
-								"email": "E-mail",
+								"email": "Email",
 								"portal": "Portal",
 								"webform": "Web form"
 							}
@@ -56,7 +56,7 @@
 				"showTitle": true,
 				"_breadcrumbNote": "DqPostvak: \"Postvak · berichten van de hele organisatie ...\", the page as its one crumb before the note (nextcloud-vue header-trail-current-once draws a crumb naming the page once).",
 				"breadcrumb": { "label": "Inbox", "route": "Postvak" },
-				"headerMeta": "messages for the whole organisation that belong to no case yet",
+				"headerMeta": "messages from the whole organisation that do not belong to a case yet",
 				"countText": "{shown} of {total} messages",
 				"footerNote": "20 per page",
 				"searchPlaceholder": "Search sender or subject",
@@ -112,7 +112,7 @@
 						"width": "230px",
 						"widget": "label",
 						"enum": ["email", "portal", "webform"],
-						"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" },
+						"enumLabels": { "email": "Email", "portal": "Portal", "webform": "Web form" },
 						"widgetProps": { "textTemplate": "{value}, {recipient|mailbox}" }
 					},
 					{
@@ -151,9 +151,9 @@
 						"id": "new-case-from-message",
 						"label": "New case",
 						"variant": "secondary",
-						"type": "handler",
-						"handler": "navigate",
-						"route": "Cases"
+						"type": "open-modal",
+						"target": "NewCaseFromMessageDialog",
+						"_note": "dossiq's own New case dialog, seeded from the message: its subject as the title, its text as the description, email as the intake channel. Once the case exists the message is filed on it through the intake log's file-on-case route, with the sender as a party, and the new case opens. A filed message has outcome case and so leaves this queue."
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"

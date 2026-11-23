@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
  * @uses \OCA\Dossiq\Service\Support\RowList
+ * @uses \OCA\Dossiq\Service\Lifecycle\ExtensionEndDate
  */
 class CaseLifecycleServiceTest extends TestCase {
 
