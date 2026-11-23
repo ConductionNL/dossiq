@@ -46,10 +46,30 @@ class CaseFlowSeedCasesTest extends TestCase {
 			 */
 			public array $saved = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param string $refusedTitle A case title whose save throws.
+			 */
 			public function __construct(private string $refusedTitle) {
 			}
 
-			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+			/**
+			 * Record one save, or refuse it.
+			 *
+			 * @param array<string,mixed> $object        The object written.
+			 * @param ObjectSaveOptions   $options       Where it is written.
+			 * @param boolean             $_rbac         Unused.
+			 * @param boolean             $_multitenancy Unused.
+			 *
+			 * @return mixed The object with an id.
+			 */
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): mixed {
 				if (($object['title'] ?? null) === $this->refusedTitle) {
 					throw new RuntimeException('schema rejected the object');
 				}
@@ -75,7 +95,7 @@ class CaseFlowSeedCasesTest extends TestCase {
 			objectService: $store,
 			schemas: ['register' => 'dossiq', 'caseType' => 'case_type', 'statusType' => 'status_type', 'case' => 'case_schema'],
 			data: ['cases' => $cases],
-			output: $output ?? $this->createMock(IOutput::class),
+			output: $output ?? $this->createMock(originalClassName: IOutput::class),
 		);
 	}//end run()
 
@@ -88,18 +108,23 @@ class CaseFlowSeedCasesTest extends TestCase {
 	 * @return CaseFlowSeedCases The planter.
 	 */
 	private function cases(array $statuses = [], array $present = []): CaseFlowSeedCases {
-		$index = $this->getMockBuilder(CaseFlowSeedIndex::class)
-			->setConstructorArgs([$this->createMock(SettingsService::class)])
+		$index = $this->getMockBuilder(className: CaseFlowSeedIndex::class)
+			->setConstructorArgs([$this->createMock(originalClassName: SettingsService::class)])
 			->onlyMethods(['caseTitlesFor'])
 			->getMock();
 		$index->method('caseTitlesFor')->willReturn($present);
 
-		$lookup = $this->createMock(StatusTypeLookup::class);
+		$lookup = $this->createMock(originalClassName: StatusTypeLookup::class);
 		$lookup->method('statusesOf')->willReturn($statuses);
 
 		return new CaseFlowSeedCases(statuses: $lookup, index: $index);
 	}//end cases()
 
+	/**
+	 * A case is bound to its case type; a status name that resolves is its status, one that does not is left out.
+	 *
+	 * @return void
+	 */
 	public function testEachCaseIsBoundToItsCaseTypeWithItsStatusResolvedByName(): void {
 		$store = $this->store();
 		$run = $this->seedRun(store: $store, cases: [
@@ -110,37 +135,53 @@ class CaseFlowSeedCasesTest extends TestCase {
 
 		$created = $this->cases(statuses: ['st-1' => 'Ontvangen'])->plant(run: $run, caseTypeId: 'ct-1');
 
-		$this->assertSame(2, $created);
-		$this->assertSame('ct-1', $run->caseTypeId);
+		$this->assertSame(expected: 2, actual: $created);
+		$this->assertSame(expected: 'ct-1', actual: $run->caseTypeId);
 		$this->assertSame(
-			[
+			expected: [
 				['register' => 'dossiq', 'schema' => 'case_schema', 'object' => ['title' => 'Aanvraag A', 'caseType' => 'ct-1', 'status' => 'st-1']],
 				['register' => 'dossiq', 'schema' => 'case_schema', 'object' => ['title' => 'Aanvraag B', 'caseType' => 'ct-1']],
 			],
-			$store->saved
+			actual: $store->saved
 		);
 	}//end testEachCaseIsBoundToItsCaseTypeWithItsStatusResolvedByName()
 
+	/**
+	 * A case planted before is skipped by title, and a failed write is reported while the others are still planted.
+	 *
+	 * @return void
+	 */
 	public function testACasePlantedBeforeIsSkippedAndAFailedWriteIsReported(): void {
 		$store = $this->store(refusedTitle: 'Aanvraag C');
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('warning')
 			->with('Case-flow seed: could not create case "Aanvraag C": schema rejected the object');
 		$run = $this->seedRun(store: $store, cases: [['title' => 'Aanvraag A'], ['title' => 'Aanvraag C'], ['title' => 'Aanvraag D']], output: $output);
 
 		$created = $this->cases(present: ['Aanvraag A'])->plant(run: $run, caseTypeId: 'ct-1');
 
-		$this->assertSame(1, $created);
-		$this->assertSame(['Aanvraag D'], array_map(static fn (array $s): string => $s['object']['title'], $store->saved));
+		$this->assertSame(expected: 1, actual: $created);
+		$this->assertSame(
+			expected: ['Aanvraag D'],
+			actual: array_map(static fn (array $s): string => $s['object']['title'], $store->saved)
+		);
 	}//end testACasePlantedBeforeIsSkippedAndAFailedWriteIsReported()
 
+	/**
+	 * The run writes to its register under the schema it is asked for.
+	 *
+	 * @return void
+	 */
 	public function testTheRunSavesUnderTheSchemaItIsAskedFor(): void {
 		$store = $this->store();
 		$run = $this->seedRun(store: $store, cases: []);
 
 		$saved = $run->save(schemaKey: 'statusType', object: ['name' => 'Ontvangen']);
 
-		$this->assertSame(['name' => 'Ontvangen', 'id' => 'id-1'], $saved);
-		$this->assertSame([['register' => 'dossiq', 'schema' => 'status_type', 'object' => ['name' => 'Ontvangen']]], $store->saved);
+		$this->assertSame(expected: ['name' => 'Ontvangen', 'id' => 'id-1'], actual: $saved);
+		$this->assertSame(
+			expected: [['register' => 'dossiq', 'schema' => 'status_type', 'object' => ['name' => 'Ontvangen']]],
+			actual: $store->saved
+		);
 	}//end testTheRunSavesUnderTheSchemaItIsAskedFor()
 }//end class
