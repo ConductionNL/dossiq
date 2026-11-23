@@ -13111,70 +13111,70 @@
                 "overviewSections": [
                   {
                     "id": "gegevens",
-                    "title": "Gegevens",
+                    "title": {"nl": "Gegevens", "en": "Details"},
                     "columns": 2,
                     "rows": [
                       {
-                        "label": "Klager",
+                        "label": {"nl": "Klager", "en": "Complainant"},
                         "field": "klager"
                       },
                       {
-                        "label": "Ontvangen",
+                        "label": {"nl": "Ontvangen", "en": "Received"},
                         "field": "receivedAt"
                       },
                       {
-                        "label": "Onderwerp",
+                        "label": {"nl": "Onderwerp", "en": "Subject"},
                         "field": "klachtOnderwerp"
                       },
                       {
-                        "label": "Afdeling",
+                        "label": {"nl": "Afdeling", "en": "Department"},
                         "field": "afdeling"
                       },
                       {
-                        "label": "Gaat over",
+                        "label": {"nl": "Gaat over", "en": "About"},
                         "field": "gaatOver"
                       },
                       {
-                        "label": "Categorie",
+                        "label": {"nl": "Categorie", "en": "Category"},
                         "field": "klachtCategorie"
                       }
                     ]
                   },
                   {
                     "id": "hoorgesprek",
-                    "title": "Hoorgesprek",
+                    "title": {"nl": "Hoorgesprek", "en": "Hearing"},
                     "columns": 2,
                     "pillField": "hoorgesprekStatus",
                     "rows": [
                       {
-                        "label": "Wanneer",
+                        "label": {"nl": "Wanneer", "en": "When"},
                         "field": "hoorgesprekWanneer"
                       },
                       {
-                        "label": "Soort",
+                        "label": {"nl": "Soort", "en": "Type"},
                         "field": "hoorgesprekSoort"
                       },
                       {
-                        "label": "Waar",
+                        "label": {"nl": "Waar", "en": "Where"},
                         "field": "hoorgesprekWaar"
                       },
                       {
-                        "label": "Aanwezig",
+                        "label": {"nl": "Aanwezig", "en": "Present"},
                         "field": "hoorgesprekAanwezig"
                       },
                       {
-                        "label": "Verslag",
+                        "label": {"nl": "Verslag", "en": "Report"},
                         "field": "hoorgesprekVerslag"
                       }
                     ]
                   },
                   {
                     "id": "oordeel",
-                    "title": "Oordeel",
-                    "intro": "Na het hoorgesprek kies je een oordeel. Het gaat eerst ter goedkeuring naar de klachtencoördinator, de termijn loopt intussen door. Daarna maak je de antwoordbrief voor de klager.",
+                    "title": {"nl": "Oordeel", "en": "Verdict"},
+                    "intro": {"nl": "Na het hoorgesprek kies je een oordeel. Het gaat eerst ter goedkeuring naar de klachtencoördinator, de termijn loopt intussen door. Daarna maak je de antwoordbrief voor de klager.", "en": "After the hearing you choose a verdict. It first goes to the complaints coordinator for approval; the deadline keeps running meanwhile. Then you write the reply letter to the complainant."},
                     "rows": [
                       {
-                        "label": "Oordeel",
+                        "label": {"nl": "Oordeel", "en": "Verdict"},
                         "field": "oordeel"
                       }
                     ]
