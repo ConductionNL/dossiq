@@ -3339,6 +3339,8 @@
 			"listNavigation": true,
 			"actionsComponent": "RequesterProjection",
 			"config": {
+				"_headerActionsBelowNote": "DqZaak and the other case boards (design-system #1206): the pager and the header buttons wrap to a row under the title, from the left, above the type pill and the breadcrumb.",
+				"headerActionsBelow": true,
 				"cardButtons": "regular",
 				"register": "dossiq",
 				"schema": "case",
