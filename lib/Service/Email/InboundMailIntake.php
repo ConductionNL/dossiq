@@ -107,6 +107,9 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Take one batch of messages through the whole path.
 	 *
+	 * A message an earlier sweep already logged is left alone: it still sits in the folder because the sweep does
+	 * not move what it files to the inbox or quarantine, and reading it again would log it twice.
+	 *
 	 * @param array<int, array<string, mixed>> $rows      The message rows.
 	 * @param integer                          $accountId The account they came from.
 	 * @param string                           $mailbox   The folder they sit in.
@@ -118,6 +121,10 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	public function processBatch(array $rows, int $accountId, string $mailbox): array {
 		$counts = [];
 		foreach ($rows as $row) {
+			if ($this->log->findMailEntry(accountId: $accountId, mailbox: $mailbox, uid: (int)($row['uid'] ?? 0)) !== null) {
+				continue;
+			}
+
 			try {
 				$outcome = $this->process(
 					message: $this->hydrate(row: $row, accountId: $accountId, mailbox: $mailbox)
