@@ -288,6 +288,94 @@ class NextcloudMailGatewayServicesTest extends TestCase {
 	}//end testTheSourceIsReadOrEmpty()
 
 	/**
+	 * Mail 5's getSource() takes an IMAP client first: the gateway opens one for the account, reads, and logs it out.
+	 *
+	 * @return void
+	 */
+	public function testMailFiveReadsTheSourceThroughAnImapClient(): void {
+		$account = self::entity(id: 3);
+		$log = [];
+		$client = new class($log) {
+			/** @var array<int, string> */
+			private array $log;
+
+			/**
+			 * @param array<int, string> $log The calls.
+			 */
+			public function __construct(array &$log) {
+				$this->log = &$log;
+			}
+
+			/**
+			 * Close the connection.
+			 *
+			 * @return void
+			 */
+			public function logout(): void {
+				$this->log[] = 'logout';
+			}
+		};
+		$factory = new class($client, $log) {
+			/** @var array<int, string> */
+			private array $log;
+
+			/**
+			 * @param object             $client The client handed out.
+			 * @param array<int, string> $log    The calls.
+			 */
+			public function __construct(private object $client, array &$log) {
+				$this->log = &$log;
+			}
+
+			/**
+			 * The client for an account.
+			 *
+			 * @param object $account The account.
+			 *
+			 * @return object
+			 */
+			public function getClient(object $account): object {
+				$this->log[] = 'getClient:' . $account->getId();
+				return $this->client;
+			}
+		};
+		$manager = new class($log) {
+			/** @var array<int, string> */
+			private array $log;
+
+			/**
+			 * @param array<int, string> $log The calls.
+			 */
+			public function __construct(array &$log) {
+				$this->log = &$log;
+			}
+
+			/**
+			 * Mail 5's form: the IMAP client comes first.
+			 *
+			 * @param object  $client  The IMAP client.
+			 * @param object  $account The account.
+			 * @param string  $mailbox The folder.
+			 * @param integer $uid     The uid.
+			 *
+			 * @return string
+			 */
+			public function getSource(object $client, object $account, string $mailbox, int $uid): string {
+				$this->log[] = "getSource:{$mailbox}:{$uid}";
+				return "From: a@b\r\n\r\nHoi";
+			}
+		};
+		$services = self::services(account: $account, manager: $manager);
+		$services['OCA\\Mail\\IMAP\\IMAPClientFactory'] = $factory;
+
+		self::assertSame(expected: "From: a@b\r\n\r\nHoi", actual: $this->gateway(services: $services)->source(3, 'INBOX', 41));
+		self::assertSame(expected: ['getClient:3', 'getSource:INBOX:41', 'logout'], actual: $log);
+
+		unset($services['OCA\\Mail\\IMAP\\IMAPClientFactory']);
+		self::assertSame(expected: '', actual: $this->gateway(services: $services)->source(3, 'INBOX', 41));
+	}//end testMailFiveReadsTheSourceThroughAnImapClient()
+
+	/**
 	 * An unknown, unreadable or missing account reads nothing, and its failure is logged.
 	 *
 	 * @return void

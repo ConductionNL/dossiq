@@ -100,6 +100,11 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	private const MAIL_MANAGER = 'OCA\\Mail\\Service\\MailManager';
 
 	/**
+	 * Mail's IMAP client factory: Mail 5's getSource() reads through a client the caller opens.
+	 */
+	private const IMAP_CLIENT_FACTORY = 'OCA\\Mail\\IMAP\\IMAPClientFactory';
+
+	/**
 	 * Mail's DKIM verifier.
 	 */
 	private const DKIM_SERVICE = 'OCA\\Mail\\Service\\DkimService';
@@ -249,7 +254,13 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		try {
-			$source = $manager->getSource($account, $mailbox, $uid);
+			$source = (new MailSourceReader())->read(
+				manager: $manager,
+				clientFactory: fn (): ?object => $this->service(name: self::IMAP_CLIENT_FACTORY),
+				account: $account,
+				mailbox: $mailbox,
+				uid: $uid
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: reading a message source failed',

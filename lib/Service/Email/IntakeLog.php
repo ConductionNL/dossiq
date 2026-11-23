@@ -306,6 +306,43 @@ class IntakeLog implements IntakeLogInterface {
 	}//end findChannelEntry()
 
 	/**
+	 * The entry an earlier sweep already wrote for this mail message, if any.
+	 *
+	 * The sweep reads the whole intake folder each run and a message that stays in it (inbox, quarantined) is
+	 * read again, so a message is known by its account, folder and uid.
+	 *
+	 * @param integer $accountId The Mail account.
+	 * @param string  $mailbox   The folder.
+	 * @param integer $uid       The message uid.
+	 *
+	 * @return array<string, mixed>|null The entry, or null when this message is new.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function findMailEntry(int $accountId, string $mailbox, int $uid): ?array {
+		if ($accountId <= 0 || $uid <= 0 || trim($mailbox) === '') {
+			return null;
+		}
+
+		$rows = $this->search(
+			filters: [
+				'accountId' => $accountId,
+				'mailbox' => $mailbox,
+				'uid' => $uid,
+				'_limit' => 1,
+			]
+		);
+
+		foreach ($rows as $row) {
+			if (is_array($row) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findMailEntry()
+
+	/**
 	 * Put a message that reached a case on that case's timeline.
 	 *
 	 * Only a message that BECAME a case gets a line. A message the filters
