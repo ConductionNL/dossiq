@@ -992,7 +992,7 @@ export default {
 				{ id: 'system', label: this.t('dossiq', 'System') },
 				{
 					id: 'integrations',
-					label: this.t('dossiq', 'Integration settings'),
+					label: this.t('dossiq', 'Integrations'),
 				},
 				{ id: 'mail', label: this.t('dossiq', 'Mail') },
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
@@ -1041,7 +1041,7 @@ export default {
 		breadcrumbs() {
 			return [
 				{
-					label: this.t('dossiq', 'Admin settings'),
+					label: this.t('dossiq', 'Administration settings'),
 					href: generateUrl('/settings/admin'),
 				},
 				{ label: 'Dossiq' },

@@ -15522,7 +15522,7 @@
 				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
 				"savedViewSave": false,
 				"showViewAction": false,
-				"searchPlaceholder": "Search by name, KvK number or place",
+				"searchPlaceholder": "Search by name, KVK number or town",
 				"rowIcon": "OfficeBuildingOutline",
 				"rowIconTone": "teal",
 				"sortKey": "tradeName",
@@ -15549,8 +15549,8 @@
 						"filter": {}
 					},
 					{
-						"label": "With an open case",
-						"activeLabel": "With an open case",
+						"label": "With open case",
+						"activeLabel": "With open case",
 						"showCount": true,
 						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
 						"filter": {
@@ -15574,7 +15574,7 @@
 						}
 					},
 					{
-						"label": "Companies",
+						"label": "Businesses",
 						"activeLabel": "Legal form: company",
 						"showCount": true,
 						"filter": {

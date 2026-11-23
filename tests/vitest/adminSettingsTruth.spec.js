@@ -119,7 +119,7 @@ describe('admin settings headings', () => {
 		expect(headings.map((h) => h.heading)).toContain('Search index')
 		// The page title is the open tab: the library's default is "{app} Settings".
 		expect(headings.map((h) => h.heading)).toContain('General')
-		expect(headings.map((h) => h.heading)).toContain('Integration settings')
+		expect(headings.map((h) => h.heading)).toContain('Integrations')
 	})
 
 	it.each(headings.map((h) => [h.file, h.heading]))(
