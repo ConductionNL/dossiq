@@ -82,46 +82,50 @@ class MessagePreview {
 		[$headers, $body] = $this->split(part: $original);
 		$read['senderName'] = $this->displayName(from: ($headers['from'] ?? ''));
 
-		$texts = [];
-		$this->walk(part: ['headers' => $headers, 'body' => $body], found: ['texts' => &$texts, 'attachments' => &$read['attachments']], depth: 0);
-		$read['preview'] = $this->shorten(text: ($texts[0] ?? ''));
+		$found = $this->walk(part: ['headers' => $headers, 'body' => $body], depth: 0);
+		$read['attachments'] = $found['attachments'];
+		$read['preview'] = $this->shorten(text: ($found['texts'][0] ?? ''));
 
 		return $read;
 	}//end read()
 
 	/**
-	 * Collect the plain texts and attachment names of a part and its children.
+	 * The plain texts and attachment names of a part and its children.
 	 *
 	 * @param array{headers: array<string, string>, body: string} $part  The part.
-	 * @param array{texts: array<int, string>, attachments: array<int, string>} $found The texts and names so far.
-	 * @param int $depth How deep the part sits.
+	 * @param int                                                 $depth How deep the part sits.
 	 *
-	 * @return void
+	 * @return array{texts: array<int, string>, attachments: array<int, string>}
 	 */
-	private function walk(array $part, array $found, int $depth): void {
+	private function walk(array $part, int $depth): array {
+		$found = ['texts' => [], 'attachments' => []];
 		$type = strtolower(($part['headers']['content-type'] ?? 'text/plain'));
 		$filename = $this->filename(headers: $part['headers']);
 		if ($filename !== '') {
 			$found['attachments'][] = $filename;
-			return;
+			return $found;
 		}
 
 		if (str_starts_with($type, 'multipart/') === true) {
 			if ($depth >= self::MAX_DEPTH) {
-				return;
+				return $found;
 			}
 
 			foreach ($this->children(body: $part['body'], type: $part['headers']['content-type']) as $child) {
 				[$headers, $body] = $this->split(part: $child);
-				$this->walk(part: ['headers' => $headers, 'body' => $body], found: $found, depth: ($depth + 1));
+				$inner = $this->walk(part: ['headers' => $headers, 'body' => $body], depth: ($depth + 1));
+				$found['texts'] = array_merge($found['texts'], $inner['texts']);
+				$found['attachments'] = array_merge($found['attachments'], $inner['attachments']);
 			}
 
-			return;
+			return $found;
 		}
 
 		if (str_starts_with($type, 'text/plain') === true) {
 			$found['texts'][] = $this->decode(body: $part['body'], encoding: ($part['headers']['content-transfer-encoding'] ?? ''));
 		}
+
+		return $found;
 	}//end walk()
 
 	/**

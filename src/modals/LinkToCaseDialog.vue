@@ -1,12 +1,12 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcModal size="normal" :name="t('dossiq', 'Link to case')" @close="$emit('close')">
+	<NcModal size="normal" labelId="link-to-case-title" @close="$emit('close')">
 		<div class="link-to-case" data-testid="link-to-case-dialog">
 			<p class="link-to-case__eyebrow">
 				{{ t('dossiq', 'Inbox') }}
 			</p>
-			<h2 class="link-to-case__title">
+			<h2 id="link-to-case-title" class="link-to-case__title">
 				{{ t('dossiq', 'Link to case') }}
 			</h2>
 			<p class="link-to-case__lead">
