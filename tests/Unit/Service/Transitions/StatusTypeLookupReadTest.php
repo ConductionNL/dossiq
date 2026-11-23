@@ -29,10 +29,13 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCP\IL10N;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\StatusTypeLookup
@@ -48,6 +51,7 @@ class StatusTypeLookupReadTest extends TestCase {
 	 * @param array<string, string> $config   The settings values.
 	 * @param bool                  $noStore  Whether the object service is unavailable.
 	 * @param CaseTypeResolver|null $resolver The resolver, or a silent mock.
+	 * @param string                $language The reader's language, '' for none.
 	 *
 	 * @return StatusTypeLookup
 	 */
@@ -56,6 +60,7 @@ class StatusTypeLookupReadTest extends TestCase {
 		array $config = ['register' => 'dossiq', 'status_type_schema' => 'statusType'],
 		bool $noStore = false,
 		?CaseTypeResolver $resolver = null,
+		string $language = '',
 	): StatusTypeLookup {
 		$objectService = new class($found) {
 			public function __construct(private mixed $found) {
@@ -78,8 +83,30 @@ class StatusTypeLookupReadTest extends TestCase {
 			static fn (string $key): string => ($config[$key] ?? '')
 		);
 
-		return new StatusTypeLookup($settings, ($resolver ?? $this->createMock(CaseTypeResolver::class)));
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn($language);
+
+		return new StatusTypeLookup(
+			settingsService: $settings,
+			caseTypeResolver: ($resolver ?? $this->createMock(originalClassName: CaseTypeResolver::class)),
+			text: new LanguageMapText(),
+			reader: new TranslatedText(l10n: $l10n),
+		);
 	}//end lookup()
+
+	/**
+	 * A translatable status name reads in the reader's language, Dutch for a reader without one.
+	 *
+	 * @return void
+	 */
+	public function testATranslatableNameReadsInTheReadersLanguage(): void {
+		$row = ['id' => 's-3', 'name' => ['nl' => 'Bevestigd', 'en' => 'Confirmed']];
+
+		self::assertSame(expected: 'Confirmed', actual: $this->lookup(found: $row, language: 'en')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Confirmed', actual: $this->lookup(found: $row, language: 'en_GB')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Bevestigd', actual: $this->lookup(found: $row, language: 'nl')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Bevestigd', actual: $this->lookup(found: $row)->nameFor(statusTypeId: 's-3'));
+	}//end testATranslatableNameReadsInTheReadersLanguage()
 
 	/**
 	 * A row read from the store is returned whole, from the configured schema.
