@@ -1315,3 +1315,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         cases, the deleted case not planted again, the unresolvable status, the failed case write), green before and
         unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Repair/CaseFlowSeedCasesTest` (3).
+  - [x] 8bm `Controller/SetupController` (1: ExcessiveClassComplexity 55 against 50; CouplingBetweenObjects 14 against
+        13 stays, the extracted `\Throwable` traded for the new class). Loading the example dataset the wizard picked is
+        its own concern, so it moved to the new `Controller/Support/DatasetLoad`: a posted dataset nobody offers
+        refused, the posted one else the stored pick, the legacy `install-demo-data` meaning the shipped set, "none"
+        recorded as a decline, and an import recorded with its counts only once it returned (`load()`, was
+        `loadDataset()` with `postedRefusal()`, `chosenDataset()`, `importDataset()`, `importedAnswer()` and
+        `refuseDataset()`; `decline()`, was `declineDataset()` and its twin `skipDemoData()`, whose bodies were the
+        same). Bodies moved unchanged; the controller now reads the posted `dataset` and hands it over. The controller
+        builds the loader in its constructor, so its constructor signature and the container are unchanged. phpmd: the
+        ExcessiveClassComplexity finding is gone and the new file has zero findings under both rulesets.
+        Characterisation: the existing `SetupControllerStatusTest`, `SetupControllerReadinessTest` and
+        `SetupWizardStepsTest` (58: the load, the decline, the refused and unknown dataset, the failed import, the
+        legacy action, the pick posted with Next), green before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Controller/Support/DatasetLoadTest` (3).
