@@ -479,7 +479,7 @@ export default {
 .link-to-case__label {
 	margin: 8px 0 0;
 	font-size: 14px;
-	font-weight: 700;
+	font-weight: 600;
 }
 
 .link-to-case__label-hint {
@@ -493,15 +493,25 @@ export default {
 	display: flex;
 	gap: 12px;
 	align-items: center;
-	padding: 10px 14px;
+	padding: 10px 12px;
 	border: 1px solid var(--color-border-maxcontrast);
 	border-radius: var(--border-radius-large);
+	font-weight: 400;
 	cursor: pointer;
 }
 
 .link-to-case__case--chosen {
-	border: 2px solid var(--color-primary-element);
+	border-color: var(--color-primary-element);
 	background: var(--color-primary-element-light);
+}
+
+.link-to-case__case-head strong {
+	font-weight: 600;
+}
+
+/* The theme draws a label's text bold; the board draws these lines regular. */
+.link-to-case :deep(.checkbox-radio-switch__text) {
+	font-weight: 400;
 }
 
 .link-to-case__case-text {
@@ -518,14 +528,14 @@ export default {
 
 .link-to-case__case-number {
 	color: var(--color-primary-element);
-	font-weight: 700;
+	font-weight: 600;
 }
 
 .link-to-case__pill {
 	margin-inline-end: 6px;
 	padding: 1px 8px;
 	border-radius: 10px;
-	background: var(--color-background-dark);
+	background: var(--color-main-background);
 	color: var(--color-main-text);
 	font-size: 12px;
 	font-weight: 600;
