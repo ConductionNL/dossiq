@@ -42,10 +42,10 @@ class MailCreateDialogListenerTest extends TestCase {
 	public function testOnlyMailsPageForASignedInUser(): void {
 		$listener = new MailCreateDialogListener();
 
-		$this->assertTrue($listener->rendersMailForASignedInUser(event: $this->render(app: 'mail', loggedIn: true)));
-		$this->assertFalse($listener->rendersMailForASignedInUser(event: $this->render(app: 'mail', loggedIn: false)));
-		$this->assertFalse($listener->rendersMailForASignedInUser(event: $this->render(app: 'dossiq', loggedIn: true)));
-		$this->assertFalse($listener->rendersMailForASignedInUser(event: new Event()));
+		$this->assertTrue(condition: $listener->rendersMailForASignedInUser(event: $this->render(app: 'mail', loggedIn: true)));
+		$this->assertFalse(condition: $listener->rendersMailForASignedInUser(event: $this->render(app: 'mail', loggedIn: false)));
+		$this->assertFalse(condition: $listener->rendersMailForASignedInUser(event: $this->render(app: 'dossiq', loggedIn: true)));
+		$this->assertFalse(condition: $listener->rendersMailForASignedInUser(event: new Event()));
 	}//end testOnlyMailsPageForASignedInUser()
 
 	/**
