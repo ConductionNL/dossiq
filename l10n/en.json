@@ -11215,6 +11215,7 @@
         "Type of the sender. medewerker is a handler writing from the case.": "Type of the sender. medewerker is a handler writing from the case.",
         "Type your message…": "Type your message…",
         "Type: {type}": "Type: {type}",
+        "Typed according to the RGBZ, kept in both directions": "Typed according to the RGBZ, kept in both directions",
         "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.": "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.",
         "Typed per the RGBZ, kept in both directions": "Typed per the RGBZ, kept in both directions",
         "UID": "UID",
