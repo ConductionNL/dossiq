@@ -43,6 +43,17 @@ describe('the Linked side card on the case page', () => {
 		expect(ids.indexOf('side-linked')).toBe(ids.indexOf('side-handling') + 1)
 	})
 
+	it('says "Nothing linked yet" when nothing is linked, and the work instruction card says when its type names none', () => {
+		expect(linked.content.emptyText).toBe('Nothing linked yet')
+		const instruction = simpleCase.sideColumn.find(
+			(card) => typeof card === 'object' && card.id === 'side-work-instruction',
+		)
+		expect(instruction.content.emptyText).toBe('This case type names no work instruction yet')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(nl['Nothing linked yet']).toBe('Nog niets gekoppeld')
+		expect(nl['This case type names no work instruction yet']).toBe('Dit zaaktype noemt nog geen werkinstructie')
+	})
+
 	it('lists the leaves in the board order: documents, the pipelinq question, fees, contract, projects', () => {
 		const ids = linked.content.leaves.map((leaf) =>
 			typeof leaf === 'object' ? leaf.id : leaf,

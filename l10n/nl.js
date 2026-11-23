@@ -5924,6 +5924,8 @@ OC.L10N.register(
         "No related cases yet": "Nog geen gerelateerde zaken",
         "No relevant information found": "Geen relevante informatie gevonden",
         "No requester yet": "Nog geen aanvrager",
+        "Nothing linked yet": "Nog niets gekoppeld",
+        "This case type names no work instruction yet": "Dit zaaktype noemt nog geen werkinstructie",
         "No required documents for this case type": "Geen verplichte documenten voor dit zaaktype",
         "No required properties for this case type": "Geen verplichte eigenschappen voor dit zaaktype",
         "No result recorded yet": "Nog geen resultaat vastgelegd",
