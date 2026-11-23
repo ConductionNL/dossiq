@@ -379,3 +379,6 @@ export {
 	dispatchObjectsChanged,
 	OBJECTS_CHANGED_EVENT,
 } from '@conduction/nextcloud-vue/src/utils/objectSignals.js'
+
+// The registry wraps its components in the library's lazy loader.
+export { lazyComponent, loadLazyComponent, resolveLazyComponent } from '@conduction/nextcloud-vue/src/utils/lazyComponent.js'

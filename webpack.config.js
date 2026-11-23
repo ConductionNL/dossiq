@@ -171,6 +171,35 @@ webpackConfig.resolve.alias['@nextcloud/dialogs$'] = path.resolve(
 // the exports field. No alias needed; the pin alone is sufficient. Mirrors
 // decidesk's working webpack config.
 
+// The manifest JSON goes into the bundle without its rationale keys
+// (build/strip-notes-loader.js): about half of its bytes are `_note` prose.
+webpackConfig.module.rules.push({
+	test: /[\\/]src[\\/](manifest|menu-layout(\.simple)?|manifest\.d[\\/][^\\/]+)\.json$/,
+	type: 'json',
+	use: [path.join(__dirname, 'build', 'strip-notes-loader.js')],
+})
+
+// @nextcloud/vue declares no `sideEffects`, so webpack keeps every module its
+// barrel re-exports (the emoji picker and its data, the rich-text and
+// date-picker stacks) even where nothing imports them. Its modules have no
+// import-time side effects other than their stylesheets, which stay included
+// through the CSS rule's own default.
+webpackConfig.module.rules.push({
+	test: /[\\/]node_modules[\\/]@nextcloud[\\/]vue[\\/]dist[\\/].*\.m?js$/,
+	sideEffects: false,
+})
+
+// A dynamic `import('@mdi/js')` (the library's icon browser) uses every export,
+// and webpack keeps one copy of a module, so that copy landed in the entry
+// bundle with all 7,000 icons, beside the few that @nextcloud/dialogs imports
+// by name. Dynamic imports get a module of their own instead, so the static
+// imports stay tree-shaken and the full set loads only with the icon browser.
+webpackConfig.plugins.push(new webpack.NormalModuleReplacementPlugin(/^@mdi\/js$/, (resource) => {
+	if ((resource.dependencies || []).some((dependency) => dependency.type === 'import()')) {
+		resource.request = '@mdi/js/mdi.js?on-demand'
+	}
+}))
+
 // Share Vue + @nextcloud/vue + pinia + icons + @conduction/nextcloud-vue
 // across every entry-point so each widget bundle no longer inlines its own
 // ~5 MB framework copy. Stable filenames (no contenthash in the JS name)
@@ -187,6 +216,10 @@ webpackConfig.optimization = {
 			defaultVendors: false,
 			ncVue: {
 				name: appId + '-shared-nc-vue',
+				// Initial chunks only: the library's own on-demand pieces (its
+				// widget renderers, dialogs, charts, editors) stay async chunks
+				// instead of being pulled into the one chunk every page loads.
+				chunks: 'initial',
 				// A symlinked local nextcloud-vue checkout resolves outside
 				// node_modules (webpack follows the symlink to its real path),
 				// so match on the `nextcloud-vue` path segment, not node_modules.
@@ -198,6 +231,7 @@ webpackConfig.optimization = {
 			},
 			vendor: {
 				name: appId + '-shared-vendor',
+				chunks: 'initial',
 				test: /[\\/]node_modules[\\/](vue|pinia|vue-material-design-icons|@vueuse|core-js)[\\/]/,
 				priority: 20,
 				reuseExistingChunk: true,
