@@ -15181,12 +15181,12 @@
 					}
 				],
 				"shipped": {
-					"title": "Shipped packages",
+					"title": "Built-in packages",
 					"subtitle": "A package is a case type with its statuses, flows and templates; the code stays the same",
 					"parts": "Case type, statuses, flows, templates",
 					"notice": {
 						"title": "No registry set up.",
-						"text": "You see the packages shipped with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
+						"text": "You see the packages that ship with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
 					},
 					"crumbs": [
 						{
