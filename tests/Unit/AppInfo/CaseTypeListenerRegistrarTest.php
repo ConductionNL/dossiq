@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
+use OCA\Dossiq\Listener\CaseOpeningDefaultsListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
@@ -47,6 +48,7 @@ class CaseTypeListenerRegistrarTest extends TestCase {
 			$expected[] = [$event, CaseInheritedDeadlineListener::class, -100];
 		}
 
+		$expected[] = [ObjectCreatingEvent::class, CaseOpeningDefaultsListener::class, 0];
 		$expected[] = [ObjectCreatedEvent::class, CaseTeamAccessListener::class, 0];
 		$expected[] = [ObjectUpdatedEvent::class, CaseTeamAccessListener::class, 0];
 		$expected[] = [ObjectUpdatingEvent::class, CaseDeadlineFollowsTermListener::class, -110];
