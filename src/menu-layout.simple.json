@@ -2661,6 +2661,11 @@
 									"label": "Email",
 									"icon": "EmailOutline",
 									"overflow": true,
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/emails",
+										"field": "total"
+									},
+									"_countNote": "DqZaakEmail \"E-mail 3\": the mail linked to the case, as the panel lists it (OpenRegister's email links of the object).",
 									"widgetIds": [
 										"case-email-panel",
 										"case-notes-panel"
