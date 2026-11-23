@@ -657,7 +657,14 @@
 											"deadline[lt]": "@today+7d"
 										}
 									},
-									"variant": "warning",
+									"_figureNote": "DqMijnWerk: the figure is ink; only the caption turns red while a case ends today (\"2 lopen vandaag af\").",
+									"captionVariantWhen": [
+										{
+											"op": "gt",
+											"value": 0,
+											"variant": "error"
+										}
+									],
 									"layout": "stacked"
 								}
 							},
@@ -734,7 +741,6 @@
 											"endDate[gte]": "@monthStart"
 										}
 									},
-									"variant": "success",
 									"layout": "stacked"
 								}
 							},
