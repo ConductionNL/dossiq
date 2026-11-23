@@ -1329,3 +1329,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `SetupWizardStepsTest` (58: the load, the decline, the refused and unknown dataset, the failed import, the
         legacy action, the pick posted with Next), green before and unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Controller/Support/DatasetLoadTest` (3).
+  - [x] 8bn `Workflow/WorkflowLifecycleGuard` (1: ExcessiveClassComplexity 57 against 50). Which route a definition is
+        on, and which route a case type takes by default, is its own concern, so it moved to the new
+        `Workflow/DefaultRoute`: a blank route read as the default route (`variantOf()`), the default a case type records
+        as an id or an embedded row (`definitionIdFor()`, was `defaultDefinitionIdFor()`), and the pick among several
+        active routes, the recorded one else the lowest slug and its highest version, logged (`among()`, was
+        `defaultAmong()` with `routeOrder()` and `idOf()`). `VARIANT_DEFAULT` lives there too; the guard's constant
+        names it. Bodies moved unchanged. The guard's public methods stay on it and its interface, and delegate; it
+        builds the reader in its constructor, so its constructor signature and the container are unchanged. phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation: the existing workflow guard, definition service and template loader tests (151 in 27 files:
+        the route read, the recorded default, the ambiguous pick, publish and deprecate), green before and unchanged
+        after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Workflow/DefaultRouteTest` (3).

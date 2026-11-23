@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WorkflowDefinitionService
  * @uses \OCA\Dossiq\Service\Workflow\DefinitionLifecycleRows
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
+ * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  * @covers \OCA\Dossiq\Controller\WorkflowDefinitionController
  * @uses \OCA\Dossiq\Service\StepConfigValidator
  * @uses \OCA\Dossiq\Service\StepConfig\EscalationRuleValidator
