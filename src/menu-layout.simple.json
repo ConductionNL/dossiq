@@ -2267,15 +2267,26 @@
 							},
 							"caption": "Decide by {date}",
 							"startField": "startDate",
-							"action": {
-								"label": "Suspend deadline",
-								"type": "open-modal",
-								"target": "CaseLifecycleMenuDialog",
-								"props": {
-									"caseId": "@objectId",
-									"act": "suspend"
+							"actions": [
+								{
+									"label": "Extend",
+									"type": "open-modal",
+									"target": "CaseLifecycleMenuDialog",
+									"props": {
+										"caseId": "@objectId",
+										"act": "extend"
+									}
+								},
+								{
+									"label": "Suspend deadline",
+									"type": "open-modal",
+									"target": "CaseLifecycleMenuDialog",
+									"props": {
+										"caseId": "@objectId",
+										"act": "suspend"
+									}
 								}
-							}
+							]
 						}
 					},
 					"case-stages": {

@@ -3524,6 +3524,7 @@ OC.L10N.register(
         "Exported %n case anonymised": "Exported %n case anonymised",
         "Exported %n cases anonymised": "Exported %n cases anonymised",
         "Exporteren": "Exporteren",
+        "Extend": "Extend",
         "Extend deadline": "Extend deadline",
         "Extend term": "Extend term",
         "Extend the term": "Extend the term",
