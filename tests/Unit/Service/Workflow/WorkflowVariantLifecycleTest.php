@@ -38,10 +38,10 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WorkflowDefinitionService
  * @uses \OCA\Dossiq\Service\Workflow\DefinitionLifecycleRows
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
- * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  * @uses \OCA\Dossiq\Service\Workflow\StepConfigCheck
  * @uses \OCA\Dossiq\Service\Workflow\PublishCandidate
+ * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  */
 class WorkflowVariantLifecycleTest extends TestCase {
 
