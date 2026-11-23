@@ -150,7 +150,7 @@ class OneDateWritePathTest extends TestCase {
 			. ' date write; belongs to the archival capability and its own change',
 		'Service/Bezwaar/BeroepService.php::shiftDate' => 'beroep term arithmetic on an already normalised value; moves with'
 			. ' openspec/changes/terms-on-the-engine-calendar',
-		'Service/CaseLifecycleService.php::requireLaterDate' => 'a comparison guard, not a writer: it refuses an earlier date and stores nothing itself',
+		'Service/Lifecycle/ExtensionEndDate.php::requireLaterDate' => 'a comparison guard, not a writer: it refuses an earlier date and stores nothing itself',
 		'Portal/CaseSteps.php::asDate' => 'a read for display: it cuts a stored moment down to the day a resident'
 			. ' reads beside a step, writes nothing and resolves no zone (gmdate on a stored ATOM value). The folding'
 			. ' it belongs to is deliberately dependency-free so the rule can be asserted without a store, which is'
