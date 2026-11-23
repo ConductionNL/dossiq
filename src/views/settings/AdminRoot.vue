@@ -68,7 +68,7 @@
 				:description="
 					t(
 						'dossiq',
-						'In which register Dossiq keeps cases, and with which schemas.',
+						'Which register Dossiq stores cases in, and with which schemas.',
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/intro"
