@@ -115,6 +115,14 @@ describe('the Who can see this card', () => {
 		expect(formatters.accessExceptionNames(undefined)).toBe('')
 	})
 
+	it('reads Everyone on the case as the default of a document without a level, and says an empty checksum is not computed yet', () => {
+		expect(card.title).toBe('Who may see this: {name}')
+		expect(card.fields[0].fallback).toBe('Everyone on the case')
+		const checksum = files.props.sideCards.find((c) => c.id === 'checksum')
+		expect(checksum.emptyText).toBe('Not computed yet')
+		expect(files.props.bulkActions.map((action) => action.label)).toEqual(['Merge into pdf', 'Copy to another case', 'Who may see this', 'Mark as final'])
+	})
+
 	it('offers Change exception only on a row whose canChangeAccess is true', () => {
 		expect(card.actions).toHaveLength(1)
 		expect(card.actions[0]).toMatchObject({

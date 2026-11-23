@@ -14,7 +14,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('dossiq', 'Who can see this: {name}', { name: fileName })"
+		:name="t('dossiq', 'Who may see this: {name}', { name: fileName })"
 		data-testid="document-access-exception-dialog"
 		:noClose="busy"
 		@closing="onClose">
