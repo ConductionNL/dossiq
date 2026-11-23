@@ -3289,6 +3289,7 @@
         "Each lot is a sub-case with bids and an award of its own": "Each lot is a sub-case with bids and an award of its own",
         "Each product field and the case answer its new value comes from.": "Each product field and the case answer its new value comes from.",
         "Each report groups cases on a field. An administrator sets them up under Settings.": "Each report groups cases on a field. An administrator sets them up under Settings.",
+        "Each report is a grouping of cases on a field. An administrator sets them up under Settings.": "Each report is a grouping of cases on a field. An administrator sets them up under Settings.",
         "Each thing the applicant has to send, as its own row. A list rather than a sentence, because only a list lets the answer say WHICH of them arrived, and a partly answered request is the ordinary case.": "Each thing the applicant has to send, as its own row. A list rather than a sentence, because only a list lets the answer say WHICH of them arrived, and a partly answered request is the ordinary case.",
         "Each user still switches it on for their own mailbox. Until then, nothing is linked.": "Each user still switches it on for their own mailbox. Until then, nothing is linked.",
         "Each {to, from | value, as, maxLength, values, default, required}. from @id reads the record's uuid; as is text, date, dateTime or integer.": "Each {to, from | value, as, maxLength, values, default, required}. from @id reads the record's uuid; as is text, date, dateTime or integer.",

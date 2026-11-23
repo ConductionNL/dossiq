@@ -12804,8 +12804,8 @@
 			"config": {
 				"description": "Reports on every case in Zuiddrecht. Pick a report and set the period. Costs per task field are in Shillinq.",
 				"panel": {
-					"title": "Report overview",
-					"subtitle": "Each report groups cases on a field. An administrator sets them up under Settings.",
+					"title": "Reports",
+					"subtitle": "Each report is a grouping of cases on a field. An administrator sets them up under Settings.",
 					"link": {
 						"label": "Set up reports",
 						"href": "/index.php/settings/admin/dossiq"
@@ -12844,7 +12844,7 @@
 					},
 					{
 						"id": "TermijnDashboard",
-						"label": "Terms",
+						"label": "Deadlines",
 						"description": "Cases approaching or exceeding their statutory deadline.",
 						"meta": "Grouping: deadline status",
 						"icon": "ClockAlertOutline",
