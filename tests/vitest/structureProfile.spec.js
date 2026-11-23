@@ -337,7 +337,7 @@ describe('the simple profile', () => {
 		// Help is the documentation link already in the footer, renamed, so
 		// the footer does not list the same page twice.
 		expect(entry('Documentation')).toMatchObject({
-			label: 'Help and explanation',
+			label: 'Help and guidance',
 			icon: 'HelpCircleOutline',
 			href: 'https://dossiq.conduction.nl',
 			section: 'footer',
