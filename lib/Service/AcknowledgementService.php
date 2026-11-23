@@ -67,7 +67,6 @@ use Throwable;
  * directory, the portal's field list and the field writer. Splitting the class
  * to lower the count would spread one statutory duty over several files, which
  * is the thing this change exists to stop.
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/burger-notifications/spec.md
  */

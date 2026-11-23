@@ -1385,3 +1385,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         cursor) with the other match tests and `ServiceCatchReturnsNullTest` (79 in 4 files), green before and
         unchanged after but for one `@uses` line.
         Own test: `tests/Unit/Service/Email/MatchRunReadinessTest` (2).
+  - [x] 8br Three stale `TooManyMethods` suppressions (3: `AcknowledgementService`, `DeadlineExtensionService`,
+        `ZgwRulesBase`). The extractions of 8au, 8aw and 8bp left each class under the threshold, but the
+        class-level suppression stayed. Found by removing every `@SuppressWarnings(PHPMD.*)` line in `lib/` one at
+        a time and running both rulesets on its file: these three were the only ones whose rule no longer fires.
+        Removed; phpmd reports zero findings on the three files under both rulesets (pdepend cache cleared).
+        Docblock only, no code path changed, so no test was added; the suites of the three classes run unchanged.
+        `phpmd.suppressWarnings` 195 to 192 (the baseline file still reads 178: development was already over it).

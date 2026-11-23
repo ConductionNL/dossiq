@@ -39,8 +39,6 @@ use RuntimeException;
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
  *
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
- *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
