@@ -2275,7 +2275,8 @@
 									"props": {
 										"caseId": "@objectId",
 										"act": "extend"
-									}
+									},
+									"hiddenIn": ["settled"]
 								},
 								{
 									"label": "Suspend deadline",
@@ -2284,7 +2285,8 @@
 									"props": {
 										"caseId": "@objectId",
 										"act": "suspend"
-									}
+									},
+									"hiddenIn": ["settled"]
 								}
 							]
 						}
