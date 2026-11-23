@@ -2,7 +2,8 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
 	<NcModal size="normal" labelId="link-to-case-title" @close="$emit('close')">
-		<div class="link-to-case" data-testid="link-to-case-dialog">
+		<!-- In the board look, so the theme's paragraph and heading sizes, which spare only .cn-look-board, leave the board's type alone. -->
+		<div class="link-to-case cn-look-board" data-testid="link-to-case-dialog">
 			<p class="link-to-case__eyebrow">
 				{{ t('dossiq', 'Inbox') }}
 			</p>
@@ -391,7 +392,7 @@ export default {
 
 .link-to-case__title {
 	margin: 0;
-	font-size: 22px;
+	font-size: 20px;
 	font-weight: 700;
 }
 
