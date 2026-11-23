@@ -8838,7 +8838,7 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time",
+						"label": "Lead time",
 						"width": "158px",
 						"formatter": "processingTime"
 					},
@@ -8894,7 +8894,7 @@
 						"showCount": true
 					},
 					{
-						"label": "Shipped",
+						"label": "Included",
 						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
 						"filter": {
 							"supersededBy": {
@@ -9201,7 +9201,7 @@
 					{
 						"id": "side-case-type-choice-list",
 						"type": "field-list",
-						"title": "Choice list: {name|fieldTitle}",
+						"title": "Pick list: {name|fieldTitle}",
 						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
 						"tabs": ["fields"],
 						"follows": {
@@ -9465,7 +9465,7 @@
 								},
 								{
 									"id": "rights",
-									"label": "Rights",
+									"label": "Permissions",
 									"widgetIds": [
 										"case-type-rights"
 									]
@@ -9522,7 +9522,7 @@
 								{
 									"id": "history",
 									"widgetId": "case-type-history",
-									"label": "Record history"
+									"label": "History"
 								}
 							]
 						}
@@ -9624,7 +9624,7 @@
 						"title": "Rules",
 						"headerActions": [
 							{
-								"label": "Add a rule",
+								"label": "Add rule",
 								"icon": "Plus",
 								"action": {
 									"type": "navigate",
