@@ -12296,6 +12296,7 @@ OC.L10N.register(
         "With a reason. The requester gets a message.": "With a reason. The requester gets a message.",
         "With an account (DigiD or eHerkenning)": "With an account (DigiD or eHerkenning)",
         "With an open case": "With an open case",
+        "With confidentiality": "With confidentiality",
         "With data protection": "With data protection",
         "With drafts": "With drafts",
         "With open case": "With open case",
