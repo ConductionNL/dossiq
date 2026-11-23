@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
 use OCA\Dossiq\Service\Session\SessionDefinitionReader;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -66,7 +67,7 @@ class ComplaintCaseTypeTest extends TestCase {
 	private function objects(): array {
 		if (self::$objects === null) {
 			$register = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'), true);
-			self::$objects = (array)$register['components']['objects'];
+			self::$objects = (array)SeedAsReadInDutch::resolve(value: $register['components']['objects']);
 		}
 
 		return self::$objects;

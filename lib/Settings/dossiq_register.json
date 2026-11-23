@@ -13055,7 +13055,7 @@
                     "version": "1.1.1",
                     "slug": "omgevingsvergunning"
                 },
-                "title": "Omgevingsvergunning",
+                "title": {"nl": "Omgevingsvergunning", "en": "Environmental permit"},
                 "colour": "teal",
                 "icon": "OfficeBuildingOutline",
                 "category": "Vergunningen",
@@ -13081,7 +13081,7 @@
                     "version": "1.1.1",
                     "slug": "subsidieaanvraag"
                 },
-                "title": "Subsidieaanvraag",
+                "title": {"nl": "Subsidieaanvraag", "en": "Grant application"},
                 "colour": "teal",
                 "icon": "CashMultiple",
                 "category": "Subsidies",
@@ -13106,7 +13106,7 @@
                     "version": "1.3.0",
                     "slug": "klacht-behandeling"
                 },
-                "title": "Klacht behandeling",
+                "title": {"nl": "Klacht behandeling", "en": "Complaint handling"},
                 "overviewCards": ["case-overview-sections"],
                 "overviewSections": [
                   {
@@ -13428,15 +13428,15 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-ontvangen"
                 },
-                "phase": "Ontvangst",
-                "name": "Ontvangen",
+                "phase": {"nl": "Ontvangst", "en": "Receipt"},
+                "name": {"nl": "Ontvangen", "en": "Received"},
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
                 "colour": "blue",
-                "publicLabel": "Ontvangen",
+                "publicLabel": {"nl": "Ontvangen", "en": "Received"},
                 "publicDescription": "Uw aanvraag is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
@@ -13445,15 +13445,15 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-in-behandeling"
                 },
-                "phase": "Beoordeling",
-                "name": "In behandeling",
+                "phase": {"nl": "Beoordeling", "en": "Assessment"},
+                "name": {"nl": "In behandeling", "en": "In progress"},
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag wordt inhoudelijk getoetst",
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
-                "publicLabel": "In behandeling",
+                "publicLabel": {"nl": "In behandeling", "en": "In progress"},
                 "publicDescription": "Wij toetsen uw aanvraag aan de regels."
             },
             {
@@ -13462,15 +13462,15 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-besluitvorming"
                 },
-                "phase": "Besluit",
-                "name": "Besluitvorming",
+                "phase": {"nl": "Besluit", "en": "Decision"},
+                "name": {"nl": "Besluitvorming", "en": "Decision making"},
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Besluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
                 "colour": "teal",
-                "publicLabel": "Besluit",
+                "publicLabel": {"nl": "Besluit", "en": "Decision"},
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
             {
@@ -13479,7 +13479,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-afgehandeld"
                 },
-                "name": "Afgehandeld",
+                "name": {"nl": "Afgehandeld", "en": "Completed"},
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Zaak is afgehandeld en gearchiveerd",
                 "order": 4,
@@ -13487,7 +13487,7 @@
                 "role": "closed",
                 "colour": "green",
                 "hiddenInLists": true,
-                "publicLabel": "Afgehandeld",
+                "publicLabel": {"nl": "Afgehandeld", "en": "Completed"},
                 "publicDescription": "Uw aanvraag is afgehandeld."
             },
             {
@@ -13496,15 +13496,15 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-ontvangen"
                 },
-                "phase": "Ontvangst",
-                "name": "Ontvangen",
+                "phase": {"nl": "Ontvangst", "en": "Receipt"},
+                "name": {"nl": "Ontvangen", "en": "Received"},
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidieaanvraag is ontvangen",
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
                 "colour": "blue",
-                "publicLabel": "Ontvangen",
+                "publicLabel": {"nl": "Ontvangen", "en": "Received"},
                 "publicDescription": "Uw aanvraag is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
@@ -13513,15 +13513,15 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-beoordeling"
                 },
-                "phase": "Beoordeling",
-                "name": "Beoordeling",
+                "phase": {"nl": "Beoordeling", "en": "Assessment"},
+                "name": {"nl": "Beoordeling", "en": "Assessment"},
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
-                "publicLabel": "In behandeling",
+                "publicLabel": {"nl": "In behandeling", "en": "In progress"},
                 "publicDescription": "Wij toetsen uw aanvraag aan de subsidieregels."
             },
             {
@@ -13530,15 +13530,15 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-besluitvorming"
                 },
-                "phase": "Besluit",
-                "name": "Besluitvorming",
+                "phase": {"nl": "Besluit", "en": "Decision"},
+                "name": {"nl": "Besluitvorming", "en": "Decision making"},
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
                 "colour": "teal",
-                "publicLabel": "Besluit",
+                "publicLabel": {"nl": "Besluit", "en": "Decision"},
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
             {
@@ -13547,7 +13547,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-afgehandeld"
                 },
-                "name": "Afgehandeld",
+                "name": {"nl": "Afgehandeld", "en": "Completed"},
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidie is verleend, geweigerd of ingetrokken",
                 "order": 4,
@@ -13555,7 +13555,7 @@
                 "role": "closed",
                 "colour": "green",
                 "hiddenInLists": true,
-                "publicLabel": "Afgehandeld",
+                "publicLabel": {"nl": "Afgehandeld", "en": "Completed"},
                 "publicDescription": "Uw aanvraag is afgehandeld."
             },
             {
@@ -13564,15 +13564,15 @@
                     "schema": "statusType",
                     "slug": "klacht-ontvangen"
                 },
-                "phase": "Ontvangst",
-                "name": "Ontvangen",
+                "phase": {"nl": "Ontvangst", "en": "Receipt"},
+                "name": {"nl": "Ontvangen", "en": "Received"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
                 "colour": "blue",
-                "publicLabel": "Ontvangen",
+                "publicLabel": {"nl": "Ontvangen", "en": "Received"},
                 "publicDescription": "Uw klacht is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
@@ -13581,15 +13581,15 @@
                     "schema": "statusType",
                     "slug": "klacht-bevestigd"
                 },
-                "phase": "Ontvangst",
-                "name": "Bevestigd",
+                "phase": {"nl": "Ontvangst", "en": "Receipt"},
+                "name": {"nl": "Bevestigd", "en": "Confirmed"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "De ontvangst van de klacht is schriftelijk bevestigd (Awb 9:6)",
                 "order": 2,
                 "isFinal": false,
                 "role": "intake",
                 "colour": "blue",
-                "publicLabel": "Ontvangen",
+                "publicLabel": {"nl": "Ontvangen", "en": "Received"},
                 "publicDescription": "Wij hebben de ontvangst van uw klacht bevestigd."
             },
             {
@@ -13599,15 +13599,15 @@
                     "slug": "klacht-onderzoek",
                     "version": "1.1.0"
                 },
-                "phase": "Beoordeling",
-                "name": "Hoorgesprek",
+                "phase": {"nl": "Beoordeling", "en": "Assessment"},
+                "name": {"nl": "Hoorgesprek", "en": "Hearing"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "De klager en de betrokken medewerker worden gehoord (Awb 9:10)",
                 "order": 3,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
-                "publicLabel": "In behandeling",
+                "publicLabel": {"nl": "In behandeling", "en": "In progress"},
                 "publicDescription": "Wij onderzoeken uw klacht en vragen u om uw kant van het verhaal."
             },
             {
@@ -13616,15 +13616,15 @@
                     "schema": "statusType",
                     "slug": "klacht-oordeel"
                 },
-                "phase": "Beoordeling",
-                "name": "Oordeel",
+                "phase": {"nl": "Beoordeling", "en": "Assessment"},
+                "name": {"nl": "Oordeel", "en": "Verdict"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Het bestuursorgaan oordeelt of de klacht gegrond is",
                 "order": 4,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
-                "publicLabel": "In behandeling",
+                "publicLabel": {"nl": "In behandeling", "en": "In progress"},
                 "publicDescription": "Wij beoordelen uw klacht."
             },
             {
@@ -13633,15 +13633,15 @@
                     "schema": "statusType",
                     "slug": "klacht-antwoordbrief"
                 },
-                "phase": "Afhandeling",
-                "name": "Antwoordbrief",
+                "phase": {"nl": "Afhandeling", "en": "Completion"},
+                "name": {"nl": "Antwoordbrief", "en": "Reply letter"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "De klager krijgt het oordeel, de gronden en eventuele conclusies schriftelijk (Awb 9:12)",
                 "order": 5,
                 "isFinal": false,
                 "role": "review",
                 "colour": "teal",
-                "publicLabel": "In behandeling",
+                "publicLabel": {"nl": "In behandeling", "en": "In progress"},
                 "publicDescription": "Wij sturen u ons oordeel per brief."
             },
             {
@@ -13651,7 +13651,7 @@
                     "slug": "klacht-afgehandeld",
                     "version": "1.1.0"
                 },
-                "name": "Afgehandeld",
+                "name": {"nl": "Afgehandeld", "en": "Completed"},
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is afgehandeld met formeel antwoord",
                 "order": 6,
@@ -13659,7 +13659,7 @@
                 "role": "closed",
                 "colour": "green",
                 "hiddenInLists": true,
-                "publicLabel": "Afgehandeld",
+                "publicLabel": {"nl": "Afgehandeld", "en": "Completed"},
                 "publicDescription": "Uw klacht is afgehandeld. U heeft ons antwoord ontvangen."
             },
             {
