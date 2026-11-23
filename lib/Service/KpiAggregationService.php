@@ -687,13 +687,16 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 			return null;
 		}
 
-		try {
-			$service = $this->container->get('OCA\OpenRegister\Service\LanguageService');
-		} catch (\Throwable $e) {
+		$serviceId = 'OCA\OpenRegister\Service\LanguageService';
+		if ($this->container->has($serviceId) === false) {
 			return null;
 		}
 
-		if (method_exists($service, 'setReturnAllTranslations') === false || method_exists($service, 'shouldReturnAllTranslations') === false) {
+		$service = $this->container->get($serviceId);
+		if (is_object($service) === false
+			|| method_exists($service, 'setReturnAllTranslations') === false
+			|| method_exists($service, 'shouldReturnAllTranslations') === false
+		) {
 			return null;
 		}
 

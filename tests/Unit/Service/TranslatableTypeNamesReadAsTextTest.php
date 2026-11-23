@@ -161,8 +161,12 @@ class TranslatableTypeNamesReadAsTextTest extends TestCase {
 			}
 		};
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
-		$container->method('get')->willReturnCallback(
-			static fn (string $id): object => ($id === 'OCA\\OpenRegister\\Service\\LanguageService' ? $language : $objectService)
+		$container->method('has')->willReturn(true);
+		$container->method('get')->willReturnMap(
+			[
+				['OCA\\OpenRegister\\Service\\LanguageService', $language],
+				['OCA\OpenRegister\Service\ObjectService', $objectService],
+			]
 		);
 		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('getLanguageCode')->willReturn('en');
