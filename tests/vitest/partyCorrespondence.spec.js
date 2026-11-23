@@ -66,8 +66,8 @@ describe('the Files tab declares its columns', () => {
 		// 🔴 The property, not the label. A column bound to a key nothing
 		// answers renders blank forever and raises nothing anywhere. The table
 		// shows the DqDocumentenBeheer columns: scanVerdict, which the dossier
-		// listing carries per row, and vertrouwelijkheidaanduiding, the row's
-		// own confidentiality; reviewVerdict, which the listing puts on each row
+		// listing carries per row, and accessExceptionNames, the row's access
+		// exception (Visible to reads everyone on the case without one); reviewVerdict, which the listing puts on each row
 		// of a case under review. Direction and keywords are the informatieobject's
 		// own fields, which the listing carries whole; they start hidden, as do
 		// documentType and partyName, which DocumentListingLabels adds to each row.
@@ -80,7 +80,7 @@ describe('the Files tab declares its columns', () => {
 				.map((column) => column.property),
 		).toEqual([
 			'scanVerdict',
-			'vertrouwelijkheidaanduiding',
+			'accessExceptionNames',
 			'reviewVerdict',
 			'documentType',
 			'direction',

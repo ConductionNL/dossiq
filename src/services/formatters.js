@@ -483,6 +483,23 @@ function sentTime(value, when) {
 	return sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
 }
 
+/**
+ * Who a document's access exception names: "Only Pieter Jansen and Woo team", or '' without one.
+ *
+ * @param {Array<string>} value The display names, people first, then groups.
+ * @return {string} The sentence.
+ */
+function exceptionSentence(value) {
+	const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
+	if (names.length === 0) {
+		return ''
+	}
+	if (names.length === 1) {
+		return t('dossiq', 'Only {name}', { name: names[0] })
+	}
+	return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
+}
+
 export default {
 	/**
 	 * A stored code by its label (`formatterOptions.labels`), translated; the
@@ -908,16 +925,20 @@ export default {
 	 * @return {string} The sentence, or '' when the document carries no exception.
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
 	 */
-	accessExceptionNames: (value) => {
-		const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
-		if (names.length === 0) {
-			return ''
-		}
-		if (names.length === 1) {
-			return t('dossiq', 'Only {name}', { name: names[0] })
-		}
-		return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
+	/**
+	 * Who may see a document, as the Files list's Visible to column reads it (board DqDocumentenBeheer):
+	 * everyone on the case, unless the document carries an access exception.
+	 *
+	 * @param {Array<string>} value The exception's display names, when the document carries one.
+	 * @return {string} The sentence.
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	visibleTo: (value) => {
+		const exception = exceptionSentence(value)
+		return exception !== '' ? exception : t('dossiq', 'Everyone on the case')
 	},
+
+	accessExceptionNames: (value) => exceptionSentence(value),
 
 	confidentialityLabel: (value) => {
 		const labels = {

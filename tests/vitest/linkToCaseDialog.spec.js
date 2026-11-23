@@ -113,12 +113,12 @@ describe('LinkToCaseDialog', () => {
 		// The theme sizes every paragraph and heading outside .cn-look-board; the dialog is drawn in the board look.
 		expect(wrapper.find('[data-testid="link-to-case-dialog"]').classes()).toContain('cn-look-board')
 		expect(wrapper.find('[data-testid="link-to-case-message"]').text()).toContain('Vraag over mijn kapvergunning 2026-0206')
-		expect(wrapper.find('[data-testid="link-to-case-attachments"]').text()).toContain('2 attachments go along: eik-achtertuin-1.jpg, eik-achtertuin-2.jpg')
+		expect(wrapper.find('[data-testid="link-to-case-attachments"]').text()).toContain('2 attachments go with it: eik-achtertuin-1.jpg, eik-achtertuin-2.jpg')
 		const proposal = wrapper.find('[data-testid="link-to-case-proposal"]')
 		expect(proposal.classes()).toContain('link-to-case__case--chosen')
 		expect(proposal.text()).toContain('Kapvergunning · Henk Bakker · handler Anouk Bakker')
 		expect(wrapper.find('[data-testid="link-to-case-confirm"]').text()).toContain('Link to case 2026-0206')
-		expect(wrapper.find('[data-testid="link-to-case-notify"]').text()).toContain('Let Anouk Bakker know a message was added')
+		expect(wrapper.find('[data-testid="link-to-case-notify"]').text()).toContain('Tell Anouk Bakker a message was added')
 	})
 
 	it('links to the proposal with the proposal as its reason and both choices', async () => {
@@ -149,12 +149,16 @@ describe('LinkToCaseDialog', () => {
 		expect(wrapper.vm.canLink).toBe(true)
 	})
 
-	it('names the reader as the handler and offers no notice to themselves', async () => {
+	it('names the reader as the handler and shows the notice disabled, with why', async () => {
 		mockGet.mockImplementation(() => Promise.resolve({ data: { identifier: '2026-4833', title: 'Lindelaan', status: { name: 'Received' }, caseType: { title: 'Complaint handling' }, assignee: 'pieter' } }))
 		const wrapper = await dialog()
 
 		expect(wrapper.find('[data-testid="link-to-case-proposal"]').text()).toContain('handler Pieter Jansen')
-		expect(wrapper.find('[data-testid="link-to-case-notify"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="link-to-case-notify"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="link-to-case-notify-note"]').text()).toContain('You handle this case yourself')
+		await wrapper.find('[data-testid="link-to-case-confirm"]').trigger('click')
+		await flushPromises()
+		expect(mockPost.mock.calls[0][1].notifyHandler).toBe(false)
 	})
 
 	it('reads a stored case into the row the dialog shows', () => {

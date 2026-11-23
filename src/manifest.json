@@ -4014,18 +4014,13 @@
 								},
 								{
 									"id": "visible-to",
-									"key": "vertrouwelijkheidaanduiding",
+									"key": "accessExceptionNames",
 									"source": "row",
 									"hidden": "@context.caseType.documentReview.enabled",
 									"label": "Visible to",
-									"property": "vertrouwelijkheidaanduiding",
-									"formatter": "confidentialityLabel",
-									"colorMap": {
-										"vertrouwelijk": "warning",
-										"confidentieel": "warning",
-										"geheim": "warning",
-										"zeer_geheim": "warning"
-									}
+									"property": "accessExceptionNames",
+									"formatter": "visibleTo",
+									"_note": "DqDocumentenBeheer: who may see the document. Everyone on the case, unless the document carries an access exception (the dossier listing's accessExceptionNames), then the exception's people and groups."
 								},
 								{
 									"id": "review-verdict",
