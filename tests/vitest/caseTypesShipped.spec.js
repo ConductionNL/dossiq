@@ -17,9 +17,9 @@ const page = layout.pages.find((p) => p.id === 'CaseTypes')
 
 describe('the case type list in the simple profile', () => {
 	it('offers the shipped case types, current versions only, with a count', () => {
-		const chip = page.config.quickFilters.find((q) => q.label === 'Shipped')
+		const chip = page.config.quickFilters.find((q) => q.label === 'Included')
 		expect(chip.filter).toEqual({ supersededBy: { isnull: true }, '@self': { owner: '__system__' } })
 		expect(chip.showCount).toBe(true)
-		expect(page.config.quickFilters.map((q) => q.label)).toEqual(['All', 'Published', 'Draft', 'Shipped'])
+		expect(page.config.quickFilters.map((q) => q.label)).toEqual(['All', 'Published', 'Draft', 'Included'])
 	})
 })

@@ -18,10 +18,10 @@ const home = manifest.pages.find((page) => page.id === 'MyWorkHome')
 const team = home.config.views.find((view) => view.id === 'team')
 
 describe('the My team view', () => {
-	it('names the overdue tile Late', () => {
+	it('names the overdue tile Overdue', () => {
 		const tile = team.widgets.find((widget) => widget.id === 'kpi-overdue')
-		expect(tile.title).toBe('Late')
-		expect(tile.content.label).toBe('Late')
+		expect(tile.title).toBe('Overdue')
+		expect(tile.content.label).toBe('Overdue')
 	})
 
 	it('shows the titles of the two bar lists', () => {

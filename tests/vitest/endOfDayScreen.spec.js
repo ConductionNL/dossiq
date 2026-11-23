@@ -49,7 +49,7 @@ describe('the end-of-day page', () => {
 		const open = widget('eod-open').content
 		expect(open.presentation).toBe('notes')
 		expect(open.noteAction.urlField).toBe('notesUrl')
-		expect(open.noteAction.recordAll.label).toBe('Close out your day')
+		expect(open.noteAction.recordAll.label).toBe('Close the day')
 	})
 
 	it('keeps typed notes in the browser as the ready figure inside the notes list', () => {
@@ -134,7 +134,7 @@ describe('the end-of-day page', () => {
 		expect(figures.content.columns).toBe(2)
 		const [opened, recorded, hours] = figures.content.cells
 		expect(opened).toMatchObject({ label: 'Opened', valueField: 'figures.0.value', caption: '{figures.0.note}' })
-		expect(recorded).toMatchObject({ label: 'Notes recorded', valueField: 'figures.1.value', caption: '{figures.1.note}' })
+		expect(recorded).toMatchObject({ label: 'Recorded', valueField: 'figures.1.value', caption: '{figures.1.note}' })
 		expect(hours).toMatchObject({ label: 'Hours', valueField: 'hours', caption: 'already in humaniq', endpointSource: { url: SUMMARY } })
 		expect(hours.format).toEqual({ style: 'decimal', decimals: 2 })
 		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })

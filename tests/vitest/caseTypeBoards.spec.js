@@ -137,7 +137,7 @@ describe('the side facts (REQ-CTB-5)', () => {
 describe('card header actions (nextcloud-vue widget-header-actions)', () => {
 	it.each([
 		['case-type-statuses', 'Edit', 'statuses'],
-		['case-type-rules-summary', 'Add a rule', 'rules'],
+		['case-type-rules-summary', 'Add rule', 'rules'],
 		['case-type-terms-written', 'Edit', 'properties'],
 	])('%s carries %s, opening the %s tab', (id, label, tabId) => {
 		expect(widget(id).headerActions).toEqual([
@@ -176,7 +176,7 @@ describe('the choice list beside Fields (DqZaaktypeVelden, nextcloud-vue side-ca
 
 	it('follows the selected field that has a choice list, beside the Fields tab', () => {
 		expect(card.tabs).toEqual(['fields'])
-		expect(card.title).toBe('Choice list: {name|fieldTitle}')
+		expect(card.title).toBe('Pick list: {name|fieldTitle}')
 		expect(card.follows).toEqual({
 			widget: 'case-type-fields-editor',
 			register: 'dossiq',
