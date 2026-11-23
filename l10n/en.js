@@ -10822,6 +10822,7 @@ OC.L10N.register(
         "This server does not keep track of which cases you open.": "This server does not keep track of which cases you open.",
         "This set has no items.": "This set has no items.",
         "This shared case is password-protected.": "This shared case is password-protected.",
+        "This shows what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq.": "This shows what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq.",
         "This source cannot be searched now.": "This source cannot be searched now.",
         "This source could not be searched.": "This source could not be searched.",
         "This source is not known.": "This source is not known.",

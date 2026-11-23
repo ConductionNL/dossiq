@@ -8239,7 +8239,7 @@
 							],
 							"noteAction": {
 								"urlField": "notesUrl",
-								"label": "Record it",
+								"label": "Record",
 								"fieldLabel": "What happened",
 								"placeholder": "For example: called the resident, waiting for documents",
 								"readyLabel": "filled in, not recorded yet",
@@ -8330,7 +8330,7 @@
 									"caption": "{figures.0.note}"
 								},
 								{
-									"label": "Notes recorded",
+									"label": "Recorded",
 									"valueField": "figures.1.value",
 									"caption": "{figures.1.note}"
 								},
@@ -8408,7 +8408,7 @@
 						"titleTone": "side",
 						"content": {
 							"contentMode": "markdown",
-							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
+							"text": "This shows what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
 						}
 					}
 				],
