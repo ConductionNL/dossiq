@@ -63,7 +63,7 @@ class CaseCreationActivityStampListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Add `lastActivityAt` to a case being created, unless it already has one.
+	 * Hand a pre-persist create to the stamp; any other event is not this listener's.
 	 *
 	 * @param Event $event The dispatched event.
 	 *
@@ -72,22 +72,33 @@ class CaseCreationActivityStampListener implements IEventListener {
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === false) {
-			return;
+		if ($event instanceof ObjectCreatingEvent) {
+			$this->stampIfMissing(creating: $event);
 		}
+	}//end handle()
 
-		$case = $this->caseBeingCreated(event: $event);
+	/**
+	 * Add `lastActivityAt` to a case being created, unless it already has one.
+	 *
+	 * @param ObjectCreatingEvent $creating The pre-persist create event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-last-activity-at/spec.md
+	 */
+	private function stampIfMissing(ObjectCreatingEvent $creating): void {
+		$case = $this->caseBeingCreated(event: $creating);
 		if ($case === null || trim((string)($case[CaseActivityStampInterface::FIELD] ?? '')) !== '') {
 			return;
 		}
 
-		$event->setModifiedData(
+		$creating->setModifiedData(
 			array_merge(
-				$event->getModifiedData(),
+				$creating->getModifiedData(),
 				[CaseActivityStampInterface::FIELD => $this->time->now()->format(DateTimeInterface::ATOM)]
 			)
 		);
-	}//end handle()
+	}//end stampIfMissing()
 
 	/**
 	 * The case as the create will store it, or null when the object is no case or cannot be read.
