@@ -3391,6 +3391,8 @@ OC.L10N.register(
         "Say why this message belongs on that case.": "Say why this message belongs on that case.",
         "The message could not be linked. Try again.": "The message could not be linked. Try again.",
         "The message is on case {number}.": "The message is on case {number}.",
+        "The case was made, but the message could not be put on it. Link it from the inbox.": "The case was made, but the message could not be put on it. Link it from the inbox.",
+        "The message is on the new case.": "The message is on the new case.",
         "handler {name}": "handler {name}",
         "Evaluated": "Evaluated",
         "Evaluated by": "Evaluated by",
