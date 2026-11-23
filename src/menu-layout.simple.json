@@ -8841,7 +8841,7 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time",
+						"label": "Lead time",
 						"width": "158px",
 						"formatter": "processingTime"
 					},
@@ -8897,7 +8897,7 @@
 						"showCount": true
 					},
 					{
-						"label": "Shipped",
+						"label": "Included",
 						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
 						"filter": {
 							"supersededBy": {
