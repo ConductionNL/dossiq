@@ -142,7 +142,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "A short tour of the menu. It takes less than a minute. The tour starts only here, on the dashboard; whoever arrives on a case through a link sees that case without a welcome card and gets the tour on their first visit to the dashboard. Restart it later from Help and explanation.",
+						"body": "A short tour of the menu. It takes less than a minute. The tour starts only here, on the dashboard; whoever arrives on a case through a link sees that case without a welcome card and gets the tour on their first visit to the dashboard. Restart it later from Help and guidance.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -4014,18 +4014,13 @@
 								},
 								{
 									"id": "visible-to",
-									"key": "vertrouwelijkheidaanduiding",
+									"key": "accessExceptionNames",
 									"source": "row",
 									"hidden": "@context.caseType.documentReview.enabled",
 									"label": "Visible to",
-									"property": "vertrouwelijkheidaanduiding",
-									"formatter": "confidentialityLabel",
-									"colorMap": {
-										"vertrouwelijk": "warning",
-										"confidentieel": "warning",
-										"geheim": "warning",
-										"zeer_geheim": "warning"
-									}
+									"property": "accessExceptionNames",
+									"formatter": "visibleTo",
+									"_note": "DqDocumentenBeheer: who may see the document. Everyone on the case, unless the document carries an access exception (the dossier listing's accessExceptionNames), then the exception's people and groups."
 								},
 								{
 									"id": "review-verdict",

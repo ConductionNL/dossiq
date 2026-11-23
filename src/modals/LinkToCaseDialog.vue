@@ -11,7 +11,7 @@
 				{{ t('dossiq', 'Link to case') }}
 			</h2>
 			<p class="link-to-case__lead">
-				{{ t('dossiq', 'The message goes onto the case with its attachments. It leaves the inbox.') }}
+				{{ t('dossiq', 'The message and its attachments go on the case. It leaves the inbox.') }}
 			</p>
 
 			<div class="link-to-case__message" data-testid="link-to-case-message">
@@ -24,14 +24,14 @@
 					</p>
 					<span v-if="message.attachments.length > 0" class="link-to-case__attachments" data-testid="link-to-case-attachments">
 						<Paperclip :size="14" />
-						{{ n('dossiq', '%n attachment goes along: {names}', '%n attachments go along: {names}', message.attachments.length, { names: message.attachments.join(', ') }) }}
+						{{ n('dossiq', '%n attachment goes with it: {names}', '%n attachments go with it: {names}', message.attachments.length, { names: message.attachments.join(', ') }) }}
 					</span>
 				</div>
 			</div>
 
 			<template v-if="suggested">
 				<p class="link-to-case__label">
-					{{ t('dossiq', 'Proposal') }}
+					{{ t('dossiq', 'Suggestion') }}
 					<span class="link-to-case__label-hint">{{ t('dossiq', 'the case number is in the subject') }}</span>
 				</p>
 				<label class="link-to-case__case" :class="{ 'link-to-case__case--chosen': chosen && chosen.id === suggested.id }" data-testid="link-to-case-proposal">
@@ -86,7 +86,7 @@ v-model="chosenId"
 				</li>
 			</ul>
 			<p class="link-to-case__hint">
-				{{ t('dossiq', 'You only see cases you may see. No case that fits? Choose New case in the inbox.') }}
+				{{ t('dossiq', 'You only see cases you may see. No case fits? Then choose New case in the inbox.') }}
 			</p>
 
 			<NcTextField
@@ -100,11 +100,19 @@ v-if="overridesProposal"
 				{{ t('dossiq', 'When linking') }}
 			</p>
 			<NcCheckboxRadioSwitch v-if="senderLabel" v-model="addSender" data-testid="link-to-case-add-sender">
-				{{ t('dossiq', 'Put {name} on the case as a party, if they are not on it yet', { name: senderLabel }) }}
+				{{ t('dossiq', 'Add {name} to the case as a party involved, if they are not on it yet', { name: senderLabel }) }}
 			</NcCheckboxRadioSwitch>
-			<NcCheckboxRadioSwitch v-if="handlerName && !handlerIsReader" v-model="notifyHandler" data-testid="link-to-case-notify">
-				{{ t('dossiq', 'Let {name} know a message was added', { name: handlerName }) }}
+			<NcCheckboxRadioSwitch
+v-if="handlerName"
+				:modelValue="notifyHandler && !handlerIsReader"
+				:disabled="handlerIsReader"
+				data-testid="link-to-case-notify"
+				@update:modelValue="notifyHandler = $event">
+				{{ t('dossiq', 'Tell {name} a message was added', { name: handlerName }) }}
 			</NcCheckboxRadioSwitch>
+			<p v-if="handlerIsReader" class="link-to-case__hint" data-testid="link-to-case-notify-note">
+				{{ t('dossiq', 'You handle this case yourself, so nobody else needs telling.') }}
+			</p>
 
 			<p v-if="error" class="link-to-case__error" role="alert">
 				{{ error }}
