@@ -7104,7 +7104,7 @@
 								{ "value": "brief", "label": "Letter" },
 								{ "value": "email", "label": "Email" },
 								{ "value": "form", "label": "Web form" },
-								{ "value": "balie", "label": "Desk" }
+								{ "value": "balie", "label": "Service desk" }
 							],
 							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
 						},

@@ -52,7 +52,7 @@ describe('ContactMomentDetailDialog facts', () => {
 	})
 
 	it('words every stored channel and both directions', () => {
-		const words = { email: 'Email', webformulier: 'Web form', chat: 'Chat', social_media: 'Social media', balie: 'Desk', brief: 'Letter' }
+		const words = { email: 'Email', webformulier: 'Web form', chat: 'Chat', social_media: 'Social media', balie: 'Service desk', brief: 'Letter' }
 		for (const [code, label] of Object.entries(words)) {
 			expect(fact(open({ notificationChannel: code }), 'channel')).toBe(label)
 		}
