@@ -10,7 +10,7 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Every action-dialog config titled "Archive this case" in a layout.
+ * Every action-dialog config titled "Archive case" in a layout.
  *
  * @param {unknown} node The layout or a part of it.
  * @param {Array<object>} found The configs found so far.
@@ -20,7 +20,7 @@ function archiveDialogs(node, found = []) {
 	if (Array.isArray(node)) {
 		node.forEach((item) => archiveDialogs(item, found))
 	} else if (node && typeof node === 'object') {
-		if (node.title === 'Archive this case' && node.summary) {
+		if (node.title === 'Archive case' && node.summary) {
 			found.push(node)
 		}
 		Object.values(node).forEach((value) => archiveDialogs(value, found))

@@ -12,6 +12,7 @@
 		:notificationLabels="notificationLabels"
 		:permissions="permissions"
 		:supportDialog="supportDialog"
+		:userSettingsTitle="t('dossiq', 'Personal settings')"
 		:userSettingsSections="userSettingsSections"
 		:userSettingsNextcloudLinks="userSettingsNextcloudLinks">
 		<!--
