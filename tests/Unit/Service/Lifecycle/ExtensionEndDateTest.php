@@ -36,20 +36,20 @@ class ExtensionEndDateTest extends TestCase {
 		$endDates = new ExtensionEndDate();
 
 		$this->assertSame(
-			'2027-04-01',
-			$endDates->resolve(current: '2027-03-01', asked: ['named' => '2027-04-01T10:00:00', 'period' => 'P14D'])
+			expected: '2027-04-01',
+			actual: $endDates->resolve(current: '2027-03-01', asked: ['named' => '2027-04-01T10:00:00', 'period' => 'P14D'])
 		);
 		$this->assertSame(
-			'2027-04-01',
-			$endDates->resolve(current: '', asked: ['named' => '2027-04-01', 'period' => ''])
+			expected: '2027-04-01',
+			actual: $endDates->resolve(current: '', asked: ['named' => '2027-04-01', 'period' => ''])
 		);
 
 		foreach ([['2027-03-01', 'new_end_date_not_later'], ['not a date', 'new_end_date_unreadable']] as [$named, $code]) {
 			try {
 				$endDates->resolve(current: '2027-03-01', asked: ['named' => $named, 'period' => 'P14D']);
-				$this->fail('Expected '.$code);
+				$this->fail(message: 'Expected '.$code);
 			} catch (RuntimeException $e) {
-				$this->assertSame($code, $e->getMessage());
+				$this->assertSame(expected: $code, actual: $e->getMessage());
 			}
 		}
 	}//end testANamedDateMustLieAfterTheCurrentEnd()
@@ -63,16 +63,16 @@ class ExtensionEndDateTest extends TestCase {
 		$endDates = new ExtensionEndDate();
 
 		$this->assertSame(
-			'2027-03-15',
-			$endDates->resolve(current: '2027-03-01', asked: ['named' => '', 'period' => 'P14D'])
+			expected: '2027-03-15',
+			actual: $endDates->resolve(current: '2027-03-01', asked: ['named' => '', 'period' => 'P14D'])
 		);
 
 		foreach ([['', 'extension_period_not_configured'], ['fortnight', 'extension_period_unreadable']] as [$period, $code]) {
 			try {
 				$endDates->resolve(current: '2027-03-01', asked: ['named' => '', 'period' => $period]);
-				$this->fail('Expected '.$code);
+				$this->fail(message: 'Expected '.$code);
 			} catch (RuntimeException $e) {
-				$this->assertSame($code, $e->getMessage());
+				$this->assertSame(expected: $code, actual: $e->getMessage());
 			}
 		}
 	}//end testThePeriodIsAddedWhenNoDateIsNamed()
@@ -86,18 +86,18 @@ class ExtensionEndDateTest extends TestCase {
 		$timer = $this->createMock(originalClassName: TermijnTimerService::class);
 		$timer->expects($this->once())
 			->method('rollTermEndFor')
-			->with($this->callback(static fn (DateTimeImmutable $date): bool => $date->format('Y-m-d') === '2027-03-13'))
+			->with($this->callback(callback: static fn (DateTimeImmutable $date): bool => $date->format('Y-m-d') === '2027-03-13'))
 			->willReturn(new DateTimeImmutable('2027-03-15'));
 
 		$endDates = new ExtensionEndDate(timer: $timer);
 
 		$this->assertSame(
-			'2027-03-15',
-			$endDates->resolve(current: '2027-03-01', asked: ['named' => '', 'period' => 'P12D'])
+			expected: '2027-03-15',
+			actual: $endDates->resolve(current: '2027-03-01', asked: ['named' => '', 'period' => 'P12D'])
 		);
 		$this->assertSame(
-			'2027-03-13',
-			$endDates->resolve(current: '2027-03-01', asked: ['named' => '2027-03-13', 'period' => 'P12D'])
+			expected: '2027-03-13',
+			actual: $endDates->resolve(current: '2027-03-01', asked: ['named' => '2027-03-13', 'period' => 'P12D'])
 		);
 	}//end testTheCalendarRollsTheEndOfAPeriodOnly()
 }//end class
