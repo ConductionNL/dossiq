@@ -61,7 +61,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseEmailMatchServiceInterface;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseMailLeaf;
 use OCA\Dossiq\Service\Email\MailMatchSources;
-use OCP\IUser;
+use OCA\Dossiq\Service\Email\MatchRunReadiness;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -89,6 +89,13 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 	private const LINK_PAGE_LIMIT = 25;
 
 	/**
+	 * Prepares a run, or names why it is refused.
+	 *
+	 * @var MatchRunReadiness
+	 */
+	private readonly MatchRunReadiness $readiness;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Register/schema config and the object service.
@@ -97,6 +104,7 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 	 * @param ContainerInterface        $container       Resolves OpenRegister's email leaf.
 	 * @param LoggerInterface           $logger          Logger.
 	 * @param CaseMergeService          $mergeService    Follows a merged case to its survivor.
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -106,6 +114,12 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly CaseMergeService $mergeService,
 	) {
+		$this->readiness = new MatchRunReadiness(
+			settingsService: $settingsService,
+			matching: $matching,
+			container: $this->container,
+			logger: $logger
+		);
 	}//end __construct()
 
 	/**
@@ -170,7 +184,7 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 			return null;
 		}
 
-		return $this->unlessRefused(userId: $userId, prepared: $this->prepareRun(owner: $owner, accountId: $accountId));
+		return $this->unlessRefused(userId: $userId, prepared: $this->readiness->prepare(owner: $owner, accountId: $accountId));
 	}//end openRun()
 
 	/**
@@ -228,124 +242,6 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 
 		return true;
 	}//end startCursor()
-
-	/**
-	 * Everything one run needs, or the code for why it must not run.
-	 *
-	 * The order is the fail-closed order: the account and the configuration are
-	 * checked before OpenRegister is touched at all, so an unconfigured register
-	 * refuses with zero OpenRegister calls (REQ-ECM-007).
-	 *
-	 * @param IUser $owner     The mailbox owner.
-	 * @param int   $accountId Their configured Mail account.
-	 *
-	 * @return CaseEmailMatchRun|string The run, or the refusal code.
-	 */
-	private function prepareRun(IUser $owner, int $accountId): CaseEmailMatchRun|string {
-		$run = new CaseEmailMatchRun(owner: $owner, accountId: $accountId);
-		$refusal = $this->mailboxRefusal(run: $run)
-			?? $this->configurationRefusal(run: $run)
-			?? $this->objectServiceRefusal(run: $run)
-			?? $this->emailLeafRefusal(run: $run);
-
-		return $refusal ?? $run;
-	}//end prepareRun()
-
-	/**
-	 * Refuse a Mail account that is not the owner's, or an unusable pattern.
-	 *
-	 * @param CaseEmailMatchRun $run The run; receives the pattern.
-	 *
-	 * @return string|null The refusal code, or null to go on.
-	 */
-	private function mailboxRefusal(CaseEmailMatchRun $run): ?string {
-		if ($this->matching->messages->ownsAccount(accountId: $run->accountId, userId: $run->owner->getUID()) === false) {
-			$this->logger->warning(
-				'Dossiq: email case matching refused, the configured Mail account is not the user\'s own',
-				['app' => AppIdentity::APP_ID, 'userId' => $run->owner->getUID(), 'accountId' => $run->accountId]
-			);
-			return 'account_not_owned';
-		}
-
-		$pattern = $this->matching->recognizer->loadPattern();
-		if ($pattern === null) {
-			return 'pattern_invalid';
-		}
-
-		$run->pattern = $pattern;
-
-		return null;
-	}//end mailboxRefusal()
-
-	/**
-	 * Refuse when the register or the case schema is not configured.
-	 *
-	 * @param CaseEmailMatchRun $run The run; receives the register and schema.
-	 *
-	 * @return string|null The refusal code, or null to go on.
-	 */
-	private function configurationRefusal(CaseEmailMatchRun $run): ?string {
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			$this->logger->warning(
-				'Dossiq: app-config "register" or "case_schema" is not configured; email case matching is refused, not run unscoped',
-				['app' => AppIdentity::APP_ID]
-			);
-			return 'register_unconfigured';
-		}
-
-		$run->register = $register;
-		$run->schema = $schema;
-
-		return null;
-	}//end configurationRefusal()
-
-	/**
-	 * Refuse when OpenRegister is missing or cannot scope a read to the owner.
-	 *
-	 * @param CaseEmailMatchRun $run The run; receives the object service.
-	 *
-	 * @return string|null The refusal code, or null to go on.
-	 */
-	private function objectServiceRefusal(CaseEmailMatchRun $run): ?string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return 'openregister_unavailable';
-		}
-
-		if (method_exists($objectService, 'runAs') === false) {
-			// Without runAs() the lookup would run with no subject, which a cron
-			// process is: OpenRegister then scopes it to every organisation.
-			$this->logger->warning(
-				'Dossiq: OpenRegister has no runAs(); email case matching is refused rather than resolving cases outside the mailbox owner\'s scope',
-				['app' => AppIdentity::APP_ID]
-			);
-			return 'scope_unavailable';
-		}
-
-		$run->objectService = $objectService;
-
-		return null;
-	}//end objectServiceRefusal()
-
-	/**
-	 * Refuse when OpenRegister's email leaf is not there to link with.
-	 *
-	 * @param CaseEmailMatchRun $run The run; receives the leaf.
-	 *
-	 * @return string|null The refusal code, or null to go on.
-	 */
-	private function emailLeafRefusal(CaseEmailMatchRun $run): ?string {
-		$linkService = $this->getEmailLinkService();
-		if ($linkService === null || method_exists($linkService, 'linkEmail') === false) {
-			return 'email_leaf_unavailable';
-		}
-
-		$run->linkService = $linkService;
-
-		return null;
-	}//end emailLeafRefusal()
 
 	/**
 	 * Process a batch as the mailbox owner.
@@ -593,22 +489,4 @@ class CaseEmailMatchService implements CaseEmailMatchServiceInterface {
 		return false;
 	}//end pageHoldsLink()
 
-	/**
-	 * Resolve OpenRegister's email leaf, or null when it is not there.
-	 *
-	 * @return object|null The leaf service.
-	 */
-	private function getEmailLinkService(): ?object {
-		try {
-			$service = $this->container->get('OCA\OpenRegister\Service\EmailLinkService');
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === false) {
-			return null;
-		}
-
-		return $service;
-	}//end getEmailLinkService()
 }//end class

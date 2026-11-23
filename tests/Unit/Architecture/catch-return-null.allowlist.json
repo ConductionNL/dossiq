@@ -280,7 +280,7 @@
       "reason": "`tryParse()` is the read-path reader: a stored value that is not an ISO 8601 date answers null so a report can skip the row. Every WRITE path calls `parse()`, which refuses instead, and OneDateWritePathTest holds that line."
     },
     {
-      "file": "lib/Service/CaseEmailMatchService.php",
+      "file": "lib/Service/Email/MatchRunReadiness.php",
       "method": "getEmailLinkService",
       "occurrence": 1,
       "class": "degradation",

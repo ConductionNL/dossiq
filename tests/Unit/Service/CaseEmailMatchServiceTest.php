@@ -70,6 +70,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
  * @uses \OCA\Dossiq\Service\CaseEmailMatchRun
+ * @uses \OCA\Dossiq\Service\Email\MatchRunReadiness
  * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class CaseEmailMatchServiceTest extends TestCase {

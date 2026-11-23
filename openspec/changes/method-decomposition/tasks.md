@@ -1370,3 +1370,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         extension tests (226 in 17 files: the ceiling, the supervisor override, the declared period, the rolled end,
         the requester told), green before and unchanged after but for one `@uses` line in two.
         Own test: `tests/Unit/Service/ExtensionLimitsTest` (3).
+  - [x] 8bq `CaseEmailMatchService` (1: ExcessiveClassComplexity 60 against 50). What an email match run needs before it
+        starts, or why it cannot, is its own concern, so it moved to the new `Email/MatchRunReadiness`: the Mail account
+        is the owner's own and the pattern loads, the register and case schema are configured, OpenRegister can scope a
+        read to the owner, and the email leaf is there, the first that fails naming the refusal code (`prepare()`, was
+        `prepareRun()` with `mailboxRefusal()`, `configurationRefusal()`, `objectServiceRefusal()`,
+        `emailLeafRefusal()` and `getEmailLinkService()`). Bodies moved unchanged; the catch-return-null allowlist
+        entry for `getEmailLinkService()` follows it to the new file. The service builds the readiness over its own
+        collaborators in its constructor, so its constructor signature and the container are unchanged. phpmd: zero
+        findings on both files under both rulesets (pdepend cache cleared).
+        Characterisation: the existing `CaseEmailMatchServiceTest` (every refusal code, the run as the owner, the
+        cursor) with the other match tests and `ServiceCatchReturnsNullTest` (79 in 4 files), green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Service/Email/MatchRunReadinessTest` (2).
