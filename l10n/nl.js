@@ -9043,7 +9043,7 @@ OC.L10N.register(
         "Suggested intervention from LHS matrix (may be overridden)": "Voorgestelde interventie uit de LHS-matrix (mag worden overruled)",
         "Suggested intervention:": "Voorgestelde interventie:",
         "Suggested team": "Voorgesteld team",
-        "Suggestion": "Suggestie",
+        "Suggestion": "Voorstel",
         "Suggestions": "Suggesties",
         "Summaries": "Samenvattingen",
         "Summarise, classify and anonymise with a language model you choose.": "Samenvatten, classificeren en anonimiseren met een taalmodel dat jij kiest.",
