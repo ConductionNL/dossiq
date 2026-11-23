@@ -44,7 +44,7 @@ describe('UserSettings', () => {
 
 		const sections = wrapper.findAllComponents({ name: 'NcAppSettingsSection' })
 		expect(sections.map((s) => [s.props('id'), s.props('name')])).toEqual([
-			['notification-routing', 'Notices'],
+			['notification-routing', 'Notifications'],
 			['work-digest', 'Daily overview'],
 			['substitution', 'Cover while I am away'],
 			['email-matching', 'Link mail to cases'],

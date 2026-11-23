@@ -21,7 +21,7 @@
 -->
 <template>
 	<!-- Order, names and descriptions follow board DqPersoonlijkeInstellingen. -->
-	<NcAppSettingsSection id="notification-routing" :name="t('dossiq', 'Notices')">
+	<NcAppSettingsSection id="notification-routing" :name="t('dossiq', 'Notifications')">
 		<template #icon>
 			<BellOutline :size="18" />
 		</template>
