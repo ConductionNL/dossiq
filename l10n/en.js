@@ -4514,6 +4514,7 @@ OC.L10N.register(
         "Include documents": "Include documents",
         "Included with dossiq": "Included with dossiq",
         "Including work you cover": "Including work you cover",
+        "Including work you cover as stand-in": "Including work you cover as stand-in",
         "Income": "Income",
         "Income Test": "Income Test",
         "Incoming": "Incoming",

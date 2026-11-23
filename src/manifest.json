@@ -2235,8 +2235,8 @@
 							"showViewAction": false,
 							"quickFilters": [
 								{
-									"label": "Including work you cover",
-									"activeLabel": "Including work you cover",
+									"label": "Including work you cover as stand-in",
+									"activeLabel": "Including work you cover as stand-in",
 									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view. No tab is drawn for it either (quickFilterPlacement active): the toolbar row starts with the team's name chips (slot toolbar-start).",
 									"filter": {
 										"statusHiddenInLists": false,

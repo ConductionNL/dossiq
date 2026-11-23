@@ -4514,6 +4514,7 @@ OC.L10N.register(
         "Include documents": "Documenten meenemen",
         "Included with dossiq": "Meegeleverd met dossiq",
         "Including work you cover": "Inclusief werk waarvoor u waarneemt",
+        "Including work you cover as stand-in": "Inclusief werk waarvoor u waarneemt",
         "Income": "Inkomen",
         "Income Test": "Inkomenstoets",
         "Incoming": "Inkomend",
