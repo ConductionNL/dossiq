@@ -8231,7 +8231,7 @@
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
 				"defaultOrder": "deadline,receivedAt",
-				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"countText": "{shown} of {total} open cases in your teams · sorted by deadline",
 				"defaultFilters": {
 					"isFinalStatus": false,
 					"assignedGroup": "@myTeam"
@@ -8243,7 +8243,7 @@
 				"savedViewCountText": "{shown} of {total} open cases · {view} · sorted by deadline",
 				"_countTextByViewNote": "DqWerkbord, DqZakenKaart: the line under the title says what the open view shows. The board view is not sorted by deadline but grouped by status; the map gives only the count, and nextcloud-vue adds how many of them have an address on the map. Other views keep countText (nextcloud-vue countTextByView).",
 				"countTextByView": {
-					"board": "{shown} of {total} open cases in your teams, board view by status",
+					"board": "{shown} of {total} open cases in your teams · board view by status",
 					"map": "{shown} of {total} open cases in your teams"
 				},
 				"footerNote": "click a column header to sort · 20 per page",
@@ -8608,15 +8608,12 @@
 						"showCount": true
 					},
 					"Unclaimed": {
-						"label": "Not claimed",
 						"showCount": true
 					},
 					"Closed": {
-						"label": "Finished",
 						"showCount": true
 					},
 					"Overdue": {
-						"label": "Late",
 						"showCount": true
 					},
 					"Deadline this week": {
@@ -8841,7 +8838,7 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time",
+						"label": "Lead time",
 						"width": "158px",
 						"formatter": "processingTime"
 					},
@@ -8897,7 +8894,7 @@
 						"showCount": true
 					},
 					{
-						"label": "Shipped",
+						"label": "Included",
 						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
 						"filter": {
 							"supersededBy": {
@@ -9204,7 +9201,7 @@
 					{
 						"id": "side-case-type-choice-list",
 						"type": "field-list",
-						"title": "Choice list: {name|fieldTitle}",
+						"title": "Pick list: {name|fieldTitle}",
 						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
 						"tabs": ["fields"],
 						"follows": {
@@ -9468,7 +9465,7 @@
 								},
 								{
 									"id": "rights",
-									"label": "Rights",
+									"label": "Permissions",
 									"widgetIds": [
 										"case-type-rights"
 									]
@@ -9525,7 +9522,7 @@
 								{
 									"id": "history",
 									"widgetId": "case-type-history",
-									"label": "Record history"
+									"label": "History"
 								}
 							]
 						}
@@ -9627,7 +9624,7 @@
 						"title": "Rules",
 						"headerActions": [
 							{
-								"label": "Add a rule",
+								"label": "Add rule",
 								"icon": "Plus",
 								"action": {
 									"type": "navigate",
