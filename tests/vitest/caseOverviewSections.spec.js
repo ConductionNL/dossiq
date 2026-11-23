@@ -10,7 +10,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { resolveOverviewSections } from '../../src/utils/caseOverviewSections.js'
+import { labelIn, resolveOverviewSections } from '../../src/utils/caseOverviewSections.js'
 
 const read = (...parts) => JSON.parse(fs.readFileSync(path.join(__dirname, '../..', ...parts), 'utf8'))
 
@@ -48,6 +48,18 @@ describe('resolveOverviewSections', () => {
 		const words = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 
 		expect(section.rows.map((row) => row.value)).toEqual([words('2026-11-23T00:50:43+00:00'), words('2026-11-20'), '2026-4833'])
+	})
+
+	it('reads a label written per language in the reader\'s language, then Dutch', () => {
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'en')).toBe('Details')
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'en_GB')).toBe('Details')
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'de')).toBe('Gegevens')
+		expect(labelIn('Gegevens', 'en')).toBe('Gegevens')
+		expect(labelIn(undefined, 'en')).toBe('')
+		const [section] = resolveOverviewSections([{ id: 'a', title: { nl: 'Gegevens', en: 'Details' }, intro: { nl: 'Uitleg', en: 'Explanation' }, rows: [{ label: { nl: 'Klager', en: 'Complainant' }, field: 'who' }] }], { who: 'R. de Boer' })
+		expect(section.title).toBe('Details')
+		expect(section.intro).toBe('Explanation')
+		expect(section.rows).toEqual([{ label: 'Complainant', value: 'R. de Boer' }])
 	})
 
 	it('shows no object as a value', () => {

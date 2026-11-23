@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import { getLanguage } from '@nextcloud/l10n'
 import { formatDate } from './caseHelpers.js'
 
 /** An ISO date or date-time as the case stores it ("2026-11-23", "2026-11-23T00:50:43+00:00"). */
@@ -48,6 +49,31 @@ function rowValue(row, caseObject) {
 }
 
 /**
+ * A label as the reader reads it. A case type may write a section's title,
+ * intro, note and its rows' labels once (a string) or per language
+ * (`{ "nl": "Gegevens", "en": "Details" }`); a map answers the reader's
+ * language, then Dutch, then the first language it has.
+ *
+ * @param {string|object|undefined} value The declared label.
+ * @param {string} [language] The reader's language; Nextcloud's when not given.
+ *
+ * @return {string} The label, or ''.
+ *
+ * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+ */
+export function labelIn(value, language = getLanguage()) {
+	if (typeof value === 'string') {
+		return value
+	}
+	if (!value || typeof value !== 'object') {
+		return ''
+	}
+	const base = String(language || '').split(/[-_]/)[0]
+	const pick = value[language] ?? value[base] ?? value.nl ?? Object.values(value).find((entry) => typeof entry === 'string')
+	return typeof pick === 'string' ? pick : ''
+}
+
+/**
  * The declared sections with their rows filled from the case.
  *
  * @param {Array<object>} declared The case type's `overviewSections`.
@@ -63,10 +89,13 @@ export function resolveOverviewSections(declared, caseObject) {
 	}
 
 	return declared
-		.filter((section) => section?.id && section.title)
+		.filter((section) => section?.id && labelIn(section.title))
 		.map((section) => ({
 			...section,
+			title: labelIn(section.title),
+			intro: labelIn(section.intro),
+			note: labelIn(section.note),
 			pill: section.pillField ? (propertyOf(caseObject, section.pillField) ?? '') : '',
-			rows: (section.rows || []).map((row) => ({ label: row.label, value: rowValue(row, caseObject) })),
+			rows: (section.rows || []).map((row) => ({ label: labelIn(row.label), value: rowValue(row, caseObject) })),
 		}))
 }
