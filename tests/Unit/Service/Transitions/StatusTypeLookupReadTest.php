@@ -73,6 +73,10 @@ class StatusTypeLookupReadTest extends TestCase {
 					throw $this->found;
 				}
 
+				if (is_array($this->found) === true && isset($this->found['rendered']) === true && $options?->render === true) {
+					return $this->found['rendered'];
+				}
+
 				return $this->found;
 			}
 		};
@@ -122,6 +126,20 @@ class StatusTypeLookupReadTest extends TestCase {
 		self::assertFalse(condition: $lookup->isNameOf(statusTypeId: 's-3', text: ''));
 		self::assertTrue(condition: $this->lookup(found: ['id' => 's-4', 'name' => 'Besluit'])->isNameOf(statusTypeId: 's-4', text: 'Besluit'));
 	}//end testATextIsTheNameInAnyLanguage()
+
+	/**
+	 * The name is read from the stored row, not from a render that already
+	 * resolved it in another language.
+	 *
+	 * @return void
+	 */
+	public function testTheNameIsReadFromTheStoredRow(): void {
+		$stored = ['id' => 's-5', 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing'], 'rendered' => ['id' => 's-5', 'name' => 'Hoorgesprek']];
+		$lookup = $this->lookup(found: $stored, language: 'en');
+
+		self::assertSame(expected: 'Hearing', actual: $lookup->nameFor(statusTypeId: 's-5'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-5', text: 'Hearing'));
+	}//end testTheNameIsReadFromTheStoredRow()
 
 	/**
 	 * A row read from the store is returned whole, from the configured schema.

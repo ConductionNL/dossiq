@@ -77,7 +77,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function nameFor(string $statusTypeId): string {
-		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+		$statusType = $this->storedRowFor(statusTypeId: $statusTypeId);
 
 		return $this->reader->forReader(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
 	}//end nameFor()
@@ -102,7 +102,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 			return false;
 		}
 
-		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+		$statusType = $this->storedRowFor(statusTypeId: $statusTypeId);
 		$name = ($statusType['name'] ?? ($statusType['title'] ?? null));
 		if (is_array($name) === false) {
 			$name = [$name];
@@ -340,16 +340,38 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 
 
 	/**
+	 * A statusType as stored, its translatable fields still keyed by language.
+	 *
+	 * A rendered read resolves those fields in the language of OpenRegister's
+	 * own request handling, which a dossiq request does not set, so the name
+	 * would read in the register's default language whatever the reader's.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return array<string, mixed> The stored row, or an empty array when unresolvable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function storedRowFor(string $statusTypeId): array {
+		if ($statusTypeId === '') {
+			return [];
+		}
+
+		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId, render: false);
+	}//end storedRowFor()
+
+	/**
 	 * Read one object from a configured schema.
 	 *
 	 * @param string $schemaKey The settings key naming the schema.
 	 * @param string $id        The object's id.
+	 * @param bool   $render    Whether to render it, which resolves its translations.
 	 *
 	 * @return array<string, mixed> The object, or an empty array when unreadable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function read(string $schemaKey, string $id): array {
+	private function read(string $schemaKey, string $id, bool $render = true): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -362,7 +384,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 		}
 
 		try {
-			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema, render: $render));
 		} catch (Throwable $e) {
 			return [];
 		}
