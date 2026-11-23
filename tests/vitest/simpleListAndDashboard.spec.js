@@ -121,8 +121,8 @@ describe('the cases list', () => {
 		const lead = simple.quickFilters.slice(0, 6)
 		expect(lead.map((lens) => lens.label)).toEqual([
 			'All',
-			'Mine',
-			'Due this week',
+			'My cases',
+			'Deadline this week',
 			'Waiting on the applicant',
 			'Woo requests',
 			'Suspended',
@@ -151,8 +151,8 @@ describe('the cases list', () => {
 					(label) =>
 						![
 							'All',
-							'Mine',
-							'Due this week',
+							'My cases',
+							'Deadline this week',
 							'Waiting on the applicant',
 							'Woo requests',
 							'Suspended',
@@ -173,11 +173,11 @@ describe('the cases list', () => {
 		).toContain(`"${WOO}"`)
 	})
 
-	it('shows five columns, the number and the requester under the title, each a field the case carries', () => {
+	it('shows six columns, the number and the requester under the title, each a field the case carries', () => {
 		const keys = simple.columns.map((column) =>
 			typeof column === 'string' ? column : column.key,
 		)
-		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'deadline'])
+		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'assignedGroup', 'deadline'])
 		for (const key of keys) {
 			expect(caseFields.has(key), key).toBe(true)
 		}
@@ -198,6 +198,25 @@ describe('the cases list', () => {
 			expect(now.formatter).toBe(was.formatter)
 			expect(now.widget).toBe(was.widget)
 		}
+	})
+
+	it('wraps the title, the type and the team over lines at the board widths, as DqZaken draws them', () => {
+		const byKey = Object.fromEntries(simple.columns.map((column) => [column.key, column]))
+		// The board's widths, except that Type holds a one-word case type
+		// ("Omgevingsvergunning") without breaking it and Deadline holds its
+		// English head with the sort and filter icons; Case gives the room.
+		expect(Object.fromEntries(simple.columns.map((column) => [column.key, column.width]))).toEqual({
+			title: '248px',
+			caseType: '172px',
+			status: '133px',
+			assignee: '157px',
+			assignedGroup: '141px',
+			deadline: '141px',
+		})
+		for (const key of ['title', 'caseType', 'assignedGroup']) {
+			expect(byKey[key].cellClass.split(' '), key).toContain('cn-cell--wrap')
+		}
+		expect(byKey.assignedGroup).toMatchObject({ label: 'Team', widget: 'group' })
 	})
 
 	it('draws the handler as an avatar and the deadline in colour, red from the day after it ends', () => {
@@ -244,7 +263,7 @@ describe('the cases list', () => {
 		expect(before.showViewToggle).toBeUndefined()
 	})
 
-	it('shows a filter funnel on every column, as DqZaken draws them on Zaak, Type, Status, Behandelaar and Termijn', () => {
+	it('shows a filter funnel on every column, as DqZaken draws them on Zaak, Type, Status, Behandelaar, Team and Termijn', () => {
 		// The board is the canon (case-search-and-lists, REQ-CSL-07). The
 		// library draws the funnels unless the page sets `headerFilters: false`
 		// or a column sets `filterable: false`, so neither may appear here.
@@ -254,7 +273,8 @@ describe('the cases list', () => {
 			'Case',
 			'Type',
 			'Status',
-			'Handler',
+			'Case handler',
+			'Team',
 			'Deadline',
 		])
 		for (const column of simple.columns) {
@@ -857,10 +877,10 @@ describe('the landing page', () => {
 		// Live check, 5 October 2026: the tile said 58 over an empty week,
 		// because it counted overdue cases and the strip only this week.
 		const lens = original('Cases').config.quickFilters.find(
-			(item) => item.label === 'Due this week',
+			(item) => item.label === 'Deadline this week',
 		).filter
 		const tile = widget('simple-due-soon').content
-		expect(tile.label).toBe('Due this week')
+		expect(tile.label).toBe('Deadline this week')
 		expect(tile.source.filter).toEqual({
 			assignee: '@me',
 			isFinalStatus: lens.isFinalStatus,

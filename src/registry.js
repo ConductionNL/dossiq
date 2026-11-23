@@ -26,38 +26,25 @@
 
 // The AI features a case type switched on, and the report group the case is in
 // (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
-import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/specs/case-management/spec.md
 // Who has held this case, and who is asking for it
 // (custody-and-handover-of-a-case, rows 2.37 and 2.38).
 // @spec openspec/specs/case-management/spec.md
-import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
-import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
-import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
-import CaseTypeFieldRightsWidget from './components/caseType/CaseTypeFieldRightsWidget.vue'
-import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
-import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
-import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
-import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
-import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
-import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
 // A KPI against its target, added from the dashboard's presets (row 10.1).
 // @spec openspec/changes/capability-rows-say-the-whole-capability/specs/dashboard/spec.md
-import KpiTargetGauge from './components/dashboard/KpiTargetGauge.vue'
 // The task page's leaves, as detail widgets (task-page-on-the-manifest).
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
-import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // Ask whether this case already exists, before it does.
 // @spec openspec/specs/friendly-case-create-form/spec.md
 // A search openregister refused, said where the term was typed.
@@ -68,103 +55,40 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
-import AdviceRequestDialog from './dialogs/AdviceRequestDialog.vue'
-import AdviceResponseDialog from './dialogs/AdviceResponseDialog.vue'
-import AnswerPublishDialog from './dialogs/AnswerPublishDialog.vue'
-import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
-import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
-import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
-import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/specs/case-management/spec.md
-import CaseLocationDialog from './dialogs/CaseLocationDialog.vue'
-import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
-import CasePublishDialog from './dialogs/CasePublishDialog.vue'
-import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
-import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
-import CaseSplitDialog from './dialogs/CaseSplitDialog.vue'
-import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
 // change note, and a route to the copy (case-type-authoring-extras D5).
 // @spec openspec/specs/workflow-import-export/spec.md
 // @spec openspec/specs/zaaktype-versioning/spec.md
-import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
-import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 // The version chain: starting the next version, and moving one running case
 // along it (case-type-version-chain).
 // @spec openspec/specs/zaaktype-versioning/spec.md
-import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
-import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
-import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
-import ConsentRecordDialog from './dialogs/ConsentRecordDialog.vue'
-import ContactMomentDetailDialog from './dialogs/ContactMomentDetailDialog.vue'
-import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
-import DecisionTableAdviceDialog from './dialogs/DecisionTableAdviceDialog.vue'
-import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
-import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
-import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
-import DsoCollaborationDialog from './dialogs/DsoCollaborationDialog.vue'
-import DsoForwardDialog from './dialogs/DsoForwardDialog.vue'
-import FieldCatalogueDialog from './dialogs/FieldCatalogueDialog.vue'
-import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
-import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
-import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
-import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
-import LogContactDialog from './dialogs/LogContactDialog.vue'
-import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
-import PartnerAskDialog from './dialogs/PartnerAskDialog.vue'
-import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
-import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/specs/task-management/spec.md
-import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
-import RemindDialog from './dialogs/RemindDialog.vue'
-import RowRecordActionDialog from './dialogs/RowRecordActionDialog.vue'
-import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
-import TaskAssignDialog from './dialogs/TaskAssignDialog.vue'
 // @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
-import AanvullingVragenModal from './modals/AanvullingVragenModal.vue'
-import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
-import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
 // "object-list"` CnObjectListWidget, resolved by the library, not a
 // registry widget entry — only the two modals it dispatches to are ours).
 // @spec openspec/specs/document-zaakdossier/spec.md
 // @spec openspec/specs/document-zaakdossier/spec.md
-import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
-import DossierExportPanel from './modals/DossierExportPanel.vue'
-import FileRequestDialog from './modals/FileRequestDialog.vue'
-import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 // VTH-specific case detail panels
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
-import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
-import CaseOverviewSections from './views/cases/components/CaseOverviewSections.vue'
-import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
-import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 // The AVG panel on a data subject request case
 // (data-subject-requests-drive-the-platform).
-import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
-import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
-import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
-import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
-import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
-import CaseTypeFlowView from './views/settings/CaseTypeFlowView.vue'
-import WorkloadTeamChips from './views/WorkloadTeamChips.vue'
-import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
+import { lazyComponent } from '@conduction/nextcloud-vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
@@ -185,6 +109,87 @@ import { openIntegriqConnections } from './utils/integriqConnections.js'
 import { markMessageRead, markMessageUnread } from './utils/messageUnread.js'
 import { prepareNoticePayout } from './utils/noticePayout.js'
 import { readFileAsMessage } from './utils/savedMail.js'
+
+// Every component here loads with the page or widget that uses it, not with
+// the app: the entry bundle holds the registry, not the components.
+const CaseAiFeaturesPanel = lazyComponent(() => import('./components/case/CaseAiFeaturesPanel.vue'), 'CaseAiFeaturesPanel')
+const CaseCustodyPanel = lazyComponent(() => import('./components/case/CaseCustodyPanel.vue'), 'CaseCustodyPanel')
+const DocumentReviewPanel = lazyComponent(() => import('./components/case/DocumentReviewPanel.vue'), 'DocumentReviewPanel')
+const CaseTypeBlueprintWidget = lazyComponent(() => import('./components/caseType/CaseTypeBlueprintWidget.vue'), 'CaseTypeBlueprintWidget')
+const CaseTypeFieldRightsWidget = lazyComponent(() => import('./components/caseType/CaseTypeFieldRightsWidget.vue'), 'CaseTypeFieldRightsWidget')
+const CaseTypeMessagesEditorWidget = lazyComponent(() => import('./components/caseType/CaseTypeMessagesEditorWidget.vue'), 'CaseTypeMessagesEditorWidget')
+const CaseTypePartyKindsWidget = lazyComponent(() => import('./components/caseType/CaseTypePartyKindsWidget.vue'), 'CaseTypePartyKindsWidget')
+const CaseTypePortalWidget = lazyComponent(() => import('./components/caseType/CaseTypePortalWidget.vue'), 'CaseTypePortalWidget')
+const CaseTypeRulesWidget = lazyComponent(() => import('./components/caseType/CaseTypeRulesWidget.vue'), 'CaseTypeRulesWidget')
+const CaseTypeTranslationsWidget = lazyComponent(() => import('./components/caseType/CaseTypeTranslationsWidget.vue'), 'CaseTypeTranslationsWidget')
+const CaseTypeWorkflowEditorWidget = lazyComponent(() => import('./components/caseType/CaseTypeWorkflowEditorWidget.vue'), 'CaseTypeWorkflowEditorWidget')
+const KpiTargetGauge = lazyComponent(() => import('./components/dashboard/KpiTargetGauge.vue'), 'KpiTargetGauge')
+const RequesterProjection = lazyComponent(() => import('./components/initiator/RequesterProjection.vue'), 'RequesterProjection')
+const AdviceRequestDialog = lazyComponent(() => import('./dialogs/AdviceRequestDialog.vue'), 'AdviceRequestDialog')
+const AdviceResponseDialog = lazyComponent(() => import('./dialogs/AdviceResponseDialog.vue'), 'AdviceResponseDialog')
+const AnswerPublishDialog = lazyComponent(() => import('./dialogs/AnswerPublishDialog.vue'), 'AnswerPublishDialog')
+const AssessmentDecisionDialog = lazyComponent(() => import('./dialogs/AssessmentDecisionDialog.vue'), 'AssessmentDecisionDialog')
+const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')
+const CaseCopyDialog = lazyComponent(() => import('./dialogs/CaseCopyDialog.vue'), 'CaseCopyDialog')
+const CaseLifecycleMenuDialog = lazyComponent(() => import('./dialogs/CaseLifecycleMenuDialog.vue'), 'CaseLifecycleMenuDialog')
+const CaseLocationDialog = lazyComponent(() => import('./dialogs/CaseLocationDialog.vue'), 'CaseLocationDialog')
+const CasePlanFollowUpDialog = lazyComponent(() => import('./dialogs/CasePlanFollowUpDialog.vue'), 'CasePlanFollowUpDialog')
+const CasePublishDialog = lazyComponent(() => import('./dialogs/CasePublishDialog.vue'), 'CasePublishDialog')
+const CaseRawDataDialog = lazyComponent(() => import('./dialogs/CaseRawDataDialog.vue'), 'CaseRawDataDialog')
+const CaseRebindDialog = lazyComponent(() => import('./dialogs/CaseRebindDialog.vue'), 'CaseRebindDialog')
+const CaseSplitDialog = lazyComponent(() => import('./dialogs/CaseSplitDialog.vue'), 'CaseSplitDialog')
+const CaseStartFlowDialog = lazyComponent(() => import('./dialogs/CaseStartFlowDialog.vue'), 'CaseStartFlowDialog')
+const CaseTypeDuplicateDialog = lazyComponent(() => import('./dialogs/CaseTypeDuplicateDialog.vue'), 'CaseTypeDuplicateDialog')
+const CaseTypeImportDialog = lazyComponent(() => import('./dialogs/CaseTypeImportDialog.vue'), 'CaseTypeImportDialog')
+const CaseTypeNewVersionDialog = lazyComponent(() => import('./dialogs/CaseTypeNewVersionDialog.vue'), 'CaseTypeNewVersionDialog')
+const CaseTypePublishDialog = lazyComponent(() => import('./dialogs/CaseTypePublishDialog.vue'), 'CaseTypePublishDialog')
+const CaseVersionMoveDialog = lazyComponent(() => import('./dialogs/CaseVersionMoveDialog.vue'), 'CaseVersionMoveDialog')
+const ConsentRecordDialog = lazyComponent(() => import('./dialogs/ConsentRecordDialog.vue'), 'ConsentRecordDialog')
+const ContactMomentDetailDialog = lazyComponent(() => import('./dialogs/ContactMomentDetailDialog.vue'), 'ContactMomentDetailDialog')
+const CrossDomainLookupDialog = lazyComponent(() => import('./dialogs/CrossDomainLookupDialog.vue'), 'CrossDomainLookupDialog')
+const DecisionTableAdviceDialog = lazyComponent(() => import('./dialogs/DecisionTableAdviceDialog.vue'), 'DecisionTableAdviceDialog')
+const DocumentAccessExceptionDialog = lazyComponent(() => import('./dialogs/DocumentAccessExceptionDialog.vue'), 'DocumentAccessExceptionDialog')
+const DocumentAssessDialog = lazyComponent(() => import('./dialogs/DocumentAssessDialog.vue'), 'DocumentAssessDialog')
+const DocumentCompareDialog = lazyComponent(() => import('./dialogs/DocumentCompareDialog.vue'), 'DocumentCompareDialog')
+const DsoCollaborationDialog = lazyComponent(() => import('./dialogs/DsoCollaborationDialog.vue'), 'DsoCollaborationDialog')
+const DsoForwardDialog = lazyComponent(() => import('./dialogs/DsoForwardDialog.vue'), 'DsoForwardDialog')
+const FieldCatalogueDialog = lazyComponent(() => import('./dialogs/FieldCatalogueDialog.vue'), 'FieldCatalogueDialog')
+const FileContactMomentDialog = lazyComponent(() => import('./dialogs/FileContactMomentDialog.vue'), 'FileContactMomentDialog')
+const GatherDocumentsDialog = lazyComponent(() => import('./dialogs/GatherDocumentsDialog.vue'), 'GatherDocumentsDialog')
+const GenerateDocumentDialog = lazyComponent(() => import('./dialogs/GenerateDocumentDialog.vue'), 'GenerateDocumentDialog')
+const LinkProgrammeDialog = lazyComponent(() => import('./dialogs/LinkProgrammeDialog.vue'), 'LinkProgrammeDialog')
+const LogContactDialog = lazyComponent(() => import('./dialogs/LogContactDialog.vue'), 'LogContactDialog')
+const NoticeOfDefaultDialog = lazyComponent(() => import('./dialogs/NoticeOfDefaultDialog.vue'), 'NoticeOfDefaultDialog')
+const PartnerAskDialog = lazyComponent(() => import('./dialogs/PartnerAskDialog.vue'), 'PartnerAskDialog')
+const PortalMessageDialog = lazyComponent(() => import('./dialogs/PortalMessageDialog.vue'), 'PortalMessageDialog')
+const RecordStepsDialog = lazyComponent(() => import('./dialogs/RecordStepsDialog.vue'), 'RecordStepsDialog')
+const RemedyLodgeDialog = lazyComponent(() => import('./dialogs/RemedyLodgeDialog.vue'), 'RemedyLodgeDialog')
+const RemindDialog = lazyComponent(() => import('./dialogs/RemindDialog.vue'), 'RemindDialog')
+const RowRecordActionDialog = lazyComponent(() => import('./dialogs/RowRecordActionDialog.vue'), 'RowRecordActionDialog')
+const SearchPlanDialog = lazyComponent(() => import('./dialogs/SearchPlanDialog.vue'), 'SearchPlanDialog')
+const TaskAssignDialog = lazyComponent(() => import('./dialogs/TaskAssignDialog.vue'), 'TaskAssignDialog')
+const AanvullingVragenModal = lazyComponent(() => import('./modals/AanvullingVragenModal.vue'), 'AanvullingVragenModal')
+const BulkDocumentActionDialog = lazyComponent(() => import('./modals/BulkDocumentActionDialog.vue'), 'BulkDocumentActionDialog')
+const DeelzaakCreateModal = lazyComponent(() => import('./modals/DeelzaakCreateModal.vue'), 'DeelzaakCreateModal')
+const DocumentMetadataDialog = lazyComponent(() => import('./modals/DocumentMetadataDialog.vue'), 'DocumentMetadataDialog')
+const DossierExportPanel = lazyComponent(() => import('./modals/DossierExportPanel.vue'), 'DossierExportPanel')
+const FileRequestDialog = lazyComponent(() => import('./modals/FileRequestDialog.vue'), 'FileRequestDialog')
+const LinkToCaseDialog = lazyComponent(() => import('./modals/LinkToCaseDialog.vue'), 'LinkToCaseDialog')
+const VersionHistoryPanel = lazyComponent(() => import('./modals/VersionHistoryPanel.vue'), 'VersionHistoryPanel')
+const CaseAccessTab = lazyComponent(() => import('./views/cases/components/CaseAccessTab.vue'), 'CaseAccessTab')
+const CaseConversationsPanel = lazyComponent(() => import('./views/cases/components/CaseConversationsPanel.vue'), 'CaseConversationsPanel')
+const CaseOverviewSections = lazyComponent(() => import('./views/cases/components/CaseOverviewSections.vue'), 'CaseOverviewSections')
+const CaseSharingTab = lazyComponent(() => import('./views/cases/components/CaseSharingTab.vue'), 'CaseSharingTab')
+const CaseTermsTab = lazyComponent(() => import('./views/cases/components/CaseTermsTab.vue'), 'CaseTermsTab')
+const DataSubjectRequestTab = lazyComponent(() => import('./views/cases/components/DataSubjectRequestTab.vue'), 'DataSubjectRequestTab')
+const MailIntakeLogView = lazyComponent(() => import('./views/intake/MailIntakeLogView.vue'), 'MailIntakeLogView')
+const PublicAppointmentPage = lazyComponent(() => import('./views/public/PublicAppointmentPage.vue'), 'PublicAppointmentPage')
+const PublicFederatedTransferPage = lazyComponent(() => import('./views/public/PublicFederatedTransferPage.vue'), 'PublicFederatedTransferPage')
+const PublicStatusPage = lazyComponent(() => import('./views/public/PublicStatusPage.vue'), 'PublicStatusPage')
+const MailPartiesReportWidget = lazyComponent(() => import('./views/reports/MailPartiesReportWidget.vue'), 'MailPartiesReportWidget')
+const CaseTypeFlowView = lazyComponent(() => import('./views/settings/CaseTypeFlowView.vue'), 'CaseTypeFlowView')
+const WorkloadTeamChips = lazyComponent(() => import('./views/WorkloadTeamChips.vue'), 'WorkloadTeamChips')
+const WorkloadTeamHeading = lazyComponent(() => import('./views/WorkloadTeamHeading.vue'), 'WorkloadTeamHeading')
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
@@ -771,6 +776,13 @@ const registry = {
 		_note: "The library's CnActionDialog acting on one record-list row. A `rowActions` open-modal entry hands the clicked row over as `row` while its declared props resolve only the page's tokens; this passes the row on as CnActionDialog's `object`, so a request URL names both the page record (`@objectId`) and the row (`@object.id`). First used by the case-goals list's Close entry (POST /api/cases/{caseId}/goals/{goalId}/close, which checks the case update right first). The configuration (fields, reason, confirm, done text) is the manifest's.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	// @spec openspec/specs/case-email-integration/spec.md
+	LinkToCaseDialog: {
+		kind: 'modal',
+		component: LinkToCaseDialog,
+		propsSchema: {},
+		_note: 'Board DqKoppelAanZaak. Opened by the inbox row action `file-on-case` (`type: open-modal`), so the index page mounts it with the row as `object` and the intake log entry as `objectId`.',
+	},
 	FileRequestDialog: {
 		kind: 'modal',
 		component: FileRequestDialog,

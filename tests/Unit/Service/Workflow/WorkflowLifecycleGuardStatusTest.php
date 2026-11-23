@@ -22,6 +22,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
+ * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  */
 class WorkflowLifecycleGuardStatusTest extends TestCase {
 

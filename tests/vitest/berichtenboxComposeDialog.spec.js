@@ -105,7 +105,7 @@ describe('a case can reach the compose dialog at all', () => {
 	it('registers the dialog as a modal', () => {
 		expect(registrySource).toContain('BerichtenboxComposeDialog: {')
 		expect(registrySource).toContain(
-			"import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'",
+			"const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')",
 		)
 	})
 

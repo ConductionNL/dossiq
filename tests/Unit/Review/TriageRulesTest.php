@@ -42,6 +42,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
  * @covers \OCA\Dossiq\Review\TriageRules
  * @uses   \OCA\Dossiq\Review\TriageConditions
  * @uses   \OCA\Dossiq\Review\TriageFacts
+ * @uses   \OCA\Dossiq\Review\RuleMarkings
  * @uses   \OCA\Dossiq\Review\DocumentRelevance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore

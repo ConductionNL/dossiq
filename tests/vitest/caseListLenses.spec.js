@@ -84,7 +84,7 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
  * tests stayed green, which is the failure `a-test-that-feeds-two-different-
  * literals` names.
  */
-const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
+const LENSES = ['All', 'My cases', 'Unclaimed', 'Closed', 'Overdue', 'Deadline this week']
 
 /**
  * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
@@ -150,7 +150,7 @@ const CASE_LENSES = [
 	// Mine because it is about the CASE, and Mine onwards are about who is
 	// holding it.
 	'Assessed high risk',
-	'Mine',
+	'My cases',
 	'Unclaimed',
 	'Handed on',
 	'Closed',
@@ -173,7 +173,7 @@ const CASE_LENSES = [
 	// working set with every draft you may read in it.
 	WITH_DRAFTS_LENS,
 	'Overdue',
-	'Due this week',
+	'Deadline this week',
 	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
 	// due and whose payment shillinq has not confirmed. It sits with the two
 	// clock lenses because it is the same question about a different clock:
@@ -278,12 +278,12 @@ describe('Cases index lenses', () => {
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
-		expect(chip('Cases', 'Mine').filter.isFinalStatus).toBe(false)
+		expect(chip('Cases', 'My cases').filter.isFinalStatus).toBe(false)
 		expect(chip('Cases', 'Unclaimed').filter.isFinalStatus).toBe(false)
 	})
 
 	it('scopes Mine to the signed-in user through @me', () => {
-		expect(chip('Cases', 'Mine').filter.assignee).toBe('@me')
+		expect(chip('Cases', 'My cases').filter.assignee).toBe('@me')
 	})
 
 	it('shows closed cases under Closed only', () => {
@@ -395,7 +395,7 @@ describe('Cases index lenses', () => {
 	})
 
 	it('gives Due this week the half-open window on deadline', () => {
-		expect(chip('Cases', 'Due this week').filter).toEqual({
+		expect(chip('Cases', 'Deadline this week').filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
 			isDraft: false,
@@ -434,7 +434,7 @@ describe('Tasks index lenses', () => {
 		// The two person-scoped lenses, and the only two. `scope` says so
 		// rather than relying on the default, which is the point of the
 		// test below.
-		expect(chip('Tasks', 'Mine').filter).toEqual({
+		expect(chip('Tasks', 'My cases').filter).toEqual({
 			scope: 'assigned',
 			isTerminal: false,
 		})
@@ -474,7 +474,7 @@ describe('Tasks index lenses', () => {
 			.filter((entry) => entry.filter.scope !== 'all')
 			.map((entry) => entry.label)
 			.sort()
-		expect(personal).toEqual(['Mine', 'Unclaimed'])
+		expect(personal).toEqual(['My cases', 'Unclaimed'])
 	})
 
 	it('asks the engine for the two due windows rather than deriving them', () => {
@@ -485,7 +485,7 @@ describe('Tasks index lenses', () => {
 			scope: 'all',
 			overdue: true,
 		})
-		expect(chip('Tasks', 'Due this week').filter).toEqual({
+		expect(chip('Tasks', 'Deadline this week').filter).toEqual({
 			scope: 'all',
 			isTerminal: false,
 			dueAfter: '@today',
@@ -546,7 +546,7 @@ describe('Tasks index lenses', () => {
 describe('the relative-date tokens the windows are built from', () => {
 	it('spells the week edge the way the library parses it', () => {
 		for (const id of ['Cases', 'Tasks']) {
-			const window = chip(id, 'Due this week').filter
+			const window = chip(id, 'Deadline this week').filter
 			const far = Object.values(window).find(
 				(value) => typeof value === 'string' && value.startsWith('@today+'),
 			)
@@ -730,6 +730,12 @@ describe('bulk actions on the Cases index', () => {
 			'extend-term',
 			'export-anonymised',
 		])
+	})
+
+	it('keeps the band to the five buttons DqZaken draws and puts the anonymised export under More', () => {
+		const inline = actions().filter((action) => action.menu !== true).map((action) => action.id)
+		expect(inline).toEqual(['reassign', 'transition', 'suspend', 'resume', 'extend-term'])
+		expect(actions().find((action) => action.id === 'export-anonymised').menu).toBe(true)
 	})
 
 	it('names a handler that caseBulkActions.js exports AND the registry registers', () => {

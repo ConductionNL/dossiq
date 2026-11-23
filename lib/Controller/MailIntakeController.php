@@ -39,12 +39,14 @@ use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilingFollowUpsInterface;
 use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
 use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
 use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
+use OCA\Dossiq\Service\Intake\MessagePreview;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\Email\InboundMessage;
 use OCP\AppFramework\Controller;
@@ -101,6 +103,7 @@ class MailIntakeController extends Controller {
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
 	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization, for the case a handler picks.
+	 * @param FilingFollowUpsInterface   $followUps       The Link to case dialog's choices: the sender as a party, the handler told.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -114,6 +117,7 @@ class MailIntakeController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly FilingFollowUpsInterface $followUps,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -441,16 +445,28 @@ class MailIntakeController extends Controller {
 	 * case id they cared to guess, and the case would then show a message from
 	 * a citizen to a handler who may not read it.
 	 *
-	 * @param string $entryId The log entry.
-	 * @param string $caseId  The case the handler picked.
-	 * @param string $reason  Why they overrode the match.
+	 * The two choices of the Link to case dialog (DqKoppelAanZaak) run after
+	 * the filing and never undo it: the sender put on the case as a party,
+	 * and the case's handler told.
+	 *
+	 * @param string $entryId       The log entry.
+	 * @param string $caseId        The case the handler picked.
+	 * @param string $reason        Why they overrode the match.
+	 * @param bool   $addSender     Put the sender on the case as a party.
+	 * @param bool   $notifyHandler Tell the case's handler.
 	 *
 	 * @return JSONResponse What happened.
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	#[NoAdminRequired]
-	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {
+	public function fileOnCase(
+		string $entryId,
+		string $caseId = '',
+		string $reason = '',
+		bool $addSender = false,
+		bool $notifyHandler = false,
+	): JSONResponse {
 		$refusal = $this->fileOnCaseRefusal(caseId: $caseId, reason: $reason);
 		if ($refusal !== null) {
 			return $refusal;
@@ -467,8 +483,51 @@ class MailIntakeController extends Controller {
 		$filing->caseId = trim($caseId);
 		$filing->reason = $reason;
 
-		return $this->fileByHand(filing: $filing);
+		$response = $this->fileByHand(filing: $filing);
+		$response->setData(
+			array_merge(
+				(array)$response->getData(),
+				$this->followUps(filing: $filing, choices: ['addSender' => $addSender, 'notifyHandler' => $notifyHandler])
+			)
+		);
+
+		return $response;
 	}//end fileOnCase()
+
+	/**
+	 * Run the dialog's choices on a filed message: the sender as a party, the handler told.
+	 *
+	 * @param ManualFiling                                   $filing  The message filed by hand.
+	 * @param array{addSender: bool, notifyHandler: bool} $choices What the caller chose.
+	 *
+	 * @return array<string, string> `party` and `handler`, each what happened, when chosen.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function followUps(ManualFiling $filing, array $choices): array {
+		$sender = (string)($filing->entry['sender'] ?? '');
+		$name = (new MessagePreview())->read(original: (string)($filing->entry['original'] ?? ''))['senderName'];
+		$done = [];
+		if ($choices['addSender'] === true) {
+			$done['party'] = $this->followUps->addSenderAsParty(caseId: $filing->caseId, address: $sender, name: $name);
+		}
+
+		if ($choices['notifyHandler'] === true) {
+			$label = $name;
+			if ($label === '') {
+				$label = $sender;
+			}
+
+			$done['handler'] = $this->followUps->notifyHandler(
+				caseId: $filing->caseId,
+				callerId: $this->callerId(),
+				sender: $label,
+				subject: (string)($filing->entry['subject'] ?? '')
+			);
+		}
+
+		return $done;
+	}//end followUps()
 
 	/**
 	 * Refuse a filing by hand the caller may not make, or that says too little.

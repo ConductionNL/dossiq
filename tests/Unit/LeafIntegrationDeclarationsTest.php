@@ -162,12 +162,30 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	}//end allLinkedTypes()
 
 	/**
-	 * Only `case` and `complaint` offer a create-from-email button.
+	 * Every schema as the import merges it: the register, then each fragment's schemas.
+	 * Lists merge by position here; read `linkedTypes` through allLinkedTypes(), which concatenates as the import does.
+	 *
+	 * @return array<string, array<string, mixed>> The schemas by slug.
+	 */
+	private function mergedSchemas(): array {
+		$schemas = $this->register()['components']['schemas'];
+		foreach (glob($this->root() . '/lib/Settings/register.d/*.json') as $file) {
+			$fragment = json_decode((string)file_get_contents($file), true);
+			foreach (($fragment['components']['schemas'] ?? []) as $name => $schema) {
+				$schemas[$name] = array_replace_recursive(($schemas[$name] ?? []), $schema);
+			}
+		}
+
+		return $schemas;
+	}//end mergedSchemas()
+
+	/**
+	 * Only `case` and the work queue (`mailIntakeEntry`) offer a create-from-email button, the two blocks board MlConnections draws.
 	 *
 	 * @return void
 	 */
 	public function testExactlyTwoSchemasCarryAMailTemplate(): void {
-		$schemas = $this->register()['components']['schemas'];
+		$schemas = $this->mergedSchemas();
 
 		$carrying = [];
 		foreach ($schemas as $name => $schema) {
@@ -178,7 +196,7 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 
 		sort($carrying);
 		$this->assertSame(
-			['case', 'complaint'],
+			['case', 'mailIntakeEntry'],
 			$carrying,
 			'a schema declaring a template gets a create button in the Mail sidebar, so the set is exact'
 		);
@@ -190,9 +208,9 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 * @return void
 	 */
 	public function testEveryTemplateKeyIsARealProperty(): void {
-		$schemas = $this->register()['components']['schemas'];
+		$schemas = $this->mergedSchemas();
 
-		foreach (['case', 'complaint'] as $name) {
+		foreach (['case', 'mailIntakeEntry'] as $name) {
 			$template = $schemas[$name]['configuration']['mailObjectTemplate'];
 			$properties = $schemas[$name]['properties'];
 
@@ -220,11 +238,11 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoTemplatePrefillsAnIdentity(): void {
-		$schemas = $this->register()['components']['schemas'];
+		$schemas = $this->mergedSchemas();
 
 		$forbidden = [
 			'case' => ['initiatorSourceId', 'initiatorType', 'requester'],
-			'complaint' => ['complainant'],
+			'mailIntakeEntry' => ['case'],
 		];
 
 		foreach ($forbidden as $name => $fields) {
@@ -387,17 +405,17 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 * its schema list by filtering on `linkedTypes.includes('mail')` and draws
 	 * the create button per schema in THAT list, so a schema declaring a
 	 * template and not the sentinel is offered nothing at all, silently.
-	 * `complaint` was exactly that until this change.
+	 * `complaint` was exactly that once.
 	 *
 	 * @return void
 	 */
 	public function testTheMailTemplatesAreActuallyReachable(): void {
-		$schemas = $this->register()['components']['schemas'];
+		$declared = $this->allLinkedTypes();
 
-		foreach (['case', 'complaint'] as $name) {
+		foreach (['case', 'mailIntakeEntry'] as $name) {
 			$this->assertContains(
 				'mail',
-				($schemas[$name]['configuration']['linkedTypes'] ?? []),
+				($declared[$name] ?? []),
 				sprintf(
 					'%s declares a mailObjectTemplate, so it must also carry the "mail" sentinel '
 					. 'or the Mail sidebar never lists it and the button never appears',

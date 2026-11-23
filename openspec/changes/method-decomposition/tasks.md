@@ -1216,3 +1216,179 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         acts, silence-close and admissibility suites (466), green before and unchanged after but for one `@uses`
         line in two.
         Own test: `tests/Unit/Service/Lifecycle/StatusRowsTest` (2).
+  - [x] 8bf `Controller/Support/ApplicatieRules` (1: ExcessiveClassComplexity 54 against 50). Ac-003, the fields an
+        autorisatie must carry for its component and scopes, reads one entry of the body and no store, so it moved to
+        the new `Controller/Support/AutorisatieScopeFields` with its table of requirements per component: the invalid
+        parameters an entry lacks, named by its position (`missingParams()`, was `missingFieldParams()`), the fields its
+        component and scopes require (`requiredFieldsFor()`), the ones it leaves empty (`missingRequiredFields()`) and
+        whether a scope names the component's domain (`scopesContain()`). Bodies and reason sentences moved unchanged.
+        `validateAutorisatieScopes()` builds one over the rules' own translator, so the constructor and the container
+        binding are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `ApplicatieRulesTest` (ac-003a to 003e by position, a complete entry, an
+        unknown component) and `AcControllerCharacterisationTest`, green before and unchanged after but for one
+        `@uses` line or `UsesClass` attribute in each.
+        Own test: `tests/Unit/Controller/Support/AutorisatieScopeFieldsTest` (2).
+  - [x] 8bg `ZgwDrcRulesService` (1: ExcessiveClassComplexity 53 against 50). Drc-006, a locked document changed only
+        with its own lock id, reads the body and the stored document and no store, so it moved to the new
+        `Zgw/DrcLockRule`, built the way slice 8b builds its rule groups: the refusal (`refusal()`, was
+        `validateLock()`), the lock a stored document carries (`currentLock()`) and the missing or wrong lock id
+        (`lockRefusal()`). The two refusal builders (`lockRequiredError()`, `wrongLockError()`) built the 400 of one
+        field that `ZgwRuleResults::fieldRefusal()` builds (slice 8au), so they call it, word for word as before. The
+        service builds the rule in its constructor over its own results builder, so its constructor, the dispatcher
+        and the container are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `ZgwDrcRulesServiceTest` (drc-006 on PUT and PATCH: unlocked, not locked, the
+        missing, wrong and right lock id, the old `lock` field), the DRC rule and dispatcher tests (158), green before
+        and unchanged after but for one `@covers` line.
+        Own test: `tests/Unit/Service/Zgw/DrcLockRuleTest` (2).
+  - [x] 8bh `WorkflowDefinitionService` (1: ExcessiveClassComplexity 54 against 50). The rows a definition's
+        lifecycle steps write are built from what the step already holds and read no store, so they moved to the new
+        `Workflow/DefinitionLifecycleRows` (next to `Workflow/DefinitionRows`, which reads stored rows): the draft row
+        with its encoded content and route (`draft()`, was `draftRow()` with `draftState()`), the draft a clone
+        starts as on its source's route with its title marked `(kopie)` (`cloned()`, was the literal in
+        `cloneDefinition()` with `cloneTitle()`), the publish payload with the authorization-enriched transitions when
+        any resolved (`published()`, was `buildPublishPayload()`), and the deprecation payload `deprecate()` and the
+        publish of a newer version both wrote (`deprecated()`). Bodies moved unchanged. The service builds one over
+        its own guard and JSON encoder in the constructor, so its constructor signature, interface and container
+        binding are unchanged. phpmd: zero findings on both files under both rulesets, and the
+        ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `WorkflowVariantLifecycleTest` (publish, the default route, deprecating the
+        previous active version of a route, cloning on the source's route), `WorkflowPublishRefusalTest`,
+        `StepConfigPublishTest`, `WorkflowDefinitionPublishTest` and the task declaration and package draft tests
+        (237), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/Workflow/DefinitionLifecycleRowsTest` (2).
+  - [x] 8bi `DecisionAdvice/DecisionAdviceService` (1: ExcessiveClassComplexity 55 against 50). What the advice reads
+        off the stored decision table a case type names reads no store, so it moved to the new
+        `DecisionAdvice/AdviceTable`, a value over the table: the declared inputs with their type and the literal
+        values their rules use (`offeredInputs()`, was the loop in `form()`), the outcomes a handler can choose
+        (`outcomes()`), the entered value of every declared input, refusing a missing one (`declaredValues()`, was
+        `declaredInputs()`), the recommendation in what the table answered (`recommendation()`, was
+        `recommendationOf()`), with the column values (`entries()`) and the definition names (`names()`). Bodies and
+        refusal sentences moved unchanged; the loose-list reading went with them. The service builds one where it
+        reads a table, so its constructor, interface and container binding are unchanged. phpmd: zero findings on
+        both files under both rulesets, and the ExcessiveClassComplexity finding is gone over the whole of `lib/`
+        (pdepend cache cleared).
+        Characterisation: the existing `DecisionAdviceServiceTest` (the form's inputs and outcomes, a missing input
+        refused, the recommendation stored, accepting and deviating) and `DecisionAdviceControllerTest` (29), green
+        before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Service/DecisionAdvice/AdviceTableTest` (2).
+  - [x] 8bj `Review/TriageRules` (2: ExcessiveClassComplexity 55 against 50, and CouplingBetweenObjects 14 against
+        13). What the rules of a case have marked reads the case's reviews and no store, so it moved to the new
+        `Review/RuleMarkings`, a value over those reviews: each rule listed with how many documents it decided and how
+        many of its markings a reviewer overturned (`onRules()`, was the loop in `forCase()` with `decidedPerRule()`
+        and `overturnedPerRule()`), and a review as a rule marks it, its effect, the rule as source and name, and the
+        moment (`marked()`, was `markedByRule()`). Bodies moved unchanged. With the marking moment the service no
+        longer names `DateTimeImmutable` or `DateTimeInterface`, so its coupling goes from 14 to 13 (moving only the
+        counts made it 15). The service builds one where it reads the reviews, so its constructor, interface and
+        container binding are unchanged. phpmd: zero findings on both files under both rulesets; over the whole of
+        `lib/` both findings are gone (pdepend cache cleared).
+        Characterisation: the existing `TriageRulesTest` (the listing with decided and overturned counts, applying
+        rules to unmarked documents with the rule as source) and `TriageRuleControllerTest`, green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Review/RuleMarkingsTest` (2).
+  - [x] 8bk `Zaakdossier/DocumentCorrespondents` (1: ExcessiveClassComplexity 56 against 50). Matching a submitted
+        sender or recipient to a party of the case is its own concern, so it moved to the new
+        `Zaakdossier/CasePartyIndex`, built over the case's party links: every way a party may be named, its uuid,
+        contact uid and address in any casing, first holder wins (`indexOf()`, `withKeysOf()`, now built once in the
+        constructor), one value or a picker's option object matched to a party (`match()`, was `matchOne()` with
+        `matchOption()`), the recipients matched each once whatever shape they arrived in (`matchAll()`, was
+        `matchMany()` with `asList()` and `singleAsList()`) and the identifier a party link is stored under
+        (`identifierOf()`, which the correspondents keep as a delegating public method). Bodies moved unchanged. The
+        correspondents build an index where they resolve, so their constructor and the container binding are
+        unchanged. phpmd: zero findings on both files under both rulesets, and the ExcessiveClassComplexity finding
+        is gone over the whole of `lib/` (pdepend cache cleared).
+        Characterisation: the existing `DocumentCorrespondentsTest`, `DocumentCorrespondentsWriteTest`,
+        `CorrespondentWriterTest`, `CorrespondentDispatchGoldenTest`, `InboundSenderIsAPartyTest` and the dossier
+        write tests (86), green before and unchanged after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Zaakdossier/CasePartyIndexTest` (2).
+  - [x] 8bl `Repair/CaseFlowSeedDataRepairStep` (1: ExcessiveClassComplexity 54 against 50; and CouplingBetweenObjects
+        14 against 13, which PHPMD reported unsuppressed on development). Planting the demo cases of one seeded case type
+        is its own concern, so it moved to the new `Repair/CaseFlowSeedCases`: the case bound to its case type, its
+        status resolved by name or left out, a case planted before skipped by title, and a failed write reported
+        (`plant()`, was `seedCasesOf()` with `seedCases()`, `seedCaseRow()` and `saveSeedCase()`). Bodies moved
+        unchanged. Writing one object under one of the run's schemas is `CaseFlowSeedRun::save()`, so neither class
+        names the save options any more and the step's coupling goes from 14 to 13. The step builds the planter where
+        it seeds, so its constructor and the container are unchanged. phpmd: zero findings on the three files under
+        both rulesets.
+        Characterisation: the existing `CaseFlowSeedDataRepairStepTest` and `CaseFlowSeedRunGoldenTest` (the demo
+        cases, the deleted case not planted again, the unresolvable status, the failed case write), green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Repair/CaseFlowSeedCasesTest` (3).
+  - [x] 8bm `Controller/SetupController` (1: ExcessiveClassComplexity 55 against 50; CouplingBetweenObjects 14 against
+        13 stays, the extracted `\Throwable` traded for the new class). Loading the example dataset the wizard picked is
+        its own concern, so it moved to the new `Controller/Support/DatasetLoad`: a posted dataset nobody offers
+        refused, the posted one else the stored pick, the legacy `install-demo-data` meaning the shipped set, "none"
+        recorded as a decline, and an import recorded with its counts only once it returned (`load()`, was
+        `loadDataset()` with `postedRefusal()`, `chosenDataset()`, `importDataset()`, `importedAnswer()` and
+        `refuseDataset()`; `decline()`, was `declineDataset()` and its twin `skipDemoData()`, whose bodies were the
+        same). Bodies moved unchanged; the controller now reads the posted `dataset` and hands it over. The controller
+        builds the loader in its constructor, so its constructor signature and the container are unchanged. phpmd: the
+        ExcessiveClassComplexity finding is gone and the new file has zero findings under both rulesets.
+        Characterisation: the existing `SetupControllerStatusTest`, `SetupControllerReadinessTest` and
+        `SetupWizardStepsTest` (58: the load, the decline, the refused and unknown dataset, the failed import, the
+        legacy action, the pick posted with Next), green before and unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Controller/Support/DatasetLoadTest` (3).
+  - [x] 8bn `Workflow/WorkflowLifecycleGuard` (1: ExcessiveClassComplexity 57 against 50). Which route a definition is
+        on, and which route a case type takes by default, is its own concern, so it moved to the new
+        `Workflow/DefaultRoute`: a blank route read as the default route (`variantOf()`), the default a case type records
+        as an id or an embedded row (`definitionIdFor()`, was `defaultDefinitionIdFor()`), and the pick among several
+        active routes, the recorded one else the lowest slug and its highest version, logged (`among()`, was
+        `defaultAmong()` with `routeOrder()` and `idOf()`). `VARIANT_DEFAULT` lives there too; the guard's constant
+        names it. Bodies moved unchanged. The guard's public methods stay on it and its interface, and delegate; it
+        builds the reader in its constructor, so its constructor signature and the container are unchanged. phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation: the existing workflow guard, definition service and template loader tests (151 in 27 files:
+        the route read, the recorded default, the ambiguous pick, publish and deprecate), green before and unchanged
+        after but for one `@uses` line in four.
+        Own test: `tests/Unit/Service/Workflow/DefaultRouteTest` (3).
+  - [x] 8bo `CaseRelationService` (1: ExcessiveClassComplexity 58 against 50). Stripping the links to a deleted case
+        from the cases that hold one is its own concern, so it moved to the new `Relation/DeletedCaseLinks`: the cases
+        the deleted case named and the cases that named it (`/used`), each once and never the case itself, and a
+        counterpart written only when a relation or typed link to the deleted case went (`strip()`, was the body of
+        `cleanupForDeletedCase()` with `stripCounterpart()`, `stripLinksTo()`, `counterpartIdsOf()`,
+        `declaredCounterpartIds()` and `incomingCounterpartIds()`). Bodies moved unchanged. The public
+        `cleanupForDeletedCase()` stays on the service and its interface, and delegates. The service builds the cleanup
+        over its own store and codec in its constructor, so its constructor signature and the container are unchanged.
+        phpmd: the ExcessiveClassComplexity finding is gone over the whole of `lib/` (pdepend cache cleared) and the
+        new file has zero findings under both rulesets.
+        Characterisation: the existing `CaseRelationServiceTest`, `CaseRelationServiceGoldenTest`, `ZrcDestroyCaseTest`
+        and the other relation tests (182 in 22 files: the counterparts declared from the other side, the case-delete
+        path), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/Relation/DeletedCaseLinksTest` (3).
+  - [x] 8bp `DeadlineExtensionService` (1: ExcessiveClassComplexity 60 against 50). Whether an extension may go ahead,
+        and by how many days it moves the term, is its own concern, so it moved to the new `ExtensionLimits` (beside
+        `ExtensionRun`, outside the procedure-named `Termijn/` directory): the new end after the current one, the
+        ceiling of extensions that a supervisor passes, and the period the case type declares, measured to the end
+        asked for (`assertAllowed()`, was `assertExtensionAllowed()` with `assertExtensionPermitted()`,
+        `assertWithinDeclaredPeriod()`, `resolveMaxExtensions()`, `cachedDefinition()`, `definitieCache()` and
+        `definitionIn()`), and the days between two ends (`daysImpact()`, was `calculateDaysImpact()`, which
+        `rungsStillBehind()` still asks). Bodies moved unchanged. The service builds the checks over its own term
+        service, dates and declarations in its constructor, so its constructor signature and the container are
+        unchanged. phpmd: zero findings on both files under both rulesets (pdepend cache cleared).
+        Characterisation: the existing `DeadlineExtensionLimitTest`, `DeadlinePauseExtensionServiceTest` and the other
+        extension tests (226 in 17 files: the ceiling, the supervisor override, the declared period, the rolled end,
+        the requester told), green before and unchanged after but for one `@uses` line in two.
+        Own test: `tests/Unit/Service/ExtensionLimitsTest` (3).
+  - [x] 8bq `CaseEmailMatchService` (1: ExcessiveClassComplexity 60 against 50). What an email match run needs before it
+        starts, or why it cannot, is its own concern, so it moved to the new `Email/MatchRunReadiness`: the Mail account
+        is the owner's own and the pattern loads, the register and case schema are configured, OpenRegister can scope a
+        read to the owner, and the email leaf is there, the first that fails naming the refusal code (`prepare()`, was
+        `prepareRun()` with `mailboxRefusal()`, `configurationRefusal()`, `objectServiceRefusal()`,
+        `emailLeafRefusal()` and `getEmailLinkService()`). Bodies moved unchanged, but for the leaf lookup: gate-122
+        named `getEmailLinkService()` a copy of `Access/ObjectReadGrants::service()` once it moved, so
+        `emailLeafRefusal()` now resolves the leaf itself and refuses on a throw, a non-object or no `linkEmail()`, the
+        same answer for every input. Its catch-return-null allowlist entry went with it. The service builds the readiness over its own
+        collaborators in its constructor, so its constructor signature and the container are unchanged. phpmd: zero
+        findings on both files under both rulesets (pdepend cache cleared).
+        Characterisation: the existing `CaseEmailMatchServiceTest` (every refusal code, the run as the owner, the
+        cursor) with the other match tests and `ServiceCatchReturnsNullTest` (79 in 4 files), green before and
+        unchanged after but for one `@uses` line.
+        Own test: `tests/Unit/Service/Email/MatchRunReadinessTest` (2).
+  - [x] 8br Three stale `TooManyMethods` suppressions (3: `AcknowledgementService`, `DeadlineExtensionService`,
+        `ZgwRulesBase`). The extractions of 8au, 8aw and 8bp left each class under the threshold, but the
+        class-level suppression stayed. Found by removing every `@SuppressWarnings(PHPMD.*)` line in `lib/` one at
+        a time and running both rulesets on its file: these three were the only ones whose rule no longer fires.
+        Removed; phpmd reports zero findings on the three files under both rulesets (pdepend cache cleared).
+        Docblock only, no code path changed, so no test was added; the suites of the three classes run unchanged.
+        `phpmd.suppressWarnings` 195 to 192 (the baseline file still reads 178: development was already over it).

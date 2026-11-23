@@ -79,7 +79,7 @@ function widget(pageId, widgetId) {
 describe('a hidden status leaves every working lens', () => {
 	// The chips that list work somebody is expected to do. Closed is absent
 	// on purpose and has its own assertion below.
-	it.each(['All', 'Unread', 'Mine', 'Unclaimed', 'Overdue', 'Due this week'])(
+	it.each(['All', 'Unread', 'My cases', 'Unclaimed', 'Overdue', 'Deadline this week'])(
 		'the %s chip narrows on the hidden mirror',
 		(label) => {
 			expect(chip('Cases', label).filter[FLAG]).toBe(false)

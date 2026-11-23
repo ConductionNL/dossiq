@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Listener\Registrar;
 use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
+use OCA\Dossiq\Listener\CaseOpeningDefaultsListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
@@ -121,6 +122,11 @@ class CaseTypeListenerRegistrar {
 				priority: self::INHERITED_DEADLINE_PRIORITY
 			);
 		}
+
+		// A case created through the API or a dialog opens the way the
+		// intake's cases do: its case type's team, handler and first status
+		// where the writer gave none (CaseOpeningDefaults).
+		$context->registerEventListener(event: ObjectCreatingEvent::class, listener: CaseOpeningDefaultsListener::class);
 	}//end registerSavingListeners()
 
 	/**

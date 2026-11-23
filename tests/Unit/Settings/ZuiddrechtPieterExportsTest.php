@@ -49,6 +49,6 @@ class ZuiddrechtPieterExportsTest extends TestCase {
 		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
 		$views = array_column($set['views'], 'data', 'key');
 
-		$this->assertSame('Door Anouk Bakker, team Woo en informatie', $views['anouk-woo-verzoeken-team']['description'] ?? null);
+		$this->assertSame('By Anouk Bakker, team Woo and information', $views['anouk-woo-verzoeken-team']['description'] ?? null);
 	}//end testAnouksSharedViewSaysWhoMadeIt()
 }//end class

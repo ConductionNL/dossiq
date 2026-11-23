@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 
 /**
@@ -81,6 +83,26 @@ final class CaseFlowSeedRun {
 		public readonly IOutput $output,
 	) {
 	}//end __construct()
+
+	/**
+	 * Write one object to the register, under one of the run's schemas.
+	 *
+	 * @param string              $schemaKey The key of the schema in `$schemas`: caseType, statusType or case.
+	 * @param array<string,mixed> $object    The object to write.
+	 *
+	 * @return mixed What the store hands back.
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
+	 */
+	public function save(string $schemaKey, array $object): mixed {
+		return $this->objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+				register: $this->schemas['register'],
+				schema: $this->schemas[$schemaKey]
+			))
+		);
+	}//end save()
 
 	/**
 	 * Whether the demo cases were due and every case type was seeded, so the seed is recorded.

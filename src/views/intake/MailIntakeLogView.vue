@@ -140,7 +140,7 @@
 									variant="tertiary"
 									:data-testid="`intake-log-file-on-case-${entryId(entry)}`"
 									@click="openFileOnCase(entry)">
-									{{ t('dossiq', 'File on a case') }}
+									{{ t('dossiq', 'Link to case') }}
 								</NcButton>
 							</td>
 						</tr>

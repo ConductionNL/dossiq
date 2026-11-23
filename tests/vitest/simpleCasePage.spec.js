@@ -393,18 +393,19 @@ describe('the tabs', () => {
 	const find = (config, id) =>
 		config.widgets.find((widget) => widget.id === id)
 
-	it('shows the five the board draws and keeps the other panels under Acties, losing none', () => {
+	it('shows the six the boards draw and keeps the other panels under Acties, losing none', () => {
 		const strip = tabsOf(simple)
-		expect(strip.maxVisibleTabs).toBe(5)
-		// The five every case shows; a case type domain adds its own tabs
-		// behind a visibleWhen (checked under the side column).
+		expect(strip.maxVisibleTabs).toBe(6)
+		// The six every case shows (DqZaakEmail: E-mail between Taken and
+		// Historie); a case type domain adds its own tabs behind a visibleWhen
+		// (checked under the side column).
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
-		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Email', 'History'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')

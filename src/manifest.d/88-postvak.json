@@ -10,7 +10,8 @@
 			"id": "Postvak",
 			"route": "/postvak",
 			"type": "index",
-			"title": "Mailbox",
+			"title": "Inbox",
+			"menuEntry": "Queue",
 			"config": {
 				"sidebar": {
 					"enabled": true,
@@ -54,7 +55,7 @@
 				},
 				"showTitle": true,
 				"_breadcrumbNote": "DqPostvak: \"Postvak · berichten van de hele organisatie ...\", the page as its one crumb before the note (nextcloud-vue header-trail-current-once draws a crumb naming the page once).",
-				"breadcrumb": { "label": "Mailbox", "route": "Postvak" },
+				"breadcrumb": { "label": "Inbox", "route": "Postvak" },
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
 				"footerNote": "20 per page",
@@ -102,12 +103,12 @@
 						"key": "subject",
 						"label": "Message",
 						"width": "300px",
-						"cellClass": "cn-cell--strong",
+						"cellClass": "cn-cell--strong cn-cell--wrap",
 						"secondary": "{sender} · {receivedAt|relativetime}"
 					},
 					{
 						"key": "channel",
-						"label": "Came in via",
+						"label": "Received via",
 						"width": "230px",
 						"widget": "label",
 						"enum": ["email", "portal", "webform"],
@@ -121,16 +122,16 @@
 						"widget": "badge",
 						"widgetProps": {
 							"variant": "info",
-							"textTemplate": "Looks like {value}"
+							"textTemplate": "Looks like {value}",
+							"emptyLabel": "No case"
 						}
 					},
 					{
 						"key": "actions",
-						"label": "Do",
+						"label": "To do",
 						"widget": "actions",
 						"widgetProps": {
 							"actions": [
-								"link-to-case",
 								"file-on-case",
 								"new-case-from-message"
 							]
@@ -139,61 +140,12 @@
 				],
 				"actions": [
 					{
-						"id": "link-to-case",
+						"id": "file-on-case",
 						"label": "Link to case",
 						"variant": "secondary",
-						"visibleWhen": {
-							"field": "suggestion.case",
-							"op": "notEmpty"
-						},
-						"type": "handler",
-						"handler": "navigate",
-						"route": "CaseDetail",
-						"params": {
-							"id": "@row.suggestion.case"
-						}
-					},
-					{
-						"id": "file-on-case",
-						"label": "File on a case",
-						"variant": "secondary",
 						"type": "open-modal",
-						"target": "CnActionDialog",
-						"_note": "capability-rows-say-the-whole-capability 2.7 (REQ-CRS-18): file the message on any case the intake worker picks, not only the one its subject suggests. The dialog posts to the intake log's file-on-case route, which holds the intake role, the read check on the picked case and the required reason; a filed message has outcome case and so leaves this queue, which lists inbox and quarantined messages only.",
-						"props": {
-							"config": {
-								"title": "File this message on a case",
-								"eyebrow": "{sender}",
-								"summary": { "title": "{subject}", "meta": "{sender}" },
-								"fields": [
-									{
-										"field": "caseId",
-										"type": "search",
-										"label": "Case",
-										"required": true,
-										"source": { "register": "dossiq", "schema": "case" },
-										"optionLabel": "{title}",
-										"optionSecondary": "{identifier}"
-									},
-									{
-										"field": "reason",
-										"type": "text",
-										"label": "Reason",
-										"required": true,
-										"placeholder": "Why does this message belong on that case?"
-									}
-								],
-								"confirm": {
-									"label": "File it",
-									"icon": "FileMoveOutline",
-									"request": {
-										"method": "POST",
-										"url": "/apps/dossiq/api/mail-intake/log/@objectId/file-on-case"
-									}
-								},
-								"doneText": "The message is filed on the case."
-							}
-						}
+						"target": "LinkToCaseDialog",
+						"_note": "Board DqKoppelAanZaak: the message with its text and attachments, the case its subject names as the chosen proposal, a search for another case, and the two choices of When linking (the sender as a party, the handler told). The dialog posts to the intake log's file-on-case route, which holds the intake role and the read check on the picked case; a link to another case than the proposal asks why, as an override of the match. A filed message has outcome case and so leaves this queue."
 					},
 					{
 						"id": "new-case-from-message",

@@ -414,7 +414,10 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->queue()->getData();
 
-		$this->assertSame(expected: [['id' => 'e-quarantined', 'suggestion' => null, 'channel' => 'email']], actual: $body['results']);
+		$this->assertSame(
+			expected: [['id' => 'e-quarantined', 'senderName' => '', 'preview' => '', 'attachments' => [], 'suggestion' => null, 'channel' => 'email']],
+			actual: $body['results']
+		);
 		$this->assertSame(expected: 1, actual: $body['sleeping']);
 		$this->assertSame(expected: 1, actual: $body['total']);
 	}//end testTheQueueLeavesOutTheSleepingItems()

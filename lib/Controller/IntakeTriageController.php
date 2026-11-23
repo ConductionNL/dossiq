@@ -58,6 +58,7 @@ use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
 use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
 use OCA\Dossiq\Kernel\Contracts\TriageChannelInterface;
 use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
+use OCA\Dossiq\Service\Intake\MessagePreview;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -327,7 +328,7 @@ class IntakeTriageController extends Controller {
 		$awake = $this->sleep->awake(queue: $items);
 		$lens = $this->channels->annotate(
 			items: $this->suggestions->narrow(
-				items: $this->suggestions->annotate(items: array_values($awake)),
+				items: $this->suggestions->annotate(items: (new MessagePreview())->annotate(items: array_values($awake))),
 				suggestion: $suggestion
 			)
 		);
