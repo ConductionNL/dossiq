@@ -108,6 +108,8 @@ describe('LinkToCaseDialog', () => {
 	it('shows the message with its attachments and the proposal as the chosen case', async () => {
 		const wrapper = await dialog()
 
+		// The theme sizes every paragraph and heading outside .cn-look-board; the dialog is drawn in the board look.
+		expect(wrapper.find('[data-testid="link-to-case-dialog"]').classes()).toContain('cn-look-board')
 		expect(wrapper.find('[data-testid="link-to-case-message"]').text()).toContain('Vraag over mijn kapvergunning 2026-0206')
 		expect(wrapper.find('[data-testid="link-to-case-attachments"]').text()).toContain('2 attachments go along: eik-achtertuin-1.jpg, eik-achtertuin-2.jpg')
 		const proposal = wrapper.find('[data-testid="link-to-case-proposal"]')
