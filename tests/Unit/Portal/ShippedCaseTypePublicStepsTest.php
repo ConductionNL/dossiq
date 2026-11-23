@@ -44,16 +44,16 @@ class ShippedCaseTypePublicStepsTest extends TestCase {
 	 */
 	private const EXPECTED = [
 		// Base register, the four resident-facing case types.
-		'@ref:omgevingsvergunning'             => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
-		'@ref:subsidieaanvraag'                => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
-		'@ref:klacht-behandeling'              => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
+		'@ref:omgevingsvergunning'             => ['Received', 'In progress', 'Decision', 'Completed'],
+		'@ref:subsidieaanvraag'                => ['Received', 'In progress', 'Decision', 'Completed'],
+		'@ref:klacht-behandeling'              => ['Received', 'In progress', 'Completed'],
 		'@ref:melding-openbare-ruimte'         => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		// 58-case-type-versions: v2's Veiligheidstoets folds into the status
 		// after it, so both versions read as the same three steps.
 		'c4e7e000-0000-4000-a000-000000000101' => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		'c4e7e000-0000-4000-a000-000000000102' => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		// 81-woo-verzoek: eight internal statuses, five public steps.
-		'3c0f5a00-0000-4000-a000-00000000a001' => ['Ontvangen', 'In behandeling', 'Besluit', 'Besluit genomen', 'Afgehandeld'],
+		'3c0f5a00-0000-4000-a000-00000000a001' => ['Received', 'In progress', 'Decision', 'Decision taken', 'Completed'],
 		// 46-demo-cases-english, in the language that file declares.
 		'building-permit-type'                 => ['Received', 'In progress', 'Decision', 'Completed'],
 		'grant-application-type'               => ['Received', 'In progress', 'Decision', 'Completed'],
