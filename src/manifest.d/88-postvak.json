@@ -11,6 +11,8 @@
 			"route": "/postvak",
 			"type": "index",
 			"title": "Mailbox",
+			"_menuEntryNote": "DqPostvak marks Wachtrij (Team queue) in the menu while the Mailbox is open: the Mailbox has no entry of its own (nextcloud-vue page menuEntry).",
+			"menuEntry": "Queue",
 			"config": {
 				"sidebar": {
 					"enabled": true,
@@ -121,7 +123,8 @@
 						"widget": "badge",
 						"widgetProps": {
 							"variant": "info",
-							"textTemplate": "Looks like {value}"
+							"textTemplate": "Looks like {value}",
+							"emptyLabel": "No case"
 						}
 					},
 					{

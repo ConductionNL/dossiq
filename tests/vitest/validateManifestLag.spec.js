@@ -226,7 +226,10 @@ describe('check:manifest tells a lag from a defect', () => {
 		// A bulk action under More (`menu`, schema 2.191.0) is derived the same way.
 		const declaresBulkMenu = Object.hasOwn(installed.$defs.actionFields?.properties || {}, 'menu')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb && declaresSummaryRows && declaresBulkMenu) {
+		// A page naming its menu entry (`menuEntry`, schema 2.192.0) is derived the same way.
+		const declaresMenuEntry = Object.hasOwn(installed.$defs.page?.properties || {}, 'menuEntry')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb && declaresSummaryRows && declaresBulkMenu && declaresMenuEntry) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -258,6 +261,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 		if (!declaresSummaryRows) {
 			expect(out).toMatch(/\/setup\/steps\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresMenuEntry) {
+			expect(out).toMatch(/\/pages\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
 		}
 		if (!declaresBulkMenu) {
 			expect(out).toMatch(/\/config\/bulkActions\/\d+ uses "unevaluatedProperties", which schema [\d.]+ accepts/)
