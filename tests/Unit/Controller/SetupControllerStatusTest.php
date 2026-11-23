@@ -49,6 +49,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for SetupController::status().
  *
  * @covers \OCA\Dossiq\Controller\SetupController
+ * @uses \OCA\Dossiq\Controller\Support\DatasetLoad
  * @uses \OCA\Dossiq\Service\Setup\FirstRunReadiness
  * @uses \OCA\Dossiq\Service\Setup\CaseTypePackageChoice
  */

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\DatasetLoad;
 use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
@@ -77,7 +78,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DEMO_DATA_DECIDED_KEY = DemoDataServiceInterface::DECIDED_KEY;
+	private const DEMO_DATA_DECIDED_KEY = DatasetLoad::DECIDED_KEY;
 
 	/**
 	 * App-config key holding the dataset the operator picked.
@@ -90,7 +91,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DATASET_KEY = 'demo_dataset';
+	private const DATASET_KEY = DatasetLoad::DATASET_KEY;
 
 	/**
 	 * App-config key holding the setup version the wizard was closed at.
@@ -104,6 +105,13 @@ class SetupController extends Controller {
 	private const DISMISSED_VERSION_KEY = 'setup_dismissed_version';
 
 	/**
+	 * Loads the picked example dataset, or records that none is wanted.
+	 *
+	 * @var DatasetLoad
+	 */
+	private readonly DatasetLoad $datasets;
+
+	/**
 	 * Construct the setup controller.
 	 *
 	 * @param string $appName The app id.
@@ -115,6 +123,7 @@ class SetupController extends Controller {
 	 * @param FirstRunReadinessInterface $readiness The minimum an instance needs, read live.
 	 * @param ActiveOrganisationProfileInterface $organisationProfile The active organisation's name and logo (Organisation step).
 	 * @param CaseTypePackageChoiceInterface $caseTypes The on-request case type packages (Case types step).
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -128,6 +137,7 @@ class SetupController extends Controller {
 		private readonly CaseTypePackageChoiceInterface $caseTypes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->datasets = new DatasetLoad(appConfig: $appConfig, demoDataService: $demoDataService, caseTypes: $caseTypes);
 	}//end __construct()
 
 	/**
@@ -365,13 +375,14 @@ class SetupController extends Controller {
 	 * @return DataResponse|null The failure, or null when there was nothing to do or the load succeeded.
 	 *
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function loadPostedDataset(): ?DataResponse {
 		if ($this->request->getParam(self::DATASET_KEY) === null) {
 			return null;
 		}
 
-		$outcome = $this->loadDataset(actionId: 'load-demo-data');
+		$outcome = $this->datasets->load(actionId: 'load-demo-data', posted: $this->request->getParam('dataset'));
 		if (($outcome->getData()['success'] ?? false) === true) {
 			return null;
 		}
@@ -390,6 +401,7 @@ class SetupController extends Controller {
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
@@ -397,8 +409,11 @@ class SetupController extends Controller {
 		// dataset, and it still means "import the one this app ships". Kept so
 		// an older manifest, a runbook or a script that posts it keeps working.
 		return match ($actionId) {
-			'load-demo-data', 'install-demo-data' => $this->loadDataset(actionId: $actionId),
-			'skip-demo-data' => $this->skipDemoData(),
+			'load-demo-data', 'install-demo-data' => $this->datasets->load(
+				actionId: $actionId,
+				posted: $this->request->getParam('dataset'),
+			),
+			'skip-demo-data' => $this->datasets->decline(),
 			'dismiss-setup' => $this->dismissSetup(),
 			'init-register' => $this->initRegister(),
 			'seed' => $this->installSeedPackage(),
@@ -480,218 +495,6 @@ class SetupController extends Controller {
 		$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
 		return new DataResponse(['success' => true, 'message' => $outcome['message'], 'detail' => $outcome]);
 	}//end installSeedPackage()
-
-	/**
-	 * Import the dataset a card's Load button posted as `dataset`, or the
-	 * stored pick when nothing is posted (ADR-111 rule 4).
-	 *
-	 * @param string $actionId The action that asked, which decides whether an
-	 *                         unanswered choice is refused or means the shipped set.
-	 *
-	 * @return DataResponse The outcome, carrying the counts.
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function loadDataset(string $actionId): DataResponse {
-		// The card's Load button names its dataset in the body. An older wizard
-		// posts nothing and relies on the pick stored a step earlier. Nothing is
-		// stored before the load succeeds: a failed load must leave the step
-		// open for an operator who asked for data and got none.
-		$posted = $this->request->getParam('dataset');
-		$refusal = $this->postedRefusal(posted: $posted);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$picked = $this->chosenDataset(actionId: $actionId, posted: $posted);
-
-		// 🔴 NO SILENT DEFAULT. Importing here because the operator clicked Run
-		// one step early would plant example objects nobody asked for, which is
-		// the failure this whole step exists to avoid.
-		if ($picked === '') {
-			return new DataResponse(['success' => false, 'message' => 'Pick a dataset first.']);
-		}
-
-		if ($picked === DemoDataServiceInterface::NONE_DATASET) {
-			return $this->declineDataset();
-		}
-
-		return $this->importDataset(picked: $picked);
-	}//end loadDataset()
-
-	/**
-	 * Refuse a posted dataset nobody answers to; nothing posted is no refusal.
-	 *
-	 * @param mixed $posted The posted `dataset`, or null.
-	 *
-	 * @return DataResponse|null
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function postedRefusal(mixed $posted): ?DataResponse {
-		if ($posted === null) {
-			return null;
-		}
-
-		return $this->refuseDataset(value: $posted);
-	}//end postedRefusal()
-
-	/**
-	 * The dataset to load: the posted one, else the stored pick.
-	 *
-	 * The legacy id carries no answer, so it means the shipped dataset. A
-	 * caller that posts it has said which one by posting it.
-	 *
-	 * @param string $actionId The action that asked.
-	 * @param mixed  $posted   The posted `dataset`, or null.
-	 *
-	 * @return string The dataset id, or '' when none was chosen.
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function chosenDataset(string $actionId, mixed $posted): string {
-		$picked = $this->config(key: self::DATASET_KEY);
-		if ($posted !== null) {
-			$picked = (string)$posted;
-		}
-
-		if ($actionId === 'install-demo-data' && $picked === '') {
-			return DemoDataServiceInterface::DEMO_DATASET;
-		}
-
-		return $picked;
-	}//end chosenDataset()
-
-	/**
-	 * Record that no example data is wanted.
-	 *
-	 * @return DataResponse
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function declineDataset(): DataResponse {
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
-
-		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
-	}//end declineDataset()
-
-	/**
-	 * Import the dataset and record the choice once the import returned.
-	 *
-	 * Recorded only after the import actually returned. Marking it first
-	 * would let a failed install present as a finished step, and an import
-	 * that stored nothing now throws rather than returning zeroes.
-	 * Loading IS choosing the set, so the pick is recorded too.
-	 *
-	 * The packages installed before this choice skipped their example rows,
-	 * and reinstalling a current package writes nothing, so their examples
-	 * are written now, once the decision says this instance wants them. Their
-	 * outcomes travel in `detail.packageExamples`.
-	 *
-	 * @param string $picked The dataset.
-	 *
-	 * @return DataResponse The outcome, carrying the counts.
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
-	 */
-	private function importDataset(string $picked): DataResponse {
-		try {
-			$imported = $this->demoDataService->install();
-		} catch (\Throwable $e) {
-			return new DataResponse(['success' => false, 'message' => $e->getMessage()]);
-		}
-
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataServiceInterface::DECIDED_INSTALLED);
-
-		return $this->importedAnswer(imported: $imported + ['packageExamples' => $this->caseTypes->writeExamplesOfInstalled()]);
-	}//end importDataset()
-
-	/**
-	 * The answer to an import that returned.
-	 *
-	 * 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
-	 * numbers cannot be told apart from an import that wrote nothing — and
-	 * one number cannot be told apart from a number read out of the file it
-	 * was asked to import. The landing is stated against the ask.
-	 *
-	 * 🔴 THE SCHEMA COUNT IS GONE, BECAUSE IT WAS COUNTING THE DAMAGE.
-	 * `schemas` is how many schemas the import DEFINED, and this message
-	 * read it as "how many schemas the objects landed in". Those were the
-	 * same number only while the demo import was forking a schema set of
-	 * its own: "across 139 schemas" was the fork, reported as a feature.
-	 * A demo set defines no schemas now, so the honest sentence is about
-	 * objects. The full counts stay in `detail`.
-	 *
-	 * @param array<string, mixed> $imported The import's counts.
-	 *
-	 * @return DataResponse
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function importedAnswer(array $imported): DataResponse {
-		return new DataResponse(
-			[
-				'success' => true,
-				'message' => sprintf(
-					'Demo data installed: %d of %d objects stored, %d refused, %d already present.',
-					$imported['objects'],
-					$imported['requested'],
-					$imported['refused'],
-					$imported['unchanged']
-				),
-				'detail'  => $imported,
-			]
-		);
-	}//end importedAnswer()
-
-	/**
-	 * Refuse a posted dataset id no dataset answers to.
-	 *
-	 * @param mixed $value The posted value.
-	 *
-	 * @return DataResponse|null The refusal, or null when the dataset is known.
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function refuseDataset(mixed $value): ?DataResponse {
-		$named = 'that';
-		if (is_scalar($value) === true) {
-			$named = (string)$value;
-		}
-
-		$known = array_column($this->demoDataService->listChoices(), 'id');
-		if (is_scalar($value) === true && in_array($named, $known, true) === true) {
-			return null;
-		}
-
-		return new DataResponse(
-			['success' => false, 'message' => 'No dataset is called "' . $named . '".'],
-			Http::STATUS_BAD_REQUEST,
-		);
-	}//end refuseDataset()
-
-	/**
-	 * Record that the operator declined the demo dataset.
-	 *
-	 * Its own action so "no thanks" is a decision the wizard can record. Without
-	 * it the only way past the step would be to install demo data, which is
-	 * wrong on a production instance.
-	 *
-	 * @return DataResponse The outcome.
-	 *
-	 * @spec exclude Demo-data skip action (ADR-111 rule 4); no per-app openspec change yet.
-	 */
-	private function skipDemoData(): DataResponse {
-		// Skipping IS choosing "None", so both keys are written: an older
-		// runbook may read either one.
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
-
-		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
-	}//end skipDemoData()
 
 	/**
 	 * Refuse a posted dataset the demo data service does not offer.
