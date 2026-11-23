@@ -528,7 +528,7 @@
 		<template #tab-advanced>
 			<CnSettingsSection
 				id="section-zgw"
-				:name="t('dossiq', 'ZGW API mapping')"
+				:name="t('dossiq', 'ZGW API connection')"
 				:description="
 					t(
 						'dossiq',

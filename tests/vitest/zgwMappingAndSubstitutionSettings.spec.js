@@ -112,7 +112,7 @@ describe('ZgwMappingSettings', () => {
 		const wrapper = mount(ZgwMappingSettings)
 		await flushPromises()
 
-		await button(wrapper, 'Reset')[0].trigger('click')
+		await button(wrapper, 'Set up again')[0].trigger('click')
 		await flushPromises()
 
 		expect(zgwStore.resetMapping).toHaveBeenCalledWith('zaak')

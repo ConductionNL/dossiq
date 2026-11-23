@@ -53,6 +53,6 @@ describe('the ZGW mapping names', () => {
 		expect(table).toContain('class="cn-status-badge cn-status-badge--success"')
 		expect(table).not.toMatch(/\.status-enabled \{/)
 		expect(table).toMatch(/:deep\(\.button-vue\) \{\s*min-height: 34px;/)
-		expect(nl['ZGW Resource']).toBe('ZGW-bron')
+		expect(nl['ZGW source']).toBe('ZGW-bron')
 	})
 })
