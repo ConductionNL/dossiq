@@ -3391,6 +3391,8 @@ OC.L10N.register(
         "Say why this message belongs on that case.": "Zeg waarom dit bericht bij die zaak hoort.",
         "The message could not be linked. Try again.": "Het bericht kon niet worden gekoppeld. Probeer het opnieuw.",
         "The message is on case {number}.": "Het bericht staat op zaak {number}.",
+        "The message is on the new case.": "Het bericht staat op de nieuwe zaak.",
+        "The case was made, but the message could not be put on it. Link it from the inbox.": "De zaak is gemaakt, maar het bericht kon er niet op worden gezet. Koppel het vanuit het postvak.",
         "handler {name}": "behandelaar {name}",
         "Evaluated": "Geëvalueerd",
         "Evaluated by": "Beoordeeld door",

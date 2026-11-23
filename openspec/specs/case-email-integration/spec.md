@@ -369,6 +369,15 @@ records one person's correction and SHALL NOT change the matching rules.
 - **THEN** the response SHALL be 403
 - **AND** the message SHALL stay where it was
 
+#### Scenario: A new case is made from an inbox message
+@e2e exclude needs a logged inbox message, which only a mail server and the intake sweep produce; covered by tests/vitest/newCaseFromMessageDialog.spec.js
+
+- **GIVEN** a message in the inbox that belongs to no case
+- **WHEN** a handler with the intake role chooses New case on it
+- **THEN** the New case dialog SHALL open with the subject as the title, the text as the description and email as the intake channel
+- **AND** once the case is made the message SHALL be filed on it with the sender as a party
+- **AND** the new case SHALL open
+
 ### Requirement: A saved mail file is parsed by integriq and filed as a message
 
 A `.eml` or `.msg` file on a case SHALL be readable as a message. dossiq

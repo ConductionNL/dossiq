@@ -151,9 +151,9 @@
 						"id": "new-case-from-message",
 						"label": "New case",
 						"variant": "secondary",
-						"type": "handler",
-						"handler": "navigate",
-						"route": "Cases"
+						"type": "open-modal",
+						"target": "NewCaseFromMessageDialog",
+						"_note": "dossiq's own New case dialog, seeded from the message: its subject as the title, its text as the description, email as the intake channel. Once the case exists the message is filed on it through the intake log's file-on-case route, with the sender as a party, and the new case opens. A filed message has outcome case and so leaves this queue."
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
