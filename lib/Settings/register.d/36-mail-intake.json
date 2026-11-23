@@ -17,6 +17,7 @@
                     "linkedTypes": [
                         "mail"
                     ],
+                    "mailObjectName": "work queue item",
                     "mailObjectTemplate": {
                         "subject": "{{subject}}",
                         "sender": "{{sender}}",
