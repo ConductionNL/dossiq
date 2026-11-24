@@ -44,11 +44,24 @@ use Throwable;
 /**
  * OpenRegister reads for the case-type resolver.
  *
+ * A row or list read once is kept for the rest of the request: answering one
+ * case page asked for the same case type and its status types many times. Any
+ * object create, update or delete in the request drops what is kept
+ * ({@see \OCA\Dossiq\Listener\CaseTypeStoreForgetListener}), and a failed read
+ * is not kept.
+ *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeStore implements CaseTypeStoreInterface {
+	/**
+	 * The rows read in this request, by schema key and id or filter.
+	 *
+	 * @var array<string, array>
+	 */
+	private array $kept = [];
+
 	/**
 	 * Constructor.
 	 *
@@ -94,13 +107,19 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 			return [];
 		}
 
+		$key = 'row|'.$schemaKey.'|'.$id;
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
 			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}
 
-		return $this->asRow(value: $found);
+		$this->kept[$key] = $this->asRow(value: $found);
+		return $this->kept[$key];
 	}//end readRow()
 
 	/**
@@ -346,6 +365,11 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 			return [];
 		}
 
+		$key = 'search|'.$schemaKey.'|'.json_encode($filter);
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
 			$found = $objectService->searchObjects(
 				['@self' => ['register' => $register, 'schema' => $schema]] + $filter + ['_limit' => 200]
@@ -354,8 +378,20 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 			return [];
 		}
 
-		return $this->asRows(value: $found);
+		$this->kept[$key] = $this->asRows(value: $found);
+		return $this->kept[$key];
 	}//end search()
+
+	/**
+	 * Forget the rows read earlier in this request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function forget(): void {
+		$this->kept = [];
+	}//end forget()
 
 	/**
 	 * Normalise one store answer into a plain row.

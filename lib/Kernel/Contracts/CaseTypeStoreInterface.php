@@ -106,4 +106,13 @@ interface CaseTypeStoreInterface {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array;
+
+	/**
+	 * Forget the rows read earlier in this request, so the next read asks OpenRegister again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function forget(): void;
 }//end interface

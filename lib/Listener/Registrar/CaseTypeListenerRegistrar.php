@@ -37,6 +37,7 @@ use OCA\Dossiq\Listener\CaseOpeningDefaultsListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
+use OCA\Dossiq\Listener\CaseTypeStoreForgetListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -81,6 +82,13 @@ class CaseTypeListenerRegistrar {
 	public const TERM_NOTE_PRIORITY = -120;
 
 	/**
+	 * The case type store forgets its request reads first after an object change.
+	 *
+	 * @var int
+	 */
+	public const STORE_FORGET_PRIORITY = 1000;
+
+	/**
 	 * Register the case type inheritance listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -95,6 +103,10 @@ class CaseTypeListenerRegistrar {
 		$this->registerSavingListeners(context: $context);
 		$this->registerSavedListeners(context: $context);
 		$this->registerTermListeners(context: $context);
+		// Before any other saved listener, so none of them reads a row the save replaced.
+		foreach (CaseTypeStoreForgetListener::EVENTS as $event) {
+			$context->registerEventListener(event: $event, listener: CaseTypeStoreForgetListener::class, priority: self::STORE_FORGET_PRIORITY);
+		}
 	}//end register()
 
 	/**
