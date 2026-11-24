@@ -13,9 +13,9 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import fragment from '../../src/manifest.d/99-supervision-plan.json'
 import en from '../../l10n/en.json'
 import nl from '../../l10n/nl.json'
+import fragment from '../../src/manifest.d/99-supervision-plan.json'
 
 const PROGRESS = '/apps/dossiq/api/supervision-plans/year/@workspace.year/progress'
 const page = fragment.pages.find((p) => p.id === 'SupervisionPlan')
