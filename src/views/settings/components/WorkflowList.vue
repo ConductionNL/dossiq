@@ -17,7 +17,8 @@
 			<li
 				v-for="row in list.rows"
 				:key="row.id"
-				class="workflow-list__row" :class="['workflow-list__row--' + row.kind]"
+				class="workflow-list__row"
+				:class="['workflow-list__row--' + row.kind]"
 				:data-testid="'workflow-list-row-' + row.id">
 				<span class="workflow-list__number">{{ row.number }}</span>
 				<span class="workflow-list__label">{{ row.label }}</span>
@@ -27,71 +28,17 @@
 					:variant="row.kind === 'status' ? 'primary' : 'default'"
 					size="small" />
 				<span class="workflow-list__actions">
-					<template v-if="row.kind !== 'status'">
-						<button
-							type="button"
-							class="workflow-list__action"
-							:disabled="readOnly || row.first"
-							:aria-label="t('dossiq', 'Move {name} up', { name: row.label })"
-							data-testid="workflow-list-up"
-							@click="$emit('moveStep', row.id, 'up')">
-							↑
-						</button>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:disabled="readOnly || row.last"
-							:aria-label="t('dossiq', 'Move {name} down', { name: row.label })"
-							data-testid="workflow-list-down"
-							@click="$emit('moveStep', row.id, 'down')">
-							↓
-						</button>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:aria-label="t('dossiq', 'Edit {name}', { name: row.label })"
-							data-testid="workflow-list-edit"
-							@click="$emit('editStep', row.id)">
-							{{ t('dossiq', 'Edit') }}
-						</button>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:disabled="readOnly"
-							:aria-label="t('dossiq', 'Delete {name}', { name: row.label })"
-							data-testid="workflow-list-delete"
-							@click="$emit('deleteStep', row.id)">
-							{{ t('dossiq', 'Delete') }}
-						</button>
-					</template>
-					<template v-else>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:aria-label="t('dossiq', 'Edit {name}', { name: row.label })"
-							data-testid="workflow-list-edit-status"
-							@click="$emit('editStatus', row.statusId)">
-							{{ t('dossiq', 'Edit') }}
-						</button>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:disabled="readOnly"
-							:aria-label="t('dossiq', 'Add a step to {name}', { name: row.label })"
-							data-testid="workflow-list-add-step"
-							@click="$emit('addStep', row.statusId)">
-							{{ t('dossiq', 'Add step') }}
-						</button>
-						<button
-							type="button"
-							class="workflow-list__action"
-							:disabled="readOnly"
-							:aria-label="t('dossiq', 'Delete {name}', { name: row.label })"
-							data-testid="workflow-list-delete-status"
-							@click="$emit('deleteStatus', row.statusId)">
-							{{ t('dossiq', 'Delete') }}
-						</button>
-					</template>
+					<button
+						v-for="action in actionsFor(row)"
+						:key="action.id"
+						type="button"
+						class="workflow-list__action"
+						:disabled="action.disabled"
+						:aria-label="action.ariaLabel"
+						:data-testid="'workflow-list-' + action.id"
+						@click="$emit(action.event, ...action.args)">
+						{{ action.text }}
+					</button>
 				</span>
 			</li>
 		</ol>
@@ -154,6 +101,33 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The buttons one row offers: a step moves up and down, is edited and
+		 * deleted; a status is edited, gets a step and is deleted. A published
+		 * flow offers no change, only Edit to read the panel.
+		 *
+		 * @param {object} row One row of the list.
+		 * @return {Array<{id: string, text: string, ariaLabel: string, disabled: boolean, event: string, args: Array}>} The buttons.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		actionsFor(row) {
+			const name = { name: row.label }
+			const ro = this.readOnly
+			if (row.kind !== 'status') {
+				return [
+					{ id: 'up', text: '↑', ariaLabel: t('dossiq', 'Move {name} up', name), disabled: ro || row.first, event: 'moveStep', args: [row.id, 'up'] },
+					{ id: 'down', text: '↓', ariaLabel: t('dossiq', 'Move {name} down', name), disabled: ro || row.last, event: 'moveStep', args: [row.id, 'down'] },
+					{ id: 'edit', text: t('dossiq', 'Edit'), ariaLabel: t('dossiq', 'Edit {name}', name), disabled: false, event: 'editStep', args: [row.id] },
+					{ id: 'delete', text: t('dossiq', 'Delete'), ariaLabel: t('dossiq', 'Delete {name}', name), disabled: ro, event: 'deleteStep', args: [row.id] },
+				]
+			}
+			return [
+				{ id: 'edit-status', text: t('dossiq', 'Edit'), ariaLabel: t('dossiq', 'Edit {name}', name), disabled: false, event: 'editStatus', args: [row.statusId] },
+				{ id: 'add-step', text: t('dossiq', 'Add step'), ariaLabel: t('dossiq', 'Add a step to {name}', name), disabled: ro, event: 'addStep', args: [row.statusId] },
+				{ id: 'delete-status', text: t('dossiq', 'Delete'), ariaLabel: t('dossiq', 'Delete {name}', name), disabled: ro, event: 'deleteStatus', args: [row.statusId] },
+			]
+		},
+
 		/**
 		 * @param {string} kind status, task, message or action.
 		 * @return {string} The pill's word.
