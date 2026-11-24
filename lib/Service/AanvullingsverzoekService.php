@@ -53,6 +53,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
 use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
+use OCA\Dossiq\Service\Support\AskedItems;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
@@ -85,6 +86,13 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 	public const PORTAL_TASK_SOURCE = 'dossiq.aanvullingsverzoek';
 
 	/**
+	 * Turns the asked items into checklist rows and a one-line summary.
+	 *
+	 * @var AskedItems
+	 */
+	private readonly AskedItems $askedItems;
+
+	/**
 	 * Constructor.
 	 *
 	 * There is deliberately NO TermijnService here. Everything this class needs
@@ -107,6 +115,7 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 		private readonly ?ResidentQuestionTaskInterface $portalTask = null,
 		private readonly DayCount $days = new DayCount(),
 	) {
+		$this->askedItems = new AskedItems();
 	}//end __construct()
 
 	/**
@@ -257,12 +266,12 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 	private function requestRow(array $ask, array $instance): array {
 		$request = [
 			'case' => $ask['caseId'],
-			'summary' => $this->summaryOf(items: $ask['asked']),
+			'summary' => $this->askedItems->summary(items: $ask['asked']),
 			'party' => trim($ask['party']),
 			'recipient' => trim($ask['recipient']),
 			'pauseReason' => trim($ask['pauseReason']),
 			'rationale' => trim($ask['rationale']),
-			'missingItems' => $this->itemRows(items: $ask['items']),
+			'missingItems' => $this->askedItems->rows(items: $ask['items']),
 			'kind' => $ask['kind'],
 			'requestedBy' => $ask['userId'],
 			'requestedAt' => $ask['now'],
@@ -716,59 +725,6 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 			status: RefusedException::STATUS_INDETERMINATE,
 		);
 	}//end notWritten()
-
-	/**
-	 * The item rows a list of asked-for things becomes.
-	 *
-	 * @param array<int, string> $items What was asked for.
-	 *
-	 * @return array<int, array<string, mixed>> The rows, none received yet.
-	 */
-	private function itemRows(array $items): array {
-		return array_map(
-			static fn (string $text): array => ['item' => $text, 'received' => false],
-			$this->cleanLines(items: $items)
-		);
-	}//end itemRows()
-
-	/**
-	 * The asked-for lines, trimmed, without the blank ones.
-	 *
-	 * @param array<int, string> $items What was asked for.
-	 *
-	 * @return array<int, string> The non-blank lines, in order.
-	 */
-	private function cleanLines(array $items): array {
-		$clean = [];
-		foreach ($items as $item) {
-			$text = trim((string)$item);
-			if ($text !== '') {
-				$clean[] = $text;
-			}
-		}
-
-		return $clean;
-	}//end cleanLines()
-
-	/**
-	 * One line naming what a request is about.
-	 *
-	 * @param array<int, string> $items What was asked for.
-	 *
-	 * @return string The summary.
-	 */
-	private function summaryOf(array $items): string {
-		$clean = $this->cleanLines(items: $items);
-		if ($clean === []) {
-			return 'Aanvullingsverzoek';
-		}
-
-		if (count($clean) === 1) {
-			return $clean[0];
-		}
-
-		return sprintf('%s and %d more', $clean[0], (count($clean) - 1));
-	}//end summaryOf()
 
 	/**
 	 * The OpenRegister seam and the register, or a refusal.

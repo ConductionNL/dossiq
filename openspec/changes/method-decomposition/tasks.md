@@ -1662,3 +1662,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CitizenManifestTest`, `PortalCaseDeclarationsTest` and `PortalConversationTest`, green before and unchanged
         after but for one `@uses` line each.
         Own test: `tests/Unit/Portal/CitizenCaseCollectionTest` (2); dropping the intro turns 4 tests red (checked).
+  - [x] 8cl `AanvullingsverzoekService` (1, unsuppressed: ExcessiveClassComplexity 57 against 50). Turning the items a
+        handler asks for into checklist rows (each not yet received) and the one-line summary a request is titled by
+        is its own concern, so `itemRows()`, `cleanLines()` and `summaryOf()` moved to the new, generically named
+        `Support/AskedItems` (`rows()`, `summary()`). Bodies moved unchanged. The service builds it in its constructor,
+        so its constructor signature and the container are unchanged. Complexity 50; phpmd: no
+        ExcessiveClassComplexity finding, and no new finding on either file under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `AanvullingsverzoekServiceAskGoldenTest` (the rows and summary of every ask),
+        `AanvullingsverzoekServiceTest`, `WooClarificationTest` and `PortalWooAnswerTest`, green before and unchanged
+        after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Support/AskedItemsTest` (2); keeping blank lines turns 4 tests red (checked).
