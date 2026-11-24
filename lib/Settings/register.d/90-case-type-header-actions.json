@@ -1,0 +1,29 @@
+{
+  "_note": "case-type-declares-its-header-actions, task 1 (schema half). A case type names which of the case page's header actions lead its header row, and which one is the primary button. The page decides which actions exist and who may use them (each action's own visibleWhen); this only orders and promotes them, so an id the page does not declare is left out and a case type cannot widen who may act. Both keys must be declared properties of caseType: OpenRegister's magic mapper stores an undeclared key nowhere. A case type that declares neither keeps today's row. A fragment rather than an edit to dossiq_register.json, per ADR-037. caseType moves to 1.52.0 so an existing instance re-imports the schema (1.51.0 is the grant chain; renumber at merge if 1.52.0 is taken).",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.52.0",
+        "properties": {
+          "headerActions": {
+            "type": "array",
+            "title": "Header actions",
+            "description": "The header actions this case type's cases lead with, in order, named by the id the case page declares them under. Leave it empty and the case page keeps its own row. An id the case page does not declare is left out.",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "uniqueItems": true,
+            "default": []
+          },
+          "primaryAction": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Primary action",
+            "description": "The header action drawn as the primary button on this case type's cases, named by the id the case page declares it under. Leave it empty and the case page keeps its own primary button."
+          }
+        }
+      }
+    }
+  }
+}

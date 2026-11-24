@@ -1683,6 +1683,10 @@
         "version": "",
         "digest": "5210193e6f6cf3560ecbc363cbb26c8d0d26d2b5c5bd744b734b662e9bc87f91"
     },
+    "lib/Settings/register.d/90-case-type-header-actions.json::caseType": {
+        "version": "1.52.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/92-admin-data-access.json::avgIncident": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

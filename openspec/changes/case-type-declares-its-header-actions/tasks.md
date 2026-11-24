@@ -3,7 +3,7 @@
 ### Task 1: The case page reads the case type's header row
 - **spec_ref**: `openspec/changes/case-type-declares-its-header-actions/specs/case-type-header-actions/spec.md#requirement-a-case-type-declares-the-header-row-of-its-cases`
 - **files**: `src/manifest.json` (CaseDetail header), nextcloud-vue CnDetailPage (`headerActionsFrom`), `lib/Settings/register.d` (caseType schema: `headerActions`, `primaryAction`)
-- [ ] The caseType schema declares `headerActions` (array of strings) and `primaryAction` (string); schema version bumped
+- [x] The caseType schema declares `headerActions` (array of strings) and `primaryAction` (string); schema version bumped (register.d/90-case-type-header-actions.json, caseType 1.52.0; tests/Unit/Settings/CaseTypeHeaderActionsTest.php)
 - [ ] The case page orders and promotes header actions from `@context.caseType.headerActions` / `primaryAction`; without them the row is unchanged
 - [ ] An id the page does not declare, or whose `visibleWhen` fails, is left out
 - [ ] Test: vitest over the manifest and a library test for the ordering and the primary button
