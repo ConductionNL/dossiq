@@ -435,6 +435,8 @@ $extra = [
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
+    // The files browser's actions, fetched by the bundle on an object's page.
+    ['name' => 'dashboard#filesSurfaces', 'url' => '/files-surfaces',              'verb' => 'GET'],
 
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
