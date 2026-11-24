@@ -164,6 +164,8 @@ class FakeObjectService {
  *
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingDelivery
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Service\Notification\CaseNoticeLog
+ * @uses \OCA\Dossiq\Service\Notification\PortalInboxChannel
  * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
  * @uses \OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer
  * @uses \OCA\Dossiq\Exception\RefusedException
