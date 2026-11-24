@@ -109,6 +109,50 @@
       "format": "date",
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
       "hideOnCreate": true
+    },
+    {
+      "id": "49eb18e1-e586-521a-995e-58223c022c01",
+      "name": "scoringFormula",
+      "definition": "Beoordelingsformule",
+      "description": "De sleutel van de formule waarmee de inschrijvingen worden gescoord: lowest-price, relative-price of price-quality. De waarden die de formule verder nodig heeft en die niet per inschrijving verschillen, staan als velden met de naam van die waarde op de zaak.",
+      "category": "Aanbesteding",
+      "propertyType": "string",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "enumValues": [
+        "lowest-price",
+        "relative-price",
+        "price-quality"
+      ]
+    },
+    {
+      "id": "6b3e461d-5f1c-5bc6-9e2d-c1dccba50198",
+      "name": "maxPoints",
+      "definition": "Maximum aantal punten",
+      "description": "Het aantal punten dat de beste inschrijving op prijs krijgt.",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "minimum": 0,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    },
+    {
+      "id": "bc458f42-9dc5-5e42-bad3-6c309d3c37dd",
+      "name": "qualityWeight",
+      "definition": "Weging kwaliteit",
+      "description": "Het gewicht van de kwaliteitsscore in de prijs-kwaliteitformule, als fractie (0,6 voor 60 procent).",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "minimum": 0,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    },
+    {
+      "id": "2ded9613-2333-5734-ae72-9d1acd66e910",
+      "name": "priceWeight",
+      "definition": "Weging prijs",
+      "description": "Het gewicht van de prijsscore in de prijs-kwaliteitformule, als fractie (0,4 voor 40 procent).",
+      "category": "Aanbesteding",
+      "propertyType": "number",
+      "minimum": 0,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
     }
   ],
   "statusTypes": [
