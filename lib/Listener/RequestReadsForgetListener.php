@@ -34,6 +34,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Override;
 
 /**
  * Forgets the request's configuration reads on any object change.
@@ -73,6 +74,7 @@ class RequestReadsForgetListener implements IEventListener {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	#[Override]
 	public function handle(Event $event): void {
 		foreach (self::EVENTS as $name) {
 			if (is_a($event, $name) === true) {

@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use Override;
 use Throwable;
 
 /**
@@ -422,6 +423,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	#[Override]
 	public function forget(): void {
 		$this->kept = [];
 	}//end forget()

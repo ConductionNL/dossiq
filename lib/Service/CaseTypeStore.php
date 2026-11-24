@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use Override;
 use Throwable;
 
 /**
@@ -393,6 +394,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	#[Override]
 	public function forget(): void {
 		$this->kept = [];
 	}//end forget()
