@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Access\AssignedGroupReadRows;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
 use OCA\Dossiq\Service\Access\CaseTeamAccessRules;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
+use OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
@@ -193,6 +194,7 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$sources = new CaseRightsRowSources(
 			caseTypes: new CaseTypeRightsMatrixRows(),
 			assignedGroup: new AssignedGroupReadRows(session: $session, groups: $groups),
+			kept: $this->createMock(originalClassName: CaseTypeRightsRowsCache::class),
 		);
 
 		return new CaseTypeRightsRowsListener(store: $store, roles: $roles, sources: $sources, logger: new NullLogger());
