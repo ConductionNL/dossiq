@@ -51,12 +51,14 @@ class OfferedTransitions {
 	 * @param TransitionSpecReader   $specReader    The template dialects a transition may be spelled in.
 	 * @param StatusDeclarations     $statuses      What the destination status declares.
 	 * @param TransitionDeclarations $moves         What the transition itself declares.
+	 * @param TransitionLabel        $labels        A transition's label as text.
 	 */
 	public function __construct(
 		private readonly GuardRegistry $guardRegistry,
 		private readonly TransitionSpecReader $specReader,
 		private readonly StatusDeclarations $statuses,
 		private readonly TransitionDeclarations $moves,
+		private readonly TransitionLabel $labels = new TransitionLabel(),
 	) {
 	}//end __construct()
 
@@ -153,7 +155,7 @@ class OfferedTransitions {
 	private function withheldEntry(array $transition, array $reasons): array {
 		return [
 			'id' => (string)($transition['id'] ?? ''),
-			'label' => (string)($transition['label'] ?? ''),
+			'label' => $this->labels->forReader(transition: $transition),
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
 			'reasons' => $reasons,
 		];
@@ -240,10 +242,10 @@ class OfferedTransitions {
 		);
 		$toStatus = (string)($transition['toStatus'] ?? '');
 		$toStatusName = $this->statuses->nameOf(statusTypeId: $toStatus);
-		$label = (string)($transition['label'] ?? '');
+		$label = $this->labels->forReader(transition: $transition);
 		// A label that is only the destination's name, in whatever language it
 		// was written, reads as that name in the reader's language.
-		if ($toStatusName !== '' && $this->statuses->isNameOf(statusTypeId: $toStatus, text: $label) === true) {
+		if ($toStatusName !== '' && $this->isOnlyTheStatusName(transition: $transition, toStatus: $toStatus) === true) {
 			$label = $toStatusName;
 		}
 
@@ -272,4 +274,29 @@ class OfferedTransitions {
 			...$this->moves->closingChoice(transition: $transition, case: $case),
 		];
 	}//end offeredEntry()
+
+	/**
+	 * Whether every text of a transition's label is the destination status's name.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param string               $toStatus   The destination status.
+	 *
+	 * @return bool True when the label only names the status it leads to.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	private function isOnlyTheStatusName(array $transition, string $toStatus): bool {
+		$texts = $this->labels->texts(transition: $transition);
+		if ($texts === []) {
+			return false;
+		}
+
+		foreach ($texts as $text) {
+			if ($this->statuses->isNameOf(statusTypeId: $toStatus, text: $text) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end isOnlyTheStatusName()
 }//end class

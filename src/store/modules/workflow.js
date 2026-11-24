@@ -9,6 +9,7 @@ import { generateUrl } from '@nextcloud/router'
  * workflowTemplate objects in OpenRegister.
  */
 import { defineStore } from 'pinia'
+import { labelText } from '../../utils/translatableLabel.js'
 import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
 import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
@@ -965,7 +966,7 @@ export const useWorkflowStore = defineStore('workflow', {
 						status: caseData.status,
 						transition: transition
 							? {
-									label: transition.label,
+									label: labelText(transition.label),
 									fromStatus: transition.fromStatus,
 									toStatus: transition.toStatus,
 								}

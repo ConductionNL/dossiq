@@ -54,6 +54,7 @@ use OCA\Dossiq\Service\Transitions\TransitionAsk;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\Transitions\TransitionStep;
+use OCA\Dossiq\Service\Transitions\TransitionLabel;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -103,6 +104,7 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
 	 * @param CaseDeclarations $declarations What the case declares about its status and its moves
 	 * @param CaseMoveLedger $ledger What a move writes, and what earlier moves wrote
+	 * @param TransitionLabel $labels A transition's label as text.
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -114,6 +116,7 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 		private readonly CaseDeclarations $declarations,
 		private readonly CaseMoveLedger $ledger,
+		private readonly TransitionLabel $labels = new TransitionLabel(),
 	) {
 	}//end __construct()
 
@@ -322,6 +325,13 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		$transition = $this->templateLoader->getTransitionForCase(case: $loaded, transitionId: $ask->transitionId);
 		if ($transition === null) {
 			throw new RuntimeException('transition_not_found');
+		}
+
+		// The move is recorded with its label's source text. A recorded label
+		// names an act (FourEyesRule reads who performed it), so it must not
+		// depend on the language of the person who moved the case.
+		if (array_key_exists('label', $transition) === true) {
+			$transition['label'] = $this->labels->source(transition: $transition);
 		}
 
 		return new TransitionStep(ask: $ask, caseData: $loaded, transition: $transition);
