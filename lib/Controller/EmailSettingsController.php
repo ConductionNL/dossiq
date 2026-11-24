@@ -30,16 +30,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
-use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IAppConfig;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -56,56 +53,21 @@ use OCP\IUserSession;
 class EmailSettingsController extends Controller {
 
 	/**
-	 * IMAP/poller config keys handled here.
-	 *
-	 * @var array<int, string>
-	 */
-	private const IMAP_KEYS = [
-		// 🔴 THE HOST, USERNAME AND PASSWORD ARE GONE. Nextcloud Mail owns the
-		// account and the credential; this surface picks one of its accounts by
-		// id and names the folder intake reads. A form that still offered a
-		// password field would keep writing one into appconfig, which is why the
-		// keys leave here in the same change that deletes the stored values.
-		'email_mail_account_id',
-		'email_imap_folder',
-		'email_transport',
-		'email_poll_interval',
-		'email_poll_batch_size',
-		'email_max_attachment_size',
-		// The case type an unmatched mail becomes a case of. Empty means the
-		// mail stays in the mailbox, which is the default and the behaviour
-		// every instance had before this key existed.
-		'email_fallback_case_type',
-		// Who may open a case by mail, the readable junk rules, and the group
-		// that reads the intake log.
-		'email_intake_blocklist',
-		'email_intake_junk_rules',
-		'email_intake_role',
-	];
-
-	/**
 	 * Constructor.
 	 *
-	 * @param IRequest $request Inbound request.
-	 * @param EmailTemplateServiceInterface $templateService Records the mailbox status the settings card shows.
-	 * @param IAppConfig $appConfig App config (IMAP settings).
-	 * @param IUserSession $userSession Current user session.
-	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
-	 * @param SenderBlocklistInterface $blocklist Who may not open a case by mail, normalised as it is stored.
+	 * @param IRequest           $request     Inbound request.
+	 * @param IUserSession       $userSession Current user session.
+	 * @param MailIntakeSettings $settings    The settings keys, the block list and the Mail accounts.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly EmailTemplateServiceInterface $templateService,
-		private readonly IAppConfig $appConfig,
 		private readonly IUserSession $userSession,
-		private readonly MailGatewayInterface $mailGateway,
-		private readonly SenderBlocklistInterface $blocklist,
+		private readonly MailIntakeSettings $settings,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
-
 
 	/**
 	 * Read the masked IMAP / poller settings.
@@ -128,14 +90,8 @@ class EmailSettingsController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$values = [];
-		foreach (self::IMAP_KEYS as $key) {
-			$values[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
-		}
-
-		return new JSONResponse($values);
+		return new JSONResponse($this->settings->values());
 	}//end getSettings()
-
 
 	/**
 	 * Persist IMAP / poller settings.
@@ -165,35 +121,15 @@ class EmailSettingsController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		foreach (self::IMAP_KEYS as $key) {
-			$value = $this->request->getParam($key);
-			if ($value === null) {
-				continue;
-			}
+		$params = [];
+		foreach ($this->settings->keys() as $key) {
+			$params[$key] = $this->request->getParam($key);
+		}
 
-			// 🔴 THE BLOCK LIST IS WRITTEN BY THE CLASS THAT READS IT. `blocks()`
-			// compares an entry against a normalised address, so a list stored
-			// as an administrator typed it — `Spammer@Voorbeeld.NL `, with the
-			// capitals and the trailing space — matches nothing and the surface
-			// still shows the address as blocked. Normalising on the way in is
-			// the only place that can be true for every reader.
-			if ($key === SenderBlocklistInterface::BLOCKLIST_KEY) {
-				$this->blocklist->replace(entries: explode(',', (string)$value));
-				continue;
-			}
-
-			// 🔴 NOTHING HERE IS SENSITIVE ANY MORE, AND THE MASKING IS GONE WITH
-			// IT. This surface held exactly one secret, the shared-mailbox
-			// password, and Nextcloud Mail holds the account now. The `***`
-			// placeholder that meant "unchanged" went with it: a form that still
-			// understood it would accept three asterisks as a value for a key
-			// that is no longer a credential.
-			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$value);
-		}//end foreach
+		$this->settings->save(params: $params);
 
 		return new JSONResponse(['saved' => true]);
 	}//end saveSettings()
-
 
 	/**
 	 * The Nextcloud Mail accounts an administrator can point intake at.
@@ -220,25 +156,6 @@ class EmailSettingsController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->mailGateway->isAvailable() === false) {
-			$this->templateService->recordMailboxStatus(
-				status: 'unconfigured',
-				message: 'The Mail app is not installed, so intake is unavailable'
-			);
-			return new JSONResponse(['available' => false, 'accounts' => []]);
-		}
-
-		$accounts = $this->mailGateway->accounts();
-		$status = 'unconfigured';
-		$message = 'No mail account is available to read';
-		if ($accounts !== []) {
-			$status = 'configured';
-			$message = 'Nextcloud Mail holds ' . count($accounts) . ' account(s) intake can read';
-		}
-
-		$this->templateService->recordMailboxStatus(status: $status, message: $message);
-
-		return new JSONResponse(['available' => true, 'accounts' => $accounts]);
+		return new JSONResponse($this->settings->accounts());
 	}//end mailAccounts()
-
 }//end class

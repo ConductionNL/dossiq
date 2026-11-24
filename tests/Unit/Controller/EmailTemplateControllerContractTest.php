@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailSettingsController;
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
@@ -58,6 +59,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
  * @covers \OCA\Dossiq\Controller\EmailSettingsController
+ * @covers \OCA\Dossiq\Controller\Support\MailIntakeSettings
  */
 class EmailTemplateControllerContractTest extends TestCase {
 
@@ -166,11 +168,13 @@ class EmailTemplateControllerContractTest extends TestCase {
 		);
 		$this->settings   = new EmailSettingsController(
 			request: $this->request,
-			templateService: $this->templateService,
-			appConfig: $this->appConfig,
 			userSession: $this->userSession,
-			mailGateway: $this->mailGateway,
-			blocklist: $this->blocklist,
+			settings: new MailIntakeSettings(
+				appConfig: $this->appConfig,
+				blocklist: $this->blocklist,
+				mailGateway: $this->mailGateway,
+				templateService: $this->templateService,
+			),
 		);
 	}//end setUp()
 

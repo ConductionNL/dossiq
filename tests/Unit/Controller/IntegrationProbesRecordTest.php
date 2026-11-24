@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailSettingsController;
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
@@ -55,6 +56,7 @@ use OCP\App\IAppManager;
  * The probe and save side of pluggable-integration-registry.
  *
  * @covers \OCA\Dossiq\Controller\EmailSettingsController
+ * @covers \OCA\Dossiq\Controller\Support\MailIntakeSettings
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @covers \OCA\Dossiq\Controller\StufController
  * */
@@ -319,11 +321,13 @@ class IntegrationProbesRecordTest extends TestCase {
 
 		return new EmailSettingsController(
 			request: $this->createMock(IRequest::class),
-			templateService: $this->templateService,
-			appConfig: $this->createMock(IAppConfig::class),
 			userSession: $userSession,
-			mailGateway: $gateway,
-			blocklist: $this->createMock(SenderBlocklist::class),
+			settings: new MailIntakeSettings(
+				appConfig: $this->createMock(IAppConfig::class),
+				blocklist: $this->createMock(SenderBlocklist::class),
+				mailGateway: $gateway,
+				templateService: $this->templateService,
+			),
 		);
 	}//end emailController()
 

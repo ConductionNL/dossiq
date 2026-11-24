@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailSettingsController;
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
@@ -43,6 +44,7 @@ use PHPUnit\Framework\TestCase;
  * Tests for EmailSettingsController.
  */
 #[CoversClass(EmailSettingsController::class)]
+#[CoversClass(MailIntakeSettings::class)]
 final class EmailSettingsControllerTest extends TestCase {
 	/**
 	 * A controller over this session and appconfig.
@@ -64,11 +66,13 @@ final class EmailSettingsControllerTest extends TestCase {
 
 		return new EmailSettingsController(
 			request: $this->createMock(originalClassName: IRequest::class),
-			templateService: $this->createMock(originalClassName: EmailTemplateServiceInterface::class),
-			appConfig: $appConfig,
 			userSession: $userSession,
-			mailGateway: $gateway ?? $this->createMock(originalClassName: MailGatewayInterface::class),
-			blocklist: $this->createMock(originalClassName: SenderBlocklistInterface::class),
+			settings: new MailIntakeSettings(
+				appConfig: $appConfig,
+				blocklist: $this->createMock(originalClassName: SenderBlocklistInterface::class),
+				mailGateway: $gateway ?? $this->createMock(originalClassName: MailGatewayInterface::class),
+				templateService: $this->createMock(originalClassName: EmailTemplateServiceInterface::class),
+			),
 		);
 	}//end controller()
 
@@ -130,4 +134,39 @@ final class EmailSettingsControllerTest extends TestCase {
 		);
 		self::assertSame(expected: [AppIdentity::APP_ID], actual: array_values(array_unique($asked)));
 	}//end testTheReadReturnsEverySettingsKeyEmptyWhenUnset()
+
+	/**
+	 * A save stores only the keys given, sends the block list through its own class, and ignores a key not in the form.
+	 *
+	 * @return void
+	 */
+	public function testASaveStoresTheNamedKeysAndTheBlockListThroughItsClass(): void {
+		$stored    = [];
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('setValueString')->willReturnCallback(
+			function (string $app, string $key, string $value) use (&$stored): bool {
+				$stored[$app . '/' . $key] = $value;
+				return true;
+			}
+		);
+		$blocklist = $this->createMock(originalClassName: SenderBlocklistInterface::class);
+		$blocklist->expects($this->once())->method('replace')->with(['a@x.nl', ' B@Y.nl ']);
+
+		$settings = new MailIntakeSettings(
+			appConfig: $appConfig,
+			blocklist: $blocklist,
+			mailGateway: $this->createMock(originalClassName: MailGatewayInterface::class),
+			templateService: $this->createMock(originalClassName: EmailTemplateServiceInterface::class),
+		);
+		$settings->save(
+			params: [
+				'email_imap_folder'                      => 'INBOX',
+				'email_transport'                        => null,
+				SenderBlocklistInterface::BLOCKLIST_KEY => 'a@x.nl, B@Y.nl ',
+				'email_imap_password'                    => 'secret',
+			]
+		);
+
+		self::assertSame(expected: [AppIdentity::APP_ID . '/email_imap_folder' => 'INBOX'], actual: $stored);
+	}//end testASaveStoresTheNamedKeysAndTheBlockListThroughItsClass()
 }//end class

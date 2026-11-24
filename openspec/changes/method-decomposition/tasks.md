@@ -1479,15 +1479,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8bx `Controller/EmailTemplateController` (1: CouplingBetweenObjects 15 against 13). The mail settings form is
         its own surface, so its three routes go to their own controller, `EmailSettingsController`
         (`emailSettings#getSettings`, `#saveSettings`, `#mailAccounts` in `appinfo/routes.php`; same URLs, verbs and
-        `AuthorizedAdminSetting` attributes, so `openapi.json`, which matches by URL, is unchanged), with the settings
-        keys. Bodies moved unchanged, the block list still written through `SenderBlocklistInterface`. The template
-        controller keeps the templates, the draft and the variables and no longer takes the app config, the mail
-        gateway or the block list (nine parameters to six); the container wires both. Coupling 12 and 11, complexity
-        21 and 13 (pdepend); phpmd: no finding on either file under both rulesets with the suppression gone.
+        `AuthorizedAdminSetting` attributes, so `openapi.json`, which matches by URL, is unchanged). The controller
+        keeps the session check and the request; what the form reads and writes is
+        `Controller/Support/MailIntakeSettings` (the settings keys, `values()`, `save()` with the block list still
+        written through `SenderBlocklistInterface`, and `accounts()` with the mailbox status it records), so the new
+        controller takes three parameters, not six (gate-122). Bodies moved unchanged. The template controller keeps
+        the templates, the draft and the variables and no longer takes the app config, the mail gateway or the block
+        list (nine parameters to six); the container wires all three. Coupling 12, 8 and 5, complexity 21, 8 and 11
+        (pdepend); phpmd: no finding on the three files under both rulesets with the suppression gone.
         `@SuppressWarnings(PHPMD.*)` lines in `lib/` 190 to 189.
         Characterisation: the existing `EmailTemplateControllerContractTest` (the anonymous refusals, the admin
         check on the session uid, the case guard on the draft, the settings write without a password and through
         the block list) and the mail card of `IntegrationProbesRecordTest`, green before and after; the settings
         calls now go to the new controller, no assertion changed.
-        Own test: `tests/Unit/Controller/EmailSettingsControllerTest` (2: the anonymous refusal on all three routes
-        with nothing read, and the read of every settings key, empty when unset).
+        Own test: `tests/Unit/Controller/EmailSettingsControllerTest` (3: the anonymous refusal on all three routes
+        with nothing read, the read of every settings key, empty when unset, and a save that stores only the named
+        keys, the block list through its class and nothing outside the form).
