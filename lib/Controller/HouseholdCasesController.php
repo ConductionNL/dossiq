@@ -32,11 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\HouseholdReaderGate;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
-use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -52,12 +51,11 @@ use Throwable;
 /**
  * Lists a case's household cases, and looks the household up in other domains.
  *
- * Two guards, the session and the household service make thirteen classes
- * with the framework's own; each is one the endpoint needs.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * Who may ask is the reader gate's answer (signed in, sensitive access, case
+ * read access); the controller keeps the session and the household service.
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class HouseholdCasesController extends Controller {
 	use TranslatesRefusals;
@@ -68,17 +66,17 @@ class HouseholdCasesController extends Controller {
 	 * @param IRequest           $request     The request.
 	 * @param IUserSession       $userSession Who is asking.
 	 * @param ISession           $session     Where this reader's lookups are kept until they sign out.
-	 * @param CaseAccessGuardInterface    $caseAccess  Whether the reader may read a case.
-	 * @param CitizenLookupGuardInterface $sensitive   Whether the reader may see the social domain's sensitive fields.
-	 * @param HouseholdCasesInterface     $household   Builds the rows.
+	 * @param HouseholdReaderGate     $gate        Whether the reader may ask about a case's household.
+	 * @param HouseholdCasesInterface $household   Builds the rows.
 	 * @param LoggerInterface    $logger      The logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ISession $session,
-		private readonly CaseAccessGuardInterface $caseAccess,
-		private readonly CitizenLookupGuardInterface $sensitive,
+		private readonly HouseholdReaderGate $gate,
 		private readonly HouseholdCasesInterface $household,
 		private readonly LoggerInterface $logger,
 	) {
@@ -93,13 +91,14 @@ class HouseholdCasesController extends Controller {
 	 * @return JSONResponse `{ results }`.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
-		$refusal = $this->refusalFor(user: $user, caseId: $caseId);
+		$refusal = $this->gate->refusal(user: $user, caseId: $caseId);
 		if ($refusal !== null || $user === null) {
-			return $refusal ?? $this->unauthenticated();
+			return $refusal ?? $this->gate->unauthenticated();
 		}
 
 		try {
@@ -121,6 +120,8 @@ class HouseholdCasesController extends Controller {
 	 *
 	 * @throws RefusedException When the household cannot be read.
 	 * @throws Throwable When reading fails.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function householdCasesOf(string $caseId, IUser $user): JSONResponse {
 		$case = $this->household->readCase(caseId: $caseId);
@@ -136,7 +137,7 @@ class HouseholdCasesController extends Controller {
 		$rows = $this->household->sameDomain(
 			case: $case,
 			bsns: $bsns,
-			canRead: fn (string $id): bool => $this->caseAccess->hasCaseReadAccess(caseId: $id, user: $user),
+			canRead: fn (string $id): bool => $this->gate->mayRead(caseId: $id, user: $user),
 		);
 
 		return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);
@@ -150,13 +151,14 @@ class HouseholdCasesController extends Controller {
 	 * @return JSONResponse `{ results }`: the other-domain rows.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function lookUp(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
-		$refusal = $this->refusalFor(user: $user, caseId: $caseId);
+		$refusal = $this->gate->refusal(user: $user, caseId: $caseId);
 		if ($refusal !== null || $user === null) {
-			return $refusal ?? $this->unauthenticated();
+			return $refusal ?? $this->gate->unauthenticated();
 		}
 
 		try {
@@ -199,34 +201,6 @@ class HouseholdCasesController extends Controller {
 	}//end householdOf()
 
 	/**
-	 * Why this reader may not ask about this case, or null when they may.
-	 *
-	 * @param IUser|null $user   The reader.
-	 * @param string     $caseId The case uuid.
-	 *
-	 * @return JSONResponse|null The refusal.
-	 */
-	private function refusalFor(?IUser $user, string $caseId): ?JSONResponse {
-		if ($user === null) {
-			return $this->unauthenticated();
-		}
-
-		if ($this->sensitive->maySeeSensitiveFields(user: $user) === false
-			|| $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false
-		) {
-			return new JSONResponse(
-				[
-					'message' => 'Only someone who works with the social domain\'s sensitive data on this case can see its household.',
-					'error'   => 'household-not-allowed',
-				],
-				Http::STATUS_FORBIDDEN,
-			);
-		}
-
-		return null;
-	}//end refusalFor()
-
-	/**
 	 * The other-domain rows this reader looked up on this case this session.
 	 *
 	 * @param string $caseId The case uuid.
@@ -265,15 +239,6 @@ class HouseholdCasesController extends Controller {
 	private function sessionKey(string $caseId, IUser $user): string {
 		return 'dossiq.household-lookup.' . $user->getUID() . '.' . $caseId;
 	}//end sessionKey()
-
-	/**
-	 * The answer to a request nobody signed in for.
-	 *
-	 * @return JSONResponse 401.
-	 */
-	private function unauthenticated(): JSONResponse {
-		return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-signed-in'], Http::STATUS_UNAUTHORIZED);
-	}//end unauthenticated()
 
 	/**
 	 * Log a failure and answer it as one.
