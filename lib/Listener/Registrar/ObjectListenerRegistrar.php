@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\TenantMembershipChangedListener;
 use OCA\Dossiq\Listener\CaseTypeDeleteGuard;
 use OCA\Dossiq\Listener\EmailTemplateVersionListener;
 use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
@@ -83,6 +84,10 @@ class ObjectListenerRegistrar {
 		$this->registerSubmissionClosingDateGuard(context: $context);
 		$this->registerMapLayerHostListener(context: $context);
 		$this->registerSubsystemRegistrars(context: $context);
+		// A user's tenant ids are kept for a minute; a tenantUser change drops them.
+		foreach (TenantMembershipChangedListener::EVENTS as $event) {
+			$context->registerEventListener(event: $event, listener: TenantMembershipChangedListener::class);
+		}
 	}//end register()
 
 	/**

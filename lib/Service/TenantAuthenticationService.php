@@ -35,6 +35,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
+use OCA\Dossiq\Service\Tenant\TenantMembershipCache;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -75,19 +76,27 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	private const MAX_MEMBERSHIPS = 100;
 
 	/**
+	 * Reads a findAll() row, entity or array, as an array.
+	 *
+	 * @var OpenRegisterRowNormaliser
+	 */
+	private readonly OpenRegisterRowNormaliser $rowNormaliser;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager (for OR availability check).
 	 * @param ContainerInterface $container DI container.
 	 * @param LoggerInterface $logger Logger.
-	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
+	 * @param TenantMembershipCache|null $memberships The memberships kept for a minute; none keeps nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
+		private readonly ?TenantMembershipCache $memberships = null,
 	) {
+		$this->rowNormaliser = new OpenRegisterRowNormaliser();
 	}//end __construct()
 
 	/**
@@ -468,6 +477,10 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 * returned as an empty list is indistinguishable from "member of nothing",
 	 * and the caller would read it as a clean answer.
 	 *
+	 * A read answer is kept for a minute per user in {@see TenantMembershipCache},
+	 * because every dossiq request asks; a tenantUser change drops it at once. A
+	 * failed read throws before anything is kept.
+	 *
 	 * @param string $userId The Nextcloud uid.
 	 *
 	 * @return array<int, string> Tenant ids, possibly empty.
@@ -481,6 +494,11 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			return [];
 		}
 
+		$kept = $this->memberships?->get(userId: $userId);
+		if ($kept !== null) {
+			return $kept;
+		}
+
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -491,7 +509,10 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			return [];
 		}
 
-		return $this->distinctTenantRefs(rows: $rows);
+		$tenantIds = $this->distinctTenantRefs(rows: $rows);
+		$this->memberships?->remember(userId: $userId, tenantIds: $tenantIds);
+
+		return $tenantIds;
 	}//end listTenantsForUser()
 
 	/**
