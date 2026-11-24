@@ -1406,3 +1406,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and unchanged after but for one `@uses` line each.
         Own test: `tests/Unit/Service/Lifecycle/ExtensionEndDateTest` (3: the named date, the period with its two
         refusals, the calendar roll of a period only).
+  - [x] 8bt `LoadDefaultZgwMappings` (1: ExcessiveClassComplexity 61 against 50). Seeding the two ZGW test consumers
+        and describing the default notification channels are their own concerns, so they moved to
+        `Repair/Support/DefaultTestConsumers` (`upsert()` and `defaults()`, were `upsertApplicaties()`,
+        `updateApplicatie()`, `createApplicatie()`, `getDefaultApplicaties()` and the three definition methods) and
+        `Repair/Support/DefaultNotificationChannels` (`defaults()`, `mappingReady()`, `report()`, were
+        `getDefaultKanalen()`, `kanaalMappingReady()` and `reportKanalen()`). Bodies moved unchanged. The container
+        lookups and the channel write under the system identity stay in the step, so gate-66 and
+        `SeedWriteIdentityTest` read it as before. The step builds both in its constructor, so its constructor signature
+        and the container are unchanged. Complexity 45, 9 and 7 (pdepend); phpmd: zero findings on the three files under
+        both rulesets with the suppression gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 193 to 192.
+        Characterisation: the existing `LoadDefaultZgwMappingsRunTest` (fresh install, older install, the order of the
+        lines, the skipped and the throwing seeds), `LoadDefaultZgwMappingsGoldenTest` and `SeedWriteIdentityTest`,
+        green before and unchanged after but for two `@uses` lines.
+        Own tests: `tests/Unit/Repair/Support/DefaultTestConsumersTest` (2: the frozen defaults, create and update) and
+        `DefaultNotificationChannelsTest` (3: the five channels, readiness with its two skip lines, the report).

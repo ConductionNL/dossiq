@@ -28,11 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use DateTime;
 use OCA\Dossiq\Kernel\Contracts\LoadDefaultZgwMappingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwMappingServiceInterface;
 use OCA\Dossiq\Repair\Support\DefaultMappingTables;
+use OCA\Dossiq\Repair\Support\DefaultNotificationChannels;
+use OCA\Dossiq\Repair\Support\DefaultTestConsumers;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -44,11 +45,23 @@ use Psr\Log\LoggerInterface;
  * Repair step that loads default ZGW API mapping configurations.
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInterface {
 	use RunsUnderSystemIdentity;
+
+	/**
+	 * Creates or updates the default ZGW test consumers.
+	 *
+	 * @var DefaultTestConsumers
+	 */
+	private readonly DefaultTestConsumers $testConsumers;
+
+	/**
+	 * The default notification channels, their readiness and their report.
+	 *
+	 * @var DefaultNotificationChannels
+	 */
+	private readonly DefaultNotificationChannels $channels;
 
 	/**
 	 * Constructor for LoadDefaultZgwMappings.
@@ -64,6 +77,8 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->testConsumers = new DefaultTestConsumers();
+		$this->channels = new DefaultNotificationChannels();
 	}//end __construct()
 
 	/**
@@ -362,146 +377,10 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 			return;
 		}
 
-		[$created, $updated] = $this->upsertApplicaties(consumerMapper: $consumerMapper, defaults: $this->getDefaultApplicaties());
+		[$created, $updated] = $this->testConsumers->upsert(consumerMapper: $consumerMapper);
 
 		$output->info("Created {$created}, updated {$updated} default test applicaties.");
 	}//end createDefaultApplicaties()
-
-	/**
-	 * Create each default applicatie, or update the one that already exists by name.
-	 *
-	 * @param object                           $consumerMapper OpenRegister's ConsumerMapper.
-	 * @param array<int, array<string, mixed>> $defaults       The default applicaties.
-	 *
-	 * @return array{0: int, 1: int} The number created and the number updated.
-	 */
-	private function upsertApplicaties(object $consumerMapper, array $defaults): array {
-		$created = 0;
-
-		$updated = 0;
-
-		foreach ($defaults as $applicatie) {
-			$existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
-			if (count(value: $existing) > 0) {
-				$this->updateApplicatie(consumerMapper: $consumerMapper, consumer: $existing[0], applicatie: $applicatie);
-				$updated++;
-				continue;
-			}
-
-			$this->createApplicatie(consumerMapper: $consumerMapper, applicatie: $applicatie);
-			$created++;
-		}
-
-		return [$created, $updated];
-	}//end upsertApplicaties()
-
-	/**
-	 * Update an existing consumer's authorization configuration so new scopes are applied.
-	 *
-	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
-	 * @param object               $consumer       The existing consumer.
-	 * @param array<string, mixed> $applicatie     The default applicatie.
-	 *
-	 * @return void
-	 */
-	private function updateApplicatie(object $consumerMapper, object $consumer, array $applicatie): void {
-		$newConfig = $applicatie['authorizationConfiguration'] ?? [];
-		$consumer->setAuthorizationConfiguration($newConfig);
-		$consumer->setUpdated(new DateTime());
-		$consumerMapper->update($consumer);
-	}//end updateApplicatie()
-
-	/**
-	 * Create a default applicatie with fresh timestamps.
-	 *
-	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
-	 * @param array<string, mixed> $applicatie     The default applicatie.
-	 *
-	 * @return void
-	 */
-	private function createApplicatie(object $consumerMapper, array $applicatie): void {
-		$applicatie['created'] = new DateTime();
-		$applicatie['updated'] = new DateTime();
-		$consumerMapper->createFromArray(object: $applicatie);
-	}//end createApplicatie()
-
-	/**
-	 * Get default test applicatie configurations.
-	 *
-	 * @return array[] The default applicatie data
-	 */
-	private function getDefaultApplicaties(): array {
-		return [
-			$this->adminApplicatie(),
-			$this->limitedApplicatie(),
-		];
-	}//end getDefaultApplicaties()
-
-	/**
-	 * The superuser test applicatie.
-	 *
-	 * @return array<string, mixed> The applicatie data
-	 */
-	private function adminApplicatie(): array {
-		return [
-			// FROZEN client ids + secrets below. These are ZGW consumer
-			// credentials registered in the ZGW consumer table and referenced
-			// by name from tests/zgw/seed-consumers.sh and the Postman
-			// environments. A renamed id here makes the seed script look up a
-			// consumer that does not exist — a KeyError that aborts the whole
-			// e2e job before a single test runs. `procest-admin` is also a
-			// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
-			'name' => 'procest-admin',
-			'description' => 'Dossiq Admin (development)',
-			'authorizationType' => 'jwt-zgw',
-			'userId' => 'admin',
-			'authorizationConfiguration' => [
-				'publicKey' => 'procest-admin-secret-key-for-testing',
-				'algorithm' => 'HS256',
-				'superuser' => true,
-				'scopes' => [],
-			],
-		];
-	}//end adminApplicatie()
-
-	/**
-	 * The read-only test applicatie with limited scopes.
-	 *
-	 * @return array<string, mixed> The applicatie data
-	 */
-	private function limitedApplicatie(): array {
-		return [
-			'name' => 'procest-limited',
-			'description' => 'Dossiq Limited (testing)',
-			'authorizationType' => 'jwt-zgw',
-			'userId' => 'admin',
-			'authorizationConfiguration' => [
-				'publicKey' => 'procest-limited-secret-key-for-test',
-				'algorithm' => 'HS256',
-				'superuser' => false,
-				'scopes' => $this->limitedScopes(),
-			],
-		];
-	}//end limitedApplicatie()
-
-	/**
-	 * The scopes the limited test applicatie holds.
-	 *
-	 * @return array<int, array<string, mixed>> The scopes
-	 */
-	private function limitedScopes(): array {
-		return [
-			[
-				'component' => 'ztc',
-				'scopes' => ['zaaktypen.lezen'],
-			],
-			[
-				'component' => 'zrc',
-				'scopes' => ['zaken.lezen'],
-				'maxVertrouwelijkheidaanduiding' => 'openbaar',
-			],
-		];
-	}//end limitedScopes()
 
 	/**
 	 * Create default notification channels (kanalen).
@@ -514,7 +393,7 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 		$channelMapping = $this->zgwMappingService->getMapping(
 			resourceKey: 'kanaal'
 		);
-		if ($this->kanaalMappingReady(output: $output, channelMapping: $channelMapping) === false) {
+		if ($this->channels->mappingReady(output: $output, channelMapping: $channelMapping) === false) {
 			return;
 		}
 
@@ -525,35 +404,8 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 
 		$result = $this->createMissingKanalen(objectService: $objectService, channelMapping: $channelMapping);
 
-		$this->reportKanalen(output: $output, result: $result);
+		$this->channels->report(output: $output, result: $result);
 	}//end createDefaultKanalen()
-
-	/**
-	 * Whether the kanaal mapping is configured with a register and schema.
-	 *
-	 * @param IOutput                   $output         The output interface for progress reporting
-	 * @param array<string, mixed>|null $channelMapping The kanaal mapping, or null when absent
-	 *
-	 * @return bool True when the default channels can be written
-	 */
-	private function kanaalMappingReady(IOutput $output, ?array $channelMapping): bool {
-		if ($channelMapping === null) {
-			$output->info('Kanaal mapping not configured. Skipping default channels.');
-			return false;
-		}
-
-		// On a fresh install the schema settings can still be empty when this
-		// step runs; a search against an empty schema context throws and would
-		// abort the install. Skip by name instead.
-		if ((string)($channelMapping['sourceRegister'] ?? '') === ''
-			|| (string)($channelMapping['sourceSchema'] ?? '') === ''
-		) {
-			$output->info('Kanaal mapping has no register/schema configured yet. Skipping default channels.');
-			return false;
-		}
-
-		return true;
-	}//end kanaalMappingReady()
 
 	/**
 	 * Resolve OpenRegister's ObjectService for the default channels.
@@ -583,7 +435,7 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 	 * @return array{created: int, refused: list<string>} The count created and the names refused
 	 */
 	private function createMissingKanalen(object $objectService, array $channelMapping): array {
-		$defaults = $this->getDefaultKanalen();
+		$defaults = $this->channels->defaults();
 		$store = [$objectService, $channelMapping['sourceRegister'], $channelMapping['sourceSchema']];
 		$created = 0;
 		$refused = [];
@@ -651,46 +503,5 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 			return 'refused';
 		}//end try
 	}//end createKanaal()
-
-	/**
-	 * Report how many default channels were created and which were refused.
-	 *
-	 * @param IOutput                                    $output The output interface for progress reporting
-	 * @param array{created: int, refused: list<string>} $result Number of channels created and names of refused channels
-	 *
-	 * @return void
-	 */
-	private function reportKanalen(IOutput $output, array $result): void {
-		$created = $result['created'];
-		$refused = $result['refused'];
-		if ($refused !== []) {
-			$output->warning(
-				sprintf(
-					'Created %d default notification channels; %d REFUSED (%s). ZGW notifications on those channels cannot be delivered.',
-					$created,
-					count($refused),
-					implode(', ', $refused)
-				)
-			);
-			return;
-		}
-
-		$output->info("Created {$created} default notification channels.");
-	}//end reportKanalen()
-
-	/**
-	 * Get default notification channel configurations.
-	 *
-	 * @return array[] The default kanaal data
-	 */
-	private function getDefaultKanalen(): array {
-		return [
-			['name' => 'zaken', 'filters' => ['bronorganisatie', 'caseType', 'vertrouwelijkheidaanduiding']],
-			['name' => 'documenten', 'filters' => ['bronorganisatie', 'informatieobjecttype', 'vertrouwelijkheidaanduiding']],
-			['name' => 'besluiten', 'filters' => ['verantwoordelijkeOrganisatie', 'besluittype']],
-			['name' => 'catalogi', 'filters' => []],
-			['name' => 'autorisaties', 'filters' => []],
-		];
-	}//end getDefaultKanalen()
 
 }//end class
