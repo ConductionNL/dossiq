@@ -9,4 +9,5 @@
   - Written, runs in nightly (#6685); the picker test is no longer `test.fixme` now that task 2 is built.
 - [x] 4 Example set: one shared view "Te beoordelen deze week" for Team Vergunningen in `lib/Settings/example-sets/` next to `example-set-board-saved-views`.
   - `lib/Settings/example-sets/zuiddrecht.json` view `marleen-te-beoordelen-deze-week` (owner Marleen Postma, Teamleider in Vergunningen; shared read-only with `{{cast:vergunningen.gid}}`; the team's open cases due within seven days). Test: `tests/Unit/Settings/ZuiddrechtBoardSavedViewsTest.php::testMarleenSharesTheVergunningenWeekView`.
-- [ ] 5 `openspec/parity/capabilities.json` row 9.4: built, evidence the manifest pages and the example view; board DqZaken.
+- [x] 5 `openspec/parity/capabilities.json` row 9.4: built, evidence the manifest pages and the example view; board DqZaken.
+  - Done 24 Nov 2026: `built.state` built, evidence the library share section, the six pages with `savedViewsShareGroups: mine` and the example view; the screen stays DqZaken. The rating comes from the corpus and is not edited here.
