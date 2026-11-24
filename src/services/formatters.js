@@ -329,6 +329,42 @@ function lookedUpId(row) {
 }
 
 /**
+ * The related types whose labels the case list shows (Case type, Status).
+ *
+ * @type {Array<string>}
+ */
+export const CASE_LIST_LABEL_TYPES = ['caseType', 'statusType']
+
+/**
+ * Start the label lookups of the given types now, instead of when the first
+ * cell asks. A list's cells ask only once its rows have arrived, which put
+ * the labels in a second request wave after the list; started beside the
+ * list request, they arrive with it. A type already looked up, under way, or
+ * not registered yet is skipped.
+ *
+ * @spec openspec/specs/case-management/spec.md
+ * @param {Array<string>} [types] The registered object types.
+ * @return {Array<string>} The types whose lookup this call started.
+ */
+export function primeRelatedLabels(types = CASE_LIST_LABEL_TYPES) {
+	let store
+	try {
+		store = useObjectStore()
+	} catch {
+		return []
+	}
+	const started = []
+	for (const type of types) {
+		if (relatedFetchStarted[type] || relatedLabels[type] !== undefined || !canLookUp(store, type)) {
+			continue
+		}
+		startRelatedLookup(store, type)
+		started.push(type)
+	}
+	return started
+}
+
+/**
  * Forget the related labels (tests).
  *
  * @return {void}
