@@ -1704,3 +1704,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         but for two `@uses` lines each.
         Own tests: `tests/Unit/Service/Mandate/MandateRowsTest` (3) and `MandateConditionsTest` (1); letting an
         open-ended row lapse turns 10 tests red (checked).
+  - [x] 8cn `Notification/RequesterNoticeSender` (2, unsuppressed: TooManyMethods 32 against 25, ExcessiveClassComplexity
+        68 against 50). Two channels of concern moved out. The portal inbox (a message from the organisation to the
+        case's portal subject, saved as the system) went to the new `Notification/PortalInboxChannel::deliver()`, with
+        `portalMessage()`, `savePortalMessage()`, `portalAnswer()`, `idOf()` and its own copy of the four-line
+        `refused()`; the store it writes to is passed in by the sender, read as before. Keeping each notice and its
+        result on the case's outbound communications went to the new `Notification/CaseNoticeLog` (`record()`, was
+        `noticeRecord()`; `append()`, was `appendRecord()`; `storedNotices()`, `writeNotices()`). Bodies moved unchanged
+        but for the store parameter and `self::PORTAL_APP`, now `RequesterNoticeSender::PORTAL_APP`. The sender builds
+        both in its constructor and no longer takes the `SearchesObjects` trait, so its constructor signature and the
+        container are unchanged. 24 methods; phpmd: neither finding remains, and zero findings on the three files under
+        both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the findings were not
+        suppressed).
+        Characterisation: the existing `RequesterNoticeSenderTest` and `RequesterNoticeSenderChannelsTest` (the portal
+        inbox unconfigured, throwing and answering no id, the record on the case) with the five suites that send
+        through it (186 tests), green before and unchanged after but for two `@uses` lines each.
+        Own tests: `PortalInboxChannelTest` (1) and `CaseNoticeLogTest` (1); always copying the optional result fields
+        turns 3 tests red (checked).
