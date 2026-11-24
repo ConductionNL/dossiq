@@ -137,7 +137,7 @@ class HouseholdCasesController extends Controller {
 		$rows = $this->household->sameDomain(
 			case: $case,
 			bsns: $bsns,
-			canRead: fn (string $id): bool => $this->gate->mayRead(caseId: $id, user: $user),
+			canRead: $this->gate->caseFilterFor(user: $user),
 		);
 
 		return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);

@@ -1447,11 +1447,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8bv `Controller/HouseholdCasesController` (1: CouplingBetweenObjects 14 against 13). Who may ask about a
         case's household is its own concern, so it moved to the new `Controller/Support/HouseholdReaderGate`: the
         refusal (401 for nobody signed in, 403 without the social domain's sensitive access or without read access to
-        the case, the sensitive check first; was `refusalFor()` with `unauthenticated()`) and `mayRead()`, the case
-        read check the same-domain rows are filtered by. Bodies and refusal texts moved unchanged. The controller takes
+        the case, the sensitive check first; was `refusalFor()` with `unauthenticated()`) and `caseFilterFor()`, the
+        case guard's answer the same-domain rows are filtered by (a filter handed on, not a permission evaluator of
+        its own, so `NoSecondPermissionEvaluatorTest` stays green). Bodies and refusal texts moved unchanged. The controller takes
         the gate instead of the two guards, so its constructor changed (seven parameters to six); nothing registers it
         by hand, the container wires the gate, and the one test file that builds the controller passes the gate, no
-        assertion changed. Coupling 13 and 5, complexity 22 and 7 (pdepend); phpmd: no finding on either file under
+        assertion changed. Coupling 13 and 6, complexity 22 and 7 (pdepend); phpmd: no finding on either file under
         both rulesets with the suppression gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 192 to 191.
         Characterisation: the existing `HouseholdCasesControllerTest` (5: no sensitive access, the administrator
         outside the group over the real guard, no case access, the three fields of a looked-up row, no other domain

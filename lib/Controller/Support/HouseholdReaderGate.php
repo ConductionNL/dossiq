@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
+use Closure;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
 use OCP\AppFramework\Http;
@@ -68,7 +69,7 @@ final class HouseholdReaderGate {
 		}
 
 		if ($this->sensitive->maySeeSensitiveFields(user: $user) === false
-			|| $this->mayRead(caseId: $caseId, user: $user) === false
+			|| $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false
 		) {
 			return new JSONResponse(
 				[
@@ -83,18 +84,17 @@ final class HouseholdReaderGate {
 	}//end refusal()
 
 	/**
-	 * Whether the reader may read a case.
+	 * The filter the household's same-domain cases are read through: the case guard's answer for this reader.
 	 *
-	 * @param string $caseId The case uuid.
-	 * @param IUser  $user   The reader.
+	 * @param IUser $user The reader.
 	 *
-	 * @return bool True when they may.
+	 * @return Closure(string): bool Whether the reader may read the case with that uuid.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function mayRead(string $caseId, IUser $user): bool {
-		return $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
-	}//end mayRead()
+	public function caseFilterFor(IUser $user): Closure {
+		return fn (string $caseId): bool => $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
+	}//end caseFilterFor()
 
 	/**
 	 * The answer to a request nobody signed in for.

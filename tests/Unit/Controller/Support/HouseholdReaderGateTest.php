@@ -118,17 +118,17 @@ final class HouseholdReaderGateTest extends TestCase {
 	}//end testAReaderWhoMayNotReadTheCaseIsRefused()
 
 	/**
-	 * Both: no refusal, and mayRead answers the case guard for any case.
+	 * Both: no refusal, and the case filter answers the case guard for any case.
 	 *
 	 * @return void
 	 */
-	public function testAReaderWithBothPassesAndMayReadAsksTheCaseGuard(): void {
+	public function testAReaderWithBothPassesAndTheCaseFilterAsksTheCaseGuard(): void {
 		$asked = [];
 		$gate = $this->gate(sensitive: true, readable: true, asked: $asked);
 
 		self::assertNull(actual: $gate->refusal(user: $this->user(), caseId: 'case-1'));
-		self::assertTrue(condition: $gate->mayRead(caseId: 'case-2', user: $this->user()));
+		self::assertTrue(condition: ($gate->caseFilterFor(user: $this->user()))('case-2'));
 		self::assertSame(expected: ['case-1', 'case-2'], actual: $asked);
-		self::assertFalse(condition: $this->gate(sensitive: true, readable: false)->mayRead(caseId: 'case-3', user: $this->user()));
-	}//end testAReaderWithBothPassesAndMayReadAsksTheCaseGuard()
+		self::assertFalse(condition: ($this->gate(sensitive: true, readable: false)->caseFilterFor(user: $this->user()))('case-3'));
+	}//end testAReaderWithBothPassesAndTheCaseFilterAsksTheCaseGuard()
 }//end class
