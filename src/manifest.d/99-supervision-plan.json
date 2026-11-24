@@ -4,17 +4,8 @@
 		"spdx-copyright": "2026 Conduction B.V.",
 		"change": "supervision-plan-page",
 		"board": "DqToezichtplan",
-		"why": "A year's supervision plan as one page: the year, the four figures, completion per category, the quarterly overview with its forecast and the frequency by risk profile. Every figure reads GET /api/supervision-plans/year/{year}/progress, which counts completed and cancelled from the field inspections in the reader's own scope, so nothing on the page is stored on the plan. The year field writes @workspace.year and starts on the current year. The map of planned inspections is not on the page yet: a planned inspection has no coordinates until it is visited (gpsLocation), so it waits on a geocoded location (tasks.md task 2)."
+		"why": "A year's supervision plan as one page: the year, the four figures, completion per category, the quarterly overview with its forecast and the frequency by risk profile. Every figure reads GET /api/supervision-plans/year/{year}/progress, which counts completed and cancelled from the field inspections in the reader's own scope, so nothing on the page is stored on the plan. The page is reached from its card on Reports (ADR-112: reports are one page of cards, not a menu branch), not from a menu entry of its own. The year field writes @workspace.year and starts on the current year. The map of planned inspections is not on the page yet: a planned inspection has no coordinates until it is visited (gpsLocation), so it waits on a geocoded location (tasks.md task 2)."
 	},
-	"menu": [
-		{
-			"id": "SupervisionPlanMenu",
-			"label": "Supervision plan",
-			"icon": "CalendarTextOutline",
-			"route": "SupervisionPlan",
-			"order": 72
-		}
-	],
 	"pages": [
 		{
 			"id": "SupervisionPlan",

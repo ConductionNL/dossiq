@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest'
 import en from '../../l10n/en.json'
 import nl from '../../l10n/nl.json'
 import fragment from '../../src/manifest.d/99-supervision-plan.json'
+import manifest from '../../src/manifest.json'
 
 const PROGRESS = '/apps/dossiq/api/supervision-plans/year/@workspace.year/progress'
 const page = fragment.pages.find((p) => p.id === 'SupervisionPlan')
@@ -23,9 +24,11 @@ const widget = (id) => page.config.widgets.find((w) => w.id === id)
 const ROUTES = fs.readFileSync(path.resolve(__dirname, '../../appinfo/routes.php'), 'utf8')
 
 describe('the Supervision plan page', () => {
-	it('is a dashboard at /inspection-plan with a menu entry routing to it', () => {
+	it('is a dashboard at /inspection-plan, reached from its card on Reports and not from a menu entry', () => {
 		expect(page).toMatchObject({ route: '/inspection-plan', type: 'dashboard', title: 'Supervision plan' })
-		expect(fragment.menu).toEqual([expect.objectContaining({ id: 'SupervisionPlanMenu', route: 'SupervisionPlan', label: 'Supervision plan' })])
+		expect(fragment.menu).toBeUndefined()
+		const cards = manifest.pages.find((p) => p.id === 'Reports').config.cards
+		expect(cards).toContainEqual(expect.objectContaining({ id: 'SupervisionPlan', route: 'SupervisionPlan', label: 'Supervision plan' }))
 		expect(page.config.allowEdit).toBe(false)
 	})
 
@@ -75,7 +78,8 @@ describe('the Supervision plan page', () => {
 	})
 
 	it('has an English source and a Dutch translation for every label it shows', () => {
-		const texts = new Set([page.title, page.config.description, ...fragment.menu.map((m) => m.label)])
+		const card = manifest.pages.find((p) => p.id === 'Reports').config.cards.find((c) => c.id === 'SupervisionPlan')
+		const texts = new Set([page.title, page.config.description, card.label, card.description, card.meta])
 		for (const w of page.config.widgets) {
 			texts.add(w.title)
 			for (const key of ['label', 'caption', 'submitLabel', 'emptyText', 'emptyLabel']) {
