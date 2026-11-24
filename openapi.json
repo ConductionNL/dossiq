@@ -10059,6 +10059,124 @@
                 }
             }
         },
+        "/cases/{caseId}/scoring": {
+            "get": {
+                "operationId": "scoring-sheet",
+                "summary": "The scoring sheet of the case",
+                "description": "The formula the case scores its bids by (the case's scoringFormula), the values the case holds for it, the values an evaluator enters per bid, and the admissible bids with the caller's own total so far; `refusal` says in words why nothing can be scored. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "scoring"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "scoring-score",
+                "summary": "Score one bid of the case",
+                "description": "Applies the case's scoring formula to one admissible bid with the values the evaluator entered (price and lowest price are read from the bids) and stores the caller's own evaluation with its weighted total. Body: `{bid, scores}`. A refusal (no formula, a bid that is not admissible, a missing value, a finalised evaluation) answers 422 with the sentence. Needs a user who may change the case.",
+                "tags": [
+                    "scoring"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "bid",
+                                    "scores"
+                                ],
+                                "properties": {
+                                    "bid": {
+                                        "type": "string",
+                                        "description": "The bid uuid."
+                                    },
+                                    "scores": {
+                                        "type": "object",
+                                        "description": "The evaluator's number per value the formula takes per bid.",
+                                        "additionalProperties": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Problem422"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
         "/cases/{caseId}/pipelinq/contact-moments": {
             "get": {
                 "operationId": "pipelinq-contact-moment-contact-moments",
