@@ -166,6 +166,8 @@ final class CitizenCaseCollection {
 	 * which branch filed it, its number and its case type.
 	 *
 	 * @return array<string, mixed> The keys.
+	 *
+	 * @spec openspec/changes/case-page-shows-the-outcome/specs/portal-contribution/spec.md#requirement-the-case-collection-must-name-its-outcome-fields
 	 */
 	private function caseListKeys(): array {
 		return [
@@ -203,6 +205,13 @@ final class CitizenCaseCollection {
 			// portal needs to tell statuses apart; the merged case list
 			// showed it as is. portaliq shows this field instead.
 			'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
+			// WHAT WAS DECIDED AND WHY, on the page of an ended case. Both
+			// fields are on CITIZEN_CASE_FIELDS: portaliq drops an outcome
+			// field the collection does not project (board ZaakAfgerond).
+			'outcome' => [
+				'labelField' => 'resultPublicLabel',
+				'descriptionField' => 'resultPublicDescription',
+			],
 			// Where the case type of a case lives, so a portal
 			// administrator can hide a case type the portal has no form
 			// for (portaliq operate-show-per-case-type).
