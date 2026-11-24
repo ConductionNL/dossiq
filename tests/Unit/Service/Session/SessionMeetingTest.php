@@ -62,7 +62,7 @@ class SessionMeetingTest extends TestCase {
 	 * @return IEventDispatcher
 	 */
 	private function dispatcher(?string $meetingId): IEventDispatcher {
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			function (object $event) use ($meetingId): void {
 				$this->dispatched[] = $event;
@@ -81,23 +81,26 @@ class SessionMeetingTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSessionIsTheMeetingsSubject(): void {
-		$meetings = new SessionMeeting(eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'), logger: $this->createMock(LoggerInterface::class));
+		$meetings = new SessionMeeting(
+			eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		self::assertSame('meeting-9', $meetings->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
+		self::assertSame(expected: 'meeting-9', actual: $meetings->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
 
-		self::assertCount(1, $this->dispatched);
+		self::assertCount(expectedCount: 1, haystack: $this->dispatched);
 		$event = $this->dispatched[0];
-		self::assertInstanceOf(MeetingRequestedEvent::class, $event);
-		self::assertSame(['register' => 'dossiq', 'schema' => 'hearingSession', 'id' => 'session-1'], $event->getSubject());
+		self::assertInstanceOf(expected: MeetingRequestedEvent::class, actual: $event);
+		self::assertSame(expected: ['register' => 'dossiq', 'schema' => 'hearingSession', 'id' => 'session-1'], actual: $event->getSubject());
 		self::assertSame(
-			[
+			expected: [
 				'title'           => 'Hearing',
 				'scheduledDate'   => '2026-10-20T10:00:00+00:00',
 				'location'        => 'Room 2',
 				'virtualLocation' => 'https://talk.example/abc',
 				'meetingMode'     => 'hybrid',
 			],
-			$event->getMeeting()
+			actual: $event->getMeeting()
 		);
 	}//end testTheSessionIsTheMeetingsSubject()
 
@@ -107,13 +110,16 @@ class SessionMeetingTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheModeFollowsWhereTheSessionIsHeld(): void {
-		$meetings = new SessionMeeting(eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'), logger: $this->createMock(LoggerInterface::class));
+		$meetings = new SessionMeeting(
+			eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
 		$meetings->open(session: ['location' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']);
 		$meetings->open(session: ['videoCallUrl' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']);
 
-		self::assertSame('digital', $this->dispatched[0]->getMeeting()['meetingMode']);
-		self::assertArrayNotHasKey('meetingMode', $this->dispatched[1]->getMeeting());
+		self::assertSame(expected: 'digital', actual: $this->dispatched[0]->getMeeting()['meetingMode']);
+		self::assertArrayNotHasKey(key: 'meetingMode', array: $this->dispatched[1]->getMeeting());
 	}//end testTheModeFollowsWhereTheSessionIsHeld()
 
 	/**
@@ -122,21 +128,26 @@ class SessionMeetingTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutAMeetingThePlanStands(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
-		$absent = new SessionMeeting(eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'), logger: $logger, eventClass: '\\OCA\\Nowhere\\MeetingRequestedEvent');
-		self::assertSame('', $absent->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
-		self::assertSame([], $this->dispatched);
+		$absent = new SessionMeeting(
+			eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'),
+			logger: $logger,
+			eventClass: '\\OCA\\Nowhere\\MeetingRequestedEvent'
+		);
+		self::assertSame(expected: '', actual: $absent->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
+		self::assertSame(expected: [], actual: $this->dispatched);
 
 		$unhandled = new SessionMeeting(eventDispatcher: $this->dispatcher(meetingId: null), logger: $logger);
-		self::assertSame('', $unhandled->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
+		self::assertSame(expected: '', actual: $unhandled->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
 
-		$failing = $this->createMock(IEventDispatcher::class);
-		$failing->method('dispatchTyped')->willThrowException(new RuntimeException('listener broke'));
-		self::assertSame('', (new SessionMeeting(eventDispatcher: $failing, logger: $logger))->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
+		$failing = $this->createMock(originalClassName: IEventDispatcher::class);
+		$failing->method('dispatchTyped')->willThrowException(new RuntimeException(message: 'listener broke'));
+		$broken = new SessionMeeting(eventDispatcher: $failing, logger: $logger);
+		self::assertSame(expected: '', actual: $broken->open(session: self::SESSION, location: ['dossiq', 'hearingSession']));
 
 		$noId = new SessionMeeting(eventDispatcher: $this->dispatcher(meetingId: 'meeting-9'), logger: $logger);
-		self::assertSame('', $noId->open(session: ['id' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']));
+		self::assertSame(expected: '', actual: $noId->open(session: ['id' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']));
 	}//end testWithoutAMeetingThePlanStands()
 
 }//end class

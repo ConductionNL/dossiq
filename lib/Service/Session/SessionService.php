@@ -35,7 +35,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Session;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
@@ -312,7 +311,7 @@ class SessionService {
 			$write->payload,
 			$this->sessionHead(write: $write),
 			[
-				'scheduledDate'           => $write->scheduled->format(DateTimeInterface::ATOM),
+				'scheduledDate'           => $write->scheduled->format(DATE_ATOM),
 				'chairperson'             => $write->chairpersonId,
 				'invitees'                => $rules->stampInvitees(invitees: $write->invitees, when: $write->now),
 				'inspectionAvailableFrom' => $available->format('Y-m-d'),
@@ -337,7 +336,7 @@ class SessionService {
 			$write->payload,
 			$this->sessionHead(write: $write),
 			[
-				'scheduledDate'           => $write->now->format(DateTimeInterface::ATOM),
+				'scheduledDate'           => $write->now->format(DATE_ATOM),
 				'chairperson'             => $write->chairpersonId,
 				'invitees'                => ($write->payload['invitees'] ?? []),
 				'inspectionAvailableFrom' => $write->now->format('Y-m-d'),
@@ -402,7 +401,7 @@ class SessionService {
 			session: $session,
 			changes: [
 				'attendance'         => $merged,
-				'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
+				'attendanceFrozenAt' => $freezeAt->format(DATE_ATOM),
 			]
 		);
 	}//end recordAttendance()

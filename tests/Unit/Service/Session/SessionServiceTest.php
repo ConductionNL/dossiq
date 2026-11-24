@@ -192,7 +192,7 @@ class SessionServiceTest extends TestCase {
 	 */
 	public function testAPlannedSessionOpensAsAMeetingAndKeepsItsId(): void {
 		$subjects   = [];
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (object $event) use (&$subjects): void {
 				$subjects[] = array_values($event->getSubject());
@@ -203,7 +203,7 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(LoggerInterface::class))
+			meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(originalClassName: LoggerInterface::class))
 		);
 
 		$saved = $service->schedule(
@@ -215,10 +215,10 @@ class SessionServiceTest extends TestCase {
 		);
 
 		$stored = $this->store->row(schema: 'hearingSession', uuid: $saved['id']);
-		self::assertSame([['dossiq', 'hearingSession', $saved['id']]], $subjects);
-		self::assertSame('meeting-9', $stored['meeting']);
-		self::assertSame('meeting-9', $saved['meeting']);
-		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $stored));
+		self::assertSame(expected: [['dossiq', 'hearingSession', $saved['id']]], actual: $subjects);
+		self::assertSame(expected: 'meeting-9', actual: $stored['meeting']);
+		self::assertSame(expected: 'meeting-9', actual: $saved['meeting']);
+		self::assertSame(expected: [], actual: self::$schemas->errors(slug: 'hearingSession', payload: $stored));
 	}//end testAPlannedSessionOpensAsAMeetingAndKeepsItsId()
 
 	/**
@@ -234,8 +234,8 @@ class SessionServiceTest extends TestCase {
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
 			meetings: new SessionMeeting(
-				eventDispatcher: $this->createMock(IEventDispatcher::class),
-				logger: $this->createMock(LoggerInterface::class)
+				eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
 			)
 		);
 
@@ -248,8 +248,8 @@ class SessionServiceTest extends TestCase {
 		);
 
 		$stored = $this->store->row(schema: 'hearingSession', uuid: $saved['id']);
-		self::assertSame('planned', $stored['status']);
-		self::assertArrayNotHasKey('meeting', $stored);
+		self::assertSame(expected: 'planned', actual: $stored['status']);
+		self::assertArrayNotHasKey(key: 'meeting', array: $stored);
 	}//end testWithoutAMeetingTheSessionIsStillPlanned()
 
 	/**
