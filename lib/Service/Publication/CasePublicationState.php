@@ -252,7 +252,7 @@ class CasePublicationState {
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-sees-where-the-decision-became-public-req-wds-003
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-sees-where-the-decision-became-public-req-wds-003
 	 */
 	public function writeCaseState(string $caseId, array $changes): void {
 		$objectService = $this->settingsService->getObjectService();

@@ -48,7 +48,7 @@ interface PortalWooAnswerInterface {
 	 *
 	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	public function submit(WooAnswerSubmission $submission): array;
 }//end interface
