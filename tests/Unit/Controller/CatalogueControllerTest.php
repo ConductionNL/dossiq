@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+ * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
  */
 
 declare(strict_types=1);

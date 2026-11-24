@@ -13220,7 +13220,7 @@
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-management :: A handler links an object to a case from its page (REQ-CRS-26)"
 				],
 				"plan": [
-					"openspec/changes/catalogue-object-types",
+					"openspec/changes/archive/2026-11-24-catalogue-object-types",
 					"openspec/changes/objects-index-like-cases"
 				]
 			},
@@ -20367,7 +20367,7 @@
 				"plan": [
 					"openspec/changes/capability-rows-say-the-whole-capability",
 					"openspec/changes/advanced-holds-the-catalogue-folders",
-					"openspec/changes/catalogue-object-types"
+					"openspec/changes/archive/2026-11-24-catalogue-object-types"
 				]
 			},
 			"evidence": {
