@@ -1611,3 +1611,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         before and unchanged after.
         Own test: `tests/Unit/Service/TenantMigration/OrganisationFromLegacyTenantTest` (2); dropping the quota turns 2
         tests red (checked).
+  - [x] 8ch `Recycle/CaseRecycleService` (1, unsuppressed: ExcessiveClassComplexity 61 against 50). Two concerns moved
+        out. Reading the live case behind the retention clocks (`liveCase()`'s body, `caseStoreLocation()`,
+        `readLiveCase()`) went to the new `Recycle/LiveCaseReader::read()`, which takes the `SearchesObjects` trait the
+        service no longer needs. Who may see a deleted case in the lens (`maySee()`'s body and `deletedOrHeldBy()`)
+        went to the new `Recycle/DeletedCaseVisibility::maySee()`. Bodies moved unchanged; `liveCase()` and `maySee()`
+        stay on the service as one-line delegations. The restore record stayed: moving it would carry its inherited
+        StaticAccess on `ObjectAuditEvents::of()` into a new file. The service builds both in its constructor, so its
+        constructor signature and the container are unchanged. phpmd: no ExcessiveClassComplexity finding, and no new
+        finding on the three files under both rulesets (the StaticAccess in `recordRestore()` was there before).
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation, green on the unchanged service first (own commit): `Recycle/CaseRecycleLiveCaseTest` (2: the
+        case read from the store; no id, no store, no case schema and a failing store each null), with the existing
+        `CaseRecycleServiceTest` for the lens; unchanged and green after but for `@uses` lines.
+        Own tests: `Recycle/LiveCaseReaderTest` (2) and `Recycle/DeletedCaseVisibilityTest` (1); dropping the assignee
+        check turns 1 test red (checked).

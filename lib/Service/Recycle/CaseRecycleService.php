@@ -45,7 +45,6 @@ use DateTime;
 use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -58,8 +57,6 @@ use Throwable;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseRecycleService implements CaseRecycleServiceInterface {
-
-	use SearchesObjects;
 
 	/**
 	 * OpenRegister's mapper over the per-register magic tables.
@@ -116,6 +113,20 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 	public const DELETED_LENS = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicSearchHandler::DELETED_ONLY';
 
 	/**
+	 * Reads the live case behind the retention clocks.
+	 *
+	 * @var LiveCaseReader
+	 */
+	private readonly LiveCaseReader $liveCases;
+
+	/**
+	 * Whether a caller may see one deleted case in the lens.
+	 *
+	 * @var DeletedCaseVisibility
+	 */
+	private readonly DeletedCaseVisibility $visibility;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
@@ -129,6 +140,8 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->liveCases = new LiveCaseReader(settingsService: $settingsService, logger: $logger);
+		$this->visibility = new DeletedCaseVisibility(windowReader: $windowReader);
 	}//end __construct()
 
 	/**
@@ -358,59 +371,8 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function liveCase(string $caseId): ?array {
-		$location = $this->caseStoreLocation();
-		if ($location === null || $caseId === '') {
-			return null;
-		}
-
-		return $this->readLiveCase(location: $location, caseId: $caseId);
+		return $this->liveCases->read(caseId: $caseId);
 	}//end liveCase()
-
-	/**
-	 * Where the live cases are stored, or null when OpenRegister or its configuration is missing.
-	 *
-	 * @return CaseStoreLocation|null The location.
-	 */
-	private function caseStoreLocation(): ?CaseStoreLocation {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return new CaseStoreLocation(objectService: $objectService, register: $register, schema: $schema);
-	}//end caseStoreLocation()
-
-	/**
-	 * Read one live case; a store that cannot be read is logged and answers null.
-	 *
-	 * @param CaseStoreLocation $location Where the case is stored.
-	 * @param string            $caseId   The case UUID.
-	 *
-	 * @return array<string, mixed>|null The case payload, or null.
-	 */
-	private function readLiveCase(CaseStoreLocation $location, string $caseId): ?array {
-		// The catch LOGS and does not answer: a store that could not be read is
-		// a different fact from a case that is not there, and a bare `return
-		// null` in the catch makes the two indistinguishable downstream.
-		$case = null;
-		try {
-			$case = $this->findObjectAsArray(
-				objectService: $location->objectService,
-				register: $location->register,
-				schema: $location->schema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the case behind the retention clocks could not be read',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
-			);
-		}
-
-		return $case;
-	}//end readLiveCase()
 
 	/**
 	 * Restore a deleted case, and record who did it and when.
@@ -640,35 +602,8 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function maySee(object $entity, string $userId, bool $isAdmin): bool {
-		if ($isAdmin === true) {
-			return true;
-		}
-
-		if ($userId === '') {
-			return false;
-		}
-
-		return $this->deletedOrHeldBy(entity: $entity, userId: $userId);
+		return $this->visibility->maySee(entity: $entity, userId: $userId, isAdmin: $isAdmin);
 	}//end maySee()
-
-	/**
-	 * Whether the user deleted the case, or handled it when it was deleted.
-	 *
-	 * @param object $entity The deleted case.
-	 * @param string $userId The user.
-	 *
-	 * @return bool True when it was theirs.
-	 */
-	private function deletedOrHeldBy(object $entity, string $userId): bool {
-		$marker = $this->windowReader->marker(entity: $entity);
-		if (trim((string)($marker['deletedBy'] ?? '')) === $userId) {
-			return true;
-		}
-
-		$payload = $this->windowReader->payload(entity: $entity);
-
-		return (trim((string)($payload['assignee'] ?? '')) === $userId);
-	}//end deletedOrHeldBy()
 
 	/**
 	 * Whether an entity belongs to the configured case schema.
