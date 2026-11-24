@@ -85,6 +85,7 @@ interface TenantLookupObjectServiceStub {
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
+ * @uses \OCA\Dossiq\Service\Tenant\MandateMatrix
  * @covers \OCA\Dossiq\Service\TenantQuotaService
  *
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
