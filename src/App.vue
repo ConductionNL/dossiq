@@ -74,10 +74,10 @@
 </template>
 
 <script>
-import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
+import { CnAppRoot } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import { translate as ncT } from '@nextcloud/l10n'
-import { reactive } from 'vue'
+import { defineAsyncComponent, reactive } from 'vue'
 import UserSettings from './views/settings/UserSettings.vue'
 import { initializeStores } from './store/store.js'
 import { notificationLabels } from './utils/notificationLabels.js'
@@ -89,11 +89,26 @@ import { currentPermissions } from './utils/permissions.js'
  */
 const USER_SETTINGS_HASH = '#user-settings'
 
+/**
+ * The object sidebar, loaded when a detail page first shows it.
+ *
+ * It renders only while `objectSidebarState.active` is set, which a detail
+ * page does; the Cases list and the dashboard never show it. Importing it
+ * statically made every page evaluate the sidebar, its Notes tab and its
+ * object table before the first API call. This is the same module CnAppRoot
+ * lazy-loads for its own sidebar, so both share one chunk.
+ *
+ * @spec openspec/specs/performance-hardening/spec.md
+ */
+export const LazyObjectSidebar = defineAsyncComponent(
+	() => import('@conduction/nextcloud-vue/dist/esm/components/CnObjectSidebar/CnObjectSidebar.vue.js').then((m) => m.default),
+)
+
 export default {
 	name: 'App',
 	components: {
 		CnAppRoot,
-		CnObjectSidebar,
+		CnObjectSidebar: LazyObjectSidebar,
 		UserSettings,
 	},
 
