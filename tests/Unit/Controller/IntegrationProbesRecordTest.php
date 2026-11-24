@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Controller\EmailTemplateController;
+use OCA\Dossiq\Controller\EmailSettingsController;
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Controller\StufController;
-use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\EmailTemplateService;
@@ -55,7 +55,8 @@ use OCP\App\IAppManager;
 /**
  * The probe and save side of pluggable-integration-registry.
  *
- * @covers \OCA\Dossiq\Controller\EmailTemplateController
+ * @covers \OCA\Dossiq\Controller\EmailSettingsController
+ * @covers \OCA\Dossiq\Controller\Support\MailIntakeSettings
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @covers \OCA\Dossiq\Controller\StufController
  * */
@@ -290,7 +291,7 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end settingsController()
 
 	/**
-	 * Build an EmailTemplateController over the accounts Nextcloud Mail holds.
+	 * Build an EmailSettingsController over the accounts Nextcloud Mail holds.
 	 *
 	 * 🔴 THERE IS NO HOST TO DIAL ANY MORE. This helper used to name an IMAP
 	 * host and port, because the probe it feeds opened a socket to whatever an
@@ -302,13 +303,13 @@ class IntegrationProbesRecordTest extends TestCase {
 	 * @param array $accounts      The accounts it offers.
 	 * @param bool  $signedIn      Whether a user is signed in.
 	 *
-	 * @return EmailTemplateController The controller.
+	 * @return EmailSettingsController The controller.
 	 */
 	private function emailController(
 		bool $mailAvailable = true,
 		array $accounts = [],
 		bool $signedIn = true,
-	): EmailTemplateController {
+	): EmailSettingsController {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(
 			$signedIn === true ? $this->createMock(IUser::class) : null
@@ -318,16 +319,15 @@ class IntegrationProbesRecordTest extends TestCase {
 		$gateway->method('isAvailable')->willReturn($mailAvailable);
 		$gateway->method('accounts')->willReturn($accounts);
 
-		return new EmailTemplateController(
+		return new EmailSettingsController(
 			request: $this->createMock(IRequest::class),
-			templateService: $this->templateService,
-			settingsService: $this->createMock(SettingsService::class),
-			appConfig: $this->createMock(IAppConfig::class),
 			userSession: $userSession,
-			groupManager: $this->createMock(IGroupManager::class),
-			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
-			mailGateway: $gateway,
-			blocklist: $this->createMock(SenderBlocklist::class),
+			settings: new MailIntakeSettings(
+				appConfig: $this->createMock(originalClassName: IAppConfig::class),
+				blocklist: $this->createMock(originalClassName: SenderBlocklist::class),
+				mailGateway: $gateway,
+				templateService: $this->templateService,
+			),
 		);
 	}//end emailController()
 
