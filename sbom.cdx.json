@@ -17905,8 +17905,8 @@
     {
       "type": "library",
       "name": "postcss-html",
-      "version": "2.0.0",
-      "bom-ref": "dossiq@0.1.0|postcss-html@2.0.0",
+      "version": "2.0.1",
+      "bom-ref": "dossiq@0.1.0|postcss-html@2.0.1",
       "licenses": [
         {
           "license": {
@@ -17914,15 +17914,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/postcss-html@2.0.0",
+      "purl": "pkg:npm/postcss-html@2.0.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/postcss-html/-/postcss-html-2.0.0.tgz",
+          "url": "https://registry.npmjs.org/postcss-html/-/postcss-html-2.0.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "7f646fc39142a259447d58f7c1f37b25d41bee7dab348b615be7a9c36101ca2a3b33a3fb447d014e3f1afce0c7ad45ddd1c98eef27216fa6278b2995f77d7cd9"
+              "content": "16abad237bba0fb8f6f1982f8841631826c8775ef84c7695c4500c7bfc9de98ffe052422758621da7442c4593c6edc0457ae1fdd3bdf373eeeade1a7933aad98"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -17943,7 +17943,7 @@
           "type": "library",
           "name": "js-tokens",
           "version": "9.0.1",
-          "bom-ref": "dossiq@0.1.0|postcss-html@2.0.0|js-tokens@9.0.1",
+          "bom-ref": "dossiq@0.1.0|postcss-html@2.0.1|js-tokens@9.0.1",
           "licenses": [
             {
               "license": {
@@ -19248,8 +19248,8 @@
     {
       "type": "library",
       "name": "sass",
-      "version": "1.105.0",
-      "bom-ref": "dossiq@0.1.0|sass@1.105.0",
+      "version": "1.108.2",
+      "bom-ref": "dossiq@0.1.0|sass@1.108.2",
       "licenses": [
         {
           "license": {
@@ -19257,15 +19257,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/sass@1.105.0",
+      "purl": "pkg:npm/sass@1.108.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/sass/-/sass-1.105.0.tgz",
+          "url": "https://registry.npmjs.org/sass/-/sass-1.108.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "e048d2b914f21bc338c915d76353d3f4e515e73cf6df10712646c8029ae884a1ea7fa1ce538302a44dd4def002fa23b5831a1b06311235b723f2b6004195a7c8"
+              "content": "92e80af1d8e8b671bd1d044f4ce7f7e9ab0a625c60f2b596b0d2d81ce8160c854e89942a9517ca0601785d733a91fc35e3a9080ccbe6e7b07818892f0d2c93cc"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""

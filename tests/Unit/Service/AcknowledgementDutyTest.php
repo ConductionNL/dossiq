@@ -142,6 +142,8 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Service\Notification\CaseNoticeLog
+ * @uses \OCA\Dossiq\Service\Notification\PortalInboxChannel
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate

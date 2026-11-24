@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  * REQ-WDS-004 through AanvullingsverzoekService::ask() and recordAnswer(), over a real store.
  *
  * @covers \OCA\Dossiq\Service\AanvullingsverzoekService
+ * @uses \OCA\Dossiq\Service\Support\AskedItems
  *
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Exception\RefusedException
