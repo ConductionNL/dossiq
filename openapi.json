@@ -773,6 +773,54 @@
         }
     ],
     "paths": {
+        "/supervision-plans/year/{year}/progress": {
+            "get": {
+                "operationId": "supervision-plan-progress-for-year",
+                "summary": "Read the progress of a year's supervision plan",
+                "description": "The figures of the supervision plan for a year, as `/supervision-plans/{id}/progress` answers them, with the frequency per risk profile in `risk`. The plan is looked up by its year in the caller's own scope; a year with no plan, or a value that is not four digits, answers 404. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "path",
+                        "required": true,
+                        "description": "The plan year, four digits.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
         "/supervision-plans/{id}/progress": {
             "get": {
                 "operationId": "supervision-plan-progress",
