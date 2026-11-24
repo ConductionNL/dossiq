@@ -42,7 +42,12 @@ final class FiledOverListIsNoRelationTest extends TestCase {
 	 */
 	private function definitions(): array {
 		$root  = dirname(__DIR__, 3) . '/lib/Settings';
-		$files = array_merge([$root . '/dossiq_register.json'], glob($root . '/register.d/*.json') ?: []);
+		$fragments = glob($root . '/register.d/*.json');
+		if ($fragments === false) {
+			$fragments = [];
+		}
+
+		$files = array_merge([$root . '/dossiq_register.json'], $fragments);
 		$found = [];
 		foreach ($files as $file) {
 			$data     = json_decode((string)file_get_contents($file), true);
