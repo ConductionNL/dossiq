@@ -13,8 +13,11 @@
 ### Task 2: The page
 - **spec_ref**: `openspec/changes/supervision-plan-page/specs/vth-module/spec.md#requirement-the-supervision-plan-has-a-page-of-its-own`
 - **files**: `src/manifest.d` (page `/inspection-plan`, menu entry for the supervision role), `l10n/en.json`, `l10n/nl.json`
-- [ ] Header, Year | Quarter, the four figures, the per-category bars, the quarterly overview, frequency by risk and the map, as board DqToezichtplan
-- [ ] Test: vitest over the page config
+- [x] Header, Year, the four figures, the per-category bars, the quarterly overview and frequency by risk, as board DqToezichtplan
+  - `src/manifest.d/99-supervision-plan.json`: dashboard page `SupervisionPlan` at `/inspection-plan` and menu entry `SupervisionPlanMenu`. A year field (`workspace-filter`, `inputType: year`, starts on the current year) writes `@workspace.year`; every widget reads `GET /api/supervision-plans/year/{year}/progress` (`SupervisionPlanController::progressForYear()`, `SupervisionPlanReader::idForYear()`), so the page opens a plan by its year in the reader's own scope. `SupervisionPlanProgress::riskRows()` adds the frequency per risk profile (`risk`) to the figures. Strings in `l10n/en.json` and `l10n/nl.json`. Decision (board unreachable from the cloud lane, identity.conduction.nl refused): the page follows the spec's figures and the board's caption in `openspec/specs/vth-module/screens.md`; the Quarter view is the quarterly table with its forecast, not a second toggle; the menu entry is not narrowed to a supervision role, because the manifest menu has no role condition and the endpoint already reads in the reader's scope. The pixel pass against DqToezichtplan stays with task 4.
+- [ ] The planned inspections on the map: a planned inspection has no coordinates until it is visited (`gpsLocation`), so the map waits on a geocoded location of the inspected object
+- [x] Test: vitest over the page config
+  - `tests/vitest/supervisionPlanPage.spec.js`; PHPUnit `SupervisionPlanReaderTest::testThePlanOfAYear`, `SupervisionPlanControllerTest::testTheFiguresOfAYear`, `SupervisionPlanProgressTest::testTheRiskFrequencyRows`.
 
 ### Task 3: Suggest a schedule
 - **spec_ref**: `openspec/changes/supervision-plan-page/specs/vth-module/spec.md#requirement-a-schedule-is-proposed-before-it-is-written`

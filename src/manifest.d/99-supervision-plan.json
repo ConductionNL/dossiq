@@ -1,0 +1,363 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "supervision-plan-page",
+		"board": "DqToezichtplan",
+		"why": "A year's supervision plan as one page: the year, the four figures, completion per category, the quarterly overview with its forecast and the frequency by risk profile. Every figure reads GET /api/supervision-plans/year/{year}/progress, which counts completed and cancelled from the field inspections in the reader's own scope, so nothing on the page is stored on the plan. The year field writes @workspace.year and starts on the current year. The map of planned inspections is not on the page yet: a planned inspection has no coordinates until it is visited (gpsLocation), so it waits on a geocoded location (tasks.md task 2)."
+	},
+	"menu": [
+		{
+			"id": "SupervisionPlanMenu",
+			"label": "Supervision plan",
+			"icon": "CalendarTextOutline",
+			"route": "SupervisionPlan",
+			"order": 72
+		}
+	],
+	"pages": [
+		{
+			"id": "SupervisionPlan",
+			"route": "/inspection-plan",
+			"type": "dashboard",
+			"title": "Supervision plan",
+			"config": {
+				"description": "Planned, completed and cancelled inspections per category, counted from the inspections",
+				"allowEdit": false,
+				"showActionsMenu": false,
+				"showWidgetActions": false,
+				"appId": "dossiq",
+				"pageId": "SupervisionPlan",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "supervision-plan-year",
+						"type": "workspace-filter",
+						"title": "Year",
+						"content": {
+							"style": "input",
+							"inputType": "year",
+							"writes": "@workspace.year",
+							"label": "Year",
+							"submitLabel": "Show plan"
+						}
+					},
+					{
+						"id": "supervision-plan-scheduled",
+						"type": "stat",
+						"title": "Scheduled",
+						"content": {
+							"label": "Scheduled",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress"
+							},
+							"valueField": "scheduled",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "Inspections in the plan for {year}"
+						}
+					},
+					{
+						"id": "supervision-plan-completed",
+						"type": "stat",
+						"title": "Completed",
+						"content": {
+							"label": "Completed",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress"
+							},
+							"valueField": "completed",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "{completion} % of the plan"
+						}
+					},
+					{
+						"id": "supervision-plan-cancelled",
+						"type": "stat",
+						"title": "Cancelled",
+						"content": {
+							"label": "Cancelled",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress"
+							},
+							"valueField": "cancelled",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "{remaining} still to do"
+						}
+					},
+					{
+						"id": "supervision-plan-capacity",
+						"type": "stat",
+						"title": "Capacity",
+						"content": {
+							"label": "Capacity",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress"
+							},
+							"valueField": "capacityHours",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " h"
+							},
+							"caption": "Hours available; {demandHours} hours demanded by risk"
+						}
+					},
+					{
+						"id": "supervision-plan-per-category",
+						"type": "chart",
+						"title": "Completed per category",
+						"content": {
+							"chartKind": "bar-list",
+							"barListWide": true,
+							"barMax": 100,
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress",
+								"responsePath": "categories",
+								"labelsPath": "name",
+								"series": [
+									{
+										"name": "Completed",
+										"path": "completion"
+									}
+								]
+							},
+							"emptyLabel": "This plan has no categories yet"
+						}
+					},
+					{
+						"id": "supervision-plan-categories",
+						"type": "object-table",
+						"title": "Per category",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress",
+								"responsePath": "categories"
+							},
+							"columns": [
+								{
+									"key": "name",
+									"label": "Category",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
+									"key": "label",
+									"label": "Progress"
+								},
+								{
+									"key": "cancelled",
+									"label": "Cancelled",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "remaining",
+									"label": "Remaining",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "demand",
+									"label": "Demanded by risk",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "demandHours",
+									"label": "Hours",
+									"class": "cn-table-col--end",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									}
+								}
+							],
+							"emptyText": "This plan has no categories yet"
+						}
+					},
+					{
+						"id": "supervision-plan-quarters",
+						"type": "object-table",
+						"title": "Quarterly overview",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress",
+								"responsePath": "quarters"
+							},
+							"columns": [
+								{
+									"key": "quarter",
+									"label": "Quarter"
+								},
+								{
+									"key": "scheduled",
+									"label": "Scheduled",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "completed",
+									"label": "Completed",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "cancelled",
+									"label": "Cancelled",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "remaining",
+									"label": "Remaining",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "forecast",
+									"label": "Forecast",
+									"class": "cn-table-col--end"
+								}
+							],
+							"emptyText": "No inspections scheduled in this year"
+						}
+					},
+					{
+						"id": "supervision-plan-risk",
+						"type": "object-table",
+						"title": "Frequency by risk",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/progress",
+								"responsePath": "risk"
+							},
+							"columns": [
+								{
+									"key": "category",
+									"label": "Category",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
+									"key": "profile",
+									"label": "Risk profile"
+								},
+								{
+									"key": "objects",
+									"label": "Objects",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "visitsPerYear",
+									"label": "Visits per year",
+									"class": "cn-table-col--end",
+									"format": {
+										"style": "decimal",
+										"decimals": 1
+									}
+								},
+								{
+									"key": "demand",
+									"label": "Inspections",
+									"class": "cn-table-col--end"
+								}
+							],
+							"emptyText": "No risk frequency recorded for this plan"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "supervision-plan-year",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"sizeToContent": true
+					},
+					{
+						"id": 2,
+						"widgetId": "supervision-plan-scheduled",
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"sizeToContent": true
+					},
+					{
+						"id": 3,
+						"widgetId": "supervision-plan-completed",
+						"gridX": 3,
+						"gridY": 1,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"sizeToContent": true
+					},
+					{
+						"id": 4,
+						"widgetId": "supervision-plan-cancelled",
+						"gridX": 6,
+						"gridY": 1,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"sizeToContent": true
+					},
+					{
+						"id": 5,
+						"widgetId": "supervision-plan-capacity",
+						"gridX": 9,
+						"gridY": 1,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"sizeToContent": true
+					},
+					{
+						"id": 6,
+						"widgetId": "supervision-plan-per-category",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 7,
+						"widgetId": "supervision-plan-quarters",
+						"gridX": 6,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 8,
+						"widgetId": "supervision-plan-categories",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 9,
+						"widgetId": "supervision-plan-risk",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"sizeToContent": true
+					}
+				]
+			}
+		}
+	]
+}

@@ -31,10 +31,11 @@ class SupervisionPlanControllerTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $read The reader's answer.
 	 * @param string               $from The `from` parameter.
+	 * @param array<string, mixed> $year The reader's answer to the year lookup.
 	 *
 	 * @return SupervisionPlanController The controller.
 	 */
-	private function controller(array $read, string $from=''): SupervisionPlanController {
+	private function controller(array $read, string $from='', array $year=['status' => 404]): SupervisionPlanController {
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			static function (string $key, mixed $default=null) use ($from): mixed {
@@ -48,6 +49,7 @@ class SupervisionPlanControllerTest extends TestCase {
 
 		$reader = $this->createMock(originalClassName: SupervisionPlanReader::class);
 		$reader->method('read')->willReturn($read);
+		$reader->method('idForYear')->willReturn($year);
 
 		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('now')->willReturn(new DateTimeImmutable('2026-11-24T10:00:00+01:00'));
@@ -123,4 +125,26 @@ class SupervisionPlanControllerTest extends TestCase {
 			$this->assertNotSame(expected: '', actual: $progress->getData()['error']);
 		}
 	}//end testRefusalsKeepTheReadersStatus()
+
+	/**
+	 * The plan of a year answers its figures; a year with no plan, or no year, is refused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	public function testTheFiguresOfAYear(): void {
+		$found = $this->controller(read: $this->found(), year: ['status' => 200, 'id' => 'plan-2026'])->progressForYear(year: '2026');
+		$this->assertSame(expected: Http::STATUS_OK, actual: $found->getStatus());
+		$this->assertSame(expected: 100, actual: $found->getData()['scheduled']);
+
+		$none = $this->controller(read: $this->found())->progressForYear(year: '2031');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $none->getStatus());
+
+		$down = $this->controller(read: $this->found(), year: ['status' => 503])->progressForYear(year: '2026');
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $down->getStatus());
+
+		$word = $this->controller(read: $this->found(), year: ['status' => 200, 'id' => 'plan-2026'])->progressForYear(year: 'next');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $word->getStatus());
+	}//end testTheFiguresOfAYear()
 }//end class
