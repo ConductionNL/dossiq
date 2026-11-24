@@ -27,6 +27,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\ScoringSheetInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IL10N;
@@ -57,6 +58,8 @@ use OCP\IL10N;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Reads the case, its submissions and formulas, and writes the evaluation.
  */
 class ScoringSheet implements ScoringSheetInterface {
+	use SearchesObjects;
+
 
 	/**
 	 * The case field that names the formula by its key.
@@ -331,24 +334,32 @@ class ScoringSheet implements ScoringSheetInterface {
 			return ['refusal' => $this->l10n->t('Your evaluation of this bid is no longer open, so its score cannot change.')];
 		}
 
-		$payload = [
-			'bid' => $submissionId,
-			'tender' => (string)($submission['tender'] ?? $caseId),
-			'evaluator' => $userId,
-			'criterionScores' => $scores,
-			'weightedTotal' => $total,
-			'state' => (string)($existing['state'] ?? 'submitted'),
-		];
-		$existingId = null;
 		if ($existing !== null) {
+			// Only the score changes: a partial write, so the evaluation's notes
+			// and attachments stay as they are.
 			$existingId = $this->value->idOf(row: $existing);
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: AppIdentity::REGISTER_SLUG,
+				schema: ScoringRecords::EVALUATION_SCHEMA,
+				id: $existingId,
+				changes: ['criterionScores' => $scores, 'weightedTotal' => $total]
+			);
+
+			return ['id' => $existingId];
 		}
 
 		$saved = $objectService->saveObject(
-			object: $payload,
+			object: [
+				'bid' => $submissionId,
+				'tender' => (string)($submission['tender'] ?? $caseId),
+				'evaluator' => $userId,
+				'criterionScores' => $scores,
+				'weightedTotal' => $total,
+				'state' => 'submitted',
+			],
 			options: new ObjectSaveOptions(
-				target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: ScoringRecords::EVALUATION_SCHEMA),
-				uuid: $existingId
+				target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: ScoringRecords::EVALUATION_SCHEMA)
 			)
 		);
 
