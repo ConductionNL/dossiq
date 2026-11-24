@@ -2,7 +2,7 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Dossiq",
-        "version": "0.4.61-unstable.20261123071813",
+        "version": "0.4.62-unstable.20261124024405",
         "description": "The JSON API of Dossiq, the case management app for Nextcloud: cases and their tasks, deadlines, decisions, documents, mandates, work queues, intake and the settings behind them. The case objects themselves are stored in OpenRegister and read and written through its API; this document covers the endpoints Dossiq adds on top.\n\nEvery path is served under `/api/v1/`, the version this document describes. The unversioned `/api/` paths keep working, are deprecated, and name their `/api/v1/` successor in a `Link` header next to a `Deprecation` header. Errors are RFC 9457 problem details (`application/problem+json`), and every response carries an `API-Version` header. Paths that implement an external standard keep the formats of that standard and are not described here.",
         "contact": {
             "name": "Conduction B.V.",
@@ -773,6 +773,112 @@
         }
     ],
     "paths": {
+        "/supervision-plans/{id}/progress": {
+            "get": {
+                "operationId": "supervision-plan-progress",
+                "summary": "Read a supervision plan's progress",
+                "description": "Scheduled, completed, cancelled and remaining inspections in total, per category and per quarter, with capacity and demand in hours. Completed and cancelled are counted from the field inspections naming a category, read in the caller's own scope. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The supervisionPlan UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
+        "/supervision-plans/{id}/schedule-proposal": {
+            "get": {
+                "operationId": "supervision-plan-schedule-proposal",
+                "summary": "Propose a supervision plan's schedule",
+                "description": "Proposed inspection dates per category from the frequency per risk profile and the capacity, on working days, highest risk first. Nothing is written (`written` is false); the supervisor accepts a proposal before anything is planned. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The supervisionPlan UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "description": "The first day a date may fall on (Y-m-d); today when absent.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
         "/access-links/case/{caseId}": {
             "get": {
                 "operationId": "case-access-link-index",

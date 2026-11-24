@@ -274,6 +274,9 @@ class SchemaSlugMap {
 		// as "not configured on this instance", which is silence.
 		'fieldInspection' => 'field_inspection_schema',
 		'fieldEvidence' => 'field_evidence_schema',
+		// A year's supervision plan and its categories (supervision-plan-page).
+		'supervisionPlan' => 'supervision_plan_schema',
+		'supervisionPlanCategory' => 'supervision_plan_category_schema',
 	];
 
 	/**
