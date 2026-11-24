@@ -7,8 +7,8 @@
  * The labels are looked up by the formatters the first time a cell asks, and a
  * cell asks only once the list's rows have arrived: a second request wave on
  * every visit to Cases. Starting the lookups when the Cases route is entered
- * (and once the stores are up, for a first load that lands on Cases) sends
- * them beside the list request.
+ * (and once the object types are registered, for a first load that lands on
+ * Cases) sends them beside the list request.
  *
  * @module services/relatedLabelPrime
  * @spec openspec/specs/case-management/spec.md
@@ -43,15 +43,21 @@ export function primeForRoute(route, prime = primeRelatedLabels) {
 }
 
 /**
- * Start the label lookups on every navigation to the case list.
+ * Start the label lookups on every navigation to the case list, and once the
+ * object types are registered: a first load that lands on Cases navigates
+ * before then, when no lookup can start yet.
  *
  * @spec openspec/specs/case-management/spec.md
  * @param {object} router The app's router.
+ * @param {Promise<void>} ready Settles once the object types are registered.
  * @param {function(): Array<string>} [prime] The lookup starter, for tests.
- * @return {void}
+ * @return {Promise<Array<string>>} The types the ready-time prime started.
  */
-export function installRelatedLabelPrime(router, prime = primeRelatedLabels) {
+export function installRelatedLabelPrime(router, ready, prime = primeRelatedLabels) {
 	router.afterEach((to) => {
 		primeForRoute(to, prime)
 	})
+	return Promise.resolve(ready)
+		.then(() => primeForRoute(router.currentRoute && router.currentRoute.value, prime))
+		.catch(() => [])
 }

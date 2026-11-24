@@ -41,6 +41,7 @@ import mapFormatters from './services/mapFormatters.js'
 import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { installRelatedLabelPrime } from './services/relatedLabelPrime.js'
 import { useObjectStore } from './store/modules/object.js'
+import { storesReady } from './store/store.js'
 import { withConfigLabels } from './utils/configLabels.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
 import { DOSSIQ_FIELD_INSPECTION_CONFIG } from './utils/fieldInspectionConfig.js'
@@ -332,7 +333,7 @@ installCaseLiveUpdates(router, () => useObjectStore())
 // The files browser's actions load on an object's page only. See `services/filesSurfaces.js`.
 installFilesSurfaces(router)
 // The case list's type and status labels load beside the list. See `services/relatedLabelPrime.js`.
-installRelatedLabelPrime(router)
+installRelatedLabelPrime(router, storesReady)
 // The team the team queue opens on (@myTeam). Read through the namespace so
 // a library without the hook does not stop the app from starting.
 installMyTeamSource(ncVue.registerMyTeamSource)

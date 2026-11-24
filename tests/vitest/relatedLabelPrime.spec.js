@@ -66,13 +66,23 @@ describe('relatedLabelPrime', () => {
 		expect(primeForRoute({ name: 'Cases' }, prime)).toEqual(['caseType'])
 	})
 
-	it('primes on every navigation to the case list', () => {
+	it('primes on every navigation to the case list', async () => {
 		let hook = null
-		const router = { afterEach: (fn) => { hook = fn } }
+		const router = { afterEach: (fn) => { hook = fn }, currentRoute: { value: { name: 'Dashboard' } } }
 		const prime = vi.fn(() => [])
-		installRelatedLabelPrime(router, prime)
+		await installRelatedLabelPrime(router, Promise.resolve(), prime)
 		hook({ name: 'CaseDetail' })
 		hook({ name: 'Cases' })
 		expect(prime).toHaveBeenCalledTimes(1)
+	})
+
+	it('primes a first load on the case list once the object types are registered', async () => {
+		let ready = null
+		const router = { afterEach: () => {}, currentRoute: { value: { name: 'Cases' } } }
+		const prime = vi.fn(() => ['caseType', 'statusType'])
+		const done = installRelatedLabelPrime(router, new Promise((resolve) => { ready = resolve }), prime)
+		expect(prime).not.toHaveBeenCalled()
+		ready()
+		await expect(done).resolves.toEqual(['caseType', 'statusType'])
 	})
 })

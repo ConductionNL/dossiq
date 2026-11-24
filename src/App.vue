@@ -79,7 +79,6 @@ import { loadState } from '@nextcloud/initial-state'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import UserSettings from './views/settings/UserSettings.vue'
-import { primeForRoute } from './services/relatedLabelPrime.js'
 import { initializeStores } from './store/store.js'
 import { notificationLabels } from './utils/notificationLabels.js'
 import { supportDialogForThisLoad } from './utils/onboardingOrder.js'
@@ -271,18 +270,12 @@ export default {
 		},
 	},
 
-	/**
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
-	 * @spec openspec/specs/case-management/spec.md
-	 */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	async created() {
 		// Pinia stores still need to come up so legacy custom components
 		// keep working through the manifest transition. CnAppRoot itself
 		// doesn't depend on them.
 		await initializeStores()
-		// A first load that lands on Cases navigated before the object types
-		// were registered, so the route hook could not start the label lookups.
-		primeForRoute(this.$route)
 	},
 
 	mounted() {

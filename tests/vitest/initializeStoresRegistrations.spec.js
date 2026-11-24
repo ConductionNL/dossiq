@@ -21,7 +21,7 @@ vi.mock('../../src/store/modules/object.js', () => ({
 	}),
 }))
 
-const { initializeStores } = await import('../../src/store/store.js')
+const { initializeStores, storesReady } = await import('../../src/store/store.js')
 
 const FULL = {
 	register: 'r1',
@@ -109,5 +109,18 @@ describe('initializeStores registrations', () => {
 		expect(registered).toEqual([])
 		expect(stores.settingsStore).toBeDefined()
 		expect(stores.objectStore).toBeDefined()
+	})
+})
+
+describe('storesReady', () => {
+	it('settles once initializeStores has registered the object types', async () => {
+		let settled = false
+		storesReady.then(() => { settled = true })
+		await Promise.resolve()
+		settings = FULL
+		await initializeStores()
+		await storesReady
+		expect(settled).toBe(true)
+		expect(registered.length).toBeGreaterThan(0)
 	})
 })
