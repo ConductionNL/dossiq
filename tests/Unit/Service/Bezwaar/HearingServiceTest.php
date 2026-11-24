@@ -223,35 +223,35 @@ class HearingServiceTest extends TestCase {
 	 */
 	public function testALateCorrectionIsRecordedBeforeThePatchAndAFailedPatchLeavesANotAppliedRow(): void {
 		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
-		$yesterday = (new DateTimeImmutable('-1 day'))->format(DateTimeInterface::ATOM);
+		$yesterday = (new DateTimeImmutable(datetime: '-1 day'))->format(format: DateTimeInterface::ATOM);
 		$entry = ['invitee' => 'person-1', 'present' => true, 'correctionReason' => 'Niet geregistreerd'];
 
 		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'scheduledDate' => $yesterday, 'attendance' => []]);
 		$updated = $service->recordAttendance(sessionId: 'session-1', entries: [$entry]);
-		$this->assertSame(['dossiq.bezwaar.attendance-late-correction'], $this->trail->actionsOn('session-1'));
-		$this->assertCount(1, $updated['attendance']);
-		$this->assertArrayHasKey('attendanceFrozenAt', $this->store->row('hearingSession', 'session-1'));
+		$this->assertSame(expected: ['dossiq.bezwaar.attendance-late-correction'], actual: $this->trail->actionsOn('session-1'));
+		$this->assertCount(expectedCount: 1, haystack: $updated['attendance']);
+		$this->assertArrayHasKey(key: 'attendanceFrozenAt', array: $this->store->row('hearingSession', 'session-1'));
 
 		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1', 'scheduledDate' => $yesterday, 'attendance' => []]);
 		$this->store->refuseSaves = true;
 		try {
 			$service->recordAttendance(sessionId: 'session-2', entries: [$entry]);
-			$this->fail('a failed patch must raise');
+			$this->fail(message: 'a failed patch must raise');
 		} catch (RuntimeException $failed) {
-			$this->assertSame('Could not record attendance', $failed->getMessage());
+			$this->assertSame(expected: 'Could not record attendance', actual: $failed->getMessage());
 		}
 
 		$this->assertSame(
-			[
+			expected: [
 				'dossiq.bezwaar.attendance-late-correction',
 				'dossiq.bezwaar.attendance-late-correction-not-applied',
 			],
-			$this->trail->actionsOn('session-2')
+			actual: $this->trail->actionsOn('session-2')
 		);
 		$context = $this->rowContext(uuid: 'session-2', action: 'dossiq.bezwaar.attendance-late-correction-not-applied');
-		$this->assertSame('awb-art-7:7', $context['tag']);
-		$this->assertArrayHasKey('error', $context['payload']);
-		$this->assertSame([], $this->store->row('hearingSession', 'session-2')['attendance']);
+		$this->assertSame(expected: 'awb-art-7:7', actual: $context['tag']);
+		$this->assertArrayHasKey(key: 'error', array: $context['payload']);
+		$this->assertSame(expected: [], actual: $this->store->row('hearingSession', 'session-2')['attendance']);
 	}
 
 	/**
@@ -262,12 +262,14 @@ class HearingServiceTest extends TestCase {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function testAttendanceInsideTheGraceWindowWritesNoEntry(): void {
-		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'scheduledDate' => (new DateTimeImmutable('+1 day'))->format(DateTimeInterface::ATOM), 'attendance' => [['invitee' => 'person-0']]]);
+		$tomorrow = (new DateTimeImmutable(datetime: '+1 day'))->format(format: DateTimeInterface::ATOM);
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'scheduledDate' => $tomorrow, 'attendance' => [['invitee' => 'person-0']]]);
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
 
-		$updated = $this->realHearingService(trail: $this->bezwaarAuditTrail())->recordAttendance(sessionId: 'session-1', entries: [['invitee' => 'person-1', 'present' => true]]);
+		$updated = $service->recordAttendance(sessionId: 'session-1', entries: [['invitee' => 'person-1', 'present' => true]]);
 
-		$this->assertSame([], $this->trail->actionsOn('session-1'));
-		$this->assertSame([['invitee' => 'person-0'], ['invitee' => 'person-1', 'present' => true]], $updated['attendance']);
+		$this->assertSame(expected: [], actual: $this->trail->actionsOn('session-1'));
+		$this->assertSame(expected: [['invitee' => 'person-0'], ['invitee' => 'person-1', 'present' => true]], actual: $updated['attendance']);
 	}
 
 	/**

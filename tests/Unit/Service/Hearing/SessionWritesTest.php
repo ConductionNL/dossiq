@@ -43,6 +43,11 @@ use RuntimeException;
 class SessionWritesTest extends TestCase {
 	use MakesBezwaarAuditTrail;
 
+	/**
+	 * Start an empty store and trail.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 		$this->startBezwaarStore();
@@ -55,7 +60,7 @@ class SessionWritesTest extends TestCase {
 	 */
 	private function writes(): array {
 		return [
-			new SessionWrites(auditTrail: $this->bezwaarAuditTrail(), logger: $this->createMock(LoggerInterface::class)),
+			new SessionWrites(auditTrail: $this->bezwaarAuditTrail(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			new SessionStore(objectService: $this->store, register: 'dossiq', schema: 'hearingSession'),
 		];
 	}
@@ -78,11 +83,11 @@ class SessionWritesTest extends TestCase {
 		$updated = $writes->attendance(store: $store, patch: $patch);
 
 		$this->assertSame(
-			['dossiq.bezwaar.attendance-late-correction', 'dossiq.bezwaar.attendance-late-correction'],
-			$this->trail->actionsOn('session-1')
+			expected: ['dossiq.bezwaar.attendance-late-correction', 'dossiq.bezwaar.attendance-late-correction'],
+			actual: $this->trail->actionsOn('session-1')
 		);
-		$this->assertCount(2, $updated['attendance']);
-		$this->assertCount(2, $this->store->row('hearingSession', 'session-1')['attendance']);
+		$this->assertCount(expectedCount: 2, haystack: $updated['attendance']);
+		$this->assertCount(expectedCount: 2, haystack: $this->store->row('hearingSession', 'session-1')['attendance']);
 	}
 
 	/**
@@ -103,21 +108,21 @@ class SessionWritesTest extends TestCase {
 
 		try {
 			$writes->attendance(store: $store, patch: $patch);
-			$this->fail('a failed patch must raise');
+			$this->fail(message: 'a failed patch must raise');
 		} catch (RuntimeException $failed) {
-			$this->assertSame('Could not record attendance', $failed->getMessage());
+			$this->assertSame(expected: 'Could not record attendance', actual: $failed->getMessage());
 		}
 
 		$this->assertSame(
-			[
+			expected: [
 				'dossiq.bezwaar.attendance-late-correction',
 				'dossiq.bezwaar.attendance-late-correction',
 				'dossiq.bezwaar.attendance-late-correction-not-applied',
 				'dossiq.bezwaar.attendance-late-correction-not-applied',
 			],
-			$this->trail->actionsOn('session-1')
+			actual: $this->trail->actionsOn('session-1')
 		);
-		$this->assertSame([], $this->store->row('hearingSession', 'session-1')['attendance']);
+		$this->assertSame(expected: [], actual: $this->store->row('hearingSession', 'session-1')['attendance']);
 	}
 
 	/**
@@ -136,18 +141,26 @@ class SessionWritesTest extends TestCase {
 		);
 
 		$updated = $writes->minutes(store: $store, patch: $patch);
-		$this->assertSame('Verslag', $updated['minutesSummary']);
-		$this->assertSame(['dossiq.bezwaar.verslag-recorded'], $this->trail->actionsOn('session-1'));
+		$this->assertSame(expected: 'Verslag', actual: $updated['minutesSummary']);
+		$this->assertSame(expected: ['dossiq.bezwaar.verslag-recorded'], actual: $this->trail->actionsOn('session-1'));
 
 		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1']);
 		$this->trail->failsAll = true;
 		try {
-			$writes->minutes(store: $store, patch: new SessionPatch(sessionId: 'session-2', current: ['case' => 'case-1'], update: ['minutesSummary' => 'Verslag'], entries: [['hasSummary' => true]]));
-			$this->fail('minutes without their entry must be refused');
+			$writes->minutes(
+				store: $store,
+				patch: new SessionPatch(
+					sessionId: 'session-2',
+					current: ['case' => 'case-1'],
+					update: ['minutesSummary' => 'Verslag'],
+					entries: [['hasSummary' => true]],
+				),
+			);
+			$this->fail(message: 'minutes without their entry must be refused');
 		} catch (RuntimeException $refused) {
-			$this->assertSame('Could not add minutes', $refused->getMessage());
+			$this->assertSame(expected: 'Could not add minutes', actual: $refused->getMessage());
 		}
 
-		$this->assertArrayNotHasKey('minutesSummary', $this->store->row('hearingSession', 'session-2'));
+		$this->assertArrayNotHasKey(key: 'minutesSummary', array: $this->store->row('hearingSession', 'session-2'));
 	}
 }
