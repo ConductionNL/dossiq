@@ -43,7 +43,7 @@ use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Listener\Support\TermPauseFollowUp;
 use OCA\Dossiq\Listener\Support\TermRungActions;
 use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -110,10 +110,7 @@ class TermijnTimerFiredListener implements IEventListener {
 			termService: $termService,
 			escalationService: $escalationService,
 			logger: $logger,
-			aanvullingen: $aanvullingen,
-			chases: $chases,
-			pauses: $pauses,
-			cases: $cases
+			followUp: new TermPauseFollowUp(aanvullingen: $aanvullingen, chases: $chases, pauses: $pauses, cases: $cases)
 		);
 	}//end __construct()
 
@@ -158,7 +155,7 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function dispatch(FlowTimerFiredEvent $event): void {
-		$metadata = $this->termijnMetadata(event: $event);
+		$metadata = $this->actions->termMetadata(event: $event);
 		if ($metadata === null) {
 			return;
 		}
@@ -180,25 +177,6 @@ class TermijnTimerFiredListener implements IEventListener {
 			metadata: $metadata
 		);
 	}//end dispatch()
-
-	/**
-	 * The metadata of a fire from a dossiq term timer, or null for any other timer.
-	 *
-	 * @param FlowTimerFiredEvent $event The fire.
-	 *
-	 * @return array<string, mixed>|null The timer metadata.
-	 */
-	private function termijnMetadata(FlowTimerFiredEvent $event): ?array {
-		$timer = $event->getTimer();
-		$metadata = ($timer->getMetadata() ?? []);
-		if ((string)$timer->getAppId() !== 'dossiq'
-			|| (string)($metadata['source'] ?? '') !== TermijnTimerServiceInterface::METADATA_SOURCE
-		) {
-			return null;
-		}
-
-		return $metadata;
-	}//end termijnMetadata()
 
 	/**
 	 * The TermijnInstance a fire names, warning when it is unknown.

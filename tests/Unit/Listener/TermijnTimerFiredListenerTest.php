@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Listener\Support\TimerFire
  * @uses \OCA\Dossiq\Listener\Support\TermRungActions
+ * @uses \OCA\Dossiq\Listener\Support\TermPauseFollowUp
  * @uses \OCA\Dossiq\Service\DeadlinePauseService
  * @uses \OCA\Dossiq\Service\Term\DayCount
  */

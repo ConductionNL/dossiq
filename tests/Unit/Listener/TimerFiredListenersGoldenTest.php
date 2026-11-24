@@ -50,6 +50,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
  * @uses \OCA\Dossiq\Listener\Support\TimerFire
  * @uses \OCA\Dossiq\Listener\Support\TermRungActions
+ * @uses \OCA\Dossiq\Listener\Support\TermPauseFollowUp
  *
  * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */

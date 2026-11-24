@@ -1422,23 +1422,25 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own tests: `tests/Unit/Repair/Support/DefaultTestConsumersTest` (2: the frozen defaults, create and update) and
         `DefaultNotificationChannelsTest` (3: the five channels, readiness with its two skip lines, the report).
   - [x] 8bu `Listener/TermijnTimerFiredListener` (1: CouplingBetweenObjects 14 against 13). What a rung of a known term
-        does is its own concern, so it moved to the new `Listener/Support/TermRungActions`: the rung routed by the
-        kind of term its timer carries (`route()`, was `routeRung()`, now building the `TermijnRungFire` itself), the
-        beslistermijn breach flip and threshold bookkeeping (`handleBeslistermijnRung()` with `bucketFromRungKey()`),
-        and the hersteltermijn reminder or expired pause (`handleHersteltermijnRung()`, `isChaseRung()`,
-        `handleChase()`, `handlePauseExpiry()`, `expireRequest()`, `resumeExpired()`, `noticeFor()`). Bodies moved
-        unchanged. The listener keeps which fire is a dossiq term's, the instance lookup and the run under the
-        background service account; it no longer names `TermijnRungFire` or `\Throwable`, so its coupling goes from 14
-        to 13 (moving only the pause expiry left it at 14). The listener builds the actions in its constructor, so its
-        constructor signature and the container are unchanged. Coupling 13 and 10, complexity 14 and 31 (pdepend);
-        phpmd: no CouplingBetweenObjects finding with the suppression gone, and no new finding on either file under
-        both rulesets (the StaticAccess on `TimerFire` in `handle()` was there before). `@SuppressWarnings(PHPMD.*)`
-        lines in `lib/` 192 to 191.
+        does is its own concern, so it moved to the new `Listener/Support/TermRungActions`: whether a fire is a dossiq
+        term timer's (`termMetadata()`, was `termijnMetadata()`), the rung routed by the kind of term its timer carries
+        (`route()`, was `routeRung()`, now building the `TermijnRungFire` itself), the beslistermijn breach flip and
+        threshold bookkeeping (`handleBeslistermijnRung()` with `bucketFromRungKey()`), and the hersteltermijn reminder
+        or expired pause (`handleHersteltermijnRung()`, `isChaseRung()`, `handleChase()`, `handlePauseExpiry()`,
+        `expireRequest()`, `resumeExpired()`, `noticeFor()`). Bodies moved unchanged. The four optional collaborators of
+        a suspended term travel as one value, `Listener/Support/TermPauseFollowUp`, so the new constructor takes four
+        parameters (gate-122). The listener keeps the instance lookup and the run under the background service
+        account; it no longer names `TermijnRungFire`, `TermijnTimerServiceInterface` or `\Throwable`, so its coupling
+        goes from 14 to 13 (moving only the pause expiry left it at 14). The listener builds the actions in its
+        constructor, so its constructor signature and the container are unchanged. Coupling 13, 8 and 4, complexity
+        11, 34 and 1 (pdepend); phpmd: no CouplingBetweenObjects finding with the suppression gone, and no new finding
+        on the three files under both rulesets (the StaticAccess on `TimerFire` in `handle()` was there before).
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 192 to 191.
         Characterisation: the existing `TermijnTimerFiredListenerTest`, `TermijnTimerFiredListenerEdgesTest`,
         `TermijnTimerFiredListenerServiceAccountTest`, `TimerFiredListenersGoldenTest` and
         `DeadlineMonitoringEndToEndTest` (62: the breach flip, the thresholds, the reminder, the expired pause with its
-        failing request, the unknown instance, the unreadable key), green before and unchanged after but for one
-        `@uses` line in three.
-        Own test: `tests/Unit/Listener/Support/TermRungActionsTest` (4: the breach on the fresh row, a bucket only for
-        a running term and a readable key, the reminder and the resumed term left alone, the expired pause resumed with
-        its handler and a failing resume logged).
+        failing request, the unknown instance, the unreadable key), green before and unchanged after but for two
+        `@uses` lines in three.
+        Own test: `tests/Unit/Listener/Support/TermRungActionsTest` (5: only a dossiq term timer carries term
+        metadata, the breach on the fresh row, a bucket only for a running term and a readable key, the reminder and
+        the resumed term left alone, the expired pause resumed with its handler and a failing resume logged).

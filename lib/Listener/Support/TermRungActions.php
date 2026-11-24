@@ -32,14 +32,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Support;
 
-use OCA\Dossiq\Kernel\Contracts\AanvullingsverzoekResolutionServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlineEscalationServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Listener\TermijnRungFire;
+use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -62,15 +59,8 @@ final class TermRungActions {
 	 * @param TermijnServiceInterface $termService Instance lookup, updates and events.
 	 * @param DeadlineEscalationServiceInterface $escalationService Threshold bookkeeping and dispatch.
 	 * @param LoggerInterface $logger Logger.
-	 * @param AanvullingsverzoekResolutionServiceInterface|null $aanvullingen The request
-	 *        the hersteltermijn belonged to. Optional: without it only the term is handled.
-	 * @param PauseChaseServiceInterface|null $chases The reminders on a suspended term.
-	 *        Optional: without it a reminder rung sends nothing.
-	 * @param DeadlinePauseServiceInterface|null $pauses Resumes a term whose pause ran out
-	 *        (REQ-TERM-080). Optional: without it the expiry is recorded and the term stays paused.
-	 * @param CaseObjectReaderInterface|null $cases Reads the case behind the term, for the
-	 *        handler the resume is told to and the title it names. Optional: without it the
-	 *        term still resumes, and nobody is told.
+	 * @param TermPauseFollowUp $followUp The optional collaborators of a suspended term: the
+	 *        request behind it, its reminders, its resume and the case it belongs to.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
@@ -78,12 +68,30 @@ final class TermRungActions {
 		private readonly TermijnServiceInterface $termService,
 		private readonly DeadlineEscalationServiceInterface $escalationService,
 		private readonly LoggerInterface $logger,
-		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
-		private readonly ?PauseChaseServiceInterface $chases = null,
-		private readonly ?DeadlinePauseServiceInterface $pauses = null,
-		private readonly ?CaseObjectReaderInterface $cases = null,
+		private readonly TermPauseFollowUp $followUp,
 	) {
 	}//end __construct()
+
+	/**
+	 * The metadata of a fire from a dossiq term timer, or null for any other timer.
+	 *
+	 * @param FlowTimerFiredEvent $event The fire.
+	 *
+	 * @return array<string, mixed>|null The timer metadata.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function termMetadata(FlowTimerFiredEvent $event): ?array {
+		$timer = $event->getTimer();
+		$metadata = ($timer->getMetadata() ?? []);
+		if ((string)$timer->getAppId() !== 'dossiq'
+			|| (string)($metadata['source'] ?? '') !== TermijnTimerServiceInterface::METADATA_SOURCE
+		) {
+			return null;
+		}
+
+		return $metadata;
+	}//end termMetadata()
 
 	/**
 	 * Route a rung of a known term by the kind of term its timer carries.
@@ -201,7 +209,7 @@ final class TermRungActions {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function handleChase(array $instance): void {
-		$this->chases?->chaseIfDue(instance: $instance);
+		$this->followUp->chases?->chaseIfDue(instance: $instance);
 	}//end handleChase()
 
 	/**
@@ -260,12 +268,12 @@ final class TermRungActions {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function expireRequest(string $caseId, string $instanceId): void {
-		if ($this->aanvullingen === null || $caseId === '') {
+		if ($this->followUp->aanvullingen === null || $caseId === '') {
 			return;
 		}
 
 		try {
-			$this->aanvullingen->expireIfRunOut(caseId: $caseId);
+			$this->followUp->aanvullingen->expireIfRunOut(caseId: $caseId);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the aanvullingsverzoek behind an expired pause could not be marked expired',
@@ -292,12 +300,12 @@ final class TermRungActions {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function resumeExpired(string $caseId, string $instanceId): void {
-		if ($this->pauses === null) {
+		if ($this->followUp->pauses === null) {
 			return;
 		}
 
 		try {
-			$this->pauses->resumeAfterExpiry(termInstanceId: $instanceId, notice: $this->noticeFor(caseId: $caseId));
+			$this->followUp->pauses->resumeAfterExpiry(termInstanceId: $instanceId, notice: $this->noticeFor(caseId: $caseId));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq termijn: a term whose pause ran out could not be resumed',
@@ -319,8 +327,8 @@ final class TermRungActions {
 	 */
 	private function noticeFor(string $caseId): array {
 		$case = null;
-		if ($this->cases !== null && $caseId !== '') {
-			$case = $this->cases->fetchCaseById(caseUuid: $caseId);
+		if ($this->followUp->cases !== null && $caseId !== '') {
+			$case = $this->followUp->cases->fetchCaseById(caseUuid: $caseId);
 		}
 
 		if ($case === null) {

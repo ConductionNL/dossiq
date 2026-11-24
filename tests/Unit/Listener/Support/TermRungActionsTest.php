@@ -28,10 +28,15 @@ use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Listener\Support\TermPauseFollowUp;
 use OCA\Dossiq\Listener\Support\TermRungActions;
+use OCA\OpenRegister\Db\FlowTimer;
+use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use RuntimeException;
 
 /**
@@ -39,6 +44,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\Support\TermRungActions
  * @uses   \OCA\Dossiq\Listener\TermijnRungFire
+ * @uses   \OCA\Dossiq\Listener\Support\TermPauseFollowUp
  */
 class TermRungActionsTest extends TestCase {
 
@@ -173,6 +179,44 @@ class TermRungActionsTest extends TestCase {
 	}//end testAnExpiredPauseIsRecordedAndResumedAndAFailingResumeIsLogged()
 
 	/**
+	 * Only a dossiq timer from the term source carries term metadata.
+	 *
+	 * @return void
+	 */
+	public function testOnlyADossiqTermTimerCarriesTermMetadata(): void {
+		$actions = $this->actions();
+		$source = TermijnTimerServiceInterface::METADATA_SOURCE;
+
+		self::assertSame(
+			expected: ['source' => $source, 'termijnInstanceId' => 'ti-1'],
+			actual: $actions->termMetadata(event: self::fire(appId: 'dossiq', source: $source))
+		);
+		self::assertNull(actual: $actions->termMetadata(event: self::fire(appId: 'decidiq', source: $source)));
+		self::assertNull(actual: $actions->termMetadata(event: self::fire(appId: 'dossiq', source: 'dossiq-advice')));
+	}//end testOnlyADossiqTermTimerCarriesTermMetadata()
+
+	/**
+	 * A rung fire of a timer.
+	 *
+	 * @param string $appId  The app the timer belongs to.
+	 * @param string $source The metadata source.
+	 *
+	 * @return FlowTimerFiredEvent The fire.
+	 */
+	private static function fire(string $appId, string $source): FlowTimerFiredEvent {
+		$timer = new FlowTimer();
+		$timer->setUuid('timer-1');
+		$timer->setAppId($appId);
+		$timer->setMetadata(['source' => $source, 'termijnInstanceId' => 'ti-1']);
+
+		return new FlowTimerFiredEvent(
+			timer: $timer,
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:preBreach:7', rungKey: 'preBreach:7'),
+			notice: new EscalationNotice(recipients: [], priority: 'medium'),
+		);
+	}//end fire()
+
+	/**
 	 * The actions.
 	 *
 	 * @param PauseChaseServiceInterface|null    $chases The chase service.
@@ -190,9 +234,7 @@ class TermRungActionsTest extends TestCase {
 			termService: $this->terms,
 			escalationService: $this->escalation,
 			logger: $this->logger,
-			chases: $chases,
-			pauses: $pauses,
-			cases: $cases,
+			followUp: new TermPauseFollowUp(chases: $chases, pauses: $pauses, cases: $cases),
 		);
 	}//end actions()
 }//end class
