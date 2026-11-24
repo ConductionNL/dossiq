@@ -119,9 +119,6 @@ class CaseFileEditorController extends Controller {
 	 * @param IAppManager                 $appManager      Whether the office editor is there.
 	 * @param ContainerInterface          $container       Resolves OpenRegister's services.
 	 * @param LoggerInterface             $logger          Logger.
-	 * @param IShareManager               $shareManager    Accepts the share for the caller.
-	 *
-	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -134,7 +131,6 @@ class CaseFileEditorController extends Controller {
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly IShareManager $shareManager,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -282,10 +278,11 @@ class CaseFileEditorController extends Controller {
 	private function acceptShare(IUser $user, File $node): void {
 		$userId = $user->getUID();
 		try {
-			$shares = $this->shareManager->getSharesBy(userId: self::STORE_USER, shareType: IShare::TYPE_USER, path: $node, reshares: false, limit: -1);
+			$shareManager = $this->container->get(IShareManager::class);
+			$shares       = $shareManager->getSharesBy(userId: self::STORE_USER, shareType: IShare::TYPE_USER, path: $node, reshares: false, limit: -1);
 			foreach ($shares as $share) {
 				if ($share->getSharedWith() === $userId && $share->getStatus() !== IShare::STATUS_ACCEPTED) {
-					$this->shareManager->acceptShare(share: $share, recipientId: $userId);
+					$shareManager->acceptShare(share: $share, recipientId: $userId);
 				}
 			}
 		} catch (Throwable $e) {

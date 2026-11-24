@@ -88,6 +88,11 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 
 		private bool $officeEnabled = true;
 
+		/**
+		 * The share manager the controller resolves through the container.
+		 *
+		 * @var IShareManager
+		 */
 		private IShareManager $shareManager;
 
 		/**
@@ -114,7 +119,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 					$this->grants[] = $grant;
 				}
 			};
-			$this->shareManager = $this->createMock(IShareManager::class);
+			$this->shareManager = $this->createMock(originalClassName: IShareManager::class);
 			$this->shareManager->method('getSharesBy')->willReturn([]);
 			$this->restriction = new class {
 				public bool $readable = true;
@@ -151,7 +156,11 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 		private function controller(): CaseFileEditorController {
 			$container = $this->createMock(ContainerInterface::class);
 			$container->method('get')->willReturnCallback(
-				fn (string $id) => $id === CaseFileEditorController::SHARING_HANDLER ? $this->sharing : $this->restriction
+				fn (string $id) => match ($id) {
+					CaseFileEditorController::SHARING_HANDLER => $this->sharing,
+					IShareManager::class => $this->shareManager,
+					default => $this->restriction,
+				}
 			);
 			$urls = $this->createMock(IURLGenerator::class);
 			$urls->method('linkToRoute')->willReturnCallback(
@@ -171,7 +180,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 				appManager: $apps,
 				container: $container,
 				logger: $this->createMock(LoggerInterface::class),
-				shareManager: $this->shareManager,
 			);
 		}
 
