@@ -435,6 +435,8 @@ $extra = [
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
+    // The files browser's actions, fetched by the bundle on an object's page.
+    ['name' => 'dashboard#filesSurfaces', 'url' => '/files-surfaces',              'verb' => 'GET'],
 
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
@@ -751,6 +753,11 @@ $extra = [
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
         // The sync frame's conflict card keeps the device's text or the office's.
     ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
+        // A supervision plan's figures, counted from its inspections, and a
+        // proposed schedule that is shown before anything is planned
+        // (supervision-plan-page).
+    ['name' => 'supervisionPlan#progress',         'url' => '/api/supervision-plans/{id}/progress',          'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposal', 'url' => '/api/supervision-plans/{id}/schedule-proposal', 'verb' => 'GET'],
         // Per-case advice requests, on any case type.
     ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
