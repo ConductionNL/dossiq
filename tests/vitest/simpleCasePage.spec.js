@@ -817,9 +817,10 @@ describe('the header and the side column', () => {
 	it('adds the tabs of a case type domain only for that category, each over records linked to this case', () => {
 		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
 		const tabs = find(simple, 'case-panels').content.tabs
-		// Proposals is gated on waiting proposals, not on a case type domain.
+		// Proposals is gated on waiting proposals and Synced from on integriq's
+		// provenance, not on a case type domain.
 		// Investigation lists the case's own answer (investigationStepsTab.spec.js), not linked records.
-		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals' && tab.widgetId !== 'case-investigation-steps')
+		const gated = tabs.filter((tab) => tab.visibleWhen && !['case-change-proposals', 'case-synced-from-panel', 'case-investigation-steps'].includes(tab.widgetId))
 		expect(gated.map((tab) => tab.widgetId)).toEqual([
 			'case-objection-hearings',
 			'case-objection-advice',
