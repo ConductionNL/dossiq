@@ -253,7 +253,7 @@ test.describe('The Woo dossier shared with the requester', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#scenario-the-requester-answers-the-clarification-question
+	// @e2e openspec/specs/portal-contribution/spec.md#scenario-the-requester-answers-the-clarification-question
 	test('the requester answers the clarification question', async ({
 		request,
 	}) => {
@@ -304,7 +304,7 @@ test.describe('The Woo dossier shared with the requester', () => {
 		expect(String(theCase.termNote ?? '')).toMatch(PAUSED_NOTE)
 	})
 
-	// @e2e openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#scenario-a-paused-term-says-why-and-gives-no-date
+	// @e2e openspec/specs/portal-contribution/spec.md#scenario-a-paused-term-says-why-and-gives-no-date
 	test('a paused term says why', async ({ request }) => {
 		test.skip(wooCaseType === '', 'No published Woo case type on this instance')
 
@@ -324,7 +324,7 @@ test.describe('The Woo dossier shared with the requester', () => {
 		expect(theCase.waitingOnApplicant).toBe(true)
 	})
 
-	// @e2e openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#scenario-the-link-appears-after-publishing
+	// @e2e openspec/specs/portal-contribution/spec.md#scenario-the-link-appears-after-publishing
 	test('the link appears after publishing', async ({ request }) => {
 		test.skip(wooCaseType === '', 'No published Woo case type on this instance')
 

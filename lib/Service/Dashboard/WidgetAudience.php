@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCP\IGroupManager;
 /**
  * Reads a widget's declared groups and answers whether a user is in one of them.
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 class WidgetAudience {
 
@@ -58,7 +58,7 @@ class WidgetAudience {
 	 * @param SettingsServiceInterface $settings Reads the `widget_roles` setting.
 	 * @param IGroupManager            $groups   Answers group membership.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settings,
@@ -73,7 +73,7 @@ class WidgetAudience {
 	 *
 	 * @return list<string> The group ids; empty means everybody.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-001-a-contributed-case-widget-declares-the-roles-that-may-see-it
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-001-a-contributed-case-widget-declares-the-roles-that-may-see-it
 	 */
 	public function groupsFor(string $widgetId): array {
 		$configured = $this->decoded(json: $this->settings->getConfigValue(key: self::SETTING, default: ''));
@@ -89,7 +89,7 @@ class WidgetAudience {
 	 *
 	 * @return array<string, list<string>> Group ids by widget id.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
 	public function all(): array {
 		$audiences = [];
@@ -111,7 +111,7 @@ class WidgetAudience {
 	 *
 	 * @return array<string, list<string>> Every shipped widget with its groups after the save.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
 	public function save(array $audiences): array {
 		$configured = $this->decoded(json: $this->settings->getConfigValue(key: self::SETTING, default: ''));
@@ -141,7 +141,7 @@ class WidgetAudience {
 	 *
 	 * @return bool True when the user is in the audience.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function admits(string $widgetId, ?string $userId): bool {
 		$groups = $this->groupsFor(widgetId: $widgetId);

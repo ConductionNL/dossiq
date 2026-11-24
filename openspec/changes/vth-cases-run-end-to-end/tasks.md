@@ -19,7 +19,8 @@
 
 ## 4. Tests and checks
 
-- [ ] 4.1 `tests/e2e/package-admin-tab.spec.ts`: both scenarios of REQ-VAS-PKG-01.
+- [x] 4.1 `tests/e2e/package-admin-tab.spec.ts`: both scenarios of REQ-VAS-PKG-01.
+  - Written, runs in nightly (`tests/e2e/package-admin-tab.spec.ts`, #6685); not run here, the live pass owns it.
 - [ ] 4.2 Newman: forward and collaborate calls against the DSO mock in `tests/integration/packages/dso-intake.postman_collection.json`.
 - [ ] 4.3 Live pass against DqVthInstellingen, DqZaaktypen and DqInspectie.
 - [ ] 4.4 `openspec/parity/capabilities.json` row 11.56: built when 1 to 3 are live.

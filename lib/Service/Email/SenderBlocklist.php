@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -71,7 +71,7 @@ class SenderBlocklist implements SenderBlocklistInterface {
 	 *
 	 * @return array<int, string> The entries, lowercased.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function entries(): array {
 		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::BLOCKLIST_KEY, '');
@@ -90,7 +90,7 @@ class SenderBlocklist implements SenderBlocklistInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function replace(array $entries): void {
 		$cleaned = [];
@@ -123,7 +123,7 @@ class SenderBlocklist implements SenderBlocklistInterface {
 	 *
 	 * @return boolean True when the address is blocked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function blocks(string $email): bool {
 		$address = InboundMessage::addressIn(value: $email);
@@ -152,7 +152,7 @@ class SenderBlocklist implements SenderBlocklistInterface {
 	 *
 	 * @return boolean True when the address is on the allow half.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function allows(string $email): bool {
 		$address = InboundMessage::addressIn(value: $email);

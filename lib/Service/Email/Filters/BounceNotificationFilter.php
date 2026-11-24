@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCA\Dossiq\Service\Email\InboundMessage;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -68,7 +68,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function name(): string {
 		return self::NAME;
@@ -79,7 +79,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return integer The order.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function order(): int {
 		return 20;
@@ -92,7 +92,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return FilterVerdict Reject when it is, pass otherwise.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict {
 		$reason = ($this->headerReason(message: $message) ?? $this->senderReason(message: $message));
@@ -110,7 +110,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return string|null The reason, or null when the headers do not.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function headerReason(InboundMessage $message): ?string {
 		$contentType = strtolower($message->header(name: 'content-type'));
@@ -136,7 +136,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return bool True when it carries one.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function hasNullReturnPath(InboundMessage $message): bool {
 		// An empty Return-Path is the RFC 5321 null reverse-path, which exists
@@ -156,7 +156,7 @@ class BounceNotificationFilter implements InboundMailFilter {
 	 *
 	 * @return string|null The reason, or null when the sender is not a postmaster address.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function senderReason(InboundMessage $message): ?string {
 		$sender = $message->senderAddress();

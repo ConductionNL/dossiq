@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the surface reaches every
  *  part of the intake path by design; each collaborator knows only its own.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -138,7 +138,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse The entries, or 403 when the caller lacks the intake role.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $sender = '', string $outcome = ''): JSONResponse {
@@ -172,7 +172,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse The entry, 403 without the intake role, 404 when it is gone.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(string $entryId): JSONResponse {
@@ -195,7 +195,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse What the released message became.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function release(string $entryId): JSONResponse {
@@ -221,7 +221,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return string The outcome the intake answered.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function fileReleased(array $entry): string {
 		return $this->intake->fileOnCase(
@@ -242,7 +242,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function markReleased(string $entryId): void {
 		$this->log->amend(
@@ -267,7 +267,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse What the corrected message became.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function junk(string $entryId, bool $junk = false): JSONResponse {
@@ -310,7 +310,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse Whether it was sent.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function bounce(string $entryId, string $address = '', string $reason = ''): JSONResponse {
@@ -376,7 +376,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse Whether the mail server confirmed it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function move(string $entryId, string $target = '', string $note = ''): JSONResponse {
@@ -628,7 +628,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
 		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
@@ -641,7 +641,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, mixed>|JSONResponse The entry, or the 401, 403 or 404.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function workableEntry(string $entryId): array|JSONResponse {
 		$refusal = $this->requireIntakeRole();
@@ -671,7 +671,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The entry, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function entryOrNull(string $entryId): ?array {
 		try {
@@ -689,7 +689,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return string The uid, or '' when there is no session.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function callerId(): string {
 		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
@@ -702,7 +702,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return InboundMessage The message.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function messageOf(array $entry): InboundMessage {
 		$message = InboundMessage::fromRow(
@@ -733,7 +733,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, string> The results.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function resultsOf(array $entry): array {
 		return [

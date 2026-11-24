@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
@@ -98,7 +98,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return boolean True when a mail app is installed and answering.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->gateway->isAvailable();
@@ -116,7 +116,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return array<string, int> A count per outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function processBatch(array $rows, int $accountId, string $mailbox): array {
 		$counts = [];
@@ -150,7 +150,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function process(InboundMessage $message): string {
 		$verdict = $this->checks->pipeline->run(message: $message);
@@ -177,7 +177,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The refused outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function refuseByFilter(InboundMessage $message, FilterVerdict $verdict): string {
 		$this->log->record(
@@ -197,7 +197,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string|null The outcome, or null when the message goes on to be placed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function filterOutcome(ScreenedMessage $screened): ?string {
 		if ($screened->verdict->outcome === FilterOutcome::QUARANTINE) {
@@ -218,7 +218,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The quarantined outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function quarantineByFilter(ScreenedMessage $screened): string {
 		$this->log->record(
@@ -238,7 +238,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The inbox outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function inboxForward(ScreenedMessage $screened): string {
 		// A filter that wants a message sent on says so, and the act itself
@@ -263,7 +263,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function place(ScreenedMessage $screened): string {
 		$caseId = $this->matchedCaseId(message: $screened->message, results: $screened->results);
@@ -288,7 +288,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The policy outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function policyFor(string $caseId, array $results): string {
 		$caseTypeId = $this->filing->unmatched->fallbackCaseTypeId();
@@ -310,7 +310,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The refused outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function refuseByPolicy(ScreenedMessage $screened, string $caseId): string {
 		$this->log->record(
@@ -332,7 +332,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The quarantined outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function quarantineByPolicy(ScreenedMessage $screened, string $caseId): string {
 		$this->log->record(
@@ -357,7 +357,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function fileOnCase(
 		InboundMessage $message,
@@ -406,7 +406,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return array{0: string, 1: string} The case id ('' for none) and the reason.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function caseAndReason(InboundMessage $message, string $caseId): array {
 		$onCase = $caseId;
@@ -429,7 +429,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The inbox outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function parkInInbox(ScreenedMessage $screened): string {
 		// 🔴 THE ONE BRANCH THAT USED TO BE A SILENT `continue`. A message
@@ -454,7 +454,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function archiveOnCase(InboundMessage $message, string $onCase): void {
 		try {
@@ -480,7 +480,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The case id, or '' when there is none or it is not allowed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function matchedCaseId(InboundMessage $message, array $results): string {
 		$identifier = $this->identifierFromSubject(subject: $message->subject);
@@ -516,7 +516,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The identifier, or '' when there is no tag.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function identifierFromSubject(string $subject): string {
 		if (preg_match(self::CASE_NUMBER_PATTERN, $subject, $matches) !== 1) {
@@ -539,7 +539,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return InboundMessage The message.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function hydrate(array $row, int $accountId, string $mailbox): InboundMessage {
 		$message = InboundMessage::fromRow(row: $row, accountId: $accountId, mailbox: $mailbox);
@@ -558,7 +558,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	 *
 	 * @return string The case type id, or ''.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function caseTypeOf(string $caseId): string {
 		try {

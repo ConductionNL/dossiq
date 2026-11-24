@@ -86,7 +86,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget,
 	 *
 	 * @return bool True when the widget is offered to this user.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function isEnabled(): bool {
 		return $this->audience->admits(widgetId: $this->getId(), userId: $this->userSession->getUser()?->getUID());
@@ -183,7 +183,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget,
 	 * @return WidgetItems The items.
 	 *
 	 * @spec openspec/specs/dashboard/spec.md
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
 		// The interface passes a cursor and a limit; the summary has at most two rows.

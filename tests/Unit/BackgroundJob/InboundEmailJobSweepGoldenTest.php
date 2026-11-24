@@ -13,7 +13,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
  * @uses \OCA\Dossiq\BackgroundJob\MailIntakeSource
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class InboundEmailJobSweepGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

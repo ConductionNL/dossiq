@@ -147,7 +147,7 @@ class EmailSettingsController extends Controller {
 	 *
 	 * @return JSONResponse The accounts, or an empty list when Mail is absent.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
