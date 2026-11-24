@@ -107,6 +107,33 @@ class SupervisionPlanController extends Controller {
 	}//end progress()
 
 	/**
+	 * The figures of the plan for a year, so the plan page opens on its year.
+	 *
+	 * @param string $year The plan year, four digits.
+	 *
+	 * @no-admin-idor-exempt The plan is looked up by year in the caller's own OpenRegister scope (RBAC and multitenancy
+	 *                        on), so a plan the caller may not read answers 404, and its figures are read as progress()
+	 *                        reads them. It writes nothing.
+	 *
+	 * @return JSONResponse The figures, or the refusal.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	#[NoAdminRequired]
+	public function progressForYear(string $year): JSONResponse {
+		if (preg_match('/^\d{4}$/', $year) !== 1) {
+			return $this->refused(status: SupervisionPlanReader::NOT_FOUND);
+		}
+
+		$found = $this->reader->idForYear(year: (int)$year);
+		if ($found['status'] !== SupervisionPlanReader::FOUND) {
+			return $this->refused(status: $found['status']);
+		}
+
+		return $this->progress(id: (string)($found['id'] ?? ''));
+	}//end progressForYear()
+
+	/**
 	 * A proposed schedule for the plan; nothing is planned.
 	 *
 	 * The optional `from` (Y-m-d) is the first day a date may fall on; today

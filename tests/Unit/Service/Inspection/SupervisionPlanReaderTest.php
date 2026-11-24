@@ -80,6 +80,18 @@ class SupervisionPlanReaderTest extends TestCase {
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters=[], mixed ...$scope): array {
 				$this->calls[] = ['search', $schema, $filters, $scope];
+				if ($schema === 'supervisionPlan') {
+					if ($this->broken === true) {
+						throw new RuntimeException('down');
+					}
+
+					if (($filters['year'] ?? null) !== 2026) {
+						return [];
+					}
+
+					return [['id' => 'stale', 'year' => 2025], ['year' => 2026], ['@self' => ['id' => 'plan-2026'], 'year' => 2026]];
+				}
+
 				if ($schema === 'supervisionPlanCategory') {
 					return [['id' => 'hos', 'name' => 'Hospitality'], ['@self' => ['id' => 'con'], 'name' => 'Construction'], ['name' => 'No id']];
 				}
@@ -177,4 +189,21 @@ class SupervisionPlanReaderTest extends TestCase {
 		$broken = $this->reader(objectService: $this->objectService(broken: true));
 		$this->assertSame(expected: ['status' => 500], actual: $broken->read(id: 'plan-2026', withInspections: true));
 	}//end testRefusals()
+
+	/**
+	 * A plan is found by its year in the reader's scope; another year, or none, is refused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	public function testThePlanOfAYear(): void {
+		$objects = $this->objectService();
+		$this->assertSame(expected: ['status' => 200, 'id' => 'plan-2026'], actual: $this->reader(objectService: $objects)->idForYear(year: 2026));
+		$this->assertSame(expected: [['search', 'supervisionPlan', ['year' => 2026], []]], actual: $objects->calls);
+
+		$this->assertSame(expected: ['status' => 404], actual: $this->reader(objectService: $this->objectService())->idForYear(year: 2031));
+		$this->assertSame(expected: ['status' => 503], actual: $this->reader(objectService: null)->idForYear(year: 2026));
+		$this->assertSame(expected: ['status' => 500], actual: $this->reader(objectService: $this->objectService(broken: true))->idForYear(year: 2026));
+	}//end testThePlanOfAYear()
 }//end class
