@@ -6844,8 +6844,8 @@
       "type": "library",
       "name": "compiler-sfc",
       "group": "@vue",
-      "version": "3.5.45",
-      "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.45",
+      "version": "3.5.46",
+      "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.46",
       "licenses": [
         {
           "license": {
@@ -6853,15 +6853,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40vue/compiler-sfc@3.5.45",
+      "purl": "pkg:npm/%40vue/compiler-sfc@3.5.46",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.45.tgz",
+          "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.46.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "30a1636f6517d0cfe5fe385fcea30bac8f15338a5fbc5286de9a8566449914744bb4d95dfcee11b543d91564b086ba3fd78a8ff3c5101245b31f1019010d2db3"
+              "content": "86352f3311a1f902207a0c24b1fa7a05105895e13f6bcbde647bd347ab1afa8f9b3381d4f969eb5199613745fea4372c97c2e1c266eeef6c4fbcb324dd7530a2"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6871,6 +6871,144 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@vue/compiler-sfc"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "compiler-core",
+          "group": "@vue",
+          "version": "3.5.46",
+          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.46|@vue/compiler-core@3.5.46",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40vue/compiler-core@3.5.46",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@vue/compiler-core/-/compiler-core-3.5.46.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "c9bf8df3f9a005ca1ea8224f572248fc3dcea612eb48c5e707765050d9912d4ff57ec316e1b15f74958d8bda088fbf8403750b28a90fedbfd50a97184187a2b9"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-core"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "compiler-dom",
+          "group": "@vue",
+          "version": "3.5.46",
+          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.46|@vue/compiler-dom@3.5.46",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40vue/compiler-dom@3.5.46",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@vue/compiler-dom/-/compiler-dom-3.5.46.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "063de5092c370d09c3443c70d75e57a9d2c3774fb5f0d7ed96077c3974861beb9def8871248135ede62b33e556810ad332cbc96cb87d1f37f6324c00cebbb7e9"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-dom"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "compiler-ssr",
+          "group": "@vue",
+          "version": "3.5.46",
+          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.46|@vue/compiler-ssr@3.5.46",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40vue/compiler-ssr@3.5.46",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@vue/compiler-ssr/-/compiler-ssr-3.5.46.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "a9e6c284bdda3f49b593e4e549ff9f656bcec007f77e50428b9a3e9f4d72911dc35f899321685e165b66a22435dbecfaebfe1c19e5ea6c1d8feec3d690685035"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/compiler-ssr"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "shared",
+          "group": "@vue",
+          "version": "3.5.46",
+          "bom-ref": "dossiq@0.1.0|@vue/compiler-sfc@3.5.46|@vue/shared@3.5.46",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40vue/shared@3.5.46",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@vue/shared/-/shared-3.5.46.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "3f559e3db7731eb7087225ad998d889bd10585d6a4777ad9c58aaf6a539add27e8c6d177e50f148668f5b4a9fa6d63f8bad70ea4df1aa3a06825422dab451ffa"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@vue/compiler-sfc/node_modules/@vue/shared"
+            }
+          ]
         }
       ]
     },
@@ -21961,6 +22099,42 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/vue"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "compiler-sfc",
+          "group": "@vue",
+          "version": "3.5.45",
+          "bom-ref": "dossiq@0.1.0|vue@3.5.45|@vue/compiler-sfc@3.5.45",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40vue/compiler-sfc@3.5.45",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@vue/compiler-sfc/-/compiler-sfc-3.5.45.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "30a1636f6517d0cfe5fe385fcea30bac8f15338a5fbc5286de9a8566449914744bb4d95dfcee11b543d91564b086ba3fd78a8ff3c5101245b31f1019010d2db3"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/vue/node_modules/@vue/compiler-sfc"
+            }
+          ]
         }
       ]
     },
