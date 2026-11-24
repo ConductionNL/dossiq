@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
+use OCA\Dossiq\Service\Mandate\MandateConditions;
+use OCA\Dossiq\Service\Mandate\MandateRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -56,6 +58,20 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	public const REDEN_BELANGENCONFLICT = 'belangenconflict';
 
 	/**
+	 * Reads mandate rows: in force on a date, matching a decision and case type, for a role.
+	 *
+	 * @var MandateRows
+	 */
+	private readonly MandateRows $rows;
+
+	/**
+	 * Checks a mandate's conditions against a case: the ceiling and subdelegation.
+	 *
+	 * @var MandateConditions
+	 */
+	private readonly MandateConditions $conditions;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings.
@@ -67,6 +83,8 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly ?ConflictOfInterestService $conflictService = null,
 	) {
+		$this->rows = new MandateRows();
+		$this->conditions = new MandateConditions();
 	}//end __construct()
 
 	/**
@@ -246,7 +264,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		$out = [];
 		$context = ['decisionType' => $decisionType, 'caseType' => $caseType];
 		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: $context) as $row) {
-			if ($this->matchesTypeTerms(row: $row, request: $context) === false) {
+			if ($this->rows->matchesTypes(row: $row, request: $context) === false) {
 				continue;
 			}
 
@@ -280,7 +298,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		return array_values(
 			array_filter(
 				$this->readActiveMandates(store: $store, context: $context),
-				fn (array $row): bool => $this->isRowTemporallyValid(row: $row, dateStr: $dateStr)
+				fn (array $row): bool => $this->rows->isValidOn(row: $row, dateStr: $dateStr)
 			)
 		);
 	}//end activeRows()
@@ -317,7 +335,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 
 		$dateStr = $date->format('Y-m-d');
 
-		return $this->anyActiveFor(rows: $rows, scope: ['organisation' => $organisation, 'dateStr' => $dateStr]);
+		return $this->rows->anyActiveFor(rows: $rows, scope: ['organisation' => $organisation, 'dateStr' => $dateStr]);
 	}//end hasActiveMandateFor()
 
 	/**
@@ -349,50 +367,6 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 
 		return $rows;
 	}//end activeMandateRows()
-
-	/**
-	 * Whether any row is an active mandate of the organisation, valid on the date.
-	 *
-	 * @param array<int, array<string, mixed>>             $rows  The mandate rows.
-	 * @param array{organisation: string, dateStr: string} $scope `organisation` the organisation UUID; `dateStr` the date, `Y-m-d`.
-	 *
-	 * @return bool True when one is.
-	 *
-	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
-	 */
-	private function anyActiveFor(array $rows, array $scope): bool {
-		[$organisation, $dateStr] = [$scope['organisation'], $scope['dateStr']];
-		foreach ($rows as $row) {
-			if ((string)($row['status'] ?? '') === 'active'
-				&& self::organisationOf(row: $row) === $organisation
-				&& $this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === true
-			) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end anyActiveFor()
-
-	/**
-	 * The organisation that owns a row: its `@self` organisation, else its own field.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The organisation UUID, or ''.
-	 */
-	private static function organisationOf(array $row): string {
-		$organisation = ($row['@self']['organisation'] ?? ($row['organisation'] ?? ''));
-		if (is_array($organisation) === true) {
-			$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
-		}
-
-		if (is_scalar($organisation) === false) {
-			return '';
-		}
-
-		return (string)$organisation;
-	}//end organisationOf()
 
 	/**
 	 * The object service, the register and one schema, or null when any is missing.
@@ -449,56 +423,6 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	}//end readActiveMandates()
 
 	/**
-	 * Check whether a row's validFrom/validUntil window covers the given date.
-	 *
-	 * @param array<string, mixed> $row Row carrying validFrom/validUntil.
-	 * @param string $dateStr Date in Y-m-d form.
-	 *
-	 * @return bool True when the row is temporally valid on that date.
-	 */
-	private function isRowTemporallyValid(array $row, string $dateStr): bool {
-		$validFrom = (string)($row['validFrom'] ?? '1970-01-01');
-		$validUntil = (string)($row['validUntil'] ?? '');
-		if ($validFrom > $dateStr) {
-			return false;
-		}
-
-		if ($validUntil !== '' && $validUntil < $dateStr) {
-			return false;
-		}
-
-		return true;
-	}//end isRowTemporallyValid()
-
-	/**
-	 * Check a mandaat's decisionTypes/caseTypes voorwaarden against the request.
-	 *
-	 * An empty list means "no restriction"; an empty case type skips the
-	 * case-type filter entirely.
-	 *
-	 * @param array<string, mixed>                          $row     Mandaat row.
-	 * @param array{decisionType: string, caseType: string} $request The decision type slug and the case type slug (may be empty).
-	 *
-	 * @return bool True when the mandaat applies to the pair.
-	 */
-	private function matchesTypeTerms(array $row, array $request): bool {
-		$decisionType = $request['decisionType'];
-		$caseType = $request['caseType'];
-		$voorw = (array)($row['terms'] ?? []);
-		$decTypes = (array)($voorw['decisionTypes'] ?? []);
-		if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
-			return false;
-		}
-
-		$caseTypes = (array)($voorw['caseTypes'] ?? []);
-		if ($caseType !== '' && count($caseTypes) > 0 && in_array($caseType, $caseTypes, true) === false) {
-			return false;
-		}
-
-		return true;
-	}//end matchesTypeVoorwaarden()
-
-	/**
 	 * Applicable mandates for the given user (filtered to their active role).
 	 *
 	 * Returns the same row shape as {@see getApplicableMandaten()}, augmented
@@ -524,7 +448,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 			return [];
 		}
 
-		return $this->forRole(
+		return $this->rows->forRole(
 			rows: $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date),
 			roleId: $roleId
 		);
@@ -548,31 +472,6 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	}//end roleIdOf()
 
 	/**
-	 * The mandates a role may use: those given to the role, and those given to no role.
-	 *
-	 * Each carries `unilateral`: whether it was given to this role.
-	 *
-	 * @param array<int, array<string, mixed>> $rows   The applicable mandates.
-	 * @param string                           $roleId The role id.
-	 *
-	 * @return array<int, array<string, mixed>> The mandates.
-	 */
-	private function forRole(array $rows, string $roleId): array {
-		$out = [];
-		foreach ($rows as $row) {
-			$mandateRoleId = (string)($row['mandateeRole'] ?? '');
-			if ($mandateRoleId !== '' && $mandateRoleId !== $roleId) {
-				continue;
-			}
-
-			$row['unilateral'] = ($mandateRoleId === $roleId);
-			$out[] = $row;
-		}
-
-		return $out;
-	}//end forRole()
-
-	/**
 	 * Resolve the user's *primary* active role at the given date.
 	 *
 	 * Returns an array {rolId, toewijzingType, waarnemerVoor} when found.
@@ -590,12 +489,12 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 			return null;
 		}
 
-		$active = $this->validOn(rows: $rows, dateStr: $date->format('Y-m-d'));
+		$active = $this->rows->validOn(rows: $rows, dateStr: $date->format('Y-m-d'));
 		if (count($active) === 0) {
 			return null;
 		}
 
-		return $this->firstByAllocation(active: $active);
+		return $this->rows->firstByAllocation(active: $active);
 	}//end resolveUserRole()
 
 	/**
@@ -627,45 +526,6 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	}//end roleAssignmentsOf()
 
 	/**
-	 * The rows valid on the day.
-	 *
-	 * @param array<int, array<string, mixed>> $rows    The rows.
-	 * @param string                           $dateStr The day (Y-m-d).
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function validOn(array $rows, string $dateStr): array {
-		$active = [];
-		foreach ($rows as $row) {
-			if ($this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === false) {
-				continue;
-			}
-
-			$active[] = $row;
-		}
-
-		return $active;
-	}//end validOn()
-
-	/**
-	 * The assignment that counts: primair first, then waarnemer, then tijdelijk.
-	 *
-	 * @param array<int, array<string, mixed>> $active The valid assignments, at least one.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function firstByAllocation(array $active): array {
-		$order = ['primair' => 0, 'observer' => 1, 'tijdelijk' => 2];
-		usort(
-			$active,
-			static fn (array $a, array $b): int
-				=> ($order[(string)($a['allocationType'] ?? 'primair')] ?? 99) <=> ($order[(string)($b['allocationType'] ?? 'primair')] ?? 99)
-		);
-
-		return $active[0];
-	}//end firstByAllocation()
-
-	/**
 	 * Evaluate voorwaarden (plafond, subdelegatie) against the case properties.
 	 *
 	 * @param array<string, mixed> $mandate Mandaat row.
@@ -676,70 +536,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function evaluateConditions(array $mandate, array $caseProperties): array {
-		$voorw = (array)($mandate['terms'] ?? []);
-		$failed = [];
-		$redenen = [];
-
-		// Plafond check (cents).
-		if ($this->plafondExceeded(terms: $voorw, caseProperties: $caseProperties) === true) {
-			$failed[] = 'plafond';
-			$redenen[] = self::REDEN_PLAFOND_OVERSCHREDEN;
-		}
-
-		// Subdelegation check.
-		if ($this->subdelegatieDenied(terms: $voorw, caseProperties: $caseProperties) === true) {
-			$failed[] = 'subdelegatie';
-			$redenen[] = self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN;
-		}
-
-		if (count($failed) === 0) {
-			return ['passed' => true, 'reason' => '', 'failedConditions' => []];
-		}
-
-		// The most-specific failure wins; plafond is evaluated first and so
-		// takes precedence over subdelegatie.
-		$effectiveReason = ($redenen[0] ?? self::REDEN_NIET_BEVOEGD);
-
-		return ['passed' => false, 'reason' => $effectiveReason, 'failedConditions' => $failed];
+		return $this->conditions->evaluate(mandate: $mandate, caseProperties: $caseProperties);
 	}//end evaluateConditions()
 
-	/**
-	 * Check whether the case amount exceeds the mandaat plafond.
-	 *
-	 * Both the plafond and the case amount must be present; when either is
-	 * absent the plafond is not applicable and the check passes.
-	 *
-	 * @param array<string, mixed> $terms Mandaat voorwaarden.
-	 * @param array<string, mixed> $caseProperties Case properties.
-	 *
-	 * @return bool True when the plafond is exceeded.
-	 */
-	private function plafondExceeded(array $terms, array $caseProperties): bool {
-		if (isset($terms['plafondCents'], $caseProperties['bedragCents']) === false) {
-			return false;
-		}
-
-		$plafond = (int)$terms['plafondCents'];
-		$amount = (int)$caseProperties['bedragCents'];
-
-		return ($amount > $plafond);
-	}//end plafondExceeded()
-
-	/**
-	 * Check whether a requested subdelegation is denied by the voorwaarden.
-	 *
-	 * Only evaluated when the case explicitly requests subdelegation.
-	 *
-	 * @param array<string, mixed> $terms Mandaat voorwaarden.
-	 * @param array<string, mixed> $caseProperties Case properties.
-	 *
-	 * @return bool True when subdelegation was requested but is not allowed.
-	 */
-	private function subdelegatieDenied(array $terms, array $caseProperties): bool {
-		if (($caseProperties['subdelegatieRequested'] ?? false) !== true) {
-			return false;
-		}
-
-		return ((bool)($terms['subdelegatie'] ?? false) === false);
-	}//end subdelegatieDenied()
 }//end class

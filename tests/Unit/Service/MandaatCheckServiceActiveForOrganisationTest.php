@@ -33,6 +33,8 @@ use RuntimeException;
  * Whether an organisation holds a mandate active on a date.
  *
  * @covers \OCA\Dossiq\Service\MandaatCheckService
+ * @uses \OCA\Dossiq\Service\Mandate\MandateConditions
+ * @uses \OCA\Dossiq\Service\Mandate\MandateRows
  */
 class MandaatCheckServiceActiveForOrganisationTest extends TestCase {
 	/**
