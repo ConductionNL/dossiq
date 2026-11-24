@@ -317,7 +317,7 @@
 		},
 		{
 			"id": "EndOfDayMenu",
-			"label": "Close out your day",
+			"label": "Close the day",
 			"icon": "ClipboardCheckOutline",
 			"route": "EndOfDay",
 			"order": 34
@@ -340,7 +340,7 @@
 		},
 		{
 			"id": "Analytics",
-			"label": "Processing time",
+			"label": "Lead time",
 			"icon": "ChartLine",
 			"route": "Doorlooptijd",
 			"order": 55
@@ -748,10 +748,10 @@
 					{
 						"id": "kpi-open-cases",
 						"type": "stat",
-						"title": "Open Cases",
+						"title": "Open cases",
 						"_note": "openspec/specs/dashboard/spec.md DASH-001a: this card counts every case whose status is not final, and is deliberately NOT scoped to the dashboard date range. It used to be titled \"New cases\" and counted startDate inside the picker window, which answers a different question and left the dashboard with no headline for open workload at all. The spec's \"+3 today\" sub-label is not expressible here: CnStatWidget interpolates a caption only in endpointSource mode, so a second count needs a Dossiq KPI endpoint.",
 						"content": {
-							"label": "Open Cases",
+							"label": "Open cases",
 							"caption": "+{newToday} today",
 							"route": {
 								"name": "Cases"
@@ -771,9 +771,9 @@
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
-						"title": "Late",
+						"title": "Overdue",
 						"content": {
-							"label": "Late",
+							"label": "Overdue",
 							"caption": "action needed",
 							"route": {
 								"name": "Cases",
@@ -800,10 +800,10 @@
 					{
 						"id": "kpi-completed",
 						"type": "stat",
-						"title": "Completed This Month",
+						"title": "Completed this month",
 						"content": {
-							"label": "Completed This Month",
-							"caption": "avg {avgProcessingDays} days",
+							"label": "Completed this month",
+							"caption": "{avgProcessingDays} days on average",
 							"route": {
 								"name": "Cases",
 								"query": {
@@ -826,9 +826,9 @@
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
-						"title": "My Tasks",
+						"title": "My tasks",
 						"content": {
-							"label": "My Tasks",
+							"label": "My tasks",
 							"caption": "{tasksDueToday} due today",
 							"route": {
 								"name": "Tasks",
@@ -883,7 +883,7 @@
 					{
 						"id": "cases-by-status",
 						"type": "chart",
-						"title": "Cases by Status",
+						"title": "Cases by status",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -915,7 +915,7 @@
 					{
 						"id": "cases-by-type",
 						"type": "chart",
-						"title": "Cases by Type",
+						"title": "Cases by type",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -1028,7 +1028,7 @@
 					{
 						"id": "stalled-cases",
 						"type": "object-table",
-						"title": "Stalled Cases",
+						"title": "Stuck cases",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -1353,7 +1353,7 @@
 							{
 								"id": "open-cases",
 								"type": "object-table",
-								"title": "Open Cases",
+								"title": "Open cases",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -1575,9 +1575,9 @@
 							{
 								"id": "kpi-open-cases",
 								"type": "stat",
-								"title": "Open Cases",
+								"title": "Open cases",
 								"content": {
-									"label": "Open Cases",
+									"label": "Open cases",
 									"caption": "+{newToday} today",
 									"route": {
 										"name": "Cases"
@@ -1597,9 +1597,9 @@
 							{
 								"id": "kpi-overdue",
 								"type": "stat",
-								"title": "Late",
+								"title": "Overdue",
 								"content": {
-									"label": "Late",
+									"label": "Overdue",
 									"caption": "action needed",
 									"route": {
 										"name": "Cases",
@@ -1626,10 +1626,10 @@
 							{
 								"id": "kpi-completed",
 								"type": "stat",
-								"title": "Completed This Month",
+								"title": "Completed this month",
 								"content": {
-									"label": "Completed This Month",
-									"caption": "avg {avgProcessingDays} days",
+									"label": "Completed this month",
+									"caption": "{avgProcessingDays} days on average",
 									"route": {
 										"name": "Cases",
 										"query": {
@@ -1652,7 +1652,7 @@
 							{
 								"id": "cases-by-status",
 								"type": "chart",
-								"title": "Cases by Status",
+								"title": "Cases by status",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -1684,7 +1684,7 @@
 							{
 								"id": "cases-by-type",
 								"type": "chart",
-								"title": "Cases by Type",
+								"title": "Cases by type",
 								"content": {
 									"chartKind": "bar-list",
 									"footnote": "Click a bar to see the cases",
@@ -1715,7 +1715,7 @@
 							{
 								"id": "stalled-cases",
 								"type": "object-table",
-								"title": "Stalled Cases",
+								"title": "Stuck cases",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -2235,8 +2235,8 @@
 							"showViewAction": false,
 							"quickFilters": [
 								{
-									"label": "Including work you cover",
-									"activeLabel": "Including work you cover",
+									"label": "Including work you cover as stand-in",
+									"activeLabel": "Including work you cover as stand-in",
 									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view. No tab is drawn for it either (quickFilterPlacement active): the toolbar row starts with the team's name chips (slot toolbar-start).",
 									"filter": {
 										"statusHiddenInLists": false,
@@ -2334,9 +2334,9 @@
 								{
 									"id": "queue-unassigned",
 									"type": "stat",
-									"title": "Without a handler",
+									"title": "Without case handler",
 									"content": {
-										"label": "Without a handler",
+										"label": "Without case handler",
 										"caption": "{queueNewToday} came in today",
 										"format": {
 											"style": "decimal",
@@ -2435,18 +2435,18 @@
 												"value": "{title}"
 											},
 											{
-												"label": "Open now",
+												"label": "Open",
 												"value": "{open}",
 												"align": "end"
 											},
 											{
-												"label": "Queued",
+												"label": "Waiting",
 												"value": "{waiting}",
 												"align": "end",
 												"alertAbove": 0
 											}
 										],
-										"footnote": "Open with the team, and how many of those have no handler yet",
+										"footnote": "Open with the team, and how many have no case handler yet",
 										"emptyText": "No open cases"
 									}
 								}
@@ -3633,7 +3633,7 @@
 								},
 								{
 									"widgetId": "case-people-panel",
-									"label": "People"
+									"label": "Parties"
 								},
 								{
 									"widgetId": "case-email-panel",
@@ -4095,7 +4095,7 @@
 							"bulkActions": [
 								{
 									"id": "bulk-merge-pdf",
-									"label": "Merge into PDF",
+									"label": "Merge into pdf",
 									"icon": "FilePdfBox",
 									"type": "open-modal",
 									"target": "BulkDocumentActionDialog",
@@ -4117,7 +4117,7 @@
 								},
 								{
 									"id": "bulk-confidentiality",
-									"label": "Who can see this",
+									"label": "Who may see this",
 									"icon": "ShieldLockOutline",
 									"type": "open-modal",
 									"target": "BulkDocumentActionDialog",
@@ -4141,12 +4141,13 @@
 							"sideCards": [
 								{
 									"id": "visibility",
-									"title": "Who can see this: {name}",
+									"title": "Who may see this: {name}",
 									"fields": [
 										{
 											"key": "vertrouwelijkheidaanduiding",
 											"label": "Default",
 											"formatter": "confidentialityLabel",
+											"fallback": "Everyone on the case",
 											"colorMap": {
 												"vertrouwelijk": "warning",
 												"confidentieel": "warning",
@@ -4185,6 +4186,7 @@
 								{
 									"id": "checksum",
 									"title": "Checksum",
+									"emptyText": "Not computed yet",
 									"fields": [
 										{
 											"key": "integrity.value",
@@ -4743,7 +4745,7 @@
 						"id": "case-decisions-panel",
 						"type": "sections",
 						"title": "Decisions",
-						"subtitle": "From decidiq's decision-making, shown on the case",
+						"subtitle": "From decision making in decidiq, shown on the case",
 						"_note": "The Decisions tab: the outcomes of the case. decidiq's decisions first, then the advice a decision table gave on this case and what the handler chose (enforcement-intervention-from-the-case 3.3, REQ-LHS-CASE-01, decision 197: the advice is its own object linked from the case). Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host. The decidiq leaf is the definition that held this tab before, moved verbatim under its own id.",
 						"content": {
 							"sections": [
@@ -4758,7 +4760,7 @@
 											"surface": "sidebar-tab"
 										},
 										"title": "Decisions",
-										"subtitle": "From decidiq's decision-making, shown on the case",
+										"subtitle": "From decision making in decidiq, shown on the case",
 										"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 									}
 								},
@@ -6296,7 +6298,7 @@
 						},
 						{
 							"id": "assistant",
-							"label": "Assistant",
+							"label": "AI features",
 							"icon": "RobotOutline",
 							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, and the report group with its near-duplicates. A `component:` tab and not a `widgets[]` one for the reason the Terms tab gives. An undeclared case type makes no call to hermiq: the panel reads the case type's declaration first.",
 							"component": "CaseAiFeaturesPanel"
@@ -6651,15 +6653,15 @@
 					{
 						"id": "case-archive",
 						"type": "open-modal",
-						"label": "Archive this case",
+						"label": "Archive case",
 						"icon": "ArchiveOutline",
 						"target": "CnActionDialog",
 						"props": {
 							"objectId": "@objectId",
 							"config": {
-								"title": "Archive this case",
-								"eyebrow": "Close off · {identifier}",
-								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"title": "Archive case",
+								"eyebrow": "Complete · {identifier}",
+								"subtitle": "The case goes to the archive and can only be read after that.",
 								"summary": {
 									"source": {
 										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
@@ -6671,10 +6673,10 @@
 								},
 								"facts": [
 									{
-										"title": "Retention under the case type",
+										"title": "Retention according to the case type",
 										"items": [
 											{
-												"label": "Archive nomination",
+												"label": "Archive designation",
 												"value": "{archiveNomination}"
 											},
 											{
@@ -6686,7 +6688,7 @@
 												"value": "{archiveActionDate|date}"
 											},
 											{
-												"label": "Archive status afterwards",
+												"label": "Archive status after archiving",
 												"value": "Archived"
 											}
 										]
@@ -6725,7 +6727,7 @@
 										},
 										"openTasks": {
 											"label": "Open tasks: {count}",
-											"detail": "no task open any more",
+											"detail": "no open tasks left",
 											"unmetDetail": "{count} still open"
 										}
 									},
@@ -6746,13 +6748,13 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
+									"hint": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step."
 								},
 								"note": {
 									"variant": "info",
 									"icon": "LockOutline",
-									"title": "Read only afterwards",
-									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+									"title": "Read-only after that",
+									"text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date."
 								},
 								"fieldsAfterNote": true,
 								"fields": [
@@ -7104,7 +7106,7 @@
 								{ "value": "brief", "label": "Letter" },
 								{ "value": "email", "label": "Email" },
 								{ "value": "form", "label": "Web form" },
-								{ "value": "balie", "label": "Desk" }
+								{ "value": "balie", "label": "Service desk" }
 							],
 							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
 						},
@@ -7217,7 +7219,7 @@
 							},
 							"classifications": [
 								{ "value": "openbaar", "label": "Public", "decisionLabel": "Made public", "description": "All requested documents become public" },
-								{ "value": "deels_openbaar", "label": "Disclosed in part", "decisionLabel": "Made public in part", "description": "Some of the documents become public, in full or in part" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "decisionLabel": "Partly made public", "description": "Some of the documents become public, in full or in part" },
 								{ "value": "niet_openbaar", "label": "Not public", "decisionLabel": "Not made public", "description": "None of the documents becomes public, the reason is in the decision" }
 							]
 						},
@@ -8157,7 +8159,7 @@
 			"id": "EndOfDay",
 			"route": "/end-of-day",
 			"type": "dashboard",
-			"title": "Close out your day",
+			"title": "Close the day",
 			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case. SINCE 20 OCTOBER 2026 THIS IS MANIFEST CONFIG (Ruben): the day lists are worked out on the server (GET /api/personal-queue/end-of-day, EndOfDayService), so Recorded today survives a reload; opened is still OpenRegister's read state. What is typed and not yet recorded stays in the browser and is the ready figure inside the notes list (nextcloud-vue record-list `presentation: notes`). The hours box is humaniq's leaf per row (`rowLeaf`), and nothing on an instance without humaniq.",
 			"config": {
 				"gridMargin": 10,
@@ -8239,7 +8241,7 @@
 							],
 							"noteAction": {
 								"urlField": "notesUrl",
-								"label": "Record it",
+								"label": "Record",
 								"fieldLabel": "What happened",
 								"placeholder": "For example: called the resident, waiting for documents",
 								"readyLabel": "filled in, not recorded yet",
@@ -8251,7 +8253,7 @@
 										"one": "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.",
 										"other": "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow."
 									},
-									"label": "Close out your day",
+									"label": "Close the day",
 									"icon": "ClipboardCheckOutline",
 									"cancel": {
 										"label": "Cancel",
@@ -8330,7 +8332,7 @@
 									"caption": "{figures.0.note}"
 								},
 								{
-									"label": "Notes recorded",
+									"label": "Recorded",
 									"valueField": "figures.1.value",
 									"caption": "{figures.1.note}"
 								},
@@ -8408,7 +8410,7 @@
 						"titleTone": "side",
 						"content": {
 							"contentMode": "markdown",
-							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
+							"text": "This shows what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
 						}
 					}
 				],
@@ -8988,7 +8990,7 @@
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "dashboard",
-			"title": "Processing time",
+			"title": "Lead time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the four compliance charts, the deadline list of one configured case type, the cases at risk and the breakdown, which read /api/reports/processing-time (one `view` per widget; the server shapes every figure, the browser no longer loads every case). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"gridMargin": 10,
@@ -9074,9 +9076,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Average processing time",
+						"title": "Average lead time",
 						"content": {
-							"label": "Average processing time",
+							"label": "Average lead time",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9104,9 +9106,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Within the norm",
+						"title": "Within the standard",
 						"content": {
-							"label": "Within the norm",
+							"label": "Within the standard",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9134,9 +9136,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Longer than the norm",
+						"title": "Longer than the standard",
 						"content": {
-							"label": "Longer than the norm",
+							"label": "Longer than the standard",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9164,9 +9166,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "stat",
-						"title": "Handled",
+						"title": "Completed",
 						"content": {
-							"label": "Handled",
+							"label": "Completed",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -9216,7 +9218,7 @@
 								"labelsPath": "summary.monthlyAvgDays.labels",
 								"series": [
 									{
-										"name": "Average processing time",
+										"name": "Average lead time",
 										"path": "summary.monthlyAvgDays.values"
 									}
 								]
@@ -9262,7 +9264,7 @@
 								"labelsPath": "summary.withinNormByCaseType.labels",
 								"series": [
 									{
-										"name": "Within the norm",
+										"name": "Within the standard",
 										"path": "summary.withinNormByCaseType.shares"
 									}
 								]
@@ -12804,8 +12806,8 @@
 			"config": {
 				"description": "Reports on every case in Zuiddrecht. Pick a report and set the period. Costs per task field are in Shillinq.",
 				"panel": {
-					"title": "Report overview",
-					"subtitle": "Each report groups cases on a field. An administrator sets them up under Settings.",
+					"title": "Reports",
+					"subtitle": "Each report is a grouping of cases on a field. An administrator sets them up under Settings.",
 					"link": {
 						"label": "Set up reports",
 						"href": "/index.php/settings/admin/dossiq"
@@ -12844,7 +12846,7 @@
 					},
 					{
 						"id": "TermijnDashboard",
-						"label": "Terms",
+						"label": "Deadlines",
 						"description": "Cases approaching or exceeding their statutory deadline.",
 						"meta": "Grouping: deadline status",
 						"icon": "ClockAlertOutline",
@@ -12949,9 +12951,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Running terms",
+						"title": "Running deadlines",
 						"content": {
-							"label": "Running terms",
+							"label": "Running deadlines",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -12975,9 +12977,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Ending this week",
+						"title": "Expires this week",
 						"content": {
-							"label": "Ending this week",
+							"label": "Expires this week",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -13001,9 +13003,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Overdue",
+						"title": "Expired",
 						"content": {
-							"label": "Overdue",
+							"label": "Expired",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -13028,9 +13030,9 @@
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
 						"type": "stat",
-						"title": "Penalty running",
+						"title": "Penalty payment running",
 						"content": {
-							"label": "Penalty running",
+							"label": "Penalty payment running",
 							"layout": "stacked",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
@@ -15181,12 +15183,12 @@
 					}
 				],
 				"shipped": {
-					"title": "Shipped packages",
+					"title": "Built-in packages",
 					"subtitle": "A package is a case type with its statuses, flows and templates; the code stays the same",
 					"parts": "Case type, statuses, flows, templates",
 					"notice": {
 						"title": "No registry set up.",
-						"text": "You see the packages shipped with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
+						"text": "You see the packages that ship with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
 					},
 					"crumbs": [
 						{
@@ -15423,7 +15425,7 @@
 				"allowSavedViews": true,
 				"showViewAction": false,
 				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
-				"searchPlaceholder": "Search by name, BSN or place of residence",
+				"searchPlaceholder": "Search by name, BSN or town",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -15441,8 +15443,8 @@
 						"default": true
 					},
 					{
-						"label": "With data protection",
-						"activeLabel": "Data protection: yes",
+						"label": "With confidentiality",
+						"activeLabel": "Confidentiality: yes",
 						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
@@ -15522,7 +15524,7 @@
 				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
 				"savedViewSave": false,
 				"showViewAction": false,
-				"searchPlaceholder": "Search by name, KvK number or place",
+				"searchPlaceholder": "Search by name, KVK number or town",
 				"rowIcon": "OfficeBuildingOutline",
 				"rowIconTone": "teal",
 				"sortKey": "tradeName",
@@ -15549,8 +15551,8 @@
 						"filter": {}
 					},
 					{
-						"label": "With an open case",
-						"activeLabel": "With an open case",
+						"label": "With open case",
+						"activeLabel": "With open case",
 						"showCount": true,
 						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
 						"filter": {
@@ -15574,7 +15576,7 @@
 						}
 					},
 					{
-						"label": "Companies",
+						"label": "Businesses",
 						"activeLabel": "Legal form: company",
 						"showCount": true,
 						"filter": {

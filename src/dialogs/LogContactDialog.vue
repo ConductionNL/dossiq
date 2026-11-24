@@ -196,7 +196,7 @@ export default {
 			return [
 				{ value: 'phone', label: t('dossiq', 'Phone') },
 				{ value: 'email', label: t('dossiq', 'Email') },
-				{ value: 'balie', label: t('dossiq', 'Desk') },
+				{ value: 'balie', label: t('dossiq', 'Service desk') },
 				{ value: 'brief', label: t('dossiq', 'Letter') },
 				{ value: 'webformulier', label: portalName() || t('dossiq', 'Web form') },
 				{ value: 'chat', label: t('dossiq', 'Chat') },

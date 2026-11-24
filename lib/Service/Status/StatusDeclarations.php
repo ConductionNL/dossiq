@@ -127,6 +127,20 @@ class StatusDeclarations implements StatusDeclarationsInterface {
 	}//end nameOf()
 
 	/**
+	 * Whether a text is a status's name in any of its languages.
+	 *
+	 * @param string $statusTypeId The status.
+	 * @param string $text         The text.
+	 *
+	 * @return bool True when the text names the status.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function isNameOf(string $statusTypeId, string $text): bool {
+		return $this->lookup->isNameOf(statusTypeId: $statusTypeId, text: $text);
+	}//end isNameOf()
+
+	/**
 	 * Settle the dwell fields on a payload about to be saved.
 	 *
 	 * @param array<string, mixed>   $case     The case payload.

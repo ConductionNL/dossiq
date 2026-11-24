@@ -22,7 +22,7 @@ describe('Assigned to me: work you cover', () => {
 	it('opens on the lens that includes covered work', () => {
 		const lens = myWork.overrides.quickFilters.find((tab) => tab.default === true)
 		expect(lens.sourceParams).toEqual({ covering: '1' })
-		expect(lens.activeLabel).toBe('Including work you cover')
+		expect(lens.activeLabel).toBe('Including work you cover as stand-in')
 		expect(nl[lens.activeLabel]).toBe('Inclusief werk waarvoor u waarneemt')
 		expect(nl[lens.label]).toBeTruthy()
 	})

@@ -28,7 +28,7 @@ function findTab (node) {
 			}
 		}
 	} else if (node && typeof node === 'object') {
-		if (node.label === 'People' && Array.isArray(node.widgetIds)) {
+		if (node.label === 'Parties' && Array.isArray(node.widgetIds)) {
 			return node
 		}
 		for (const child of Object.values(node)) {

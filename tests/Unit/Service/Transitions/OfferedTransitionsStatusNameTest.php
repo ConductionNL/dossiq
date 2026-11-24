@@ -62,4 +62,40 @@ class OfferedTransitionsStatusNameTest extends TestCase {
 
 		$this->assertSame(expected: 'Besluit', actual: $result['transitions'][0]['toStatusName']);
 	}//end testAnOfferedMoveNamesTheStatusItLeadsTo()
+
+	/**
+	 * A move labelled only with its destination's name reads that name in the reader's
+	 * language; a label of its own stays.
+	 *
+	 * @return void
+	 */
+	public function testALabelThatIsOnlyTheDestinationReadsInTheReadersLanguage(): void {
+		$guards = $this->createMock(originalClassName: GuardRegistry::class);
+		$guards->method('evaluateAll')->willReturn([]);
+		$spec = $this->createMock(originalClassName: TransitionSpecReader::class);
+		$spec->method('guardsWithImplicit')->willReturn([]);
+		$spec->method('isRoleHidden')->willReturn(false);
+		$statuses = $this->createMock(originalClassName: StatusDeclarations::class);
+		$statuses->method('isDerivedStatus')->willReturn(false);
+		$statuses->method('nameOf')->willReturnMap([['st-3', 'Hearing']]);
+		$statuses->method('isNameOf')->willReturnMap([['st-3', 'Hoorgesprek', true], ['st-3', 'Plan the hearing', false]]);
+		$moves = $this->createMock(originalClassName: TransitionDeclarations::class);
+		$moves->method('withheldReasons')->willReturn([]);
+		$moves->method('explanationOf')->willReturn('');
+		$moves->method('closingChoice')->willReturn([]);
+
+		$offer = new OfferedTransitions(guardRegistry: $guards, specReader: $spec, statuses: $statuses, moves: $moves);
+		$result = $offer->from(
+			transitions: [
+				['id' => 't-1', 'label' => 'Hoorgesprek', 'fromStatus' => 'st-2', 'toStatus' => 'st-3'],
+				['id' => 't-2', 'label' => 'Plan the hearing', 'fromStatus' => 'st-2', 'toStatus' => 'st-3'],
+			],
+			case: ['caseType' => 'ct-1'],
+			currentId: 'st-2',
+			userId: 'pieter',
+		);
+
+		$this->assertSame(expected: 'Hearing', actual: $result['transitions'][0]['label']);
+		$this->assertSame(expected: 'Plan the hearing', actual: $result['transitions'][1]['label']);
+	}//end testALabelThatIsOnlyTheDestinationReadsInTheReadersLanguage()
 }//end class

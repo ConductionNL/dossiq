@@ -555,10 +555,10 @@ describe('the landing page', () => {
 		// Every widget is the full structure's (both structures draw the two
 		// charts as the board's bar lists), and the five KPI tiles leave the
 		// grid for the KPI row above it.
-		// Two KPI tiles carry the board's own words: Late (Te laat) and Within
+		// Two KPI tiles carry the board's own words: Overdue (Te laat) and Within
 		// deadline (Binnen termijn).
 		const boardWords = {
-			'kpi-overdue': 'Late',
+			'kpi-overdue': 'Overdue',
 			'kpi-sla-compliance': 'Within deadline',
 		}
 		// The two charts carry the board's subtitle, "Lopende zaken".
@@ -566,7 +566,7 @@ describe('the landing page', () => {
 		const sameButBars = (list) =>
 			list.map((item) => {
 				if (subtitled.includes(item.id)) {
-					return { ...item, subtitle: 'Open cases' }
+					return { ...item, subtitle: 'Ongoing cases' }
 				}
 				if (boardWords[item.id]) {
 					return {
