@@ -477,7 +477,7 @@ final class MailIntakeControllerTest extends TestCase {
 	 */
 	public function testFileOnCaseNamesASenderWithoutANameByAddress(): void {
 		$this->log->method('find')->willReturn(
-			$this->entry(['sender' => 'henk@example.org', 'subject' => 'Vraag', 'original' => "From: henk@example.org\r\n\r\nHallo"])
+			$this->entry(overrides: ['sender' => 'henk@example.org', 'subject' => 'Vraag', 'original' => "From: henk@example.org\r\n\r\nHallo"])
 		);
 		$this->intake->method('fileOnCase')->willReturn('case-114');
 		$this->followUps->expects($this->never())->method('addSenderAsParty');
@@ -488,8 +488,8 @@ final class MailIntakeControllerTest extends TestCase {
 
 		$data = $this->controller()->fileOnCase('entry-1', 'case-114', 'Hoort hier.', false, true)->getData();
 
-		$this->assertArrayNotHasKey('party', $data);
-		$this->assertSame('notified', $data['handler']);
+		$this->assertArrayNotHasKey(key: 'party', array: $data);
+		$this->assertSame(expected: 'notified', actual: $data['handler']);
 	}//end testFileOnCaseNamesASenderWithoutANameByAddress()
 
 	/**

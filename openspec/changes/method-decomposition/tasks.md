@@ -1543,3 +1543,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         entry. Unchanged and green after but for one `@uses` line in each file that builds the service.
         Own test: `tests/Unit/Service/Hearing/SessionWritesTest` (3); dropping the not-applied rows turns 2 tests red
         (checked).
+  - [x] 8cb `Controller/MailIntakeController` (1, unsuppressed: ExcessiveClassComplexity 51 against 50). Running the
+        Link to case dialog's two choices on a message filed by hand (the sender as a party, the case's handler told,
+        named by address when the original carries no display name) is its own concern, so `followUps()` moved to the
+        new `Controller/Support/FilingChoices::run()` (body unchanged; the caller id is passed in). The controller
+        builds it over the follow-ups it is given in its constructor, so its constructor signature and the container
+        are unchanged, and it no longer names `MessagePreview`. phpmd: zero findings on both files under both
+        rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation, green on the unchanged controller first (own commit): 1 test added to
+        `MailIntakeControllerTest` for a sender without a display name, named by address in the handler's notice
+        (19 in all); unchanged and green after.
+        Own test: `tests/Unit/Controller/Support/FilingChoicesTest` (3); dropping the address fallback turns 2 tests
+        red (checked).
