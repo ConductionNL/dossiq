@@ -325,6 +325,7 @@ class DsoContractRequestStub implements IRequest {
  *
  * @covers \OCA\Dossiq\Controller\DsoController
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\RequestBodyFields
  */
 class DsoControllerContractTest extends TestCase {
 

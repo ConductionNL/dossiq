@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\JsonRequestBody;
+use OCA\Dossiq\Controller\Support\RequestBodyFields;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
@@ -62,6 +62,13 @@ class DsoController extends Controller {
 	private const DSO_STATUSES = ['submitted', 'in_handling', 'granted', 'refused', 'withdrawn'];
 
 	/**
+	 * Reads the request body's fields and refuses a missing or unknown choice.
+	 *
+	 * @var RequestBodyFields
+	 */
+	private readonly RequestBodyFields $fields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name
@@ -86,6 +93,7 @@ class DsoController extends Controller {
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->fields = new RequestBodyFields();
 	}//end __construct()
 
 	/**
@@ -194,10 +202,14 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = $this->fields->read(request: $this->request);
 		$newStatus = (string)($body['newStatus'] ?? '');
 
-		$refusal = $this->statusRefusal(newStatus: $newStatus);
+		$refusal = $this->fields->choiceRefusal(
+			value: $newStatus,
+			allowed: self::DSO_STATUSES,
+			messages: ['required' => 'newStatus is required', 'invalid' => 'Invalid status value']
+		);
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -208,25 +220,6 @@ class DsoController extends Controller {
 			return $this->failure(exception: $e, endpoint: ['action' => 'transitionStatus', 'message' => 'Could not transition status']);
 		}//end try
 	}//end transitionStatus()
-
-	/**
-	 * Refuse a missing or unknown DSO status.
-	 *
-	 * @param string $newStatus The requested status.
-	 *
-	 * @return JSONResponse|null The refusal, or null for a valid status.
-	 */
-	private function statusRefusal(string $newStatus): ?JSONResponse {
-		if ($newStatus === '') {
-			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
-		}
-
-		if (in_array(needle: $newStatus, haystack: self::DSO_STATUSES, strict: true) === false) {
-			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
-		}
-
-		return null;
-	}//end statusRefusal()
 
 	/**
 	 * Move a case the user may change to a new DSO status.
@@ -248,8 +241,8 @@ class DsoController extends Controller {
 		$updated = $this->dsoCaseService->transitionStatus(
 			caseId: $caseId,
 			newStatus: (string)($body['newStatus'] ?? ''),
-			besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
-			notes: $this->optionalString(body: $body, key: 'notes'),
+			besluitdatum: $this->fields->optionalString(body: $body, key: 'besluitdatum'),
+			notes: $this->fields->optionalString(body: $body, key: 'notes'),
 			userId: $user->getUID()
 		);
 
@@ -277,8 +270,12 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
-		$refusal = $this->outcomeRefusal(outcome: (string)($body['outcome'] ?? ''));
+		$body = $this->fields->read(request: $this->request);
+		$refusal = $this->fields->choiceRefusal(
+			value: (string)($body['outcome'] ?? ''),
+			allowed: ['granted', 'refused'],
+			messages: ['required' => 'outcome is required', 'invalid' => 'Invalid outcome value']
+		);
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -319,7 +316,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = $this->fields->read(request: $this->request);
 		if ((string)($body['requestedCompetentAuthority'] ?? '') === '') {
 			return $this->badRequest(message: 'aangezochtBevoegdGezag is required');
 		}
@@ -360,7 +357,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = $this->fields->read(request: $this->request);
 		$accept = (bool)($body['accept'] ?? false);
 		$advies = (string)($body['advice'] ?? '');
 
@@ -406,7 +403,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = $this->fields->read(request: $this->request);
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
 
 		if ($targetBevoegdGezag === '') {
@@ -549,26 +546,6 @@ class DsoController extends Controller {
 	}//end forwarded()
 
 	/**
-	 * Refuse a missing or unknown beschikking outcome.
-	 *
-	 * @param string $outcome The requested outcome.
-	 *
-	 * @return JSONResponse|null The 400, or null for `granted` or `refused`.
-	 */
-	private function outcomeRefusal(string $outcome): ?JSONResponse {
-		if ($outcome === '') {
-			return new JSONResponse(['error' => 'outcome is required'], Http::STATUS_BAD_REQUEST);
-		}
-
-		$allowedOutcomes = ['granted', 'refused'];
-		if (in_array(needle: $outcome, haystack: $allowedOutcomes, strict: true) === false) {
-			return new JSONResponse(['error' => 'Invalid outcome value'], Http::STATUS_BAD_REQUEST);
-		}
-
-		return null;
-	}//end outcomeRefusal()
-
-	/**
 	 * Generate the beschikking the body asks for.
 	 *
 	 * @param string               $caseId The case.
@@ -603,31 +580,4 @@ class DsoController extends Controller {
 
 		return new JSONResponse($samenwerkverzoek, Http::STATUS_CREATED);
 	}//end writeSamenwerking()
-
-	/**
-	 * Read an optional string field from the decoded body.
-	 *
-	 * @param array<string,mixed> $body The decoded request body.
-	 * @param string $key The field name.
-	 *
-	 * @return string|null The value, or null when absent.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
-	 */
-	private function optionalString(array $body, string $key): ?string {
-		if (isset($body[$key]) === false) {
-			return null;
-		}
-
-		return (string)$body[$key];
-	}//end optionalString()
-
-	/**
-	 * Decode a JSON request body safely.
-	 *
-	 * @return array<string,mixed>
-	 */
-	private function readJsonBody(): array {
-		return (new JsonRequestBody())->read(request: $this->request);
-	}//end readJsonBody()
 }//end class
