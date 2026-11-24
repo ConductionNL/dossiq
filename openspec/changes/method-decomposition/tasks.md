@@ -1495,3 +1495,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own test: `tests/Unit/Controller/EmailSettingsControllerTest` (3: the anonymous refusal on all three routes
         with nothing read, the read of every settings key, empty when unset, and a save that stores only the named
         keys, the block list through its class and nothing outside the form).
+  - [x] 8by `Controller/CaseRecycleController` (1: CouplingBetweenObjects 16 against 13). Every other gesture there acts
+        on a case in OpenRegister's recycle state; the retention clocks read a case that still exists under the
+        ordinary case authority, so that route goes to its own controller, `RetentionClocksController`
+        (`retentionClocks#clocks` in `appinfo/routes.php`; same URL and verb, so `openapi.json`, which matches by URL,
+        is unchanged). It takes the request, the per-case `CaseAccessRefusal` (injected, no longer built inline), the
+        new `Controller/Support/LiveCaseRetentionClocks` (the live case read and its two clocks, null when the case is
+        not live) and the logger: four parameters (gate-122). Bodies otherwise moved unchanged: 401 signed out, 403
+        without read access, 404 `case_not_found`, 500 withholding the detail. The recycle controller no longer takes
+        the clocks or the case guard (ten parameters to eight); the container wires the rest. Coupling 13, 9 and 2,
+        complexity 16, 5 and 3 (pdepend); phpmd: no finding on the three files under both rulesets with the
+        suppression gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 189 to 188.
+        Characterisation: the existing `CaseRecycleControllerTest` (11: the lens, the windows, the scope, restore, the
+        refusals and their statuses, the preview, the guarded clocks read, both clocks, the anonymous caller on all
+        five routes, the withheld detail), green before and after; its clocks calls now go to the new controller, no
+        assertion changed.
+        Own test: `tests/Unit/Controller/Support/LiveCaseRetentionClocksTest` (2: the clocks of the live case, and
+        null without asking the clocks for a case that is not live).
