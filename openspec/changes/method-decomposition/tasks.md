@@ -1529,3 +1529,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own test: `tests/Unit/Service/Advice/AdviceRequestFilingTest` (2: the saved request carries its decision
         reference under its own id, and an unanswered decidesk fails closed with no reference stored); saving the
         reference without the request's uuid turns seven tests red (checked).
+  - [x] 8ca `Bezwaar/HearingService` (2: ExcessiveClassComplexity 54 against 50, and TooManyMethods). What a session
+        change writes moved to the new `Hearing/SessionWrites`: the attendance (each late correction recorded first,
+        then the patch, and an `attendance-late-correction-not-applied` row per correction when the patch fails) and
+        the minutes (the verslag entry recorded, then applied), with the patch itself (`attendance()`, `minutes()`;
+        bodies, log lines and messages moved unchanged). The service keeps the store lookups, the plans, the consent
+        guard, the new sessions and the seeding; it builds the writer over its own audit trail and logger in its
+        constructor, so its constructor, interface and container binding are unchanged. phpmd: zero findings on both
+        files under both rulesets with both suppressions gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 187 to 185.
+        Characterisation, green on the single class first (own commit): 2 tests added to the Bezwaar
+        `HearingServiceTest` (12 in all) for a late correction recorded before the patch, a failed patch leaving a
+        not-applied row with its error and the attendance unchanged, and attendance inside the grace window writing no
+        entry. Unchanged and green after but for one `@uses` line in each file that builds the service.
+        Own test: `tests/Unit/Service/Hearing/SessionWritesTest` (3); dropping the not-applied rows turns 2 tests red
+        (checked).
