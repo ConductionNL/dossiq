@@ -7,7 +7,7 @@
     "tools": [
       {
         "name": "composer",
-        "version": "2.10.2"
+        "version": "2.8.12"
       },
       {
         "vendor": "cyclonedx",
@@ -830,8 +830,8 @@
       "type": "library",
       "name": "nextcloud-vue",
       "group": "@conduction",
-      "version": "2.181.0",
-      "bom-ref": "dossiq@0.1.0|@conduction/nextcloud-vue@2.181.0",
+      "version": "2.203.0",
+      "bom-ref": "dossiq@0.1.0|@conduction/nextcloud-vue@2.203.0",
       "licenses": [
         {
           "license": {
@@ -839,15 +839,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40conduction/nextcloud-vue@2.181.0",
+      "purl": "pkg:npm/%40conduction/nextcloud-vue@2.203.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@conduction/nextcloud-vue/-/nextcloud-vue-2.181.0.tgz",
+          "url": "https://registry.npmjs.org/@conduction/nextcloud-vue/-/nextcloud-vue-2.203.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "4cbbcd40d463ccd080f1a3edaeca41c546842375bad9b7956540f0b289a94f3641ca79122d3ae762d6ae99d659767b057dff60ef40b1c4f0ab8937579b586f9b"
+              "content": "b5e3f0e39ab553281a32e5e0ad40505c8d99e92fa5452897eb44caea62ac1b57e97de44bd5382723b84429504c894a9d480eae59a3229fcf35b20a4452224364"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -864,7 +864,7 @@
           "type": "library",
           "name": "commander",
           "version": "14.0.3",
-          "bom-ref": "dossiq@0.1.0|@conduction/nextcloud-vue@2.181.0|commander@14.0.3",
+          "bom-ref": "dossiq@0.1.0|@conduction/nextcloud-vue@2.203.0|commander@14.0.3",
           "licenses": [
             {
               "license": {
