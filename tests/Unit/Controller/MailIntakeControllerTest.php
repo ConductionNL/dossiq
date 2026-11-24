@@ -471,6 +471,28 @@ final class MailIntakeControllerTest extends TestCase {
 	}//end testFileOnCaseRunsTheChosenFollowUps()
 
 	/**
+	 * A sender without a display name is named by address in the handler's notice, and only that choice runs.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseNamesASenderWithoutANameByAddress(): void {
+		$this->log->method('find')->willReturn(
+			$this->entry(['sender' => 'henk@example.org', 'subject' => 'Vraag', 'original' => "From: henk@example.org\r\n\r\nHallo"])
+		);
+		$this->intake->method('fileOnCase')->willReturn('case-114');
+		$this->followUps->expects($this->never())->method('addSenderAsParty');
+		$this->followUps->expects($this->once())
+			->method('notifyHandler')
+			->with('case-114', 'intaker', 'henk@example.org', 'Vraag')
+			->willReturn('notified');
+
+		$data = $this->controller()->fileOnCase('entry-1', 'case-114', 'Hoort hier.', false, true)->getData();
+
+		$this->assertArrayNotHasKey('party', $data);
+		$this->assertSame('notified', $data['handler']);
+	}//end testFileOnCaseNamesASenderWithoutANameByAddress()
+
+	/**
 	 * Without the choices nothing else happens.
 	 *
 	 * @return void
