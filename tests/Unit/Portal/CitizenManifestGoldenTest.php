@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * The resident's manifest declarations, exactly.
  *
  * @covers \OCA\Dossiq\Portal\CitizenManifest
+ * @uses \OCA\Dossiq\Portal\CitizenCaseCollection
  * @uses \OCA\Dossiq\Portal\PortalConversation
  */
 class CitizenManifestGoldenTest extends TestCase {

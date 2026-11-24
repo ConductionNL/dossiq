@@ -35,6 +35,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
+use OCA\Dossiq\Service\Tenant\MandateMatrix;
 use OCA\Dossiq\Service\Tenant\TenantMembershipCache;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -58,13 +59,6 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	use ResolvesInstalledObjectService;
 
 	/**
-	 * Default deny-everything matrix (fail-closed fallback).
-	 *
-	 * @var array<string, array<string, bool>>
-	 */
-	private const DEFAULT_DENY_MATRIX = [];
-
-	/**
 	 * Upper bound on memberships read for one user.
 	 *
 	 * A person belongs to a handful of tenants, not hundreds. The cap exists so
@@ -83,6 +77,13 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	private readonly OpenRegisterRowNormaliser $rowNormaliser;
 
 	/**
+	 * Reads a mandate matrix: which row is in force, its matrix, and what it grants.
+	 *
+	 * @var MandateMatrix
+	 */
+	private readonly MandateMatrix $matrices;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager (for OR availability check).
@@ -97,6 +98,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 		private readonly ?TenantMembershipCache $memberships = null,
 	) {
 		$this->rowNormaliser = new OpenRegisterRowNormaliser();
+		$this->matrices = new MandateMatrix();
 	}//end __construct()
 
 	/**
@@ -191,54 +193,8 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function isAllowed(array $matrix, string $role, string $action): bool {
-		return self::anyGrants(candidates: self::entriesFor(matrix: $matrix, role: $role), action: $action);
+		return $this->matrices->allows(matrix: $matrix, role: $role, action: $action);
 	}//end isAllowed()
-
-	/**
-	 * The matrix entries that apply to a role: its own, then the wildcard role's.
-	 *
-	 * @param array<string, array<string, bool>> $matrix Active mandate matrix.
-	 * @param string                             $role   Resolved user role.
-	 *
-	 * @return array<int, array<string, bool>> The entries.
-	 */
-	private static function entriesFor(array $matrix, string $role): array {
-		$roleEntry = ($matrix[$role] ?? null);
-		$wildcardEntry = ($matrix['*'] ?? null);
-
-		$candidates = [];
-		if (is_array($roleEntry) === true) {
-			$candidates[] = $roleEntry;
-		}
-
-		if (is_array($wildcardEntry) === true) {
-			$candidates[] = $wildcardEntry;
-		}
-
-		return $candidates;
-	}//end entriesFor()
-
-	/**
-	 * Whether any entry grants the action, by name or by wildcard.
-	 *
-	 * @param array<int, array<string, bool>> $candidates The entries that apply.
-	 * @param string                          $action     Requested action.
-	 *
-	 * @return bool True when one grants it.
-	 */
-	private static function anyGrants(array $candidates, string $action): bool {
-		foreach ($candidates as $entry) {
-			if (($entry[$action] ?? false) === true) {
-				return true;
-			}
-
-			if (($entry['*'] ?? false) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end anyGrants()
 
 	/**
 	 * Load the active mandate matrix for the tenant.
@@ -263,7 +219,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			return null;
 		}
 
-		return $this->normaliseMatrix(matrixField: ($active['matrix'] ?? null));
+		return $this->matrices->normalise(matrixField: ($active['matrix'] ?? null));
 	}//end loadActiveMatrix()
 
 	/**
@@ -278,7 +234,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			return null;
 		}
 
-		return $this->findActiveMandateRow(rows: $this->rowsAsArrays(rows: $rows));
+		return $this->matrices->activeRow(rows: $this->rowsAsArrays(rows: $rows));
 	}//end activeMandateRowOf()
 
 	/**
@@ -323,71 +279,6 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			'offset' => 0,
 		];
 	}//end mandateQuery()
-
-	/**
-	 * Pick the mandate row whose effective window contains "now".
-	 *
-	 * @param array<int, array<string, mixed>> $rows The tenantMandate rows, read as arrays.
-	 *
-	 * @return array<string, mixed>|null The active row, or null when none applies.
-	 */
-	private function findActiveMandateRow(array $rows): ?array {
-		$now = time();
-		foreach ($rows as $row) {
-			if ($this->isEffectiveAt(row: $row, moment: $now) === true) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end findActiveMandateRow()
-
-	/**
-	 * Whether a mandate row's effective window holds the moment.
-	 *
-	 * A missing bound is open-ended; a bound that does not parse makes the row apply never.
-	 *
-	 * @param array<string, mixed> $row    The tenantMandate row.
-	 * @param int                  $moment The moment, a Unix timestamp.
-	 *
-	 * @return bool True when the row is in force at the moment.
-	 */
-	private function isEffectiveAt(array $row, int $moment): bool {
-		$from = strtotime((string)($row['effectiveFrom'] ?? '1970-01-01'));
-		$to = strtotime((string)($row['effectiveTo'] ?? '2099-12-31'));
-
-		return ($from !== false && $to !== false && $from <= $moment && $moment <= $to);
-	}//end isEffectiveAt()
-
-	/**
-	 * Normalise the `matrix` field of an active mandate row.
-	 *
-	 * @param mixed $matrixField The raw matrix value.
-	 *
-	 * @return array<string, array<string, bool>> The resolved matrix.
-	 */
-	private function normaliseMatrix(mixed $matrixField): array {
-		if (is_array($matrixField) === true) {
-			return $matrixField;
-		}
-
-		if (is_string($matrixField) === true) {
-			$decoded = json_decode($matrixField, true);
-			if (is_array($decoded) === true) {
-				return $decoded;
-			}
-
-			return self::DEFAULT_DENY_MATRIX;
-		}
-
-		// Fallback: a default role-action matrix when the active mandate row
-		// does not embed one. Mirrors the common municipal mandate template.
-		return [
-			'tenant_admin' => ['*' => true],
-			'case_handler' => ['create' => true, 'edit' => true, 'status_update' => true],
-			'viewer' => [],
-		];
-	}//end normaliseMatrix()
 
 	/**
 	 * Resolve the role for a user inside a tenant.

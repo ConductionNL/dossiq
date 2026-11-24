@@ -1637,3 +1637,87 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CaseRecycleServiceTest` for the lens; unchanged and green after but for `@uses` lines.
         Own tests: `Recycle/LiveCaseReaderTest` (2) and `Recycle/DeletedCaseVisibilityTest` (1); dropping the assignee
         check turns 1 test red (checked).
+  - [x] 8ci `Pdok/PdokLocatieserverService` (1, unsuppressed: ExcessiveClassComplexity 60 against 50). The outage budget
+        and the degraded state (three server errors in sixty seconds hold the service degraded for five minutes; a 4xx
+        never counts; a success clears it) are their own concern, so `recordSuccess()`, `recordFailure()`,
+        `cachedFailures()`, `withinWindow()`, `engageDegraded()` and `isDegraded()` moved to the new `Pdok/OutageBreaker`
+        with the `OUTAGE_THRESHOLD`, `OUTAGE_WINDOW` and `DEGRADED_TTL` constants. Bodies moved unchanged; the breaker
+        keeps its state in the service's own distributed cache, under the same keys. The service builds it in its
+        constructor, so its constructor signature and the container are unchanged. phpmd: zero findings on both files
+        under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not
+        suppressed).
+        Characterisation: the existing `PdokOutageBreakerTest`, `PdokLocatieserverServiceTest` and
+        `PdokRequestShapesTest` (41), green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Pdok/OutageBreakerTest` (2); counting 4xx answers toward the budget turns 4 tests
+        red (checked).
+  - [x] 8cj `Portal/CitizenManifest` (1, unsuppressed: ExcessiveClassLength 1009 against 1000). The resident's own
+        cases as the portal declares them (the collection "Mijn zaken" reads, its projected fields, who is at turn,
+        where it stands, what a card shows, the organisation's intro) are their own declaration, so `caseCollection()`'s
+        body moved to the new `Portal/CitizenCaseCollection::declaration()` with `caseDetailKeys()`, `casePageBlocks()`
+        and `caseListKeys()`. Bodies moved unchanged but for `self::` on the manifest's three public constants, now
+        `CitizenManifest::`. `caseCollection()` stays on the manifest as a one-line delegation, so
+        `PortalContributionProvider` and every reader are unchanged. 907 lines; phpmd: zero findings on both files under
+        both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `CitizenManifestGoldenTest` (every declaration byte for byte),
+        `CitizenManifestTest`, `PortalCaseDeclarationsTest` and `PortalConversationTest`, green before and unchanged
+        after but for one `@uses` line each.
+        Own test: `tests/Unit/Portal/CitizenCaseCollectionTest` (2); dropping the intro turns 4 tests red (checked).
+  - [x] 8ck `TenantAuthenticationService` (1, unsuppressed: ExcessiveClassComplexity 59 against 50). Reading a mandate
+        matrix (which `tenantMandate` row is in force at a moment, the matrix it carries or the default when it carries
+        none, and whether it grants a role an action, wildcards included) is its own concern, so `isAllowed()`'s body,
+        `entriesFor()`, `anyGrants()`, `findActiveMandateRow()`, `isEffectiveAt()` and `normaliseMatrix()` moved to the
+        new `Tenant/MandateMatrix` (`allows()`, `activeRow()`, `normalise()`) with `DEFAULT_DENY_MATRIX`. Bodies moved
+        unchanged. The reads, the refusal on an unreadable matrix and the membership cache stay in the service, which
+        builds the matrix reader in its constructor, so its constructor signature and the container are unchanged.
+        phpmd: no ExcessiveClassComplexity finding, and no new finding on either file under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `TenantAuthenticationServiceTest` (grants and wildcards) and
+        `TenantAuthenticationLookupsGoldenTest` (past, future and garbled rows, JSON and default matrices, the decision),
+        green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Tenant/MandateMatrixTest` (2); ignoring the wildcard action turns 2 tests red
+        (checked).
+  - [x] 8cl `AanvullingsverzoekService` (1, unsuppressed: ExcessiveClassComplexity 57 against 50). Turning the items a
+        handler asks for into checklist rows (each not yet received) and the one-line summary a request is titled by
+        is its own concern, so `itemRows()`, `cleanLines()` and `summaryOf()` moved to the new, generically named
+        `Support/AskedItems` (`rows()`, `summary()`). Bodies moved unchanged. The service builds it in its constructor,
+        so its constructor signature and the container are unchanged. Complexity 50; phpmd: no
+        ExcessiveClassComplexity finding, and no new finding on either file under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `AanvullingsverzoekServiceAskGoldenTest` (the rows and summary of every ask),
+        `AanvullingsverzoekServiceTest`, `WooClarificationTest` and `PortalWooAnswerTest`, green before and unchanged
+        after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Support/AskedItemsTest` (2); keeping blank lines turns 4 tests red (checked).
+  - [x] 8cm `MandaatCheckService` (1, unsuppressed: ExcessiveClassComplexity 74 against 50). Two pure concerns moved
+        out. The questions asked of register rows (in force on a date, covering a decision and case type, one active
+        for an organisation, the rows for a role, the primary role assignment) went to the new `Mandate/MandateRows`
+        (`isValidOn()`, was `isRowTemporallyValid()`; `matchesTypes()`, was `matchesTypeTerms()`; `anyActiveFor()`,
+        `forRole()`, `validOn()`, `firstByAllocation()` and the private `organisationOf()`). The conditions a mandate
+        sets on a case (the ceiling first, then subdelegation) went to the new `Mandate/MandateConditions`
+        (`evaluate()`, `evaluateConditions()`'s body, with `plafondExceeded()` and `subdelegatieDenied()`).
+        Bodies moved unchanged but for `self::REDEN_*`, now `MandaatCheckService::REDEN_*`. `evaluateConditions()`
+        stays public as a one-line delegation. The reads, the stores and the refusals stay in the service, which builds
+        both in its constructor, so its constructor signature and the container are unchanged. phpmd: zero findings on
+        the three files under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the
+        finding was not suppressed).
+        Characterisation: the existing `MandaatCheckServiceTest`, `MandaatCheckServiceActiveForOrganisationTest` and
+        `RefusalReplacesTheEmptyAnswerTest` (210 tests with the other mandate suites), green before and unchanged after
+        but for two `@uses` lines each.
+        Own tests: `tests/Unit/Service/Mandate/MandateRowsTest` (3) and `MandateConditionsTest` (1); letting an
+        open-ended row lapse turns 10 tests red (checked).
+  - [x] 8cn `Notification/RequesterNoticeSender` (2, unsuppressed: TooManyMethods 32 against 25, ExcessiveClassComplexity
+        68 against 50). Two channels of concern moved out. The portal inbox (a message from the organisation to the
+        case's portal subject, saved as the system) went to the new `Notification/PortalInboxChannel::deliver()`, with
+        `portalMessage()`, `savePortalMessage()`, `portalAnswer()`, `idOf()` and its own copy of the four-line
+        `refused()`; the store it writes to is passed in by the sender, read as before. Keeping each notice and its
+        result on the case's outbound communications went to the new `Notification/CaseNoticeLog` (`record()`, was
+        `noticeRecord()`; `append()`, was `appendRecord()`; `storedNotices()`, `writeNotices()`). Bodies moved unchanged
+        but for the store parameter and `self::PORTAL_APP`, now `RequesterNoticeSender::PORTAL_APP`. The sender builds
+        both in its constructor and no longer takes the `SearchesObjects` trait, so its constructor signature and the
+        container are unchanged. 24 methods; phpmd: neither finding remains, and zero findings on the three files under
+        both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the findings were not
+        suppressed).
+        Characterisation: the existing `RequesterNoticeSenderTest` and `RequesterNoticeSenderChannelsTest` (the portal
+        inbox unconfigured, throwing and answering no id, the record on the case) with the five suites that send
+        through it (186 tests), green before and unchanged after but for two `@uses` lines each.
+        Own tests: `PortalInboxChannelTest` (1) and `CaseNoticeLogTest` (1); always copying the optional result fields
+        turns 3 tests red (checked).

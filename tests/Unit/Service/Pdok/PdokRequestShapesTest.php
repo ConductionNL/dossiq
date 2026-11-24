@@ -40,6 +40,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Pdok\PdokLocatieserverService
  * @uses   \OCA\Dossiq\Service\Pdok\LocatieserverCall
+ * @uses   \OCA\Dossiq\Service\Pdok\OutageBreaker
  */
 final class PdokRequestShapesTest extends TestCase {
 
