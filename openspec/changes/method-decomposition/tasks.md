@@ -1476,3 +1476,56 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         reflection on the controller; the golden file unchanged), green before and after but for the constructor call.
         Own test: `tests/Unit/Controller/Support/WorkloadScopeTest` (3); dropping the empty-uid check turns it red
         (checked).
+  - [x] 8bx `Controller/EmailTemplateController` (1: CouplingBetweenObjects 15 against 13). The mail settings form is
+        its own surface, so its three routes go to their own controller, `EmailSettingsController`
+        (`emailSettings#getSettings`, `#saveSettings`, `#mailAccounts` in `appinfo/routes.php`; same URLs, verbs and
+        `AuthorizedAdminSetting` attributes, so `openapi.json`, which matches by URL, is unchanged). The controller
+        keeps the session check and the request; what the form reads and writes is
+        `Controller/Support/MailIntakeSettings` (the settings keys, `values()`, `save()` with the block list still
+        written through `SenderBlocklistInterface`, and `accounts()` with the mailbox status it records), so the new
+        controller takes three parameters, not six (gate-122). Bodies moved unchanged. The template controller keeps
+        the templates, the draft and the variables and no longer takes the app config, the mail gateway or the block
+        list (nine parameters to six); the container wires all three. Coupling 12, 8 and 5, complexity 21, 8 and 11
+        (pdepend); phpmd: no finding on the three files under both rulesets with the suppression gone.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 190 to 189.
+        Characterisation: the existing `EmailTemplateControllerContractTest` (the anonymous refusals, the admin
+        check on the session uid, the case guard on the draft, the settings write without a password and through
+        the block list) and the mail card of `IntegrationProbesRecordTest`, green before and after; the settings
+        calls now go to the new controller, no assertion changed.
+        Own test: `tests/Unit/Controller/EmailSettingsControllerTest` (3: the anonymous refusal on all three routes
+        with nothing read, the read of every settings key, empty when unset, and a save that stores only the named
+        keys, the block list through its class and nothing outside the form).
+  - [x] 8by `Controller/CaseRecycleController` (1: CouplingBetweenObjects 16 against 13). Every other gesture there acts
+        on a case in OpenRegister's recycle state; the retention clocks read a case that still exists under the
+        ordinary case authority, so that route goes to its own controller, `RetentionClocksController`
+        (`retentionClocks#clocks` in `appinfo/routes.php`; same URL and verb, so `openapi.json`, which matches by URL,
+        is unchanged). It takes the request, the per-case `CaseAccessRefusal` (injected, no longer built inline), the
+        new `Controller/Support/LiveCaseRetentionClocks` (the live case read and its two clocks, null when the case is
+        not live) and the logger: four parameters (gate-122). Bodies otherwise moved unchanged: 401 signed out, 403
+        without read access, 404 `case_not_found`, 500 withholding the detail. The recycle controller no longer takes
+        the clocks or the case guard (ten parameters to eight); the container wires the rest. Coupling 13, 9 and 2,
+        complexity 16, 5 and 3 (pdepend); phpmd: no finding on the three files under both rulesets with the
+        suppression gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 189 to 188.
+        Characterisation: the existing `CaseRecycleControllerTest` (11: the lens, the windows, the scope, restore, the
+        refusals and their statuses, the preview, the guarded clocks read, both clocks, the anonymous caller on all
+        five routes, the withheld detail), green before and after; its clocks calls now go to the new controller, no
+        assertion changed.
+        Own test: `tests/Unit/Controller/Support/LiveCaseRetentionClocksTest` (2: the clocks of the live case, and
+        null without asking the clocks for a case that is not live).
+  - [x] 8bz `AdviceService` (1: CouplingBetweenObjects 15 against 13). What a new advice request writes is its own
+        concern, so it moved to the new `Advice/AdviceRequestFiling` (`file()`): the adviceRequest saved under the
+        configured schema (`savedAdvice()`, `adviceSchema()`), the decidesk `advice` Decision raised for the saved id
+        and its reference stored back (`delegateAdviceDecision()`, `storeDecisionRef()`, `decisionPayload()`), failing
+        closed when decidesk does not answer. Bodies moved unchanged, so the settings reads happen in the same order
+        and `AdviceServiceRequestGoldenTest` is unchanged. The service keeps the payload, the notification, the
+        reads, the transitions and the reminders; it takes the filing instead of the delegation service, so its
+        constructor changed (same eight parameters, one type); the container wires the filing. It no longer names
+        `AdviceDelegationService`, `ObjectSaveOptions` or `ObjectFindTarget`. Coupling 13 and 7, complexity 35 and 12
+        (pdepend); phpmd: no finding on either file under both rulesets with the suppression gone.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 188 to 187.
+        Characterisation: the existing `AdviceServiceRequestGoldenTest` (six recorded requests, every store write and
+        settings read in order), `AdviceKindAndOutcomeTest`, `AdviceServiceAuthorizationTest` and
+        `OneDateWritePathRoundTripTest`, green before and unchanged after but for the constructor call.
+        Own test: `tests/Unit/Service/Advice/AdviceRequestFilingTest` (2: the saved request carries its decision
+        reference under its own id, and an unanswered decidesk fails closed with no reference stored); saving the
+        reference without the request's uuid turns seven tests red (checked).

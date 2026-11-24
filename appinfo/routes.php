@@ -514,7 +514,7 @@ $extra = [
     ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
     ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
     ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
-    ['name' => 'caseRecycle#clocks',             'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
+    ['name' => 'retentionClocks#clocks',         'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
 
         // Claim and release (case-claim-action, row 2.4). Who holds a case is
         // one field, and OpenRegister would take that write straight from the
@@ -820,9 +820,9 @@ $extra = [
     // Which groups may see each contributed dashboard widget. Admin only.
     ['name' => 'widgetAudience#show', 'url' => '/api/settings/widget-audience', 'verb' => 'GET'],
     ['name' => 'widgetAudience#save', 'url' => '/api/settings/widget-audience', 'verb' => 'PUT'],
-    ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
-    ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
-    ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
+    ['name' => 'emailSettings#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
+    ['name' => 'emailSettings#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
+    ['name' => 'emailSettings#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
 
     // Inbound-mail-filters: the intake log as a surface, and the two named acts
     // a handler can perform on a message that should not have come to us. Every

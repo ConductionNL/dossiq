@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Advice\AdviceRequestFiling;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
@@ -109,7 +110,11 @@ class AdviceKindAndOutcomeTest extends TestCase {
 			settingsService: $settings,
 			userSession: $this->createMock(IUserSession::class),
 			logger: $this->createMock(LoggerInterface::class),
-			adviceDelegation: $delegation,
+			filing: new AdviceRequestFiling(
+				delegation: $delegation,
+				settingsService: $settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+			),
 			repository: $this->repository,
 			guard: $this->createMock(AdviceAuthorizationGuard::class),
 			notifier: $this->notifier,
