@@ -52,6 +52,7 @@ use Psr\Log\AbstractLogger;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Hearing\SessionWrites
  * @uses \OCA\Dossiq\Service\Support\OpensInTheInitialState
  */
 class HearingServiceGoldenTest extends TestCase {
