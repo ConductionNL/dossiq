@@ -210,7 +210,12 @@ class SupervisionPlanProgressTest extends TestCase {
 			actual: $figures['risk']
 		);
 
-		$odd = (new SupervisionPlanProgress())->riskRows(categories: [['name' => 'A', 'riskFrequency' => 'x'], ['name' => 'B', 'riskFrequency' => ['x', ['profile' => 'mid', 'objects' => -3]]]]);
+		$odd = (new SupervisionPlanProgress())->riskRows(
+			categories: [
+				['name' => 'A', 'riskFrequency' => 'x'],
+				['name' => 'B', 'riskFrequency' => ['x', ['profile' => 'mid', 'objects' => -3]]],
+			]
+		);
 		$this->assertSame(expected: [['category' => 'B', 'profile' => 'mid', 'objects' => 0, 'visitsPerYear' => 0.0, 'demand' => 0]], actual: $odd);
 	}//end testTheRiskFrequencyRows()
 }//end class
