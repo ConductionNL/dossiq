@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.198.0",
+	"version": "2.199.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5719,6 +5719,18 @@
 								}
 							],
 							"description": "type='detail', board look: the meta line on row 2 of the header, after the breadcrumb and a middle dot (screens-detail-page-parity). A field template such as `\"via {channel}\"`: every `{path}` is read from the record, and a line with an empty value is dropped. Maps to CnDetailPage `headerMeta`. type='index' | 'dashboard' | 'settings' (page-header-breadcrumb): the note after the breadcrumb and a middle dot under the title; on an index page `{total}` and `{shown}` are the list's counts."
+						},
+						"headerMetaSource": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["url"],
+							"description": "type='index' (index-header-meta-from-endpoint, 2.199.0): an endpoint whose answer at `responsePath` (a string or a number) fills `{source}` in headerMeta, for a line no list count gives (\"Bijgewerkt uit Magister om 07.00, 3 wijzigingen\"). The request grammar of a widget's endpointSource; while it reads, after a failed read or for an empty value the note is left out.",
+							"properties": {
+								"url": { "type": "string", "minLength": 1 },
+								"method": { "type": "string", "enum": ["GET", "POST"], "default": "GET" },
+								"params": { "type": "object", "additionalProperties": true },
+								"responsePath": { "type": "string" }
+							}
 						},
 						"headerMetaCounts": {
 							"type": "object",
