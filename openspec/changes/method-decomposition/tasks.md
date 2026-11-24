@@ -1555,3 +1555,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (19 in all); unchanged and green after.
         Own test: `tests/Unit/Controller/Support/FilingChoicesTest` (3); dropping the address fallback turns 2 tests
         red (checked).
+  - [x] 8ce `Controller/DsoController` (1, unsuppressed: ExcessiveClassComplexity 55 against 50). Reading the fields of a
+        request body (the body, a field that may be absent, a field that must be one of a fixed set) is its own
+        concern, so `readJsonBody()`, `optionalString()`, `statusRefusal()` and `outcomeRefusal()` went to the new
+        generic `Controller/Support/RequestBodyFields` (`read()`, `optionalString()`, and one `choiceRefusal()` that
+        takes the allowed values and the two sentences each caller had). Bodies and sentences unchanged. The
+        controller builds it in its constructor, so its constructor signature and the container are unchanged, and it
+        no longer names `JsonRequestBody` directly, so its coupling stays at 15. phpmd: no ExcessiveClassComplexity
+        finding, and no new finding on either file under both rulesets (the CouplingBetweenObjects 15 was there
+        before). `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `DsoCaseMutationsGoldenTest`, `DsoControllerTest` and
+        `DsoControllerContractTest` (the missing and unknown status and outcome, the optional dates and notes), green
+        before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Controller/Support/RequestBodyFieldsTest` (2); dropping the allowed-value check turns 3
+        tests red (checked).

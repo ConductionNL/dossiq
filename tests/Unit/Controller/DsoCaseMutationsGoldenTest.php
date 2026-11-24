@@ -51,6 +51,7 @@ interface DsoGoldenJsonRequest extends IRequest {
  *
  * @covers \OCA\Dossiq\Controller\DsoController
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\RequestBodyFields
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */
