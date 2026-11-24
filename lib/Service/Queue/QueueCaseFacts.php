@@ -192,15 +192,6 @@ class QueueCaseFacts {
 	}//end profileForCaseType()
 
 	/**
-	 * The profile with the thresholds of the case type it reads; the profile as it is when the read fails or finds none.
-	 *
-	 * @param UrgencyProfile                                                         $profile  The instance profile.
-	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the case type is
-	 *                                                                                          stored, and its id.
-	 *
-	 * @return UrgencyProfile The profile for that type.
-	 */
-	/**
 	 * A case type row, read once per request.
 	 *
 	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the row lives.
@@ -221,6 +212,15 @@ class QueueCaseFacts {
 		return $this->caseTypeRows[$key];
 	}//end caseTypeRow()
 
+	/**
+	 * The profile with the thresholds of the case type it reads; the profile as it is when the read fails or finds none.
+	 *
+	 * @param UrgencyProfile                                                         $profile  The instance profile.
+	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the case type is
+	 *                                                                                          stored, and its id.
+	 *
+	 * @return UrgencyProfile The profile for that type.
+	 */
 	private function withThresholdsOf(UrgencyProfile $profile, array $caseType): UrgencyProfile {
 		try {
 			$row = $this->caseTypeRow(caseType: $caseType);

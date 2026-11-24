@@ -58,10 +58,35 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->objects = new class {
+			/**
+			 * Finds asked.
+			 *
+			 * @var int
+			 */
 			public int $finds = 0;
+
+			/**
+			 * Searches asked.
+			 *
+			 * @var int
+			 */
 			public int $searches = 0;
+
+			/**
+			 * Whether find() throws.
+			 *
+			 * @var bool
+			 */
 			public bool $fail = false;
 
+			/**
+			 * One row per id, numbered by the find that read it.
+			 *
+			 * @param string $id      The id.
+			 * @param mixed  $options The find options.
+			 *
+			 * @return array<string, string>
+			 */
 			public function find(string $id, mixed $options = null): array {
 				$this->finds++;
 				if ($this->fail === true) {
@@ -71,6 +96,13 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 				return ['id' => $id, 'title' => 'Read '.$this->finds];
 			}
 
+			/**
+			 * One row per search, numbered by the search that read it.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 *
+			 * @return array<int, array<string, string>>
+			 */
 			public function searchObjects(array $query): array {
 				$this->searches++;
 				return [['id' => 'st-'.$this->searches, 'caseType' => ($query['caseType'] ?? '')]];
@@ -95,7 +127,7 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 	private function settings(): SettingsService {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
-		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => $key === 'register' ? '42' : '65');
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => (['register' => '42'][$key] ?? '65'));
 
 		return $settings;
 	}//end settings()
