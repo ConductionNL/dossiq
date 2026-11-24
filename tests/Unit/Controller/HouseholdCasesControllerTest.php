@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\HouseholdCasesController;
+use OCA\Dossiq\Controller\Support\HouseholdReaderGate;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\SociaalDomein\HouseholdCases;
@@ -87,8 +88,7 @@ class HouseholdCasesControllerTest extends TestCase {
 				request: $request,
 				userSession: $userSession,
 				session: $session,
-				caseAccess: $caseAccess,
-				sensitive: $guard,
+				gate: new HouseholdReaderGate(caseAccess: $caseAccess, sensitive: $guard),
 				household: $household,
 				logger: new NullLogger(),
 			),
