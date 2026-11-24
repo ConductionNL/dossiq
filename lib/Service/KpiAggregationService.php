@@ -266,8 +266,8 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		return [
 			'statusBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'status'), label: 'status'),
 			'typeBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'caseType'), label: 'type'),
-			'avgProcessingDays' => $this->averageProcessingDays(closed: $run->closed),
-			'slaCompliance' => $this->slaCompliance(closed: $run->closed),
+			'avgProcessingDays' => $this->sources->measures->averageProcessingDays(closed: $run->closed),
+			'slaCompliance' => $this->sources->measures->slaCompliance(closed: $run->closed),
 		];
 	}//end openWorkShape()
 
@@ -536,92 +536,6 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 
 		return $out;
 	}//end labelled()
-
-	/**
-	 * Mean days from start to end across the closed cases.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The average, or null when nothing closed.
-	 */
-	private function averageProcessingDays(array $closed): ?float {
-		$total = 0;
-		$counted = 0;
-
-		foreach ($closed as $row) {
-			$days = $this->daysBetween(from: ($row['startDate'] ?? null), to: ($row['endDate'] ?? null));
-			if ($days === null) {
-				continue;
-			}
-
-			$total += $days;
-			$counted++;
-		}
-
-		if ($counted === 0) {
-			return null;
-		}
-
-		return round(($total / $counted), 1);
-	}//end averageProcessingDays()
-
-	/**
-	 * Share of the closed cases that met their deadline, as a percentage.
-	 *
-	 * A case with no deadline is not counted either way: it had no target to
-	 * meet, so including it would flatter or punish the figure arbitrarily.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The percentage, or null when nothing measurable closed.
-	 */
-	private function slaCompliance(array $closed): ?float {
-		$within = 0;
-		$measurable = 0;
-
-		foreach ($closed as $row) {
-			$deadline = substr((string)($row['deadline'] ?? ''), 0, 10);
-			$end = substr((string)($row['endDate'] ?? ''), 0, 10);
-			if ($deadline === '' || $end === '') {
-				continue;
-			}
-
-			$measurable++;
-			if ($end <= $deadline) {
-				$within++;
-			}
-		}
-
-		if ($measurable === 0) {
-			return null;
-		}
-
-		return round((($within / $measurable) * 100), 0);
-	}//end slaCompliance()
-
-	/**
-	 * Whole days between two dates.
-	 *
-	 * @param mixed $from The earlier date.
-	 * @param mixed $to The later date.
-	 *
-	 * @return int|null The difference in days, or null when either is unusable.
-	 */
-	private function daysBetween(mixed $from, mixed $to): ?int {
-		$fromDate = substr((string)$from, 0, 10);
-		$toDate = substr((string)$to, 0, 10);
-		if ($fromDate === '' || $toDate === '') {
-			return null;
-		}
-
-		$start = date_create_immutable($fromDate);
-		$end = date_create_immutable($toDate);
-		if ($start === false || $end === false) {
-			return null;
-		}
-
-		return $this->sources->days->signed(from: $start, to: $end);
-	}//end daysBetween()
 
 	/**
 	 * The register and schema ids these metrics read.
