@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\Capabilities\ICapability;
 /**
  * Dossiq's capabilities.
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 class Capabilities implements ICapability {
 
@@ -41,7 +41,7 @@ class Capabilities implements ICapability {
 	 *
 	 * @return array<string, array<string, bool>> Keyed by app id.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function getCapabilities(): array {
 		return [

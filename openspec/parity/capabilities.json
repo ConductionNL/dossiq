@@ -22495,7 +22495,7 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/inspection-checklists-onto-task",
-					"openspec/changes/inspection-conflict-card",
+					"openspec/changes/archive/2026-11-24-inspection-conflict-card",
 					"openspec/changes/outbox-cards-with-summary"
 				],
 				"requirement": [

@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service\Sync;
 /**
  * The status and body a resolve request answers with.
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 final class ConflictResolutionOutcome {
 
@@ -37,7 +37,7 @@ final class ConflictResolutionOutcome {
 	 * @param int                  $status The HTTP status.
 	 * @param array<string, mixed> $body   The response body.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function __construct(
 		public readonly int $status,
@@ -53,7 +53,7 @@ final class ConflictResolutionOutcome {
 	 *
 	 * @return self
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public static function refused(int $status, string $message): self {
 		return new self(status: $status, body: ['message' => $message]);

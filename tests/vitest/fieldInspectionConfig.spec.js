@@ -31,7 +31,7 @@ const template = {
 }
 
 describe('dossiq field-inspection config', () => {
-	// @spec openspec/changes/inspection-conflict-card/design.md (open decision 4)
+	// @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/design.md (open decision 4)
 	it('files a replay conflict in the register as a conflictRecord', () => {
 		expect(config.register).toBe('dossiq')
 		expect(config.conflictSchema).toBe('conflictRecord')
