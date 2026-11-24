@@ -38,6 +38,7 @@ use Throwable;
  * Golden test for AanvullingsverzoekService::ask(): the answer or refusal, every collaborator call and the logs.
  *
  * @covers \OCA\Dossiq\Service\AanvullingsverzoekService
+ * @uses \OCA\Dossiq\Service\Support\AskedItems
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AanvullingsverzoekServiceAskGoldenTest extends TestCase {
