@@ -96,6 +96,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
+	#[\Override]
 	public function handle(Event $event): void {
 		if (is_a($event, self::EVENT) === false
 			|| method_exists($event, 'getProvider') === false

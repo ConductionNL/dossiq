@@ -77,6 +77,7 @@ class CaseTypeRightsSourcesListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
+	#[\Override]
 	public function handle(Event $event): void {
 		if ($this->isObjectEvent(event: $event) === false) {
 			return;
