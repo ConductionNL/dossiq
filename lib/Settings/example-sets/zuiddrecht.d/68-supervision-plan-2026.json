@@ -1,0 +1,65 @@
+{
+	"$comment": "DqToezichtplan: Zuiddrecht's supervision plan 2026, 150 inspections across hospitality, construction and environment, with 1,600 capacity hours. Each category's frequency by risk adds up to what it plans, so the demand the page shows equals the plan. Completed and cancelled are not seeded on the plan: they are counted from field inspections naming a category (supervision-plan-page).",
+	"objects": [
+		{
+			"key": "toezichtplan-2026",
+			"register": "dossiq",
+			"schema": "supervisionPlan",
+			"data": {
+				"title": "Supervision plan 2026",
+				"year": 2026,
+				"description": "Annual supervision plan: 150 inspections across hospitality, construction and environment.",
+				"capacityHours": 1600
+			}
+		},
+		{
+			"key": "toezichtplan-2026-horeca",
+			"register": "dossiq",
+			"schema": "supervisionPlanCategory",
+			"data": {
+				"plan": "{{object:toezichtplan-2026.id}}",
+				"name": "Hospitality",
+				"order": 1,
+				"planned": 40,
+				"hoursPerInspection": 8,
+				"riskFrequency": [
+					{"profile": "high", "objects": 10, "visitsPerYear": 2},
+					{"profile": "medium", "objects": 20, "visitsPerYear": 1}
+				]
+			}
+		},
+		{
+			"key": "toezichtplan-2026-bouw",
+			"register": "dossiq",
+			"schema": "supervisionPlanCategory",
+			"data": {
+				"plan": "{{object:toezichtplan-2026.id}}",
+				"name": "Construction",
+				"order": 2,
+				"planned": 60,
+				"hoursPerInspection": 12,
+				"riskFrequency": [
+					{"profile": "high", "objects": 15, "visitsPerYear": 2},
+					{"profile": "medium", "objects": 30, "visitsPerYear": 1}
+				]
+			}
+		},
+		{
+			"key": "toezichtplan-2026-milieu",
+			"register": "dossiq",
+			"schema": "supervisionPlanCategory",
+			"data": {
+				"plan": "{{object:toezichtplan-2026.id}}",
+				"name": "Environment",
+				"order": 3,
+				"planned": 50,
+				"hoursPerInspection": 10,
+				"riskFrequency": [
+					{"profile": "high", "objects": 10, "visitsPerYear": 2},
+					{"profile": "medium", "objects": 20, "visitsPerYear": 1},
+					{"profile": "low", "objects": 20, "visitsPerYear": 0.5}
+				]
+			}
+		}
+	]
+}
