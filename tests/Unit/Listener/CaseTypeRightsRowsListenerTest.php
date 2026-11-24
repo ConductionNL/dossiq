@@ -104,7 +104,7 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 		$this->assignedRows = $this->createMock(AssignedGroupReadRows::class);
 		$this->assignedRows->method('rows')->willReturn([['group' => 'team-a', 'actions' => ['read']]]);
 		$this->logger = $this->createMock(LoggerInterface::class);
-		$this->cache = $this->createMock(CaseTypeRightsRowsCache::class);
+		$this->cache = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
 	}//end setUp()
 
 	/**
@@ -179,11 +179,11 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 
 		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
 
-		$kept = $this->createMock(CaseTypeRightsRowsCache::class);
+		$kept = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
 		$kept->method('get')->willReturn([['group' => 'kept', 'actions' => ['read']]]);
 		$kept->expects($this->never())->method('remember');
 		$this->cache = $kept;
-		$store = $this->createPartialMock(CaseTypeStore::class, ['everyCaseType']);
+		$store = $this->createPartialMock(originalClassName: CaseTypeStore::class, methods: ['everyCaseType']);
 		$store->expects($this->never())->method('everyCaseType');
 		$this->store = $store;
 
@@ -191,11 +191,11 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 		$this->listener()->handle($event);
 
 		$this->assertSame(
-			[
+			expected: [
 				['dossiq', [['group' => 'team-a', 'actions' => ['read']]]],
 				['dossiq', [['group' => 'kept', 'actions' => ['read']]]],
 			],
-			$event->added
+			actual: $event->added
 		);
 	}//end testCompiledRowsAreKeptAndKeptRowsAreReused()
 
@@ -248,9 +248,8 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 		return new CaseTypeRightsRowsListener(
 			$this->store,
 			$this->roles,
-			new CaseRightsRowSources(caseTypes: $this->caseTypeRows, assignedGroup: $this->assignedRows),
+			new CaseRightsRowSources(caseTypes: $this->caseTypeRows, assignedGroup: $this->assignedRows, kept: $this->cache),
 			$this->logger,
-			$this->cache,
 		);
 	}//end listener()
 

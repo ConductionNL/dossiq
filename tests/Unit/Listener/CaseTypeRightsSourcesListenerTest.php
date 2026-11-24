@@ -48,7 +48,7 @@ class CaseTypeRightsSourcesListenerTest extends TestCase {
 	 * @return CaseTypeRightsSourcesListener
 	 */
 	private function listener(CaseTypeRightsRowsCache $cache): CaseTypeRightsSourcesListener {
-		$settings = $this->createMock(SettingsServiceInterface::class);
+		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ['case_type_schema' => '65', 'organisatie_rol_schema' => '210'][$key] ?? ''
 		);
@@ -76,8 +76,8 @@ class CaseTypeRightsSourcesListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testASourceChangeDropsTheRows(): void {
-		$cache = $this->createMock(CaseTypeRightsRowsCache::class);
-		$cache->expects($this->exactly(3))->method('forget');
+		$cache = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
+		$cache->expects($this->exactly(count: 3))->method('forget');
 		$listener = $this->listener(cache: $cache);
 
 		$listener->handle(new ObjectCreatedEvent($this->objectOf(schema: '65')));
@@ -91,7 +91,7 @@ class CaseTypeRightsSourcesListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnyOtherChangeLeavesTheRows(): void {
-		$cache = $this->createMock(CaseTypeRightsRowsCache::class);
+		$cache = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
 		$cache->expects($this->never())->method('forget');
 		$listener = $this->listener(cache: $cache);
 

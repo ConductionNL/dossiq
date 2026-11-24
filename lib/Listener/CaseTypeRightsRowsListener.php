@@ -48,7 +48,6 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\OrganisationRolesInterface;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
-use OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -77,16 +76,14 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	 *
 	 * @param CaseTypeStoreInterface     $store   Reads every case type.
 	 * @param OrganisationRolesInterface $roles   Reads the organisation roles.
-	 * @param CaseRightsRowSources       $sources The case type rights rows and the assigned group's read rows.
+	 * @param CaseRightsRowSources       $sources The case type rights rows, the kept ones, and the assigned group's read rows.
 	 * @param LoggerInterface            $logger  The logger.
-	 * @param CaseTypeRightsRowsCache    $cache   The compiled case type rows of the last minute.
 	 */
 	public function __construct(
 		private readonly CaseTypeStoreInterface $store,
 		private readonly OrganisationRolesInterface $roles,
 		private readonly CaseRightsRowSources $sources,
 		private readonly LoggerInterface $logger,
-		private readonly CaseTypeRightsRowsCache $cache,
 	) {
 	}//end __construct()
 
@@ -125,14 +122,14 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function caseTypeRows(): array {
-		$kept = $this->cache->get();
+		$kept = $this->sources->kept->get();
 		if ($kept !== null) {
 			return $kept;
 		}
 
 		$rows = $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped());
 		if ($rows !== []) {
-			$this->cache->remember(rows: $rows);
+			$this->sources->kept->remember(rows: $rows);
 		}
 
 		return $rows;

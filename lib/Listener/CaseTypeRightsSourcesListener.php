@@ -78,7 +78,7 @@ class CaseTypeRightsSourcesListener implements IEventListener {
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (in_array(get_class($event), self::EVENTS, true) === false) {
+		if ($this->isObjectEvent(event: $event) === false) {
 			return;
 		}
 
@@ -90,6 +90,23 @@ class CaseTypeRightsSourcesListener implements IEventListener {
 			}
 		}
 	}//end handle()
+
+	/**
+	 * Whether the event is one of OpenRegister's object create, update or delete events.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return bool
+	 */
+	private function isObjectEvent(Event $event): bool {
+		foreach (self::EVENTS as $name) {
+			if (is_a($event, $name) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isObjectEvent()
 
 	/**
 	 * The configured ids of the schemas the rows are compiled from.
