@@ -59,7 +59,6 @@ use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -72,8 +71,6 @@ use Throwable;
  * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 class RequesterNoticeSender {
-
-	use SearchesObjects;
 
 	public const STATUS_SENT = 'sent';
 	public const STATUS_NOT_SENT = 'not-sent';
@@ -102,6 +99,20 @@ class RequesterNoticeSender {
 	];
 
 	/**
+	 * Puts a notice in the requester's portal inbox.
+	 *
+	 * @var PortalInboxChannel
+	 */
+	private readonly PortalInboxChannel $portalInbox;
+
+	/**
+	 * Keeps each notice and its result on the case's outbound communications.
+	 *
+	 * @var CaseNoticeLog
+	 */
+	private readonly CaseNoticeLog $noticeLog;
+
+	/**
 	 * Constructor.
 	 *
 	 * Every collaborator but the e-mail transport is optional: a channel whose
@@ -125,6 +136,8 @@ class RequesterNoticeSender {
 		private readonly CaseContactDirectory $contacts = new CaseContactDirectory(),
 		private readonly LoggerInterface $logger = new NullLogger(),
 	) {
+		$this->portalInbox = new PortalInboxChannel(appManager: $appManager, logger: $logger);
+		$this->noticeLog = new CaseNoticeLog(writer: $writer, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -183,7 +196,7 @@ class RequesterNoticeSender {
 		$result = $this->result(delivery: $delivery);
 		$result['record'] = $this->recordOn(
 			case: $delivery->case,
-			record: $this->noticeRecord(result: $result, extras: (array)($delivery->options['recordExtras'] ?? []))
+			record: $this->noticeLog->record(result: $result, extras: (array)($delivery->options['recordExtras'] ?? []))
 		);
 		$this->logOutcome(result: $result);
 
@@ -278,110 +291,15 @@ class RequesterNoticeSender {
 	 */
 	private function through(string $channel, NoticeDelivery $delivery): ?array {
 		return match ($channel) {
-			self::CHANNEL_PORTAL => $this->portalInbox(case: $delivery->case, notice: $delivery->notice),
+			self::CHANNEL_PORTAL => $this->portalInbox->deliver(
+				case: $delivery->case,
+				notice: $delivery->notice,
+				store: $this->storeFor(schemaKey: 'portaal_bericht_schema')
+			),
 			self::CHANNEL_DIGITAL_POST => $this->digitalPostTo(case: $delivery->case, notice: $delivery->notice),
 			default => $this->emailTo(case: $delivery->case, notice: $delivery->notice),
 		};
 	}//end through()
-
-	/**
-	 * The portal inbox: a `portaalBericht` from the organisation to the case's portal subject.
-	 *
-	 * @param array<string, mixed> $case   The case row.
-	 * @param array<string, mixed> $notice The notice.
-	 *
-	 * @return array<string, mixed>|null Null when the case has no portal subject or portaliq is absent.
-	 */
-	private function portalInbox(array $case, array $notice): ?array {
-		$subject = trim((string)($case['portalSubject'] ?? ''));
-		if ($subject === '' || $this->appManager?->isInstalled(self::PORTAL_APP) !== true) {
-			return null;
-		}
-
-		$store = $this->storeFor(schemaKey: 'portaal_bericht_schema');
-		if ($store === null) {
-			return $this->refused(code: 'portal-inbox-unavailable', reason: 'The portal inbox is not configured, so the notice could not be put there.');
-		}
-
-		$message = $this->portalMessage(case: $case, notice: $notice);
-		try {
-			$saved = $this->savePortalMessage(store: $store, message: $message);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq requester notice: the portal inbox refused it', ['exception' => $e]);
-			return $this->refused(code: 'portal-inbox-failed', reason: 'The portal inbox did not accept the notice.');
-		}
-
-		return $this->portalAnswer(saved: $saved, sentAt: $message['sentAt']);
-	}//end portalInbox()
-
-	/**
-	 * The portal message for the requester, sent now.
-	 *
-	 * @param array<string, mixed>  $case   The case row; its portal subject is the recipient.
-	 * @param array<string, string> $notice The notice.
-	 *
-	 * @return array<string, string>
-	 */
-	private function portalMessage(array $case, array $notice): array {
-		return [
-			'caseId' => (string)($case['id'] ?? ''),
-			'caseReference' => (string)($case['identifier'] ?? ''),
-			'recipientRef' => trim((string)($case['portalSubject'] ?? '')),
-			'senderRef' => 'dossiq',
-			'senderType' => 'medewerker',
-			'senderName' => 'Gemeente',
-			'subject' => $notice['subject'],
-			'content' => $notice['body'],
-			'direction' => 'handler_to_citizen',
-			'sentAt' => (new DateTimeImmutable())->format('c'),
-		];
-	}//end portalMessage()
-
-	/**
-	 * Save the message in the requester's portal inbox.
-	 *
-	 * @param array{0: object, 1: string, 2: string} $store   The object service, the register and the schema.
-	 * @param array<string, string>                  $message The portal message.
-	 *
-	 * @return array<string, mixed>|null The saved message.
-	 */
-	private function savePortalMessage(array $store, array $message): ?array {
-		[$objectService, $register, $schema] = $store;
-
-		// As the system: a background job has no user, and the requester's
-		// inbox is not a register the acting handler holds a grant on.
-		return $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: fn (): ?array => $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $message
-			)
-		);
-	}//end savePortalMessage()
-
-	/**
-	 * Sent with the saved message's id, or refused when the inbox gave none.
-	 *
-	 * @param mixed  $saved  What the portal inbox saved.
-	 * @param string $sentAt When the message was sent.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function portalAnswer(mixed $saved, string $sentAt): array {
-		$row = [];
-		if (is_array($saved) === true) {
-			$row = $saved;
-		}
-
-		$messageId = $this->idOf(row: $row);
-		if ($messageId === '') {
-			return $this->refused(code: 'portal-inbox-failed', reason: 'The portal inbox did not accept the notice.');
-		}
-
-		return ['sent' => true, 'messageId' => $messageId, 'sentAt' => $sentAt];
-	}//end portalAnswer()
 
 	/**
 	 * Digital post over integriq, when the requester's BSN is known.
@@ -665,101 +583,10 @@ class RequesterNoticeSender {
 			return $record;
 		}
 
-		$this->appendRecord(location: [...$store, $caseId], record: $record);
+		$this->noticeLog->append(location: [...$store, $caseId], record: $record);
 
 		return $record;
 	}//end recordOn()
-
-	/**
-	 * The record of this notice, from the transport's answer and the caller's extras.
-	 *
-	 * @param array<string, mixed> $result The delivery result.
-	 * @param array<string, mixed> $extras More keys from the caller.
-	 *
-	 * @return array<string, mixed> The record.
-	 */
-	private function noticeRecord(array $result, array $extras): array {
-		$record = $extras + [
-			'moment' => $result['moment'],
-			'template' => $result['template'],
-			'channel' => $result['channel'],
-			'status' => $result['status'],
-			'channelsTried' => $result['channelsTried'],
-			'attemptedAt' => $result['attemptedAt'],
-		];
-		foreach (['messageId', 'sentAt', 'reasonCode', 'reason'] as $key) {
-			if (isset($result[$key]) === true) {
-				$record[$key] = $result[$key];
-			}
-		}
-
-		return $record;
-	}//end noticeRecord()
-
-	/**
-	 * Append the record to the case's outbound communications; a failed write is logged.
-	 *
-	 * @param array{0: object, 1: string, 2: string, 3: string} $location The object service, register, schema and case id.
-	 * @param array<string, mixed>                                 $record   The record.
-	 *
-	 * @return void
-	 */
-	private function appendRecord(array $location, array $record): void {
-		try {
-			$list = $this->storedNotices(location: $location);
-			$list[] = $record;
-			$this->writeNotices(location: $location, list: $list);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq requester notice: case {case} could not record the notice',
-				['case' => $location[3], 'reason' => $e->getMessage()]
-			);
-		}//end try
-	}//end appendRecord()
-
-	/**
-	 * The notices the stored case already carries, as a list.
-	 *
-	 * @param array{0: object, 1: string, 2: string, 3: string} $location The object service, register, schema and case id.
-	 *
-	 * @return array<int|string, mixed>
-	 */
-	private function storedNotices(array $location): array {
-		[$objectService, $register, $schema, $caseId] = $location;
-		$stored = $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId)
-		);
-		$list = [];
-		if (is_array($stored) === true) {
-			$list = ($stored['outboundCommunications'] ?? []);
-		}
-
-		if (is_array($list) === false) {
-			$list = [];
-		}
-
-		return $list;
-	}//end storedNotices()
-
-	/**
-	 * Write the case's outbound communications.
-	 *
-	 * @param array{0: object, 1: string, 2: string, 3: string} $location The object service, register, schema and case id.
-	 * @param array<int|string, mixed>                             $list     The notices, the new one last.
-	 *
-	 * @return void
-	 */
-	private function writeNotices(array $location, array $list): void {
-		[$objectService, $register, $schema, $caseId] = $location;
-		$this->writer->write(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			case: ['id' => $caseId],
-			changes: ['outboundCommunications' => array_values($list)],
-		);
-	}//end writeNotices()
 
 	/**
 	 * The object service, the register and one schema, or null when any is missing.
@@ -778,16 +605,4 @@ class RequesterNoticeSender {
 
 		return [$objectService, $register, $schema];
 	}//end storeFor()
-
-	/**
-	 * The id of a saved row.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
 }//end class
