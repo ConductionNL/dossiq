@@ -57,6 +57,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 	use OCP\IURLGenerator;
 	use OCP\IUser;
 	use OCP\IUserSession;
+	use OCP\Share\IManager as IShareManager;
+	use OCP\Share\IShare;
 	use PHPUnit\Framework\TestCase;
 	use Psr\Container\ContainerInterface;
 	use Psr\Log\LoggerInterface;
@@ -86,6 +88,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 
 		private bool $officeEnabled = true;
 
+		private IShareManager $shareManager;
+
 		/**
 		 * Set up the collaborators: a caller who may change the case and a file in its folder.
 		 *
@@ -110,6 +114,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 					$this->grants[] = $grant;
 				}
 			};
+			$this->shareManager = $this->createMock(IShareManager::class);
+			$this->shareManager->method('getSharesBy')->willReturn([]);
 			$this->restriction = new class {
 				public bool $readable = true;
 
@@ -165,7 +171,77 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 				appManager: $apps,
 				container: $container,
 				logger: $this->createMock(LoggerInterface::class),
+				shareManager: $this->shareManager,
 			);
+		}
+
+		/**
+		 * A store share of the file for this user, with the given status.
+		 *
+		 * @param string $sharedWith The recipient.
+		 * @param int    $status     The share's status.
+		 *
+		 * @return IShare
+		 */
+		private function share(string $sharedWith, int $status): IShare {
+			$share = $this->createMock(originalClassName: IShare::class);
+			$share->method('getSharedWith')->willReturn($sharedWith);
+			$share->method('getStatus')->willReturn($status);
+			return $share;
+		}
+
+		/**
+		 * A pending share is accepted for the caller, so the editor finds the file in the caller's files.
+		 *
+		 * @return void
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		public function testAcceptsAPendingShareForTheCaller(): void {
+			$pending = $this->share(sharedWith: 'pieter', status: IShare::STATUS_PENDING);
+			$other = $this->share(sharedWith: 'anna', status: IShare::STATUS_PENDING);
+			$this->shareManager = $this->createMock(originalClassName: IShareManager::class);
+			$this->shareManager->expects(self::once())->method('getSharesBy')
+				->with(CaseFileEditorController::STORE_USER, IShare::TYPE_USER)
+				->willReturn([$other, $pending]);
+			$this->shareManager->expects(self::once())->method('acceptShare')->with($pending, 'pieter');
+
+			$response = $this->controller()->open(caseId: self::CASE_ID, fileId: 42);
+
+			self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		}
+
+		/**
+		 * A share the caller already accepted is left as it is.
+		 *
+		 * @return void
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		public function testLeavesAnAcceptedShareAlone(): void {
+			$this->shareManager = $this->createMock(originalClassName: IShareManager::class);
+			$this->shareManager->method('getSharesBy')->willReturn([$this->share(sharedWith: 'pieter', status: IShare::STATUS_ACCEPTED)]);
+			$this->shareManager->expects(self::never())->method('acceptShare');
+
+			self::assertSame(expected: Http::STATUS_OK, actual: $this->controller()->open(caseId: self::CASE_ID, fileId: 42)->getStatus());
+		}
+
+		/**
+		 * A share that cannot be accepted does not stop the link.
+		 *
+		 * @return void
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		public function testAnAcceptFailureStillAnswersTheLink(): void {
+			$this->shareManager = $this->createMock(originalClassName: IShareManager::class);
+			$this->shareManager->method('getSharesBy')->willReturn([$this->share(sharedWith: 'pieter', status: IShare::STATUS_PENDING)]);
+			$this->shareManager->method('acceptShare')->willThrowException(new \RuntimeException(message: 'no'));
+
+			$response = $this->controller()->open(caseId: self::CASE_ID, fileId: 42);
+
+			self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+			self::assertSame(expected: '/index.php/f/42', actual: $response->getData()['url']);
 		}
 
 		/**
