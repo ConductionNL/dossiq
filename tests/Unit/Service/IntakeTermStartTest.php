@@ -36,7 +36,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Termijn\WorkingDayRoll
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class IntakeTermStartTest extends TestCase {
 
@@ -69,7 +69,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testASundayFilingStartsOnMonday(): void {
 		$sunday = new DateTimeImmutable('2026-03-08T20:14:00+01:00');
@@ -90,7 +90,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAFilingInsideTheWorkingWeekStartsAtOnce(): void {
 		$tuesday = new DateTimeImmutable('2026-03-10T10:00:00+01:00');
@@ -119,7 +119,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAnEarlyMorningFilingOnTheSameDayIsStillOutside(): void {
 		$sevenAm = new DateTimeImmutable('2026-03-10T07:00:00+01:00');
@@ -139,7 +139,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAnUnreachableCalendarStampsNothing(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -162,7 +162,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testACalendarAnsweringEarlierIsRefused(): void {
 		$sunday = new DateTimeImmutable('2026-03-08T20:14:00+01:00');
@@ -176,7 +176,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAStampedCaseIsNotStampedAgain(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));
@@ -191,7 +191,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testTheArrivalMomentComesFromTheCase(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));

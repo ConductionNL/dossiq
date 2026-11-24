@@ -62,7 +62,7 @@ interface IntakeTermStartInterface {
 	 *
 	 * @return bool True when it is already stamped.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function isStamped(array $case): bool;
 

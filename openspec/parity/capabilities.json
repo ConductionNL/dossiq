@@ -17586,7 +17586,7 @@
 				],
 				"plan": [
 					"openspec/changes/a-request-form-opens-the-case-at-once",
-					"openspec/changes/intake-says-when-the-term-starts",
+					"openspec/changes/archive/2026-11-24-intake-says-when-the-term-starts",
 					"openspec/changes/archive/2026-11-24-omgevingsvergunning-starts-its-term",
 					"openspec/changes/woo-request-takes-over-from-opencatalogi",
 					"openspec/changes/woo-term-is-computed-and-reported-right"
@@ -18003,7 +18003,7 @@
 					"openspec/specs/termijn-binding :: A term ends on a day, not at a moment (REQ-TERM-DAY-001)"
 				],
 				"plan": [
-					"openspec/changes/intake-says-when-the-term-starts",
+					"openspec/changes/archive/2026-11-24-intake-says-when-the-term-starts",
 					"openspec/changes/woo-term-is-computed-and-reported-right"
 				]
 			},
