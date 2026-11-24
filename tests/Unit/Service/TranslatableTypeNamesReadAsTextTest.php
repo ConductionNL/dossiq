@@ -47,6 +47,7 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Service\DemoCaseloadSeedDataService
  * @covers \OCA\Dossiq\Service\KpiSources
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Dashboard\ClosedCaseMeasures
  */
 class TranslatableTypeNamesReadAsTextTest extends TestCase {
 

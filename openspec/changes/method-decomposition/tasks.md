@@ -1610,6 +1610,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         termination date and from now when it is unreadable, a row without a status, the quota, the repairs), green
         before and unchanged after.
         Own test: `tests/Unit/Service/TenantMigration/OrganisationFromLegacyTenantTest` (2); dropping the quota turns 2
+  - [x] 8cg `KpiAggregationService` (1, unsuppressed: ExcessiveClassComplexity 58 against 50). Folding the cases closed
+        this month into their average duration and their deadline compliance is its own concern, so
+        `averageProcessingDays()`, `slaCompliance()` and `daysBetween()` moved to the new
+        `Dashboard/ClosedCaseMeasures` (bodies unchanged; the day count is its own constructor argument). `KpiSources`,
+        the bundle of what the figures are read from, builds it over its day count and carries it as `measures`, so the
+        service's constructor signature, the container and the service's coupling (14, there before) are unchanged.
+        phpmd: no ExcessiveClassComplexity finding, and no new finding on the three files under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `KpiAggregationServiceTest` (the duration and compliance fold, cases without a
+        deadline, no closed cases, unreadable dates, an end before the start), green before and unchanged after.
+        Own test: `tests/Unit/Service/Dashboard/ClosedCaseMeasuresTest` (2); inverting the deadline comparison turns 2
         tests red (checked).
   - [x] 8ch `Recycle/CaseRecycleService` (1, unsuppressed: ExcessiveClassComplexity 61 against 50). Two concerns moved
         out. Reading the live case behind the retention clocks (`liveCase()`'s body, `caseStoreLocation()`,
