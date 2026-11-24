@@ -107,7 +107,7 @@
     "node-polyfill-webpack-plugin": "4.0.0",
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.9",
-    "sass": "^1.105.0",
+    "sass": "^1.108.2",
     "sass-loader": "^17.0.0",
     "style-loader": "~4.0.0",
     "stylelint": "^18.0.0",

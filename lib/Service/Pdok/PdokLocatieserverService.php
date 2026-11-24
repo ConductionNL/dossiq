@@ -72,26 +72,18 @@ class PdokLocatieserverService {
 	private const DEFAULT_SUGGEST_TTL = 300;
 
 	/**
-	 * Outage window — number of consecutive 5xx responses before degrading.
-	 */
-	private const OUTAGE_THRESHOLD = 3;
-
-	/**
-	 * Outage window length in seconds.
-	 */
-	private const OUTAGE_WINDOW = 60;
-
-	/**
-	 * How long the service stays degraded once tripped (5 min).
-	 */
-	private const DEGRADED_TTL = 300;
-
-	/**
 	 * Shared cache used for response caching AND outage tracking.
 	 *
 	 * @var ICache The distributed cache instance.
 	 */
 	private ICache $cache;
+
+	/**
+	 * Counts PDOK's 5xx answers and degrades the service when they pile up.
+	 *
+	 * @var OutageBreaker
+	 */
+	private readonly OutageBreaker $breaker;
 
 	/**
 	 * Constructor.
@@ -111,6 +103,7 @@ class PdokLocatieserverService {
 		private IClientService $clientService,
 	) {
 		$this->cache = $cacheFactory->createDistributed('dossiq_pdok_locatieserver');
+		$this->breaker = new OutageBreaker(cache: $this->cache, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -129,7 +122,7 @@ class PdokLocatieserverService {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggest(string $query, array $filterQueries = [], int $rows = 10): array {
-		if ($this->isDegraded() === true) {
+		if ($this->breaker->isDegraded() === true) {
 			return [];
 		}
 
@@ -195,7 +188,7 @@ class PdokLocatieserverService {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function health(): string {
-		if ($this->isDegraded() === true) {
+		if ($this->breaker->isDegraded() === true) {
 			return 'degraded';
 		}
 
@@ -331,7 +324,7 @@ class PdokLocatieserverService {
 	 * @return array{response: array{docs: array}}
 	 */
 	private function failedRead(LocatieserverCall $read, RuntimeException $exception): array {
-		$this->recordFailure(statusCode: $exception->getCode());
+		$this->breaker->recordFailure(statusCode: $exception->getCode());
 		$this->logger->warning(
 			'Dossiq PDOK Locatieserver call failed',
 			[
@@ -403,7 +396,7 @@ class PdokLocatieserverService {
 			throw new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
 		}
 
-		$this->recordSuccess();
+		$this->breaker->recordSuccess();
 		return (string)$response->getBody();
 	}//end callDirect()
 
@@ -527,12 +520,12 @@ class PdokLocatieserverService {
 		if (is_array(value: $result) === true) {
 			$body = ($result['body'] ?? ($result['response']['body'] ?? null));
 			if (is_string(value: $body) === true) {
-				$this->recordSuccess();
+				$this->breaker->recordSuccess();
 				return $body;
 			}
 
 			if (is_array(value: $body) === true) {
-				$this->recordSuccess();
+				$this->breaker->recordSuccess();
 				return (string)json_encode(value: $body);
 			}
 		}
@@ -558,114 +551,4 @@ class PdokLocatieserverService {
 		);
 		return $this->callDirect(url: rtrim(string: $endpoint, characters: '/') . '/' . $path . '?' . http_build_query(data: $params));
 	}//end directFallback()
-
-	/**
-	 * Record a successful call (clears the failure counter).
-	 *
-	 * @return void
-	 */
-	private function recordSuccess(): void {
-		$this->cache->remove('failures');
-		// Self-clear degraded state on first success after cool-down.
-		if ($this->cache->get('degraded_until') !== null) {
-			$this->cache->remove('degraded_until');
-		}
-	}//end recordSuccess()
-
-	/**
-	 * Record a failure and flip into degraded state if the threshold is hit
-	 * within the rolling window.
-	 *
-	 * @param int $statusCode HTTP status code from the failing call.
-	 *
-	 * @return void
-	 */
-	private function recordFailure(int $statusCode): void {
-		// Only 5xx (and network errors, coded 0) count toward the outage
-		// budget. 4xx responses indicate a client problem, not a PDOK outage.
-		if ($statusCode !== 0 && ($statusCode < 500 || $statusCode >= 600)) {
-			return;
-		}
-
-		$failures = $this->cachedFailures();
-
-		$now = time();
-		$failures = $this->withinWindow(failures: $failures, now: $now);
-
-		$failures[] = $now;
-
-		if (count(value: $failures) >= self::OUTAGE_THRESHOLD) {
-			$this->engageDegraded(now: $now, failures: $failures);
-			return;
-		}
-
-		$this->cache->set('failures', array_values(array: $failures), self::OUTAGE_WINDOW);
-	}//end recordFailure()
-
-	/**
-	 * The failure timestamps in the cache, or none.
-	 *
-	 * @return array<int, int>
-	 */
-	private function cachedFailures(): array {
-		$failures = $this->cache->get('failures');
-		if (is_array(value: $failures) === false) {
-			$failures = [];
-		}
-
-		return $failures;
-	}//end cachedFailures()
-
-	/**
-	 * The failures inside the rolling window.
-	 *
-	 * @param array<int, int> $failures The failure timestamps.
-	 * @param int             $now      The current time.
-	 *
-	 * @return array<int, int>
-	 */
-	private function withinWindow(array $failures, int $now): array {
-		return array_filter(
-			array: $failures,
-			callback: static function (int $failedAt) use ($now): bool {
-				return ($now - $failedAt) <= self::OUTAGE_WINDOW;
-			}
-		);
-	}//end withinWindow()
-
-	/**
-	 * Flip into degraded state and clear the failure count.
-	 *
-	 * @param int             $now      The current time.
-	 * @param array<int, int> $failures The failures that hit the threshold.
-	 *
-	 * @return void
-	 */
-	private function engageDegraded(int $now, array $failures): void {
-		$this->cache->set('degraded_until', ($now + self::DEGRADED_TTL), self::DEGRADED_TTL);
-		$this->cache->remove('failures');
-		$this->logger->warning(
-			'Dossiq PDOK Locatieserver: degraded state engaged',
-			['failureCount' => count(value: $failures), 'cooldownSec' => self::DEGRADED_TTL]
-		);
-	}//end engageDegraded()
-
-	/**
-	 * Whether the service is currently in degraded state.
-	 *
-	 * @return bool True while degraded.
-	 */
-	private function isDegraded(): bool {
-		$until = $this->cache->get('degraded_until');
-		if ($until === null) {
-			return false;
-		}
-
-		if ((int)$until <= time()) {
-			$this->cache->remove('degraded_until');
-			return false;
-		}
-
-		return true;
-	}//end isDegraded()
 }//end class
