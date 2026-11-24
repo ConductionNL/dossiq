@@ -23,7 +23,7 @@
 
 		<!-- Label -->
 		<text
-			v-if="transition.label"
+			v-if="label"
 			:x="midX"
 			:y="midY - 8"
 			text-anchor="middle"
@@ -31,7 +31,7 @@
 			:fill="
 				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
 			">
-			{{ transition.label }}
+			{{ label }}
 		</text>
 
 		<!-- Click target (wider invisible path for easier clicking) -->
@@ -46,6 +46,8 @@
 </template>
 
 <script>
+import { labelText } from '../../../utils/translatableLabel.js'
+
 export default {
 	name: 'WorkflowTransitionArrow',
 	props: {
@@ -72,6 +74,16 @@ export default {
 
 	emits: ['click', 'dblclick'],
 	computed: {
+		/**
+		 * The label in the reader's language.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		label() {
+			return labelText(this.transition.label)
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midX() {
 			return (this.fromPos.x + this.toPos.x) / 2

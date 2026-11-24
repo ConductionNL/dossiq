@@ -1921,7 +1921,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.54.0",
+                "version": "1.54.1",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3975,12 +3975,11 @@
                         "type": "array",
                         "readOnly": true,
                         "title": "Filed over",
-                        "description": "The cases this one was filed over after the duplicate warning. Written once, when a coordinator files a case the case type would otherwise have blocked. Dossiq has no case-note store, so the reason lives on the case beside this list rather than in a note nobody can query.",
+                        "description": "The cases this one was filed over after the duplicate warning. Written once, when a coordinator files a case the case type would otherwise have blocked. Dossiq has no case-note store, so the reason lives on the case beside this list rather than in a note nobody can query. The items carry no $ref on purpose: a $ref makes OpenRegister write the new case back into every listed case on save, one full update each, which made filing over twenty matches take twenty seconds.",
                         "order": 25,
                         "items": {
                             "type": "string",
-                            "format": "uuid",
-                            "$ref": "case"
+                            "format": "uuid"
                         }
                     },
                     "duplicateOverrideReason": {

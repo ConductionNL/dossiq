@@ -83,7 +83,7 @@ The system SHALL define status transitions as embedded objects within a workflow
 | `id` | string (UUID) | Sentry ID | Unique transition identifier |
 | `fromStatus` | reference | Exit criterion source | Source status |
 | `toStatus` | reference | Entry criterion target | Target status |
-| `label` | string | -- | Transition button label (e.g., "Goedkeuren") |
+| `label` | string or language map | -- | Transition button label (e.g., "Goedkeuren", or `{"nl": "In behandeling nemen", "en": "Take on"}`) |
 | `guards` | array of Guard | OnPart/IfPart | Pre-conditions |
 | `automaticActions` | array of ActionRef | -- | Actions triggered on transition |
 | `allowedRoles` | array of reference | -- | Which RoleTypes may trigger this transition |
@@ -106,6 +106,25 @@ Guard types:
 - **WHEN** a case handler triggers transition "Goedkeuren" but the required document "Besluit" is not uploaded
 - **THEN** the transition SHALL be blocked
 - **AND** the system SHALL display: "Kan niet doorgaan: document 'Besluit' is vereist"
+
+### Requirement: A transition label is translatable
+
+A transition's `label` SHALL be either a plain string or a language map keyed by language code, the same shape as the other translatable names. Where a person reads a label (Next step, the bulk status dialog, the workflow editor) it SHALL read in that person's language, falling back to Dutch and then to the first text the map holds. A move SHALL be recorded with the label's source text, because a recorded label names an act that other rules (four-eyes) look up. The packages, templates and example sets dossiq ships SHALL give every transition label in Dutch and in English.
+
+#### Scenario: An English reader sees the English label
+@e2e exclude the shipped packages reach an instance only with a register import, which the e2e rig does not run; covered by OfferedTransitionsStatusNameTest and ShippedTransitionLabelsTest
+
+- **GIVEN** a transition labelled `{"nl": "In behandeling nemen", "en": "Take on"}`
+- **WHEN** a handler whose language is English opens Next step on a case where it applies
+- **THEN** the move SHALL read "Take on"
+- **AND** after the move the status record SHALL carry "In behandeling nemen"
+
+#### Scenario: The workflow editor edits the label in the reader's language
+@e2e exclude covered by tests/vitest/translatableLabel.spec.js; the editor's label field is a plain text input
+
+- **GIVEN** a transition labelled `{"nl": "Afwijzen", "en": "Reject"}`
+- **WHEN** an English administrator types "Refuse" in the editor's label field
+- **THEN** the label SHALL become `{"nl": "Afwijzen", "en": "Refuse"}`
 
 ### Requirement: Pre-Seeded Bezwaar Workflow Template
 

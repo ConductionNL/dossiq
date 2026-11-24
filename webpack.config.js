@@ -35,6 +35,12 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'dashboardWidgets.js'),
 		filename: appId + '-dashboardWidgets.js',
 	},
+	// On Mail's page: offers dossiq's New case dialog to OpenRegister's Mail
+	// panel. Tiny on purpose; the dialog itself is an on-demand chunk.
+	mailCreateDialog: {
+		import: path.join(__dirname, 'src', 'mail-create-dialog.js'),
+		filename: appId + '-mail-create-dialog.js',
+	},
 }
 
 // @conduction/nextcloud-vue resolves normally from node_modules. To build
