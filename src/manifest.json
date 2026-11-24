@@ -6165,6 +6165,7 @@
 					{
 						"id": "presence-strip",
 						"widgetId": "case-presence",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 2,
 						"gridWidth": 12,
@@ -6174,6 +6175,7 @@
 					{
 						"id": "case-banners",
 						"widgetId": "case-banner-stack",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 3,
 						"gridWidth": 12,
@@ -6185,6 +6187,7 @@
 					{
 						"id": "5",
 						"widgetId": "case-panels",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 9,
