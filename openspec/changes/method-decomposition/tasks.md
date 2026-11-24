@@ -1512,3 +1512,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         assertion changed.
         Own test: `tests/Unit/Controller/Support/LiveCaseRetentionClocksTest` (2: the clocks of the live case, and
         null without asking the clocks for a case that is not live).
+  - [x] 8bz `AdviceService` (1: CouplingBetweenObjects 15 against 13). What a new advice request writes is its own
+        concern, so it moved to the new `Advice/AdviceRequestFiling` (`file()`): the adviceRequest saved under the
+        configured schema (`savedAdvice()`, `adviceSchema()`), the decidesk `advice` Decision raised for the saved id
+        and its reference stored back (`delegateAdviceDecision()`, `storeDecisionRef()`, `decisionPayload()`), failing
+        closed when decidesk does not answer. Bodies moved unchanged, so the settings reads happen in the same order
+        and `AdviceServiceRequestGoldenTest` is unchanged. The service keeps the payload, the notification, the
+        reads, the transitions and the reminders; it takes the filing instead of the delegation service, so its
+        constructor changed (same eight parameters, one type); the container wires the filing. It no longer names
+        `AdviceDelegationService`, `ObjectSaveOptions` or `ObjectFindTarget`. Coupling 13 and 7, complexity 35 and 12
+        (pdepend); phpmd: no finding on either file under both rulesets with the suppression gone.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 188 to 187.
+        Characterisation: the existing `AdviceServiceRequestGoldenTest` (six recorded requests, every store write and
+        settings read in order), `AdviceKindAndOutcomeTest`, `AdviceServiceAuthorizationTest` and
+        `OneDateWritePathRoundTripTest`, green before and unchanged after but for the constructor call.
+        Own test: `tests/Unit/Service/Advice/AdviceRequestFilingTest` (2: the saved request carries its decision
+        reference under its own id, and an unanswered decidesk fails closed with no reference stored); saving the
+        reference without the request's uuid turns seven tests red (checked).
