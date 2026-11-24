@@ -49,6 +49,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\TakeBackTimerFiredListener
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
  * @uses \OCA\Dossiq\Listener\Support\TimerFire
+ * @uses \OCA\Dossiq\Listener\Support\TermRungActions
  *
  * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */

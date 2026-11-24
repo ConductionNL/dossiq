@@ -44,6 +44,7 @@ use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\PauseChaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Listener\Support\TermRungActions;
 use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -58,19 +59,16 @@ use Psr\Log\LoggerInterface;
  * @template-implements IEventListener<Event>
  *
  * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
- *   service account's refusal: a fire from cron writes as that account or not at all.
  */
 class TermijnTimerFiredListener implements IEventListener {
 	use SearchesObjects;
 
 	/**
-	 * Instance statuses on which no escalation or breach applies any more.
+	 * What a rung of a known term does: the breach, the reminder, the expired pause.
 	 *
-	 * @var array<int, string>
+	 * @var TermRungActions
 	 */
-	private const TERMINAL_STATUSES = ['completed', 'withdrawn'];
+	private readonly TermRungActions $actions;
 
 	/**
 	 * Constructor.
@@ -95,17 +93,28 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param CaseObjectReaderInterface|null $cases Reads the case behind the term, for the
 	 *        handler the resume is told to and the title it names. Optional: without
 	 *        it the term still resumes, and nobody is told.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly TermijnServiceInterface $termService,
-		private readonly DeadlineEscalationServiceInterface $escalationService,
+		DeadlineEscalationServiceInterface $escalationService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
-		private readonly ?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
-		private readonly ?PauseChaseServiceInterface $chases = null,
-		private readonly ?DeadlinePauseServiceInterface $pauses = null,
-		private readonly ?CaseObjectReaderInterface $cases = null,
+		?AanvullingsverzoekResolutionServiceInterface $aanvullingen = null,
+		?PauseChaseServiceInterface $chases = null,
+		?DeadlinePauseServiceInterface $pauses = null,
+		?CaseObjectReaderInterface $cases = null,
 	) {
+		$this->actions = new TermRungActions(
+			termService: $termService,
+			escalationService: $escalationService,
+			logger: $logger,
+			aanvullingen: $aanvullingen,
+			chases: $chases,
+			pauses: $pauses,
+			cases: $cases
+		);
 	}//end __construct()
 
 	/**
@@ -145,6 +154,8 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param FlowTimerFiredEvent $event The fire.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function dispatch(FlowTimerFiredEvent $event): void {
 		$metadata = $this->termijnMetadata(event: $event);
@@ -162,8 +173,10 @@ class TermijnTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$this->routeRung(
-			fire: new TermijnRungFire(rungKey: (string)$event->getRungKey(), instance: $instance, instanceId: $instanceId),
+		$this->actions->route(
+			rungKey: (string)$event->getRungKey(),
+			instance: $instance,
+			instanceId: $instanceId,
 			metadata: $metadata
 		);
 	}//end dispatch()
@@ -206,262 +219,4 @@ class TermijnTimerFiredListener implements IEventListener {
 
 		return $instance;
 	}//end knownInstance()
-
-	/**
-	 * Route a rung by the kind of term its timer carries.
-	 *
-	 * @param TermijnRungFire      $fire     The rung's key, the TermijnInstance row and its id.
-	 * @param array<string, mixed> $metadata The timer metadata.
-	 *
-	 * @return void
-	 */
-	private function routeRung(TermijnRungFire $fire, array $metadata): void {
-		$kind = (string)($metadata['kind'] ?? '');
-		if ($kind === TermijnTimerServiceInterface::KIND_HERSTELTERMIJN) {
-			$this->handleHersteltermijnRung(fire: $fire);
-			return;
-		}
-
-		$this->handleBeslistermijnRung(fire: $fire);
-	}//end routeRung()
-
-	/**
-	 * A hersteltermijn rung: a reminder inside the term, or the term running out.
-	 *
-	 * @param TermijnRungFire $fire The rung's key, the TermijnInstance row and its id.
-	 *
-	 * @return void
-	 */
-	private function handleHersteltermijnRung(TermijnRungFire $fire): void {
-		// Two kinds of rung live on the helper now. `slaBreached:0` is the
-		// hersteltermijn running out; every `preBreach:<days>` rung is a
-		// reminder due inside it. They are told apart by the trigger rather
-		// than by the message, because the rung KEY is the one part of a
-		// fire the engine guarantees and the listener already parses.
-		if ($this->isChaseRung(rungKey: $fire->rungKey) === true) {
-			$this->handleChase(instance: $fire->instance);
-			return;
-		}
-
-		$this->handlePauseExpiry(instance: $fire->instance, instanceId: $fire->instanceId);
-	}//end handleHersteltermijnRung()
-
-	/**
-	 * A beslistermijn rung: threshold bookkeeping, breach flip, accrual sync.
-	 *
-	 * @param TermijnRungFire $fire The rung's key, the TermijnInstance row and its id.
-	 *
-	 * @return void
-	 */
-	private function handleBeslistermijnRung(TermijnRungFire $fire): void {
-		$instance = $fire->instance;
-		$instanceId = $fire->instanceId;
-		if (in_array((string)($instance['status'] ?? ''), self::TERMINAL_STATUSES, true) === true) {
-			return;
-		}
-
-		$bucket = $this->bucketFromRungKey(rungKey: $fire->rungKey);
-		if ($bucket === null) {
-			return;
-		}
-
-		if ($bucket === 0 && (string)($instance['status'] ?? '') !== 'exceeded') {
-			$this->termService->updateTermijnInstance($instanceId, ['status' => 'exceeded']);
-			$this->termService->recordEvent(
-				termInstanceId: $instanceId,
-				type: 'exceeded',
-				basis: 'AWB 4:13',
-				rationale: 'Termijn overschreden zonder beschikking',
-				daysImpact: 0,
-			);
-			$instance['status'] = 'exceeded';
-		}
-
-		// Re-read so notifyThreshold sees the freshest notificatiesVerstuurd.
-		$latest = ($this->termService->getTermijnInstance($instanceId) ?? $instance);
-		$this->escalationService->notifyThreshold($latest, $bucket);
-	}//end handleBeslistermijnRung()
-
-	/**
-	 * Whether a rung on the hersteltermijn helper is one of the reminders.
-	 *
-	 * @param string $rungKey The rung's stable key, `trigger:offset:unit`.
-	 *
-	 * @return bool True for a reminder rung.
-	 *
-	 * @spec openspec/specs/termijn-pause-extension/spec.md
-	 */
-	private function isChaseRung(string $rungKey): bool {
-		return (str_starts_with($rungKey, 'preBreach:') === true);
-	}//end isChaseRung()
-
-	/**
-	 * A reminder rung fired on a suspended term.
-	 *
-	 * THE RUNG DOES NOT DECIDE, IT ONLY ASKS. It says a moment the engine was
-	 * given has arrived; whether a reminder is due is answered against the
-	 * count on the instance, re-read here. So a rung that fires after a resume,
-	 * twice, or beside a daily sweep that already sent one, sends nothing.
-	 *
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/termijn-pause-extension/spec.md
-	 */
-	private function handleChase(array $instance): void {
-		$this->chases?->chaseIfDue(instance: $instance);
-	}//end handleChase()
-
-	/**
-	 * The hersteltermijn helper fired: the pause ran out without an
-	 * aanvulling. The engine cannot cancel a single timer, so a helper
-	 * outliving an on-time aanvulling fires anyway — the still-paused
-	 * guard here is what drops it, and so a term the handler resumed
-	 * earlier is neither resumed again nor told about (REQ-TERM-080).
-	 *
-	 * @param array<string, mixed> $instance The TermijnInstance row.
-	 * @param string $instanceId Its id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
-	 */
-	private function handlePauseExpiry(array $instance, string $instanceId): void {
-		if ((string)($instance['status'] ?? '') !== 'paused') {
-			return;
-		}
-
-		$this->termService->recordEvent(
-			termInstanceId: $instanceId,
-			type: 'pause-expired',
-			basis: 'AWB 4:5',
-			rationale: 'Pauzetermijn verlopen zonder aanvulling',
-			daysImpact: 0,
-		);
-
-		$caseId = trim((string)($instance['case'] ?? ''));
-		$this->expireRequest(caseId: $caseId, instanceId: $instanceId);
-		$this->resumeExpired(caseId: $caseId, instanceId: $instanceId);
-	}//end handlePauseExpiry()
-
-	/**
-	 * Mark the request behind an expired pause as run out.
-	 *
-	 * The timer says the hersteltermijn ran out. The REQUEST is what the
-	 * file has to show when an application is refused for incompleteness
-	 * under Awb 4:5, so the day it ran out is recorded there too, as a
-	 * state. Nothing is deleted and nothing is rewritten: the items and the
-	 * dates stay exactly as they were sent, which is the whole point of
-	 * keeping an unanswered request.
-	 *
-	 * A failure here must not poison the engine sweep, and must not undo
-	 * the event before it: the term is correct either way, and the request
-	 * can still be expired by hand.
-	 *
-	 * @param string $caseId The case the term belongs to.
-	 * @param string $instanceId The term instance id.
-	 *
-	 * @return void
-	 */
-	private function expireRequest(string $caseId, string $instanceId): void {
-		if ($this->aanvullingen === null || $caseId === '') {
-			return;
-		}
-
-		try {
-			$this->aanvullingen->expireIfRunOut(caseId: $caseId);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the aanvullingsverzoek behind an expired pause could not be marked expired',
-				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
-			);
-		}
-	}//end expireRequest()
-
-	/**
-	 * Resume the term whose pause ran out, and tell the case's handler.
-	 *
-	 * The handler is the case's assignee at the moment the pause ran out. A
-	 * case without one, or one that cannot be read, still resumes: the term
-	 * is the statutory part, the notice is the courtesy. A failure is logged
-	 * and must not poison the engine sweep.
-	 *
-	 * @param string $caseId The case the term belongs to.
-	 * @param string $instanceId The term instance id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
-	 */
-	private function resumeExpired(string $caseId, string $instanceId): void {
-		if ($this->pauses === null) {
-			return;
-		}
-
-		try {
-			$this->pauses->resumeAfterExpiry(termInstanceId: $instanceId, notice: $this->noticeFor(caseId: $caseId));
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq termijn: a term whose pause ran out could not be resumed',
-				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
-			);
-		}
-	}//end resumeExpired()
-
-	/**
-	 * Who the resume is told to, and the case it names.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, string> `notify` and `caseTitle`, empty when the case cannot be read.
-	 *
-	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
-	 */
-	private function noticeFor(string $caseId): array {
-		$case = null;
-		if ($this->cases !== null && $caseId !== '') {
-			$case = $this->cases->fetchCaseById(caseUuid: $caseId);
-		}
-
-		if ($case === null) {
-			return [];
-		}
-
-		$title = trim((string)($case['title'] ?? ''));
-		if ($title === '') {
-			$title = trim((string)($case['identifier'] ?? ''));
-		}
-
-		return ['notify' => trim((string)($case['assignee'] ?? '')), 'caseTitle' => $title];
-	}//end noticeFor()
-
-	/**
-	 * Map an engine rung key onto the domain threshold bucket.
-	 *
-	 * Keys follow `trigger:offset:unit` (`preBreach:14:calendarDays`) or
-	 * `slaBreached:0`; the offset IS the bucket. Unknown shapes map to
-	 * null and are ignored rather than guessed.
-	 *
-	 * @param string $rungKey The rung's stable key.
-	 *
-	 * @return int|null The bucket (14/7/2/0), or null.
-	 */
-	private function bucketFromRungKey(string $rungKey): ?int {
-		$parts = explode(':', $rungKey);
-		$trigger = (string)($parts[0] ?? '');
-		if (isset($parts[1]) === false || is_numeric($parts[1]) === false) {
-			return null;
-		}
-
-		if ($trigger === 'slaBreached') {
-			return 0;
-		}
-
-		if ($trigger === 'preBreach') {
-			return (int)$parts[1];
-		}
-
-		return null;
-	}//end bucketFromRungKey()
 }//end class

@@ -43,6 +43,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
  * @uses   \OCA\Dossiq\Listener\Support\TimerFire
+ * @uses   \OCA\Dossiq\Listener\Support\TermRungActions
  */
 class TermijnTimerFiredListenerEdgesTest extends TestCase {
 
