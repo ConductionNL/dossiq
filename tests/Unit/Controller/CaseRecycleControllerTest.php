@@ -31,6 +31,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseRecycleController;
+use OCA\Dossiq\Controller\RetentionClocksController;
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
+use OCA\Dossiq\Controller\Support\LiveCaseRetentionClocks;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
@@ -50,6 +53,8 @@ use RuntimeException;
  * The lens, the restore, the preview, the destroy and the clocks.
  *
  * @covers \OCA\Dossiq\Controller\CaseRecycleController
+ * @covers \OCA\Dossiq\Controller\RetentionClocksController
+ * @covers \OCA\Dossiq\Controller\Support\LiveCaseRetentionClocks
  */
 class CaseRecycleControllerTest extends TestCase {
 
@@ -136,14 +141,26 @@ class CaseRecycleControllerTest extends TestCase {
 			$this->request,
 			$this->recycle,
 			$this->destruction,
-			$this->clocks,
-			$this->guard,
 			$this->groupManager,
 			$this->userSession,
 			$this->createMock(originalClassName: LoggerInterface::class),
 			$this->l10n()
 		);
 	}//end controller()
+
+	/**
+	 * Build the retention clocks controller under test (the clocks route left CaseRecycleController).
+	 *
+	 * @return RetentionClocksController
+	 */
+	private function clocksController(): RetentionClocksController {
+		return new RetentionClocksController(
+			request: $this->request,
+			access: new CaseAccessRefusal(userSession: $this->userSession, guard: $this->guard),
+			clocks: new LiveCaseRetentionClocks(recycle: $this->recycle, clocks: $this->clocks),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end clocksController()
 
 	/**
 	 * A translator that answers the text it was given.
@@ -327,7 +344,7 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->recycle->expects($this->never())->method('liveCase');
 		$this->clocks->expects($this->never())->method('clocksFor');
 
-		$response = $this->controller()->clocks(caseId: 'case-9');
+		$response = $this->clocksController()->clocks(caseId: 'case-9');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testTheClocksReadIsGuarded()
@@ -350,7 +367,7 @@ class CaseRecycleControllerTest extends TestCase {
 			]
 		);
 
-		$data = $this->controller()->clocks(caseId: 'case-9')->getData();
+		$data = $this->clocksController()->clocks(caseId: 'case-9')->getData();
 
 		$this->assertSame('2024-01-31', $data['lawfulPurpose']['date']);
 		$this->assertSame('2034-01-31', $data['archive']['date']);
@@ -379,7 +396,7 @@ class CaseRecycleControllerTest extends TestCase {
 			$controller->restore(caseId: 'case-9')->getStatus(),
 			$controller->destructionPreview(caseId: 'case-9')->getStatus(),
 			$controller->destroy(caseId: 'case-9')->getStatus(),
-			$controller->clocks(caseId: 'case-9')->getStatus(),
+			$this->clocksController()->clocks(caseId: 'case-9')->getStatus(),
 		];
 
 		$this->assertSame(array_fill(0, 5, Http::STATUS_UNAUTHORIZED), $statuses);

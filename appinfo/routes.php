@@ -514,7 +514,7 @@ $extra = [
     ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
     ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
     ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
-    ['name' => 'caseRecycle#clocks',             'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
+    ['name' => 'retentionClocks#clocks',         'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
 
         // Claim and release (case-claim-action, row 2.4). Who holds a case is
         // one field, and OpenRegister would take that write straight from the
