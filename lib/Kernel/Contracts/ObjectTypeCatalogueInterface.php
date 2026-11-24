@@ -51,7 +51,7 @@ interface ObjectTypeCatalogueInterface {
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
 	 */
 	public function list(): array;
 }//end interface

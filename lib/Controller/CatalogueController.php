@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+ * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Throwable;
 /**
  * The catalogue page's object types.
  *
- * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+ * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
  */
 class CatalogueController extends Controller {
 
@@ -69,7 +69,7 @@ class CatalogueController extends Controller {
 	 *
 	 * @return JSONResponse `{results: array, total: int}`, or 503 with `error`.
 	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function objectTypes(): JSONResponse {
