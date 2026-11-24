@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.197.0",
+	"version": "2.198.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1531,9 +1531,10 @@
 			"anyOf": [
 				{ "required": ["field"] },
 				{ "required": ["text"] },
-				{ "required": ["countFrom"] }
+				{ "required": ["countFrom"] },
+				{ "required": ["endpointSource"] }
 			],
-			"description": "A pill in a detail page header, rendered through CnStatusBadge: from one field of the record (`field`; nothing renders while it is empty), a constant (`text`), or a count of a related list (`countFrom` with `countLabel`; nothing renders at 0, while counting or after a failed count). screens-relation-pages, 2.85.0.",
+			"description": "A pill in a detail page header, rendered through CnStatusBadge: from one field of the record (`field`; nothing renders while it is empty), a constant (`text`), a count of a related list (`countFrom` with `countLabel`; nothing renders at 0, while counting or after a failed count), or a value an endpoint answers (`endpointSource`; detail-pill-from-endpoint). screens-relation-pages, 2.85.0.",
 			"properties": {
 				"field": {
 					"type": "string",
@@ -1559,6 +1560,18 @@
 						"register": { "type": "string", "minLength": 1 },
 						"schema": { "type": "string", "minLength": 1 },
 						"filter": { "type": "object", "additionalProperties": true }
+					}
+				},
+				"endpointSource": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["url"],
+					"description": "detail-pill-from-endpoint: the pill shows the value this endpoint answers at `responsePath` (a string or a number), through `labels`, `colorMap` and `values` as a field pill. For a value the record cannot store, such as a pupil's state today. `url` and `params` take the `@objectId` and `@object.<field>` tokens. Nothing renders while it reads, after a failed read or for an empty value. Used when `field`, `text` and `countFrom` are not set.",
+					"properties": {
+						"url": { "type": "string", "minLength": 1, "description": "App-relative (through generateUrl) or absolute URL." },
+						"method": { "type": "string", "enum": ["GET", "POST"], "default": "GET" },
+						"params": { "type": "object", "additionalProperties": true },
+						"responsePath": { "type": "string", "description": "Dot-path to the value in the response, for example `header.statePill.value`." }
 					}
 				},
 				"resolve": { "type": "object", "additionalProperties": false, "required": ["register", "schema"], "description": "detail-pill-resolve: the field holds the id of a record of this register and schema; the pill shows that record's `labelField` (else its title or name) and keys `colorMap` by it. The raw value shows while the lookup runs and when it finds nothing.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "labelField": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1, "description": "pill-color-field: the referenced record's property holding a colour name (an NL Design System hue such as `red` or `blue-light`, or a badge role); the pill takes the tone it maps onto." }, "iconField": { "type": "string", "minLength": 1, "description": "pill-color-field: the referenced record's property holding a registered icon name, shown before the label." } } },
