@@ -297,11 +297,11 @@ class PortalCasePageTest extends TestCase {
 	 * Portaliq drops an `outcome` field that names a field outside the
 	 * collection's `fields`, and then shows no outcome.
 	 *
-	 * @dataProvider residentAudienceProvider
-	 *
 	 * @param string $audience The resident audience.
 	 *
 	 * @return void
+	 *
+	 * @dataProvider residentAudienceProvider
 	 *
 	 * @spec openspec/changes/case-page-shows-the-outcome/specs/portal-contribution/spec.md#requirement-the-case-collection-must-name-its-outcome-fields
 	 */
@@ -313,13 +313,13 @@ class PortalCasePageTest extends TestCase {
 			}
 		}
 
-		$this->assertNotNull($cases);
+		$this->assertNotNull(actual: $cases);
 		$this->assertSame(
-			['labelField' => 'resultPublicLabel', 'descriptionField' => 'resultPublicDescription'],
-			$cases['outcome']
+			expected: ['labelField' => 'resultPublicLabel', 'descriptionField' => 'resultPublicDescription'],
+			actual: $cases['outcome']
 		);
-		$this->assertContains($cases['outcome']['labelField'], $cases['fields']);
-		$this->assertContains($cases['outcome']['descriptionField'], $cases['fields']);
+		$this->assertContains(needle: $cases['outcome']['labelField'], haystack: $cases['fields']);
+		$this->assertContains(needle: $cases['outcome']['descriptionField'], haystack: $cases['fields']);
 	}
 
 	/**
