@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\FilingChoices;
 use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
@@ -46,7 +47,6 @@ use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
 use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
-use OCA\Dossiq\Service\Intake\MessagePreview;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\Email\InboundMessage;
 use OCP\AppFramework\Controller;
@@ -90,6 +90,13 @@ class MailIntakeController extends Controller {
 	private const PAGE_SIZE = 100;
 
 	/**
+	 * The Link to case dialog's choices, run after a filing by hand.
+	 *
+	 * @var FilingChoices
+	 */
+	private readonly FilingChoices $choices;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest          $request     Inbound request.
@@ -117,9 +124,10 @@ class MailIntakeController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly FilingFollowUpsInterface $followUps,
+		FilingFollowUpsInterface $followUps,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+		$this->choices = new FilingChoices(followUps: $followUps);
 	}//end __construct()
 
 	/**
@@ -487,47 +495,16 @@ class MailIntakeController extends Controller {
 		$response->setData(
 			array_merge(
 				(array)$response->getData(),
-				$this->followUps(filing: $filing, choices: ['addSender' => $addSender, 'notifyHandler' => $notifyHandler])
+				$this->choices->run(
+					filing: $filing,
+					choices: ['addSender' => $addSender, 'notifyHandler' => $notifyHandler],
+					callerId: $this->callerId()
+				)
 			)
 		);
 
 		return $response;
 	}//end fileOnCase()
-
-	/**
-	 * Run the dialog's choices on a filed message: the sender as a party, the handler told.
-	 *
-	 * @param ManualFiling                                   $filing  The message filed by hand.
-	 * @param array{addSender: bool, notifyHandler: bool} $choices What the caller chose.
-	 *
-	 * @return array<string, string> `party` and `handler`, each what happened, when chosen.
-	 *
-	 * @spec openspec/specs/case-email-integration/spec.md
-	 */
-	private function followUps(ManualFiling $filing, array $choices): array {
-		$sender = (string)($filing->entry['sender'] ?? '');
-		$name = (new MessagePreview())->read(original: (string)($filing->entry['original'] ?? ''))['senderName'];
-		$done = [];
-		if ($choices['addSender'] === true) {
-			$done['party'] = $this->followUps->addSenderAsParty(caseId: $filing->caseId, address: $sender, name: $name);
-		}
-
-		if ($choices['notifyHandler'] === true) {
-			$label = $name;
-			if ($label === '') {
-				$label = $sender;
-			}
-
-			$done['handler'] = $this->followUps->notifyHandler(
-				caseId: $filing->caseId,
-				callerId: $this->callerId(),
-				sender: $label,
-				subject: (string)($filing->entry['subject'] ?? '')
-			);
-		}
-
-		return $done;
-	}//end followUps()
 
 	/**
 	 * Refuse a filing by hand the caller may not make, or that says too little.
