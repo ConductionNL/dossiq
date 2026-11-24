@@ -292,6 +292,37 @@ class PortalCasePageTest extends TestCase {
 	}
 
 	/**
+	 * An ended case shows what was decided and why, from fields the case list projects.
+	 *
+	 * Portaliq drops an `outcome` field that names a field outside the
+	 * collection's `fields`, and then shows no outcome.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @param string $audience The resident audience.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-shows-the-outcome/specs/portal-contribution/spec.md#requirement-the-case-collection-must-name-its-outcome-fields
+	 */
+	public function testTheCaseNamesItsOutcomeFields(string $audience): void {
+		$cases = null;
+		foreach ($this->provider()->getContribution(['audience' => $audience])['collections'] as $collection) {
+			if ($collection['id'] === 'mijnZaken') {
+				$cases = $collection;
+			}
+		}
+
+		$this->assertNotNull($cases);
+		$this->assertSame(
+			['labelField' => 'resultPublicLabel', 'descriptionField' => 'resultPublicDescription'],
+			$cases['outcome']
+		);
+		$this->assertContains($cases['outcome']['labelField'], $cases['fields']);
+		$this->assertContains($cases['outcome']['descriptionField'], $cases['fields']);
+	}
+
+	/**
 	 * Suppliers and inspectors keep the blocks portaliq builds, declared only to carry a group, and no case screen.
 	 *
 	 * @return void
