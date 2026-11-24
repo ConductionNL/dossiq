@@ -76,9 +76,21 @@ class DocumentVerdicts implements DocumentVerdictsInterface {
 		$groundsField = $this->settingsService->getConfigValue('document_grounds_field', 'weigeringsgronden');
 		$partial = $this->settingsService->getConfigValue('document_partial_verdict', 'deels_openbaar');
 
+		// The counts include assessments the caller may not read itself (REQ-WSA-004), as the
+		// outstanding count does; the grounds cited stay with what the caller may read.
 		$counts = [];
-		$cited = [];
 		$assessed = 0;
+		$rows = new CaseAssessmentRows(settingsService: $this->settingsService);
+		foreach ($rows->verdictsForCase(caseId: $caseId, verdictField: $verdictField) as $row) {
+			if ($row['verdict'] === '' || in_array($row['documentRef'], $documents, true) === false) {
+				continue;
+			}
+
+			$assessed++;
+			$counts[$row['verdict']] = (($counts[$row['verdict']] ?? 0) + 1);
+		}
+
+		$cited = [];
 		foreach ($this->assessmentRows(caseId: $caseId) as $row) {
 			$documentRef = (string)($row['documentRef'] ?? '');
 			$verdict = (string)($row[$verdictField] ?? '');
@@ -86,8 +98,6 @@ class DocumentVerdicts implements DocumentVerdictsInterface {
 				continue;
 			}
 
-			$assessed++;
-			$counts[$verdict] = (($counts[$verdict] ?? 0) + 1);
 			foreach ($this->codesOf(value: ($row[$groundsField] ?? [])) as $code) {
 				$cited[$code][] = ['documentRef' => $documentRef, 'partial' => ($verdict === $partial)];
 			}

@@ -216,6 +216,24 @@ class DocumentVerdictsTest extends TestCase {
 	}//end testGroundsHiddenFromTheCallerAreNotRead()
 
 	/**
+	 * The summary counts assessments another reviewer recorded, which the caller may not read itself, so a
+	 * colleague's Files tab reads the same "4 of 7 assessed" (REQ-WSA-004); their grounds stay unread.
+	 *
+	 * @return void
+	 */
+	public function testCountsAssessmentsHiddenFromTheCallerButCitesNoneOfTheirGrounds(): void {
+		$register = $this->lindelaan();
+		$all = $this->verdicts(register: $register)->forCase(caseId: 'case-1');
+		$register->hiddenFromCaller = ['wooDocumentAssessment'];
+		$answer = $this->verdicts(register: $register)->forCase(caseId: 'case-1');
+
+		self::assertGreaterThan(expected: 0, actual: $all['assessed']);
+		self::assertSame(expected: $all['assessed'], actual: $answer['assessed']);
+		self::assertSame(expected: $all['counts'], actual: $answer['counts']);
+		self::assertSame(expected: [], actual: $answer['grounds']);
+	}//end testCountsAssessmentsHiddenFromTheCallerButCitesNoneOfTheirGrounds()
+
+	/**
 	 * A list of grounds that cannot be read leaves the code without a label, not the answer without grounds.
 	 *
 	 * @return void
