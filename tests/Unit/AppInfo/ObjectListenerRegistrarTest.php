@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\TenantMembershipChangedListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
@@ -123,7 +124,24 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testTheReportGroupingIsRegisteredOnCreation(): void {
+	/**
+	 * A create, update or delete of a tenantUser row reaches the listener that drops kept memberships.
+	 *
+	 * @return void
+	 */
+	public function testATenantUserChangeDropsTheKeptMemberships(): void {
+		$registered = $this->registrations();
+
+		foreach (['Created', 'Updated', 'Deleted'] as $change) {
+			$this->assertContains(
+				needle: TenantMembershipChangedListener::class,
+				haystack: ($registered['OCA\OpenRegister\Event\Object' . $change . 'Event'] ?? []),
+				message: 'without it a user keeps a tenant they left for up to a minute',
+			);
+		}
+	}//end testATenantUserChangeDropsTheKeptMemberships()
+
+		public function testTheReportGroupingIsRegisteredOnCreation(): void {
 		$this->assertContains(
 			needle: ReportGroupingOnCreateListener::class,
 			haystack: ($this->registrations()['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
