@@ -51,6 +51,16 @@ class QueueCaseFacts {
 	private const OPEN_TERM_STATUSES = ['lopend', 'verlengd', 'paused', 'exceeded'];
 
 	/**
+	 * The case type rows read while scoring this request's queue, by id.
+	 *
+	 * Every case of a type asked for the same row; a queue is a read, so
+	 * nothing in it changes a case type.
+	 *
+	 * @var array<string, array|null>
+	 */
+	private array $caseTypeRows = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (schema config).
@@ -190,14 +200,30 @@ class QueueCaseFacts {
 	 *
 	 * @return UrgencyProfile The profile for that type.
 	 */
-	private function withThresholdsOf(UrgencyProfile $profile, array $caseType): UrgencyProfile {
-		try {
-			$row = $this->findObjectAsArray(
+	/**
+	 * A case type row, read once per request.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string} $caseType Where the row lives.
+	 *
+	 * @return array<string, mixed>|null The row, or null when absent.
+	 */
+	private function caseTypeRow(array $caseType): ?array {
+		$key = $caseType['register'].'|'.$caseType['schema'].'|'.$caseType['id'];
+		if (array_key_exists($key, $this->caseTypeRows) === false) {
+			$this->caseTypeRows[$key] = $this->findObjectAsArray(
 				objectService: $caseType['objectService'],
 				register: $caseType['register'],
 				schema: $caseType['schema'],
 				id: $caseType['id']
 			);
+		}
+
+		return $this->caseTypeRows[$key];
+	}//end caseTypeRow()
+
+	private function withThresholdsOf(UrgencyProfile $profile, array $caseType): UrgencyProfile {
+		try {
+			$row = $this->caseTypeRow(caseType: $caseType);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'WorkQueue: case type read failed, scoring with the instance thresholds',
