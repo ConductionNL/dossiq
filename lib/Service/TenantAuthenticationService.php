@@ -76,21 +76,27 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	private const MAX_MEMBERSHIPS = 100;
 
 	/**
+	 * Reads a findAll() row, entity or array, as an array.
+	 *
+	 * @var OpenRegisterRowNormaliser
+	 */
+	private readonly OpenRegisterRowNormaliser $rowNormaliser;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager (for OR availability check).
 	 * @param ContainerInterface $container DI container.
 	 * @param LoggerInterface $logger Logger.
-	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 * @param TenantMembershipCache|null $memberships The memberships kept for a minute; none keeps nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 		private readonly ?TenantMembershipCache $memberships = null,
 	) {
+		$this->rowNormaliser = new OpenRegisterRowNormaliser();
 	}//end __construct()
 
 	/**
@@ -508,7 +514,6 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 
 		return $tenantIds;
 	}//end listTenantsForUser()
-
 
 	/**
 	 * Read a user's membership rows; a failed read is logged and thrown (fail-closed).

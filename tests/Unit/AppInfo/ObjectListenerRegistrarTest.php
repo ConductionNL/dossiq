@@ -119,12 +119,6 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 * @return void
 	 */
 	/**
-	 * A created case reaches the report grouping, through the intake registrar
-	 * this one calls (ai-features-on-the-case, REQ-AIC-04).
-	 *
-	 * @return void
-	 */
-	/**
 	 * A create, update or delete of a tenantUser row reaches the listener that drops kept memberships.
 	 *
 	 * @return void
@@ -141,7 +135,13 @@ class ObjectListenerRegistrarTest extends TestCase {
 		}
 	}//end testATenantUserChangeDropsTheKeptMemberships()
 
-		public function testTheReportGroupingIsRegisteredOnCreation(): void {
+	/**
+	 * A created case reaches the report grouping, through the intake registrar
+	 * this one calls (ai-features-on-the-case, REQ-AIC-04).
+	 *
+	 * @return void
+	 */
+	public function testTheReportGroupingIsRegisteredOnCreation(): void {
 		$this->assertContains(
 			needle: ReportGroupingOnCreateListener::class,
 			haystack: ($this->registrations()['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),

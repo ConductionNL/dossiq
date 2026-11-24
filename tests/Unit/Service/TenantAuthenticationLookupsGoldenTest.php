@@ -160,7 +160,7 @@ class TenantAuthenticationLookupsGoldenTest extends TestCase {
 	 */
 	public function testAMembershipListIsKeptUntilItIsForgotten(): void {
 		$rows = [['tenantRef' => 'tenant-a']];
-		$auth = $this->auth(['tenantUser' => $rows]);
+		$auth = $this->auth(bySchema: ['tenantUser' => $rows]);
 
 		self::assertSame(expected: ['tenant-a'], actual: $auth->listTenantsForUser(userId: 'alice'));
 		self::assertTrue(condition: $auth->isMemberOf(tenantId: 'tenant-a', userId: 'alice'));

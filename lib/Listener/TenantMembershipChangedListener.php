@@ -70,7 +70,6 @@ class TenantMembershipChangedListener implements IEventListener {
 	 *
 	 * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
 	 */
-	#[\Override]
 	public function handle(Event $event): void {
 		foreach (self::EVENTS as $name) {
 			if (is_a($event, $name) === true) {
