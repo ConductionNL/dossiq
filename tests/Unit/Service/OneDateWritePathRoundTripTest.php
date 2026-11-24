@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Advice\AdviceRequestFiling;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Controller\TermijnController;
@@ -384,7 +385,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			settingsService: $settings,
 			userSession: $session,
 			logger: $logger,
-			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+			filing: new AdviceRequestFiling(delegation: $this->createMock(originalClassName: AdviceDelegationService::class), settingsService: $settings, logger: $logger),
 			repository: new AdviceRepository(settingsService: $settings, logger: $logger),
 			guard: new AdviceAuthorizationGuard(
 				settingsService: $settings,
