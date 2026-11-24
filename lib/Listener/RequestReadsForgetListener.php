@@ -73,7 +73,6 @@ class RequestReadsForgetListener implements IEventListener {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	#[\Override]
 	public function handle(Event $event): void {
 		foreach (self::EVENTS as $name) {
 			if (is_a($event, $name) === true) {

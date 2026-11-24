@@ -52,6 +52,10 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) Eleven: the reads the
+ * resolver uses plus forget(), which drops what those reads kept. The reads
+ * and the forget share the kept rows, so they stay one class.
+ *
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeStore implements CaseTypeStoreInterface {
@@ -389,7 +393,6 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	#[\Override]
 	public function forget(): void {
 		$this->kept = [];
 	}//end forget()

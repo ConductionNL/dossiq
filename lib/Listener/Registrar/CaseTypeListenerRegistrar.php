@@ -50,6 +50,10 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) A registrar names every
+ * listener and event it wires; that list is the class. One over the threshold
+ * since the request-reads listener joined it.
+ *
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeListenerRegistrar {
