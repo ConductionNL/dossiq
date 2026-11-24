@@ -1692,4 +1692,4 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `RefusalReplacesTheEmptyAnswerTest` (210 tests with the other mandate suites), green before and unchanged after
         but for two `@uses` lines each.
         Own tests: `tests/Unit/Service/Mandate/MandateRowsTest` (3) and `MandateConditionsTest` (1); letting an
-        open-ended row lapse turns the tests that rely on it red (checked).
+        open-ended row lapse turns 10 tests red (checked).
