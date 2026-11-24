@@ -7372,6 +7372,8 @@ OC.L10N.register(
         "Read and write indications and case meetings": "Read and write indications and case meetings",
         "Read and write the records of the dossiq register": "Read and write the records of the dossiq register",
         "Read as a message": "Read as a message",
+        "Open in editor": "Open in editor",
+        "This file could not be opened for editing.": "This file could not be opened for editing.",
         "Read at": "Read at",
         "Read Confirmation On": "Read Confirmation On",
         "Read how we handle this kind of case": "Read how we handle this kind of case",
