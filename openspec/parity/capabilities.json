@@ -15883,7 +15883,7 @@
 					"openspec/changes/organisations-legal-form-short",
 					"openspec/changes/organisations-list-cells-as-drawn",
 					"openspec/changes/person-chips",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -15995,7 +15995,7 @@
 					"openspec/changes/party-overview-card-order",
 					"openspec/changes/party-tickets-all-with-reference",
 					"openspec/changes/party-tickets-link",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -16044,7 +16044,7 @@
 				],
 				"plan": [
 					"openspec/changes/contacts-secrecy-pill",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {

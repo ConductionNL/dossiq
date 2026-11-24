@@ -7,7 +7,7 @@
  * aggregate `op: max` and the built-in `masked` formatter, so dossiq keeps no
  * formatter of its own for either.
  *
- * @spec openspec/changes/screens-round12-relations/specs/initiator-display/spec.md
+ * @spec openspec/specs/initiator-display/spec.md
  */
 
 import { readFileSync } from 'fs'
