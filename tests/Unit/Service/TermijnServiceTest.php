@@ -112,6 +112,34 @@ class TermijnServiceTest extends TestCase {
 	}//end testCreateTermijnInstanceForOmgevingsvergunningHas56DayDeadline()
 
 	/**
+	 * The start event's sentence is written through the translator, in the language Nextcloud writes
+	 * the case's notes in, so an English instance does not get a Dutch note on every new case.
+	 *
+	 * @return void
+	 */
+	public function testTheStartSentenceIsWrittenThroughTheTranslator(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+				default => '',
+			},
+		);
+		$l10n = $this->createMock(\OCP\IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => 'EN: '.$text);
+		$service = new TermijnService(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), l10n: $l10n);
+
+		$service->createTermijnInstance('Z/2026/127', 'omgevingsvergunning-regulier', new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
+
+		$event = array_values($this->objects->store['termijnGebeurtenis'] ?? [])[0];
+		self::assertSame('EN: Deadline started when the case was created', $event['rationale']);
+	}//end testTheStartSentenceIsWrittenThroughTheTranslator()
+
+	/**
 	 * @return void
 	 */
 	public function testCreateTermijnInstanceForWmoHas42DayDeadline(): void {
