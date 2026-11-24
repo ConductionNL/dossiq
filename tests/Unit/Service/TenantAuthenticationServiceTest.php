@@ -27,6 +27,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
+ * @uses \OCA\Dossiq\Service\Tenant\MandateMatrix
  */
 class TenantAuthenticationServiceTest extends TestCase {
 	private TenantAuthenticationService $svc;
