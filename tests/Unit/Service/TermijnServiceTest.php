@@ -133,7 +133,11 @@ class TermijnServiceTest extends TestCase {
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => 'EN: '.$text);
 		$service = new TermijnService(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class), l10n: $l10n);
 
-		$service->createTermijnInstance(caseId: 'Z/2026/127', caseType: 'omgevingsvergunning-regulier', startDate: new DateTimeImmutable(datetime: '2026-06-01T10:00:00+00:00'));
+		$service->createTermijnInstance(
+			caseId: 'Z/2026/127',
+			caseType: 'omgevingsvergunning-regulier',
+			startDate: new DateTimeImmutable(datetime: '2026-06-01T10:00:00+00:00'),
+		);
 
 		$event = array_values($this->objects->store['termijnGebeurtenis'] ?? [])[0];
 		self::assertSame(expected: 'EN: Deadline started when the case was created', actual: $event['rationale']);
