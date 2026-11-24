@@ -111,6 +111,11 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 			);
 		}
 
-		return new WorkloadScope(groupManager: $groupManager, userManager: $this->createMock(originalClassName: IUserManager::class), teams: $teamService, logger: $logger);
+		return new WorkloadScope(
+			groupManager: $groupManager,
+			userManager: $this->createMock(originalClassName: IUserManager::class),
+			teams: $teamService,
+			logger: $logger,
+		);
 	}//end scopeFor()
 }//end class

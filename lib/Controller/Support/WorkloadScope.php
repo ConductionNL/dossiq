@@ -99,22 +99,18 @@ final class WorkloadScope {
 	/**
 	 * Whether a user holds the dossiq coordinator role (NC admin).
 	 *
-	 * Coordinator authority is delegated to Nextcloud admin membership, the
-	 * same model used elsewhere in dossiq (e.g.
-	 * {@see \OCA\Dossiq\Controller\SubstitutionController::isCoordinator()}).
+	 * Coordinator authority is Nextcloud admin membership, as in
+	 * {@see \OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard::isCoordinator()};
+	 * an empty uid never is one.
 	 *
 	 * @param string $userId The user id.
 	 *
-	 * @return bool
+	 * @return bool True for a coordinator.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function isCoordinator(string $userId): bool {
-		if ($userId === '') {
-			return false;
-		}
-
-		return $this->groupManager->isAdmin($userId);
+		return $userId !== '' && $this->groupManager->isAdmin($userId) === true;
 	}//end isCoordinator()
 
 	/**

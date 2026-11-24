@@ -108,7 +108,12 @@ class WorkQueueControllerTest extends TestCase {
 			$this->workQueueService,
 			$this->logger,
 			$this->coveredWork,
-			new WorkloadScope(groupManager: $this->groupManager, userManager: $this->userManager, teams: $this->teams, logger: $this->logger),
+			new WorkloadScope(
+				groupManager: $this->groupManager,
+				userManager: $this->userManager,
+				teams: $this->teams,
+				logger: $this->logger,
+			),
 		);
 	}//end setUp()
 
