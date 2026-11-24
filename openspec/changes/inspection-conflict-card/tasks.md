@@ -27,4 +27,5 @@
 
 ### Task 5: File conflicts from the device (after Task 4)
 - **files**: `src/main.js`, nextcloud-vue `src/integrations/offline/offlineDb.js`
-- [ ] Open decision 4 in `design.md`
+- [x] Open decision 4 in `design.md`
+  - Decided as recommended: nextcloud-vue #2323 (in 2.213.0) makes `recordConflict` write `syncQueueRef` (the queue operation id) and `conflictFields` (the fields the device sent whose value differs from the server's, top-level names); `src/utils/fieldInspectionConfig.js` sets `register: 'dossiq'` and `conflictSchema: 'conflictRecord'`, so a replay conflict is filed in the register. Test: `tests/vitest/fieldInspectionConfig.spec.js`; the library's `tests/integrations/offline/conflictRecording.spec.js`.
