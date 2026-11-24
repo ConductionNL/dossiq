@@ -26,5 +26,6 @@ Read `openspec/woo-build-rules.md` first. Start the term tasks (group 2) only on
 
 ## 6. End to end
 
-- [ ] 6.1 (live pass, decision 139) `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` with portaliq installed: the three scenarios marked e2e. Verify: the run, against the board `portaliq/ZaakWooVerzoek`.
-- [ ] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`. No `Co-Authored-By`.
+- [x] 6.1 (written, runs in nightly; live pass, decision 139) `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` with portaliq installed: the three scenarios marked e2e. Verify: the run, against the board `portaliq/ZaakWooVerzoek`.
+- [x] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`. No `Co-Authored-By`.
+  - Run once at archive (24 Nov): no new finding against development; see the archive PR.

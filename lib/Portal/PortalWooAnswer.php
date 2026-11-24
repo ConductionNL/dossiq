@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Records a requester's answer on their own open request. Fails closed.
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
 class PortalWooAnswer implements PortalWooAnswerInterface {
 
@@ -94,7 +94,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	public function submit(WooAnswerSubmission $submission): array {
 		$text = trim($submission->answer);
@@ -120,7 +120,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return WooAnswerRun|null
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function openRun(WooAnswerSubmission $submission): ?WooAnswerRun {
 		$objectService = $this->settings->getObjectService();
@@ -150,7 +150,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function record(WooAnswerRun $run): array {
 		$caseId = $this->answerableCase(run: $run);
@@ -183,7 +183,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return array{status: int, body: array<string, mixed>}|null The 503 when the write is refused, else null.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function storeAnswer(WooAnswerRun $run, string $caseId): ?array {
 		try {
@@ -216,7 +216,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function answeredFields(int $filed): array {
 		$fields = ['applicantAnswer'];
@@ -240,7 +240,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return int How many were stored.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function fileAttachments(string $caseId, array $attachments): int {
 		if ($this->documents === null || $attachments === []) {
@@ -274,7 +274,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return string|null The case id, or null.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function answerableCase(WooAnswerRun $run): ?string {
 		try {
@@ -306,7 +306,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return string|null The case id, or null.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function callersCaseOfRequest(WooAnswerRun $run): ?string {
 		if ($run->subjectRef === '' || $run->requestId === '') {
@@ -340,7 +340,7 @@ class PortalWooAnswer implements PortalWooAnswerInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function isRequest(?array $open, string $requestId): bool {
 		return $open !== null && $this->idOf(row: $open) === $requestId;

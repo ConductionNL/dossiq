@@ -16774,7 +16774,7 @@
 				"plan": [
 					"openspec/changes/portal-conversation-live-pass",
 					"openspec/changes/an-aanvullingsverzoek-is-a-portal-task",
-					"openspec/changes/woo-dossier-shared-with-the-requester"
+					"openspec/changes/archive/2026-11-24-woo-dossier-shared-with-the-requester"
 				],
 				"spec": "openspec/specs/portal-contribution",
 				"requirement": "openspec/changes/portal-conversation-live-pass/specs/portal-contribution :: A message goes round trip between the handler and the resident (REQ-PORTAL-RT-01)"
@@ -22147,7 +22147,7 @@
 				"plan": [
 					"openspec/changes/mandated-case-steps-read-unscoped",
 					"openspec/changes/site-business-and-authorisation",
-					"openspec/changes/woo-dossier-shared-with-the-requester"
+					"openspec/changes/archive/2026-11-24-woo-dossier-shared-with-the-requester"
 				]
 			},
 			"evidence": {
