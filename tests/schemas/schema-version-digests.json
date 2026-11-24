@@ -1959,6 +1959,18 @@
         "version": "1.9.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-supervision-plan.json::fieldInspection": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-supervision-plan.json::supervisionPlan": {
+        "version": "1.0.0",
+        "digest": "4389bdc1be8f209557fcab73d9d8d87123f982b10b331a3fd252b715e8657052"
+    },
+    "lib/Settings/register.d/99-supervision-plan.json::supervisionPlanCategory": {
+        "version": "1.0.0",
+        "digest": "e0b59ae0162c390025ddee6b8702917b34769903c0be9784c157612e2220a039"
+    },
     "lib/Settings/register.d/99-template-category.json::workflowTemplate": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

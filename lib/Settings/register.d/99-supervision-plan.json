@@ -1,0 +1,138 @@
+{
+  "_note": "supervision-plan-page REQ (vth-module, board DqToezichtplan): a year's supervision plan and its category rows. The plan holds the year and the capacity in hours; a category row holds what is planned for one kind of supervision (hospitality, construction, environment), the hours one inspection takes and how often each risk profile is visited. Completed and cancelled are NOT stored here: they are counted from the field inspections that name the category in `planCategory`, so an inspection completed in the field counts at once without anyone editing the plan (SupervisionPlanProgress). A field inspection is cancelled when it carries `cancelledAt`; its offline `status` stays the device's lifecycle.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": ["supervisionPlan", "supervisionPlanCategory"]
+      }
+    },
+    "schemas": {
+      "supervisionPlan": {
+        "slug": "supervisionPlan",
+        "icon": "CalendarCheckOutline",
+        "version": "1.0.0",
+        "searchable": false,
+        "x-schema-org": "schema:Schedule",
+        "title": "Supervision plan",
+        "description": "The annual supervision plan: the year it covers and the inspection capacity available for it.",
+        "type": "object",
+        "required": ["year", "title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Title",
+            "description": "The plan's name, such as Supervision plan 2026."
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100,
+            "title": "Year",
+            "description": "The calendar year the plan covers."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "description": "What the plan sets out to inspect, in one or two sentences."
+          },
+          "capacityHours": {
+            "type": "number",
+            "minimum": 0,
+            "title": "Capacity (hours)",
+            "description": "The inspection hours available in the year, set against the demand the categories' risk frequencies ask for."
+          }
+        }
+      },
+      "supervisionPlanCategory": {
+        "slug": "supervisionPlanCategory",
+        "icon": "ShapeOutline",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Supervision plan category",
+        "description": "One category of a supervision plan: how many inspections are planned, the hours one takes and how often each risk profile is visited.",
+        "type": "object",
+        "required": ["plan", "name", "planned"],
+        "properties": {
+          "plan": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "supervisionPlan",
+            "title": "Plan",
+            "description": "The supervision plan this category belongs to."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Name",
+            "description": "The category, such as Hospitality."
+          },
+          "planned": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Planned inspections",
+            "description": "The number of inspections planned in this category for the plan's year."
+          },
+          "hoursPerInspection": {
+            "type": "number",
+            "minimum": 0,
+            "title": "Hours per inspection",
+            "description": "The hours one inspection in this category takes, travel included."
+          },
+          "riskFrequency": {
+            "type": "array",
+            "title": "Frequency by risk",
+            "description": "How often an object of each risk profile is inspected: the number of objects with that profile and the visits per object per year.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"],
+                  "title": "Risk profile",
+                  "description": "The risk profile of the objects in this row."
+                },
+                "objects": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "title": "Objects",
+                  "description": "How many objects carry this risk profile."
+                },
+                "visitsPerYear": {
+                  "type": "number",
+                  "minimum": 0,
+                  "title": "Visits per year",
+                  "description": "Inspections per object per year; 0.5 is once every two years."
+                }
+              }
+            }
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "Where the category stands among the plan's categories."
+          }
+        }
+      },
+      "fieldInspection": {
+        "version": "1.3.0",
+        "properties": {
+          "planCategory": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "supervisionPlanCategory",
+            "title": "Plan category",
+            "description": "The supervision plan category this inspection counts towards. Empty for an inspection outside any plan."
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Cancelled at",
+            "description": "When the inspection was cancelled. A cancelled inspection counts as cancelled in its plan category, not as remaining."
+          }
+        }
+      }
+    }
+  }
+}
