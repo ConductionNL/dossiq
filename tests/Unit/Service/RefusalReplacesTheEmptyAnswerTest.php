@@ -53,6 +53,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Beschikking\MandaatVerifier
  * @covers \OCA\Dossiq\Service\MandaatCheckService
+ * @uses \OCA\Dossiq\Service\Mandate\MandateConditions
+ * @uses \OCA\Dossiq\Service\Mandate\MandateRows
  * @covers \OCA\Dossiq\Service\RoleResolverService
  * @covers \OCA\Dossiq\Service\Support\RefusesWhenIndeterminate
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
