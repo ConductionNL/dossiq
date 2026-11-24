@@ -1199,7 +1199,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         of `lib/` (pdepend cache cleared).
         Characterisation: the existing `RetiredNodeRewriterTest`, `RetiredNodeRewriterEdgesTest` (bridged, fanned
         out and orphaned edges in both endpoint shapes, a translated step chained), `RetiredNodeTranslatorTest` and
-        the repair step tests (75), green before and unchanged after but for one `@uses` line in four.
+        the repair step tests (75), green before and unchanged after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Flow/EdgeEndpointsTest` (3).
   - [x] 8be `Lifecycle/CaseEndingActs` (1: ExcessiveClassComplexity 54 against 50; TooManyMethods stays, 29 down to
         27). What the ending acts read off a case type's status rows reads no store, so it moved to the new
@@ -1300,7 +1300,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         is gone over the whole of `lib/` (pdepend cache cleared).
         Characterisation: the existing `DocumentCorrespondentsTest`, `DocumentCorrespondentsWriteTest`,
         `CorrespondentWriterTest`, `CorrespondentDispatchGoldenTest`, `InboundSenderIsAPartyTest` and the dossier
-        write tests (86), green before and unchanged after but for one `@uses` line in four.
+        write tests (86), green before and unchanged after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Zaakdossier/CasePartyIndexTest` (2).
   - [x] 8bl `Repair/CaseFlowSeedDataRepairStep` (1: ExcessiveClassComplexity 54 against 50; and CouplingBetweenObjects
         14 against 13, which PHPMD reported unsuppressed on development). Planting the demo cases of one seeded case type
@@ -1340,7 +1340,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         findings on both files under both rulesets.
         Characterisation: the existing workflow guard, definition service and template loader tests (151 in 27 files:
         the route read, the recorded default, the ambiguous pick, publish and deprecate), green before and unchanged
-        after but for one `@uses` line in four.
+        after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Workflow/DefaultRouteTest` (3).
   - [x] 8bo `CaseRelationService` (1: ExcessiveClassComplexity 58 against 50). Stripping the links to a deleted case
         from the cases that hold one is its own concern, so it moved to the new `Relation/DeletedCaseLinks`: the cases
@@ -1438,7 +1438,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `TermijnTimerFiredListenerServiceAccountTest`, `TimerFiredListenersGoldenTest` and
         `DeadlineMonitoringEndToEndTest` (62: the breach flip, the thresholds, the reminder, the expired pause with its
         failing request, the unknown instance, the unreadable key), green before and unchanged after but for one
-        `@uses` line in four.
+        `@uses` line in three.
         Own test: `tests/Unit/Listener/Support/TermRungActionsTest` (4: the breach on the fresh row, a bucket only for
         a running term and a readable key, the reminder and the resumed term left alone, the expired pause resumed with
         its handler and a failing resume logged).
