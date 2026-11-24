@@ -18400,16 +18400,16 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"owner": "ConductionNL/openregister",
 				"change": "nextcloud-vue/saved-views-shared-by-role",
-				"note": "Re-read 2026-10-07: the backend is built in openregister, but the dialog a dossiq user saves a view in (nextcloud-vue CnSaveViewDialog) has no group picker, so a saved case search can be private or public and never shared with one department. Missing: a group share in CnSaveViewDialog and CnSavedViewsControl (nextcloud-vue). Missing half specified in nextcloud-vue/saved-views-shared-by-role (spec round part 3, 2026-10-07); delivered half: openregister/view-group-share.",
+				"note": "Re-read 2026-11-24: the group share is in nextcloud-vue's save dialog now, and dossiq limits it to the reader's own groups (case-views-shared-with-a-team tasks 2 to 5). Re-read 2026-10-07 had found no group picker in CnSaveViewDialog (specified as nextcloud-vue/saved-views-shared-by-role); the backend half is openregister/view-group-share. The live check of the picker (task 1) follows.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaken"
 				},
-				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards, editable in openregister's own src/modals/view/EditView.vue:284; dossiq's lists save views through nextcloud-vue CnSaveViewDialog, which offers only a public toggle (src/components/CnSaveViewDialog/CnSaveViewDialog.vue:28-31)",
-				"readOn": "2026-10-07",
+				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards; nextcloud-vue CnSaveViewDialog draws a share section (CnSavedViewShareFields, people and groups, read-only or edit) narrowed by `savedViewsShareGroups` (change saved-view-share-groups); dossiq sets `savedViewsShareGroups: mine` on every list page with saved views (src/manifest.json Cases, Tasks, CaseObjects, Contacts, Organisations; src/manifest.d/89-search.json SearchResults; dossiq #6894, tests/vitest/savedViewsShareOwnGroups.spec.js); the Zuiddrecht example set ships Marleen Postma's view shared read-only with Team Vergunningen (lib/Settings/example-sets/zuiddrecht.json, tests/Unit/Settings/ZuiddrechtBoardSavedViewsTest.php); tests/e2e/case-views-shared.spec.ts written (runs in the nightly)",
+				"readOn": "2026-11-24",
 				"plan": "openspec/changes/case-views-shared-with-a-team",
 				"requirement": "openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
 			},
