@@ -45,7 +45,7 @@ interface SettlementOverviewInterface {
 	 *
 	 * @return array{empty: bool, settlements: list<array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+	 * @spec openspec/specs/case-page/spec.md
 	 */
 	public function forCase(string $caseId): array;
 }//end interface
