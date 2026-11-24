@@ -1199,7 +1199,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         of `lib/` (pdepend cache cleared).
         Characterisation: the existing `RetiredNodeRewriterTest`, `RetiredNodeRewriterEdgesTest` (bridged, fanned
         out and orphaned edges in both endpoint shapes, a translated step chained), `RetiredNodeTranslatorTest` and
-        the repair step tests (75), green before and unchanged after but for one `@uses` line in four.
+        the repair step tests (75), green before and unchanged after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Flow/EdgeEndpointsTest` (3).
   - [x] 8be `Lifecycle/CaseEndingActs` (1: ExcessiveClassComplexity 54 against 50; TooManyMethods stays, 29 down to
         27). What the ending acts read off a case type's status rows reads no store, so it moved to the new
@@ -1300,7 +1300,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         is gone over the whole of `lib/` (pdepend cache cleared).
         Characterisation: the existing `DocumentCorrespondentsTest`, `DocumentCorrespondentsWriteTest`,
         `CorrespondentWriterTest`, `CorrespondentDispatchGoldenTest`, `InboundSenderIsAPartyTest` and the dossier
-        write tests (86), green before and unchanged after but for one `@uses` line in four.
+        write tests (86), green before and unchanged after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Zaakdossier/CasePartyIndexTest` (2).
   - [x] 8bl `Repair/CaseFlowSeedDataRepairStep` (1: ExcessiveClassComplexity 54 against 50; and CouplingBetweenObjects
         14 against 13, which PHPMD reported unsuppressed on development). Planting the demo cases of one seeded case type
@@ -1340,7 +1340,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         findings on both files under both rulesets.
         Characterisation: the existing workflow guard, definition service and template loader tests (151 in 27 files:
         the route read, the recorded default, the ambiguous pick, publish and deprecate), green before and unchanged
-        after but for one `@uses` line in four.
+        after but for one `@uses` line in three.
         Own test: `tests/Unit/Service/Workflow/DefaultRouteTest` (3).
   - [x] 8bo `CaseRelationService` (1: ExcessiveClassComplexity 58 against 50). Stripping the links to a deleted case
         from the cases that hold one is its own concern, so it moved to the new `Relation/DeletedCaseLinks`: the cases
@@ -1421,3 +1421,26 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         green before and unchanged after but for two `@uses` lines.
         Own tests: `tests/Unit/Repair/Support/DefaultTestConsumersTest` (2: the frozen defaults, create and update) and
         `DefaultNotificationChannelsTest` (3: the five channels, readiness with its two skip lines, the report).
+  - [x] 8bu `Listener/TermijnTimerFiredListener` (1: CouplingBetweenObjects 14 against 13). What a rung of a known term
+        does is its own concern, so it moved to the new `Listener/Support/TermRungActions`: whether a fire is a dossiq
+        term timer's (`termMetadata()`, was `termijnMetadata()`), the rung routed by the kind of term its timer carries
+        (`route()`, was `routeRung()`, now building the `TermijnRungFire` itself), the beslistermijn breach flip and
+        threshold bookkeeping (`handleBeslistermijnRung()` with `bucketFromRungKey()`), and the hersteltermijn reminder
+        or expired pause (`handleHersteltermijnRung()`, `isChaseRung()`, `handleChase()`, `handlePauseExpiry()`,
+        `expireRequest()`, `resumeExpired()`, `noticeFor()`). Bodies moved unchanged. The four optional collaborators of
+        a suspended term travel as one value, `Listener/Support/TermPauseFollowUp`, so the new constructor takes four
+        parameters (gate-122). The listener keeps the instance lookup and the run under the background service
+        account; it no longer names `TermijnRungFire`, `TermijnTimerServiceInterface` or `\Throwable`, so its coupling
+        goes from 14 to 13 (moving only the pause expiry left it at 14). The listener builds the actions in its
+        constructor, so its constructor signature and the container are unchanged. Coupling 13, 8 and 4, complexity
+        11, 34 and 1 (pdepend); phpmd: no CouplingBetweenObjects finding with the suppression gone, and no new finding
+        on the three files under both rulesets (the StaticAccess on `TimerFire` in `handle()` was there before).
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 192 to 191.
+        Characterisation: the existing `TermijnTimerFiredListenerTest`, `TermijnTimerFiredListenerEdgesTest`,
+        `TermijnTimerFiredListenerServiceAccountTest`, `TimerFiredListenersGoldenTest` and
+        `DeadlineMonitoringEndToEndTest` (62: the breach flip, the thresholds, the reminder, the expired pause with its
+        failing request, the unknown instance, the unreadable key), green before and unchanged after but for two
+        `@uses` lines in three.
+        Own test: `tests/Unit/Listener/Support/TermRungActionsTest` (5: only a dossiq term timer carries term
+        metadata, the breach on the fresh row, a bucket only for a running term and a readable key, the reminder and
+        the resumed term left alone, the expired pause resumed with its handler and a failing resume logged).
