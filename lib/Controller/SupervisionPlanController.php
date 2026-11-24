@@ -118,14 +118,11 @@ class SupervisionPlanController extends Controller {
 	 * @return JSONResponse The figures, or the refusal.
 	 *
 	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
 	 */
 	#[NoAdminRequired]
 	public function progressForYear(string $year): JSONResponse {
-		if (preg_match('/^\d{4}$/', $year) !== 1) {
-			return $this->refused(status: SupervisionPlanReader::NOT_FOUND);
-		}
-
-		$found = $this->reader->idForYear(year: (int)$year);
+		$found = $this->planOfYear(year: $year);
 		if ($found['status'] !== SupervisionPlanReader::FOUND) {
 			return $this->refused(status: $found['status']);
 		}
@@ -163,6 +160,46 @@ class SupervisionPlanController extends Controller {
 
 		return new JSONResponse($proposal);
 	}//end scheduleProposal()
+
+	/**
+	 * The proposed schedule of the plan for a year, so the plan page shows it beside the year's figures.
+	 *
+	 * @param string $year The plan year, four digits.
+	 *
+	 * @no-admin-idor-exempt The plan is looked up by year in the caller's own OpenRegister scope (RBAC and multitenancy
+	 *                        on), so a plan the caller may not read answers 404, and the proposal is made as
+	 *                        scheduleProposal() makes it. It writes nothing.
+	 *
+	 * @return JSONResponse The proposal, or the refusal.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	#[NoAdminRequired]
+	public function scheduleProposalForYear(string $year): JSONResponse {
+		$found = $this->planOfYear(year: $year);
+		if ($found['status'] !== SupervisionPlanReader::FOUND) {
+			return $this->refused(status: $found['status']);
+		}
+
+		return $this->scheduleProposal(id: (string)($found['id'] ?? ''));
+	}//end scheduleProposalForYear()
+
+	/**
+	 * The plan of a year as the reader finds it; a value that is not four digits is not found.
+	 *
+	 * @param string $year The plan year from the route.
+	 *
+	 * @return array<string, mixed> The reader's answer: `status`, and `id` when found.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	private function planOfYear(string $year): array {
+		if (preg_match('/^\d{4}$/', $year) !== 1) {
+			return ['status' => SupervisionPlanReader::NOT_FOUND];
+		}
+
+		return $this->reader->idForYear(year: (int)$year);
+	}//end planOfYear()
 
 	/**
 	 * The refusal for a status the reader answered.

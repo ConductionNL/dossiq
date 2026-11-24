@@ -147,4 +147,29 @@ class SupervisionPlanControllerTest extends TestCase {
 		$word = $this->controller(read: $this->found(), year: ['status' => 200, 'id' => 'plan-2026'])->progressForYear(year: 'next');
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $word->getStatus());
 	}//end testTheFiguresOfAYear()
+
+	/**
+	 * The plan of a year answers its proposed schedule, which writes nothing; a year with no plan, or no year, is
+	 * refused with the reader's status.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	public function testTheProposalOfAYear(): void {
+		$found = $this->controller(read: $this->found(), from: '2026-01-05', year: ['status' => 200, 'id' => 'plan-2026'])
+			->scheduleProposalForYear(year: '2026');
+		$this->assertSame(expected: Http::STATUS_OK, actual: $found->getStatus());
+		$this->assertFalse(condition: $found->getData()['written']);
+		$this->assertSame(expected: '2026-01-05', actual: $found->getData()['categories'][0]['firstDate']);
+
+		$none = $this->controller(read: $this->found())->scheduleProposalForYear(year: '2031');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $none->getStatus());
+
+		$down = $this->controller(read: $this->found(), year: ['status' => 503])->scheduleProposalForYear(year: '2026');
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $down->getStatus());
+
+		$word = $this->controller(read: $this->found(), year: ['status' => 200, 'id' => 'plan-2026'])->scheduleProposalForYear(year: 'next');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $word->getStatus());
+	}//end testTheProposalOfAYear()
 }//end class

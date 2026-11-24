@@ -22,8 +22,9 @@
 ### Task 3: Suggest a schedule
 - **spec_ref**: `openspec/changes/supervision-plan-page/specs/vth-module/spec.md#requirement-a-schedule-is-proposed-before-it-is-written`
 - **files**: an endpoint for the proposal, its dialog
-- [ ] Proposal from frequency and capacity, shown before writing
-  - Half: `GET /api/supervision-plans/{id}/schedule-proposal[?from=Y-m-d]` (`SupervisionScheduleProposal`) proposes dates per category from the risk frequency, cut evenly to the capacity, on working days, highest risk first, and writes nothing (`written: false`). The dialog that shows it waits on the page (task 2), and accepting a proposal (planning the inspections) is not built: a `fieldInspection` needs a case and an inspector, which the proposal does not choose.
+- [x] Proposal from frequency and capacity, shown before writing
+  - Shown (24 Nov): the plan page's Suggested schedule table (`supervision-plan-proposal` in `src/manifest.d/99-supervision-plan.json`) reads `GET /api/supervision-plans/year/{year}/schedule-proposal` (category, demanded, proposed, first and last visit), which writes nothing; decided as a card on the page rather than a dialog, since the dialog's only act (accept) is not built. Vitest `tests/vitest/supervisionPlanPage.spec.js`, PHPUnit `testTheProposalOfAYear`, `testEachCategoryNamesTheSpanOfItsVisits`.
+  - Earlier half: `GET /api/supervision-plans/{id}/schedule-proposal[?from=Y-m-d]` (`SupervisionScheduleProposal`) proposes dates per category from the risk frequency, cut evenly to the capacity, on working days, highest risk first, and writes nothing (`written: false`). The dialog that shows it waits on the page (task 2), and accepting a proposal (planning the inspections) is not built: a `fieldInspection` needs a case and an inspector, which the proposal does not choose.
 - [x] Test: PHPUnit for the proposal rule
   - `tests/Unit/Service/Inspection/SupervisionScheduleProposalTest.php`.
 

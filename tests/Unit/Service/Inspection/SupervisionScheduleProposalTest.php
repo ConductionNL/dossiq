@@ -108,6 +108,33 @@ class SupervisionScheduleProposalTest extends TestCase {
 	}//end testDatesAreWorkingDaysInOrder()
 
 	/**
+	 * Each category names the span of its visits, first and last date, so a table row says it without the visits;
+	 * a category with no visit names none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	public function testEachCategoryNamesTheSpanOfItsVisits(): void {
+		$proposal = $this->propose(plan: ['year' => 2026, 'capacityHours' => 1600]);
+
+		foreach ($proposal['categories'] as $category) {
+			$dates = array_column($category['visits'], 'date');
+			$this->assertSame(expected: $dates[0], actual: $category['firstDate']);
+			$this->assertSame(expected: $dates[count($dates) - 1], actual: $category['lastDate']);
+		}
+
+		$this->assertSame(expected: '2026-01-01', actual: $proposal['categories'][0]['firstDate']);
+
+		$late = $this->propose(plan: ['year' => 2026], from: '2027-01-04');
+		foreach ($late['categories'] as $category) {
+			$this->assertSame(expected: [], actual: $category['visits']);
+			$this->assertSame(expected: '', actual: $category['firstDate']);
+			$this->assertSame(expected: '', actual: $category['lastDate']);
+		}
+	}//end testEachCategoryNamesTheSpanOfItsVisits()
+
+	/**
 	 * Demand above capacity is cut by the same share in every category, and the shortfall is reported.
 	 *
 	 * @return void
