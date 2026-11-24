@@ -1555,3 +1555,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (19 in all); unchanged and green after.
         Own test: `tests/Unit/Controller/Support/FilingChoicesTest` (3); dropping the address fallback turns 2 tests
         red (checked).
+  - [x] 8cd `Lifecycle/CaseEndingActs` (1, unsuppressed: TooManyMethods 27 against 25). Working out where finishing or
+        aborting lands the case (the terminal status, named or the case type's lowest-ordered one, the closing result,
+        the end date and the phases it never reached) is its own concern, so `landing()` moved to the new
+        `Lifecycle/EndingLanding::resolve()` with `terminalStatus()`, `terminalRows()` and `skippedPhases()`. Bodies
+        moved unchanged. The acts build it over their result writer, status lookup and status rows in the constructor,
+        so their constructor signature and the container are unchanged. 23 methods; phpmd: zero findings on both files
+        under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not
+        suppressed).
+        Characterisation: the existing `CaseEndingActsGoldenTest` (named, uuid-shaped, non-terminal and missing terminal
+        statuses, unordered terminals, result refused or empty) and `CaseEndingActsTest` (early close with and without
+        skipped phases), green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Lifecycle/EndingLandingTest` (2); dropping the skipped phases turns 3 tests red
+        (checked).
