@@ -31,6 +31,12 @@ const template = {
 }
 
 describe('dossiq field-inspection config', () => {
+	// @spec openspec/changes/inspection-conflict-card/design.md (open decision 4)
+	it('files a replay conflict in the register as a conflictRecord', () => {
+		expect(config.register).toBe('dossiq')
+		expect(config.conflictSchema).toBe('conflictRecord')
+	})
+
 	it('reads the one template schema, not the older checklist or result schemas', () => {
 		expect(config.referenceSchema).toBe('inspectionChecklistTemplate')
 		expect(config.resultSchema).toBe('')

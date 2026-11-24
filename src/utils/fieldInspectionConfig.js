@@ -23,7 +23,14 @@
  * the answer, which the leaf cannot express, so the server's gate decides it
  * on replay.
  *
+ * - Conflicts: a replay that collides with an office edit is filed in the
+ *   register as a `conflictRecord` (with `syncQueueRef` and `conflictFields`,
+ *   which the library writes since 2.213.0), so the case page's conflict card
+ *   and the resolve endpoint see it. Without `conflictSchema` the clash stayed
+ *   on the device and nobody at the office heard of it.
+ *
  * @spec openspec/changes/inspection-checklists-onto-task/tasks.md
+ * @spec openspec/changes/inspection-conflict-card/design.md (open decision 4)
  * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
  */
 export const DOSSIQ_FIELD_INSPECTION_CONFIG = Object.freeze({
@@ -44,6 +51,8 @@ export const DOSSIQ_FIELD_INSPECTION_CONFIG = Object.freeze({
 	resultEndpoint: '/apps/dossiq/api/cases/{caseRef}/checklist-results',
 	resultTemplateParam: 'checklistId',
 	resultPlannedItemParam: 'inspection',
+	register: 'dossiq',
+	conflictSchema: 'conflictRecord',
 })
 
 export default DOSSIQ_FIELD_INSPECTION_CONFIG

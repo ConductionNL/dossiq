@@ -204,6 +204,10 @@ describe('main.js boot', { timeout: 60000 }, () => {
 				resultEndpoint: '/apps/dossiq/api/cases/{caseRef}/checklist-results',
 				resultTemplateParam: 'checklistId',
 				resultPlannedItemParam: 'inspection',
+				// inspection-conflict-card decision 4: a replay conflict is
+				// filed in the register as a conflictRecord.
+				register: 'dossiq',
+				conflictSchema: 'conflictRecord',
 			},
 		}])
 	})
