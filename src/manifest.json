@@ -4023,6 +4023,28 @@
 									"_note": "DqDocumentenBeheer: who may see the document. Everyone on the case, unless the document carries an access exception (the dossier listing's accessExceptionNames), then the exception's people and groups."
 								},
 								{
+									"key": "documentType",
+									"source": "row",
+									"label": "Type",
+									"property": "documentType",
+									"hidden": { "not": "@context.caseType.documentReview.enabled" }
+								},
+								{
+									"key": "direction",
+									"source": "row",
+									"label": "Direction",
+									"property": "direction",
+									"formatter": "documentDirection",
+									"hidden": { "not": "@context.caseType.documentReview.enabled" }
+								},
+								{
+									"key": "partyName",
+									"source": "row",
+									"label": "Author",
+									"property": "partyName",
+									"hidden": { "not": "@context.caseType.documentReview.enabled" }
+								},
+								{
 									"id": "review-verdict",
 									"key": "reviewVerdict",
 									"source": "row",
@@ -4046,28 +4068,6 @@
 										"deels_openbaar": "warning",
 										"niet_openbaar": "error"
 									}
-								},
-								{
-									"key": "documentType",
-									"source": "row",
-									"label": "Document type",
-									"property": "documentType",
-									"hidden": true
-								},
-								{
-									"key": "direction",
-									"source": "row",
-									"label": "Direction",
-									"property": "direction",
-									"formatter": "documentDirection",
-									"hidden": true
-								},
-								{
-									"key": "partyName",
-									"source": "row",
-									"label": "Sender or recipient",
-									"property": "partyName",
-									"hidden": true
 								},
 								{
 									"key": "keywords",
