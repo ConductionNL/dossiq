@@ -81,6 +81,11 @@ class SupervisionPlanController extends Controller {
 	 *
 	 * @param string $id The supervisionPlan uuid.
 	 *
+	 * @no-admin-idor-exempt Every read runs in the caller's own OpenRegister scope: SupervisionPlanReader finds the plan
+	 *                        and searches its categories and inspections with RBAC and multitenancy on (their defaults), so
+	 *                        a plan the caller may not read answers 404 and an inspection they may not see is not counted.
+	 *                        It writes nothing.
+	 *
 	 * @return JSONResponse The figures, or the refusal.
 	 *
 	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-1
@@ -108,6 +113,11 @@ class SupervisionPlanController extends Controller {
 	 * when it is absent or not a date.
 	 *
 	 * @param string $id The supervisionPlan uuid.
+	 *
+	 * @no-admin-idor-exempt Every read runs in the caller's own OpenRegister scope: SupervisionPlanReader finds the plan
+	 *                        and searches its categories and inspections with RBAC and multitenancy on (their defaults), so
+	 *                        a plan the caller may not read answers 404 and an inspection they may not see is not counted.
+	 *                        It writes nothing.
 	 *
 	 * @return JSONResponse The proposal, or the refusal.
 	 *

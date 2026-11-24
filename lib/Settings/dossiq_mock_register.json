@@ -26710,6 +26710,111 @@
         "reference": "Voorbeeld Reference 3",
         "startDate": "2026-03-03",
         "endDate": "2026-03-03"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlan",
+          "slug": "supervisionplan-supervisionplan-1-3"
+        },
+        "title": "Voorbeeld Supervision plan 1",
+        "year": 2026,
+        "description": "Voorbeeld Description 1",
+        "capacityHours": 1100
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlan",
+          "slug": "supervisionplan-supervisionplan-2-3"
+        },
+        "title": "Voorbeeld Supervision plan 2",
+        "year": 2027,
+        "description": "Voorbeeld Description 2",
+        "capacityHours": 1200
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlan",
+          "slug": "supervisionplan-supervisionplan-3-3"
+        },
+        "title": "Voorbeeld Supervision plan 3",
+        "year": 2028,
+        "description": "Voorbeeld Description 3",
+        "capacityHours": 1300
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlanCategory",
+          "slug": "supervisionplancategory-supervisionplancategory-1-3"
+        },
+        "plan": "00000000-0000-4000-8000-000000000001",
+        "name": "Hospitality",
+        "planned": 10,
+        "hoursPerInspection": 5,
+        "riskFrequency": [
+          {
+            "profile": "high",
+            "objects": 1,
+            "visitsPerYear": 2
+          },
+          {
+            "profile": "low",
+            "objects": 2,
+            "visitsPerYear": 0.5
+          }
+        ],
+        "order": 1
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlanCategory",
+          "slug": "supervisionplancategory-supervisionplancategory-2-3"
+        },
+        "plan": "00000000-0000-4000-8000-000000000002",
+        "name": "Construction",
+        "planned": 20,
+        "hoursPerInspection": 6,
+        "riskFrequency": [
+          {
+            "profile": "high",
+            "objects": 2,
+            "visitsPerYear": 2
+          },
+          {
+            "profile": "low",
+            "objects": 4,
+            "visitsPerYear": 0.5
+          }
+        ],
+        "order": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "supervisionPlanCategory",
+          "slug": "supervisionplancategory-supervisionplancategory-3-3"
+        },
+        "plan": "00000000-0000-4000-8000-000000000003",
+        "name": "Environment",
+        "planned": 30,
+        "hoursPerInspection": 7,
+        "riskFrequency": [
+          {
+            "profile": "high",
+            "objects": 3,
+            "visitsPerYear": 2
+          },
+          {
+            "profile": "low",
+            "objects": 6,
+            "visitsPerYear": 0.5
+          }
+        ],
+        "order": 3
       }
     ]
   }
