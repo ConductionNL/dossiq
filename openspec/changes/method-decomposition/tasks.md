@@ -1637,3 +1637,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CaseRecycleServiceTest` for the lens; unchanged and green after but for `@uses` lines.
         Own tests: `Recycle/LiveCaseReaderTest` (2) and `Recycle/DeletedCaseVisibilityTest` (1); dropping the assignee
         check turns 1 test red (checked).
+  - [x] 8ck `TenantAuthenticationService` (1, unsuppressed: ExcessiveClassComplexity 59 against 50). Reading a mandate
+        matrix (which `tenantMandate` row is in force at a moment, the matrix it carries or the default when it carries
+        none, and whether it grants a role an action, wildcards included) is its own concern, so `isAllowed()`'s body,
+        `entriesFor()`, `anyGrants()`, `findActiveMandateRow()`, `isEffectiveAt()` and `normaliseMatrix()` moved to the
+        new `Tenant/MandateMatrix` (`allows()`, `activeRow()`, `normalise()`) with `DEFAULT_DENY_MATRIX`. Bodies moved
+        unchanged. The reads, the refusal on an unreadable matrix and the membership cache stay in the service, which
+        builds the matrix reader in its constructor, so its constructor signature and the container are unchanged.
+        phpmd: no ExcessiveClassComplexity finding, and no new finding on either file under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `TenantAuthenticationServiceTest` (grants and wildcards) and
+        `TenantAuthenticationLookupsGoldenTest` (past, future and garbled rows, JSON and default matrices, the decision),
+        green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Tenant/MandateMatrixTest` (2); ignoring the wildcard action turns 2 tests red
+        (checked).
