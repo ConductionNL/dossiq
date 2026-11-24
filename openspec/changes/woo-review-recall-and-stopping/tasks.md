@@ -100,11 +100,12 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
   - Still owed (live pass, decision 139): read the audit entry through the OpenRegister API on the dev instance.
 ## 4. End to end
 
-- [ ] 4.1 e2e `tests/e2e/woo-recall.spec.ts`: declare a rule, mark a document and see the rule
+- [x] 4.1 e2e `tests/e2e/woo-recall.spec.ts`: declare a rule, mark a document and see the rule
   locked, draw a sample of 20 on a seeded case, judge it, and see the estimate and the met or not
   met line. Cite REQ-WRS-001 to REQ-WRS-003.
   - Written in `tests/e2e/document-review.spec.ts` (the spec's own 400/1600/200 fixture). Not run (live pass,
     decision 139).
+  - Written, runs in nightly (`tests/e2e/woo-recall.spec.ts`, #6685); not run here, the live pass owns it.
 
 ## 5. Verify and deliver
 

@@ -15,6 +15,7 @@
 
 ## 3. Checks
 
-- [ ] 3.1 `tests/e2e/tenant-quota.spec.ts`: the refusal and the billing run.
+- [x] 3.1 `tests/e2e/tenant-quota.spec.ts`: the refusal and the billing run.
+  - Written, runs in nightly (`tests/e2e/tenant-quota.spec.ts`, #6685); not run here, the live pass owns it.
 - [ ] 3.2 Live pass against board DqTenant with the example tenant Waterland.
 - [ ] 3.3 `openspec/parity/capabilities.json` row 17.2: built when 1 and 2 are live.
