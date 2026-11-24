@@ -79,3 +79,24 @@ rights. No dossiq class writes calendar events for a session.
 - **GIVEN** the merged dossiq register
 - **WHEN** the `hearingSession` schema is read
 - **THEN** its `calendarProvider` MUST be enabled on `scheduledDate`
+
+### Requirement: A planned session opens as a meeting in the decision app (REQ-CSS-6)
+When the decision app is installed, planning a session MUST ask it, through its
+typed `MeetingRequestedEvent` (ADR-041, decidiq `meeting-requested-event`), to hold
+a meeting whose `subjectRegister`, `subjectSchema` and `subjectId` point at the
+session record, carrying the session's title, start, place and video link. The
+session MUST keep the meeting's id in `meeting`. Without the decision app, or when
+it does not hold the meeting, the session MUST still be planned, without `meeting`.
+
+#### Scenario: A planned hearing is a meeting
+@e2e exclude Covered by SessionServiceTest and SessionMeetingTest; the live check is owed with the bezwaar package journey (2.2).
+- **GIVEN** an installed decision app and a case whose case type declares a `hearing`
+- **WHEN** a hearing is planned
+- **THEN** the decision app holds one meeting with the session as its subject
+- **AND** the session carries that meeting's id in `meeting`
+
+#### Scenario: Without the decision app the plan stands
+@e2e exclude Covered by SessionMeetingTest.
+- **GIVEN** no decision app
+- **WHEN** a hearing is planned
+- **THEN** the session is stored as planned, without `meeting`

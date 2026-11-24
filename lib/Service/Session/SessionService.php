@@ -62,6 +62,7 @@ class SessionService {
 	 * @param SettingsService $settingsService Register, schema keys and the object service.
 	 * @param ITimeFactory       $timeFactory     The clock.
 	 * @param CaseDateNormaliser $caseDates       The one reader of a date.
+	 * @param SessionMeeting|null $meetings       Opens a planned session as a meeting in the decision app.
 	 *
 	 * @return void
 	 */
@@ -69,6 +70,7 @@ class SessionService {
 		private readonly SettingsService $settingsService,
 		private readonly ITimeFactory $timeFactory,
 		private readonly CaseDateNormaliser $caseDates,
+		private readonly ?SessionMeeting $meetings = null,
 	) {
 	}//end __construct()
 
@@ -153,8 +155,45 @@ class SessionService {
 		$write->definition->rules()->assertInspectionFloor(scheduled: $write->scheduled, now: $write->now);
 		$write->definition->rules()->assertInvitees(invitees: $write->invitees);
 
-		return $this->save(write: $write, record: $this->plannedRecord(write: $write));
+		return $this->openAsMeeting(write: $write, saved: $this->save(write: $write, record: $this->plannedRecord(write: $write)));
 	}//end plan()
+
+	/**
+	 * Open a planned session as a meeting in the decision app, and keep the meeting's id on it.
+	 *
+	 * Without the decision app, or when it holds no meeting, the session is
+	 * answered as saved: the plan stands either way.
+	 *
+	 * @param SessionWrite         $write The session that was planned.
+	 * @param array<string, mixed> $saved The stored session.
+	 *
+	 * @return array<string, mixed> The stored session, with `meeting` when one was opened.
+	 *
+	 * @throws RuntimeException When the register refuses to keep the meeting's id.
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-planned-session-opens-as-a-meeting-in-the-decision-app-req-css-6
+	 */
+	private function openAsMeeting(SessionWrite $write, array $saved): array {
+		if ($this->meetings === null) {
+			return $saved;
+		}
+
+		$schema    = $this->reads()->schemaKey(key: 'hearing_session_schema');
+		$meetingId = $this->meetings->open(session: $saved, location: [$write->register, $schema]);
+		$sessionId = (string)($saved['id'] ?? ($saved['@self']['id'] ?? ''));
+		if ($meetingId === '' || $sessionId === '') {
+			return $saved;
+		}
+
+		$session = new StoredSession();
+		$session->objectService = $write->objectService;
+		$session->register      = $write->register;
+		$session->id            = $sessionId;
+		$session->current       = $saved;
+		$session->definition    = $write->definition;
+
+		return $this->patch(session: $session, changes: ['meeting' => $meetingId]);
+	}//end openAsMeeting()
 
 	/**
 	 * Record that a party waived a session the case type lets them waive.

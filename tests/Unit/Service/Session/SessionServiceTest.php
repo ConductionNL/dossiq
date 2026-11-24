@@ -31,18 +31,23 @@ namespace OCA\Dossiq\Tests\Unit\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Service\Session\SessionMeeting;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
+ * @uses   \OCA\Dossiq\Service\Session\SessionMeeting
+ * @uses   \OCA\Dossiq\Service\Session\StoredSession
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
@@ -119,6 +124,20 @@ class SessionServiceTest extends TestCase {
 	private SessionService $service;
 
 	/**
+	 * The settings double.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The clock double.
+	 *
+	 * @var ITimeFactory
+	 */
+	private ITimeFactory $clock;
+
+	/**
 	 * Load the merged register once.
 	 *
 	 * @return void
@@ -159,8 +178,80 @@ class SessionServiceTest extends TestCase {
 		$clock     = $this->createMock(ITimeFactory::class);
 		$clock->method('now')->willReturnCallback(fn (): DateTimeImmutable => $this->now);
 
-		$this->service = new SessionService(settingsService: $settings, timeFactory: $clock, caseDates: $this->caseDates(zone: 'UTC', clock: $clock));
+		$this->settings = $settings;
+		$this->clock    = $clock;
+		$this->service  = new SessionService(settingsService: $settings, timeFactory: $clock, caseDates: $this->caseDates(zone: 'UTC', clock: $clock));
 	}//end setUp()
+
+	/**
+	 * A planned session opens as a meeting in the decision app and keeps its id, still fitting the schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-planned-session-opens-as-a-meeting-in-the-decision-app-req-css-6
+	 */
+	public function testAPlannedSessionOpensAsAMeetingAndKeepsItsId(): void {
+		$subjects   = [];
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$subjects): void {
+				$subjects[] = [$event->getSubjectRegister(), $event->getSubjectSchema(), $event->getSubjectId()];
+				$event->setMeetingId('meeting-9');
+				$event->setHandled(true);
+			}
+		);
+		$service = new SessionService(
+			settingsService: $this->settings,
+			timeFactory: $this->clock,
+			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
+			meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(LoggerInterface::class))
+		);
+
+		$saved = $service->schedule(
+			caseId: self::CASE_ID,
+			sessionKey: 'hearing',
+			scheduledDate: '2026-10-20T10:00:00+00:00',
+			chairpersonId: self::CHAIR,
+			invitees: [['role' => 'applicant']]
+		);
+
+		$stored = $this->store->row(schema: 'hearingSession', uuid: $saved['id']);
+		self::assertSame([['dossiq', 'hearingSession', $saved['id']]], $subjects);
+		self::assertSame('meeting-9', $stored['meeting']);
+		self::assertSame('meeting-9', $saved['meeting']);
+		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $stored));
+	}//end testAPlannedSessionOpensAsAMeetingAndKeepsItsId()
+
+	/**
+	 * When the decision app holds no meeting, the session is planned without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-planned-session-opens-as-a-meeting-in-the-decision-app-req-css-6
+	 */
+	public function testWithoutAMeetingTheSessionIsStillPlanned(): void {
+		$service = new SessionService(
+			settingsService: $this->settings,
+			timeFactory: $this->clock,
+			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
+			meetings: new SessionMeeting(
+				eventDispatcher: $this->createMock(IEventDispatcher::class),
+				logger: $this->createMock(LoggerInterface::class)
+			)
+		);
+
+		$saved = $service->schedule(
+			caseId: self::CASE_ID,
+			sessionKey: 'hearing',
+			scheduledDate: '2026-10-20T10:00:00+00:00',
+			chairpersonId: self::CHAIR,
+			invitees: [['role' => 'applicant']]
+		);
+
+		$stored = $this->store->row(schema: 'hearingSession', uuid: $saved['id']);
+		self::assertSame('planned', $stored['status']);
+		self::assertArrayNotHasKey('meeting', $stored);
+	}//end testWithoutAMeetingTheSessionIsStillPlanned()
 
 	/**
 	 * A planned hearing carries its key, its title and the inspection dates, and fits the real schema.
