@@ -24,25 +24,25 @@ describe('the lifecycle act forms', () => {
 			when: 'kase',
 			testid: 'case-act-archive',
 			card: { title: 'kase.title', meta: ['kase.identifier', 'kase.initiatorDisplayName'], badge: 'kase.resultPublicLabel' },
-			title: 'Retention under the case type',
+			title: 'Retention according to the case type',
 		})
 		expect(summary.facts).toEqual([
-			{ label: 'Archive nomination', path: 'kase.archiveNomination', fallback: 'Not set' },
+			{ label: 'Archive designation', path: 'kase.archiveNomination', fallback: 'Not set' },
 			{ label: 'Destruction date', path: 'kase.archiveActionDate', fallback: 'Not set' },
-			{ label: 'Archive status afterwards', fallback: 'Archived' },
+			{ label: 'Archive status after archiving', fallback: 'Archived' },
 		])
 		expect(notice).toEqual({
 			type: 'info',
 			icon: 'LockOutline',
-			heading: 'Read only afterwards',
-			text: 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.',
+			heading: 'Read-only after that',
+			text: 'After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.',
 		})
 		expect(fieldsOf({ id: 'archive' })).toEqual(['reason', 'notifyRequester'])
 	})
 
 	it('tells under the archive reason how the case comes back, as board DqArchiveren draws it', () => {
 		const reason = actForm({ kind: 'gesture', id: 'archive' }).inputs.find((input) => input.field === 'reason')
-		expect(reason.note).toBe('Goes into the history of the case. To bring it back, use Restore from the archive under Next step.')
+		expect(reason.note).toBe('Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.')
 
 		const abort = actForm({ kind: 'gesture', id: 'abort' }).inputs.find((input) => input.field === 'reason')
 		expect(abort.note).toBe('Goes into the history of the case.')
@@ -56,7 +56,7 @@ describe('the lifecycle act forms', () => {
 
 	it('names the archive dialog and puts the archive icon on its confirm button', () => {
 		const archive = actForm({ id: 'archive' })
-		expect(archive.title).toBe('Archive this case')
+		expect(archive.title).toBe('Archive case')
 		expect(archive.confirmIcon?.name).toBe('ArchiveOutlineIcon')
 	})
 

@@ -37,7 +37,7 @@
 	<CnDialog
 		:name="menuMode ? t('dossiq', 'What you can do with this case') : actTitle(chosen)"
 		:eyebrow="eyebrow"
-		:subtitle="menuMode ? t('dossiq', 'Only what this case allows now is active. The rest is greyed out, with the reason.') : explainer(chosen)"
+		:subtitle="menuMode ? t('dossiq', 'Only what this case allows now is on. The rest is grey, with the reason.') : explainer(chosen)"
 		width="form"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">

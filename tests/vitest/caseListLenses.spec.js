@@ -812,10 +812,10 @@ describe('what this change does NOT move', () => {
 			'All cases',
 			'Objects',
 			'Tasks',
-			'Close out your day',
+			'Close the day',
 			'Workflow board',
 			'Reports',
-			'Processing time',
+			'Lead time',
 			'Process mining',
 			// `Map` retired with the CaseMap page; the map is the Cases list
 			// in map view, and `/map` redirects there.

@@ -114,7 +114,7 @@ describe('tabs and titles', () => {
 
 	it('builds the breadcrumb and its note per tab', () => {
 		const p = page()
-		expect(p.breadcrumbs.map((crumb) => crumb.label)).toEqual(['Admin settings', 'Dossiq', 'General'])
+		expect(p.breadcrumbs.map((crumb) => crumb.label)).toEqual(['Administration settings', 'Dossiq', 'General'])
 		expect(p.breadcrumbs[0].href).toBe('/index.php/settings/admin')
 		expect(p.breadcrumbNote).toBe('applies to the whole organisation')
 		p.activeTab = 'vth'

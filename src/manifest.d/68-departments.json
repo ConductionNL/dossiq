@@ -8,7 +8,7 @@
 	"menu": [
 		{
 			"id": "DepartmentsMenu",
-			"label": "Departments and staff",
+			"label": "Departments and employees",
 			"icon": "AccountGroupOutline",
 			"route": "Departments",
 			"section": "settings",
@@ -21,7 +21,7 @@
 			"id": "Departments",
 			"route": "/settings/departments",
 			"type": "index",
-			"title": "Departments and staff",
+			"title": "Departments and employees",
 			"permission": "admin",
 			"config": {
 				"entitySource": "users",
@@ -46,7 +46,7 @@
 					"label": "Settings",
 					"href": "/index.php/settings/admin/dossiq"
 				},
-				"headerMeta": "from Nextcloud groups, with function and absence",
+				"headerMeta": "from Nextcloud groups, enriched with job title and absence",
 				"_headerButtonsNote": "Board DqAfdelingen: Downloaden in the header downloads the staff the list shows as CSV (the users source's columns).",
 				"searchPlaceholder": "Search…",
 				"showActionsMenu": true,

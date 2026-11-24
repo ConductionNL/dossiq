@@ -51,24 +51,24 @@ function archive() {
 
 describe('the Archive this case dialog against board DqArchiveren', () => {
 	it('names the case number in the eyebrow ("Afronden · 2026-0082")', () => {
-		expect(archive().eyebrow).toBe('Close off · {identifier}')
-		expect(nl['Close off · {identifier}']).toBe('Afronden · {identifier}')
+		expect(archive().eyebrow).toBe('Complete · {identifier}')
+		expect(nl['Complete · {identifier}']).toBe('Afronden · {identifier}')
 	})
 
 	it('ends the retention facts on the status the case gets ("Gearchiveerd")', () => {
 		const items = archive().facts[0].items
 		expect(items.map((item) => item.label)).toEqual([
-			'Archive nomination',
+			'Archive designation',
 			'Retention period',
 			'Destruction date',
-			'Archive status afterwards',
+			'Archive status after archiving',
 		])
 		expect(items[3].value).toBe('Archived')
 		expect(nl.Archived).toBe('Gearchiveerd')
 	})
 
 	it('says under the reason how the case comes back', () => {
-		const hint = 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'
+		const hint = 'Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.'
 		expect(archive().reason.hint).toBe(hint)
 		expect(nl[hint]).toBe('Komt in de historie van de zaak. Terughalen kan met Terughalen uit het archief, onder Volgende stap.')
 	})

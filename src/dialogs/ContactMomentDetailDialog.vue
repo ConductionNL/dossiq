@@ -67,7 +67,7 @@ function channelLabels() {
 		webformulier: t('dossiq', 'Web form'),
 		chat: t('dossiq', 'Chat'),
 		social_media: t('dossiq', 'Social media'),
-		balie: t('dossiq', 'Desk'),
+		balie: t('dossiq', 'Service desk'),
 		brief: t('dossiq', 'Letter'),
 	}
 }

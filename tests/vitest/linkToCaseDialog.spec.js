@@ -121,6 +121,12 @@ describe('LinkToCaseDialog', () => {
 		expect(wrapper.find('[data-testid="link-to-case-notify"]').text()).toContain('Tell Anouk Bakker a message was added')
 	})
 
+	it('closes on Escape, also while the search field has the focus', async () => {
+		const wrapper = await dialog()
+		await wrapper.find('[data-testid="link-to-case-dialog"] input[type="search"], [data-testid="link-to-case-dialog"] input').trigger('keydown', { key: 'Escape' })
+		expect(wrapper.emitted('close')).toHaveLength(1)
+	})
+
 	it('links to the proposal with the proposal as its reason and both choices', async () => {
 		const wrapper = await dialog()
 

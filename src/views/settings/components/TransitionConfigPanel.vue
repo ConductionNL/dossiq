@@ -3,7 +3,7 @@
 		<div class="transition-config-panel__header">
 			<h4>{{ t('dossiq', 'Transition configuration') }}</h4>
 			<NcButton
-				type="tertiary"
+				variant="tertiary"
 				:aria-label="t('dossiq', 'Close transition configuration')"
 				@click="$emit('close')">
 				<template #icon>
@@ -20,11 +20,11 @@
 				}}</label>
 				<input
 					id="transition-config-panel-label"
-					v-model="localTransition.label"
+					:value="labelInput"
 					type="text"
 					class="transition-config-panel__input"
 					:placeholder="t('dossiq', 'e.g. Goedkeuren, Afwijzen')"
-					@input="emitUpdate" />
+					@input="onLabelInput" />
 			</div>
 
 			<!-- Explanation, read at the moment of choosing -->
@@ -140,7 +140,7 @@
 					</select>
 
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('dossiq', 'Remove guard')"
 						@click="removeGuard(index)">
 						<template #icon>
@@ -148,7 +148,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addGuard">
+				<NcButton variant="secondary" @click="addGuard">
 					{{ t('dossiq', 'Add guard') }}
 				</NcButton>
 			</div>
@@ -283,7 +283,7 @@
 					</template>
 
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('dossiq', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
@@ -291,14 +291,14 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addAction">
+				<NcButton variant="secondary" @click="addAction">
 					{{ t('dossiq', 'Add action') }}
 				</NcButton>
 			</div>
 
 			<!-- Delete transition -->
 			<div class="transition-config-panel__danger">
-				<NcButton type="error" @click="onDelete">
+				<NcButton variant="error" @click="onDelete">
 					{{ t('dossiq', 'Delete transition') }}
 				</NcButton>
 			</div>
@@ -309,6 +309,7 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import { labelText, withLabelText } from '../../../utils/translatableLabel.js'
 import { parseJsonList } from './workflowConfigParsing.js'
 
 export default {
@@ -345,6 +346,18 @@ export default {
 		}
 	},
 
+	computed: {
+		/**
+		 * The label in the reader's language, for the text field.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		labelInput() {
+			return labelText(this.localTransition.label)
+		},
+	},
+
 	watch: {
 		transition: {
 			/**
@@ -377,6 +390,18 @@ export default {
 		 */
 		parseActions(actions) {
 			return parseJsonList(actions)
+		},
+
+		/**
+		 * Write the typed text into the label in the reader's language, keeping
+		 * the label's other languages.
+		 *
+		 * @param {Event} event The input event.
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		onLabelInput(event) {
+			this.localTransition.label = withLabelText(this.localTransition.label, event.target.value)
+			this.emitUpdate()
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */

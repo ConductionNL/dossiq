@@ -85,7 +85,7 @@ describe('the notification-routing section', () => {
 		expect(wrapper.vm.labelFor({ notification: 'caseAssigned' })).toBe('A case is assigned to me')
 		expect(wrapper.vm.labelFor({ schema: 'case', notification: 'caseClosed' })).toBe('A case is closed')
 		expect(wrapper.vm.labelFor({ schema: 'x', schemaTitle: 'Thing', notification: 'odd' })).toBe('Thing: odd')
-		expect(wrapper.vm.channelLabel('email')).toBe('By e-mail')
+		expect(wrapper.vm.channelLabel('email')).toBe('By email')
 		expect(wrapper.vm.channelLabel('carrier-pigeon')).toBe('carrier-pigeon')
 		expect(wrapper.vm.entryOptions[0].notificationLabel).toBe('A case is assigned to me')
 	})

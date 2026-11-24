@@ -70,18 +70,18 @@
 					<dl>
 						<dt>{{ t('dossiq', 'Address designation') }}</dt>
 						<dd>{{ chosen?.result?.nummeraanduiding_id || '—' }}</dd>
-						<dt>{{ t('dossiq', 'Use') }}</dt>
+						<dt>{{ t('dossiq', 'Intended use') }}</dt>
 						<dd>{{ useLabel || '—' }}</dd>
 					</dl>
 				</section>
 				<section class="case-location-dialog__card" data-testid="case-location-cadastre">
-					<h3>{{ t('dossiq', 'Cadastre and WOZ') }}</h3>
+					<h3>{{ t('dossiq', 'Land Registry and WOZ') }}</h3>
 					<dl>
 						<dt>{{ t('dossiq', 'Parcel') }}</dt>
 						<dd>{{ parcelLabel || '—' }}</dd>
 						<dt>{{ t('dossiq', 'Rights holders') }}</dt>
 						<dd>{{ holders === null ? '—' : holders }}</dd>
-						<dt>{{ t('dossiq', 'WOZ value') }}</dt>
+						<dt>{{ t('dossiq', 'Property valuation (WOZ value)') }}</dt>
 						<dd>{{ wozLabel || '—' }}</dd>
 					</dl>
 				</section>

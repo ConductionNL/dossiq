@@ -1392,3 +1392,32 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Removed; phpmd reports zero findings on the three files under both rulesets (pdepend cache cleared).
         Docblock only, no code path changed, so no test was added; the suites of the three classes run unchanged.
         `phpmd.suppressWarnings` 195 to 192 (the baseline file still reads 178: development was already over it).
+  - [x] 8bs `CaseLifecycleService` (1: ExcessiveClassComplexity 57 against 50). Working out the day an extension of the
+        term lands on is its own concern, so it moved to the new `Lifecycle/ExtensionEndDate`: a named date taken once it
+        lies after the current end, else the current end plus the case type's ISO 8601 period, rolled by the
+        administered calendar when the engine bridge is wired (`resolve()`, was `resolveNewEndDate()` with
+        `requireLaterDate()` and `addPeriod()`). Bodies moved unchanged. The service builds it over the timer of its
+        own deadline services in its constructor, so its constructor signature and the container are unchanged; it no
+        longer names `DateInterval`. Complexity 45 and 13 (pdepend); phpmd: no ExcessiveClassComplexity finding with the
+        suppression gone, and no new finding on either file under both rulesets (the StaticAccess on `RowList` in
+        `readJournal()` was there before). `@SuppressWarnings(PHPMD.*)` lines in `lib/` 194 to 193.
+        Characterisation: the existing `CaseLifecycleServiceTest` and `CaseLifecycleSuspendPauseReasonTest` (the period
+        added, the named date, the date not later, the unreadable date, the case type's rule and limit), green before
+        and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Lifecycle/ExtensionEndDateTest` (3: the named date, the period with its two
+        refusals, the calendar roll of a period only).
+  - [x] 8bt `LoadDefaultZgwMappings` (1: ExcessiveClassComplexity 61 against 50). Seeding the two ZGW test consumers
+        and describing the default notification channels are their own concerns, so they moved to
+        `Repair/Support/DefaultTestConsumers` (`upsert()` and `defaults()`, were `upsertApplicaties()`,
+        `updateApplicatie()`, `createApplicatie()`, `getDefaultApplicaties()` and the three definition methods) and
+        `Repair/Support/DefaultNotificationChannels` (`defaults()`, `mappingReady()`, `report()`, were
+        `getDefaultKanalen()`, `kanaalMappingReady()` and `reportKanalen()`). Bodies moved unchanged. The container
+        lookups and the channel write under the system identity stay in the step, so gate-66 and
+        `SeedWriteIdentityTest` read it as before. The step builds both in its constructor, so its constructor signature
+        and the container are unchanged. Complexity 45, 9 and 7 (pdepend); phpmd: zero findings on the three files under
+        both rulesets with the suppression gone. `@SuppressWarnings(PHPMD.*)` lines in `lib/` 193 to 192.
+        Characterisation: the existing `LoadDefaultZgwMappingsRunTest` (fresh install, older install, the order of the
+        lines, the skipped and the throwing seeds), `LoadDefaultZgwMappingsGoldenTest` and `SeedWriteIdentityTest`,
+        green before and unchanged after but for two `@uses` lines.
+        Own tests: `tests/Unit/Repair/Support/DefaultTestConsumersTest` (2: the frozen defaults, create and update) and
+        `DefaultNotificationChannelsTest` (3: the five channels, readiness with its two skip lines, the report).

@@ -57,16 +57,16 @@ function actLayouts() {
  */
 function archiveLayout() {
 	return {
-		title: t('dossiq', 'Archive this case'),
+		title: t('dossiq', 'Archive case'),
 		confirmIcon: ArchiveOutline,
-		reasonNote: t('dossiq', 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'),
+		reasonNote: t('dossiq', 'Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.'),
 		notifyRequester: true,
 		summary: archiveSummary(),
 		notice: {
 			type: 'info',
 			icon: 'LockOutline',
-			heading: t('dossiq', 'Read only afterwards'),
-			text: t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.'),
+			heading: t('dossiq', 'Read-only after that'),
+			text: t('dossiq', 'After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.'),
 		},
 	}
 }
@@ -86,7 +86,7 @@ function archiveSummary() {
 			meta: ['kase.identifier', 'kase.initiatorDisplayName'],
 			badge: 'kase.resultPublicLabel',
 		},
-		title: t('dossiq', 'Retention under the case type'),
+		title: t('dossiq', 'Retention according to the case type'),
 		facts: retentionFacts(),
 	}
 }
@@ -98,9 +98,9 @@ function archiveSummary() {
  */
 function retentionFacts() {
 	return [
-		{ label: t('dossiq', 'Archive nomination'), path: 'kase.archiveNomination', fallback: t('dossiq', 'Not set') },
+		{ label: t('dossiq', 'Archive designation'), path: 'kase.archiveNomination', fallback: t('dossiq', 'Not set') },
 		{ label: t('dossiq', 'Destruction date'), path: 'kase.archiveActionDate', fallback: t('dossiq', 'Not set') },
-		{ label: t('dossiq', 'Archive status afterwards'), fallback: t('dossiq', 'Archived') },
+		{ label: t('dossiq', 'Archive status after archiving'), fallback: t('dossiq', 'Archived') },
 	]
 }
 

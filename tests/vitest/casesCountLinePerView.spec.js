@@ -21,9 +21,9 @@ const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/menu-layout.simpl
 
 describe('the cases count line per view', () => {
 	it('keeps the sort in the table and names the board and the map lines', () => {
-		expect(config.countText).toBe('{shown} of {total} open cases in your teams, sorted by deadline')
+		expect(config.countText).toBe('{shown} of {total} open cases in your teams · sorted by deadline')
 		expect(config.countTextByView).toEqual({
-			board: '{shown} of {total} open cases in your teams, board view by status',
+			board: '{shown} of {total} open cases in your teams · board view by status',
 			map: '{shown} of {total} open cases in your teams',
 		})
 	})
