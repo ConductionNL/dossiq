@@ -19376,20 +19376,20 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"openzaak": "unknown",
-			"provider": "dossiq",
-			"providerHow": "note-cites-dossiq-code",
+			"provider": "shillinq",
+			"providerHow": "note-names-app",
 			"built": {
-				"state": "building",
-				"evidence": "Decision 261 / ADR-107: dossiq classifies, Shillinq reports. caseType.iv3TaskField exists; the duplicate Iv3TaakveldList, iv3_taakvelden.json and route GET /api/reports/iv3/taakvelden are still there to retire; no link card to Shillinq on the Reports page yet",
+				"state": "built",
+				"evidence": "Decision 261 / ADR-107: dossiq classifies, Shillinq reports. dossiq's half is built: caseType.iv3TaskField is a lookup on Shillinq's BbvTaakveld catalogue on CaseTypeDetail (src/manifest.json); the duplicate Iv3TaakveldList, iv3_taakvelden.json and GET /api/reports/iv3/taakvelden are retired; the Reports page card ShillinqIv3 links to Shillinq's report (requiredApp shillinq) and shows a sentence, never a figure, without it; tests/e2e/iv3-link-to-shillinq.spec.ts written (runs in the nightly)",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/iv3-taakveld-2023-refinement",
 				"screen": {
 					"board": "DqRapportages",
 					"reason": "reports page link card to Shillinq; the report itself is board shillinq/ShOverheid"
 				},
-				"readOn": "2026-10-30",
+				"readOn": "2026-11-24",
 				"reachedOn": "case type field iv3TaskField (CaseTypeDetail)",
-				"note": "Rescoped by decision 261: the cost report per taakveld is Shillinq's Iv3ReportGenerator, fed by dossiq's case type classification and humaniq hours (Shillinq change iv3-report-takes-case-costs-by-case-type). Missing in dossiq: retiring the duplicate taakveld list, the catalogue lookup on the case type, the Reports link card.",
+				"note": "Rescoped by decision 261: the cost report per taakveld is Shillinq's Iv3ReportGenerator, fed by dossiq's case type classification and humaniq hours (Shillinq change iv3-report-takes-case-costs-by-case-type). dossiq's tasks 2 to 7 of case-costs-reported-per-iv3-taakveld landed (24 Nov 2026); the count of off-catalogue codes (task 1) and the board amend with its live pass (task 8) remain.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md; rescoped 2026-10-30 by decision 261",
 				"plan": "openspec/changes/case-costs-reported-per-iv3-taakveld",
 				"requirement": [
