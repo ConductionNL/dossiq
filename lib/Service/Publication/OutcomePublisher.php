@@ -257,6 +257,13 @@ class OutcomePublisher implements WooPublicationServiceInterface {
 			'caseReference' => $caseId,
 		];
 
+		// The case is the publication's source: OpenCatalogi keeps it among the
+		// publication's source identifiers, not public (opencatalogi
+		// publication-relations-place-and-source-ids 3.1, REQ-PRS-002).
+		if ($caseId !== '') {
+			$payload['sourceIdentifiers'] = [['system' => 'dossiq', 'identifier' => $caseId, 'public' => false]];
+		}
+
 		$from = (string)($case['wooRequest']['periodeVan'] ?? '');
 		$to = (string)($case['wooRequest']['periodeTot'] ?? '');
 		if ($from !== '' || $to !== '') {
