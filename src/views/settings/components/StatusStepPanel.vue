@@ -145,10 +145,20 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Another status chosen: read its fields afresh.
+		 *
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
 		status() {
 			this.local = this.fromProps()
 		},
 
+		/**
+		 * The next status changed elsewhere (the canvas): read it afresh.
+		 *
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
 		nextStatus() {
 			this.local = this.fromProps()
 		},

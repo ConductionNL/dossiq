@@ -355,6 +355,13 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the case type's title for the header row, when the tab draws one,
+	 * and load the workflow's versions.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+	 */
 	async mounted() {
 		if (this.boardHeader) {
 			this.loadTitle()
