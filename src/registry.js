@@ -129,6 +129,7 @@ const RequesterProjection = lazyComponent(() => import('./components/initiator/R
 const AdviceRequestDialog = lazyComponent(() => import('./dialogs/AdviceRequestDialog.vue'), 'AdviceRequestDialog')
 const AdviceResponseDialog = lazyComponent(() => import('./dialogs/AdviceResponseDialog.vue'), 'AdviceResponseDialog')
 const AnswerPublishDialog = lazyComponent(() => import('./dialogs/AnswerPublishDialog.vue'), 'AnswerPublishDialog')
+const BidScoreDialog = lazyComponent(() => import('./dialogs/BidScoreDialog.vue'), 'BidScoreDialog')
 const AssessmentDecisionDialog = lazyComponent(() => import('./dialogs/AssessmentDecisionDialog.vue'), 'AssessmentDecisionDialog')
 const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')
 const CaseCopyDialog = lazyComponent(() => import('./dialogs/CaseCopyDialog.vue'), 'CaseCopyDialog')
@@ -445,6 +446,14 @@ const registry = {
 		component: AnswerPublishDialog,
 		propsSchema: {},
 		_note: "CaseDetail `tender-answer-publish` header action, board DqAanbesteding (REQ-TND-CASE-01). Lists the open questions that point at the case, stores the answer on the chosen one and walks the question's own lifecycle through OpenRegister's transition endpoint (`answer`, then `publish`), then stamps `publishedAt`. The schema and the case field are props, so the dialog serves any question schema with that lifecycle.",
+	},
+
+	// @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
+	BidScoreDialog: {
+		kind: 'modal',
+		component: BidScoreDialog,
+		propsSchema: {},
+		_note: "CaseDetail `bid-score` header action, board DqAanbesteding (REQ-TND-CASE-01). Reads the case's scoring sheet (GET /api/cases/{caseId}/scoring: the formula the case names in `scoringFormula`, the values the case holds under the formula's variable names, the values the evaluator enters per bid, and the admissible bids), and posts the entered values for one bid; the server applies the formula (FormulaScorer), with price and lowestPrice read from the bids, and stores the caller's evaluation with its weightedTotal, which the Evaluation card ranks by. Computes nothing itself.",
 	},
 
 	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01

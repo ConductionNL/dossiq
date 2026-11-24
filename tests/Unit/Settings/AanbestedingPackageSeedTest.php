@@ -80,7 +80,7 @@ class AanbestedingPackageSeedTest extends TestCase {
 		$this->assertSame([], $result['warnings']);
 		$this->assertTrue($result['valid']);
 		$this->assertContains('seed', $result['manifest']['parts']);
-		$this->assertSame('1.11.0', $result['manifest']['version']);
+		$this->assertSame('1.12.0', $result['manifest']['version']);
 	}//end testThePackagePassesTheShippedPackageRulesWithItsSeed()
 
 	public function testTheAwardAndTheRefusalAreDecisionTypesOfTheTenderCaseType(): void {

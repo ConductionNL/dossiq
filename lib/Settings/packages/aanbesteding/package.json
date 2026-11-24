@@ -2,7 +2,7 @@
   "id": "aanbesteding",
   "title": "Aanbesteding",
   "summary": "Case type from preparation through publication, bids and evaluation to the award decision.",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "requires": [],
   "parts": [
     "case-type",
@@ -11,5 +11,5 @@
     "examples"
   ],
   "install": "on-request",
-  "description": "The Aanbesteding case type: a tender from preparation through publication, bids and evaluation to the award decision, with its statuses, roles and flow: evaluation starts after the closing date and the award becomes final once the standstill term has ended (the case's opschortendeTermijnEinde). Category 'Inkoop en leveranciers'. Sets tenderChain, which is what the case page's tender tabs (lots, questions, bids, award) and the Overview's evaluation card gate on. Installed on request: POST /api/packages/aanbesteding/install, or occ dossiq:package:install aanbesteding. Seeds the award and refusal decision types and the 20-day standstill term (Aw 2012 art. 2.127, calendar days) (`seed/`). Ships an example tender in evaluation (`examples/`): two lots as sub-cases, three bids on them with their evaluations, and a published answer, written with the package, its dates relative to the install day."
+  "description": "The Aanbesteding case type: a tender from preparation through publication, bids and evaluation to the award decision, with its statuses, roles and flow: evaluation starts after the closing date and the award becomes final once the standstill term has ended (the case's opschortendeTermijnEinde). Category 'Inkoop en leveranciers'. Sets tenderChain, which is what the case page's tender tabs (lots, questions, bids, award) and the Overview's evaluation card gate on. Installed on request: POST /api/packages/aanbesteding/install, or occ dossiq:package:install aanbesteding. The case names the scoring formula of its bids (`scoringFormula`, a key of a scoringFormula record) and the fixed values that formula uses (`maxPoints`, `qualityWeight`, `priceWeight`); the case page's Score bid action applies it. Seeds the award and refusal decision types and the 20-day standstill term (Aw 2012 art. 2.127, calendar days) (`seed/`). Ships an example tender in evaluation (`examples/`): two lots as sub-cases, three bids on them with their evaluations, and a published answer, written with the package, its dates relative to the install day."
 }

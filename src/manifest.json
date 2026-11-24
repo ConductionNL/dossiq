@@ -6165,6 +6165,7 @@
 					{
 						"id": "presence-strip",
 						"widgetId": "case-presence",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 2,
 						"gridWidth": 12,
@@ -6174,6 +6175,7 @@
 					{
 						"id": "case-banners",
 						"widgetId": "case-banner-stack",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 3,
 						"gridWidth": 12,
@@ -6185,6 +6187,7 @@
 					{
 						"id": "5",
 						"widgetId": "case-panels",
+						"eager": true,
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 9,
@@ -6586,6 +6589,29 @@
 							"responses": {}
 						},
 						"successMessage": "Bid registered on this tender.",
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.tenderChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
+						"id": "bid-score",
+						"type": "open-modal",
+						"label": "Score bid",
+						"icon": "ScaleBalance",
+						"target": "BidScoreDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
 						"visibleWhen": {
 							"all": [
 								{
