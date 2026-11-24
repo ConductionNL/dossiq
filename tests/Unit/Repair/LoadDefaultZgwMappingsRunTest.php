@@ -36,6 +36,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  *
  * @covers \OCA\Dossiq\Repair\LoadDefaultZgwMappings
  * @uses \OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity
+ * @uses \OCA\Dossiq\Repair\Support\DefaultTestConsumers
+ * @uses \OCA\Dossiq\Repair\Support\DefaultNotificationChannels
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
