@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);

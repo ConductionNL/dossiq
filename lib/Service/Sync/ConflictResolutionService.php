@@ -4,7 +4,7 @@
  * Resolves a conflict record: keeps the device's text or the office's.
  *
  * Every check runs before the first write, in the order the contract in
- * openspec/changes/inspection-conflict-card/design.md gives:
+ * openspec/changes/archive/2026-11-24-inspection-conflict-card/design.md gives:
  *
  *  1. the record is read as the signed-in user; unreadable or absent is 404;
  *  2. a record that already has a resolution is 409;
@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * Keeps one of the two versions a conflict record holds.
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
@@ -86,7 +86,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * @param ITimeFactory      $time        The moment of resolution.
 	 * @param LoggerInterface   $logger      Records writes that could not be made.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
@@ -105,7 +105,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 *
 	 * @return ConflictResolutionOutcome The status and body to answer with.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function resolve(string $id, string $resolution, string $userId): ConflictResolutionOutcome {
 		$objectService = $this->settings->getObjectService();
@@ -138,7 +138,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 *
 	 * @return array<string, mixed>|ConflictResolutionOutcome The conflict record, or the refusal.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	private function openConflict(ConflictResolutionRequest $request): array|ConflictResolutionOutcome {
 		try {
@@ -168,7 +168,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 *
 	 * @return ConflictResolutionOutcome|null The refusal, or null once applied.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	private function applyResolution(ConflictResolutionRequest $request, array $data): ?ConflictResolutionOutcome {
 		if ($request->resolution === self::CLIENT_WINS) {
@@ -189,7 +189,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 *
 	 * @return ConflictResolutionOutcome The status and body to answer with.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	private function markResolved(ConflictResolutionRequest $request, array $data): ConflictResolutionOutcome {
 		$id = $request->id;
