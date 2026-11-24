@@ -1321,7 +1321,7 @@ export default {
 		 * The groups per contributed dashboard widget, one field each.
 		 *
 		 * @return {Array<object>} The fields.
-		 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+		 * @spec openspec/specs/dashboard-widget-visibility/spec.md
 		 */
 		widgetAudienceFields() {
 			return widgetAudienceFields(this.t.bind(this))

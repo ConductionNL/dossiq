@@ -19,7 +19,7 @@
  *
  * @link https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * Answers and stores the groups per dashboard widget, for an administrator only.
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 class WidgetAudienceController extends Controller {
 
@@ -53,7 +53,7 @@ class WidgetAudienceController extends Controller {
 	 * @param IUserSession   $session  The caller.
 	 * @param IGroupManager  $groups   Answers whether the caller is an admin.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -71,7 +71,7 @@ class WidgetAudienceController extends Controller {
 	 *
 	 * @return JSONResponse Comma-separated group ids by widget id, or 403.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function show(): JSONResponse {
@@ -85,7 +85,7 @@ class WidgetAudienceController extends Controller {
 	 *
 	 * @return JSONResponse The stored audience, or 403.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function save(): JSONResponse {

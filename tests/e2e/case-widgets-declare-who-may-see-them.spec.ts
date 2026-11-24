@@ -99,7 +99,7 @@ test.describe('A case widget declares who may see it', () => {
 		await Promise.all([admin?.dispose(), member?.dispose(), outsider?.dispose()])
 	})
 
-	// @e2e openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#scenario-narrowing-a-widget
+	// @e2e openspec/specs/dashboard-widget-visibility/spec.md#scenario-narrowing-a-widget
 	test('an administrator narrows a widget and reads the groups back', async () => {
 		const saved = await admin.put(AUDIENCE, { data: { [WIDGET]: GROUP } })
 		expect(saved.status()).toBe(200)
@@ -108,7 +108,7 @@ test.describe('A case widget declares who may see it', () => {
 		expect(read[WIDGET]).toBe(GROUP)
 	})
 
-	// @e2e openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+	// @e2e openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
 	test('a non-administrator cannot change the audience', async () => {
 		const res = await outsider.put(AUDIENCE, { data: { [WIDGET]: '' } })
 		expect(res.status(), 'the server refuses the save, whatever the page shows').toBeGreaterThanOrEqual(401)
@@ -118,7 +118,7 @@ test.describe('A case widget declares who may see it', () => {
 		expect(read[WIDGET], 'the refused save left the audience as it was').toBe(GROUP)
 	})
 
-	// @e2e openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#scenario-launchpads-widget-picker
+	// @e2e openspec/specs/dashboard-widget-visibility/spec.md#scenario-launchpads-widget-picker
 	test('the widget is offered to a member and not to an outsider', async () => {
 		await admin.put(AUDIENCE, { data: { [WIDGET]: GROUP } })
 
@@ -126,7 +126,7 @@ test.describe('A case widget declares who may see it', () => {
 		expect(await placeable(outsider)).not.toContain(WIDGET)
 	})
 
-	// @e2e openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#scenario-a-direct-item-read
+	// @e2e openspec/specs/dashboard-widget-visibility/spec.md#scenario-a-direct-item-read
 	test('an outsider reading the items directly gets no case', async () => {
 		await admin.put(AUDIENCE, { data: { [WIDGET]: GROUP } })
 
