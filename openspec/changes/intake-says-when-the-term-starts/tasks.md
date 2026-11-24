@@ -30,7 +30,7 @@ change was being built, so the engine calendar answers rather than
     replayed create event cannot re-stamp it against a calendar that has
     gained a holiday since. That is the whole of "SHALL NOT be recomputed on
     read".
-- [ ] 2.1 [partial] The on-screen intake confirmation names the reference,
+- [x] 2.1 The on-screen intake confirmation names the reference,
   the received moment, the start and the deadline (D-5).
   - UPDATE 12 Oct: the queue is gone (decision 179), so the case exists
     before the response does. portaliq development (7b7ae1fd) shows the case
@@ -40,6 +40,7 @@ change was being built, so the engine calendar answers rather than
     is not on that screen (Q-dossiq-d179-2), and the e2e scenario is a live
     pass (decision 139). Tracked in `a-request-form-opens-the-case-at-once`
     tasks 2.2b and 2.2c.
+  - DONE 24 Nov 2026: the first-working-day sentence is on the screen (a-request-form-opens-the-case-at-once 2.2b: dossiq marks `receivedOutsideWorkingHours` a confirmation field, portaliq `momentLines` says the sentence when it is true). The e2e run stays the live pass (2.2c there, decision 139).
   - WHAT SHIPPED: the three fields are on
     `PortalContributionProvider::CITIZEN_CASE_FIELDS`, which is the ONE list
     the portal projects a case down to and the ontvangstbevestiging quotes
