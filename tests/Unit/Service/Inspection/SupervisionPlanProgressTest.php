@@ -191,4 +191,31 @@ class SupervisionPlanProgressTest extends TestCase {
 		$this->assertSame(expected: 'c', actual: $progress->idOf(record: ['uuid' => 'c', '@self' => 'x']));
 		$this->assertSame(expected: '', actual: $progress->idOf(record: []));
 	}//end testIdOfReadsEveryShape()
+
+	/**
+	 * The frequency per risk profile reads one row per category and profile, in the categories' order.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	public function testTheRiskFrequencyRows(): void {
+		$figures = (new SupervisionPlanProgress())->measure(plan: ['year' => 2026], categories: $this->categories(), inspections: []);
+
+		$this->assertSame(
+			expected: [
+				['category' => 'Hospitality', 'profile' => 'high', 'objects' => 10, 'visitsPerYear' => 2.0, 'demand' => 20],
+				['category' => 'Hospitality', 'profile' => 'low', 'objects' => 39, 'visitsPerYear' => 0.5, 'demand' => 20],
+			],
+			actual: $figures['risk']
+		);
+
+		$odd = (new SupervisionPlanProgress())->riskRows(
+			categories: [
+				['name' => 'A', 'riskFrequency' => 'x'],
+				['name' => 'B', 'riskFrequency' => ['x', ['profile' => 'mid', 'objects' => -3]]],
+			]
+		);
+		$this->assertSame(expected: [['category' => 'B', 'profile' => 'mid', 'objects' => 0, 'visitsPerYear' => 0.0, 'demand' => 0]], actual: $odd);
+	}//end testTheRiskFrequencyRows()
 }//end class

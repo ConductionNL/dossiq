@@ -1420,7 +1420,9 @@
 				},
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
-				"quickActionsFrom": "@context.caseType.quickActions",
+				"_headerActionsFromNote": "case-type-declares-its-header-actions: a case type's `headerActions` (an ordered list of ids of this page's header actions) leads the header row before its `quickActions`, and its `primaryAction` names the one drawn as the primary button. nextcloud-vue takes only ids this page declares under `headerActions`, and only while their own `visibleWhen` shows them, so a case type orders and promotes, it never widens who may act. A case type that declares neither keeps the row below. Needs nextcloud-vue 2.213.0.",
+				"quickActionsFrom": ["@context.caseType.headerActions", "@context.caseType.quickActions"],
+				"primaryActionFrom": "@context.caseType.primaryAction",
 				"sideColumn": [
 					{
 						"id": "side-advice-requested",

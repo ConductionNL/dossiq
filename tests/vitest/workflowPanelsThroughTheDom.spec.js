@@ -219,6 +219,8 @@ describe('StepConfigPanel through its DOM', () => {
 		await w.find('[aria-label="Close step configuration"]').trigger('click')
 		expect(w.emitted('delete')).toEqual([['s1']])
 		expect(w.emitted('close')).toHaveLength(1)
+		await w.find('[data-testid="step-config-done"]').trigger('click')
+		expect(w.emitted('close')).toHaveLength(2)
 
 		const ro = mount(StepConfigPanel, { props: { step, readOnly: true } })
 		expect(ro.findAll('button').some((b) => b.text() === 'Delete step')).toBe(false)

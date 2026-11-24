@@ -49,6 +49,11 @@
             "type": "string",
             "title": "Title",
             "description": "What the session is called, from the case type's session label. Shown in the calendar."
+          },
+          "meeting": {
+            "type": "string",
+            "title": "Meeting",
+            "description": "The meeting in the decision app this session opens as, when that app is installed. The meeting points back at this session through its subject fields."
           }
         },
         "configuration": {

@@ -71,8 +71,46 @@ final class SupervisionPlanProgress {
 			'demandHours'   => array_sum(array_column($rows, 'demandHours')),
 			'categories'    => $rows,
 			'quarters'      => $this->quarters(inspections: $this->planned(byCategory: $byCategory, rows: $rows)),
+			'risk'          => $this->riskRows(categories: $this->ordered(categories: $categories)),
 		];
 	}//end measure()
+
+	/**
+	 * The frequency per risk profile: one row per category and profile, with the visits it demands.
+	 *
+	 * @param list<array<string, mixed>> $categories The categories, in their order.
+	 *
+	 * @return list<array<string, mixed>> Category, profile, objects, visits per year and demand per row.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	public function riskRows(array $categories): array {
+		$rows = [];
+		foreach ($categories as $category) {
+			$frequencies = $category['riskFrequency'] ?? [];
+			if (is_array($frequencies) === false) {
+				continue;
+			}
+
+			foreach ($frequencies as $frequency) {
+				if (is_array($frequency) === false) {
+					continue;
+				}
+
+				$objects = max(0, (int)($frequency['objects'] ?? 0));
+				$visits  = max(0.0, (float)($frequency['visitsPerYear'] ?? 0));
+				$rows[]  = [
+					'category'      => (string)($category['name'] ?? ''),
+					'profile'       => (string)($frequency['profile'] ?? ''),
+					'objects'       => $objects,
+					'visitsPerYear' => $visits,
+					'demand'        => (int)ceil($objects * $visits),
+				];
+			}
+		}
+
+		return $rows;
+	}//end riskRows()
 
 	/**
 	 * The record's uuid, from its top level or its `@self` block.

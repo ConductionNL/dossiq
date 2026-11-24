@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.192.0",
+	"version": "2.197.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -495,6 +495,7 @@
 				"schema": { "type": "string", "description": "Remote schema slug the registry serves (e.g. \"case-type-template\", \"application-template\")." },
 				"register": { "type": "string", "description": "Remote register segment, used when the instance's registry_register config is unset or empty." },
 				"localRegister": { "type": "string", "description": "The register an install WRITES into. Defaults to the app id. A schema slug is NOT unique across the fleet (`case`, `task` and `document` exist in several apps at once), so an unscoped write can land in another app's register: an app whose OpenRegister register slug differs from its app id must set this." },
+				"installTarget": { "type": "object", "additionalProperties": false, "required": ["property", "schemas"], "description": "Where inside the local register an install can go (store-install-target), such as a world. An install request may then carry `target`: an id written into `property` on every installed object of `schemas`, after the bundle's signature is checked. Without this block a `target` is refused (400), never ignored.", "properties": { "property": { "type": "string", "description": "The object property that records the target, e.g. \"setting\"." }, "schemas": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "Schema slugs whose installed objects get the target." } } },
 				"installable": { "type": "array", "items": { "type": "string" }, "description": "Schema slugs an install may write. THIS IS A SECURITY BOUNDARY, not a convenience: a registry is somebody else's server, and without the allowlist an item could name any schema the app owns. An absent or empty list refuses EVERY install rather than permitting every install." },
 				"kinds": { "type": "array", "items": { "type": "string" }, "description": "Kind quick-filters (ADR-080 Decision 5). Declared ONCE here, beside the allowlist: the engine returns them in the search response and CnStorePage prefers them over its page config. Defaults to the shared vocabulary when omitted." },
 				"types": { "type": "array", "items": { "type": "string" }, "description": "Shareable configuration type ids this store surfaces (store-over-federated-config). Declaring these makes the store exchange CONFIGURATION rather than rows: an item is a configuration set (`openregister.configset`), a flow (`openregister.flows`), a register with its schemas (`openregister.registers`), or any schema that marked itself `x-openregister-shareable`. Cards come from federated discovery and an install runs through the owning type, so a set arrives as registers, schemas, objects, views, flows, sources and mappings. An app that declares none keeps the remote objects API described by `schema`/`register`, and makes no discovery call at all." },
@@ -2228,6 +2229,10 @@
 					"type": ["boolean", "integer"],
 					"minimum": 1,
 					"description": "Opt-in: hand this placement's height to whatever it renders, so a widget that decides AT RUNTIME it has nothing to show costs no row. `true` sizes purely to content; an integer sizes to content too but caps the height at that many rows (GridStack's maximum, NOT a minimum: content shorter than N rows is as short as it is, content taller is clipped at N). It makes gridHeight advisory for this widget — right for anything whose height is whatever it turned out to be (a banner whose condition is false, a list that came back empty), wrong for anything with a deliberate size. Maps to CnDashboardGrid's per-item `sizeToContent`."
+				},
+				"eager": {
+					"type": "boolean",
+					"description": "On a detail page's body grid, mount this widget on page open instead of when its cell comes within a viewport height of the screen. A grid widget below the first screen waits, so opening a record fetches for the cards in view only; set `eager: true` on a widget whose data another part of the page needs at once. Read off the layout entry or the widget definition. Edit mode, printing and a browser without IntersectionObserver mount every widget at once."
 				},
 				"props": {
 					"type": "object",
@@ -4096,10 +4101,21 @@
 		},
 		"statsBlockEntry": {
 			"type": "object",
-			"required": ["register", "schema"],
+			"anyOf": [
+				{ "required": ["register", "schema"] },
+				{ "required": ["endpointSource"] }
+			],
 			"additionalProperties": false,
 			"description": "One KPI entry inside a multi-entry stats-block widget (CnStatsBlockWidget `entries[]`). Carries the same source contract as a type:'stat' widget: register + schema + metric + token-resolved filter (@today / @me / @workspace.* and ?-optional clauses), plus per-entry presentation (title, variant, countLabel, format), an optional route deep link, and hideWhenZero. A money value names its currency with currencyField (the page object's field) or currency.",
 			"properties": {
+				"endpointSource": {
+					"$ref": "#/$defs/endpointSource",
+					"description": "stats-block-entry-endpoint (2.194.0): read the entry's value from an app REST endpoint instead of OpenRegister's aggregation (then register and schema may be left out). Entries naming the same endpoint share one request, and each reads its own `valueField`, so one summary endpoint feeds several KPIs."
+				},
+				"valueField": {
+					"type": "string",
+					"description": "With `endpointSource`: the dot-path of the value in the response (after the source's `responsePath`); omitted, the response itself. A value that is not a number shows as no value."
+				},
 				"title": {
 					"type": "string",
 					"description": "KPI title rendered by the inner CnStatsBlock."
@@ -4997,9 +5013,16 @@
 							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the tabs of the page's tabs widgets and their order for this record, e.g. `@context.caseType.tabs` (DqAanbesteding). A non-empty list of tab ids keeps those tabs in that order; otherwise the declared tabs stay, and edit mode shows them all (2.128.0)."
 						},
 						"quickActionsFrom": {
+							"oneOf": [
+								{ "type": "string", "minLength": 1 },
+								{ "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+							],
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose list of `headerActions` ids picks this record's quick actions in that order, e.g. `@context.caseType.quickActions` (a case type that names the actions its cases need most). Only declared header actions are taken; an id nobody declares, or an action written out in the data, is dropped. An empty or missing list keeps `quickActions` (2.142.0). A list of paths is read in order and the first that names a declared action wins (detail-header-row-from-record)."
+						},
+						"primaryActionFrom": {
 							"type": "string",
 							"minLength": 1,
-							"description": "type='detail': a field path, read like a `visibleWhen` field, whose list of `headerActions` ids picks this record's quick actions in that order, e.g. `@context.caseType.quickActions` (a case type that names the actions its cases need most). Only declared header actions are taken; an id nobody declares, or an action written out in the data, is dropped. An empty or missing list keeps `quickActions` (2.142.0)."
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value names the declared header action drawn as this record's primary button, e.g. `@context.caseType.primaryAction`. Only an id of `headerActions` is taken, and only while that action's own `visibleWhen` shows it; otherwise the stage's primary action and `primaryAction` stay (detail-header-row-from-record)."
 						},
 						"sideColumnFrom": {
 							"type": "string",
@@ -5774,6 +5797,15 @@
 									}
 								}
 							}
+						},
+						"download": {
+							"type": "boolean",
+							"default": false,
+							"description": "type='dashboard': a \"Download\" button in the header saves the figures of the page's stat tiles (OpenRegister `source`), grouped charts (`dataSource.aggregate.groupBy` count) and object tables as CSV with the header row `widget,label,value`, UTF-8 with a byte order mark. Disabled until the figures are read; a widget whose read fails writes one row with the value `error` (dashboard-download-csv)."
+						},
+						"downloadName": {
+							"type": "string",
+							"description": "type='dashboard' with `download: true`: the file name before `-<yyyy-mm-dd>.csv`; \"dashboard\" when empty."
 						},
 						"kpiRow": {
 							"type": "array",
