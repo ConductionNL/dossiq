@@ -43,7 +43,7 @@ interface FilterPipelineInterface {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function declaredOrder(): array;
 }//end interface

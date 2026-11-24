@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Email;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class AuthenticationResult {
 
@@ -85,7 +85,7 @@ final class AuthenticationResult {
 	 *
 	 * @return string One of the four values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function fromToken(string $raw): string {
 		$token = strtolower(trim($raw));
@@ -112,7 +112,7 @@ final class AuthenticationResult {
 	 *
 	 * @return boolean True when it is a known result.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function isKnown(string $value): bool {
 		return in_array($value, self::ALL, true);
@@ -131,7 +131,7 @@ final class AuthenticationResult {
 	 *
 	 * @return boolean True when the check actively failed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function isFailure(string $value): bool {
 		return $value === self::FAIL;

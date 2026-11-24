@@ -260,7 +260,7 @@ class EmailController extends Controller {
 	 *
 	 * @return JSONResponse 200 when sent, 503 with `state: queued` when queued.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	private function answer(array $result): JSONResponse {
 		if (($result['state'] ?? OutboundStateInterface::SENT) === OutboundStateInterface::QUEUED) {
@@ -283,7 +283,7 @@ class EmailController extends Controller {
 	 *
 	 * @return JSONResponse The refusal, with its rule as `error`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
 	private function refusedSend(RefusedException $exception): JSONResponse {
 		return new JSONResponse(

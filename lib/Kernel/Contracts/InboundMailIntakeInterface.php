@@ -48,7 +48,7 @@ interface InboundMailIntakeInterface {
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function fileOnCase(
 		InboundMessage $message,
@@ -64,7 +64,7 @@ interface InboundMailIntakeInterface {
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function process(InboundMessage $message): string;
 
@@ -77,7 +77,7 @@ interface InboundMailIntakeInterface {
 	 *
 	 * @return array<string, int> A count per outcome.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function processBatch(array $rows, int $accountId, string $mailbox): array;
 }//end interface

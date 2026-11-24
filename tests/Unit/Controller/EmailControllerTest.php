@@ -229,7 +229,7 @@ class EmailControllerTest extends TestCase {
 	/**
 	 * A message the Mail account took but could not send is a 503 that says it is queued.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function testAQueuedSendIsA503ThatSaysQueued(): void {
 		$this->gateway->sendState = OutboundState::QUEUED;
@@ -245,7 +245,7 @@ class EmailControllerTest extends TestCase {
 	/**
 	 * An account the mail app cannot reach takes nothing and answers 503.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function testAnUnreachableAccountIsA503(): void {
 		$this->gateway->sendState = OutboundState::UNAVAILABLE;
