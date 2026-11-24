@@ -25,14 +25,17 @@ import manifest from '../manifest.json'
 export const NEW_CASE_REASON = 'A new case was made from this message'
 
 /**
- * The New case action of dossiq's own pages.
+ * The New case action of dossiq's own pages: the case list's first, which
+ * carries the form the boards draw, then any other page's.
  *
  * @param {object} source The app manifest.
  * @return {object|null} The open-form action, or null.
  * @spec openspec/specs/case-email-integration/spec.md#requirement-a-handler-files-a-logged-message-on-a-case-they-pick
  */
 export function findNewCaseAction(source) {
-	for (const page of source?.pages || []) {
+	const pages = source?.pages || []
+	const ordered = [...pages.filter((page) => page?.id === 'Cases'), ...pages.filter((page) => page?.id !== 'Cases')]
+	for (const page of ordered) {
 		const action = (page?.config?.headerActions || []).find((candidate) => candidate?.id === 'new-case' && candidate?.type === 'open-form')
 		if (action) {
 			return action
@@ -76,6 +79,11 @@ export default {
 
 	components: { CnActionButtons },
 
+	inject: {
+		/** The effective manifest (base, fragments and menu layout), from CnAppRoot. */
+		cnManifest: { default: null },
+	},
+
 	props: {
 		/** The inbox row: subject, sender, preview. */
 		object: { type: Object, default: () => ({}) },
@@ -97,7 +105,7 @@ export default {
 	 * @spec openspec/specs/case-email-integration/spec.md#requirement-a-handler-files-a-logged-message-on-a-case-they-pick
 	 */
 	async mounted() {
-		const action = findNewCaseAction(manifest)
+		const action = findNewCaseAction(this.cnManifest) || findNewCaseAction(manifest)
 		const buttons = this.$refs.buttons
 		if (!action || !buttons) {
 			this.$emit('close')
