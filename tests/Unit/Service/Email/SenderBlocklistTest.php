@@ -29,7 +29,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Service\Email\SenderBlocklist
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class SenderBlocklistTest extends TestCase {
 

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Calls getSource() in the form the installed Mail declares.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class MailSourceReader {
 	/**
@@ -54,7 +54,7 @@ final class MailSourceReader {
 	 *
 	 * @throws Throwable When Mail cannot open the client or read the message.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function read(object $manager, Closure $clientFactory, object $account, string $mailbox, int $uid): mixed {
 		$first = ((new ReflectionMethod($manager, 'getSource'))->getParameters()[0] ?? null);

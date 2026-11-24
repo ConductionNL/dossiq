@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) The eleventh is sendMessage(),
  *  the outbound half of the same Mail coupling (inbound-mail-filters 8.1). Design D-1
@@ -161,7 +161,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when intake can read messages.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isAvailable(): bool {
 		try {
@@ -184,7 +184,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accounts(): array {
 		if ($this->isAvailable() === false) {
@@ -201,7 +201,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, string> The folder names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mailboxes(int $accountId): array {
 		if ($this->isAvailable() === false) {
@@ -220,7 +220,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised message rows.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function messages(int $accountId, string $mailbox, int $limit): array {
 		if ($this->isAvailable() === false) {
@@ -244,7 +244,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string The source, or '' when it cannot be read.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function source(int $accountId, string $mailbox, int $uid): string {
 		$account = $this->account(accountId: $accountId);
@@ -288,7 +288,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True only when the account really holds it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function holdsMessageId(int $accountId, string $messageId): bool {
 		$bare = trim($messageId, " \t<>");
@@ -353,7 +353,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when the mail server confirmed the move.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function moveMessage(int $accountId, string $mailbox, int $uid, string $target): bool {
 		if ($mailbox === '' || $target === '' || $mailbox === $target) {
@@ -392,7 +392,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function dkimResult(string $source): string {
 		if ($source === '') {
@@ -464,7 +464,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when the address is trusted.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isTrustedSender(string $email): bool {
 		$address = trim(strtolower($email));
@@ -543,7 +543,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function attachments(int $accountId, string $mailbox, int $uid): array {
 		$account = $this->account(accountId: $accountId);
@@ -570,7 +570,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private static function attachmentRows(mixed $found): array {
 		if (is_array($found) === false) {
@@ -596,7 +596,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array{name: string, mimeType: string, size: int} The row.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private static function attachmentRow(array $attachment): array {
 		return [
@@ -614,7 +614,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @return array{accountId: int, mailbox: string, messages: array<int, array<string, mixed>>}|null
 	 *         The unpacked event, or null when it is not one intake reads.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function unpackSynchronisation(object $event): ?array {
 		if (is_a($event, self::NEW_MESSAGES_EVENT) === false) {
@@ -674,7 +674,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array{state: string, outboxId: int|null} What became of it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendMessage(int $accountId, array $message): array {
 		$unavailable = ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
@@ -881,7 +881,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function normaliseEventMessages(mixed $rows): array {
 		if (is_array($rows) === false) {
@@ -913,7 +913,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return integer The id, or 0.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function identifierOf(object $entity): int {
 		return (int)$this->call(entity: $entity, getter: ['getId', 0]);
@@ -926,7 +926,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string The name, or ''.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function nameOf(object $entity): string {
 		return (string)$this->call(entity: $entity, getter: ['getName', '']);
@@ -946,7 +946,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return mixed The value.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function call(object $entity, array $getter): mixed {
 		[$method, $fallback] = $getter;
@@ -978,7 +978,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return object|null The service, or null when Mail is absent or moved it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function service(string $name): ?object {
 		if ($this->isAvailable() === false) {
@@ -1009,7 +1009,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return object|null The account, or null when it cannot be resolved.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function account(int $accountId): ?object {
 		if ($accountId <= 0) {

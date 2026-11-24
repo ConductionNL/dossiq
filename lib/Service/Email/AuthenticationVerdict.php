@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ namespace OCA\Dossiq\Service\Email;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -84,7 +84,7 @@ class AuthenticationVerdict {
 	 *
 	 * @return array{spf: string, dkim: string, dmarc: string, threading: string} The results.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function forMessage(InboundMessage $message): array {
 		$header = $this->receivingServerHeader(message: $message);
@@ -106,7 +106,7 @@ class AuthenticationVerdict {
 	 *
 	 * @return boolean True when at least one is `fail`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function hasFailure(array $results): bool {
 		foreach ($results as $result) {
@@ -126,7 +126,7 @@ class AuthenticationVerdict {
 	 *
 	 * @return array{spf: string, dkim: string, dmarc: string, threading: string} The results.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function unknown(): array {
 		return [
@@ -144,7 +144,7 @@ class AuthenticationVerdict {
 	 *
 	 * @return string The header value, or '' when there is none.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function receivingServerHeader(InboundMessage $message): string {
 		$value = $message->header(name: self::HEADER);
@@ -167,7 +167,7 @@ class AuthenticationVerdict {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function methodResult(string $header, string $method): string {
 		if (trim($header) === '') {

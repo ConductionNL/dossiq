@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class NewMessagesSynchronizedListener implements IEventListener {
 
@@ -81,7 +81,7 @@ class NewMessagesSynchronizedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function handle(Event $event): void {
 		$batch = $this->intakeBatch(event: $event);
@@ -107,7 +107,7 @@ class NewMessagesSynchronizedListener implements IEventListener {
 	 *
 	 * @return array{accountId: int, mailbox: string, messages: array<mixed>}|null
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function intakeBatch(Event $event): ?array {
 		if ($this->account->isConfigured() === false) {
@@ -133,7 +133,7 @@ class NewMessagesSynchronizedListener implements IEventListener {
 	 *
 	 * @return array<string, int>
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function processed(array $batch): array {
 		try {

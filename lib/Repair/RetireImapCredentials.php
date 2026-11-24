@@ -45,7 +45,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class RetireImapCredentials implements IRepairStep {
 
@@ -116,7 +116,7 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function getName(): string {
 		return 'Remove the stored mailbox and SMTP passwords now that Nextcloud Mail holds the account';
@@ -129,7 +129,7 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$removed = 0;
@@ -155,7 +155,7 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return integer How many values were removed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function removeFrom(string $appId): int {
 		$removed = 0;

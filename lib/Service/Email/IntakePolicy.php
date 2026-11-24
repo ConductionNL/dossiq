@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -127,7 +127,7 @@ class IntakePolicy implements IntakePolicyInterface {
 	 *
 	 * @return string One of {@see self::ALL}.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): string {
 		if ($caseTypeId === '') {
@@ -181,7 +181,7 @@ class IntakePolicy implements IntakePolicyInterface {
 	 *
 	 * @return string The policy that applies: `accept`, `quarantine` or `refuse`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function outcomeFor(string $policy, array $results): string {
 		foreach ($results as $result) {
@@ -198,7 +198,7 @@ class IntakePolicy implements IntakePolicyInterface {
 	 *
 	 * @return string The group id, or '' when none is named.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function intakeRole(): string {
 		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::INTAKE_ROLE_KEY, ''));
@@ -217,7 +217,7 @@ class IntakePolicy implements IntakePolicyInterface {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mayRunIntake(string $userId): bool {
 		if ($userId === '') {
@@ -243,7 +243,7 @@ class IntakePolicy implements IntakePolicyInterface {
 	 *
 	 * @return string One of {@see self::ALL}.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function normalise(string $value): string {
 		$policy = strtolower(trim($value));

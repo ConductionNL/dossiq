@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -108,7 +108,7 @@ class InboundMessageTest extends TestCase {
 	/**
 	 * Mail 5's message rows carry no sender or recipient: the source's From and To name them.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 *
 	 * @return void
 	 */
@@ -125,7 +125,7 @@ class InboundMessageTest extends TestCase {
 	/**
 	 * A sender and recipient the row already carries are kept over the source's.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 *
 	 * @return void
 	 */
