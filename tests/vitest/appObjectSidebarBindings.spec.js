@@ -30,10 +30,15 @@ import { describe, expect, it } from 'vitest'
 const ROOT = path.resolve(__dirname, '../..')
 const app = fs.readFileSync(path.join(ROOT, 'src', 'App.vue'), 'utf8')
 
-/** The `<CnObjectSidebar …>` opening tag. @return {string} Its source. */
+/**
+ * The sidebar's opening tag: `<LazyObjectSidebar …>`, the CnObjectSidebar that
+ * loads when a detail page first shows it.
+ *
+ * @return {string} Its source.
+ */
 function sidebarTag() {
-	const m = app.match(/<CnObjectSidebar\b[\s\S]*?\/>/)
-	expect(m, 'App.vue still mounts CnObjectSidebar').toBeTruthy()
+	const m = app.match(/<LazyObjectSidebar\b[\s\S]*?\/>/)
+	expect(m, 'App.vue still mounts the object sidebar').toBeTruthy()
 	return m[0]
 }
 

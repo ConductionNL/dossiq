@@ -10,4 +10,5 @@
 - [x] 1.3 `CaseNumberReader` out of the term namespace (gate-119)
   - Files: lib/Service/CaseNumberReader.php, lib/Service/TermijnNotificationService.php, tests/Unit/Service/TermijnNotificationServiceTest.php
   - Test: tests/Unit/Service/TermijnNotificationServiceTest.php (9 tests, the real class over a fake object service)
-- [ ] 1.4 Vendor manifest schema 2.96.0 in `ConductionNL/.github` so gate-22 and gate-53 accept `startOn`. Out of this repo; tracked by the pull request named in the PR body.
+- [x] 1.4 Vendor manifest schema 2.96.0 in `ConductionNL/.github` so gate-22 and gate-53 accept `startOn`. Out of this repo; tracked by the pull request named in the PR body.
+  - Landed upstream: `ConductionNL/.github` main vendors `hydra-gates/scripts/schemas/app-manifest-v2.schema.json` at 2.171.0, which declares `startOn`; gate-22 and gate-53 pass on dossiq development (aaeed303, run 24 Nov). The gates still red there (23, 66, 119 count, 124) are outside this change's three findings.
