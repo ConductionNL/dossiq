@@ -22,10 +22,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -130,15 +131,15 @@ class NamedCalendars {
 	/**
 	 * The calendar handed out.
 	 *
-	 * @var object
+	 * @var WorkingCalendar
 	 */
-	public object $calendar;
+	public WorkingCalendar $calendar;
 
 	/**
 	 * Create the service with its calendar.
 	 */
 	public function __construct() {
-		$this->calendar = new \stdClass();
+		$this->calendar = WorkingCalendar::fromArray(['slug' => 'nl-national']);
 	}//end __construct()
 
 	/**
@@ -147,9 +148,9 @@ class NamedCalendars {
 	 * @param string|null $calendarSlug The slug.
 	 * @param string|null $organisation The organisation.
 	 *
-	 * @return object The calendar.
+	 * @return WorkingCalendar The calendar.
 	 */
-	public function resolve(?string $calendarSlug, ?string $organisation): object {
+	public function resolve(?string $calendarSlug, ?string $organisation): WorkingCalendar {
 		$this->asked[] = [$calendarSlug, $organisation];
 
 		return $this->calendar;
@@ -177,17 +178,14 @@ class ZeroDayCalculator {
 	}//end __construct()
 
 	/**
-	 * Add a value to a date.
+	 * Add a value to a date, in the engine's signature.
 	 *
-	 * @param DateTimeInterface $from     The start.
-	 * @param float             $value    The value.
-	 * @param string            $unit     The unit.
-	 * @param object            $calendar The calendar.
+	 * @param SlaAddition $addition The start, the value, the unit and the calendar.
 	 *
 	 * @return DateTimeImmutable The scripted answer.
 	 */
-	public function add(DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
-		$this->asked[] = [$from->format('Y-m-d'), $value, $unit, $calendar];
+	public function add(SlaAddition $addition): DateTimeImmutable {
+		$this->asked[] = [$addition->start->format('Y-m-d'), $addition->value, $addition->unit, $addition->calendar()];
 
 		return $this->answer;
 	}//end add()

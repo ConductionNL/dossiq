@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermCalendarGuard;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -229,7 +230,9 @@ class TermEndRoll implements TermEndRollInterface {
 		try {
 			$calendar = $engine['calendars']->resolve(calendarSlug: $ask->calendarSlug, organisation: $ask->organisation);
 
-			return $engine['calculator']->add(from: $ask->date, value: 0.0, unit: TermijnTimerService::UNIT_BUSINESS_DAYS, calendar: $calendar);
+			return $engine['calculator']->add(
+				new SlaAddition(start: $ask->date, value: 0.0, unit: TermijnTimerService::UNIT_BUSINESS_DAYS, calendar: $calendar)
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq termijn: engine timer call failed, domain flow continues on case data',
