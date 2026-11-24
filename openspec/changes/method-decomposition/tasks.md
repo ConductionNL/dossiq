@@ -1555,6 +1555,33 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (19 in all); unchanged and green after.
         Own test: `tests/Unit/Controller/Support/FilingChoicesTest` (3); dropping the address fallback turns 2 tests
         red (checked).
+  - [x] 8cc `TenantOnboardingService` (1, unsuppressed: ExcessiveClassComplexity 53 against 50). Carrying a tenant's
+        legacy `tenantOnboardingTask` rows onto the task engine is its own concern, so it moved to the new
+        `Onboarding/LegacyStepRows` (`carry()`, was `carryLegacyRows()`, with `legacyMetadata()`, `legacyRows()` and
+        `rowsOfTenant()` as `metadata()`, `read()` and `rowsOfTenant()`). Bodies moved unchanged but for the object
+        service, which the service still resolves and passes in, so its container lookup stays where gate-66 reads it.
+        The service builds the carrier over its own steps, logger and row normaliser in its constructor, so its
+        constructor signature and the container are unchanged. phpmd: no ExcessiveClassComplexity finding, and no new
+        finding on either file under both rulesets (the CouplingBetweenObjects 15 was there before). The
+        catch-return-null allowlist entry follows the site to `LegacyStepRows::read`. `@SuppressWarnings(PHPMD.*)`
+        lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation, green on the unchanged service first (own commit): `TenantOnboardingLegacyRowsTest` (3: the
+        tenant's known steps opened with their status and kept fields and read again; no row and a failed read open
+        nothing; a tenant with engine steps is not carried again); unchanged and green after.
+        Own test: `tests/Unit/Service/Onboarding/LegacyStepRowsTest` (2); dropping the tenant filter turns 2 tests red
+  - [x] 8cd `Lifecycle/CaseEndingActs` (1, unsuppressed: TooManyMethods 27 against 25). Working out where finishing or
+        aborting lands the case (the terminal status, named or the case type's lowest-ordered one, the closing result,
+        the end date and the phases it never reached) is its own concern, so `landing()` moved to the new
+        `Lifecycle/EndingLanding::resolve()` with `terminalStatus()`, `terminalRows()` and `skippedPhases()`. Bodies
+        moved unchanged. The acts build it over their result writer, status lookup and status rows in the constructor,
+        so their constructor signature and the container are unchanged. 23 methods; phpmd: zero findings on both files
+        under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not
+        suppressed).
+        Characterisation: the existing `CaseEndingActsGoldenTest` (named, uuid-shaped, non-terminal and missing terminal
+        statuses, unordered terminals, result refused or empty) and `CaseEndingActsTest` (early close with and without
+        skipped phases), green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Lifecycle/EndingLandingTest` (2); dropping the skipped phases turns 3 tests red
+        (checked).
   - [x] 8ce `Controller/DsoController` (1, unsuppressed: ExcessiveClassComplexity 55 against 50). Reading the fields of a
         request body (the body, a field that may be absent, a field that must be one of a fixed set) is its own
         concern, so `readJsonBody()`, `optionalString()`, `statusRefusal()` and `outcomeRefusal()` went to the new
