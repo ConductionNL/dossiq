@@ -57,6 +57,10 @@ use Throwable;
 /**
  * Opens one case file in the editor for the caller.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — every check before the share
+ * (case, folder, restriction, document write) is its own contract, and none
+ * of them may be skipped.
+ *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/case-management/spec.md
