@@ -18,6 +18,11 @@
  * Only current case types count: a draft or a superseded version grants
  * nothing, so a rights change takes effect when its version is published.
  *
+ * The compiled case type rows do not depend on the caller and are kept for a
+ * minute in {@see \OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache}; a case
+ * type or organisation role change drops them at once. An empty compile is
+ * not kept, so a failed read costs one request, not a minute.
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -43,6 +48,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\OrganisationRolesInterface;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
+use OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -69,16 +75,18 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStoreInterface            $store     Reads every case type.
-	 * @param OrganisationRolesInterface        $roles     Reads the organisation roles.
-	 * @param CaseRightsRowSources     $sources   The case type rights rows and the assigned group's read rows.
-	 * @param LoggerInterface          $logger    The logger.
+	 * @param CaseTypeStoreInterface     $store   Reads every case type.
+	 * @param OrganisationRolesInterface $roles   Reads the organisation roles.
+	 * @param CaseRightsRowSources       $sources The case type rights rows and the assigned group's read rows.
+	 * @param LoggerInterface            $logger  The logger.
+	 * @param CaseTypeRightsRowsCache    $cache   The compiled case type rows of the last minute.
 	 */
 	public function __construct(
 		private readonly CaseTypeStoreInterface $store,
 		private readonly OrganisationRolesInterface $roles,
 		private readonly CaseRightsRowSources $sources,
 		private readonly LoggerInterface $logger,
+		private readonly CaseTypeRightsRowsCache $cache,
 	) {
 	}//end __construct()
 
@@ -102,10 +110,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 		$event->addRows(rows: $this->sources->assignedGroup->rows(), appId: AppIdentity::APP_ID);
 
 		try {
-			$event->addRows(
-				rows: $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped()),
-				appId: AppIdentity::APP_ID,
-			);
+			$event->addRows(rows: $this->caseTypeRows(), appId: AppIdentity::APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case type rights could not be read; they grant nothing this request',
@@ -113,6 +118,25 @@ class CaseTypeRightsRowsListener implements IEventListener {
 			);
 		}
 	}//end handle()
+
+	/**
+	 * The rows of the current case types' matrices: the kept ones, or compiled and kept.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function caseTypeRows(): array {
+		$kept = $this->cache->get();
+		if ($kept !== null) {
+			return $kept;
+		}
+
+		$rows = $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped());
+		if ($rows !== []) {
+			$this->cache->remember(rows: $rows);
+		}
+
+		return $rows;
+	}//end caseTypeRows()
 
 	/**
 	 * The published, not superseded case types with their rights rows.
