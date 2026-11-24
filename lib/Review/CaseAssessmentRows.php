@@ -73,4 +73,42 @@ final class CaseAssessmentRows {
 			filters: ['caseRef' => $caseId, '_limit' => 1000],
 		);
 	}//end forCase()
+
+	/**
+	 * Which documents of the case are assessed and with which verdict, whoever recorded the assessment.
+	 *
+	 * Read regardless of the caller (REQ-WSA-004), as the outstanding count reads them: an assessment
+	 * another reviewer recorded is still an assessment, so every caller's summary counts it. Only the
+	 * document reference and the verdict are answered; the grounds stay with forCase().
+	 *
+	 * @param string $caseId       The case UUID.
+	 * @param string $verdictField The field that holds the verdict.
+	 *
+	 * @return array<int, array{documentRef: string, verdict: string}> One entry per assessment.
+	 *
+	 * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+	 */
+	public function verdictsForCase(string $caseId, string $verdictField): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseRef' => $caseId, '_limit' => 1000],
+		);
+
+		return array_map(
+			static fn (array $row): array => [
+				'documentRef' => (string)($row['documentRef'] ?? ''),
+				'verdict' => (string)($row[$verdictField] ?? ''),
+			],
+			$rows
+		);
+	}//end verdictsForCase()
 }//end class
