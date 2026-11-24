@@ -50,7 +50,7 @@
 			<UserSettings />
 		</template>
 		<template #sidebar="{ pageSidebarComponent }">
-			<CnObjectSidebar
+			<LazyObjectSidebar
 				v-if="objectSidebarState.active"
 				:useRegistry="false"
 				:title="objectSidebarState.title"
@@ -108,7 +108,7 @@ export default {
 	name: 'App',
 	components: {
 		CnAppRoot,
-		CnObjectSidebar: LazyObjectSidebar,
+		LazyObjectSidebar,
 		UserSettings,
 	},
 

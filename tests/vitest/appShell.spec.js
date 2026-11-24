@@ -249,7 +249,7 @@ describe('boot and slots', () => {
 
 	it('loads the object sidebar lazily, so a page without one never evaluates it', async () => {
 		const { LazyObjectSidebar } = await import('../../src/App.vue')
-		expect(App.components.CnObjectSidebar).toBe(LazyObjectSidebar)
+		expect(App.components.LazyObjectSidebar).toBe(LazyObjectSidebar)
 		expect(typeof LazyObjectSidebar.__asyncLoader).toBe('function')
 		expect(await LazyObjectSidebar.__asyncLoader()).toBe(sidebarStub)
 	})
