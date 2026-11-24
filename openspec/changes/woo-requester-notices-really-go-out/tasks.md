@@ -140,10 +140,11 @@ failure line in the PR body.
 
 ## 5. End to end
 
-- [ ] 5.1 (live pass, decision 139; spec written) `tests/e2e/woo-requester-notices.spec.ts`: a Woo request from the portal gets its
+- [x] 5.1 (live pass, decision 139; spec written) `tests/e2e/woo-requester-notices.spec.ts`: a Woo request from the portal gets its
   acknowledgement in the portal inbox and the case shows the duty met. A case with no address
   shows the duty unmet and no "verzonden" line on the citizen timeline. Cite REQ-WRN-002 and
   REQ-WRN-003.
+  - Written, runs in nightly (24 Nov 2026): both halves are in the spec now; the portal half (`portaalBericht` to the case's `portalSubject`, delivery `sent` on `portal-inbox`, duty `met`, the public timeline line) skips where portaliq is not enabled.
   - Live pass 2026-11-16: the spec as written (the no-address case) passes on a fresh rig once a background service account is set; the portal-inbox half of this task needs portaliq installed, so the box stays open.
 - [ ] 5.2 (live pass, decision 139) Live check after merge on the dev instance: one Woo case with no address. Read
   `acknowledgementDuty` through the OpenRegister API and the public timeline through the portal.
