@@ -1611,3 +1611,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         before and unchanged after.
         Own test: `tests/Unit/Service/TenantMigration/OrganisationFromLegacyTenantTest` (2); dropping the quota turns 2
         tests red (checked).
+  - [x] 8ci `Pdok/PdokLocatieserverService` (1, unsuppressed: ExcessiveClassComplexity 60 against 50). The outage budget
+        and the degraded state (three server errors in sixty seconds hold the service degraded for five minutes; a 4xx
+        never counts; a success clears it) are their own concern, so `recordSuccess()`, `recordFailure()`,
+        `cachedFailures()`, `withinWindow()`, `engageDegraded()` and `isDegraded()` moved to the new `Pdok/OutageBreaker`
+        with the `OUTAGE_THRESHOLD`, `OUTAGE_WINDOW` and `DEGRADED_TTL` constants. Bodies moved unchanged; the breaker
+        keeps its state in the service's own distributed cache, under the same keys. The service builds it in its
+        constructor, so its constructor signature and the container are unchanged. phpmd: zero findings on both files
+        under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not
+        suppressed).
+        Characterisation: the existing `PdokOutageBreakerTest`, `PdokLocatieserverServiceTest` and
+        `PdokRequestShapesTest` (41), green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Pdok/OutageBreakerTest` (2); counting 4xx answers toward the budget turns 4 tests
+        red (checked).
