@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Listener\Registrar;
 use OCA\Dossiq\Listener\WooStartFromListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
+use OCA\Dossiq\Listener\MailCreateDialogListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\SpecialCategoryProcessingLogListener;
@@ -41,6 +42,7 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 
 /**
  * Registers the DSO intake and BAG location-validation listeners.
@@ -92,6 +94,8 @@ class IntakeListenerRegistrar {
 		// forms of other apps bound to a case type, and dossiq's answer when
 		// OpenRegister asks which forms write into the case schema.
 		(new IntakeFormListenerRegistrar())->register(context: $context);
+		// A case from a mail: dossiq's New case dialog, offered to OpenRegister's Mail panel.
+		$context->registerEventListener(event: BeforeTemplateRenderedEvent::class, listener: MailCreateDialogListener::class);
 
 		$this->registerReceiptDateListeners(context: $context);
 	}//end register()
