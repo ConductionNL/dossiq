@@ -36,6 +36,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Transitions\TransitionLabel;
 
 /**
  * Service for loading and activating zaaktype templates.
@@ -447,7 +448,7 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 		if ($from === '' || $to === '') {
 			$this->logger->warning(
 				'Template transition names a status the template does not declare, dropped: '
-				. (string)($transition['label'] ?? ''),
+				. (new TransitionLabel())->source(transition: $transition),
 				['app' => AppIdentity::APP_ID]
 			);
 			return null;

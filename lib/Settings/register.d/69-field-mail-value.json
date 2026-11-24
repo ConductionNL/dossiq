@@ -1,0 +1,18 @@
+{
+  "_note": "A case type's question can be answered from the mail a case is made from, in OpenRegister's Mail panel. The template uses the placeholders of a schema's mailObjectTemplate ({{subject}}, {{sender}}, {{senderName}}, {{date}}, {{preview}} and the rest). A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "propertyDefinition": {
+        "version": "1.11.0",
+        "properties": {
+          "mailValue": {
+            "type": "string",
+            "title": "Answer from a mail",
+            "description": "What this field is filled with when a case is made from a mail, written with the mail's placeholders, for example {{senderName}} or {{subject}}. The person can still change it. Empty leaves the field for the person to fill in.",
+            "maxLength": 255
+          }
+        }
+      }
+    }
+  }
+}

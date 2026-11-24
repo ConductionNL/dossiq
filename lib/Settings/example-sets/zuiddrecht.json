@@ -2389,7 +2389,7 @@
 					{
 						"id": "2b98dffe-9f76-56b2-b684-9d9939ce864c",
 						"slug": "aanvullende-gegevens-vragen",
-						"label": "Aanvullende gegevens vragen",
+						"label": {"nl": "Aanvullende gegevens vragen", "en": "Ask for more information"},
 						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
@@ -2402,7 +2402,7 @@
 					{
 						"id": "9e722b6d-38be-5a56-9064-a28a42a91e44",
 						"slug": "aanvraag-compleet",
-						"label": "Aanvraag compleet",
+						"label": {"nl": "Aanvraag compleet", "en": "Application complete"},
 						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
@@ -2415,7 +2415,7 @@
 					{
 						"id": "80fba3a1-2111-5555-9cdc-bcd95eee6d0c",
 						"slug": "gegevens-ontvangen",
-						"label": "Gegevens ontvangen",
+						"label": {"nl": "Gegevens ontvangen", "en": "Information received"},
 						"fromStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
 						"fromStatusName": "Aanvullende gegevens gevraagd",
 						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
@@ -2428,7 +2428,7 @@
 					{
 						"id": "73263024-892c-5ab8-b0be-f50870f22447",
 						"slug": "besluit-voorbereiden",
-						"label": "Besluit voorbereiden",
+						"label": {"nl": "Besluit voorbereiden", "en": "Prepare the decision"},
 						"fromStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
 						"fromStatusName": "In behandeling",
 						"toStatus": "{{object:statustype-regulier-v4-besluit.id}}",
@@ -2441,7 +2441,7 @@
 					{
 						"id": "e15525d6-9e90-56d5-8a41-cef8a672f4d2",
 						"slug": "verlenen",
-						"label": "Vergunning verlenen",
+						"label": {"nl": "Vergunning verlenen", "en": "Grant the permit"},
 						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v4-verleend.id}}",
@@ -2454,7 +2454,7 @@
 					{
 						"id": "7d85cd81-da1d-56e7-81f1-60a0aa80fba9",
 						"slug": "weigeren",
-						"label": "Vergunning weigeren",
+						"label": {"nl": "Vergunning weigeren", "en": "Refuse the permit"},
 						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v4-geweigerd.id}}",
@@ -3159,7 +3159,7 @@
 					{
 						"id": "974277ce-7397-50ac-89ce-7a0343531dc7",
 						"slug": "aanvullende-gegevens-vragen",
-						"label": "Aanvullende gegevens vragen",
+						"label": {"nl": "Aanvullende gegevens vragen", "en": "Ask for more information"},
 						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
@@ -3172,7 +3172,7 @@
 					{
 						"id": "61e851c9-6f9c-50f6-b273-64aba2f188e9",
 						"slug": "aanvraag-compleet",
-						"label": "Aanvraag compleet",
+						"label": {"nl": "Aanvraag compleet", "en": "Application complete"},
 						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
@@ -3185,7 +3185,7 @@
 					{
 						"id": "0fbfbd1f-c475-5f60-b16f-defd58238856",
 						"slug": "gegevens-ontvangen",
-						"label": "Gegevens ontvangen",
+						"label": {"nl": "Gegevens ontvangen", "en": "Information received"},
 						"fromStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
 						"fromStatusName": "Aanvullende gegevens gevraagd",
 						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
@@ -3198,7 +3198,7 @@
 					{
 						"id": "14ad02b5-aa61-557a-a4be-a1752fb342e2",
 						"slug": "besluit-voorbereiden",
-						"label": "Besluit voorbereiden",
+						"label": {"nl": "Besluit voorbereiden", "en": "Prepare the decision"},
 						"fromStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
 						"fromStatusName": "In behandeling",
 						"toStatus": "{{object:statustype-regulier-v5-besluit.id}}",
@@ -3211,7 +3211,7 @@
 					{
 						"id": "4efa1005-f332-5463-a56e-a0fc100d3766",
 						"slug": "verlenen",
-						"label": "Vergunning verlenen",
+						"label": {"nl": "Vergunning verlenen", "en": "Grant the permit"},
 						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v5-verleend.id}}",
@@ -3224,7 +3224,7 @@
 					{
 						"id": "75a43f40-e78c-5d90-aab5-90f5e71d7bf4",
 						"slug": "weigeren",
-						"label": "Vergunning weigeren",
+						"label": {"nl": "Vergunning weigeren", "en": "Refuse the permit"},
 						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v5-geweigerd.id}}",

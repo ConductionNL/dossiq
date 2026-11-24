@@ -28,6 +28,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Dossiq\Service\Transitions\TransitionLabel;
 
 /**
  * Project each `workflowTemplate` onto an OpenRegister flow.
@@ -271,7 +272,12 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 			return null;
 		}
 
-		return ['from' => $from, 'to' => $to, 'label' => (string)($transition['label'] ?? ($transition['slug'] ?? ''))];
+		$label = (new TransitionLabel())->source(transition: $transition);
+		if ($label === '') {
+			$label = (string)($transition['slug'] ?? '');
+		}
+
+		return ['from' => $from, 'to' => $to, 'label' => $label];
 	}//end moveOf()
 
 	/**
