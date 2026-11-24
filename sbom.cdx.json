@@ -19248,8 +19248,8 @@
     {
       "type": "library",
       "name": "sass",
-      "version": "1.105.0",
-      "bom-ref": "dossiq@0.1.0|sass@1.105.0",
+      "version": "1.108.2",
+      "bom-ref": "dossiq@0.1.0|sass@1.108.2",
       "licenses": [
         {
           "license": {
@@ -19257,15 +19257,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/sass@1.105.0",
+      "purl": "pkg:npm/sass@1.108.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/sass/-/sass-1.105.0.tgz",
+          "url": "https://registry.npmjs.org/sass/-/sass-1.108.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "e048d2b914f21bc338c915d76353d3f4e515e73cf6df10712646c8029ae884a1ea7fa1ce538302a44dd4def002fa23b5831a1b06311235b723f2b6004195a7c8"
+              "content": "92e80af1d8e8b671bd1d044f4ce7f7e9ab0a625c60f2b596b0d2d81ce8160c854e89942a9517ca0601785d733a91fc35e3a9080ccbe6e7b07818892f0d2c93cc"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
