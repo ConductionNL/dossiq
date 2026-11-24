@@ -3899,6 +3899,13 @@
 							"dropDetailValues": { "case": "@object.identifier" },
 							"rowActions": [
 								{
+									"id": "open-in-editor",
+									"label": "Open in editor",
+									"icon": "PencilOutline",
+									"type": "handler",
+									"handler": "openCaseFileInEditor"
+								},
+								{
 									"id": "document-properties",
 									"label": "Document properties",
 									"icon": "FileDocumentEditOutline",

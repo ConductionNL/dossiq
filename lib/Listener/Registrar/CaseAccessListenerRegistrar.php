@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Listener\Registrar;
 use OCA\Dossiq\Listener\CaseDecisionAccessListener;
 use OCA\Dossiq\Listener\CaseReassignGuardListener;
 use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
+use OCA\Dossiq\Listener\CaseTypeRightsSourcesListener;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
 use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -77,5 +78,9 @@ class CaseAccessListenerRegistrar {
 		// for them while it compiles the case matrix. Registered by name; an
 		// OpenRegister without the event never fires it.
 		$context->registerEventListener(event: CaseTypeRightsRowsListener::EVENT, listener: CaseTypeRightsRowsListener::class);
+		// The rows are kept for a minute; a case type or organisation role change drops them.
+		foreach (CaseTypeRightsSourcesListener::EVENTS as $event) {
+			$context->registerEventListener(event: $event, listener: CaseTypeRightsSourcesListener::class);
+		}
 	}//end register()
 }//end class
