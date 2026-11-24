@@ -7,7 +7,8 @@
 - [x] 1.3 Decision types for award and refusal (REQ-EVA-002); terms for the question deadline and the 20-day standstill (REQ-TND-006, REQ-EVA-005) in the package.
       Partly built: the package's `seed/` part ships the decision types Gunningsbeslissing and Afwijzingsbeslissing on the tender case type and the 20-day standstill term (Aw 2012 art. 2.127, calendar days, bound to the case type slug); package 1.9.0; `tests/Unit/Settings/AanbestedingPackageSeedTest.php`. The question deadline is a date each tender sets in its own timeline, not a fixed duration, so it is modelled as the case type's date property `vragenTermijnEinde` (Einde vragentermijn) next to `sluiting`, not as a `termijn_definitie` row; package 1.10.0.
 - [x] 1.4 `examples/`: one tender in evaluation with two lots and three bids; bump the package version. Built: the example tender carries its question deadline and closing date; `25-lots.json` adds two lots as sub-cases (`parentCase`) in Beoordeling, `50-tender-bids.json` three `bid` rows on the lots' cases, `60-evaluations.json` one evaluation per bid, `45-tender-questions.json` a published answer; package 1.10.0. `tests/Unit/Settings/AanbestedingPackageExamplesTest.php`.
-- [ ] 1.5 `tests/integration/packages/aanbesteding.postman_collection.json`: install, register a bid, refuse a late bid, score, award.
+- [x] 1.5 `tests/integration/packages/aanbesteding.postman_collection.json`: install, register a bid, refuse a late bid, score, award.
+      Written, runs in the packages workflow (Newman; not run here): the read-backs from `scripts/packages/package-to-newman.py`, then a hand-written tender chain: a supplier and a tender in Beoordeling scored by price-quality 60/40, two bids, a late bid refused naming the closing date, the scoring sheet, scoring a bid (total 74) and reading its evaluation back, and `Definitief gunnen` refused (409, the standstill end named) on a tender whose award went out today.
 
 ## 2. Scoring
 
