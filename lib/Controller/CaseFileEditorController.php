@@ -39,6 +39,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
 use OCA\Dossiq\Kernel\Contracts\FileDocumentLookupInterface;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -88,6 +89,13 @@ class CaseFileEditorController extends Controller {
 	public const EDIT_PERMISSIONS = 3;
 
 	/**
+	 * The office editor app, and the document types it edits in its own page.
+	 */
+	public const OFFICE_APP = 'onlyoffice';
+
+	public const OFFICE_MIME = '#^application/(vnd\.openxmlformats-officedocument\.|vnd\.oasis\.opendocument\.|msword$|vnd\.ms-(excel|powerpoint)$)#';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request         Inbound request.
@@ -96,7 +104,8 @@ class CaseFileEditorController extends Controller {
 	 * @param FileDocumentLookupInterface $documents       Which document record names a file.
 	 * @param IRootFolder                 $rootFolder      Resolves the file in the store.
 	 * @param IUserSession                $userSession     The caller.
-	 * @param IURLGenerator               $urlGenerator    Builds the Files app link.
+	 * @param IURLGenerator               $urlGenerator    Builds the editor link.
+	 * @param IAppManager                 $appManager      Whether the office editor is there.
 	 * @param ContainerInterface          $container       Resolves OpenRegister's services.
 	 * @param LoggerInterface             $logger          Logger.
 	 */
@@ -108,6 +117,7 @@ class CaseFileEditorController extends Controller {
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -232,11 +242,24 @@ class CaseFileEditorController extends Controller {
 			return new JSONResponse(['error' => 'This file could not be opened for editing.'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new JSONResponse(
-			[
-				'fileId' => $node->getId(),
-				'url'    => $this->urlGenerator->linkToRoute('files.View.showFile', ['fileid' => $node->getId()]),
-			]
-		);
+		return new JSONResponse(['fileId' => $node->getId(), 'url' => $this->editorUrl(user: $user, node: $node)]);
 	}//end share()
+
+	/**
+	 * The link that opens the file: the office editor's own page for an office document, else the Files app.
+	 *
+	 * @param IUser $user The caller.
+	 * @param File  $node The file.
+	 *
+	 * @return string
+	 */
+	private function editorUrl(IUser $user, File $node): string {
+		if ($this->appManager->isEnabledForUser(self::OFFICE_APP, $user) === true
+			&& preg_match(self::OFFICE_MIME, $node->getMimetype()) === 1
+		) {
+			return $this->urlGenerator->linkToRoute(self::OFFICE_APP . '.editor.index', ['fileId' => $node->getId()]);
+		}
+
+		return $this->urlGenerator->linkToRoute('files.View.showFile', ['fileid' => $node->getId()]);
+	}//end editorUrl()
 }//end class

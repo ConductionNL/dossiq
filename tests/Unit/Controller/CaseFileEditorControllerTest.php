@@ -44,6 +44,7 @@ namespace OCA\OpenRegister\Files\Service\File {
 namespace OCA\Dossiq\Tests\Unit\Controller {
 
 	use OCA\Dossiq\Controller\CaseFileEditorController;
+	use OCP\App\IAppManager;
 	use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 	use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
 	use OCA\Dossiq\Kernel\Contracts\FileDocumentLookupInterface;
@@ -80,6 +81,10 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 		private object $sharing;
 
 		private object $restriction;
+
+		private string $mime = 'text/markdown';
+
+		private bool $officeEnabled = true;
 
 		/**
 		 * Set up the collaborators: a caller who may change the case and a file in its folder.
@@ -125,6 +130,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 			$file = $this->createMock(File::class);
 			$file->method('getPath')->willReturn($path);
 			$file->method('getId')->willReturn(42);
+			$file->method('getMimetype')->willReturn($this->mime);
 			$folder = $this->createMock(Folder::class);
 			$folder->method('getFirstNodeById')->willReturn($file);
 			$this->rootFolder = $this->createMock(IRootFolder::class);
@@ -142,7 +148,11 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 				fn (string $id) => $id === CaseFileEditorController::SHARING_HANDLER ? $this->sharing : $this->restriction
 			);
 			$urls = $this->createMock(IURLGenerator::class);
-			$urls->method('linkToRoute')->willReturn('/index.php/f/42');
+			$urls->method('linkToRoute')->willReturnCallback(
+				fn (string $route) => $route === 'onlyoffice.editor.index' ? '/apps/onlyoffice/42' : '/index.php/f/42'
+			);
+			$apps = $this->createMock(IAppManager::class);
+			$apps->method('isEnabledForUser')->willReturn($this->officeEnabled);
 
 			return new CaseFileEditorController(
 				request: $this->createMock(IRequest::class),
@@ -152,6 +162,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 				rootFolder: $this->rootFolder,
 				userSession: $this->session,
 				urlGenerator: $urls,
+				appManager: $apps,
 				container: $container,
 				logger: $this->createMock(LoggerInterface::class),
 			);
@@ -170,6 +181,31 @@ namespace OCA\Dossiq\Tests\Unit\Controller {
 			self::assertCount(1, $this->sharing->grants);
 			self::assertSame('pieter', $this->sharing->grants[0]->userId);
 			self::assertSame(CaseFileEditorController::EDIT_PERMISSIONS, $this->sharing->grants[0]->permissions);
+		}
+
+		/**
+		 * An office document opens on the office editor's own page.
+		 *
+		 * @return void
+		 */
+		public function testAnOfficeDocumentOpensInTheOfficeEditor(): void {
+			$this->mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+			$this->withFile(path: '/openregister/files/Open Registers/Dossiq Register/' . self::CASE_ID . '/report.docx');
+
+			self::assertSame('/apps/onlyoffice/42', $this->controller()->open(caseId: self::CASE_ID, fileId: 42)->getData()['url']);
+		}
+
+		/**
+		 * Without the office editor an office document opens in the Files app.
+		 *
+		 * @return void
+		 */
+		public function testWithoutTheOfficeEditorTheFilesAppOpensIt(): void {
+			$this->mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+			$this->officeEnabled = false;
+			$this->withFile(path: '/openregister/files/Open Registers/Dossiq Register/' . self::CASE_ID . '/report.docx');
+
+			self::assertSame('/index.php/f/42', $this->controller()->open(caseId: self::CASE_ID, fileId: 42)->getData()['url']);
 		}
 
 		/**
