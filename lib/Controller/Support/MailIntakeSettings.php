@@ -156,7 +156,7 @@ final class MailIntakeSettings {
 	 *
 	 * @return array{available: bool, accounts: array<mixed>}
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accounts(): array {
 		if ($this->mailGateway->isAvailable() === false) {

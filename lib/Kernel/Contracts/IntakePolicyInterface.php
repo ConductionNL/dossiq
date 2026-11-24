@@ -48,7 +48,7 @@ interface IntakePolicyInterface {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mayRunIntake(string $userId): bool;
 }//end interface

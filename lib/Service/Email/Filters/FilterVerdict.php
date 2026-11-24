@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Email\Filters;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -66,7 +66,7 @@ final class FilterVerdict {
 	 *
 	 * @return self The verdict.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function pass(string $filterName = ''): self {
 		return new self(outcome: FilterOutcome::PASS, filterName: $filterName);
@@ -80,7 +80,7 @@ final class FilterVerdict {
 	 *
 	 * @return self The verdict.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function reject(string $filterName, string $reason): self {
 		return new self(outcome: FilterOutcome::REJECT, filterName: $filterName, reason: $reason);
@@ -94,7 +94,7 @@ final class FilterVerdict {
 	 *
 	 * @return self The verdict.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function quarantine(string $filterName, string $reason): self {
 		return new self(outcome: FilterOutcome::QUARANTINE, filterName: $filterName, reason: $reason);
@@ -109,7 +109,7 @@ final class FilterVerdict {
 	 *
 	 * @return self The verdict.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function forward(string $filterName, string $reason, string $forwardTo): self {
 		return new self(
@@ -128,7 +128,7 @@ final class FilterVerdict {
 	 *
 	 * @return self The verdict.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function accept(string $filterName = '', string $reason = ''): self {
 		return new self(outcome: FilterOutcome::ACCEPT, filterName: $filterName, reason: $reason);
@@ -139,7 +139,7 @@ final class FilterVerdict {
 	 *
 	 * @return boolean True for everything except `pass`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isDecisive(): bool {
 		return FilterOutcome::isDecisive(outcome: $this->outcome);
@@ -150,7 +150,7 @@ final class FilterVerdict {
 	 *
 	 * @return array{outcome: string, filter: string, reason: string, forwardTo: string} The row.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function toArray(): array {
 		return [

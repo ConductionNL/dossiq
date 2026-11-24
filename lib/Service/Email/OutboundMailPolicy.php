@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service\Email;
 /**
  * Who a case mail is sent as and on what terms: the sender identity, the transport policy and the opt-out.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
 final class OutboundMailPolicy {
 	/**

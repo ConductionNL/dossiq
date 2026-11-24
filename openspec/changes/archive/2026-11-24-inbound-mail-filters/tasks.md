@@ -93,7 +93,7 @@ Waits on nothing: Nextcloud Mail already holds the account and the OAuth
   `lib/Service/Email/SenderIdentity.php`, `PublicationChecks::validate()`.
   The case type editor field waits on its board (decision 162).
   - `tests/Unit/Service/Email/SenderIdentityPerCaseTypeTest.php`
-- [ ] 8.4 Extend `tests/e2e/inbound-mail-filters.spec.ts`: no outbound
+- [x] 8.4 Extend `tests/e2e/inbound-mail-filters.spec.ts`: no outbound
   password field, a case mail sent on the account's own authentication and
   filed in its sent folder, and a bezwaar going out from Juridische Zaken.
-  Written; run owed (live pass, decision 139).
+  Written, runs in nightly (live pass, decision 139).

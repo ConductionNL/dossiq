@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -82,7 +82,7 @@ class MoveAction implements MoveActionInterface {
 	 *
 	 * @return array{moved: bool, entryId: string} What happened, and the log entry.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function move(
 		InboundMessage $message,
@@ -108,7 +108,7 @@ class MoveAction implements MoveActionInterface {
 	 *
 	 * @return boolean Whether the mail server confirmed the move.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function moveOnServer(InboundMessage $message, string $target): bool {
 		$moved = $this->gateway->moveMessage(
@@ -137,7 +137,7 @@ class MoveAction implements MoveActionInterface {
 	 *
 	 * @return string The log entry id, or '' when nothing was recorded.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function recordMove(InboundMessage $message, array $entry): string {
 		['note' => $note, 'reason' => $reason] = $entry;
@@ -163,7 +163,7 @@ class MoveAction implements MoveActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function amendMove(string $entryId, MailMove $move): void {
 		if ($entryId !== '') {
@@ -186,7 +186,7 @@ class MoveAction implements MoveActionInterface {
 	 *
 	 * @return string The recorded reason.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function recordedReason(MailMove $move, bool $moved): string {
 		$target = $move->target;

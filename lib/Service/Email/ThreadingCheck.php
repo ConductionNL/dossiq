@@ -37,7 +37,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ namespace OCA\Dossiq\Service\Email;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -75,7 +75,7 @@ class ThreadingCheck {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function resultFor(InboundMessage $message): string {
 		$referenced = $message->referencedMessageIds();
@@ -110,7 +110,7 @@ class ThreadingCheck {
 	 *
 	 * @return boolean False only when the threading result is `fail`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function allowsSubjectTagLink(string $threadingResult): bool {
 		return (AuthenticationResult::isFailure(value: $threadingResult) === false);

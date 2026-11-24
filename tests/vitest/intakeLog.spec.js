@@ -17,7 +17,7 @@
  * no table at all, rather than an empty one they could read as "nothing came
  * in".
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

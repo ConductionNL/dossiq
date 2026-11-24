@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
 /**
  * The checks an inbound mail passes before it is filed: the filter pipeline, the authentication verdict and threading.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class InboundMailChecks {
 	/**

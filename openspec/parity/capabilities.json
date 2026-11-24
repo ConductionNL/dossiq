@@ -12238,7 +12238,7 @@
 					"integriq:openspec/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
 					"openspec/specs/email-case-matching :: REQ-ECM-009 — An unmatched mail in the shared mailbox becomes a case"
 				],
-				"plan": "openspec/changes/inbound-mail-filters"
+				"plan": "openspec/changes/archive/2026-11-24-inbound-mail-filters"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:54-60,117,186-199 IMAP import location reads unseen INBOX messages but imports only attachments (line 266 getAttachments) onto the system inbox case; the mail body and headers are not kept; registered unconditionally in lib/AppInfo/Application.php:242 | round 2 drive: procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",

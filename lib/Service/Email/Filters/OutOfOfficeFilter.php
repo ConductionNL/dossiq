@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\Email\InboundMessage;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -80,7 +80,7 @@ class OutOfOfficeFilter implements InboundMailFilter {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function name(): string {
 		return self::NAME;
@@ -91,7 +91,7 @@ class OutOfOfficeFilter implements InboundMailFilter {
 	 *
 	 * @return integer The order.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function order(): int {
 		return 40;
@@ -104,7 +104,7 @@ class OutOfOfficeFilter implements InboundMailFilter {
 	 *
 	 * @return FilterVerdict Reject when it is, pass otherwise.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict {
 		if ($message->hasHeader(name: 'x-ms-exchange-inbox-rules-loop') === true) {

@@ -48,7 +48,7 @@ interface BounceActionInterface {
 	 *
 	 * @return array{sent: bool, entryId: string} What happened, and the log entry.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function bounce(
 		InboundMessage $message,

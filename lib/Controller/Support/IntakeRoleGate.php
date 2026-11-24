@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\IUserSession;
 /**
  * Who may run intake, for the mail intake and intake triage endpoints.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class IntakeRoleGate {
 
@@ -57,7 +57,7 @@ final class IntakeRoleGate {
 	 *
 	 * @return JSONResponse|null 401 when nobody is signed in, 403 without the intake role, null otherwise.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function refusal(): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -77,7 +77,7 @@ final class IntakeRoleGate {
 	 *
 	 * @return string The uid.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function callerId(): string {
 		return (new SessionUid(userSession: $this->userSession))->uid();
