@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseEndingActs
  * @uses \OCA\Dossiq\Service\Lifecycle\StatusRows
+ * @uses \OCA\Dossiq\Service\Lifecycle\EndingLanding
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseIncompleteness
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
