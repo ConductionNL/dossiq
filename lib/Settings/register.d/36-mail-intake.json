@@ -10,23 +10,11 @@
         "schemas": {
             "mailIntakeEntry": {
                 "slug": "mailIntakeEntry",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "type": "object",
-                "title": "Work queue",
+                "title": "Mail intake entry",
                 "configuration": {
-                    "linkedTypes": [
-                        "mail"
-                    ],
-                    "mailObjectName": "work queue item",
-                    "mailObjectTemplate": {
-                        "subject": "{{subject}}",
-                        "sender": "{{sender}}",
-                        "receivedAt": "{{datetime}}",
-                        "outcome": "inbox",
-                        "channel": "email",
-                        "reason": "Put in the work queue from Mail by hand",
-                        "mailMessageId": "{{mailRef}}"
-                    }
+                    "linkedTypes": []
                 },
                 "description": "One message the intake mailbox processed, with its original, its authentication results, the filter that decided and what became of it.",
                 "properties": {
