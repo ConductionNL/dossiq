@@ -1687,6 +1687,23 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `AanvullingsverzoekServiceTest`, `WooClarificationTest` and `PortalWooAnswerTest`, green before and unchanged
         after but for one `@uses` line each.
         Own test: `tests/Unit/Service/Support/AskedItemsTest` (2); keeping blank lines turns 4 tests red (checked).
+  - [x] 8cm `MandaatCheckService` (1, unsuppressed: ExcessiveClassComplexity 74 against 50). Two pure concerns moved
+        out. The questions asked of register rows (in force on a date, covering a decision and case type, one active
+        for an organisation, the rows for a role, the primary role assignment) went to the new `Mandate/MandateRows`
+        (`isValidOn()`, was `isRowTemporallyValid()`; `matchesTypes()`, was `matchesTypeTerms()`; `anyActiveFor()`,
+        `forRole()`, `validOn()`, `firstByAllocation()` and the private `organisationOf()`). The conditions a mandate
+        sets on a case (the ceiling first, then subdelegation) went to the new `Mandate/MandateConditions`
+        (`evaluate()`, `evaluateConditions()`'s body, with `plafondExceeded()` and `subdelegatieDenied()`).
+        Bodies moved unchanged but for `self::REDEN_*`, now `MandaatCheckService::REDEN_*`. `evaluateConditions()`
+        stays public as a one-line delegation. The reads, the stores and the refusals stay in the service, which builds
+        both in its constructor, so its constructor signature and the container are unchanged. phpmd: zero findings on
+        the three files under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the
+        finding was not suppressed).
+        Characterisation: the existing `MandaatCheckServiceTest`, `MandaatCheckServiceActiveForOrganisationTest` and
+        `RefusalReplacesTheEmptyAnswerTest` (210 tests with the other mandate suites), green before and unchanged after
+        but for two `@uses` lines each.
+        Own tests: `tests/Unit/Service/Mandate/MandateRowsTest` (3) and `MandateConditionsTest` (1); letting an
+        open-ended row lapse turns 10 tests red (checked).
   - [x] 8cn `Notification/RequesterNoticeSender` (2, unsuppressed: TooManyMethods 32 against 25, ExcessiveClassComplexity
         68 against 50). Two channels of concern moved out. The portal inbox (a message from the organisation to the
         case's portal subject, saved as the system) went to the new `Notification/PortalInboxChannel::deliver()`, with

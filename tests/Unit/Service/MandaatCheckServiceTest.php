@@ -30,6 +30,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\MandaatCheckService
+ * @uses \OCA\Dossiq\Service\Mandate\MandateConditions
+ * @uses \OCA\Dossiq\Service\Mandate\MandateRows
  *
  * @uses \OCA\Dossiq\Service\ConflictOfInterestService
  */
