@@ -30,7 +30,7 @@
  *   on the device and nobody at the office heard of it.
  *
  * @spec openspec/changes/inspection-checklists-onto-task/tasks.md
- * @spec openspec/changes/inspection-conflict-card/design.md (open decision 4)
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/design.md (open decision 4)
  * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
  */
 export const DOSSIQ_FIELD_INSPECTION_CONFIG = Object.freeze({

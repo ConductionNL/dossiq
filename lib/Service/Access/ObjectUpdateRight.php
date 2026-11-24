@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * The update right on one object, as OpenRegister decides it.
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 class ObjectUpdateRight {
 
@@ -64,7 +64,7 @@ class ObjectUpdateRight {
 	 * @param ContainerInterface $container  Resolves OpenRegister's services by name.
 	 * @param LoggerInterface    $logger     Records why no answer could be had.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -81,7 +81,7 @@ class ObjectUpdateRight {
 	 *
 	 * @return bool True only when OpenRegister grants the update.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function allows(object $object, string $schema): bool {
 		if ($this->appManager->isInstalled('openregister') === false) {
