@@ -96,7 +96,7 @@
     "@typescript-eslint/parser": "^8.70.1",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vitest/coverage-v8": "^5.0.5",
-    "@vue/compiler-sfc": "^3.5.43",
+    "@vue/compiler-sfc": "^3.5.46",
     "@vue/test-utils": "^2.4.6",
     "axe-core": "^4.13.0",
     "commander": "^15.0.0",
