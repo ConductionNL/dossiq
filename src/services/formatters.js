@@ -347,21 +347,35 @@ export const CASE_LIST_LABEL_TYPES = ['caseType', 'statusType']
  * @return {Array<string>} The types whose lookup this call started.
  */
 export function primeRelatedLabels(types = CASE_LIST_LABEL_TYPES) {
-	let store
+	const store = objectStoreOrNull()
+	const due = store ? types.filter((type) => lookupDue(store, type)) : []
+	due.forEach((type) => startRelatedLookup(store, type))
+	return due
+}
+
+/**
+ * The object store, or null when no store can be had (no active pinia).
+ *
+ * @return {object|null} The store.
+ */
+function objectStoreOrNull() {
 	try {
-		store = useObjectStore()
+		return useObjectStore()
 	} catch {
-		return []
+		return null
 	}
-	const started = []
-	for (const type of types) {
-		if (relatedFetchStarted[type] || relatedLabels[type] !== undefined || !canLookUp(store, type)) {
-			continue
-		}
-		startRelatedLookup(store, type)
-		started.push(type)
-	}
-	return started
+}
+
+/**
+ * Whether a type's labels still need a lookup the store can make.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ * @return {boolean} True when not looked up, not under way, and lookable.
+ */
+function lookupDue(store, type) {
+	const known = Boolean(relatedFetchStarted[type]) || relatedLabels[type] !== undefined
+	return !known && canLookUp(store, type)
 }
 
 /**
