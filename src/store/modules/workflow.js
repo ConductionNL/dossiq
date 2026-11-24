@@ -9,6 +9,7 @@ import { generateUrl } from '@nextcloud/router'
  * workflowTemplate objects in OpenRegister.
  */
 import { defineStore } from 'pinia'
+import { moveStepWithin } from '../../utils/flowList.js'
 import { labelText } from '../../utils/translatableLabel.js'
 import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
 import { useEngineTaskStore } from './engineTask.js'
@@ -1308,6 +1309,25 @@ export const useWorkflowStore = defineStore('workflow', {
 					this.currentTemplate.steps = JSON.stringify(steps)
 				}
 			}
+		},
+
+		/**
+		 * Move a step up or down among the steps of its status. The List view
+		 * calls this; the canvas reads the same steps, so it draws the new
+		 * order and Save writes one definition with it.
+		 *
+		 * @param {string} stepId    UUID of the step to move
+		 * @param {string} direction `up` or `down`
+		 * @return {boolean} Whether the step moved.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-a-change-in-the-list-is-the-same-change-on-the-canvas
+		 */
+		moveStep(stepId, direction) {
+			const moved = moveStepWithin(this.parsedSteps, stepId, direction)
+			if (!moved) {
+				return false
+			}
+			writeSteps(this.currentTemplate, moved)
+			return true
 		},
 
 		/**

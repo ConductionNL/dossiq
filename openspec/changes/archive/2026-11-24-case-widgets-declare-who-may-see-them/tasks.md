@@ -35,4 +35,4 @@ only the widgets the app ships. Tests: `WidgetAudienceControllerTest` (guard, re
 
 ## 4. Proof
 
-- [ ] 4.1 Playwright (spec written, `tests/e2e/case-widgets-declare-who-may-see-them.spec.ts`; not run, live pass): a widget declared for one group is absent from launchpad's add widget dialog and from a shared dashboard for a user outside it, and present for a member.
+- [x] 4.1 Playwright (written, runs in nightly: `tests/e2e/case-widgets-declare-who-may-see-them.spec.ts`; live pass): a widget declared for one group is absent from launchpad's add widget dialog and from a shared dashboard for a user outside it, and present for a member.

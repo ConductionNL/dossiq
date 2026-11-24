@@ -182,7 +182,7 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 	 *
 	 * @throws RefusedException When a clarification is not one question on a Woo case.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function kindOf(array $ask, ?string $question): array {
 		if ($question === null) {

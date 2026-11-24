@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -95,7 +95,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return array{sent: bool, entryId: string} What happened, and the log entry.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function bounce(InboundMessage $message, string $toAddress, string $reason, string $actorId = '', array $results = []): array {
 		$recipient = $this->usableRecipient(message: $message, toAddress: $toAddress);
@@ -120,7 +120,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return string The log entry id.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function loggedForward(InboundMessage $message, array $forwarded): string {
 		$bounce = $forwarded['bounce'];
@@ -142,7 +142,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return string The address, or ''.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function usableRecipient(InboundMessage $message, string $toAddress): string {
 		$recipient = InboundMessage::addressIn(value: $toAddress);
@@ -164,7 +164,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return array<string, string> The results to record.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private static function recordedResults(array $results): array {
 		$recorded = $results;
@@ -183,7 +183,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function amendForwarded(string $entryId, Bounce $bounce): void {
 		if ($entryId !== '') {
@@ -212,7 +212,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return boolean True when the mailer accepted it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function forward(InboundMessage $message, string $recipient): bool {
 		$fromAddress = trim($this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', ''));
@@ -249,7 +249,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return IMessage The message to send.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function outboundCopy(InboundMessage $message, array $forward): IMessage {
 		[$recipient, $sender] = [$forward['recipient'], $forward['sender']];
@@ -273,7 +273,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return string The note.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function coveringNote(InboundMessage $message): string {
 		$lines = [
@@ -303,7 +303,7 @@ class BounceAction implements BounceActionInterface {
 	 *
 	 * @return string The recorded reason.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function recordedReason(Bounce $bounce, bool $sent): string {
 		$recipient = $bounce->recipient;

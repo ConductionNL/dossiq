@@ -195,7 +195,7 @@ class MyOpenWorkWidgetTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function testAUserOutsideTheAudienceGetsNoItems(): void {
 		$queue = $this->createMock(originalClassName: PersonalQueueService::class);
@@ -212,7 +212,7 @@ class MyOpenWorkWidgetTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-003-the-audience-narrows-and-never-widens
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-003-the-audience-narrows-and-never-widens
 	 */
 	public function testAUserInsideTheAudienceReadsTheQueueAsThemselves(): void {
 		$queue = $this->createMock(originalClassName: PersonalQueueService::class);

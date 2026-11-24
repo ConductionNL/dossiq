@@ -458,6 +458,12 @@ if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') ===
 	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
 }
 
+// The meeting command (decidiq meeting-requested-event), which SessionMeeting
+// dispatches to open a planned session as a meeting. One spelling only.
+if (class_exists('\\OCA\\Decidiq\\Event\\MeetingRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/MeetingRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // The connection-registry events (adopt-connection-registry) ride the same loop:
 // IntegrationStatusService sends them by name, exactly like the delivery seam.

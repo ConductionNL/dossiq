@@ -245,7 +245,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function clarificationOf(array $body): ?string {
 		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekServiceInterface::KIND_CLARIFICATION) {

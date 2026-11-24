@@ -40,7 +40,7 @@ interface JunkRulesInterface {
 	 *
 	 * @return array<int, array{name: string, description: string}> The rules.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function rules(): array;
 }//end interface

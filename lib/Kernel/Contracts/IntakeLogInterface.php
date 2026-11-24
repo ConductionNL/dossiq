@@ -73,7 +73,7 @@ interface IntakeLogInterface {
 	 *
 	 * @return boolean True when the write landed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function amend(string $entryId, array $changes): bool;
 
@@ -84,7 +84,7 @@ interface IntakeLogInterface {
 	 *
 	 * @return array<string, mixed>|null The entry, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function find(string $entryId): ?array;
 
@@ -157,7 +157,7 @@ interface IntakeLogInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The entries.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function search(array $filters = []): array;
 }//end interface

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-never-reads-the-officers-work-on-a-woo-case-req-wds-005
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-never-reads-the-officers-work-on-a-woo-case-req-wds-005
  */
 
 declare(strict_types=1);

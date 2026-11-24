@@ -110,7 +110,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts, by name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function allAccounts(): array {
 		try {
@@ -273,7 +273,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 *
 	 * @return string The user id, or '' when the account cannot be read.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function ownerOf(int $accountId): string {
 		if ($accountId <= 0) {
@@ -345,7 +345,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 *
 	 * @return array<int, string> The folder names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mailboxesOf(int $accountId): array {
 		if ($accountId <= 0) {
@@ -390,7 +390,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 * @return array<int, array{id: int, uid: int, mailbox: string, messageId: string, subject: string, sentAt: string}>
 	 *         The messages.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function listMailboxMessagesSince(int $accountId, string $mailbox, int $sinceId, int $limit): array {
 		if ($accountId <= 0 || $mailbox === '' || $limit <= 0) {
@@ -432,7 +432,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 *
 	 * @return IQueryBuilder The query.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function intakeFolderQuery(array $folder, array $page): IQueryBuilder {
 		['accountId' => $accountId, 'mailbox' => $mailbox] = $folder;
@@ -459,7 +459,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 * @return array<int, array{id: int, uid: int, mailbox: string, messageId: string, subject: string, sentAt: string}>
 	 *         The messages.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function messagesOf(IResult $result, string $mailbox): array {
 		$messages = [];

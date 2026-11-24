@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\Email\InboundMessage;
 /**
  * A named filter in the intake pipeline.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 interface InboundMailFilter {
 
@@ -45,7 +45,7 @@ interface InboundMailFilter {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function name(): string;
 
@@ -54,7 +54,7 @@ interface InboundMailFilter {
 	 *
 	 * @return integer The order.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function order(): int;
 
@@ -65,7 +65,7 @@ interface InboundMailFilter {
 	 *
 	 * @return FilterVerdict The verdict, `pass` when this filter has no opinion.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict;
 }//end interface

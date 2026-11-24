@@ -74,10 +74,11 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     field the decision route writes" and the refresh assertion in `testItPostsTheDecision`. That
     the page really re-reads the case on the refresh is part of the e2e in 3.2 (live pass,
     decision 139).
-- [ ] 3.2 e2e `tests/e2e/woo-case-screens.spec.ts`: from a Woo case with gathered documents, assess
+- [x] 3.2 e2e `tests/e2e/woo-case-screens.spec.ts`: from a Woo case with gathered documents, assess
   all, extend once, decide, publish, all through the page. Assert no request to an endpoint the page
   did not offer. Cite REQ-WCS-001, REQ-WCS-002, REQ-WCS-003. **fails today** at the first step,
   because the `Assess documents` action does not exist. (live pass, decision 139)
+  - Written, runs in nightly (`tests/e2e/woo-case-screens.spec.ts`, #6685); not run here, the live pass owns it. The `Assess documents` header action (`document-assess`) exists now, so the "fails today" note above is history.
 
 ## 4. Register an objection
 
@@ -127,9 +128,10 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 6. End to end and live
 
-- [ ] 6.1 e2e `tests/e2e/woo-objection.spec.ts`: on a decided Woo case, register an objection,
+- [x] 6.1 e2e `tests/e2e/woo-objection.spec.ts`: on a decided Woo case, register an objection,
   land on the Bezwaar case, follow the link back, and find the objection on the Cases page under Bezwaar. Cite
   REQ-WCS-004 and REQ-WCS-006.
+  - Written, runs in nightly (`tests/e2e/woo-objection.spec.ts`, #6685); not run here, the live pass owns it.
 - [ ] 6.2 Live check after merge on the dev instance: one Woo case taken from intake to publication
   through the page only, and one objection against it. Record the case ids in the PR or issue.
 

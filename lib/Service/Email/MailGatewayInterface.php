@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Email;
 /**
  * What dossiq asks a mail app for.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 interface MailGatewayInterface {
 
@@ -50,7 +50,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return boolean True when intake can read messages.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isAvailable(): bool;
 
@@ -59,7 +59,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accounts(): array;
 
@@ -70,7 +70,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return array<int, string> The folder names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mailboxes(int $accountId): array;
 
@@ -83,7 +83,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised message rows.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function messages(int $accountId, string $mailbox, int $limit): array;
 
@@ -96,7 +96,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return string The source, or '' when it cannot be read.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function source(int $accountId, string $mailbox, int $uid): string;
 
@@ -111,7 +111,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return boolean True only when the account really holds it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function holdsMessageId(int $accountId, string $messageId): bool;
 
@@ -125,7 +125,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return boolean True when the mail server confirmed the move.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function moveMessage(int $accountId, string $mailbox, int $uid, string $target): bool;
 
@@ -136,7 +136,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function dkimResult(string $source): string;
 
@@ -150,7 +150,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return boolean True when the address is trusted.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isTrustedSender(string $email): bool;
 
@@ -163,7 +163,7 @@ interface MailGatewayInterface {
 	 *
 	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function attachments(int $accountId, string $mailbox, int $uid): array;
 
@@ -177,7 +177,7 @@ interface MailGatewayInterface {
 	 * @return array{accountId: int, mailbox: string, messages: array<int, array<string, mixed>>}|null
 	 *         The unpacked event, or null when it is not one intake reads.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function unpackSynchronisation(object $event): ?array;
 
@@ -197,7 +197,7 @@ interface MailGatewayInterface {
 	 * @return array{state: string, outboxId: int|null}
 	 *         `state` is one of the OutboundState constants.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendMessage(int $accountId, array $message): array;
 }//end interface

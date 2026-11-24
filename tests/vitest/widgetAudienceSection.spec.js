@@ -6,7 +6,7 @@
  * widget under its title, keyed by the id the server keys the audience on,
  * read from and saved to the admin-only endpoint.
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 
 import fs from 'fs'

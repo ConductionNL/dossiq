@@ -58,7 +58,7 @@ abstract class DashboardPageWidget implements IConditionalWidget {
 	 *
 	 * @return bool True when the widget is offered to this user.
 	 *
-	 * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
+	 * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-002-a-user-outside-the-audience-never-sees-the-widget
 	 */
 	public function isEnabled(): bool {
 		return $this->audience->admits(widgetId: $this->getId(), userId: $this->userSession->getUser()?->getUID());
