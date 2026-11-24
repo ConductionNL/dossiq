@@ -6,7 +6,7 @@
  * widgets over integriq's provenance endpoint, shown only for a case a
  * synchronization wrote.
  *
- * @spec openspec/changes/case-synced-from-tab/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import fs from 'fs'
