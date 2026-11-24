@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 /**
  * The settlements of one case, reached through its applications and their executions.
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 class SettlementOverview implements SettlementOverviewInterface {
 
@@ -92,7 +92,7 @@ class SettlementOverview implements SettlementOverviewInterface {
 	 *
 	 * @return array{empty: bool, settlements: list<array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+	 * @spec openspec/specs/case-page/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$settlements = [];
