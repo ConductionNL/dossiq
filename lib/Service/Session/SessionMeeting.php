@@ -91,15 +91,17 @@ class SessionMeeting {
 
 		$eventClass = $this->eventClass;
 		try {
-			// Positional ctor args (decision-app contract): subjectRegister,
-			// subjectSchema, subjectId, title, scheduledDate, attributes, actorId.
+			// Decision-app contract (decidiq REQ-MRE-001): subject, meeting, actorId.
 			$event = new $eventClass(
-				$location[0],
-				$location[1],
-				$sessionId,
-				$this->text(value: ($session['title'] ?? '')),
-				$this->text(value: ($session['scheduledDate'] ?? '')),
-				$this->attributesOf(session: $session),
+				[
+					'register' => $location[0],
+					'schema'   => $location[1],
+					'id'       => $sessionId,
+				],
+				[
+					'title'         => $this->text(value: ($session['title'] ?? '')),
+					'scheduledDate' => $this->text(value: ($session['scheduledDate'] ?? '')),
+				] + $this->attributesOf(session: $session),
 				''
 			);
 			$this->eventDispatcher->dispatchTyped($event);

@@ -195,9 +195,8 @@ class SessionServiceTest extends TestCase {
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (object $event) use (&$subjects): void {
-				$subjects[] = [$event->getSubjectRegister(), $event->getSubjectSchema(), $event->getSubjectId()];
-				$event->setMeetingId('meeting-9');
-				$event->setHandled(true);
+				$subjects[] = array_values($event->getSubject());
+				$event->answer(meetingId: 'meeting-9', created: true);
 			}
 		);
 		$service = new SessionService(

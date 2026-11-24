@@ -67,8 +67,7 @@ class SessionMeetingTest extends TestCase {
 			function (object $event) use ($meetingId): void {
 				$this->dispatched[] = $event;
 				if ($meetingId !== null) {
-					$event->setMeetingId($meetingId);
-					$event->setHandled(true);
+					$event->answer(meetingId: $meetingId, created: true);
 				}
 			}
 		);
@@ -89,14 +88,16 @@ class SessionMeetingTest extends TestCase {
 		self::assertCount(1, $this->dispatched);
 		$event = $this->dispatched[0];
 		self::assertInstanceOf(MeetingRequestedEvent::class, $event);
-		self::assertSame('dossiq', $event->getSubjectRegister());
-		self::assertSame('hearingSession', $event->getSubjectSchema());
-		self::assertSame('session-1', $event->getSubjectId());
-		self::assertSame('Hearing', $event->getTitle());
-		self::assertSame('2026-10-20T10:00:00+00:00', $event->getScheduledDate());
+		self::assertSame(['register' => 'dossiq', 'schema' => 'hearingSession', 'id' => 'session-1'], $event->getSubject());
 		self::assertSame(
-			['location' => 'Room 2', 'virtualLocation' => 'https://talk.example/abc', 'meetingMode' => 'hybrid'],
-			$event->getAttributes()
+			[
+				'title'           => 'Hearing',
+				'scheduledDate'   => '2026-10-20T10:00:00+00:00',
+				'location'        => 'Room 2',
+				'virtualLocation' => 'https://talk.example/abc',
+				'meetingMode'     => 'hybrid',
+			],
+			$event->getMeeting()
 		);
 	}//end testTheSessionIsTheMeetingsSubject()
 
@@ -111,8 +112,8 @@ class SessionMeetingTest extends TestCase {
 		$meetings->open(session: ['location' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']);
 		$meetings->open(session: ['videoCallUrl' => ''] + self::SESSION, location: ['dossiq', 'hearingSession']);
 
-		self::assertSame('digital', $this->dispatched[0]->getAttributes()['meetingMode']);
-		self::assertArrayNotHasKey('meetingMode', $this->dispatched[1]->getAttributes());
+		self::assertSame('digital', $this->dispatched[0]->getMeeting()['meetingMode']);
+		self::assertArrayNotHasKey('meetingMode', $this->dispatched[1]->getMeeting());
 	}//end testTheModeFollowsWhereTheSessionIsHeld()
 
 	/**

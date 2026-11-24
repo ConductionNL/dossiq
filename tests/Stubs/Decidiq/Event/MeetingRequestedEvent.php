@@ -8,8 +8,8 @@
  * unit-tested without the app installed. Loaded by tests/bootstrap.php only
  * when the real class is absent.
  *
- * THE CONSTRUCTOR ORDER IS THE CONTRACT: production builds this positionally
- * through a class-string. Keep it identical to decidiq's.
+ * THE CONSTRUCTOR IS THE CONTRACT: production builds it through a class-string.
+ * Keep it identical to decidiq's.
  *
  * @category Tests
  * @package  OCA\Decidiq\Event
@@ -36,90 +36,40 @@ use OCP\EventDispatcher\Event;
 class MeetingRequestedEvent extends Event {
 
 	/**
-	 * The meeting id (result slot).
+	 * The answer, null until the decision app answers.
 	 *
-	 * @var string
+	 * @var array{meetingId: string, created: bool}|null
 	 */
-	private string $meetingId = '';
-
-	/**
-	 * Whether the meeting was newly created (result slot).
-	 *
-	 * @var boolean
-	 */
-	private bool $created = false;
-
-	/**
-	 * Whether the decision app handled the command (result slot).
-	 *
-	 * @var boolean
-	 */
-	private bool $handled = false;
+	private ?array $answer = null;
 
 	/**
 	 * Construct the command.
 	 *
-	 * @param string               $subjectRegister Register of the producer's object
-	 * @param string               $subjectSchema   Schema of the producer's object
-	 * @param string               $subjectId       Uuid of the producer's object
-	 * @param string               $title           Meeting title
-	 * @param string               $scheduledDate   ISO-8601 start
-	 * @param array<string, mixed> $attributes      Further meeting fields
-	 * @param string               $actorId         Acting Nextcloud UID
+	 * @param array<string, mixed> $subject The producer's object: register, schema, id
+	 * @param array<string, mixed> $meeting Title, scheduledDate and further meeting fields
+	 * @param string               $actorId Acting Nextcloud UID
 	 */
 	public function __construct(
-		private readonly string $subjectRegister,
-		private readonly string $subjectSchema,
-		private readonly string $subjectId,
-		private readonly string $title,
-		private readonly string $scheduledDate,
-		private readonly array $attributes = [],
+		private readonly array $subject,
+		private readonly array $meeting,
 		private readonly string $actorId = '',
 	) {
 		parent::__construct();
 	}//end __construct()
 
 	/**
-	 * @return string
+	 * @return array<string, mixed>
 	 */
-	public function getSubjectRegister(): string {
-		return $this->subjectRegister;
-	}//end getSubjectRegister()
-
-	/**
-	 * @return string
-	 */
-	public function getSubjectSchema(): string {
-		return $this->subjectSchema;
-	}//end getSubjectSchema()
-
-	/**
-	 * @return string
-	 */
-	public function getSubjectId(): string {
-		return $this->subjectId;
-	}//end getSubjectId()
-
-	/**
-	 * @return string
-	 */
-	public function getTitle(): string {
-		return $this->title;
-	}//end getTitle()
-
-	/**
-	 * @return string
-	 */
-	public function getScheduledDate(): string {
-		return $this->scheduledDate;
-	}//end getScheduledDate()
+	public function getSubject(): array {
+		return $this->subject;
+	}//end getSubject()
 
 	/**
 	 * @return array<string, mixed>
 	 */
-	public function getAttributes(): array {
-		return $this->attributes;
-	}//end getAttributes()
+	public function getMeeting(): array {
+		return $this->meeting;
+	}//end getMeeting()
 
 	/**
 	 * @return string
@@ -129,51 +79,34 @@ class MeetingRequestedEvent extends Event {
 	}//end getActorId()
 
 	/**
-	 * @return string
-	 */
-	public function getMeetingId(): string {
-		return $this->meetingId;
-	}//end getMeetingId()
-
-	/**
-	 * @param string $meetingId The id
+	 * @param string $meetingId The meeting
+	 * @param bool   $created   Whether this command minted it
 	 *
 	 * @return void
 	 */
-	public function setMeetingId(string $meetingId): void {
-		$this->meetingId = $meetingId;
-	}//end setMeetingId()
+	public function answer(string $meetingId, bool $created): void {
+		$this->answer = ['meetingId' => $meetingId, 'created' => $created];
+	}//end answer()
 
 	/**
-	 * @return boolean
-	 */
-	public function isCreated(): bool {
-		return $this->created;
-	}//end isCreated()
-
-	/**
-	 * @param boolean $created The flag
-	 *
-	 * @return void
-	 */
-	public function setCreated(bool $created): void {
-		$this->created = $created;
-	}//end setCreated()
-
-	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isHandled(): bool {
-		return $this->handled;
+		return $this->answer !== null;
 	}//end isHandled()
 
 	/**
-	 * @param boolean $handled The flag
-	 *
-	 * @return void
+	 * @return string
 	 */
-	public function setHandled(bool $handled): void {
-		$this->handled = $handled;
-	}//end setHandled()
+	public function getMeetingId(): string {
+		return ($this->answer['meetingId'] ?? '');
+	}//end getMeetingId()
+
+	/**
+	 * @return bool
+	 */
+	public function isCreated(): bool {
+		return ($this->answer['created'] ?? false);
+	}//end isCreated()
 
 }//end class
