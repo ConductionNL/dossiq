@@ -19,6 +19,13 @@
  * back. If the library's save path stops doing any of that for this page,
  * this file goes red before a person sees it on the demo.
  *
+ * The demo's hang came from the re-read after the lock: it lands after the
+ * dialog has seeded its form, and nextcloud-vue before 2.204.1 re-seeded the
+ * form from it and dropped the stored property answers, so a required
+ * question read empty and Save stayed disabled. One definition is required
+ * here and the re-read lands 50 ms late, so this file fails on 2.203.0 and
+ * passes from 2.204.1 on.
+ *
  * @spec openspec/specs/case-management/spec.md
  */
 
@@ -81,7 +88,7 @@ const CASE = {
 	properties: [{ propertyDefinition: 'def-1', name: 'Area', value: '10' }],
 }
 const DEFINITIONS = [
-	{ id: 'def-1', name: 'Area', propertyType: 'string', caseType: 'type-1' },
+	{ id: 'def-1', name: 'Area', propertyType: 'string', caseType: 'type-1', isRequired: true },
 	{ id: 'def-2', name: 'Floors', propertyType: 'integer', caseType: 'type-1' },
 ]
 
@@ -130,6 +137,11 @@ async function fakeFetch(url, init = {}) {
 		body = method === 'PATCH'
 			? withLock({ ...CASE, ...JSON.parse(init.body) })
 			: withLock(CASE)
+		if (method === 'GET' && locked) {
+			// The re-read after the lock lands late on the demo, after the
+			// dialog has seeded its form from the case it already had.
+			await new Promise((resolve) => setTimeout(resolve, 50))
+		}
 	}
 	return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } })
 }

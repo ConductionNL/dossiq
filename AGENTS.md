@@ -87,7 +87,7 @@ Work is specified before it is built, with [OpenSpec](openspec/config.yaml):
 
 - **Code is generic and named by what it does; procedures are configuration.**
   Recorded as decision 182 in
-  `openspec/changes/hydra-gates-green-on-development/proposal.md`. A file named after a
+  `openspec/changes/archive/2026-11-24-hydra-gates-green-on-development/proposal.md`. A file named after a
   procedure term counts against `.procedure-code-baseline.json`, and a growing count
   fails the quality gate.
 - **Pages are manifest config.** Pages and menu entries are declared in
