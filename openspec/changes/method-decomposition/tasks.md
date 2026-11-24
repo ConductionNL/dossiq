@@ -1637,6 +1637,31 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CaseRecycleServiceTest` for the lens; unchanged and green after but for `@uses` lines.
         Own tests: `Recycle/LiveCaseReaderTest` (2) and `Recycle/DeletedCaseVisibilityTest` (1); dropping the assignee
         check turns 1 test red (checked).
+  - [x] 8ci `Pdok/PdokLocatieserverService` (1, unsuppressed: ExcessiveClassComplexity 60 against 50). The outage budget
+        and the degraded state (three server errors in sixty seconds hold the service degraded for five minutes; a 4xx
+        never counts; a success clears it) are their own concern, so `recordSuccess()`, `recordFailure()`,
+        `cachedFailures()`, `withinWindow()`, `engageDegraded()` and `isDegraded()` moved to the new `Pdok/OutageBreaker`
+        with the `OUTAGE_THRESHOLD`, `OUTAGE_WINDOW` and `DEGRADED_TTL` constants. Bodies moved unchanged; the breaker
+        keeps its state in the service's own distributed cache, under the same keys. The service builds it in its
+        constructor, so its constructor signature and the container are unchanged. phpmd: zero findings on both files
+        under both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not
+        suppressed).
+        Characterisation: the existing `PdokOutageBreakerTest`, `PdokLocatieserverServiceTest` and
+        `PdokRequestShapesTest` (41), green before and unchanged after but for one `@uses` line each.
+        Own test: `tests/Unit/Service/Pdok/OutageBreakerTest` (2); counting 4xx answers toward the budget turns 4 tests
+        red (checked).
+  - [x] 8cj `Portal/CitizenManifest` (1, unsuppressed: ExcessiveClassLength 1009 against 1000). The resident's own
+        cases as the portal declares them (the collection "Mijn zaken" reads, its projected fields, who is at turn,
+        where it stands, what a card shows, the organisation's intro) are their own declaration, so `caseCollection()`'s
+        body moved to the new `Portal/CitizenCaseCollection::declaration()` with `caseDetailKeys()`, `casePageBlocks()`
+        and `caseListKeys()`. Bodies moved unchanged but for `self::` on the manifest's three public constants, now
+        `CitizenManifest::`. `caseCollection()` stays on the manifest as a one-line delegation, so
+        `PortalContributionProvider` and every reader are unchanged. 907 lines; phpmd: zero findings on both files under
+        both rulesets. `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `CitizenManifestGoldenTest` (every declaration byte for byte),
+        `CitizenManifestTest`, `PortalCaseDeclarationsTest` and `PortalConversationTest`, green before and unchanged
+        after but for one `@uses` line each.
+        Own test: `tests/Unit/Portal/CitizenCaseCollectionTest` (2); dropping the intro turns 4 tests red (checked).
   - [x] 8ck `TenantAuthenticationService` (1, unsuppressed: ExcessiveClassComplexity 59 against 50). Reading a mandate
         matrix (which `tenantMandate` row is in force at a moment, the matrix it carries or the default when it carries
         none, and whether it grants a role an action, wildcards included) is its own concern, so `isAllowed()`'s body,

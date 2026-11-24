@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * REQ-WDS-001 and REQ-WDS-003 through the contribution portaliq reads.
  *
  * @covers \OCA\Dossiq\Portal\CitizenManifest
+ * @uses \OCA\Dossiq\Portal\CitizenCaseCollection
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Portal\PortalPages
