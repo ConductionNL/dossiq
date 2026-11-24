@@ -65,6 +65,14 @@ describe('overview cards per case type', () => {
 		expect(overview.slice(0, 3)).toEqual(['case-objection-grounds', 'case-objection-advice-card', 'case-summary'])
 	})
 
+	// 1.6b: the cards a case type lists take their places in the list's
+	// order (nextcloud-vue CnTabsWidget `orderFrom`), every other card keeps
+	// its own place.
+	it('draws the listed cards in the order the case type lists them', () => {
+		expect(simple.widgets.find((candidate) => candidate.id === 'case-panels').content.tabs[0].orderFrom)
+			.toBe('@context.caseType.overviewCards')
+	})
+
 	it('lets the packages list cards of the Overview tab', () => {
 		expect(packageCaseTypes('jeugdwet')[0].overviewCards).toEqual(['case-summary'])
 		const objection = packageCaseTypes('bezwaar-beroep').find((caseType) => caseType.identifier === 'bezwaar')

@@ -2349,6 +2349,7 @@
 							"tabs": [
 								{
 									"id": "overview",
+									"orderFrom": "@context.caseType.overviewCards",
 									"widgetIds": [
 										"case-objection-grounds",
 										"case-objection-advice-card",
