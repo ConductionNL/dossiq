@@ -90,9 +90,7 @@ final class AdviceRequestFilingTest extends TestCase {
 	 */
 	private function filing(AdviceDelegationService $delegation): AdviceRequestFiling {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($key === 'advies_aanvraag_schema' ? 'advies-v2' : '')
-		);
+		$settings->method('getConfigValue')->willReturnMap([['advies_aanvraag_schema', '', 'advies-v2']]);
 
 		return new AdviceRequestFiling(delegation: $delegation, settingsService: $settings, logger: new NullLogger());
 	}//end filing()
