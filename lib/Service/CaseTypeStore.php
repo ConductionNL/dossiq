@@ -389,6 +389,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	#[\Override]
 	public function forget(): void {
 		$this->kept = [];
 	}//end forget()

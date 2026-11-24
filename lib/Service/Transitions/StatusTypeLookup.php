@@ -422,6 +422,7 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	#[\Override]
 	public function forget(): void {
 		$this->kept = [];
 	}//end forget()
