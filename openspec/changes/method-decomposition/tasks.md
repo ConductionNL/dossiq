@@ -1459,3 +1459,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         before a lookup), green before and unchanged after but for its constructor call.
         Own test: `tests/Unit/Controller/Support/HouseholdReaderGateTest` (4); dropping the case read check from the
         refusal turns three tests red (checked).
+  - [x] 8bw `Controller/WorkQueueController` (1: CouplingBetweenObjects 15 against 13). Which handlers the workload
+        shows is its own concern, so it moved to the new `Controller/Support/WorkloadScope`: the reader's team groups
+        (`teamGroupIds()`, an unreadable team list logged and read as none), the narrowing to their members with a zero
+        row for an idle member (`ofTeams()` with `membersOf()` and `withMembers()`), the display names
+        (`withDisplayNames()`) and the coordinator check (`isCoordinator()`, now one expression so it is no longer a
+        copy of `SubstitutionAccessGuard::isCoordinator()`, gate-122). Bodies otherwise moved unchanged, and the scope
+        still runs inside the workload's try, so a failing member or name read is still a 500. The controller takes
+        the scope instead of the group manager, the user manager and the team service, so its constructor changed
+        (eight parameters to six); the container wires the scope. Coupling 12 and 6, complexity 11 and 18 (pdepend);
+        phpmd: no finding on either file under both rulesets with the suppression gone. `@SuppressWarnings(PHPMD.*)`
+        lines in `lib/` 191 to 190.
+        Characterisation: the existing `WorkQueueControllerTest` (12: the queue with and without covered work, the
+        workload for a coordinator, a team member, neither, unreadable teams, display names) and
+        `WorkQueueReadersTeamsGoldenTest` (seven worlds of team narrowing, now read through the scope instead of by
+        reflection on the controller; the golden file unchanged), green before and after but for the constructor call.
+        Own test: `tests/Unit/Controller/Support/WorkloadScopeTest` (3); dropping the empty-uid check turns it red
+        (checked).
