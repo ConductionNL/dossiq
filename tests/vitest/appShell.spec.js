@@ -7,7 +7,7 @@
  * support note from the initial state, the permissions, the notification
  * labels, the user settings sections and Nextcloud links, the app-bound
  * translate), the sidebar state it provides under both names, the
- * host-mounted object sidebar, the page's own sidebar component, the store
+ * host-mounted object sidebar (loaded lazily), the page's own sidebar component, the store
  * boot, and the `#user-settings` hash opening the user settings dialog on
  * load and on a later hash change, but not after unmount.
  *
@@ -43,15 +43,21 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 			])
 		},
 	},
-	CnObjectSidebar: {
-		name: 'CnObjectSidebar',
-		props: [
-			'useRegistry', 'title', 'subtitle', 'objectType', 'objectId', 'register', 'schema',
-			'objectSchema', 'objectData', 'tabs', 'hiddenTabs', 'open',
-		],
-		emits: ['update:open'],
-		render: () => h('aside', { class: 'object-sidebar' }),
-	},
+}))
+const sidebarStub = vi.hoisted(() => ({
+	name: 'CnObjectSidebar',
+	props: [
+		'useRegistry', 'title', 'subtitle', 'objectType', 'objectId', 'register', 'schema',
+		'objectSchema', 'objectData', 'tabs', 'hiddenTabs', 'open',
+	],
+	emits: ['update:open'],
+	render: () => h('aside', { class: 'object-sidebar' }),
+}))
+
+// The host-mounted sidebar is a lazy component (App.vue `LazyObjectSidebar`):
+// it loads this module when a detail page first shows it.
+vi.mock('@conduction/nextcloud-vue/dist/esm/components/CnObjectSidebar/CnObjectSidebar.vue.js', () => ({
+	default: sidebarStub,
 }))
 vi.mock('@nextcloud/initial-state', () => ({
 	loadState: (app, key, fallback) => (key in shell.states ? shell.states[key] : fallback),
@@ -239,6 +245,13 @@ describe('boot and slots', () => {
 
 		sidebar.vm.$emit('update:open', false)
 		expect(state.open).toBe(false)
+	})
+
+	it('loads the object sidebar lazily, so a page without one never evaluates it', async () => {
+		const { LazyObjectSidebar } = await import('../../src/App.vue')
+		expect(App.components.LazyObjectSidebar).toBe(LazyObjectSidebar)
+		expect(typeof LazyObjectSidebar.__asyncLoader).toBe('function')
+		expect(await LazyObjectSidebar.__asyncLoader()).toBe(sidebarStub)
 	})
 
 	it('renders the page\'s own sidebar component next to it', () => {
