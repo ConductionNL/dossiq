@@ -476,13 +476,13 @@ class StatusTransitionServiceOrderTest extends TestCase {
 		$labelled = ['label' => ['nl' => 'Besluiten', 'en' => 'Decide']] + self::TRANSITION;
 		$this->world['transition'] = $labelled;
 		$this->world['template'] = ['transitions' => [$labelled]];
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('getLanguageCode')->willReturn('en');
 
 		$this->engine(labels: new TransitionLabel(reader: new TranslatedText(l10n: $l10n)))->execute('case-1', 't1', 'Klaar.', 'jan', 'rt-1');
 
 		$moves = array_values(array_filter($this->calls, static fn (array $call): bool => $call[0] === 'writeStatusRecord'));
-		$this->assertSame('Besluiten', $moves[0][1]['label']);
+		$this->assertSame(expected: 'Besluiten', actual: $moves[0][1]['label']);
 	}//end testATranslatableLabelIsRecordedInItsSourceLanguage()
 
 	/**

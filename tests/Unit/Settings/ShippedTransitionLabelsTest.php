@@ -77,7 +77,11 @@ class ShippedTransitionLabelsTest extends TestCase {
 					$list = json_decode($list, true);
 				}
 
-				foreach ((is_array($list) === true ? $list : []) as $transition) {
+				if (is_array($list) === false) {
+					$list = [];
+				}
+
+				foreach ($list as $transition) {
 					if (is_array($transition) === true && array_key_exists('label', $transition) === true
 						&& (isset($transition['toStatus']) === true || isset($transition['toStatusName']) === true)
 					) {
@@ -97,12 +101,12 @@ class ShippedTransitionLabelsTest extends TestCase {
 	 */
 	public function testEveryShippedLabelHasDutchAndEnglish(): void {
 		$labels = self::labels();
-		$this->assertNotEmpty($labels);
+		$this->assertNotEmpty(actual: $labels);
 
 		foreach ($labels as [$file, $label]) {
-			$this->assertIsArray($label, basename($file) . ': a transition label is a language map');
-			$this->assertNotSame('', trim((string)($label['nl'] ?? '')), basename($file) . ': Dutch text');
-			$this->assertNotSame('', trim((string)($label['en'] ?? '')), basename($file) . ': English text');
+			$this->assertIsArray(actual: $label, message: basename($file) . ': a transition label is a language map');
+			$this->assertNotSame(expected: '', actual: trim((string)($label['nl'] ?? '')), message: basename($file) . ': Dutch text');
+			$this->assertNotSame(expected: '', actual: trim((string)($label['en'] ?? '')), message: basename($file) . ': English text');
 		}
 	}//end testEveryShippedLabelHasDutchAndEnglish()
 }//end class

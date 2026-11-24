@@ -96,7 +96,7 @@ class DataSubjectRequestTemplateTest extends TestCase {
 		self::assertNotSame('', $rule['askInstead']);
 
 		// And the act it names is a transition that exists, spelled the same way.
-		self::assertSame(DataSubjectRequestCase::ACT_PREPARE, $this->transition(label: DataSubjectRequestCase::ACT_PREPARE)['label']['nl']);
+		self::assertSame(expected: DataSubjectRequestCase::ACT_PREPARE, actual: $this->transition(label: DataSubjectRequestCase::ACT_PREPARE)['label']['nl']);
 	}//end testTheApprovalIsClosedToThePreparer()
 
 	/**
