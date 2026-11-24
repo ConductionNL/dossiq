@@ -51,6 +51,15 @@ use Throwable;
  */
 class StatusTypeLookup implements StatusTypeLookupInterface {
 	/**
+	 * The status types read in this request, by schema key, id and render flag.
+	 *
+	 * Dropped on any object change ({@see \OCA\Dossiq\Listener\RequestReadsForgetListener}).
+	 *
+	 * @var array<string, array>
+	 */
+	private array $kept = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService  $settingsService   Resolves the object service and configured schemas.
@@ -383,6 +392,11 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 			return [];
 		}
 
+		$key = $schemaKey.'|'.$id.'|'.(int)$render;
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
 			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema, render: $render));
 		} catch (Throwable $e) {
@@ -397,6 +411,18 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 			return [];
 		}
 
+		$this->kept[$key] = $found;
 		return $found;
 	}//end read()
+
+	/**
+	 * Forget the status types read earlier in this request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function forget(): void {
+		$this->kept = [];
+	}//end forget()
 }//end class

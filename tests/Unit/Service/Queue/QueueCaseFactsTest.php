@@ -223,6 +223,24 @@ class QueueCaseFactsTest extends TestCase {
 	}//end testTheCaseTypeSetsItsOwnThresholds()
 
 	/**
+	 * Scoring many cases of one type reads the case type once.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeIsReadOnceForTheWholeQueue(): void {
+		$instance = new UrgencyProfile(criticalDays: 3, warningDays: 7, priorityWeight: 10, idleWeight: 0.5);
+		$store    = $this->store(found: ['queueCriticalDays' => 10]);
+		$facts    = $this->facts();
+
+		$facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-1', profile: $instance);
+		$profile = $facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-1', profile: $instance);
+		$facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-2', profile: $instance);
+
+		$this->assertSame(expected: 10, actual: $profile->criticalDays);
+		$this->assertSame(expected: [['find', 'caseType', 'ct-1'], ['find', 'caseType', 'ct-2']], actual: $store->calls);
+	}//end testACaseTypeIsReadOnceForTheWholeQueue()
+
+	/**
 	 * No type, no schema, a type that is gone or one that cannot be read: the instance profile,
 	 * and only the failed read is said in the log.
 	 *
