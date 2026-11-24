@@ -47,6 +47,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Portal\PortalAssertionVerifier
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekService
+ * @uses \OCA\Dossiq\Service\Support\AskedItems
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
