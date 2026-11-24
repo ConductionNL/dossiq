@@ -54,6 +54,7 @@ use OCA\Dossiq\Service\Hearing\HearingPlan;
 use OCA\Dossiq\Service\Hearing\NewSession;
 use OCA\Dossiq\Service\Hearing\SessionPatch;
 use OCA\Dossiq\Service\Hearing\SessionStore;
+use OCA\Dossiq\Service\Hearing\SessionWrites;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -66,9 +67,7 @@ use RuntimeException;
  * Hearing service: scheduling, waiver, attendance and minutes capture.
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class HearingService implements HearingServiceInterface {
 
@@ -124,6 +123,13 @@ class HearingService implements HearingServiceInterface {
 	public const TAG_RECORDING_CONSENT = BezwaarAuditTrail::TAG_RECORDING_CONSENT;
 
 	/**
+	 * Writes an attendance or minutes patch after its entries.
+	 *
+	 * @var SessionWrites
+	 */
+	private readonly SessionWrites $writes;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
@@ -132,6 +138,8 @@ class HearingService implements HearingServiceInterface {
 	 * @param HearingSchedulePlanner $planner Awb art. 7:4 date arithmetic
 	 * @param HearingMinutesRecorder $minutes Awb art. 7:7 verslag assembly + consent gate
 	 * @param OwningCaseResolver $owningCase Resolves a session's parent bezwaar case
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -141,6 +149,7 @@ class HearingService implements HearingServiceInterface {
 		private readonly HearingMinutesRecorder $minutes,
 		private readonly OwningCaseResolver $owningCase,
 	) {
+		$this->writes = new SessionWrites(auditTrail: $auditTrail, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -272,6 +281,7 @@ class HearingService implements HearingServiceInterface {
 	 * @throws RuntimeException When the session is not found, persistence fails, or a late correction lacks a reason.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function recordAttendance(
 		string $sessionId,
@@ -284,7 +294,7 @@ class HearingService implements HearingServiceInterface {
 		$store = $this->openStore();
 		$current = $this->requireSession(store: $store, sessionId: $sessionId);
 
-		return $this->writeAttendance(store: $store, patch: $this->attendancePatch(sessionId: $sessionId, current: $current, entries: $entries));
+		return $this->writes->attendance(store: $store, patch: $this->attendancePatch(sessionId: $sessionId, current: $current, entries: $entries));
 	}//end recordAttendance()
 
 	/**
@@ -327,6 +337,7 @@ class HearingService implements HearingServiceInterface {
 	 *                          denied, or persistence fails.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function addMinutes(
 		string $sessionId,
@@ -339,7 +350,7 @@ class HearingService implements HearingServiceInterface {
 		$this->guardConsent(store: $store, sessionId: $sessionId, payload: $payload, current: $current);
 
 		$patch = $this->minutesPatch(sessionId: $sessionId, current: $current, payload: $payload, texts: $texts);
-		return $this->recordMinutes(store: $store, patch: $patch);
+		return $this->writes->minutes(store: $store, patch: $patch);
 	}//end addMinutes()
 
 	/**
@@ -621,130 +632,6 @@ class HearingService implements HearingServiceInterface {
 			tag: $session->tag,
 		);
 	}//end auditNewSession()
-
-	/**
-	 * Record each late correction, then write the attendance.
-	 *
-	 * Awb art. 7:7. Each late correction is recorded before the attendance
-	 * changes; a correction whose entry cannot be written changes nothing. A
-	 * patch that fails after the entries leaves an
-	 * `attendance-late-correction-not-applied` row per correction (REQ-BAT-003).
-	 *
-	 * @param SessionStore $store The session store.
-	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
-	 *
-	 * @return array<string, mixed> The updated session.
-	 *
-	 * @throws RuntimeException When an entry or the patch fails.
-	 */
-	private function writeAttendance(SessionStore $store, SessionPatch $patch): array {
-		$this->recordLateCorrections(store: $store, patch: $patch);
-
-		try {
-			return $this->patchSession(store: $store, patch: $patch);
-		} catch (\Throwable $e) {
-			$this->recordUnappliedCorrections(store: $store, patch: $patch, e: $e);
-
-			$this->logger->error(
-				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not record attendance');
-		}//end try
-	}//end writeAttendance()
-
-	/**
-	 * Record each late correction before the attendance changes.
-	 *
-	 * @param SessionStore $store The session store.
-	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When an entry fails.
-	 */
-	private function recordLateCorrections(SessionStore $store, SessionPatch $patch): void {
-		foreach ($patch->entries as $correction) {
-			$this->auditTrail->record(
-				register: $store->register,
-				schema: $store->schema,
-				objectUuid: $patch->sessionId,
-				event: 'attendance-late-correction',
-				payload: $correction,
-				tag: self::TAG_VERSLAG,
-			);
-		}
-	}//end recordLateCorrections()
-
-	/**
-	 * Record each late correction as not applied after the patch failed.
-	 *
-	 * @param SessionStore $store The session store.
-	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
-	 * @param \Throwable   $e     The patch failure.
-	 *
-	 * @return void
-	 */
-	private function recordUnappliedCorrections(SessionStore $store, SessionPatch $patch, \Throwable $e): void {
-		foreach ($patch->entries as $correction) {
-			$this->auditTrail->recordRefusal(
-				register: $store->register,
-				schema: $store->schema,
-				objectUuid: $patch->sessionId,
-				event: 'attendance-late-correction-not-applied',
-				payload: $correction + ['error' => $e->getMessage()],
-				tag: self::TAG_VERSLAG,
-			);
-		}
-	}//end recordUnappliedCorrections()
-
-	/**
-	 * Record the verslag entry, then apply the minutes.
-	 *
-	 * Awb art. 7:7. The verslag is recorded before the session changes.
-	 *
-	 * @param SessionStore $store The session store.
-	 * @param SessionPatch $patch The minutes patch; its one entry is the verslag payload.
-	 *
-	 * @return array<string, mixed> The updated session.
-	 *
-	 * @throws RuntimeException When the entry or the patch fails.
-	 */
-	private function recordMinutes(SessionStore $store, SessionPatch $patch): array {
-		try {
-			return $this->auditTrail->recordThenApply(
-				register: $store->register,
-				schema: $store->schema,
-				objectUuid: $patch->sessionId,
-				event: 'verslag-recorded',
-				payload: $patch->entries[0],
-				tag: self::TAG_VERSLAG,
-				apply: fn (): array => $this->patchSession(store: $store, patch: $patch),
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not add minutes');
-		}//end try
-	}//end recordMinutes()
-
-	/**
-	 * Apply a patch to a stored session.
-	 *
-	 * @param SessionStore $store The session store.
-	 * @param SessionPatch $patch The patch.
-	 *
-	 * @return array<string, mixed> The updated session, or the stored one with the changes when the store answers nothing.
-	 */
-	private function patchSession(SessionStore $store, SessionPatch $patch): array {
-		return ($this->patchObjectAsArray(
-			objectService: $store->objectService,
-			register: $store->register,
-			schema: $store->schema,
-			id: $patch->sessionId,
-			changes: $patch->update
-		) ?? array_merge($patch->current, $patch->update));
-	}//end patchSession()
 
 	/**
 	 * The uuid of a saved record, as OpenRegister serialises it.

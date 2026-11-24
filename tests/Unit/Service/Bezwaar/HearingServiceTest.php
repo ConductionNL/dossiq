@@ -50,6 +50,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Hearing\SessionWrites
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
  */
