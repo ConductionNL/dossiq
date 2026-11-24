@@ -35,6 +35,7 @@ import menuLayoutSimple from './menu-layout.simple.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
+import { installFilesSurfaces } from './services/filesSurfaces.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
@@ -327,6 +328,8 @@ watch(() => resolvedManifest.value?.menu, retitlePage)
 // screen". See src/services/caseLiveUpdates.js for what an event does, and for
 // the one thing it deliberately does not cover.
 installCaseLiveUpdates(router, () => useObjectStore())
+// The files browser's actions load on an object's page only. See `services/filesSurfaces.js`.
+installFilesSurfaces(router)
 // The team the team queue opens on (@myTeam). Read through the namespace so
 // a library without the hook does not stop the app from starting.
 installMyTeamSource(ncVue.registerMyTeamSource)

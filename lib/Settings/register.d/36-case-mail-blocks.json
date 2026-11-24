@@ -1,0 +1,35 @@
+{
+  "_note": "The work queue consists of cases (Ruben, 24 Nov). In OpenRegister's Mail panel the case schema offers two blocks: Case, which finds any case and creates one through dossiq's own New case dialog, and Work queue, which lists the unassigned cases and puts a mail in the queue as a new unassigned case from the generic dialog. The intake log (mailIntakeEntry) is no longer offered in the panel. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.64.0",
+        "configuration": {
+          "mailBlocks": [
+            {
+              "key": "case",
+              "title": "Case"
+            },
+            {
+              "key": "queue",
+              "title": "Work queue",
+              "name": "work queue item",
+              "template": {
+                "title": "{{subject}}",
+                "description": "{{preview}}",
+                "intakeChannel": "email",
+                "startDate": "{{date}}",
+                "initiatorDisplayName": "{{senderName}}",
+                "assignee": ""
+              },
+              "filter": {
+                "assignee": "IS NULL"
+              },
+              "appDialog": false
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -943,13 +943,17 @@
         "version": "1.1.1",
         "digest": "d15a7db3d754ef5563ce3081a78532a4e1e7e0b4ee4fd0474ae6f4898f559ec3"
     },
+    "lib/Settings/register.d/36-case-mail-blocks.json::case": {
+        "version": "1.64.0",
+        "digest": "89f993ffd0ef0e05bd3e064a0ba2ab43381b9c374693f2d6d2a68fb8e4f9299b"
+    },
     "lib/Settings/register.d/36-mail-intake.json::caseType": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/36-mail-intake.json::mailIntakeEntry": {
-        "version": "1.0.0",
-        "digest": "eade782a53a71dc88b595291c1bdb7d13c4b5bd90324bac4a0d09e01f602ab18"
+        "version": "1.2.0",
+        "digest": "44eb8960e5f63f032054e9537843c795900dd6f212fb477259274ec570e7de41"
     },
     "lib/Settings/register.d/36-ontvangstbevestiging.json::case": {
         "version": "",

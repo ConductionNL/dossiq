@@ -77,25 +77,37 @@ class DashboardController extends Controller {
 	 * @var string
 	 */
 	/**
-	 * The load events that put Nextcloud's file surfaces on a page.
+	 * The load event every dossiq page dispatches: the Viewer's.
 	 *
-	 * The Viewer, and the Files app's additional scripts: on that event the
-	 * Files app and its plugins (files_sharing, text, versions) register their
-	 * file actions and their New menu entries, such as Request a file, into
-	 * the shared registries that `@nextcloud/files` reads, so the files
-	 * browser on a case page offers the same actions the Files app does. Not
-	 * the Files sidebar: the sidebar's `LoadSidebar` was here too, and
-	 * its scripts loaded, but on Nextcloud 34 the sidebar is a store bound to
-	 * the Files app's own router and node list (`OCA.Files._sidebar`, no
-	 * `OCA.Files.Sidebar.open`), so it cannot be opened from another app's
-	 * page. Loading six scripts for a surface that cannot open is not worth
-	 * the bytes; the files tab offers Show in Files for what the sidebar
-	 * would have shown.
+	 * The files tab on an object's page opens a file in the Viewer, over the
+	 * page. The Viewer registers the handlers of other apps (the PDF viewer)
+	 * on DOMContentLoaded, so it has to be on the page from the start; it is
+	 * small next to the Files app's scripts.
 	 *
-	 * @var list<string> Class names, looked up at run time because neither app is a dependency.
+	 * @var list<string> Class names, looked up at run time because the Viewer app is not a dependency.
+	 */
+	public const PAGE_SURFACE_EVENTS = [
+		'OCA\\Viewer\\Event\\LoadViewer',
+	];
+
+	/**
+	 * The load event behind the files browser's actions, served by {@see filesSurfaces()}.
+	 *
+	 * On this event the Files app and its plugins (files_sharing, text,
+	 * versions, and whatever else is installed) register their file actions
+	 * and New menu entries into the shared registries `@nextcloud/files`
+	 * reads, so the files browser on an object's page offers the actions the
+	 * Files app does. Those scripts weigh megabytes and took about a second
+	 * of the main thread on every dossiq page, the lists included, which show
+	 * no files. So the page does not dispatch it; the bundle fetches
+	 * {@see filesSurfaces()} once it opens an object's page and adds the
+	 * scripts that response names. Not the Files sidebar: on Nextcloud 34 it
+	 * is bound to the Files app's own router and cannot open from another
+	 * app's page.
+	 *
+	 * @var list<string> Class names, looked up at run time because the Files app is not a dependency.
 	 */
 	public const FILES_SURFACE_EVENTS = [
-		'OCA\\Viewer\\Event\\LoadViewer',
 		'OCA\\Files\\Event\\LoadAdditionalScriptsEvent',
 	];
 
@@ -177,7 +189,7 @@ class DashboardController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	protected function renderIndex(): TemplateResponse {
-		$this->loadFilesSurfaces();
+		$this->dispatchLoadEvents(eventClasses: $this->surfaceEvents(which: 'page'));
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
@@ -237,38 +249,51 @@ class DashboardController extends Controller {
 	}//end installedVersion()
 
 	/**
-	 * Put Nextcloud's own Viewer on every dossiq page.
+	 * The scripts, stylesheets and initial state of the files browser's actions, as a bare page.
 	 *
-	 * The files tab on a case page opens a file in the Viewer, over the page,
-	 * the way the Files app does, rather than rebuilding a viewer. The Viewer
-	 * is a script its app adds to a page only when the page dispatches the
-	 * load event; a page that does not gets none, and the tab falls back to a
-	 * link into the Files app. The class is looked up by name because the
-	 * Viewer app is not a dependency: an instance without it renders the page
-	 * all the same. The
-	 * dispatcher is required, not optional: Nextcloud's container hands a
-	 * nullable parameter with a default its default, so an optional one was
-	 * null on every request and nothing loaded.
+	 * The bundle fetches this once it opens an object's page and adds what
+	 * the response names that its own page lacks (see
+	 * `src/services/filesSurfaces.js`). Rendered as the base layout: no
+	 * header or navigation, only the script, style and initial-state tags.
 	 *
-	 * @return void
+	 * @return TemplateResponse The base-layout page carrying the Files app's additional scripts.
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
 	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
-	private function loadFilesSurfaces(): void {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function filesSurfaces(): TemplateResponse {
 		// The Files app's own actions (download, delete, rename, favourite,
 		// move and copy, open in Files) are registered by its `init` script,
-		// which only the Files page loads. Every other app's actions arrive on
-		// the additional-scripts event below; this one has to be asked for.
-		// Guarded on the server's script pipeline: `Util::addScript` reaches
-		// into `OC\AppScriptDependency`, which a unit test process does not
-		// autoload, and the controller is rendered in those.
+		// which only the Files page loads; every other app's arrive on the
+		// additional-scripts event. Guarded on the server's script pipeline:
+		// `Util::addScript` reaches into `OC\AppScriptDependency`, which a unit
+		// test process does not autoload.
 		if (class_exists('OC\\AppScriptDependency') === true) {
 			Util::addScript('files', 'init');
 		}
 
-		foreach ($this->filesSurfaceEvents() as $eventClass) {
+		$this->dispatchLoadEvents(eventClasses: $this->surfaceEvents(which: 'files'));
+
+		return new TemplateResponse($this->appName, 'surfaces', [], TemplateResponse::RENDER_AS_BASE);
+	}//end filesSurfaces()
+
+	/**
+	 * Dispatch each named load event whose class exists on this instance.
+	 *
+	 * Looked up by name because neither the Viewer nor the Files app is a
+	 * dependency: an instance without them renders the page all the same.
+	 *
+	 * @param list<string> $eventClasses Class names of the load events.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	private function dispatchLoadEvents(array $eventClasses): void {
+		foreach ($eventClasses as $eventClass) {
 			if (class_exists($eventClass) === false) {
 				continue;
 			}
@@ -278,25 +303,30 @@ class DashboardController extends Controller {
 				$this->eventDispatcher->dispatchTyped($event);
 			}
 		}
-	}//end loadFilesSurfaces()
+	}//end dispatchLoadEvents()
 
 	/**
 	 * The event classes to look up, as a run-time list.
 	 *
-	 * Read through a method rather than straight off the constant so the
-	 * lookup is a real one: phpstan folds the constant's literal strings,
+	 * Read through a method rather than straight off the constants so the
+	 * lookup is a real one: phpstan folds the constants' literal strings,
 	 * finds neither class in this app's tree and calls `class_exists()` on
 	 * them impossible, while on an instance with the Files and Viewer apps
-	 * both exist. The declared type is what the analyser sees; the constant
-	 * stays the single place the names are written.
+	 * both exist.
+	 *
+	 * @param string $which `page` for every page's events, `files` for the files browser's.
 	 *
 	 * @return list<string> Class names, present or not on this instance.
 	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
-	private function filesSurfaceEvents(): array {
-		return self::FILES_SURFACE_EVENTS;
-	}//end filesSurfaceEvents()
+	private function surfaceEvents(string $which): array {
+		if ($which === 'files') {
+			return self::FILES_SURFACE_EVENTS;
+		}
+
+		return self::PAGE_SURFACE_EVENTS;
+	}//end surfaceEvents()
 
 	/**
 	 * Which structure this instance shows: `simple` or `full`.
