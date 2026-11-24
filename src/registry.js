@@ -101,6 +101,7 @@ import {
 } from './utils/caseBulkActions.js'
 import { claimCase } from './utils/caseClaim.js'
 import { declareCaseMajor, startCaseConversation } from './utils/caseConversation.js'
+import { openCaseFileInEditor } from './utils/caseFileEditor.js'
 import { toggleCaseFollow } from './utils/caseFollow.js'
 import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
@@ -1218,6 +1219,12 @@ const registry = {
 		kind: 'handler',
 		handler: declareCaseMajor,
 		_note: "The Contact tab's \"Groot incident melden\" card button: the same declaration the live-conversation panel runs (utils/caseConversation.js), for the open case.",
+	},
+	// @spec openspec/specs/case-management/spec.md
+	openCaseFileInEditor: {
+		kind: 'handler',
+		handler: openCaseFileInEditor,
+		_note: "The case Files tab's Open in editor row action. A function because the server first checks the case and the file and shares that one file with the caller for editing; only then is there a Files app link that opens it in the editor.",
 	},
 	// @spec openspec/specs/case-email-integration/spec.md
 	readFileAsMessage: {

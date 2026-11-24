@@ -2,7 +2,7 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Dossiq",
-        "version": "0.4.61-unstable.20261123071813",
+        "version": "0.4.62-unstable.20261124024405",
         "description": "The JSON API of Dossiq, the case management app for Nextcloud: cases and their tasks, deadlines, decisions, documents, mandates, work queues, intake and the settings behind them. The case objects themselves are stored in OpenRegister and read and written through its API; this document covers the endpoints Dossiq adds on top.\n\nEvery path is served under `/api/v1/`, the version this document describes. The unversioned `/api/` paths keep working, are deprecated, and name their `/api/v1/` successor in a `Link` header next to a `Deprecation` header. Errors are RFC 9457 problem details (`application/problem+json`), and every response carries an `API-Version` header. Paths that implement an external standard keep the formats of that standard and are not described here.",
         "contact": {
             "name": "Conduction B.V.",
@@ -9021,6 +9021,60 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/files/{fileId}/editor": {
+            "post": {
+                "operationId": "case-file-editor-open",
+                "summary": "Make one case file editable for the caller and answer with the link that opens it",
+                "description": "Make one case file editable for the caller and answer with the link that opens it. Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`, then the case folder, the file restriction and the document write rule, before the share. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-file-editor"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case the file is on.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The Nextcloud file id.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
                     },
                     "404": {
                         "$ref": "#/components/responses/Problem404"

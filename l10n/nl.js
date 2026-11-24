@@ -7372,6 +7372,8 @@ OC.L10N.register(
         "Read and write indications and case meetings": "Indicaties en casusoverleggen inzien en vastleggen",
         "Read and write the records of the dossiq register": "De gegevens van het dossiq-register inzien en vastleggen",
         "Read as a message": "Als bericht lezen",
+        "Open in editor": "Openen in editor",
+        "This file could not be opened for editing.": "Dit bestand kon niet worden geopend om te bewerken.",
         "Read at": "Gelezen op",
         "Read Confirmation On": "Leesbevestiging op",
         "Read how we handle this kind of case": "Lees hoe wij dit soort zaken behandelen",

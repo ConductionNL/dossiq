@@ -435,6 +435,8 @@ $extra = [
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
+    // The files browser's actions, fetched by the bundle on an object's page.
+    ['name' => 'dashboard#filesSurfaces', 'url' => '/files-surfaces',              'verb' => 'GET'],
 
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
@@ -1285,6 +1287,8 @@ $extra = [
         // to integriq's MessageParser and the parsed message is filed on the
         // case beside the original, which is never moved or deleted.
     ['name' => 'savedMail#read',                   'url' => '/api/cases/{caseId}/files/{fileId}/read-as-message', 'verb' => 'POST'],
+    // A case file opened in the editor: the file is shared with the caller for editing after the case checks.
+    ['name' => 'caseFileEditor#open',              'url' => '/api/cases/{caseId}/files/{fileId}/editor',      'verb' => 'POST'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
