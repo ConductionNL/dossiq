@@ -5,7 +5,21 @@
 			:errors="validationErrors"
 			@dismiss="validationErrors = []" />
 
-		<div class="workflow-editor__layout">
+		<!-- List view (board DqZaaktypeFlow): the same statuses and steps as the canvas -->
+		<WorkflowList
+			v-if="view === 'list'"
+			:statuses="statusNodes"
+			:steps="steps"
+			:trigger="flowTrigger"
+			:readOnly="isPublished"
+			@moveStep="onMoveStep"
+			@editStep="onEditStep"
+			@deleteStep="onStepDelete"
+			@addStep="onAddStep"
+			@editStatus="selectNode"
+			@deleteStatus="onDeleteStatusNode" />
+
+		<div v-else class="workflow-editor__layout">
 			<!-- Palette -->
 			<WorkflowPalette
 				class="workflow-editor__palette"
@@ -70,7 +84,18 @@
 			</div>
 		</div>
 
-		<!-- Side panels -->
+		<!-- Side panels: one per kind of step, the same in both views -->
+		<StatusStepPanel
+			v-if="selectedStatusData"
+			:status="selectedStatusData"
+			:steps="getStepsForStatus(selectedStatusData.id)"
+			:statuses="statusNodes"
+			:nextStatus="nextStatusOf(selectedStatusData.id)"
+			:readOnly="isPublished"
+			@update="onStatusStepUpdate"
+			@delete="onDeleteStatusNode"
+			@close="selectedNode = null" />
+
 		<StepConfigPanel
 			v-if="selectedStep"
 			:step="selectedStep"
@@ -92,8 +117,10 @@
 </template>
 
 <script>
+import StatusStepPanel from './components/StatusStepPanel.vue'
 import StepConfigPanel from './components/StepConfigPanel.vue'
 import TransitionConfigPanel from './components/TransitionConfigPanel.vue'
+import WorkflowList from './components/WorkflowList.vue'
 import WorkflowNode from './components/WorkflowNode.vue'
 import WorkflowPalette from './components/WorkflowPalette.vue'
 import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
@@ -105,10 +132,12 @@ import { caseTypeRows } from '../../utils/caseTypeRows.js'
 export default {
 	name: 'WorkflowEditor',
 	components: {
+		WorkflowList,
 		WorkflowNode,
 		WorkflowTransitionArrow,
 		WorkflowPalette,
 		WorkflowValidationBanner,
+		StatusStepPanel,
 		StepConfigPanel,
 		TransitionConfigPanel,
 	},
@@ -124,6 +153,12 @@ export default {
 		templateId: {
 			type: String,
 			default: null,
+		},
+
+		/** `canvas` or `list` (flow-page-list-beside-canvas): two views of one flow definition. */
+		view: {
+			type: String,
+			default: 'canvas',
 		},
 	},
 
@@ -181,6 +216,29 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodePositions() {
 			return this.workflowStore.parsedNodePositions
+		},
+
+		/**
+		 * The trigger the loaded template names, if any; the List view shows
+		 * "Case created" when it names none.
+		 *
+		 * @return {string|null} The trigger.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-the-list-shows-the-flow-in-order
+		 */
+		flowTrigger() {
+			const trigger = this.workflowStore.currentTemplate?.trigger
+			return typeof trigger === 'string' && trigger !== '' ? trigger : null
+		},
+
+		/**
+		 * The status whose step panel is open, if any.
+		 *
+		 * @return {object|null} The status.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-a-status-step-opens-its-panel
+		 */
+		selectedStatusData() {
+			if (!this.selectedNode) return null
+			return this.statusNodes.find((s) => s.id === this.selectedNode) || null
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -657,6 +715,88 @@ export default {
 			this.workflowStore.removeStep(stepId)
 			this.selectedStep = null
 			this.$emit('dirty')
+		},
+
+		/**
+		 * Move a step up or down from the List view. The store writes the new
+		 * order onto the one template the canvas reads too.
+		 *
+		 * @param {string} stepId UUID of the step
+		 * @param {string} direction `up` or `down`
+		 * @return {void}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-a-change-in-the-list-is-the-same-change-on-the-canvas
+		 */
+		onMoveStep(stepId, direction) {
+			if (this.workflowStore.moveStep(stepId, direction)) {
+				this.$emit('dirty')
+			}
+		},
+
+		/**
+		 * Open the step panel for a step chosen in the List view, the same
+		 * panel a step click on the canvas opens.
+		 *
+		 * @param {string} stepId UUID of the step
+		 * @return {void}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
+		onEditStep(stepId) {
+			const step = this.steps.find((s) => s.id === stepId)
+			if (step) {
+				this.onStepClick(step)
+			}
+		},
+
+		/**
+		 * The status a status moves on to: the target of its first outgoing
+		 * transition, or '' when it has none.
+		 *
+		 * @param {string} statusId UUID of the status
+		 * @return {string} UUID of the next status, or ''.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-a-status-step-opens-its-panel
+		 */
+		nextStatusOf(statusId) {
+			const outgoing = this.transitions.find((tr) => tr.fromStatus === statusId)
+			return outgoing ? outgoing.toStatus : ''
+		},
+
+		/**
+		 * Save a status step from its panel: the status object itself, then
+		 * its next status as its first outgoing transition (added when it has
+		 * none, retargeted when it has one, removed when cleared).
+		 *
+		 * @param {{status: object, nextStatus: (string|null)}} change What the panel changed.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
+		async onStatusStepUpdate({ status, nextStatus }) {
+			const saved = await this.objectStore.saveObject('statusType', status)
+			if (!saved) {
+				this.showValidationError(t('dossiq', 'Failed to save status'))
+				return
+			}
+			this.statusNodes = this.statusNodes.map((s) => (s.id === saved.id ? saved : s))
+			this.writeNextStatus(status.id, nextStatus)
+			this.$emit('dirty')
+		},
+
+		/**
+		 * Point a status's first outgoing transition at the chosen next status.
+		 *
+		 * @param {string} statusId UUID of the status
+		 * @param {string|null} nextStatus UUID of the next status, or null for none
+		 * @return {void}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
+		writeNextStatus(statusId, nextStatus) {
+			const outgoing = this.transitions.find((tr) => tr.fromStatus === statusId)
+			if (!outgoing && nextStatus) {
+				this.workflowStore.addTransition(statusId, nextStatus)
+			} else if (outgoing && !nextStatus) {
+				this.workflowStore.removeTransition(outgoing.id)
+			} else if (outgoing && outgoing.toStatus !== nextStatus) {
+				this.workflowStore.updateTransition(outgoing.id, { toStatus: nextStatus })
+			}
 		},
 
 		// --- Step management ---
