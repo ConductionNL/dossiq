@@ -690,6 +690,10 @@
                 "mandateField": "portalParty",
                 "referenceField": "identifier",
                 "statusLabelField": "statusPublicLabel",
+                "outcome": {
+                    "labelField": "resultPublicLabel",
+                    "descriptionField": "resultPublicDescription"
+                },
                 "caseTypeField": "caseType",
                 "caseTypeSource": {
                     "register": "dossiq",
@@ -1003,6 +1007,10 @@
             "mandateField": "portalParty",
             "referenceField": "identifier",
             "statusLabelField": "statusPublicLabel",
+            "outcome": {
+                "labelField": "resultPublicLabel",
+                "descriptionField": "resultPublicDescription"
+            },
             "caseTypeField": "caseType",
             "caseTypeSource": {
                 "register": "dossiq",
@@ -1821,6 +1829,10 @@
                 "mandateField": "portalParty",
                 "referenceField": "identifier",
                 "statusLabelField": "statusPublicLabel",
+                "outcome": {
+                    "labelField": "resultPublicLabel",
+                    "descriptionField": "resultPublicDescription"
+                },
                 "caseTypeField": "caseType",
                 "caseTypeSource": {
                     "register": "dossiq",
@@ -2135,6 +2147,10 @@
             "mandateField": "portalParty",
             "referenceField": "identifier",
             "statusLabelField": "statusPublicLabel",
+            "outcome": {
+                "labelField": "resultPublicLabel",
+                "descriptionField": "resultPublicDescription"
+            },
             "caseTypeField": "caseType",
             "caseTypeSource": {
                 "register": "dossiq",
