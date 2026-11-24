@@ -1476,3 +1476,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         reflection on the controller; the golden file unchanged), green before and after but for the constructor call.
         Own test: `tests/Unit/Controller/Support/WorkloadScopeTest` (3); dropping the empty-uid check turns it red
         (checked).
+  - [x] 8bx `Controller/EmailTemplateController` (1: CouplingBetweenObjects 15 against 13). The mail settings form is
+        its own surface, so its three routes go to their own controller, `EmailSettingsController`
+        (`emailSettings#getSettings`, `#saveSettings`, `#mailAccounts` in `appinfo/routes.php`; same URLs, verbs and
+        `AuthorizedAdminSetting` attributes, so `openapi.json`, which matches by URL, is unchanged), with the settings
+        keys. Bodies moved unchanged, the block list still written through `SenderBlocklistInterface`. The template
+        controller keeps the templates, the draft and the variables and no longer takes the app config, the mail
+        gateway or the block list (nine parameters to six); the container wires both. Coupling 12 and 11, complexity
+        21 and 13 (pdepend); phpmd: no finding on either file under both rulesets with the suppression gone.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` 190 to 189.
+        Characterisation: the existing `EmailTemplateControllerContractTest` (the anonymous refusals, the admin
+        check on the session uid, the case guard on the draft, the settings write without a password and through
+        the block list) and the mail card of `IntegrationProbesRecordTest`, green before and after; the settings
+        calls now go to the new controller, no assertion changed.
+        Own test: `tests/Unit/Controller/EmailSettingsControllerTest` (2: the anonymous refusal on all three routes
+        with nothing read, and the read of every settings key, empty when unset).

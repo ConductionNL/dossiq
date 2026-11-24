@@ -49,7 +49,7 @@ class EmailSettings implements IDelegatedSettings {
 	/**
 	 * Intake mailbox and poller config keys this section manages.
 	 *
-	 * Mirrors EmailTemplateController::IMAP_KEYS. There is no password key any
+	 * Mirrors EmailSettingsController::IMAP_KEYS. There is no password key any
 	 * more: Nextcloud Mail holds the account and the credential, so a delegated
 	 * admin here picks an account and names a folder and never sees a secret.
 	 *

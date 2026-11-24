@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\EmailSettingsController;
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
@@ -56,6 +57,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for EmailTemplateController.
  *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
+ * @covers \OCA\Dossiq\Controller\EmailSettingsController
  */
 class EmailTemplateControllerContractTest extends TestCase {
 
@@ -130,6 +132,13 @@ class EmailTemplateControllerContractTest extends TestCase {
 	private EmailTemplateController $controller;
 
 	/**
+	 * The mail settings controller under test (the settings routes left EmailTemplateController).
+	 *
+	 * @var EmailSettingsController
+	 */
+	private EmailSettingsController $settings;
+
+	/**
 	 * Build the controller with all collaborators mocked.
 	 *
 	 * @return void
@@ -151,10 +160,15 @@ class EmailTemplateControllerContractTest extends TestCase {
 			request: $this->request,
 			templateService: $this->templateService,
 			settingsService: $this->settingsService,
-			appConfig: $this->appConfig,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			caseAccessGuard: $this->caseAccessGuard,
+		);
+		$this->settings   = new EmailSettingsController(
+			request: $this->request,
+			templateService: $this->templateService,
+			appConfig: $this->appConfig,
+			userSession: $this->userSession,
 			mailGateway: $this->mailGateway,
 			blocklist: $this->blocklist,
 		);
@@ -208,7 +222,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$responses = [
 			'createTemplate' => $this->controller->createTemplate(caseTypeId: 'ct-1'),
 			'prefillDraft' => $this->controller->prefillDraft(caseId: 'case-1', templateId: 'tpl-1'),
-			'saveSettings' => $this->controller->saveSettings(),
+			'saveSettings' => $this->settings->saveSettings(),
 			'variables' => $this->controller->variables(caseTypeId: 'ct-1'),
 		];
 
@@ -404,7 +418,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				}
 			);
 
-		$response = $this->controller->saveSettings();
+		$response = $this->settings->saveSettings();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('7', $written['email_mail_account_id']['value']);
@@ -456,7 +470,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				}
 			);
 
-		$response = $this->controller->saveSettings();
+		$response = $this->settings->saveSettings();
 
 		$this->assertSame(['saved' => true], $response->getData());
 		$this->assertSame(['Spammer@Voorbeeld.NL', ' @reclame.nl'], $replaced);
