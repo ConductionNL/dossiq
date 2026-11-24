@@ -21,7 +21,8 @@
 
 ## 4. Tests and checks
 
-- [ ] 4.1 `tests/e2e/decision-table-advice.spec.ts`: the three scenarios of REQ-LHS-CASE-01.
+- [x] 4.1 `tests/e2e/decision-table-advice.spec.ts`: the three scenarios of REQ-LHS-CASE-01.
+  - Written, runs in nightly (`tests/e2e/decision-table-advice.spec.ts`, #6685); not run here, the live pass owns it.
 - [ ] 4.2 Newman: `tests/integration/packages/lhs-intervention.postman_collection.json` gains a recommend and an override call on an example handhavingszaak.
 - [ ] 4.3 Live pass against board DqHandhaving.
 - [x] 4.4 `openspec/parity/capabilities.json` row 7.10: built, evidence the header action and dialog, `reachedOn` CaseDetail.
