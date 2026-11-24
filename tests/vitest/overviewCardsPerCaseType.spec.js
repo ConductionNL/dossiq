@@ -9,7 +9,7 @@
  * while that list is empty, so a case type that lists nothing keeps today's
  * Overview. A domain card follows its own condition.
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'

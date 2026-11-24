@@ -25,7 +25,7 @@
  * are watched against a fake engine calendar by IntakeTermStartTest and
  * IntakeConfirmationTextTest.
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

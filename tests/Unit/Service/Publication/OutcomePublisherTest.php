@@ -131,6 +131,7 @@ class OutcomePublisherTest extends TestCase {
 				'publicationKind' => 'woo-besluit',
 				'wooCategory' => 'infocat014',
 				'caseReference' => 'case-1',
+				'sourceIdentifiers' => [['system' => 'dossiq', 'identifier' => 'case-1', 'public' => false]],
 				'period' => ['from' => '2025-01-01', 'to' => '2025-12-31'],
 			],
 			actual: $payload
@@ -138,7 +139,8 @@ class OutcomePublisherTest extends TestCase {
 	}//end testThePayloadOfACaseWithAPeriod()
 
 	/**
-	 * Without a case title the decision's title is used, then a fallback; no period without dates.
+	 * Without a case title the decision's title is used, then a fallback; no period without dates;
+	 * the case is the source identifier, and there is none without a case.
 	 *
 	 * @return void
 	 */
@@ -156,6 +158,14 @@ class OutcomePublisherTest extends TestCase {
 		$this->assertSame(expected: '', actual: $bare['summary']);
 		$this->assertSame(expected: '', actual: $bare['description']);
 		$this->assertSame(expected: 'infocat014', actual: $bare['wooCategory']);
+
+		$this->assertSame(
+			expected: [['system' => 'dossiq', 'identifier' => 'case-3', 'public' => false]],
+			actual: $bare['sourceIdentifiers']
+		);
+
+		$none = $publisher->buildPayload(case: [], decision: []);
+		$this->assertArrayNotHasKey(key: 'sourceIdentifiers', array: $none);
 
 		$half = $publisher->buildPayload(case: ['id' => 'c', 'wooRequest' => ['periodeVan' => '2025-01-01']], decision: []);
 		$this->assertSame(expected: ['from' => '2025-01-01', 'to' => ''], actual: $half['period']);
