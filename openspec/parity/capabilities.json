@@ -13881,7 +13881,7 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/tenders-run-on-the-tender-case-type",
-					"openspec/changes/screens-round12-domain-lists"
+					"openspec/changes/archive/2026-11-24-screens-round12-domain-lists"
 				],
 				"requirement": [
 					"openspec/specs/dossiq-procurement-tender-management :: REQ-TND-001 — Tenders SHALL be modelled as dossiq cases (`schema:Project`), not as a parallel domain object",
