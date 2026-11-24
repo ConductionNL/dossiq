@@ -223,6 +223,46 @@
 						}
 					},
 					{
+						"id": "supervision-plan-proposal",
+						"type": "object-table",
+						"title": "Suggested schedule",
+						"_note": "supervision-plan-page task 3, scenario 'The proposal waits for approval': the dates the risk frequency asks for, cut evenly to the capacity, on working days from today, highest risk first. It is read from GET /api/supervision-plans/year/{year}/schedule-proposal, which writes nothing (written: false), so nothing is planned by showing it. Accepting it (planning the inspections) is not offered: a field inspection needs a case and an inspector, which the proposal does not choose.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/supervision-plans/year/@workspace.year/schedule-proposal",
+								"responsePath": "categories"
+							},
+							"columns": [
+								{
+									"key": "name",
+									"label": "Category",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
+									"key": "demand",
+									"label": "Demanded by risk",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "proposed",
+									"label": "Proposed",
+									"class": "cn-table-col--end"
+								},
+								{
+									"key": "firstDate",
+									"label": "First visit",
+									"formatter": "date"
+								},
+								{
+									"key": "lastDate",
+									"label": "Last visit",
+									"formatter": "date"
+								}
+							],
+							"emptyText": "Nothing to propose for this year"
+						}
+					},
+					{
 						"id": "supervision-plan-risk",
 						"type": "object-table",
 						"title": "Frequency by risk",
@@ -343,6 +383,15 @@
 						"widgetId": "supervision-plan-risk",
 						"gridX": 0,
 						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 10,
+						"widgetId": "supervision-plan-proposal",
+						"gridX": 0,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"sizeToContent": true

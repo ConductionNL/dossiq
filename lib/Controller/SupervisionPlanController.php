@@ -165,6 +165,33 @@ class SupervisionPlanController extends Controller {
 	}//end scheduleProposal()
 
 	/**
+	 * The proposed schedule of the plan for a year, so the plan page shows it beside the year's figures.
+	 *
+	 * @param string $year The plan year, four digits.
+	 *
+	 * @no-admin-idor-exempt The plan is looked up by year in the caller's own OpenRegister scope (RBAC and multitenancy
+	 *                        on), so a plan the caller may not read answers 404, and the proposal is made as
+	 *                        scheduleProposal() makes it. It writes nothing.
+	 *
+	 * @return JSONResponse The proposal, or the refusal.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	#[NoAdminRequired]
+	public function scheduleProposalForYear(string $year): JSONResponse {
+		if (preg_match('/^\d{4}$/', $year) !== 1) {
+			return $this->refused(status: SupervisionPlanReader::NOT_FOUND);
+		}
+
+		$found = $this->reader->idForYear(year: (int)$year);
+		if ($found['status'] !== SupervisionPlanReader::FOUND) {
+			return $this->refused(status: $found['status']);
+		}
+
+		return $this->scheduleProposal(id: (string)($found['id'] ?? ''));
+	}//end scheduleProposalForYear()
+
+	/**
 	 * The refusal for a status the reader answered.
 	 *
 	 * @param int $status The status.

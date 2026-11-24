@@ -757,6 +757,7 @@ $extra = [
         // proposed schedule that is shown before anything is planned
         // (supervision-plan-page).
     ['name' => 'supervisionPlan#progressForYear',  'url' => '/api/supervision-plans/year/{year}/progress',   'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposalForYear', 'url' => '/api/supervision-plans/year/{year}/schedule-proposal', 'verb' => 'GET'],
     ['name' => 'supervisionPlan#progress',         'url' => '/api/supervision-plans/{id}/progress',          'verb' => 'GET'],
     ['name' => 'supervisionPlan#scheduleProposal', 'url' => '/api/supervision-plans/{id}/schedule-proposal', 'verb' => 'GET'],
         // Per-case advice requests, on any case type.

@@ -8,6 +8,7 @@
  * progress endpoint, so the page stores nothing of its own.
  *
  * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+ * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
  */
 
 import fs from 'fs'
@@ -41,7 +42,7 @@ describe('the Supervision plan page', () => {
 
 	it('reads every figure from the year progress endpoint the routes declare', () => {
 		expect(ROUTES).toContain("'url' => '/api/supervision-plans/year/{year}/progress'")
-		const reading = page.config.widgets.filter((w) => w.type !== 'workspace-filter')
+		const reading = page.config.widgets.filter((w) => w.type !== 'workspace-filter' && w.id !== 'supervision-plan-proposal')
 		expect(reading.length).toBeGreaterThan(0)
 		for (const w of reading) {
 			expect(w.content.endpointSource.url, w.id).toBe(PROGRESS)
@@ -67,6 +68,18 @@ describe('the Supervision plan page', () => {
 		expect(keys('supervision-plan-quarters')).toEqual(['quarter', 'scheduled', 'completed', 'cancelled', 'remaining', 'forecast'])
 		expect(widget('supervision-plan-risk').content.endpointSource.responsePath).toBe('risk')
 		expect(keys('supervision-plan-risk')).toEqual(['category', 'profile', 'objects', 'visitsPerYear', 'demand'])
+	})
+
+	it('shows the suggested schedule per category from the year proposal endpoint, which writes nothing', () => {
+		expect(ROUTES).toContain("'url' => '/api/supervision-plans/year/{year}/schedule-proposal'")
+		const proposal = widget('supervision-plan-proposal').content
+		expect(proposal.endpointSource).toEqual({
+			url: '/apps/dossiq/api/supervision-plans/year/@workspace.year/schedule-proposal',
+			responsePath: 'categories',
+		})
+		expect(proposal.columns.map((c) => c.key)).toEqual(['name', 'demand', 'proposed', 'firstDate', 'lastDate'])
+		expect(proposal.columns.filter((c) => c.formatter === 'date').map((c) => c.key)).toEqual(['firstDate', 'lastDate'])
+		expect(page.config.headerActions ?? []).toEqual([])
 	})
 
 	it('places every widget exactly once, and nothing that is not declared', () => {

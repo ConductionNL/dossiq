@@ -168,7 +168,10 @@ final class SupervisionScheduleProposal {
 	 * @param float                $share    The share of the demand that fits.
 	 * @param list<string>         $workdays The working days left in the year.
 	 *
-	 * @return array<string, mixed> The category's proposal.
+	 * @return array<string, mixed> The category's proposal, with its first and last visit date ('' when none) so a
+	 *                              table row can say the span without reading the visits.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
 	 */
 	private function categoryProposal(array $category, float $share, array $workdays): array {
 		$visits = [];
@@ -187,11 +190,13 @@ final class SupervisionScheduleProposal {
 		}
 
 		return [
-			'id'       => $this->progress->idOf(record: $category),
-			'name'     => (string)($category['name'] ?? ''),
-			'demand'   => $this->progress->demandOf(category: $category),
-			'proposed' => count($dated),
-			'visits'   => $dated,
+			'id'        => $this->progress->idOf(record: $category),
+			'name'      => (string)($category['name'] ?? ''),
+			'demand'    => $this->progress->demandOf(category: $category),
+			'proposed'  => count($dated),
+			'firstDate' => (string)($dated[0]['date'] ?? ''),
+			'lastDate'  => (string)($dated[count($dated) - 1]['date'] ?? ''),
+			'visits'    => $dated,
 		];
 	}//end categoryProposal()
 
