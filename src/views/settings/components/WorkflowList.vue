@@ -21,9 +21,11 @@
 				:data-testid="'workflow-list-row-' + row.id">
 				<span class="workflow-list__number">{{ row.number }}</span>
 				<span class="workflow-list__label">{{ row.label }}</span>
-				<span class="workflow-list__pill" :class="['workflow-list__pill--' + row.kind]">
-					{{ kindLabel(row.kind) }}
-				</span>
+				<CnStatusBadge
+					class="workflow-list__pill"
+					:label="kindLabel(row.kind)"
+					:variant="row.kind === 'status' ? 'primary' : 'default'"
+					size="small" />
 				<span class="workflow-list__actions">
 					<template v-if="row.kind !== 'status'">
 						<button
@@ -66,6 +68,14 @@
 						<button
 							type="button"
 							class="workflow-list__action"
+							:aria-label="t('dossiq', 'Edit {name}', { name: row.label })"
+							data-testid="workflow-list-edit-status"
+							@click="$emit('editStatus', row.statusId)">
+							{{ t('dossiq', 'Edit') }}
+						</button>
+						<button
+							type="button"
+							class="workflow-list__action"
 							:disabled="readOnly"
 							:aria-label="t('dossiq', 'Add a step to {name}', { name: row.label })"
 							data-testid="workflow-list-add-step"
@@ -92,10 +102,12 @@
 </template>
 
 <script>
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { DEFAULT_TRIGGER, flowListRows } from '../../../utils/flowList.js'
 
 export default {
 	name: 'WorkflowList',
+	components: { CnStatusBadge },
 
 	props: {
 		statuses: {
@@ -119,7 +131,7 @@ export default {
 		},
 	},
 
-	emits: ['moveStep', 'editStep', 'deleteStep', 'addStep', 'deleteStatus'],
+	emits: ['moveStep', 'editStep', 'deleteStep', 'addStep', 'editStatus', 'deleteStatus'],
 
 	computed: {
 		/**
@@ -202,16 +214,6 @@ export default {
 	font-weight: bold;
 }
 
-.workflow-list__pill {
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius-pill);
-	font-size: 0.85em;
-	padding: 2px 10px;
-}
-
-.workflow-list__pill--status {
-	background: var(--color-primary-element-light);
-}
 
 .workflow-list__actions {
 	display: flex;

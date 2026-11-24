@@ -5,21 +5,20 @@
 			<h2 class="workflow-tab__title" data-testid="workflow-flow-title">
 				{{ caseTypeTitle }}
 			</h2>
-			<span
+			<CnStatusBadge
 				v-if="currentTemplate"
-				class="workflow-tab__pill"
-				data-testid="workflow-flow-version">
-				{{ t('dossiq', 'Version {version}', { version: currentTemplate.version }) }}
-			</span>
-			<span
+				:label="t('dossiq', 'Version {version}', { version: currentTemplate.version })"
+				size="small"
+				data-testid="workflow-flow-version" />
+			<CnStatusBadge
 				v-if="currentTemplate"
-				class="workflow-tab__pill workflow-tab__pill--state"
-				data-testid="workflow-flow-state">
-				{{ stateLabel }}
-			</span>
+				:label="stateLabel"
+				:variant="currentTemplate.isDraft ? 'warning' : 'success'"
+				size="small"
+				data-testid="workflow-flow-state" />
 			<span class="workflow-tab__header-actions">
 				<NcButton
-					type="secondary"
+					variant="secondary"
 					:disabled="!selectedVersionId"
 					data-testid="workflow-flow-check"
 					@click="check">
@@ -27,7 +26,7 @@
 				</NcButton>
 				<span class="workflow-tab__more">
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-expanded="moreOpen ? 'true' : 'false'"
 						data-testid="workflow-flow-more"
 						@click="moreOpen = !moreOpen">
@@ -62,7 +61,7 @@
 					</ul>
 				</span>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!(currentIsDraft && dirty) || saving"
 					data-testid="workflow-flow-save"
 					@click="save">
@@ -232,6 +231,7 @@
 </template>
 
 <script>
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowEditor from '../WorkflowEditor.vue'
 import { objectStoreAccess } from '../../../mixins/objectStore.js'
@@ -241,6 +241,7 @@ import { caseTypeParts } from '../../../utils/caseTypeRows.js'
 export default {
 	name: 'WorkflowTab',
 	components: {
+		CnStatusBadge,
 		NcButton,
 		NcLoadingIcon,
 		WorkflowEditor,
@@ -631,16 +632,6 @@ export default {
 	margin: 0;
 }
 
-.workflow-tab__pill {
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius-pill);
-	font-size: 0.85em;
-	padding: 2px 10px;
-}
-
-.workflow-tab__pill--state {
-	background: var(--color-primary-element-light);
-}
 
 .workflow-tab__header-actions {
 	display: flex;
@@ -682,7 +673,7 @@ export default {
 
 .workflow-tab__switch {
 	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius-pill);
+	border-radius: var(--border-radius-large);
 	display: inline-flex;
 	overflow: hidden;
 }

@@ -18,7 +18,7 @@ import { h, reactive } from 'vue'
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: {
 		name: 'NcButton',
-		props: ['type', 'disabled'],
+		props: ['type', 'variant', 'disabled'],
 		emits: ['click'],
 		render() {
 			return h('button', { disabled: this.disabled, onClick: () => this.$emit('click') }, this.$slots.default?.())
@@ -71,6 +71,15 @@ async function mountTab(props) {
 	return w
 }
 
+/**
+ * @param {object} w The wrapper.
+ * @param {string} which version or state.
+ * @return {string} The label the header's badge carries.
+ */
+function badge(w, which) {
+	return w.find(`[data-testid="workflow-flow-${which}"]`).attributes('label')
+}
+
 beforeEach(() => {
 	vi.clearAllMocks()
 	validate.mockImplementation(() => true)
@@ -90,8 +99,8 @@ describe('the flow page header row', () => {
 		const w = await mountTab({ boardHeader: true })
 		expect(objectStore.fetchObject).toHaveBeenCalledWith('caseType', 'ct-1')
 		expect(w.find('[data-testid="workflow-flow-title"]').text()).toBe('Environmental permit regular')
-		expect(w.find('[data-testid="workflow-flow-version"]').text()).toBe('Version 2')
-		expect(w.find('[data-testid="workflow-flow-state"]').text()).toBe('Draft')
+		expect(badge(w, 'version')).toBe('Version 2')
+		expect(badge(w, 'state')).toBe('Draft')
 		expect(w.find('[data-testid="workflow-flow-save"]').attributes('disabled')).toBeDefined()
 		expect(w.find('.workflow-tab__actions').exists()).toBe(false)
 	})
@@ -136,10 +145,10 @@ describe('the flow page header row', () => {
 			workflowStore.currentTemplate = { id: 'v1', version: 1, isDraft: false, isActive: true }
 		})
 		const w = await mountTab({ boardHeader: true })
-		expect(w.find('[data-testid="workflow-flow-state"]').text()).toBe('Active')
+		expect(badge(w, 'state')).toBe('Active')
 		workflowStore.currentTemplate = { id: 'v0', version: 0, isDraft: false, isActive: false }
 		await flushPromises()
-		expect(w.find('[data-testid="workflow-flow-state"]').text()).toBe('Published')
+		expect(badge(w, 'state')).toBe('Published')
 	})
 
 	it('keeps the toolbar buttons where the case type page embeds the tab without the header', async () => {

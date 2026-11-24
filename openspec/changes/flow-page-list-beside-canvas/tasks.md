@@ -8,6 +8,12 @@ flow-definition widget exists to add a list mode to. Both views read and write t
 template through the workflow store, which is what the requirement asks. Moving the whole
 editor into the library is its own change.
 
+Decision (24 Nov 2026): on a status step, "Step name" is the status's own name, "Name of the
+status" is its public label (what a resident reads), "Deadline in this status" is
+`phaseTermDays`, and "Next status" is the target of the status's first outgoing transition
+(added when it has none, retargeted when it has one, removed when cleared). Choosing a status
+on the canvas opens the same panel.
+
 ### Task 1: Header row and the Canvas | List switch
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas`
 - **files**: `src/manifest.json` (CaseTypeFlow page), `l10n/en.json`, `l10n/nl.json`
@@ -24,8 +30,8 @@ editor into the library is its own change.
 ### Task 3: The step side panel
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views`
 - **files**: nextcloud-vue step panel, `src/manifest.json`
-- [ ] Fields and buttons as the board draws them, in both views
-- [ ] Test: the panel's fields per step kind
+- [x] Fields and buttons as the board draws them, in both views (`StatusStepPanel.vue` for a status step: Step name, Name of the status, Steps in this status, Next status, Deadline in this status, Done, Delete step; a task step keeps `StepConfigPanel` and gains Done; the same panel opens from a List row and from the canvas)
+- [x] Test: the panel's fields per step kind (`tests/vitest/flowPageListBesideCanvas.spec.js` StatusStepPanel and editor status step; `workflowPanelsThroughTheDom.spec.js` Done on a task step)
 
 ### Task 4: Live pass
 - [ ] compdiff of DqZaaktypeFlow on the demo stack, English board

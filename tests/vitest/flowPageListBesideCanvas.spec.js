@@ -47,6 +47,7 @@ vi.mock('../../src/views/settings/components/TransitionConfigPanel.vue', () => (
 const { flowListRows, moveStepWithin, stepKind, DEFAULT_TRIGGER } = await import('../../src/utils/flowList.js')
 const { default: WorkflowList } = await import('../../src/views/settings/components/WorkflowList.vue')
 const { default: WorkflowEditor } = await import('../../src/views/settings/WorkflowEditor.vue')
+const { default: StatusStepPanel } = await import('../../src/views/settings/components/StatusStepPanel.vue')
 const { useWorkflowStore } = await import('../../src/store/modules/workflow.js')
 
 const statuses = [
@@ -125,7 +126,7 @@ describe('WorkflowList', () => {
 		const rows = wrapper.findAll('li').map((li) => [
 			li.find('.workflow-list__number').text(),
 			li.find('.workflow-list__label').text(),
-			li.find('.workflow-list__pill').text(),
+			li.find('.workflow-list__pill').attributes('label'),
 		].join(' '))
 		expect(rows).toEqual([
 			'1 Received Status',
@@ -217,6 +218,153 @@ describe('WorkflowEditor in the List view', () => {
 		const wrapper = mountList(store)
 		await flushPromises()
 		wrapper.vm.onMoveStep('st-check', 'up')
+		expect(wrapper.emitted('dirty')).toBeFalsy()
+	})
+})
+
+describe('StatusStepPanel', () => {
+	/**
+	 * @param {object} props Extra props.
+	 * @return {object} The mounted panel on the status In progress.
+	 */
+	function mountPanel(props = {}) {
+		return mount(StatusStepPanel, {
+			props: {
+				status: { id: 's-progress', name: 'In progress', publicLabel: 'Being handled', phaseTermDays: 10 },
+				steps: [{ id: 'st-a', title: 'Assess' }],
+				statuses,
+				nextStatus: 's-received',
+				...props,
+			},
+		})
+	}
+
+	it('shows Step name, Name of the status, Steps in this status, Next status and Deadline, with Done and Delete step', () => {
+		const w = mountPanel()
+		expect(w.find('[data-testid="status-step-name"]').element.value).toBe('In progress')
+		expect(w.find('[data-testid="status-step-public-label"]').element.value).toBe('Being handled')
+		expect(w.find('[data-testid="status-step-steps"]').text()).toBe('Assess')
+		const options = w.findAll('[data-testid="status-step-next"] option').map((o) => o.text())
+		expect(options).toEqual(['None', 'Received'])
+		expect(w.find('[data-testid="status-step-next"]').element.value).toBe('s-received')
+		expect(w.find('[data-testid="status-step-deadline"]').element.value).toBe('10')
+		expect(w.text()).toContain('Delete step')
+		expect(w.text()).toContain('Done')
+	})
+
+	it('hands the changed fields to the editor on Done and closes', async () => {
+		const w = mountPanel()
+		await w.find('[data-testid="status-step-name"]').setValue('  Assessment  ')
+		await w.find('[data-testid="status-step-next"]').setValue('')
+		await w.find('[data-testid="status-step-deadline"]').setValue('5')
+		w.vm.done()
+		const [[change]] = w.emitted('update')
+		expect(change.status).toMatchObject({ id: 's-progress', name: 'Assessment', publicLabel: 'Being handled', phaseTermDays: 5 })
+		expect(change.nextStatus).toBeNull()
+		expect(w.emitted('close')).toHaveLength(1)
+	})
+
+	it('keeps the old name when the field is emptied and drops a negative deadline', () => {
+		const w = mountPanel()
+		w.vm.local.name = '   '
+		w.vm.local.phaseTermDays = -3
+		w.vm.done()
+		const [[change]] = w.emitted('update')
+		expect(change.status.name).toBe('In progress')
+		expect(change.status.phaseTermDays).toBeNull()
+		expect(change.nextStatus).toBe('s-received')
+	})
+
+	it('only closes on a published flow and offers no Delete step there', () => {
+		const w = mountPanel({ readOnly: true })
+		expect(w.find('[data-testid="status-step-delete"]').exists()).toBe(false)
+		w.vm.done()
+		expect(w.emitted('update')).toBeFalsy()
+		expect(w.emitted('close')).toHaveLength(1)
+	})
+
+	it('emits delete with the status id and re-reads a new status', async () => {
+		const w = mountPanel()
+		w.vm.$emit('delete', 's-progress')
+		expect(w.emitted('delete')).toEqual([['s-progress']])
+		await w.setProps({ status: { id: 's-received', name: 'Received' }, nextStatus: '' })
+		expect(w.vm.local).toEqual({ name: 'Received', publicLabel: '', nextStatus: '', phaseTermDays: null })
+	})
+})
+
+describe('WorkflowEditor status step', () => {
+	/**
+	 * @param {Array<object>} transitions The template's transitions.
+	 * @param {object|null} saved What saving the status answers.
+	 * @return {Promise<{wrapper: object, store: object, objectStore: object}>} The editor in list view.
+	 */
+	async function mountWithStatusPanel(transitions, saved) {
+		const store = {
+			currentTemplate: { id: 'tpl-1', isDraft: true },
+			parsedSteps: steps,
+			parsedTransitions: transitions,
+			parsedNodePositions: {},
+			getTemplate: vi.fn(() => Promise.resolve(null)),
+			updateNodePosition: vi.fn(),
+			addTransition: vi.fn(),
+			removeTransition: vi.fn(),
+			updateTransition: vi.fn(),
+		}
+		const objectStore = {
+			fetchCollection: vi.fn(() => Promise.resolve(statuses.map((s) => ({ ...s })))),
+			saveObject: vi.fn(() => Promise.resolve(saved)),
+		}
+		const wrapper = mount(
+			{
+				...WorkflowEditor,
+				computed: {
+					...WorkflowEditor.computed,
+					workflowStore: () => store,
+					objectStore: () => objectStore,
+				},
+			},
+			{ props: { caseTypeId: 'ct-1', templateId: 'tpl-1', view: 'list' } },
+		)
+		await flushPromises()
+		return { wrapper, store, objectStore }
+	}
+
+	it('opens the status step panel from the list and reads its next status from the transitions', async () => {
+		const { wrapper } = await mountWithStatusPanel([{ id: 'tr-1', fromStatus: 's-received', toStatus: 's-progress' }], null)
+		await wrapper.find('[data-testid="workflow-list-row-s-received"] [data-testid="workflow-list-edit-status"]').trigger('click')
+		const panel = wrapper.findComponent(StatusStepPanel)
+		expect(panel.exists()).toBe(true)
+		expect(panel.props('nextStatus')).toBe('s-progress')
+		expect(panel.props('steps').map((s) => s.id)).toEqual(['st-check', 'st-confirm'])
+	})
+
+	it('saves the status and retargets its outgoing transition', async () => {
+		const saved = { id: 's-received', name: 'Intake', order: 1 }
+		const { wrapper, store, objectStore } = await mountWithStatusPanel([{ id: 'tr-1', fromStatus: 's-received', toStatus: 's-progress' }], saved)
+		await wrapper.vm.onStatusStepUpdate({ status: { id: 's-received', name: 'Intake' }, nextStatus: 's-other' })
+		expect(objectStore.saveObject).toHaveBeenCalledWith('statusType', { id: 's-received', name: 'Intake' })
+		expect(store.updateTransition).toHaveBeenCalledWith('tr-1', { toStatus: 's-other' })
+		expect(wrapper.vm.statusNodes.find((s) => s.id === 's-received').name).toBe('Intake')
+		expect(wrapper.emitted('dirty')).toBeTruthy()
+	})
+
+	it('adds a transition when there was none and removes it when cleared', async () => {
+		const added = await mountWithStatusPanel([], { id: 's-progress', name: 'In progress' })
+		await added.wrapper.vm.onStatusStepUpdate({ status: { id: 's-progress' }, nextStatus: 's-received' })
+		expect(added.store.addTransition).toHaveBeenCalledWith('s-progress', 's-received')
+		const removed = await mountWithStatusPanel([{ id: 'tr-9', fromStatus: 's-progress', toStatus: 's-received' }], { id: 's-progress' })
+		await removed.wrapper.vm.onStatusStepUpdate({ status: { id: 's-progress' }, nextStatus: null })
+		expect(removed.store.removeTransition).toHaveBeenCalledWith('tr-9')
+		const same = await mountWithStatusPanel([{ id: 'tr-9', fromStatus: 's-progress', toStatus: 's-received' }], { id: 's-progress' })
+		await same.wrapper.vm.onStatusStepUpdate({ status: { id: 's-progress' }, nextStatus: 's-received' })
+		expect(same.store.updateTransition).not.toHaveBeenCalled()
+	})
+
+	it('says so when the status cannot be saved and changes nothing else', async () => {
+		const { wrapper, store } = await mountWithStatusPanel([], null)
+		await wrapper.vm.onStatusStepUpdate({ status: { id: 's-progress' }, nextStatus: 's-received' })
+		expect(wrapper.vm.validationErrors).toEqual([{ type: 'error', message: 'Failed to save status' }])
+		expect(store.addTransition).not.toHaveBeenCalled()
 		expect(wrapper.emitted('dirty')).toBeFalsy()
 	})
 })
