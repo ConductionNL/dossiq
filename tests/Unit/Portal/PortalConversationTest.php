@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Portal\PortalConversation
  * @covers \OCA\Dossiq\Portal\CitizenManifest
+ * @uses \OCA\Dossiq\Portal\CitizenCaseCollection
  * @uses   \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  */
