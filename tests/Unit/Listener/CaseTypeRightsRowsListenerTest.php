@@ -200,17 +200,34 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 	}//end testCompiledRowsAreKeptAndKeptRowsAreReused()
 
 	/**
-	 * An empty compile, as a failed case type read returns, is not kept.
+	 * No case types (a failed read), or no rows from matrices that have some (a failed role read), is not kept.
 	 *
 	 * @return void
 	 */
-	public function testAnEmptyCompileIsNotKept(): void {
-		$this->store->method('everyCaseType')->willReturn([]);
+	public function testACompileThatMayHaveFailedIsNotKept(): void {
 		$this->caseTypeRows->method('rows')->willReturn([]);
 		$this->cache->expects($this->never())->method('remember');
 
+		$this->store->method('everyCaseType')->willReturnOnConsecutiveCalls(
+			[],
+			[['id' => 'ct-live', 'rightsMatrix' => [['role' => 'role-1']]]]
+		);
 		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
-	}//end testAnEmptyCompileIsNotKept()
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+	}//end testACompileThatMayHaveFailedIsNotKept()
+
+	/**
+	 * Case types without a rights matrix compile to no rows, and that answer is kept.
+	 *
+	 * @return void
+	 */
+	public function testCaseTypesWithoutAMatrixKeepTheEmptyAnswer(): void {
+		$this->store->method('everyCaseType')->willReturn([['id' => 'ct-live'], ['id' => 'ct-other', 'rightsMatrix' => []]]);
+		$this->caseTypeRows->method('rows')->willReturn([]);
+		$this->cache->expects($this->once())->method('remember')->with([]);
+
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+	}//end testCaseTypesWithoutAMatrixKeepTheEmptyAnswer()
 
 	/**
 	 * Another provider's request is not answered.

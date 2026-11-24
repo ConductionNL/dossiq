@@ -20,8 +20,8 @@
  *
  * The compiled case type rows do not depend on the caller and are kept for a
  * minute in {@see \OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache}; a case
- * type or organisation role change drops them at once. An empty compile is
- * not kept, so a failed read costs one request, not a minute.
+ * type or organisation role change drops them at once. A compile that may
+ * come from a failed read is not kept, so it costs one request, not a minute.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -127,13 +127,43 @@ class CaseTypeRightsRowsListener implements IEventListener {
 			return $kept;
 		}
 
-		$rows = $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped());
-		if ($rows !== []) {
+		$caseTypes = $this->currentCaseTypes();
+		$rows = $this->sources->caseTypes->rows(caseTypes: $caseTypes, roles: $this->roles->allUnscoped());
+		if (self::worthKeeping(caseTypes: $caseTypes, rows: $rows) === true) {
 			$this->sources->kept->remember(rows: $rows);
 		}
 
 		return $rows;
 	}//end caseTypeRows()
+
+	/**
+	 * Whether a compile can be kept: it read case types, and it is empty only when no matrix asks for rows.
+	 *
+	 * A read that failed answers no case types, and a role read that failed
+	 * answers no rows for matrices that have some; neither is kept.
+	 *
+	 * @param array<int, array{id: string, rightsMatrix: mixed}> $caseTypes The current case types.
+	 * @param array<int, array<string, mixed>>                   $rows      The compiled rows.
+	 *
+	 * @return bool
+	 */
+	private static function worthKeeping(array $caseTypes, array $rows): bool {
+		if ($caseTypes === []) {
+			return false;
+		}
+
+		if ($rows !== []) {
+			return true;
+		}
+
+		foreach ($caseTypes as $caseType) {
+			if (empty($caseType['rightsMatrix']) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end worthKeeping()
 
 	/**
 	 * The published, not superseded case types with their rights rows.
