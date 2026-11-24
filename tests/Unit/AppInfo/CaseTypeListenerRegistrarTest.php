@@ -17,6 +17,7 @@ use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
+use OCA\Dossiq\Listener\RequestReadsForgetListener;
 use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -53,6 +54,9 @@ class CaseTypeListenerRegistrarTest extends TestCase {
 		$expected[] = [ObjectUpdatedEvent::class, CaseTeamAccessListener::class, 0];
 		$expected[] = [ObjectUpdatingEvent::class, CaseDeadlineFollowsTermListener::class, -110];
 		$expected[] = [ObjectUpdatingEvent::class, ApplicantTermNoteListener::class, -120];
+		foreach (RequestReadsForgetListener::EVENTS as $event) {
+			$expected[] = [$event, RequestReadsForgetListener::class, CaseTypeListenerRegistrar::STORE_FORGET_PRIORITY];
+		}
 
 		self::assertSame($expected, $this->listeners);
 	}//end testEveryListenerIsRegisteredWithItsPriority()

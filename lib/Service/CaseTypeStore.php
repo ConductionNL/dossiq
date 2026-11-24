@@ -47,7 +47,7 @@ use Throwable;
  * A row or list read once is kept for the rest of the request: answering one
  * case page asked for the same case type and its status types many times. Any
  * object create, update or delete in the request drops what is kept
- * ({@see \OCA\Dossiq\Listener\CaseTypeStoreForgetListener}), and a failed read
+ * ({@see \OCA\Dossiq\Listener\RequestReadsForgetListener}), and a failed read
  * is not kept.
  *
  * @psalm-suppress UnusedClass

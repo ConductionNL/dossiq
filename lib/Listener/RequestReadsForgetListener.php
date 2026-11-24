@@ -1,12 +1,13 @@
 <?php
 
 /**
- * Drops the case type store's request reads when an object changes.
+ * Drops the configuration rows read earlier in the request when an object changes.
  *
- * {@see \OCA\Dossiq\Service\CaseTypeStore} keeps what it read for the rest of
- * the request. A create, update or delete of any OpenRegister object in the
- * same request drops it, so a service that saves a case type, a status type or
- * a template and reads it back sees what it saved.
+ * {@see \OCA\Dossiq\Service\CaseTypeStore} and
+ * {@see \OCA\Dossiq\Service\Transitions\StatusTypeLookup} keep what they read
+ * for the rest of the request. A create, update or delete of any OpenRegister
+ * object in the same request drops it, so a service that saves a case type, a
+ * status type or a template and reads it back sees what it saved.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,17 +31,18 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
 /**
- * Forgets the case type store's request reads on any object change.
+ * Forgets the request's configuration reads on any object change.
  *
  * @template-implements IEventListener<Event>
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStoreForgetListener implements IEventListener {
+class RequestReadsForgetListener implements IEventListener {
 	/**
 	 * The object events, by name: OpenRegister may be absent.
 	 */
@@ -53,15 +55,17 @@ class CaseTypeStoreForgetListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStoreInterface $store The case type store.
+	 * @param CaseTypeStoreInterface     $store       The case type store.
+	 * @param StatusTypeLookupInterface $statusTypes The status type reads.
 	 */
 	public function __construct(
 		private readonly CaseTypeStoreInterface $store,
+		private readonly StatusTypeLookupInterface $statusTypes,
 	) {
 	}//end __construct()
 
 	/**
-	 * Forget the store's reads when the event is an object change.
+	 * Forget the kept reads when the event is an object change.
 	 *
 	 * @param Event $event The event.
 	 *
@@ -73,6 +77,7 @@ class CaseTypeStoreForgetListener implements IEventListener {
 		foreach (self::EVENTS as $name) {
 			if (is_a($event, $name) === true) {
 				$this->store->forget();
+				$this->statusTypes->forget();
 				return;
 			}
 		}

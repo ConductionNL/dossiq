@@ -23,9 +23,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Listener\CaseTypeStoreForgetListener;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
+use OCA\Dossiq\Listener\RequestReadsForgetListener;
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -36,7 +39,8 @@ use RuntimeException;
  * Unit tests for the store's request reads.
  *
  * @covers \OCA\Dossiq\Service\CaseTypeStore
- * @covers \OCA\Dossiq\Listener\CaseTypeStoreForgetListener
+ * @covers \OCA\Dossiq\Listener\RequestReadsForgetListener
+ * @covers \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 class CaseTypeStoreRequestReadsTest extends TestCase {
 
@@ -80,12 +84,21 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 	 * @return CaseTypeStore
 	 */
 	private function store(): CaseTypeStore {
+		return new CaseTypeStore(settingsService: $this->settings());
+	}//end store()
+
+	/**
+	 * Settings over the double, with every schema configured.
+	 *
+	 * @return SettingsService
+	 */
+	private function settings(): SettingsService {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => $key === 'register' ? '42' : '65');
 
-		return new CaseTypeStore(settingsService: $settings);
-	}//end store()
+		return $settings;
+	}//end settings()
 
 	/**
 	 * A case type and a list read twice ask OpenRegister once each.
@@ -127,7 +140,9 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 	 */
 	public function testAnObjectChangeDropsTheKeptReads(): void {
 		$store = $this->store();
-		$listener = new CaseTypeStoreForgetListener(store: $store);
+		$statusTypes = $this->createMock(originalClassName: StatusTypeLookupInterface::class);
+		$statusTypes->expects($this->once())->method('forget');
+		$listener = new RequestReadsForgetListener(store: $store, statusTypes: $statusTypes);
 		$store->readCaseType(caseTypeId: 'ct-1');
 
 		$listener->handle(new Event());
@@ -137,4 +152,23 @@ class CaseTypeStoreRequestReadsTest extends TestCase {
 		$listener->handle(new ObjectUpdatedEvent(new ObjectEntity(), new ObjectEntity()));
 		$this->assertSame(expected: 'Read 2', actual: $store->readCaseType(caseTypeId: 'ct-1')['title']);
 	}//end testAnObjectChangeDropsTheKeptReads()
+
+	/**
+	 * A status type read twice asks OpenRegister once; forget() asks again.
+	 *
+	 * @return void
+	 */
+	public function testAStatusTypeIsReadOncePerRequest(): void {
+		$lookup = new StatusTypeLookup(
+			settingsService: $this->settings(),
+			caseTypeResolver: $this->createMock(originalClassName: CaseTypeResolver::class)
+		);
+
+		$this->assertSame(expected: $lookup->rowFor(statusTypeId: 'st-1'), actual: $lookup->rowFor(statusTypeId: 'st-1'));
+		$this->assertSame(expected: 1, actual: $this->objects->finds);
+
+		$lookup->forget();
+		$lookup->rowFor(statusTypeId: 'st-1');
+		$this->assertSame(expected: 2, actual: $this->objects->finds);
+	}//end testAStatusTypeIsReadOncePerRequest()
 }//end class

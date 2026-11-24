@@ -105,4 +105,13 @@ interface StatusTypeLookupInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function rowsOf(string $caseTypeId): array;
+
+	/**
+	 * Forget the status types read earlier in this request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function forget(): void;
 }//end interface

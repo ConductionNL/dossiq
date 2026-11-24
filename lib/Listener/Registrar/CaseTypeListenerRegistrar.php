@@ -37,7 +37,7 @@ use OCA\Dossiq\Listener\CaseOpeningDefaultsListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
-use OCA\Dossiq\Listener\CaseTypeStoreForgetListener;
+use OCA\Dossiq\Listener\RequestReadsForgetListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -104,8 +104,8 @@ class CaseTypeListenerRegistrar {
 		$this->registerSavedListeners(context: $context);
 		$this->registerTermListeners(context: $context);
 		// Before any other saved listener, so none of them reads a row the save replaced.
-		foreach (CaseTypeStoreForgetListener::EVENTS as $event) {
-			$context->registerEventListener(event: $event, listener: CaseTypeStoreForgetListener::class, priority: self::STORE_FORGET_PRIORITY);
+		foreach (RequestReadsForgetListener::EVENTS as $event) {
+			$context->registerEventListener(event: $event, listener: RequestReadsForgetListener::class, priority: self::STORE_FORGET_PRIORITY);
 		}
 	}//end register()
 
