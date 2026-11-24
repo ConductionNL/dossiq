@@ -16,7 +16,9 @@
 
 ## 3. Checks
 
-- [ ] 3.1 `tests/e2e/grant-case.spec.ts`: both scenarios of REQ-SUB-CASE-01.
-- [ ] 3.2 Newman: `tests/integration/packages/subsidie.postman_collection.json` gains interim report, settlement and recovery calls.
+- [x] 3.1 `tests/e2e/grant-case.spec.ts`: both scenarios of REQ-SUB-CASE-01.
+  - Written, runs in nightly (#6685): each scenario has its route half (record and assess an interim report; settle 35.000 of 50.000 with 40.000 advanced and read the 5.000 recovery back on the case) and its case-page half, which stays `test.fixme` until 1.1b and 1.2 build the widgets and header actions. Not run here (no instance).
+- [x] 3.2 Newman: `tests/integration/packages/subsidie.postman_collection.json` gains interim report, settlement and recovery calls.
+  - Written, runs in the packages workflow: eleven `grant chain:` requests after the package read-backs seed a subsidie case with its application, decision and execution through the OpenRegister objects API, record (`POST /api/subsidies/uitvoeringen/{id}/tussenrapportages`, 201) and assess (`/beoordelen`, `voldoende`) an interim report and read the assessment and its session assessor back from the store, settle a draft settlement lower than granted (`/vaststellingen/{id}/vast`), read the proposed 5.000 recovery (`terugvordering`, draft, on this execution) and the case's settlement row (`GET /api/cases/{caseId}/settlements`). The requests are hand-written beside the generated read-backs (the collection description says so). Scripts checked with newman against a local mock; the run against a real instance is the workflow's.
 - [ ] 3.3 Live pass against DqSubsidie.
 - [ ] 3.4 `openspec/parity/capabilities.json` row 15.2: built when 1 and 2 are live.
