@@ -78,6 +78,7 @@
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"title": "Search: {term}",
 				"allowSavedViews": true,
+				"savedViewsShareGroups": "mine",
 				"savedViewChips": false,
 				"quickFilterPlacement": "toolbar",
 				"sidePanel": [
