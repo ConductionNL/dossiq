@@ -38,6 +38,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use RuntimeException;
 
 if (class_exists(WorkingCalendarFake::class, false) === false) {
@@ -82,6 +84,21 @@ if (class_exists(WorkingCalendarFake::class, false) === false) {
 
 			return (in_array($moment->format('Y-m-d'), $this->nonWorkingDates, true) === false);
 		}//end isWorkingDay()
+
+		/**
+		 * The same calendar as the engine's class, which is what resolve() hands out.
+		 *
+		 * @return WorkingCalendar The engine calendar.
+		 */
+		public function engineCalendar(): WorkingCalendar {
+			return WorkingCalendar::fromArray(
+				[
+					'slug'            => $this->slug,
+					'workingWeekdays' => $this->workingWeekdays,
+					'nonWorkingDates' => $this->nonWorkingDates,
+				]
+			);
+		}//end engineCalendar()
 	}//end class
 }
 
@@ -118,15 +135,15 @@ if (class_exists(WorkingCalendarServiceFake::class, false) === false) {
 		 * @param string|null $calendarSlug The calendar named on the term.
 		 * @param string|null $organisation The subject's organisation.
 		 *
-		 * @return WorkingCalendarFake The calendar.
+		 * @return WorkingCalendar The calendar.
 		 */
-		public function resolve(?string $calendarSlug, ?string $organisation): WorkingCalendarFake {
+		public function resolve(?string $calendarSlug, ?string $organisation): WorkingCalendar {
 			$this->calls[] = ['calendarSlug' => $calendarSlug, 'organisation' => $organisation];
 			if ($this->refuse === true) {
 				throw new RuntimeException('Working calendar does not exist');
 			}
 
-			return $this->calendar;
+			return $this->calendar->engineCalendar();
 		}//end resolve()
 	}//end class
 }
@@ -146,14 +163,15 @@ if (class_exists(SlaCalculatorFake::class, false) === false) {
 		/**
 		 * Add business time to an instant.
 		 *
-		 * @param DateTimeInterface $from The start instant.
-		 * @param float $value The amount.
-		 * @param string $unit The unit.
-		 * @param WorkingCalendarFake $calendar The resolved calendar.
+		 * @param SlaAddition $addition The start, the amount, the unit and the resolved calendar.
 		 *
 		 * @return DateTimeImmutable The landing instant.
 		 */
-		public function add(DateTimeInterface $from, float $value, string $unit, WorkingCalendarFake $calendar): DateTimeImmutable {
+		public function add(SlaAddition $addition): DateTimeImmutable {
+			$from     = $addition->start;
+			$value    = $addition->value;
+			$unit     = $addition->unit;
+			$calendar = $addition->calendar();
 			$this->calls[] = ['from' => $from, 'value' => $value, 'unit' => $unit, 'calendar' => $calendar->getSlug()];
 			if ($unit !== 'businessDays') {
 				throw new RuntimeException("Unit '" . $unit . "' is refused by this fake");
