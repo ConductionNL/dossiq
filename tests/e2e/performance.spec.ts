@@ -6,7 +6,7 @@
  * tests/performance/budget.json is usable within PERF_PAGE_BUDGET_MS, warm.
  */
 
-import { test } from '@playwright/test'
 import { definePerformanceSpec } from '@conduction/nextcloud-vue/testing/performance'
+import { test } from '@playwright/test'
 
 definePerformanceSpec(test)
