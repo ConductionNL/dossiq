@@ -493,10 +493,11 @@ describe('the simple profile', () => {
 	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
 	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
 	// 74 -> 73: CasesDeleted retires; a case is never deleted (cases-are-archival-no-delete).
-	it('builds the same 73 pages as the full profile, so every route stays', () => {
+	// 73 -> 74: the supervision plan gets a page (DqToezichtplan), reached from Reports (supervision-plan-page).
+	it('builds the same 74 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(73)
+		expect(built.pages).toHaveLength(74)
 	})
 })
 

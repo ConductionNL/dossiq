@@ -12861,6 +12861,15 @@
 						"route": "TermijnDashboard"
 					},
 					{
+						"id": "SupervisionPlan",
+						"label": "Supervision plan",
+						"description": "Planned, completed and cancelled inspections per category, counted from the inspections.",
+						"meta": "Grouping: category, per quarter",
+						"icon": "CalendarTextOutline",
+						"category": "throughput",
+						"route": "SupervisionPlan"
+					},
+					{
 						"id": "Archiving",
 						"label": "Archiving",
 						"description": "Cases per retention period and what is destroyed or transferred this year.",

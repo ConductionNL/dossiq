@@ -263,9 +263,6 @@
     }
   },
   "src/views/settings/tabs/WorkflowTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 7
-    },
     "no-console": {
       "count": 1
     }

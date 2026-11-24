@@ -125,6 +125,40 @@ class SupervisionPlanReader {
 	}//end read()
 
 	/**
+	 * The id of the plan for a year, so a page can open a plan by its year.
+	 *
+	 * @param int $year The plan year.
+	 *
+	 * @return array{status: int, id?: string} FOUND with the id, NOT_FOUND, BROKEN or UNCONFIGURED.
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-2
+	 */
+	public function idForYear(int $year): array {
+		$objectService = $this->settings->getObjectService();
+		$register      = $this->settings->getConfigValue('register');
+		$schema        = $this->settings->getConfigValue(self::SCHEMA_KEYS['plan']);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return ['status' => self::UNCONFIGURED];
+		}
+
+		try {
+			$plans = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['year' => $year]);
+		} catch (Throwable $e) {
+			$this->logger->error('dossiq: the supervision plan of a year could not be read', ['exception' => $e, 'year' => $year]);
+			return ['status' => self::BROKEN];
+		}
+
+		foreach ($plans as $plan) {
+			$id = $this->progress->idOf(record: $plan);
+			if ($id !== '' && (int)($plan['year'] ?? 0) === $year) {
+				return ['status' => self::FOUND, 'id' => $id];
+			}
+		}
+
+		return ['status' => self::NOT_FOUND];
+	}//end idForYear()
+
+	/**
 	 * The field inspections that name one of the categories.
 	 *
 	 * @param object                     $objectService The object service.
