@@ -171,7 +171,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
 			logger: $logger,
-			filing: new AdviceRequestFiling(delegation: $this->createMock(AdviceDelegationService::class), settingsService: $this->settingsService, logger: $logger),
+			filing: new AdviceRequestFiling(
+				delegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+				settingsService: $this->settingsService,
+				logger: $logger,
+			),
 			repository: new AdviceRepository(
 				settingsService: $this->settingsService,
 				logger: $logger,

@@ -385,7 +385,11 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			settingsService: $settings,
 			userSession: $session,
 			logger: $logger,
-			filing: new AdviceRequestFiling(delegation: $this->createMock(originalClassName: AdviceDelegationService::class), settingsService: $settings, logger: $logger),
+			filing: new AdviceRequestFiling(
+				delegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+				settingsService: $settings,
+				logger: $logger,
+			),
 			repository: new AdviceRepository(settingsService: $settings, logger: $logger),
 			guard: new AdviceAuthorizationGuard(
 				settingsService: $settings,

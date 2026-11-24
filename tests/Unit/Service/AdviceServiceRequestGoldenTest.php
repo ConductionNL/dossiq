@@ -178,7 +178,11 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 			settingsService: $settings,
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: $logger,
-			filing: new AdviceRequestFiling(delegation: $delegation, settingsService: $settings, logger: $logger),
+			filing: new AdviceRequestFiling(
+				delegation: $delegation,
+				settingsService: $settings,
+				logger: $logger,
+			),
 			repository: $this->createMock(originalClassName: AdviceRepository::class),
 			guard: $this->createMock(originalClassName: AdviceAuthorizationGuard::class),
 			notifier: $notifier,

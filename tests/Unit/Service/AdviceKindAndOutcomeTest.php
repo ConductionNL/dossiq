@@ -110,7 +110,11 @@ class AdviceKindAndOutcomeTest extends TestCase {
 			settingsService: $settings,
 			userSession: $this->createMock(IUserSession::class),
 			logger: $this->createMock(LoggerInterface::class),
-			filing: new AdviceRequestFiling(delegation: $delegation, settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
+			filing: new AdviceRequestFiling(
+				delegation: $delegation,
+				settingsService: $settings,
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+			),
 			repository: $this->repository,
 			guard: $this->createMock(AdviceAuthorizationGuard::class),
 			notifier: $this->notifier,
