@@ -30,6 +30,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\Pdok\PdokLocatieserverService
  * @uses   \OCA\Dossiq\Service\Pdok\LocatieserverCall
+ * @uses   \OCA\Dossiq\Service\Pdok\OutageBreaker
  */
 final class PdokOutageBreakerTest extends TestCase {
 
