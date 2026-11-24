@@ -323,8 +323,8 @@ class IntegrationProbesRecordTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			userSession: $userSession,
 			settings: new MailIntakeSettings(
-				appConfig: $this->createMock(IAppConfig::class),
-				blocklist: $this->createMock(SenderBlocklist::class),
+				appConfig: $this->createMock(originalClassName: IAppConfig::class),
+				blocklist: $this->createMock(originalClassName: SenderBlocklist::class),
 				mailGateway: $gateway,
 				templateService: $this->templateService,
 			),
