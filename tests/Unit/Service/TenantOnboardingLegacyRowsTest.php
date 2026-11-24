@@ -131,7 +131,15 @@ class TenantOnboardingLegacyRowsTest extends TestCase {
 
 		$progress = $this->service(
 			rows: [
-				['uuid' => 'row-1', 'tenantRef' => 'tenant-a', 'step' => 'contract', 'status' => 'completed', 'completedBy' => 'anna', 'completedAt' => '', 'blockedReason' => ''],
+				[
+					'uuid' => 'row-1',
+					'tenantRef' => 'tenant-a',
+					'step' => 'contract',
+					'status' => 'completed',
+					'completedBy' => 'anna',
+					'completedAt' => '',
+					'blockedReason' => '',
+				],
 				['uuid' => 'row-2', 'tenantRef' => 'tenant-a', 'step' => 'branding'],
 				['uuid' => 'row-3', 'tenantRef' => 'tenant-a', 'step' => 'not-a-step', 'status' => 'completed'],
 				['uuid' => 'row-4', 'tenantRef' => 'tenant-b', 'step' => 'sso_setup'],
@@ -154,7 +162,7 @@ class TenantOnboardingLegacyRowsTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoLegacyRowAndAFailedReadOpenNothing(): void {
-		$this->steps->expects($this->exactly(2))->method('forTenant')->willReturn(value: []);
+		$this->steps->expects($this->exactly(count: 2))->method('forTenant')->willReturn(value: []);
 
 		self::assertSame(expected: 0, actual: $this->service(rows: [])->getProgress(tenantId: 'tenant-a')['completed']);
 		self::assertSame(expected: 0, actual: $this->service(rows: null)->getProgress(tenantId: 'tenant-a')['completed']);

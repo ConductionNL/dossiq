@@ -1555,3 +1555,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (19 in all); unchanged and green after.
         Own test: `tests/Unit/Controller/Support/FilingChoicesTest` (3); dropping the address fallback turns 2 tests
         red (checked).
+  - [x] 8cc `TenantOnboardingService` (1, unsuppressed: ExcessiveClassComplexity 53 against 50). Carrying a tenant's
+        legacy `tenantOnboardingTask` rows onto the task engine is its own concern, so it moved to the new
+        `Onboarding/LegacyStepRows` (`carry()`, was `carryLegacyRows()`, with `legacyMetadata()`, `legacyRows()` and
+        `rowsOfTenant()` as `metadata()`, `read()` and `rowsOfTenant()`). Bodies moved unchanged but for the object
+        service, which the service still resolves and passes in, so its container lookup stays where gate-66 reads it.
+        The service builds the carrier over its own steps, logger and row normaliser in its constructor, so its
+        constructor signature and the container are unchanged. phpmd: no ExcessiveClassComplexity finding, and no new
+        finding on either file under both rulesets (the CouplingBetweenObjects 15 was there before). The
+        catch-return-null allowlist entry follows the site to `LegacyStepRows::read`. `@SuppressWarnings(PHPMD.*)`
+        lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation, green on the unchanged service first (own commit): `TenantOnboardingLegacyRowsTest` (3: the
+        tenant's known steps opened with their status and kept fields and read again; no row and a failed read open
+        nothing; a tenant with engine steps is not carried again); unchanged and green after.
+        Own test: `tests/Unit/Service/Onboarding/LegacyStepRowsTest` (2); dropping the tenant filter turns 2 tests red
+        (checked).

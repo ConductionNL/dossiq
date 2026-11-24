@@ -30,6 +30,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
+use OCA\Dossiq\Service\Onboarding\LegacyStepRows;
 use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
@@ -61,6 +62,13 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	];
 
 	/**
+	 * Carries a tenant's legacy onboarding rows onto the task engine.
+	 *
+	 * @var LegacyStepRows
+	 */
+	private readonly LegacyStepRows $legacyRows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager.
@@ -84,6 +92,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 		private readonly ?MandaatCheckService $mandates = null,
 	) {
+		$this->legacyRows = new LegacyStepRows(steps: $steps, logger: $logger, rowNormaliser: $rowNormaliser);
 	}//end __construct()
 
 	/**
@@ -266,109 +275,13 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 			return $steps;
 		}
 
-		if ($this->carryLegacyRows(tenantId: $tenantId, actor: $actor) === 0) {
+		$carried = $this->legacyRows->carry(objectService: $this->getObjectService(), tenantId: $tenantId, actor: $actor);
+		if ($carried === 0) {
 			return [];
 		}
 
 		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
 	}//end stepsCarryingLegacyRows()
-
-	/**
-	 * Open an engine step for every known step a legacy onboarding row holds.
-	 *
-	 * @param string $tenantId The tenant (Organisation) uuid.
-	 * @param string $actor    Who carries the rows over.
-	 *
-	 * @return int How many steps the engine accepted.
-	 */
-	private function carryLegacyRows(string $tenantId, string $actor): int {
-		$carried = 0;
-		foreach ($this->legacyRows(tenantId: $tenantId) as $row) {
-			$step = (string) ($row['data']['step'] ?? '');
-			$status = (string) ($row['data']['status'] ?? 'pending');
-			if (in_array($step, self::STEPS, true) === false) {
-				continue;
-			}
-
-			$metadata = $this->legacyMetadata(row: $row);
-			if ($this->steps->open(tenantId: $tenantId, step: $step, title: $step, status: $status, actor: $actor, metadata: $metadata) !== '') {
-				$carried++;
-			}
-		}
-
-		return $carried;
-	}//end carryLegacyRows()
-
-	/**
-	 * The metadata a carried step keeps from its legacy row.
-	 *
-	 * @param array $row The legacy onboarding row.
-	 *
-	 * @return array<string, string> The row's uuid and its non-empty completion and block fields.
-	 */
-	private function legacyMetadata(array $row): array {
-		$metadata = ['onboardingRow' => $row['uuid']];
-		foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
-			if ((string) ($row['data'][$field] ?? '') !== '') {
-				$metadata[$field] = (string) $row['data'][$field];
-			}
-		}
-
-		return $metadata;
-	}//end legacyMetadata()
-
-	/**
-	 * The tenant's legacy `tenantOnboardingTask` rows, each as uuid and data.
-	 *
-	 * @param string $tenantId The Organisation's uuid.
-	 *
-	 * @return array<int, array{uuid: string, data: array<string, mixed>}> The rows.
-	 */
-	private function legacyRows(string $tenantId): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => AppIdentity::REGISTER_SLUG,
-						'schema' => 'tenantOnboardingTask',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 100,
-					'offset' => 0,
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: could not read the legacy onboarding rows', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
-			return [];
-		}
-
-		return $this->rowsOfTenant(rows: $rows, tenantId: $tenantId);
-	}//end legacyRows()
-
-	/**
-	 * The normalised rows that carry data and belong to the tenant.
-	 *
-	 * @param mixed  $rows     The rows as read.
-	 * @param string $tenantId The Organisation's uuid.
-	 *
-	 * @return array<int, array{uuid: string, data: array<string, mixed>}> The rows.
-	 */
-	private function rowsOfTenant(mixed $rows, string $tenantId): array {
-		$out = [];
-		foreach ((array) $rows as $row) {
-			$normalised = $this->rowNormaliser->normalise(row: $row);
-			if ($normalised['data'] !== [] && (string) ($normalised['data']['tenantRef'] ?? '') === $tenantId) {
-				$out[] = $normalised;
-			}
-		}
-
-		return $out;
-	}//end rowsOfTenant()
 
 	/**
 	 * The signed-in user, or `admin` for a call without a session.
