@@ -6601,6 +6601,29 @@
 						}
 					},
 					{
+						"id": "bid-score",
+						"type": "open-modal",
+						"label": "Score bid",
+						"icon": "ScaleBalance",
+						"target": "BidScoreDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.tenderChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "log-contact",
 						"type": "open-modal",
 						"label": "Record contact",

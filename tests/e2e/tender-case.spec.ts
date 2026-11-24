@@ -13,8 +13,8 @@
  *    totals here are computed with the shipped `price-quality` scoring formula
  *    read from lib/Settings/register.d/88-tender-records.json, so a change to
  *    the formula changes the expectation instead of leaving a stale copy.
- *    Scoring a bid through the `bid-score` header action is task 3.2 and still
- *    open, so that half is `test.fixme`.
+ *    Scoring a bid goes through the `bid-score` header action (task 3.2): the
+ *    server applies the case's formula and stores the evaluation.
  *  - The award waits for the standstill: the flow's `Definitief gunnen`
  *    transition carries a `dateReached` guard on `opschortendeTermijnEinde`,
  *    and the engine answers 409 `transition-guard-failed` naming the day.
@@ -329,14 +329,17 @@ test.describe('A tender is worked end to end on its case page', () => {
 
 	// @e2e openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management/spec.md#scenario-the-formula-ranks-the-bids
 	test('scoring a bid applies the price-quality formula to its criterion scores', async ({ page }) => {
-		test.fixme(true, 'task 3.2: the bid-score header action is not built, so nothing applies FormulaScorer to an evaluation yet')
-
 		const caseId = await tenderCase('scoring', 'Beoordeling', { sluiting: day(-3) })
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await clickHeaderAction(page, 'cn-action-bid-score')
 		const dialog = page.getByRole('dialog')
 		await expect(dialog).toBeVisible()
+		// The dialog reads the case's scoring sheet: it names the formula, or
+		// says in words why nothing can be scored (no formula, no admissible bid).
+		await expect(
+			dialog.locator('[data-testid="bid-score-formula"], [data-testid="bid-score-refusal"]'),
+		).toBeVisible({ timeout: 30_000 })
 	})
 
 	// @e2e openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management/spec.md#scenario-the-award-waits-for-the-standstill
