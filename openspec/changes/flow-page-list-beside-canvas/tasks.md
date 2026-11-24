@@ -1,17 +1,25 @@
 # Tasks: flow-page-list-beside-canvas
 
+Decision (24 Nov 2026): the List view is built in dossiq beside the canvas it mirrors
+(`src/views/settings/components/WorkflowList.vue` over `src/utils/flowList.js`), not as a
+nextcloud-vue list mode. The canvas, the step panel and the flow definition's shape
+(`workflowTemplate.steps` with `status`/`order`) are still dossiq's own editor; no library
+flow-definition widget exists to add a list mode to. Both views read and write the one
+template through the workflow store, which is what the requirement asks. Moving the whole
+editor into the library is its own change.
+
 ### Task 1: Header row and the Canvas | List switch
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas`
 - **files**: `src/manifest.json` (CaseTypeFlow page), `l10n/en.json`, `l10n/nl.json`
 - [ ] Header: case type title, version pill, Check, More, Save, as board DqZaaktypeFlow
-- [ ] Canvas | List switch with the board's line under it
+- [x] Canvas | List switch with the board's line under it (`WorkflowTab.vue`)
 
 ### Task 2: The List view
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas`
 - **files**: nextcloud-vue flow widget (list mode), `src/manifest.json`
-- [ ] Trigger first, then statuses and steps in order, numbered, with kind pills
-- [ ] Move up/down, edit and delete per row; changes write the same flow definition as the canvas
-- [ ] Test: a vitest over the page config and a library test for the list mode
+- [x] Trigger first, then statuses and steps in order, numbered, with kind pills (a template without a trigger reads "When: Case created"; a step without a known `kind` is a Task)
+- [x] Move up/down, edit and delete per row; changes write the same flow definition as the canvas (`workflowStore.moveStep`, the canvas's own step panel and delete)
+- [x] Test: `tests/vitest/flowPageListBesideCanvas.spec.js` over the rows, the move, the store write and the editor in list mode (the list mode is dossiq's, see Decision)
 
 ### Task 3: The step side panel
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views`

@@ -20,7 +20,7 @@
 				<!-- Create new workflow if none exists -->
 				<NcButton
 					v-if="versions.length === 0"
-					type="primary"
+					variant="primary"
 					@click="createWorkflow">
 					{{ t('dossiq', 'Create workflow') }}
 				</NcButton>
@@ -28,7 +28,7 @@
 				<!-- Publish draft -->
 				<NcButton
 					v-if="currentIsDraft"
-					type="secondary"
+					variant="secondary"
 					:disabled="publishing"
 					@click="publish">
 					<template v-if="publishing" #icon>
@@ -40,7 +40,7 @@
 				<!-- Edit published (create draft copy) -->
 				<NcButton
 					v-if="currentIsPublished && !hasDraft"
-					type="secondary"
+					variant="secondary"
 					@click="editPublished">
 					{{ t('dossiq', 'Edit') }}
 				</NcButton>
@@ -48,7 +48,7 @@
 				<!-- Save -->
 				<NcButton
 					v-if="currentIsDraft && dirty"
-					type="primary"
+					variant="primary"
 					:disabled="saving"
 					@click="save">
 					<template v-if="saving" #icon>
@@ -58,10 +58,10 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton type="tertiary" @click="exportWorkflow">
+				<NcButton variant="tertiary" @click="exportWorkflow">
 					{{ t('dossiq', 'Download') }}
 				</NcButton>
-				<NcButton type="tertiary" @click="triggerImport">
+				<NcButton variant="tertiary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
 				</NcButton>
 				<input
@@ -98,7 +98,7 @@
 					{{ t('dossiq', 'Missing role type: {name}', { name: type }) }}
 				</li>
 			</ul>
-			<NcButton type="secondary" @click="importReport = null">
+			<NcButton variant="secondary" @click="importReport = null">
 				{{ t('dossiq', 'Cancel import') }}
 			</NcButton>
 		</div>
@@ -108,12 +108,35 @@
 			{{ versionNotice }}
 		</div>
 
+		<!-- Canvas | List switch (board DqZaaktypeFlow) -->
+		<div
+			v-if="selectedVersionId"
+			class="workflow-tab__views"
+			data-testid="workflow-view-switch">
+			<div class="workflow-tab__switch" role="group" :aria-label="t('dossiq', 'View')">
+				<button
+					v-for="option in viewOptions"
+					:key="option.id"
+					type="button"
+					class="workflow-tab__switch-option" :class="[{ 'workflow-tab__switch-option--active': view === option.id }]"
+					:aria-pressed="view === option.id ? 'true' : 'false'"
+					:data-testid="'workflow-view-' + option.id"
+					@click="view = option.id">
+					{{ option.label }}
+				</button>
+			</div>
+			<p class="workflow-tab__views-line">
+				{{ t('dossiq', 'The same flow and the same steps as on the canvas; what you change here is there too.') }}
+			</p>
+		</div>
+
 		<!-- Editor -->
 		<WorkflowEditor
 			v-if="selectedVersionId"
 			ref="editor"
 			:caseTypeId="caseTypeId"
 			:templateId="selectedVersionId"
+			:view="view"
 			@dirty="dirty = true" />
 
 		<!-- Empty state -->
@@ -166,10 +189,24 @@ export default {
 			dirty: false,
 			publishErrors: [],
 			importReport: null,
+			view: 'canvas',
 		}
 	},
 
 	computed: {
+		/**
+		 * The two views of one flow definition.
+		 *
+		 * @return {Array<{id: string, label: string}>} Canvas and List.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		viewOptions() {
+			return [
+				{ id: 'canvas', label: t('dossiq', 'Canvas') },
+				{ id: 'list', label: t('dossiq', 'List') },
+			]
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
@@ -436,6 +473,35 @@ export default {
 
 .workflow-tab__errors ul {
 	margin: 4px 0 0 16px;
+}
+
+.workflow-tab__views {
+	margin-bottom: 16px;
+}
+
+.workflow-tab__switch {
+	border: 1px solid var(--color-border-dark);
+	border-radius: var(--border-radius-pill);
+	display: inline-flex;
+	overflow: hidden;
+}
+
+.workflow-tab__switch-option {
+	background: none;
+	border: none;
+	cursor: pointer;
+	margin: 0;
+	padding: 4px 16px;
+}
+
+.workflow-tab__switch-option--active {
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.workflow-tab__views-line {
+	color: var(--color-text-maxcontrast);
+	margin: 6px 0 0;
 }
 
 .workflow-tab__import-report {

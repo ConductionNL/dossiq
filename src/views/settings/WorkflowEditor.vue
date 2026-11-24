@@ -5,7 +5,20 @@
 			:errors="validationErrors"
 			@dismiss="validationErrors = []" />
 
-		<div class="workflow-editor__layout">
+		<!-- List view (board DqZaaktypeFlow): the same statuses and steps as the canvas -->
+		<WorkflowList
+			v-if="view === 'list'"
+			:statuses="statusNodes"
+			:steps="steps"
+			:trigger="flowTrigger"
+			:readOnly="isPublished"
+			@moveStep="onMoveStep"
+			@editStep="onEditStep"
+			@deleteStep="onStepDelete"
+			@addStep="onAddStep"
+			@deleteStatus="onDeleteStatusNode" />
+
+		<div v-else class="workflow-editor__layout">
 			<!-- Palette -->
 			<WorkflowPalette
 				class="workflow-editor__palette"
@@ -94,6 +107,7 @@
 <script>
 import StepConfigPanel from './components/StepConfigPanel.vue'
 import TransitionConfigPanel from './components/TransitionConfigPanel.vue'
+import WorkflowList from './components/WorkflowList.vue'
 import WorkflowNode from './components/WorkflowNode.vue'
 import WorkflowPalette from './components/WorkflowPalette.vue'
 import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
@@ -105,6 +119,7 @@ import { caseTypeRows } from '../../utils/caseTypeRows.js'
 export default {
 	name: 'WorkflowEditor',
 	components: {
+		WorkflowList,
 		WorkflowNode,
 		WorkflowTransitionArrow,
 		WorkflowPalette,
@@ -124,6 +139,12 @@ export default {
 		templateId: {
 			type: String,
 			default: null,
+		},
+
+		/** `canvas` or `list` (flow-page-list-beside-canvas): two views of one flow definition. */
+		view: {
+			type: String,
+			default: 'canvas',
 		},
 	},
 
@@ -181,6 +202,18 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodePositions() {
 			return this.workflowStore.parsedNodePositions
+		},
+
+		/**
+		 * The trigger the loaded template names, if any; the List view shows
+		 * "Case created" when it names none.
+		 *
+		 * @return {string|null} The trigger.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-the-list-shows-the-flow-in-order
+		 */
+		flowTrigger() {
+			const trigger = this.workflowStore.currentTemplate?.trigger
+			return typeof trigger === 'string' && trigger !== '' ? trigger : null
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -657,6 +690,36 @@ export default {
 			this.workflowStore.removeStep(stepId)
 			this.selectedStep = null
 			this.$emit('dirty')
+		},
+
+		/**
+		 * Move a step up or down from the List view. The store writes the new
+		 * order onto the one template the canvas reads too.
+		 *
+		 * @param {string} stepId UUID of the step
+		 * @param {string} direction `up` or `down`
+		 * @return {void}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#scenario-a-change-in-the-list-is-the-same-change-on-the-canvas
+		 */
+		onMoveStep(stepId, direction) {
+			if (this.workflowStore.moveStep(stepId, direction)) {
+				this.$emit('dirty')
+			}
+		},
+
+		/**
+		 * Open the step panel for a step chosen in the List view, the same
+		 * panel a step click on the canvas opens.
+		 *
+		 * @param {string} stepId UUID of the step
+		 * @return {void}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-the-step-panel-follows-the-board-in-both-views
+		 */
+		onEditStep(stepId) {
+			const step = this.steps.find((s) => s.id === stepId)
+			if (step) {
+				this.onStepClick(step)
+			}
 		},
 
 		// --- Step management ---
