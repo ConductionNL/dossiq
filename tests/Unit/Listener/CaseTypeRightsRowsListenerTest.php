@@ -30,6 +30,7 @@ use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
 use OCA\Dossiq\Service\Access\AssignedGroupReadRows;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
+use OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCP\EventDispatcher\Event;
@@ -84,6 +85,13 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * The mocked rows cache, empty unless a test fills it.
+	 *
+	 * @var CaseTypeRightsRowsCache|MockObject
+	 */
+	private CaseTypeRightsRowsCache $cache;
+
+	/**
 	 * Build the collaborators.
 	 *
 	 * @return void
@@ -96,6 +104,7 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 		$this->assignedRows = $this->createMock(AssignedGroupReadRows::class);
 		$this->assignedRows->method('rows')->willReturn([['group' => 'team-a', 'actions' => ['read']]]);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->cache = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
 	}//end setUp()
 
 	/**
@@ -159,6 +168,68 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 	}//end testAFailingCaseTypeReadGrantsNothingAndIsLogged()
 
 	/**
+	 * Compiled rows are kept, and kept rows are handed out without reading a case type.
+	 *
+	 * @return void
+	 */
+	public function testCompiledRowsAreKeptAndKeptRowsAreReused(): void {
+		$this->store->method('everyCaseType')->willReturn([['id' => 'ct-live', 'rightsMatrix' => [['role' => 'role-1']]]]);
+		$this->caseTypeRows->method('rows')->willReturn([['group' => 'behandelaars', 'actions' => ['read']]]);
+		$this->cache->expects($this->once())->method('remember')->with([['group' => 'behandelaars', 'actions' => ['read']]]);
+
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+
+		$kept = $this->createMock(originalClassName: CaseTypeRightsRowsCache::class);
+		$kept->method('get')->willReturn([['group' => 'kept', 'actions' => ['read']]]);
+		$kept->expects($this->never())->method('remember');
+		$this->cache = $kept;
+		$store = $this->createPartialMock(originalClassName: CaseTypeStore::class, methods: ['everyCaseType']);
+		$store->expects($this->never())->method('everyCaseType');
+		$this->store = $store;
+
+		$event = $this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER);
+		$this->listener()->handle($event);
+
+		$this->assertSame(
+			expected: [
+				['dossiq', [['group' => 'team-a', 'actions' => ['read']]]],
+				['dossiq', [['group' => 'kept', 'actions' => ['read']]]],
+			],
+			actual: $event->added
+		);
+	}//end testCompiledRowsAreKeptAndKeptRowsAreReused()
+
+	/**
+	 * No case types (a failed read), or no rows from matrices that have some (a failed role read), is not kept.
+	 *
+	 * @return void
+	 */
+	public function testACompileThatMayHaveFailedIsNotKept(): void {
+		$this->caseTypeRows->method('rows')->willReturn([]);
+		$this->cache->expects($this->never())->method('remember');
+
+		$this->store->method('everyCaseType')->willReturnOnConsecutiveCalls(
+			[],
+			[['id' => 'ct-live', 'rightsMatrix' => [['role' => 'role-1']]]]
+		);
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+	}//end testACompileThatMayHaveFailedIsNotKept()
+
+	/**
+	 * Case types without a rights matrix compile to no rows, and that answer is kept.
+	 *
+	 * @return void
+	 */
+	public function testCaseTypesWithoutAMatrixKeepTheEmptyAnswer(): void {
+		$this->store->method('everyCaseType')->willReturn([['id' => 'ct-live'], ['id' => 'ct-other', 'rightsMatrix' => []]]);
+		$this->caseTypeRows->method('rows')->willReturn([]);
+		$this->cache->expects($this->once())->method('remember')->with([]);
+
+		$this->listener()->handle($this->rowsEvent(provider: CaseTypeRightsRowsListener::PROVIDER));
+	}//end testCaseTypesWithoutAMatrixKeepTheEmptyAnswer()
+
+	/**
 	 * Another provider's request is not answered.
 	 *
 	 * @return void
@@ -194,7 +265,7 @@ class CaseTypeRightsRowsListenerTest extends TestCase {
 		return new CaseTypeRightsRowsListener(
 			$this->store,
 			$this->roles,
-			new CaseRightsRowSources(caseTypes: $this->caseTypeRows, assignedGroup: $this->assignedRows),
+			new CaseRightsRowSources(caseTypes: $this->caseTypeRows, assignedGroup: $this->assignedRows, kept: $this->cache),
 			$this->logger,
 		);
 	}//end listener()
