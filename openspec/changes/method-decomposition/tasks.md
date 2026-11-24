@@ -1595,4 +1595,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `DsoControllerContractTest` (the missing and unknown status and outcome, the optional dates and notes), green
         before and unchanged after but for one `@uses` line each.
         Own test: `tests/Unit/Controller/Support/RequestBodyFieldsTest` (2); dropping the allowed-value check turns 3
+  - [x] 8cf `TenantMigrationService` (2, unsuppressed: TooManyMethods 26 against 25, ExcessiveClassComplexity 62
+        against 50). Building the unsaved Organisation a legacy `tenant` row becomes (uuid, slug, name and routing
+        group kept, the status mapped onto the Organisation lifecycle, the retention dated from the termination, the
+        storage quota in bytes) is its own concern, so `buildOrganisation()` moved to the new
+        `TenantMigration/OrganisationFromLegacyTenant::build()` with `applyStorageQuota()`, `applyLifecycle()`,
+        `resolveStatus()`, `resolveRetainedAt()` and `resolveStorageQuotaBytes()`, and the `STATUS_MAP` and
+        `TENANT_GROUP_PREFIX` constants with their reasons. Bodies moved unchanged. The service builds it over its
+        logger in its constructor, so its constructor signature and the container are unchanged, and it no longer names
+        OpenRegister's `Organisation`. 20 methods; phpmd: neither finding remains, and no new finding on either file
+        under both rulesets (the StaticAccess on `OrganisationLookup` in `placeTenant()` was there before).
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the findings were not suppressed).
+        Characterisation: the existing `TenantMigrationServiceTest` (23: the status vocabulary, retention from the
+        termination date and from now when it is unreadable, a row without a status, the quota, the repairs), green
+        before and unchanged after.
+        Own test: `tests/Unit/Service/TenantMigration/OrganisationFromLegacyTenantTest` (2); dropping the quota turns 2
         tests red (checked).
