@@ -56,12 +56,12 @@ class CaseTypeHeaderActionsTest extends TestCase {
 		$schema   = $this->caseType();
 		$property = ($schema['properties']['headerActions'] ?? null);
 
-		$this->assertIsArray($property, 'caseType declares headerActions, or OpenRegister stores it nowhere');
-		$this->assertSame('array', $property['type']);
-		$this->assertSame('string', $property['items']['type']);
-		$this->assertTrue($property['uniqueItems']);
-		$this->assertSame([], $property['default']);
-		$this->assertNotContains('headerActions', ($schema['required'] ?? []), 'a case type without a row keeps the page row');
+		$this->assertIsArray(actual: $property, message: 'caseType declares headerActions, or OpenRegister stores it nowhere');
+		$this->assertSame(expected: 'array', actual: $property['type']);
+		$this->assertSame(expected: 'string', actual: $property['items']['type']);
+		$this->assertTrue(condition: $property['uniqueItems']);
+		$this->assertSame(expected: [], actual: $property['default']);
+		$this->assertNotContains(needle: 'headerActions', haystack: ($schema['required'] ?? []), message: 'a case type without a row keeps the page row');
 	}//end testHeaderActionsIsAnOptionalListOfIds()
 
 	/**
@@ -73,9 +73,13 @@ class CaseTypeHeaderActionsTest extends TestCase {
 		$schema   = $this->caseType();
 		$property = ($schema['properties']['primaryAction'] ?? null);
 
-		$this->assertIsArray($property, 'caseType declares primaryAction, or OpenRegister stores it nowhere');
-		$this->assertSame('string', $property['type']);
-		$this->assertNotContains('primaryAction', ($schema['required'] ?? []), 'a case type without a primary keeps the page primary');
+		$this->assertIsArray(actual: $property, message: 'caseType declares primaryAction, or OpenRegister stores it nowhere');
+		$this->assertSame(expected: 'string', actual: $property['type']);
+		$this->assertNotContains(
+			needle: 'primaryAction',
+			haystack: ($schema['required'] ?? []),
+			message: 'a case type without a primary keeps the page primary'
+		);
 	}//end testPrimaryActionIsAnOptionalId()
 
 	/**
@@ -84,6 +88,6 @@ class CaseTypeHeaderActionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseTypeVersionMovesSoInstancesReimport(): void {
-		$this->assertTrue(version_compare((string)$this->caseType()['version'], '1.52.0', '>='));
+		$this->assertTrue(condition: version_compare(version1: (string)$this->caseType()['version'], version2: '1.52.0', operator: '>='));
 	}//end testTheCaseTypeVersionMovesSoInstancesReimport()
 }//end class

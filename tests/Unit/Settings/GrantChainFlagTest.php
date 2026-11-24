@@ -50,27 +50,27 @@ class GrantChainFlagTest extends TestCase {
 	}//end json()
 
 	/**
-	 * The highest caseType version any register fragment declares, other than the given one.
+	 * The caseType versions the other register fragments declare.
 	 *
 	 * @param string $except The fragment to leave out.
 	 *
-	 * @return string
+	 * @return array<int, string>
 	 */
-	private static function highestOtherCaseTypeVersion(string $except): string {
-		$highest = '0.0.0';
+	private static function otherCaseTypeVersions(string $except): array {
+		$versions = [];
 		foreach ((array)glob(self::ROOT . '/lib/Settings/register.d/*.json') as $file) {
 			if (basename((string)$file) === $except) {
 				continue;
 			}
 
 			$version = (json_decode((string)file_get_contents((string)$file), true)['components']['schemas']['caseType']['version'] ?? null);
-			if (is_string($version) === true && version_compare($version, $highest, '>') === true) {
-				$highest = $version;
+			if (is_string($version) === true) {
+				$versions[] = $version;
 			}
 		}
 
-		return $highest;
-	}//end highestOtherCaseTypeVersion()
+		return $versions;
+	}//end otherCaseTypeVersions()
 
 	/**
 	 * The case type schema carries the flag as a boolean that is off by default.
@@ -88,7 +88,7 @@ class GrantChainFlagTest extends TestCase {
 	}//end testTheCaseTypeDeclaresTheFlagOffByDefault()
 
 	/**
-	 * The fragment raises the caseType version above every other fragment, so an existing instance re-imports it.
+	 * The fragment raised the caseType version past 1.50.0 with a version of its own, so an existing instance re-imports it.
 	 *
 	 * @return void
 	 *
@@ -98,8 +98,13 @@ class GrantChainFlagTest extends TestCase {
 		$version = (string)self::json(path: 'lib/Settings/register.d/99-case-type-grant-chain.json')['components']['schemas']['caseType']['version'];
 
 		$this->assertTrue(
-			condition: version_compare($version, self::highestOtherCaseTypeVersion(except: '99-case-type-grant-chain.json'), '>'),
-			message: 'caseType ' . $version . ' must be above every other fragment'
+			condition: version_compare(version1: $version, version2: '1.50.0', operator: '>'),
+			message: 'caseType ' . $version . ' must be above 1.50.0, the version before the grant chain'
+		);
+		$this->assertNotContains(
+			needle: $version,
+			haystack: self::otherCaseTypeVersions(except: '99-case-type-grant-chain.json'),
+			message: 'caseType ' . $version . ' must not be shared with another fragment, or the re-import gate does not move'
 		);
 	}//end testTheFragmentRaisesTheCaseTypeVersion()
 
