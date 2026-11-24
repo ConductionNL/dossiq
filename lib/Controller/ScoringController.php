@@ -119,11 +119,15 @@ class ScoringController extends Controller {
 		}
 
 		$scores = $this->request->getParam('scores', []);
+		if (is_array($scores) === false) {
+			$scores = [];
+		}
+
 		try {
 			$result = $this->sheet->score(
 				caseId: $caseId,
 				submissionId: trim((string)$this->request->getParam('bid', '')),
-				scores: (is_array($scores) === true ? $scores : []),
+				scores: $scores,
 				userId: $user->getUID()
 			);
 		} catch (Throwable) {

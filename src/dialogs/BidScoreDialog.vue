@@ -20,7 +20,7 @@
 		@closing="$emit('close')">
 		<div class="bid-score">
 			<p v-if="loading" data-testid="bid-score-loading">
-				{{ t('dossiq', 'Loading the bids …') }}
+				{{ t('dossiq', 'Loading the bids …') }}
 			</p>
 			<p v-else-if="refusal" data-testid="bid-score-refusal">
 				{{ refusal }}
@@ -71,7 +71,7 @@
 				<template #icon>
 					<Scale :size="20" />
 				</template>
-				{{ saving ? t('dossiq', 'Scoring …') : t('dossiq', 'Score bid') }}
+				{{ saving ? t('dossiq', 'Scoring …') : t('dossiq', 'Score bid') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -94,12 +94,14 @@ import Scale from 'vue-material-design-icons/ScaleBalance.vue'
  *
  * @return {Record<string, string>}
  */
-const inputLabels = () => ({
-	quality: t('dossiq', 'Quality score'),
-	maxPoints: t('dossiq', 'Maximum points'),
-	qualityWeight: t('dossiq', 'Quality weight'),
-	priceWeight: t('dossiq', 'Price weight'),
-})
+function inputLabels() {
+	return {
+		quality: t('dossiq', 'Quality score'),
+		maxPoints: t('dossiq', 'Maximum points'),
+		qualityWeight: t('dossiq', 'Quality weight'),
+		priceWeight: t('dossiq', 'Price weight'),
+	}
+}
 
 export default {
 	name: 'BidScoreDialog',

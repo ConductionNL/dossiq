@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Scoring;
 
 use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
+use OCA\Dossiq\Service\Scoring\ScoringRecords;
 use OCA\Dossiq\Service\Scoring\ScoringSheet;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
@@ -314,6 +315,6 @@ class ScoringSheetTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
-		return new ScoringSheet(settings: $settings, cases: $cases, l10n: $l10n);
+		return new ScoringSheet(settings: $settings, records: new ScoringRecords(settings: $settings), cases: $cases, l10n: $l10n);
 	}//end sheet()
 }//end class

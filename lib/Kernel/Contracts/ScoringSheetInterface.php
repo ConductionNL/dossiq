@@ -45,6 +45,8 @@ interface ScoringSheetInterface {
 	 * @param string $userId The evaluator's user id.
 	 *
 	 * @return array<string, mixed> The sheet; `refusal` names why nothing can be scored.
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 	 */
 	public function forCase(string $caseId, string $userId): array;
 
@@ -58,6 +60,8 @@ interface ScoringSheetInterface {
 	 * @param string               $userId       The evaluator's user id.
 	 *
 	 * @return array<string, mixed> `{evaluationId, total}`, or `{refusal}` when it cannot be scored.
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 	 */
 	public function score(string $caseId, string $submissionId, array $scores, string $userId): array;
 }//end interface

@@ -27,7 +27,6 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\ScoringSheetInterface;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\ReadsRegisterRows;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IL10N;
@@ -58,28 +57,6 @@ use OCP\IL10N;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Reads the case, its submissions and formulas, and writes the evaluation.
  */
 class ScoringSheet implements ScoringSheetInterface {
-	use ReadsRegisterRows;
-
-	/**
-	 * The schema of the submissions that are scored.
-	 *
-	 * @var string
-	 */
-	public const SUBMISSION_SCHEMA = 'bid';
-
-	/**
-	 * The schema of the evaluations the scores are stored in.
-	 *
-	 * @var string
-	 */
-	public const EVALUATION_SCHEMA = 'evaluation';
-
-	/**
-	 * The schema of the formulas.
-	 *
-	 * @var string
-	 */
-	public const FORMULA_SCHEMA = 'scoringFormula';
 
 	/**
 	 * The case field that names the formula by its key.
@@ -87,13 +64,6 @@ class ScoringSheet implements ScoringSheetInterface {
 	 * @var string
 	 */
 	public const FORMULA_FIELD = 'scoringFormula';
-
-	/**
-	 * The submission states that can be scored.
-	 *
-	 * @var list<string>
-	 */
-	public const SCORABLE_STATES = ['admissible', 'evaluated'];
 
 	/**
 	 * The variables read from the submissions rather than entered or held by the case.
@@ -110,20 +80,15 @@ class ScoringSheet implements ScoringSheetInterface {
 	public const OPEN_EVALUATION_STATES = ['draft', 'submitted'];
 
 	/**
-	 * How many rows one read takes.
-	 *
-	 * @var int
-	 */
-	private const LIMIT = 200;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settings      The settings, which hand out the ObjectService.
+	 * @param ScoringRecords            $records       Reads the submissions, evaluations and formulas.
 	 * @param CaseObjectReaderInterface $cases         Reads a case by uuid.
 	 * @param IL10N                     $l10n          Translates the refusals.
 	 * @param FormulaScorer             $scorer        Evaluates a formula.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a stored row as an array.
+	 * @param ScoringValue              $value         Reads numbers, case answers, ids and prices.
 	 *
 	 * @return void
 	 *
@@ -131,10 +96,12 @@ class ScoringSheet implements ScoringSheetInterface {
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
+		private readonly ScoringRecords $records,
 		private readonly CaseObjectReaderInterface $cases,
 		private readonly IL10N $l10n,
 		private readonly FormulaScorer $scorer = new FormulaScorer(),
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
+		private readonly ScoringValue $value = new ScoringValue(),
 	) {
 	}//end __construct()
 
@@ -149,23 +116,28 @@ class ScoringSheet implements ScoringSheetInterface {
 	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 	 */
 	public function forCase(string $caseId, string $userId): array {
-		$submissions = $this->scorableSubmissions(caseId: $caseId);
+		$submissions = $this->records->scorableSubmissions(caseId: $caseId);
 		$formula     = $this->formulaFor(caseId: $caseId, submissions: $submissions);
 		if (isset($formula['refusal']) === true) {
 			return ['formula' => null, 'inputs' => [], 'fixed' => [], 'submissions' => [], 'refusal' => $formula['refusal']];
 		}
 
-		$evaluations = $this->evaluationsBy(userId: $userId, submissions: $submissions);
+		$evaluations = $this->records->evaluationsBy(userId: $userId, submissions: $submissions);
 		$rows        = [];
 		foreach ($submissions as $submission) {
-			$id     = $this->idOf(row: $submission);
+			$id     = $this->value->idOf(row: $submission);
 			$rows[] = [
 				'id' => $id,
-				'label' => $this->labelOf(submission: $submission),
-				'price' => $this->numberOf(value: ($submission['priceAmount'] ?? null)),
-				'total' => $this->numberOf(value: ($evaluations[$id]['weightedTotal'] ?? null)),
+				'label' => $this->value->labelOf(submission: $submission),
+				'price' => $this->value->numberOf(value: ($submission['priceAmount'] ?? null)),
+				'total' => $this->value->numberOf(value: ($evaluations[$id]['weightedTotal'] ?? null)),
 				'scores' => (array)($evaluations[$id]['criterionScores'] ?? []),
 			];
+		}
+
+		$refusal = null;
+		if ($rows === []) {
+			$refusal = $this->l10n->t('There is no admissible bid to score on this case.');
 		}
 
 		return [
@@ -173,7 +145,7 @@ class ScoringSheet implements ScoringSheetInterface {
 			'inputs' => $formula['inputs'],
 			'fixed' => $formula['fixed'],
 			'submissions' => $rows,
-			'refusal' => ($rows === [] ? $this->l10n->t('There is no admissible bid to score on this case.') : null),
+			'refusal' => $refusal,
 		];
 	}//end forCase()
 
@@ -190,7 +162,7 @@ class ScoringSheet implements ScoringSheetInterface {
 	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 	 */
 	public function score(string $caseId, string $submissionId, array $scores, string $userId): array {
-		$submissions = $this->scorableSubmissions(caseId: $caseId);
+		$submissions = $this->records->scorableSubmissions(caseId: $caseId);
 		$submission  = $this->submissionById(submissions: $submissions, submissionId: $submissionId);
 		if ($submission === null) {
 			return ['refusal' => $this->l10n->t('Only an admissible bid on this case can be scored.')];
@@ -238,12 +210,12 @@ class ScoringSheet implements ScoringSheetInterface {
 	 */
 	private function formulaFor(string $caseId, array $submissions): array {
 		$case = $this->formulaCase(caseId: $caseId, submissions: $submissions);
-		$key  = trim((string)$this->caseValue(case: $case, field: self::FORMULA_FIELD));
+		$key  = trim((string)$this->value->caseValue(case: $case, field: self::FORMULA_FIELD));
 		if ($key === '') {
 			return ['refusal' => $this->l10n->t('This case names no scoring formula. Set the scoring formula on the case first.')];
 		}
 
-		$record = $this->formulaRecord(key: $key);
+		$record = $this->records->formulaRecord(key: $key);
 		if ($record === null) {
 			return ['refusal' => $this->l10n->t('The scoring formula "%s" is not in the register, or may no longer be chosen.', [$key])];
 		}
@@ -256,7 +228,7 @@ class ScoringSheet implements ScoringSheetInterface {
 				continue;
 			}
 
-			$value = $this->numberOf(value: $this->caseValue(case: $case, field: $name));
+			$value = $this->value->numberOf(value: $this->value->caseValue(case: $case, field: $name));
 			if ($value !== null) {
 				$fixed[$name] = $value;
 				continue;
@@ -281,7 +253,7 @@ class ScoringSheet implements ScoringSheetInterface {
 	 */
 	private function formulaCase(string $caseId, array $submissions): array {
 		$case = ($this->cases->fetchCaseById(caseUuid: $caseId) ?? []);
-		if (trim((string)$this->caseValue(case: $case, field: self::FORMULA_FIELD)) !== '') {
+		if (trim((string)$this->value->caseValue(case: $case, field: self::FORMULA_FIELD)) !== '') {
 			return $case;
 		}
 
@@ -310,7 +282,7 @@ class ScoringSheet implements ScoringSheetInterface {
 	private function valuesFor(array $formula, array $submission, array $submissions, array $scores): array {
 		$entered = [];
 		foreach ($formula['inputs'] as $input) {
-			$value = $this->numberOf(value: ($scores[$input] ?? null));
+			$value = $this->value->numberOf(value: ($scores[$input] ?? null));
 			if ($value === null) {
 				return ['refusal' => $this->l10n->t('Enter a number for %s.', [$input])];
 			}
@@ -321,8 +293,8 @@ class ScoringSheet implements ScoringSheetInterface {
 		$values    = ($formula['fixed'] + $entered);
 		$variables = array_map('strval', (array)($formula['record']['variables'] ?? []));
 		if (array_intersect(self::DERIVED, $variables) !== []) {
-			$price  = $this->numberOf(value: ($submission['priceAmount'] ?? null));
-			$lowest = $this->lowestPriceOf(submissions: $submissions);
+			$price  = $this->value->numberOf(value: ($submission['priceAmount'] ?? null));
+			$lowest = $this->value->lowestPriceOf(submissions: $submissions);
 			if ($price === null || $price <= 0.0 || $lowest === null) {
 				return ['refusal' => $this->l10n->t('This bid names no price, and the scoring formula scores the price.')];
 			}
@@ -353,8 +325,8 @@ class ScoringSheet implements ScoringSheetInterface {
 			return ['refusal' => $this->l10n->t('The register cannot be reached. Try again later.')];
 		}
 
-		$submissionId = $this->idOf(row: $submission);
-		$existing     = ($this->evaluationsBy(userId: $userId, submissions: [$submission])[$submissionId] ?? null);
+		$submissionId = $this->value->idOf(row: $submission);
+		$existing     = ($this->records->evaluationsBy(userId: $userId, submissions: [$submission])[$submissionId] ?? null);
 		if ($existing !== null && in_array((string)($existing['state'] ?? ''), self::OPEN_EVALUATION_STATES, true) === false) {
 			return ['refusal' => $this->l10n->t('Your evaluation of this bid is no longer open, so its score cannot change.')];
 		}
@@ -367,80 +339,27 @@ class ScoringSheet implements ScoringSheetInterface {
 			'weightedTotal' => $total,
 			'state' => (string)($existing['state'] ?? 'submitted'),
 		];
-		$saved   = $objectService->saveObject(
+		$existingId = null;
+		if ($existing !== null) {
+			$existingId = $this->value->idOf(row: $existing);
+		}
+
+		$saved = $objectService->saveObject(
 			object: $payload,
 			options: new ObjectSaveOptions(
-				target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: self::EVALUATION_SCHEMA),
-				uuid: ($existing === null ? null : $this->idOf(row: $existing))
+				target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: ScoringRecords::EVALUATION_SCHEMA),
+				uuid: $existingId
 			)
 		);
 
 		$normalised = $this->rowNormaliser->normalise(row: $saved);
-		$id         = $this->idOf(row: $normalised['data']);
+		$id         = $this->value->idOf(row: $normalised['data']);
+		if ($id === '') {
+			$id = (string)$normalised['uuid'];
+		}
 
-		return ['id' => ($id !== '' ? $id : (string)$normalised['uuid'])];
+		return ['id' => $id];
 	}//end storeEvaluation()
-
-	/**
-	 * The case's submissions in a scorable state.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return list<array<string, mixed>> The submissions.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function scorableSubmissions(string $caseId): array {
-		return array_values(
-			array_filter(
-				$this->rows(filters: ['schema' => self::SUBMISSION_SCHEMA, 'case' => $caseId]),
-				static fn (array $row): bool => in_array((string)($row['state'] ?? ''), self::SCORABLE_STATES, true)
-			)
-		);
-	}//end scorableSubmissions()
-
-	/**
-	 * The caller's evaluations of the given submissions, by submission id.
-	 *
-	 * @param string                     $userId      The evaluator's user id.
-	 * @param list<array<string, mixed>> $submissions The submissions.
-	 *
-	 * @return array<string, array<string, mixed>> The evaluations.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function evaluationsBy(string $userId, array $submissions): array {
-		$found = [];
-		foreach ($submissions as $submission) {
-			$id = $this->idOf(row: $submission);
-			foreach ($this->rows(filters: ['schema' => self::EVALUATION_SCHEMA, 'bid' => $id, 'evaluator' => $userId]) as $evaluation) {
-				if ((string)($evaluation['bid'] ?? '') === $id && (string)($evaluation['evaluator'] ?? '') === $userId) {
-					$found[$id] = $evaluation;
-				}
-			}
-		}
-
-		return $found;
-	}//end evaluationsBy()
-
-	/**
-	 * The active formula record with the key.
-	 *
-	 * @param string $key The formula key.
-	 *
-	 * @return array<string, mixed>|null The record.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function formulaRecord(string $key): ?array {
-		foreach ($this->rows(filters: ['schema' => self::FORMULA_SCHEMA, 'key' => $key]) as $record) {
-			if ((string)($record['key'] ?? '') === $key && ($record['active'] ?? true) !== false) {
-				return $record;
-			}
-		}
-
-		return null;
-	}//end formulaRecord()
 
 	/**
 	 * One scorable submission by id.
@@ -454,7 +373,7 @@ class ScoringSheet implements ScoringSheetInterface {
 	 */
 	private function submissionById(array $submissions, string $submissionId): ?array {
 		foreach ($submissions as $submission) {
-			if ($submissionId !== '' && $this->idOf(row: $submission) === $submissionId) {
+			if ($submissionId !== '' && $this->value->idOf(row: $submission) === $submissionId) {
 				return $submission;
 			}
 		}
@@ -462,128 +381,4 @@ class ScoringSheet implements ScoringSheetInterface {
 		return null;
 	}//end submissionById()
 
-	/**
-	 * The lowest positive price among the submissions.
-	 *
-	 * @param list<array<string, mixed>> $submissions The submissions.
-	 *
-	 * @return float|null The lowest price, or null when none names one.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function lowestPriceOf(array $submissions): ?float {
-		$lowest = null;
-		foreach ($submissions as $submission) {
-			$price = $this->numberOf(value: ($submission['priceAmount'] ?? null));
-			if ($price !== null && $price > 0.0 && ($lowest === null || $price < $lowest)) {
-				$lowest = $price;
-			}
-		}
-
-		return $lowest;
-	}//end lowestPriceOf()
-
-	/**
-	 * A case value, on the case itself or among its property answers.
-	 *
-	 * @param array<string, mixed> $case  The case.
-	 * @param string               $field The field name.
-	 *
-	 * @return mixed The value, or null.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function caseValue(array $case, string $field): mixed {
-		if (isset($case[$field]) === true) {
-			return $case[$field];
-		}
-
-		foreach ((array)($case['properties'] ?? []) as $entry) {
-			if (is_array($entry) === true && (string)($entry['name'] ?? '') === $field) {
-				return ($entry['value'] ?? null);
-			}
-		}
-
-		return null;
-	}//end caseValue()
-
-	/**
-	 * How a submission is named in the sheet.
-	 *
-	 * @param array<string, mixed> $submission The submission.
-	 *
-	 * @return string The reference, else the supplier, else the id.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function labelOf(array $submission): string {
-		foreach (['submissionRef', 'supplier'] as $field) {
-			$value = trim((string)($submission[$field] ?? ''));
-			if ($value !== '') {
-				return $value;
-			}
-		}
-
-		return $this->idOf(row: $submission);
-	}//end labelOf()
-
-	/**
-	 * A number, from a number or a numeric string.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return float|null The number, or null.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function numberOf(mixed $value): ?float {
-		if (is_int($value) === true || is_float($value) === true) {
-			return (float)$value;
-		}
-
-		if (is_string($value) === true && is_numeric(trim($value)) === true) {
-			return (float)trim($value);
-		}
-
-		return null;
-	}//end numberOf()
-
-	/**
-	 * The id of a row.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function idOf(array $row): string {
-		$id = ($row['id'] ?? ($row['uuid'] ?? ''));
-
-		return (is_string($id) === true ? $id : '');
-	}//end idOf()
-
-	/**
-	 * Register rows matching the filters, each read as an array with its id.
-	 *
-	 * @param array<string, string> $filters The filters, `schema` included.
-	 *
-	 * @return list<array<string, mixed>> The rows.
-	 *
-	 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
-	 */
-	private function rows(array $filters): array {
-		$found = [];
-		foreach ($this->registerRows(id: (string)($filters['schema'] ?? ''), filters: $filters) as $row) {
-			$normalised = $this->rowNormaliser->normalise(row: $row);
-			$data       = $normalised['data'];
-			if ($this->idOf(row: $data) === '') {
-				$data['id'] = $normalised['uuid'];
-			}
-
-			$found[] = $data;
-		}
-
-		return $found;
-	}//end rows()
 }//end class
