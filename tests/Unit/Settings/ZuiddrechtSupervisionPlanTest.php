@@ -45,7 +45,8 @@ class ZuiddrechtSupervisionPlanTest extends TestCase {
 		$fragment  = json_decode((string)file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
 		$component = $fragment['components'];
 
-		$this->assertContains(needle: $schema, haystack: $component['registers']['dossiq']['schemas'], message: 'an unlisted schema is unreachable in the register');
+		$listed = $component['registers']['dossiq']['schemas'];
+		$this->assertContains(needle: $schema, haystack: $listed, message: 'an unlisted schema is unreachable in the register');
 
 		return array_keys($component['schemas'][$schema]['properties']);
 	}//end properties()
@@ -70,12 +71,13 @@ class ZuiddrechtSupervisionPlanTest extends TestCase {
 	 */
 	public function testTheCategoriesPlan150InspectionsTheirRiskAsksFor(): void {
 		$categories = array_column($this->rows(schema: 'supervisionPlanCategory'), 'data');
+		$progress   = new SupervisionPlanProgress();
 		$hours      = 0;
 
 		$this->assertSame(expected: ['Hospitality' => 40, 'Construction' => 60, 'Environment' => 50], actual: array_column($categories, 'planned', 'name'));
 		foreach ($categories as $category) {
 			$this->assertSame(expected: '{{object:toezichtplan-2026.id}}', actual: $category['plan']);
-			$this->assertSame(expected: $category['planned'], actual: SupervisionPlanProgress::demandOf(category: $category), message: $category['name']);
+			$this->assertSame(expected: $category['planned'], actual: $progress->demandOf(category: $category), message: $category['name']);
 			$hours += $category['planned'] * $category['hoursPerInspection'];
 		}
 

@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Inspection;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
  * Propose dates per category from risk frequency and capacity.
@@ -53,26 +54,44 @@ final class SupervisionScheduleProposal {
 	private const PROFILES = ['high', 'medium', 'low'];
 
 	/**
+	 * Constructor.
+	 *
+	 * @param SupervisionPlanProgress $progress The demand rule and record ids.
+	 * @param ITimeFactory            $time     Today, the first day when none is given.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
+	 */
+	public function __construct(
+		private readonly SupervisionPlanProgress $progress,
+		private readonly ITimeFactory $time,
+	) {
+	}//end __construct()
+
+	/**
 	 * The proposal for one plan.
 	 *
 	 * @param array<string, mixed>       $plan       The supervisionPlan record.
 	 * @param list<array<string, mixed>> $categories Its supervisionPlanCategory rows.
-	 * @param DateTimeImmutable          $from       The first day dates may fall on; a day before the plan's year starts on 1 January.
+	 * @param string                     $from       The first day dates may fall on (Y-m-d), today when it is not a date;
+	 *                                               a day before the plan's year means 1 January.
 	 *
 	 * @return array<string, mixed> The dates per category, the hours asked and available, and whether anything was cut.
 	 *
 	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-3
 	 */
-	public function propose(array $plan, array $categories, DateTimeImmutable $from): array {
-		$year     = (int)($plan['year'] ?? (int)$from->format('Y'));
+	public function propose(array $plan, array $categories, string $from=''): array {
+		$start    = $this->firstDay(from: $from);
+		$year     = (int)($plan['year'] ?? (int)$start->format('Y'));
 		$capacity = max(0.0, (float)($plan['capacityHours'] ?? 0));
 		$demand   = 0.0;
 		foreach ($categories as $category) {
-			$demand += $this->hoursOf(category: $category, count: SupervisionPlanProgress::demandOf(category: $category));
+			$demand += $this->hoursOf(category: $category, count: $this->progress->demandOf(category: $category));
 		}
 
 		$share    = $this->share(capacity: $capacity, demand: $demand);
-		$workdays = $this->workdays(year: $year, from: $from);
+		$workdays = $this->workdays(year: $year, from: $start);
 		$rows     = [];
 		foreach ($categories as $category) {
 			$rows[] = $this->categoryProposal(category: $category, share: $share, workdays: $workdays);
@@ -94,6 +113,22 @@ final class SupervisionScheduleProposal {
 			'categories'     => $rows,
 		];
 	}//end propose()
+
+	/**
+	 * The given Y-m-d as a day, else today.
+	 *
+	 * @param string $from The requested day.
+	 *
+	 * @return DateTimeImmutable The day.
+	 */
+	private function firstDay(string $from): DateTimeImmutable {
+		$isDay = preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $from, $part) === 1;
+		if ($isDay === true && checkdate((int)$part[2], (int)$part[3], (int)$part[1]) === true) {
+			return new DateTimeImmutable($from);
+		}
+
+		return $this->time->now();
+	}//end firstDay()
 
 	/**
 	 * The share of the demand the capacity covers, 1 when it covers all of it.
@@ -152,9 +187,9 @@ final class SupervisionScheduleProposal {
 		}
 
 		return [
-			'id'       => SupervisionPlanProgress::idOf(record: $category),
+			'id'       => $this->progress->idOf(record: $category),
 			'name'     => (string)($category['name'] ?? ''),
-			'demand'   => SupervisionPlanProgress::demandOf(category: $category),
+			'demand'   => $this->progress->demandOf(category: $category),
 			'proposed' => count($dated),
 			'visits'   => $dated,
 		];
@@ -170,7 +205,7 @@ final class SupervisionScheduleProposal {
 	private function profiles(array $category): array {
 		$rows = $category['riskFrequency'] ?? [];
 		if (is_array($rows) === false || $rows === []) {
-			return ['unrated' => SupervisionPlanProgress::demandOf(category: $category)];
+			return ['unrated' => $this->progress->demandOf(category: $category)];
 		}
 
 		$counts = [];

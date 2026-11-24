@@ -53,7 +53,7 @@ final class SupervisionPlanProgress {
 		$byCategory = $this->groupByCategory(inspections: $inspections);
 		$rows       = [];
 		foreach ($this->ordered(categories: $categories) as $category) {
-			$rows[] = $this->categoryRow(category: $category, inspections: ($byCategory[self::idOf(record: $category)] ?? []));
+			$rows[] = $this->categoryRow(category: $category, inspections: ($byCategory[$this->idOf(record: $category)] ?? []));
 		}
 
 		$scheduled = array_sum(array_column($rows, 'planned'));
@@ -83,7 +83,7 @@ final class SupervisionPlanProgress {
 	 *
 	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-1
 	 */
-	public static function idOf(array $record): string {
+	public function idOf(array $record): string {
 		$self = $record['@self'] ?? [];
 		if (is_array($self) === false) {
 			$self = [];
@@ -101,7 +101,7 @@ final class SupervisionPlanProgress {
 	 *
 	 * @spec openspec/changes/supervision-plan-page/tasks.md#task-1
 	 */
-	public static function demandOf(array $category): int {
+	public function demandOf(array $category): int {
 		$rows = $category['riskFrequency'] ?? [];
 		if (is_array($rows) === false || $rows === []) {
 			return max(0, (int)($category['planned'] ?? 0));
@@ -150,7 +150,7 @@ final class SupervisionPlanProgress {
 				<=> [(int)($right['order'] ?? PHP_INT_MAX), (string)($right['name'] ?? '')]
 		);
 
-		return array_values($categories);
+		return $categories;
 	}//end ordered()
 
 	/**
@@ -165,10 +165,10 @@ final class SupervisionPlanProgress {
 		$planned   = max(0, (int)($category['planned'] ?? 0));
 		$completed = count(array_filter($inspections, static fn (array $row): bool => self::stateOf(inspection: $row) === 'completed'));
 		$cancelled = count(array_filter($inspections, static fn (array $row): bool => self::stateOf(inspection: $row) === 'cancelled'));
-		$demand    = self::demandOf(category: $category);
+		$demand    = $this->demandOf(category: $category);
 
 		return [
-			'id'          => self::idOf(record: $category),
+			'id'          => $this->idOf(record: $category),
 			'name'        => (string)($category['name'] ?? ''),
 			'planned'     => $planned,
 			'completed'   => $completed,

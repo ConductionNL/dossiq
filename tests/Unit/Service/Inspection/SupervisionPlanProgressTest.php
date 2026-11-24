@@ -25,9 +25,14 @@ class SupervisionPlanProgressTest extends TestCase {
 	 * @return list<array<string, mixed>> The rows.
 	 */
 	private function categories(): array {
+		$risk = [
+			['profile' => 'high', 'objects' => 10, 'visitsPerYear' => 2],
+			['profile' => 'low', 'objects' => 39, 'visitsPerYear' => 0.5],
+		];
+
 		return [
 			['id' => 'env', 'name' => 'Environment', 'planned' => 50, 'order' => 3, 'hoursPerInspection' => 10],
-			['id' => 'hos', 'name' => 'Hospitality', 'planned' => 40, 'order' => 1, 'hoursPerInspection' => 6, 'riskFrequency' => [['profile' => 'high', 'objects' => 10, 'visitsPerYear' => 2], ['profile' => 'low', 'objects' => 39, 'visitsPerYear' => 0.5]]],
+			['id' => 'hos', 'name' => 'Hospitality', 'planned' => 40, 'order' => 1, 'hoursPerInspection' => 6, 'riskFrequency' => $risk],
 			['@self' => ['id' => 'con'], 'name' => 'Construction', 'planned' => 60, 'order' => 2, 'hoursPerInspection' => 12],
 		];
 	}//end categories()
@@ -44,21 +49,26 @@ class SupervisionPlanProgressTest extends TestCase {
 	 * @return list<array<string, mixed>> The inspections.
 	 */
 	private function inspections(string $category, int $completed, int $cancelled=0, int $open=0, string $scheduled='2026-02-10T09:00:00+01:00'): array {
-		$rows = [];
-		for ($i = 0; $i < $completed; $i++) {
-			$rows[] = ['planCategory' => $category, 'scheduledAt' => $scheduled, 'completedAt' => '2026-02-10T11:00:00+01:00'];
-		}
+		$base = ['planCategory' => $category, 'scheduledAt' => $scheduled];
 
-		for ($i = 0; $i < $cancelled; $i++) {
-			$rows[] = ['planCategory' => $category, 'scheduledAt' => $scheduled, 'cancelledAt' => '2026-02-01T08:00:00+01:00'];
-		}
-
-		for ($i = 0; $i < $open; $i++) {
-			$rows[] = ['planCategory' => $category, 'scheduledAt' => $scheduled, 'status' => 'planned'];
-		}
-
-		return $rows;
+		return array_merge(
+			array_fill(0, $completed, array_merge($base, ['completedAt' => '2026-02-10T11:00:00+01:00'])),
+			array_fill(0, $cancelled, array_merge($base, ['cancelledAt' => '2026-02-01T08:00:00+01:00'])),
+			array_fill(0, $open, array_merge($base, ['status' => 'planned']))
+		);
 	}//end inspections()
+
+	/**
+	 * The figures of the categories over these inspections.
+	 *
+	 * @param list<array<string, mixed>> $inspections The inspections.
+	 * @param array<string, mixed>       $plan        The plan.
+	 *
+	 * @return array<string, mixed> The figures.
+	 */
+	private function measure(array $inspections, array $plan=[]): array {
+		return (new SupervisionPlanProgress())->measure(plan: $plan, categories: $this->categories(), inspections: $inspections);
+	}//end measure()
 
 	/**
 	 * Scenario "The plan shows its progress per category": Scheduled 150, Completed 55, "15 of 40", "22 of 60", "18 of 50".
@@ -72,7 +82,7 @@ class SupervisionPlanProgressTest extends TestCase {
 			$this->inspections(category: 'env', completed: 18)
 		);
 
-		$figures = (new SupervisionPlanProgress())->measure(plan: ['year' => 2026, 'capacityHours' => 1600], categories: $this->categories(), inspections: $inspections);
+		$figures = $this->measure(inspections: $inspections, plan: ['year' => 2026, 'capacityHours' => 1600]);
 
 		$this->assertSame(expected: 150, actual: $figures['scheduled']);
 		$this->assertSame(expected: 55, actual: $figures['completed']);
@@ -89,11 +99,10 @@ class SupervisionPlanProgressTest extends TestCase {
 	 * @return void
 	 */
 	public function testACompletedInspectionCountsAtOnce(): void {
-		$open     = ['planCategory' => 'con', 'scheduledAt' => '2026-05-04T09:00:00+02:00', 'status' => 'planned'];
-		$progress = new SupervisionPlanProgress();
+		$open = ['planCategory' => 'con', 'scheduledAt' => '2026-05-04T09:00:00+02:00', 'status' => 'planned'];
 
-		$before = $progress->measure(plan: ['year' => 2026], categories: $this->categories(), inspections: [$open]);
-		$after  = $progress->measure(plan: ['year' => 2026], categories: $this->categories(), inspections: [array_merge($open, ['completedAt' => '2026-05-04T11:00:00+02:00'])]);
+		$before = $this->measure(inspections: [$open]);
+		$after  = $this->measure(inspections: [array_merge($open, ['completedAt' => '2026-05-04T11:00:00+02:00'])]);
 
 		$this->assertSame(expected: 0, actual: $before['categories'][1]['completed']);
 		$this->assertSame(expected: 1, actual: $after['categories'][1]['completed']);
@@ -109,7 +118,7 @@ class SupervisionPlanProgressTest extends TestCase {
 		$inspections   = $this->inspections(category: 'hos', completed: 2, cancelled: 3, open: 1);
 		$inspections[] = ['planCategory' => 'hos', 'completedAt' => '2026-03-01', 'cancelledAt' => '2026-02-28'];
 
-		$row = (new SupervisionPlanProgress())->measure(plan: [], categories: $this->categories(), inspections: $inspections)['categories'][0];
+		$row = $this->measure(inspections: $inspections)['categories'][0];
 
 		$this->assertSame(expected: 2, actual: $row['completed']);
 		$this->assertSame(expected: 4, actual: $row['cancelled']);
@@ -123,15 +132,16 @@ class SupervisionPlanProgressTest extends TestCase {
 	 */
 	public function testTheQuartersFollowTheScheduledDate(): void {
 		$inspections = array_merge(
-			$this->inspections(category: 'hos', completed: 2, cancelled: 1, open: 1, scheduled: '2026-02-10T09:00:00+01:00'),
+			$this->inspections(category: 'hos', completed: 2, cancelled: 1, open: 1),
 			$this->inspections(category: 'con', completed: 0, cancelled: 0, open: 3, scheduled: '2026-11-03'),
 			[['planCategory' => 'env', 'status' => 'planned']],
 			[['planCategory' => 'other-plan', 'scheduledAt' => '2026-06-01']]
 		);
 
-		$quarters = (new SupervisionPlanProgress())->measure(plan: [], categories: $this->categories(), inspections: $inspections)['quarters'];
+		$quarters = $this->measure(inspections: $inspections)['quarters'];
 
-		$this->assertSame(expected: ['quarter' => 1, 'scheduled' => 4, 'completed' => 2, 'cancelled' => 1, 'remaining' => 1, 'forecast' => 3], actual: $quarters[0]);
+		$first = ['quarter' => 1, 'scheduled' => 4, 'completed' => 2, 'cancelled' => 1, 'remaining' => 1, 'forecast' => 3];
+		$this->assertSame(expected: $first, actual: $quarters[0]);
 		$this->assertSame(expected: 0, actual: $quarters[1]['scheduled']);
 		$this->assertSame(expected: 3, actual: $quarters[3]['scheduled']);
 		$this->assertSame(expected: 3, actual: $quarters[3]['forecast']);
@@ -143,7 +153,7 @@ class SupervisionPlanProgressTest extends TestCase {
 	 * @return void
 	 */
 	public function testDemandComesFromTheRiskFrequency(): void {
-		$figures = (new SupervisionPlanProgress())->measure(plan: [], categories: $this->categories(), inspections: []);
+		$figures = $this->measure(inspections: []);
 
 		// Hospitality: 10 × 2 = 20, 39 × 0.5 = 19.5 → 20, so 40 at 6 hours.
 		$this->assertSame(expected: 40, actual: $figures['categories'][0]['demand']);
@@ -174,9 +184,11 @@ class SupervisionPlanProgressTest extends TestCase {
 	 * @return void
 	 */
 	public function testIdOfReadsEveryShape(): void {
-		$this->assertSame(expected: 'a', actual: SupervisionPlanProgress::idOf(record: ['id' => 'a']));
-		$this->assertSame(expected: 'b', actual: SupervisionPlanProgress::idOf(record: ['@self' => ['id' => 'b']]));
-		$this->assertSame(expected: 'c', actual: SupervisionPlanProgress::idOf(record: ['uuid' => 'c', '@self' => 'x']));
-		$this->assertSame(expected: '', actual: SupervisionPlanProgress::idOf(record: []));
+		$progress = new SupervisionPlanProgress();
+
+		$this->assertSame(expected: 'a', actual: $progress->idOf(record: ['id' => 'a']));
+		$this->assertSame(expected: 'b', actual: $progress->idOf(record: ['@self' => ['id' => 'b']]));
+		$this->assertSame(expected: 'c', actual: $progress->idOf(record: ['uuid' => 'c', '@self' => 'x']));
+		$this->assertSame(expected: '', actual: $progress->idOf(record: []));
 	}//end testIdOfReadsEveryShape()
 }//end class
