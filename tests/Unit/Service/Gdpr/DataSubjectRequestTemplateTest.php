@@ -51,7 +51,7 @@ class DataSubjectRequestTemplateTest extends TestCase {
 	 */
 	private function transition(string $label): array {
 		foreach ((array)($this->template['workflowTemplate']['transitions'] ?? []) as $transition) {
-			if ((string)($transition['label'] ?? '') === $label) {
+			if ((string)($transition['label']['nl'] ?? '') === $label) {
 				return (array)$transition;
 			}
 		}
@@ -96,7 +96,7 @@ class DataSubjectRequestTemplateTest extends TestCase {
 		self::assertNotSame('', $rule['askInstead']);
 
 		// And the act it names is a transition that exists, spelled the same way.
-		self::assertSame(DataSubjectRequestCase::ACT_PREPARE, $this->transition(label: DataSubjectRequestCase::ACT_PREPARE)['label']);
+		self::assertSame(DataSubjectRequestCase::ACT_PREPARE, $this->transition(label: DataSubjectRequestCase::ACT_PREPARE)['label']['nl']);
 	}//end testTheApprovalIsClosedToThePreparer()
 
 	/**

@@ -16,6 +16,8 @@
 //
 // @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
 
+import { labelText } from './translatableLabel.js'
+
 /** Validation rule codes. */
 export const RULES = {
 	NO_FINAL_STATUS: 'NO_FINAL_STATUS',
@@ -122,7 +124,7 @@ function danglingEdgeIssues(graph, edges) {
 			message: t(
 				'dossiq',
 				'Transition "{label}" references a status that no longer exists',
-				{ label: edge.label || `${edge.fromStatus} → ${edge.toStatus}` },
+				{ label: labelText(edge.label) || `${edge.fromStatus} → ${edge.toStatus}` },
 			),
 		}))
 }

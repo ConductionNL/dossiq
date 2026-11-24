@@ -31,6 +31,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Transitions\CaseDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -42,8 +43,10 @@ use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionDeclarations;
+use OCA\Dossiq\Service\Transitions\TransitionLabel;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
+use OCP\IL10N;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -116,9 +119,11 @@ class StatusTransitionServiceOrderTest extends TestCase {
 	 *
 	 * The one place the constructor is spelled out, so the split touches this helper and no test.
 	 *
+	 * @param TransitionLabel|null $labels How the engine reads a transition's label, the default when null.
+	 *
 	 * @return StatusTransitionService
 	 */
-	private function engine(): StatusTransitionService {
+	private function engine(?TransitionLabel $labels = null): StatusTransitionService {
 		$world = &$this->world;
 
 		$loader = $this->createMock(WorkflowTemplateLoader::class);
@@ -253,6 +258,7 @@ class StatusTransitionServiceOrderTest extends TestCase {
 				dispatcher: $dispatcher,
 				logger: $logger,
 			),
+			labels: ($labels ?? new TransitionLabel()),
 		);
 	}//end engine()
 
@@ -459,6 +465,25 @@ class StatusTransitionServiceOrderTest extends TestCase {
 			$answer
 		);
 	}//end testAClosingMoveIsOneSaveThenTheRest()
+
+	/**
+	 * A transition whose label is a language map is recorded with its source text, whatever
+	 * language the person who moved it reads: a recorded label names an act.
+	 *
+	 * @return void
+	 */
+	public function testATranslatableLabelIsRecordedInItsSourceLanguage(): void {
+		$labelled = ['label' => ['nl' => 'Besluiten', 'en' => 'Decide']] + self::TRANSITION;
+		$this->world['transition'] = $labelled;
+		$this->world['template'] = ['transitions' => [$labelled]];
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+
+		$this->engine(labels: new TransitionLabel(reader: new TranslatedText(l10n: $l10n)))->execute('case-1', 't1', 'Klaar.', 'jan', 'rt-1');
+
+		$moves = array_values(array_filter($this->calls, static fn (array $call): bool => $call[0] === 'writeStatusRecord'));
+		$this->assertSame('Besluiten', $moves[0][1]['label']);
+	}//end testATranslatableLabelIsRecordedInItsSourceLanguage()
 
 	/**
 	 * The version the engine read travels with the save, also for a case that carries it at the top
