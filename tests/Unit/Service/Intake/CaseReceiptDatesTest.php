@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);

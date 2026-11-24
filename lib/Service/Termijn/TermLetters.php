@@ -444,7 +444,7 @@ class TermLetters {
 	 *
 	 * @return string The lines, ending in a newline, or an empty string.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	private function termStartLines(array $context, string $locale): string {
 		$english = ($locale === 'en');

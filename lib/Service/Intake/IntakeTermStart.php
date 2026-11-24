@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * The two moments a case is stamped with at intake, and the flag between them.
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class IntakeTermStart implements IntakeTermStartInterface {
 
@@ -75,7 +75,7 @@ class IntakeTermStart implements IntakeTermStartInterface {
 	 * @param WorkingDayRoll       $calendar The one calendar the term also counts on.
 	 * @param LoggerInterface|null $logger   Where an unstamped case is noted.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function __construct(
 		private readonly WorkingDayRoll $calendar,
@@ -93,7 +93,7 @@ class IntakeTermStart implements IntakeTermStartInterface {
 	 *
 	 * @return array<string, mixed> The three fields, or [].
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function stampFor(DateTimeImmutable $receivedAt): array {
@@ -196,7 +196,7 @@ class IntakeTermStart implements IntakeTermStartInterface {
 	 *
 	 * @return bool True when it is already stamped.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function isStamped(array $case): bool {
 		return (trim((string)($case[self::TERM_STARTS_AT] ?? '')) !== '');
