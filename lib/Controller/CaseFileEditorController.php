@@ -14,6 +14,11 @@
  * guard must let the caller read it, and when a document record names the
  * file, every case of that document must allow the write.
  *
+ * The share is accepted for the caller before the link goes out. A share that
+ * is still pending (the caller does not take shares by default, or the
+ * instance forces acceptance) is not mounted in the caller's files, so the
+ * editor looks the file id up there and answers "File not found".
+ *
  * @category Controller
  * @package  OCA\Dossiq\Controller
  *
@@ -50,6 +55,8 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCP\Share\IManager as IShareManager;
+use OCP\Share\IShare;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -248,8 +255,43 @@ class CaseFileEditorController extends Controller {
 			return new JSONResponse(['error' => 'This file could not be opened for editing.'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
+		$this->acceptShare(user: $user, node: $node);
+
 		return new JSONResponse(['fileId' => $node->getId(), 'url' => $this->editorUrl(user: $user, node: $node)]);
 	}//end share()
+
+	/**
+	 * Accept the store's share of the file for the caller, so it is mounted in the caller's files.
+	 *
+	 * A share created for a user who does not take shares by default stays
+	 * pending, and a pending share is not mounted: the editor, which resolves
+	 * the file id in the caller's own files, then finds nothing. A failure is
+	 * logged and not fatal; the link still goes out.
+	 *
+	 * @param IUser $user The caller.
+	 * @param File  $node The shared file.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function acceptShare(IUser $user, File $node): void {
+		$userId = $user->getUID();
+		try {
+			$shareManager = $this->container->get(IShareManager::class);
+			$shares       = $shareManager->getSharesBy(userId: self::STORE_USER, shareType: IShare::TYPE_USER, path: $node, reshares: false, limit: -1);
+			foreach ($shares as $share) {
+				if ($share->getSharedWith() === $userId && $share->getStatus() !== IShare::STATUS_ACCEPTED) {
+					$shareManager->acceptShare(share: $share, recipientId: $userId);
+				}
+			}
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'CaseFileEditorController: the share of a case file could not be accepted for the caller',
+				['file' => $node->getId(), 'user' => $userId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end acceptShare()
 
 	/**
 	 * The link that opens the file: the office editor's own page for an office document, else the Files app.
