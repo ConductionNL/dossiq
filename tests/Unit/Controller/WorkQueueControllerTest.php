@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\Support\WorkloadScope;
 use OCA\Dossiq\Controller\WorkQueueController;
 use OCA\Dossiq\Service\Substitution\CoveredWork;
 use OCA\Dossiq\Service\Team\PrimaryTeamService;
@@ -42,6 +43,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\WorkQueueController
+ * @covers \OCA\Dossiq\Controller\Support\WorkloadScope
  */
 class WorkQueueControllerTest extends TestCase {
 
@@ -103,12 +105,10 @@ class WorkQueueControllerTest extends TestCase {
 		$this->controller = new WorkQueueController(
 			$this->request,
 			$this->userSession,
-			$this->groupManager,
 			$this->workQueueService,
 			$this->logger,
-			$this->userManager,
 			$this->coveredWork,
-			$this->teams,
+			new WorkloadScope(groupManager: $this->groupManager, userManager: $this->userManager, teams: $this->teams, logger: $this->logger),
 		);
 	}//end setUp()
 
