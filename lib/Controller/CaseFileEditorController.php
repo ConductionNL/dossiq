@@ -231,6 +231,8 @@ class CaseFileEditorController extends Controller {
 	 * @param File  $node The file.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @psalm-suppress UndefinedClass OpenRegister is an optional dependency; a missing class is caught below.
 	 */
 	private function share(IUser $user, File $node): JSONResponse {
 		try {
