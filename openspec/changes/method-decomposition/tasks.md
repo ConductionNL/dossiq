@@ -1610,7 +1610,33 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         termination date and from now when it is unreadable, a row without a status, the quota, the repairs), green
         before and unchanged after.
         Own test: `tests/Unit/Service/TenantMigration/OrganisationFromLegacyTenantTest` (2); dropping the quota turns 2
+  - [x] 8cg `KpiAggregationService` (1, unsuppressed: ExcessiveClassComplexity 58 against 50). Folding the cases closed
+        this month into their average duration and their deadline compliance is its own concern, so
+        `averageProcessingDays()`, `slaCompliance()` and `daysBetween()` moved to the new
+        `Dashboard/ClosedCaseMeasures` (bodies unchanged; the day count is its own constructor argument). `KpiSources`,
+        the bundle of what the figures are read from, builds it over its day count and carries it as `measures`, so the
+        service's constructor signature, the container and the service's coupling (14, there before) are unchanged.
+        phpmd: no ExcessiveClassComplexity finding, and no new finding on the three files under both rulesets.
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation: the existing `KpiAggregationServiceTest` (the duration and compliance fold, cases without a
+        deadline, no closed cases, unreadable dates, an end before the start), green before and unchanged after.
+        Own test: `tests/Unit/Service/Dashboard/ClosedCaseMeasuresTest` (2); inverting the deadline comparison turns 2
         tests red (checked).
+  - [x] 8ch `Recycle/CaseRecycleService` (1, unsuppressed: ExcessiveClassComplexity 61 against 50). Two concerns moved
+        out. Reading the live case behind the retention clocks (`liveCase()`'s body, `caseStoreLocation()`,
+        `readLiveCase()`) went to the new `Recycle/LiveCaseReader::read()`, which takes the `SearchesObjects` trait the
+        service no longer needs. Who may see a deleted case in the lens (`maySee()`'s body and `deletedOrHeldBy()`)
+        went to the new `Recycle/DeletedCaseVisibility::maySee()`. Bodies moved unchanged; `liveCase()` and `maySee()`
+        stay on the service as one-line delegations. The restore record stayed: moving it would carry its inherited
+        StaticAccess on `ObjectAuditEvents::of()` into a new file. The service builds both in its constructor, so its
+        constructor signature and the container are unchanged. phpmd: no ExcessiveClassComplexity finding, and no new
+        finding on the three files under both rulesets (the StaticAccess in `recordRestore()` was there before).
+        `@SuppressWarnings(PHPMD.*)` lines in `lib/` unchanged at 188 (the finding was not suppressed).
+        Characterisation, green on the unchanged service first (own commit): `Recycle/CaseRecycleLiveCaseTest` (2: the
+        case read from the store; no id, no store, no case schema and a failing store each null), with the existing
+        `CaseRecycleServiceTest` for the lens; unchanged and green after but for `@uses` lines.
+        Own tests: `Recycle/LiveCaseReaderTest` (2) and `Recycle/DeletedCaseVisibilityTest` (1); dropping the assignee
+        check turns 1 test red (checked).
   - [x] 8ci `Pdok/PdokLocatieserverService` (1, unsuppressed: ExcessiveClassComplexity 60 against 50). The outage budget
         and the degraded state (three server errors in sixty seconds hold the service degraded for five minutes; a 4xx
         never counts; a success clears it) are their own concern, so `recordSuccess()`, `recordFailure()`,

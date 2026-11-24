@@ -45,7 +45,9 @@ use RuntimeException;
  * The deleted lens, the window fallback and the recorded restore.
  *
  * @covers \OCA\Dossiq\Service\Recycle\CaseRecycleService
+ * @uses \OCA\Dossiq\Service\Recycle\DeletedCaseVisibility
  * @uses \OCA\Dossiq\Service\Recycle\DeletionWindowReader
+ * @uses \OCA\Dossiq\Service\Recycle\LiveCaseReader
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
