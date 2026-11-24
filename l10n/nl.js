@@ -5977,6 +5977,7 @@ OC.L10N.register(
         "no policy published": "geen beleid gepubliceerd",
         "No preview yet": "Nog geen preview",
         "No previous versions": "Geen eerdere versies",
+        "No problems found in this flow.": "Geen problemen gevonden in deze flow.",
         "No processing activities": "Geen verwerkingsactiviteiten",
         "No property definitions yet.": "Nog geen eigenschapsdefinities.",
         "No proposals": "Geen voorstellen",

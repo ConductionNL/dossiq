@@ -1,5 +1,79 @@
 <template>
 	<div class="workflow-tab">
+		<!-- The flow page's header row (board DqZaaktypeFlow): case type, version, Check, More, Save -->
+		<header v-if="boardHeader" class="workflow-tab__header" data-testid="workflow-flow-header">
+			<h2 class="workflow-tab__title" data-testid="workflow-flow-title">
+				{{ caseTypeTitle }}
+			</h2>
+			<span
+				v-if="currentTemplate"
+				class="workflow-tab__pill"
+				data-testid="workflow-flow-version">
+				{{ t('dossiq', 'Version {version}', { version: currentTemplate.version }) }}
+			</span>
+			<span
+				v-if="currentTemplate"
+				class="workflow-tab__pill workflow-tab__pill--state"
+				data-testid="workflow-flow-state">
+				{{ stateLabel }}
+			</span>
+			<span class="workflow-tab__header-actions">
+				<NcButton
+					type="secondary"
+					:disabled="!selectedVersionId"
+					data-testid="workflow-flow-check"
+					@click="check">
+					{{ t('dossiq', 'Check') }}
+				</NcButton>
+				<span class="workflow-tab__more">
+					<NcButton
+						type="tertiary"
+						:aria-expanded="moreOpen ? 'true' : 'false'"
+						data-testid="workflow-flow-more"
+						@click="moreOpen = !moreOpen">
+						{{ t('dossiq', 'More') }}
+					</NcButton>
+					<ul v-if="moreOpen" class="workflow-tab__more-menu" data-testid="workflow-flow-more-menu">
+						<li v-if="versions.length === 0">
+							<button type="button" @click="runMore(createWorkflow)">
+								{{ t('dossiq', 'Create workflow') }}
+							</button>
+						</li>
+						<li v-if="currentIsDraft">
+							<button type="button" :disabled="publishing" @click="runMore(publish)">
+								{{ t('dossiq', 'Publish') }}
+							</button>
+						</li>
+						<li v-if="currentIsPublished && !hasDraft">
+							<button type="button" @click="runMore(editPublished)">
+								{{ t('dossiq', 'Edit') }}
+							</button>
+						</li>
+						<li>
+							<button type="button" @click="runMore(exportWorkflow)">
+								{{ t('dossiq', 'Download') }}
+							</button>
+						</li>
+						<li>
+							<button type="button" @click="runMore(triggerImport)">
+								{{ t('dossiq', 'Import') }}
+							</button>
+						</li>
+					</ul>
+				</span>
+				<NcButton
+					type="primary"
+					:disabled="!(currentIsDraft && dirty) || saving"
+					data-testid="workflow-flow-save"
+					@click="save">
+					{{ t('dossiq', 'Save') }}
+				</NcButton>
+			</span>
+		</header>
+		<p v-if="checkNotice" class="workflow-tab__notice" data-testid="workflow-flow-check-notice">
+			{{ checkNotice }}
+		</p>
+
 		<!-- Version selector and actions -->
 		<div class="workflow-tab__toolbar">
 			<div class="workflow-tab__version-selector">
@@ -16,7 +90,7 @@
 				</select>
 			</div>
 
-			<div class="workflow-tab__actions">
+			<div v-if="!boardHeader" class="workflow-tab__actions">
 				<!-- Create new workflow if none exists -->
 				<NcButton
 					v-if="versions.length === 0"
@@ -64,14 +138,15 @@
 				<NcButton variant="tertiary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
 				</NcButton>
-				<input
-					ref="importInput"
-					type="file"
-					accept=".json"
-					style="display: none"
-					@change="handleImport" />
 			</div>
 		</div>
+
+		<input
+			ref="importInput"
+			type="file"
+			accept=".json"
+			style="display: none"
+			@change="handleImport">
 
 		<!-- Publish errors -->
 		<div v-if="publishErrors.length > 0" class="workflow-tab__errors">
@@ -178,6 +253,12 @@ export default {
 			type: String,
 			required: true,
 		},
+
+		/** Draw the flow page's header row (board DqZaaktypeFlow) instead of the toolbar buttons. */
+		boardHeader: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {
@@ -190,6 +271,9 @@ export default {
 			publishErrors: [],
 			importReport: null,
 			view: 'canvas',
+			caseTypeTitle: '',
+			moreOpen: false,
+			checkNotice: null,
 		}
 	},
 
@@ -220,6 +304,18 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentTemplate() {
 			return this.workflowStore.currentTemplate
+		},
+
+		/**
+		 * The state pill of the version shown: Draft, Active or Published.
+		 *
+		 * @return {string} The pill's word.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		stateLabel() {
+			if (!this.currentTemplate) return ''
+			if (this.currentTemplate.isDraft) return t('dossiq', 'Draft')
+			return this.currentTemplate.isActive ? t('dossiq', 'Active') : t('dossiq', 'Published')
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -259,10 +355,58 @@ export default {
 	},
 
 	async mounted() {
+		if (this.boardHeader) {
+			this.loadTitle()
+		}
 		await this.loadVersions()
 	},
 
 	methods: {
+		/**
+		 * Read the case type's title for the header row. A failed read leaves
+		 * the generic word, so the page still names what it shows.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		async loadTitle() {
+			this.caseTypeTitle = t('dossiq', 'Flow')
+			try {
+				const caseType = await this.objectStore.fetchObject('caseType', this.caseTypeId)
+				const title = caseType?.title || caseType?.name
+				if (title) {
+					this.caseTypeTitle = String(title)
+				}
+			} catch {
+				// The generic word stays: the page still names what it shows.
+			}
+		},
+
+		/**
+		 * Check the flow without publishing it: the editor's validation banner
+		 * shows what is wrong, and a clean flow says so.
+		 *
+		 * @return {boolean} Whether the flow passed.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		check() {
+			const valid = this.$refs.editor ? this.$refs.editor.validate() : false
+			this.checkNotice = valid ? t('dossiq', 'No problems found in this flow.') : null
+			return valid
+		},
+
+		/**
+		 * Close the More menu and run what was chosen in it.
+		 *
+		 * @param {() => (void|Promise<void>)} action One of this tab's actions.
+		 * @return {void|Promise<void>} What the action returns.
+		 * @spec openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas
+		 */
+		runMore(action) {
+			this.moreOpen = false
+			return action()
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadVersions() {
 			this.loading = true
@@ -473,6 +617,63 @@ export default {
 
 .workflow-tab__errors ul {
 	margin: 4px 0 0 16px;
+}
+
+.workflow-tab__header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.workflow-tab__title {
+	margin: 0;
+}
+
+.workflow-tab__pill {
+	background: var(--color-background-dark);
+	border-radius: var(--border-radius-pill);
+	font-size: 0.85em;
+	padding: 2px 10px;
+}
+
+.workflow-tab__pill--state {
+	background: var(--color-primary-element-light);
+}
+
+.workflow-tab__header-actions {
+	display: flex;
+	gap: 8px;
+	margin-inline-start: auto;
+}
+
+.workflow-tab__more {
+	position: relative;
+}
+
+.workflow-tab__more-menu {
+	background: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	box-shadow: 0 2px 8px var(--color-box-shadow);
+	inset-inline-end: 0;
+	list-style: none;
+	margin: 4px 0 0;
+	min-width: 180px;
+	padding: 4px 0;
+	position: absolute;
+	z-index: 10;
+}
+
+.workflow-tab__more-menu button {
+	background: none;
+	border: none;
+	cursor: pointer;
+	margin: 0;
+	padding: 8px 16px;
+	text-align: start;
+	width: 100%;
 }
 
 .workflow-tab__views {

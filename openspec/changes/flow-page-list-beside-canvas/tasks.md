@@ -11,7 +11,7 @@ editor into the library is its own change.
 ### Task 1: Header row and the Canvas | List switch
 - **spec_ref**: `openspec/changes/flow-page-list-beside-canvas/specs/visual-workflow-editor/spec.md#requirement-a-case-types-flow-reads-as-a-list-beside-the-canvas`
 - **files**: `src/manifest.json` (CaseTypeFlow page), `l10n/en.json`, `l10n/nl.json`
-- [ ] Header: case type title, version pill, Check, More, Save, as board DqZaaktypeFlow
+- [x] Header: case type title, version pill, Check, More, Save, as board DqZaaktypeFlow (`WorkflowTab` `boardHeader`, on the flow page only; the case type page keeps its toolbar; test `tests/vitest/flowPageHeaderRow.spec.js`)
 - [x] Canvas | List switch with the board's line under it (`WorkflowTab.vue`)
 
 ### Task 2: The List view
