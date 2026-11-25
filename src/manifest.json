@@ -6763,7 +6763,7 @@
 						"id": "interim-report-assess",
 						"type": "open-modal",
 						"label": "Assess interim report",
-						"icon": "CheckDecagramOutline",
+						"icon": "ClipboardCheckOutline",
 						"target": "InterimReportAssessDialog",
 						"props": {
 							"caseId": "@objectId"

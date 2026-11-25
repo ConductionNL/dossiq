@@ -51,7 +51,7 @@ const STUBS = {
 		template: '<textarea v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
 	},
 	FileChartOutline: true,
-	CheckDecagramOutline: true,
+	ClipboardCheckOutline: true,
 	ScaleBalance: true,
 }
 

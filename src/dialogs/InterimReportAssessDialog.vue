@@ -42,7 +42,7 @@
 			{{ reports.length === 0 ? '' : t('dossiq', 'The report is approved with the assessment voldoende (sufficient).') }}
 		</template>
 		<template #icon>
-			<CheckDecagramOutline :size="20" />
+			<ClipboardCheckOutline :size="20" />
 		</template>
 	</GrantStepDialog>
 </template>
@@ -50,7 +50,7 @@
 <script>
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import CheckDecagramOutline from 'vue-material-design-icons/CheckDecagramOutline.vue'
+import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import GrantStepDialog from './GrantStepDialog.vue'
 import { executionLabel, grantStep } from './grantChain.js'
 
@@ -60,7 +60,7 @@ const SUFFICIENT = 'voldoende'
 export default {
 	name: 'InterimReportAssessDialog',
 
-	components: { CheckDecagramOutline, GrantStepDialog, NcSelect, NcTextField },
+	components: { ClipboardCheckOutline, GrantStepDialog, NcSelect, NcTextField },
 
 	mixins: [grantStep],
 
