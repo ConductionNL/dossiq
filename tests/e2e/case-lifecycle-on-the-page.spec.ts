@@ -254,16 +254,22 @@ test.describe('Case lifecycle on the case page', () => {
 		})
 
 		const seed = async (key: string, status: string) => {
+			// Created in its lifecycle's initial state, THEN moved to this run's
+			// status: OpenRegister refuses a create that sets any other state
+			// ("A new object starts in <initial>; <status> cannot be set when it
+			// is created", 422).
 			const row = await seedCase(api, token, {
 				title: `${RUN_PREFIX} ${key}`,
 				caseType: caseTypeId,
-				status,
 				startDate: new Date().toISOString().slice(0, 10),
 				plannedEndDate: new Date(Date.now() + 30 * DAY)
 					.toISOString()
 					.slice(0, 10),
 			})
 			cases[key] = objectId(row)
+			if (status !== statusReceived) {
+				await updateObject(api, token, 'case', cases[key], { status })
+			}
 		}
 		await seed('advance', statusReceived)
 		await seed('guard', statusReceived)

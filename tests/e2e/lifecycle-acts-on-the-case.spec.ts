@@ -48,6 +48,7 @@ import {
 	seedCase,
 	seedStateMachine,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { caseActOption, caseActReason, clickHeaderAction, PAGE_LOAD } from './helpers/nav.ts'
 
@@ -101,6 +102,20 @@ async function act(
 }
 
 /**
+ * A list property of a case as the API answers it: OpenRegister returns the
+ * array itself now, older builds a JSON-encoded string.
+ *
+ * @param value The property as read.
+ * @return The list.
+ */
+function listField(value: unknown): any[] {
+	if (Array.isArray(value) === true) {
+		return value as any[]
+	}
+	return JSON.parse(String(value ?? '[]'))
+}
+
+/**
  * Open one case's page.
  *
  * @param page   The page under test.
@@ -146,13 +161,17 @@ test.describe('Lifecycle acts on the case', () => {
 			'draft',
 			'incomplete',
 		]) {
+			// Created in its lifecycle's initial state, THEN moved to this run's
+			// status: OpenRegister refuses a create that sets any other state
+			// ("A new object starts in <initial>; <status> cannot be set when it
+			// is created", 422).
 			const seeded = await seedCase(request, token, {
 				title: `${RUN_PREFIX} ${key}`,
 				caseType: machine.caseTypeId,
-				status: machine.statusInProgress,
 				description: 'Seeded for the lifecycle-acts e2e.',
 			})
 			cases[key] = objectId(seeded)
+			await updateObject(request, token, 'case', cases[key], { status: machine.statusInProgress })
 		}
 	})
 
@@ -223,7 +242,7 @@ test.describe('Lifecycle acts on the case', () => {
 			'extend',
 		]) {
 			await expect(
-				page.getByTestId(`case-act-${id}`),
+				caseActReason(page, id),
 				`${id} is in the one menu`,
 			).toBeVisible()
 		}
@@ -312,7 +331,7 @@ test.describe('Lifecycle acts on the case', () => {
 		if (reopened.status() === 200) {
 			const back = await showObject(request, 'case', cases.abort)
 			expect(back.isFinalStatus).toBe(false)
-			const journal = JSON.parse(String(back.activity ?? '[]'))
+			const journal = listField(back.activity)
 			const entry = journal
 				.reverse()
 				.find((row: Record<string, unknown>) => row.type === 'reopen')
@@ -415,7 +434,7 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(marked.isIncomplete, 'the case does not report itself complete').toBe(
 			true,
 		)
-		expect(JSON.parse(String(marked.missingFields ?? '[]'))).toEqual([
+		expect(listField(marked.missingFields)).toEqual([
 			'applicantAddress',
 		])
 
