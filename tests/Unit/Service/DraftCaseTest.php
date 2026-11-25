@@ -109,9 +109,30 @@ class DraftCaseTest extends TestCase {
 
 		$this->assertTrue(condition: $this->case['isDraft']);
 		$this->assertNull(actual: $this->case['startDate'], message: 'a draft that kept its start date is already counting down');
-		$this->assertNull(actual: $this->case['deadline']);
+		$this->assertArrayNotHasKey(key: 'deadline', array: $this->case, message: 'deadline is a read-only calculation; writing it makes the register refuse the save');
 		$this->assertNull(actual: $this->case['plannedEndDate']);
 	}//end testADraftBindsNoTerm()
+
+	/**
+	 * The register's startDate calculation leaves a draft's date empty, so
+	 * the cleared start date is not filled back with today on save (and the
+	 * deadline calculated from it stays empty too).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testTheStartDateCalculationSkipsADraft(): void {
+		$register = json_decode(
+			json: (string)file_get_contents(filename: __DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			associative: true,
+		);
+		$expression = $register['components']['schemas']['case']['x-openregister-calculations']['startDate']['expression'];
+
+		$this->assertArrayHasKey(key: 'if', array: $expression);
+		$this->assertSame(expected: ['not' => [['prop' => 'isDraft']]], actual: $expression['if'][0]);
+		$this->assertCount(expectedCount: 2, haystack: $expression['if'], message: 'no else branch: a draft answers null');
+	}//end testTheStartDateCalculationSkipsADraft()
 
 	/**
 	 * A draft belongs to its author, which is what makes it reachable by them
