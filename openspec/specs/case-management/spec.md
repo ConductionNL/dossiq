@@ -2051,14 +2051,14 @@ recovery window ends, and SHALL be findable in a deleted lens on the case
 list. dossiq SHALL NOT implement a soft delete of its own.
 
 #### Scenario: a bezwaar deleted by mistake is still there
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a deleted bezwaar inside its recovery window
 - **WHEN** a handler opens the deleted lens
 - **THEN** the case SHALL be listed with the date its window ends
 
 #### Scenario: the guard still refuses what it refused before
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a case the delete guard refuses
 - **WHEN** a handler deletes it
@@ -2098,7 +2098,7 @@ who decided, and SHALL be permitted only to the role the case type
 declares. Destroying SHALL also destroy the process data behind the case.
 
 #### Scenario: a case is got back
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a deleted case inside its window
 - **WHEN** a handler restores it
@@ -2106,14 +2106,14 @@ declares. Destroying SHALL also destroy the process data behind the case.
 - **AND** the restore SHALL record who and when
 
 #### Scenario: only the declared role destroys
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a case type declaring a destroying role
 - **WHEN** a handler without that role tries to destroy a deleted case
 - **THEN** the act SHALL be refused
 
 #### Scenario: nothing survives a destruction
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a destroyed case
 - **WHEN** its task history and notes are searched for
@@ -2126,7 +2126,7 @@ as two separate, labelled values. Neither SHALL be derived from the other,
 and dossiq SHALL NOT apply one rule to both.
 
 #### Scenario: a case whose purpose ended is still archived
-@e2e tests/e2e/case-recycle-window.spec.ts
+@e2e exclude {retired 25 Nov 2026 (cases-are-archival-no-delete 4.2): cases are archival, a delete answers 403 and the deleted lens is gone; this requirement leaves with that change}
 
 - **GIVEN** a case whose lawful purpose has ended and whose retention runs to 2034
 - **WHEN** the case is read
