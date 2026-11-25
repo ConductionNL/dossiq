@@ -41,7 +41,12 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 	 */
 	private function caseTypes(): array {
 		$types = [];
-		foreach (glob(self::PACKAGES . '/*/case-type*.json') ?: [] as $file) {
+		$files = glob(self::PACKAGES . '/*/case-type*.json');
+		if ($files === false) {
+			$files = [];
+		}
+
+		foreach ($files as $file) {
 			$decoded = json_decode((string)file_get_contents($file), true);
 			$rows = $decoded['caseType'] ?? [];
 			if (isset($rows['id']) === true) {
@@ -66,7 +71,12 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 	 */
 	private function publishedFlows(): array {
 		$flows = [];
-		foreach (glob(self::PACKAGES . '/*/flows/*.json') ?: [] as $file) {
+		$files = glob(self::PACKAGES . '/*/flows/*.json');
+		if ($files === false) {
+			$files = [];
+		}
+
+		foreach ($files as $file) {
 			$flow = json_decode((string)file_get_contents($file), true);
 			if (($flow['isActive'] ?? false) !== true || ($flow['isDraft'] ?? false) === true) {
 				continue;
@@ -91,7 +101,11 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 			$transitions = json_decode($transitions, true);
 		}
 
-		return is_array($transitions) === true ? $transitions : [];
+		if (is_array($transitions) === false) {
+			return [];
+		}
+
+		return $transitions;
 	}
 
 	/**
@@ -102,7 +116,7 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 	public function testEveryPublishedFlowHasAMoveOutOfItsCaseTypesInitialStatus(): void {
 		$types = $this->caseTypes();
 		$flows = $this->publishedFlows();
-		$this->assertNotEmpty($flows, 'The packages ship published flows.');
+		$this->assertNotEmpty(actual: $flows, message: 'The packages ship published flows.');
 
 		$stuck = [];
 		$checked = 0;
@@ -113,14 +127,18 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 			}
 
 			$checked++;
-			$from = array_column($this->transitionsOf($flow), 'fromStatus');
+			$from = array_column($this->transitionsOf(flow: $flow), 'fromStatus');
 			if (in_array($type['initialStatus'], $from, true) === false) {
 				$stuck[] = "{$name} (case type {$type['title']})";
 			}
 		}
 
-		$this->assertGreaterThan(10, $checked, 'Most shipped flows name a shipped case type.');
-		$this->assertSame([], $stuck, 'A new case of these case types would have no move: ' . implode(', ', $stuck));
+		$this->assertGreaterThan(expected: 10, actual: $checked, message: 'Most shipped flows name a shipped case type.');
+		$this->assertSame(
+			expected: [],
+			actual: $stuck,
+			message: 'A new case of these case types would have no move: ' . implode(', ', $stuck)
+		);
 	}
 
 	/**
@@ -134,14 +152,14 @@ class ShippedFlowsLeaveTheInitialStatusTest extends TestCase {
 
 		$steps = json_decode((string)$flow['steps'], true);
 		$first = array_values(array_filter($steps, static fn (array $step): bool => ($step['isInitial'] ?? false) === true));
-		$this->assertCount(1, $first, 'One initial step.');
-		$this->assertSame($initial, $first[0]['status']);
-		$this->assertSame(1, $first[0]['order']);
+		$this->assertCount(expectedCount: 1, haystack: $first, message: 'One initial step.');
+		$this->assertSame(expected: $initial, actual: $first[0]['status']);
+		$this->assertSame(expected: 1, actual: $first[0]['order']);
 
 		$out = array_values(array_filter(
-			$this->transitionsOf($flow),
+			$this->transitionsOf(flow: $flow),
 			static fn (array $move): bool => $move['fromStatus'] === $initial
 		));
-		$this->assertSame(['Vooraankondiging'], array_column($out, 'toStatusName'));
+		$this->assertSame(expected: ['Vooraankondiging'], actual: array_column($out, 'toStatusName'));
 	}
 }
