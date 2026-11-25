@@ -127,7 +127,7 @@ class DraftCaseTest extends TestCase {
 			json: (string)file_get_contents(filename: __DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			associative: true,
 		);
-		$expression = $register['components']['schemas']['case']['x-openregister-calculations']['startDate']['expression'];
+		$expression = $register['components']['schemas']['case']['configuration']['x-openregister-calculations']['startDate']['expression'];
 
 		$this->assertArrayHasKey(key: 'if', array: $expression);
 		$this->assertSame(expected: ['not' => [['prop' => 'isDraft']]], actual: $expression['if'][0]);
