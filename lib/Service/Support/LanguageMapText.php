@@ -93,7 +93,7 @@ class LanguageMapText {
 	 *
 	 * @return string The text, or the fallback.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function textOr(mixed $value, string $fallback, string $language = ''): string {
 		$text = $this->textOf(value: $value, language: $language);

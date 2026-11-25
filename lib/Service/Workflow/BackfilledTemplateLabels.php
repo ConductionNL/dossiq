@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
 /**
  * Names a backfilled template and heals one stored with "Array" labels.
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 class BackfilledTemplateLabels {
 
@@ -79,7 +79,7 @@ class BackfilledTemplateLabels {
 	 *
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function __construct(
 		private readonly LanguageMapText $text = new LanguageMapText(),
@@ -93,7 +93,7 @@ class BackfilledTemplateLabels {
 	 *
 	 * @return string The template title.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function titleFor(mixed $caseTypeTitle): string {
 		return $this->text->textOr(value: $caseTypeTitle, fallback: 'Workflow') . ' (basis)';
@@ -108,7 +108,7 @@ class BackfilledTemplateLabels {
 	 *
 	 * @return array<string, mixed> The healed fields; [] when nothing needs it.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function healed(array $template, array $caseType, array $statusesById): array {
 		if (($template['description'] ?? null) !== self::MARKER) {
@@ -288,7 +288,7 @@ class BackfilledTemplateLabels {
 	 *
 	 * @return bool True when the template is to be healed.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function castMarked(string $id, array $template): bool {

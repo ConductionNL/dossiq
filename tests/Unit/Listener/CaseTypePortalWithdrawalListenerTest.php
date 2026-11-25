@@ -250,7 +250,7 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal(): void {
 		$statuses = array_map(
