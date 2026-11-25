@@ -52,9 +52,9 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import { t } from './grantChain.js'
 
 export default {
 	name: 'GrantStepDialog',

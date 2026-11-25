@@ -15,6 +15,8 @@ import { showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 
+export { t }
+
 /**
  * Read the executions of the case's grants.
  *

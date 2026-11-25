@@ -76,6 +76,8 @@ export default {
 
 	mixins: [grantStep],
 
+	emits: ['close', 'done'],
+
 	data() {
 		return {
 			settlementId: null,
