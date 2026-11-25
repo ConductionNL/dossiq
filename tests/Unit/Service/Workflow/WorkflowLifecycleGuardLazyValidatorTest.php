@@ -35,6 +35,7 @@ use ReflectionMethod;
  * Tests for the lazily resolved task-declaration check.
  *
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
+ * @uses \OCA\Dossiq\Service\Workflow\DefaultRoute
  */
 final class WorkflowLifecycleGuardLazyValidatorTest extends TestCase {
 

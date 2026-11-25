@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class FilterPipeline implements FilterPipelineInterface {
 
@@ -94,7 +94,7 @@ class FilterPipeline implements FilterPipelineInterface {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function declaredOrder(): array {
 		return array_map(
@@ -117,7 +117,7 @@ class FilterPipeline implements FilterPipelineInterface {
 	 *
 	 * @return FilterVerdict The deciding verdict, or the written-down default.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function run(InboundMessage $message): FilterVerdict {
 		foreach ($this->ordered as $filter) {

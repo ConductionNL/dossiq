@@ -322,7 +322,7 @@ export default {
 		channelLabel(id) {
 			const known = {
 				'nc-notification': t('dossiq', 'In Nextcloud'),
-				email: t('dossiq', 'By e-mail'),
+				email: t('dossiq', 'By email'),
 				activity: t('dossiq', 'In the activity stream'),
 				'web-push': t('dossiq', 'As a push message'),
 			}

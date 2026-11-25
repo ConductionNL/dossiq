@@ -22,7 +22,6 @@ use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\DecisionAdviceServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
-use OCA\Dossiq\Service\Support\ReadsLooseValues;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Throwable;
@@ -38,10 +37,6 @@ use Throwable;
  * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
  */
 class DecisionAdviceService implements DecisionAdviceServiceInterface {
-
-	use ReadsLooseValues {
-		looseList as private listOf;
-	}
 
 	/**
 	 * The refusal of a deviation without a reason, as the handler reads it.
@@ -76,11 +71,12 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 	 * @throws DecisionAdviceRefusal When the case, its table or an input is missing, or the table gives no answer.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function recommend(string $caseId, array $inputs, string $userId): array {
 		$reference = $this->tableOf(caseId: $caseId);
 		$table = $this->table(reference: $reference);
-		$values = $this->declaredInputs(table: $table, inputs: $inputs);
+		$values = (new AdviceTable(table: $table))->declaredValues(inputs: $inputs);
 		$outputs = $this->evaluate(reference: $reference, values: $values);
 
 		return $this->saveRecommendation(
@@ -96,6 +92,7 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 	 * @param array<string, mixed> $evaluated The declared inputs and the table's outputs.
 	 *
 	 * @return array<string, mixed> The stored advice.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveRecommendation(array $asked, array $evaluated): array {
 		$outputs = $evaluated['outputs'];
@@ -106,7 +103,7 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 				'decisionTable' => $asked['reference'],
 				'inputs' => $evaluated['inputs'],
 				'outputs' => $outputs,
-				'recommendation' => $this->recommendationOf(table: $asked['table'], outputs: $outputs),
+				'recommendation' => (new AdviceTable(table: $asked['table']))->recommendation(outputs: $outputs),
 				'recommendedBy' => $asked['userId'],
 				'recommendedAt' => $this->now(),
 			]
@@ -142,6 +139,7 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 	 * @throws DecisionAdviceRefusal When the case is unknown or the table cannot be read.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function form(string $caseId): array {
 		$reference = $this->namedTableOf(caseId: $caseId);
@@ -149,71 +147,16 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 			return ['available' => false, 'decisionTable' => '', 'inputs' => [], 'outcomes' => []];
 		}
 
-		$table = $this->table(reference: $reference);
-		$rules = $this->listOf(value: ($table['rules'] ?? null));
-		$inputs = [];
-		$index = 0;
-		foreach ($this->listOf(value: ($table['inputs'] ?? null)) as $definition) {
-			if (is_array($definition) === false) {
-				continue;
-			}
-
-			$name = trim((string)($definition['name'] ?? ''));
-			if ($name !== '') {
-				$inputs[] = [
-					'name' => $name,
-					'type' => (string)($definition['type'] ?? 'string'),
-					'options' => $this->entries(rules: $rules, column: ['key' => 'inputEntries', 'index' => $index]),
-				];
-			}
-
-			$index++;
-		}
+		$table = new AdviceTable(table: $this->table(reference: $reference));
+		$inputs = $table->offeredInputs();
 
 		return [
 			'available' => ($inputs !== []),
 			'decisionTable' => $reference,
 			'inputs' => $inputs,
-			'outcomes' => $this->entries(rules: $rules, column: ['key' => 'outputEntries', 'index' => 0]),
+			'outcomes' => $table->outcomes(),
 		];
 	}//end form()
-
-	/**
-	 * The distinct literal values one column of the rules uses, in rule order.
-	 * A dash or an empty entry matches anything and is no option.
-	 *
-	 * @param array                          $rules  The table's rules.
-	 * @param array{key: string, index: int} $column `inputEntries` or `outputEntries`, and the column.
-	 *
-	 * @return list<string>
-	 */
-	private function entries(array $rules, array $column): array {
-		['key' => $key, 'index' => $index] = $column;
-		$values = [];
-		foreach ($rules as $rule) {
-			$entry = null;
-			if (is_array($rule) === true) {
-				$entry = ($this->listOf(value: ($rule[$key] ?? null))[$index] ?? null);
-			}
-
-			if (is_scalar($entry) === false) {
-				continue;
-			}
-
-			$value = trim((string)$entry);
-			if (strlen($value) >= 2 && $value[0] === '"' && substr($value, -1) === '"') {
-				$value = substr($value, 1, -1);
-			}
-
-			if ($value === '' || $value === '-' || in_array($value, $values, true) === true) {
-				continue;
-			}
-
-			$values[] = $value;
-		}
-
-		return $values;
-	}//end entries()
 
 	/**
 	 * Record the handler's choice: the recommendation accepted, or another
@@ -357,68 +300,6 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 	}//end table()
 
 	/**
-	 * The entered value of every input the table declares, and only those.
-	 *
-	 * @param array<string, mixed> $table The table.
-	 * @param array<string, mixed> $inputs The values entered.
-	 *
-	 * @return array<string, string> The values by input name.
-	 *
-	 * @throws DecisionAdviceRefusal When the table declares no input, or an input has no value.
-	 */
-	private function declaredInputs(array $table, array $inputs): array {
-		$names = $this->names(definitions: ($table['inputs'] ?? []));
-		if ($names === []) {
-			throw new DecisionAdviceRefusal('De beslistabel declareert geen invoer', Http::STATUS_CONFLICT);
-		}
-
-		$values = [];
-		$missing = [];
-		foreach ($names as $name) {
-			$value = ($inputs[$name] ?? null);
-			if (is_scalar($value) === false || trim((string)$value) === '') {
-				$missing[] = $name;
-				continue;
-			}
-
-			$values[$name] = trim((string)$value);
-		}
-
-		if ($missing !== []) {
-			throw new DecisionAdviceRefusal('Vul in: ' . implode(', ', $missing), Http::STATUS_BAD_REQUEST);
-		}
-
-		return $values;
-	}//end declaredInputs()
-
-	/**
-	 * The names of a table's input or output definitions, in declared order.
-	 *
-	 * @param mixed $definitions The definitions.
-	 *
-	 * @return array<int, string> The names.
-	 */
-	private function names(mixed $definitions): array {
-		if (is_array($definitions) === false) {
-			return [];
-		}
-
-		$names = [];
-		foreach ($definitions as $definition) {
-			if (is_array($definition) === false) {
-				continue;
-			}
-
-			$name = trim((string)($definition['name'] ?? ''));
-			if ($name !== '') {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
-	}//end names()
-
-	/**
 	 * What the table answers for the values.
 	 *
 	 * @param string $reference The table's id or key.
@@ -446,26 +327,6 @@ class DecisionAdviceService implements DecisionAdviceServiceInterface {
 
 		return $outputs;
 	}//end evaluate()
-
-	/**
-	 * The recommendation: the value of the table's first declared output.
-	 *
-	 * @param array<string, mixed> $table The table.
-	 * @param array<string, mixed> $outputs The outputs.
-	 *
-	 * @return string The recommendation.
-	 *
-	 * @throws DecisionAdviceRefusal When that output has no value.
-	 */
-	private function recommendationOf(array $table, array $outputs): string {
-		$first = ($this->names(definitions: ($table['outputs'] ?? []))[0] ?? (string)array_key_first($outputs));
-		$value = ($outputs[$first] ?? null);
-		if (is_scalar($value) === false || trim((string)$value) === '') {
-			throw new DecisionAdviceRefusal('De beslistabel geeft geen advies voor deze invoer', Http::STATUS_UNPROCESSABLE_ENTITY);
-		}
-
-		return (string)$value;
-	}//end recommendationOf()
 
 	/**
 	 * Now, as stored.

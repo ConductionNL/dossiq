@@ -48,7 +48,7 @@ describe('First today and the library banner', () => {
 	it('is the attention card, naming the first row of the past-term query', () => {
 		expect(card.type).toBe('banner')
 		expect(card.content.layout).toBe('attention')
-		expect(card.content.kicker).toBe('First today')
+		expect(card.content.kicker).toBe('Today first')
 		expect(card.content.title).toBe('{subject.title}')
 		expect(card.content.visibleWhen).toMatchObject({ op: 'gt', value: 0 })
 		expect(card.content.visibleWhen.source.filter.assignee).toBe('@me')
@@ -57,16 +57,16 @@ describe('First today and the library banner', () => {
 	it('offers the board\'s ways on: all cases past their term, the board, and the case itself last', () => {
 		// DqMijnWerk "Vandaag eerst": Alle zaken over termijn, Naar het
 		// werkbord, Termijn opschorten, Zaak openen (primary).
-		expect(card.content.actions.map((action) => action.label)).toEqual(['All cases past their deadline', 'Go to the board', 'Suspend the term', 'Open case'])
+		expect(card.content.actions.map((action) => action.label)).toEqual(['All overdue cases', 'To the work board', 'Suspend deadline', 'Open case'])
 		// Suspending opens the case's lifecycle menu on that act, for the case the card names.
 		expect(card.content.actions[2]).toEqual({
-			label: 'Suspend the term',
+			label: 'Suspend deadline',
 			type: 'open-modal',
 			target: 'CaseLifecycleMenuDialog',
 			props: { caseId: '@subject.id', act: 'suspend' },
 		})
 		expect(read('src', 'registry.js')).toContain('CaseLifecycleMenuDialog: {')
-		expect(card.content.actions[1]).toEqual({ label: 'Go to the board', route: { name: 'Cases', query: { _view: 'board' } } })
+		expect(card.content.actions[1]).toEqual({ label: 'To the work board', route: { name: 'Cases', query: { _view: 'board' } } })
 		expect(card.content.actions.filter((action) => action.primary).map((action) => action.label)).toEqual(['Open case'])
 	})
 

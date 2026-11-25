@@ -12238,7 +12238,7 @@
 					"integriq:openspec/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
 					"openspec/specs/email-case-matching :: REQ-ECM-009 — An unmatched mail in the shared mailbox becomes a case"
 				],
-				"plan": "openspec/changes/inbound-mail-filters"
+				"plan": "openspec/changes/archive/2026-11-24-inbound-mail-filters"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:54-60,117,186-199 IMAP import location reads unseen INBOX messages but imports only attachments (line 266 getAttachments) onto the system inbox case; the mail body and headers are not kept; registered unconditionally in lib/AppInfo/Application.php:242 | round 2 drive: procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",
@@ -13220,7 +13220,7 @@
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-management :: A handler links an object to a case from its page (REQ-CRS-26)"
 				],
 				"plan": [
-					"openspec/changes/catalogue-object-types",
+					"openspec/changes/archive/2026-11-24-catalogue-object-types",
 					"openspec/changes/objects-index-like-cases"
 				]
 			},
@@ -13881,7 +13881,7 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/tenders-run-on-the-tender-case-type",
-					"openspec/changes/screens-round12-domain-lists"
+					"openspec/changes/archive/2026-11-24-screens-round12-domain-lists"
 				],
 				"requirement": [
 					"openspec/specs/dossiq-procurement-tender-management :: REQ-TND-001 — Tenders SHALL be modelled as dossiq cases (`schema:Project`), not as a parallel domain object",
@@ -15883,7 +15883,7 @@
 					"openspec/changes/organisations-legal-form-short",
 					"openspec/changes/organisations-list-cells-as-drawn",
 					"openspec/changes/person-chips",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -15995,7 +15995,7 @@
 					"openspec/changes/party-overview-card-order",
 					"openspec/changes/party-tickets-all-with-reference",
 					"openspec/changes/party-tickets-link",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -16044,7 +16044,7 @@
 				],
 				"plan": [
 					"openspec/changes/contacts-secrecy-pill",
-					"openspec/changes/screens-round12-relations"
+					"openspec/changes/archive/2026-11-24-screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -16774,7 +16774,7 @@
 				"plan": [
 					"openspec/changes/portal-conversation-live-pass",
 					"openspec/changes/an-aanvullingsverzoek-is-a-portal-task",
-					"openspec/changes/woo-dossier-shared-with-the-requester"
+					"openspec/changes/archive/2026-11-24-woo-dossier-shared-with-the-requester"
 				],
 				"spec": "openspec/specs/portal-contribution",
 				"requirement": "openspec/changes/portal-conversation-live-pass/specs/portal-contribution :: A message goes round trip between the handler and the resident (REQ-PORTAL-RT-01)"
@@ -17586,8 +17586,8 @@
 				],
 				"plan": [
 					"openspec/changes/a-request-form-opens-the-case-at-once",
-					"openspec/changes/intake-says-when-the-term-starts",
-					"openspec/changes/omgevingsvergunning-starts-its-term",
+					"openspec/changes/archive/2026-11-24-intake-says-when-the-term-starts",
+					"openspec/changes/archive/2026-11-24-omgevingsvergunning-starts-its-term",
 					"openspec/changes/woo-request-takes-over-from-opencatalogi",
 					"openspec/changes/woo-term-is-computed-and-reported-right"
 				]
@@ -18003,7 +18003,7 @@
 					"openspec/specs/termijn-binding :: A term ends on a day, not at a moment (REQ-TERM-DAY-001)"
 				],
 				"plan": [
-					"openspec/changes/intake-says-when-the-term-starts",
+					"openspec/changes/archive/2026-11-24-intake-says-when-the-term-starts",
 					"openspec/changes/woo-term-is-computed-and-reported-right"
 				]
 			},
@@ -18400,16 +18400,16 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"owner": "ConductionNL/openregister",
 				"change": "nextcloud-vue/saved-views-shared-by-role",
-				"note": "Re-read 2026-10-07: the backend is built in openregister, but the dialog a dossiq user saves a view in (nextcloud-vue CnSaveViewDialog) has no group picker, so a saved case search can be private or public and never shared with one department. Missing: a group share in CnSaveViewDialog and CnSavedViewsControl (nextcloud-vue). Missing half specified in nextcloud-vue/saved-views-shared-by-role (spec round part 3, 2026-10-07); delivered half: openregister/view-group-share.",
+				"note": "Re-read 2026-11-24: the group share is in nextcloud-vue's save dialog now, and dossiq limits it to the reader's own groups (case-views-shared-with-a-team tasks 2 to 5). Re-read 2026-10-07 had found no group picker in CnSaveViewDialog (specified as nextcloud-vue/saved-views-shared-by-role); the backend half is openregister/view-group-share. The live check of the picker (task 1) follows.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaken"
 				},
-				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards, editable in openregister's own src/modals/view/EditView.vue:284; dossiq's lists save views through nextcloud-vue CnSaveViewDialog, which offers only a public toggle (src/components/CnSaveViewDialog/CnSaveViewDialog.vue:28-31)",
-				"readOn": "2026-10-07",
+				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards; nextcloud-vue CnSaveViewDialog draws a share section (CnSavedViewShareFields, people and groups, read-only or edit) narrowed by `savedViewsShareGroups` (change saved-view-share-groups); dossiq sets `savedViewsShareGroups: mine` on every list page with saved views (src/manifest.json Cases, Tasks, CaseObjects, Contacts, Organisations; src/manifest.d/89-search.json SearchResults; dossiq #6894, tests/vitest/savedViewsShareOwnGroups.spec.js); the Zuiddrecht example set ships Marleen Postma's view shared read-only with Team Vergunningen (lib/Settings/example-sets/zuiddrecht.json, tests/Unit/Settings/ZuiddrechtBoardSavedViewsTest.php); tests/e2e/case-views-shared.spec.ts written (runs in the nightly)",
+				"readOn": "2026-11-24",
 				"plan": "openspec/changes/case-views-shared-with-a-team",
 				"requirement": "openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
 			},
@@ -19376,20 +19376,20 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"openzaak": "unknown",
-			"provider": "dossiq",
-			"providerHow": "note-cites-dossiq-code",
+			"provider": "shillinq",
+			"providerHow": "note-names-app",
 			"built": {
-				"state": "building",
-				"evidence": "Decision 261 / ADR-107: dossiq classifies, Shillinq reports. caseType.iv3TaskField exists; the duplicate Iv3TaakveldList, iv3_taakvelden.json and route GET /api/reports/iv3/taakvelden are still there to retire; no link card to Shillinq on the Reports page yet",
+				"state": "built",
+				"evidence": "Decision 261 / ADR-107: dossiq classifies, Shillinq reports. dossiq's half is built: caseType.iv3TaskField is a lookup on Shillinq's BbvTaakveld catalogue on CaseTypeDetail (src/manifest.json); the duplicate Iv3TaakveldList, iv3_taakvelden.json and GET /api/reports/iv3/taakvelden are retired; the Reports page card ShillinqIv3 links to Shillinq's report (requiredApp shillinq) and shows a sentence, never a figure, without it; tests/e2e/iv3-link-to-shillinq.spec.ts written (runs in the nightly)",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/iv3-taakveld-2023-refinement",
 				"screen": {
 					"board": "DqRapportages",
 					"reason": "reports page link card to Shillinq; the report itself is board shillinq/ShOverheid"
 				},
-				"readOn": "2026-10-30",
+				"readOn": "2026-11-24",
 				"reachedOn": "case type field iv3TaskField (CaseTypeDetail)",
-				"note": "Rescoped by decision 261: the cost report per taakveld is Shillinq's Iv3ReportGenerator, fed by dossiq's case type classification and humaniq hours (Shillinq change iv3-report-takes-case-costs-by-case-type). Missing in dossiq: retiring the duplicate taakveld list, the catalogue lookup on the case type, the Reports link card.",
+				"note": "Rescoped by decision 261: the cost report per taakveld is Shillinq's Iv3ReportGenerator, fed by dossiq's case type classification and humaniq hours (Shillinq change iv3-report-takes-case-costs-by-case-type). dossiq's tasks 2 to 7 of case-costs-reported-per-iv3-taakveld landed (24 Nov 2026); the count of off-catalogue codes (task 1) and the board amend with its live pass (task 8) remain.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md; rescoped 2026-10-30 by decision 261",
 				"plan": "openspec/changes/case-costs-reported-per-iv3-taakveld",
 				"requirement": [
@@ -19703,7 +19703,7 @@
 				],
 				"plan": [
 					"openspec/changes/capability-rows-say-the-whole-capability",
-					"openspec/changes/overview-cards-per-case-type"
+					"openspec/changes/archive/2026-11-24-overview-cards-per-case-type"
 				]
 			},
 			"evidence": {
@@ -20367,7 +20367,7 @@
 				"plan": [
 					"openspec/changes/capability-rows-say-the-whole-capability",
 					"openspec/changes/advanced-holds-the-catalogue-folders",
-					"openspec/changes/catalogue-object-types"
+					"openspec/changes/archive/2026-11-24-catalogue-object-types"
 				]
 			},
 			"evidence": {
@@ -22147,7 +22147,7 @@
 				"plan": [
 					"openspec/changes/mandated-case-steps-read-unscoped",
 					"openspec/changes/site-business-and-authorisation",
-					"openspec/changes/woo-dossier-shared-with-the-requester"
+					"openspec/changes/archive/2026-11-24-woo-dossier-shared-with-the-requester"
 				]
 			},
 			"evidence": {
@@ -22495,7 +22495,7 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/inspection-checklists-onto-task",
-					"openspec/changes/inspection-conflict-card",
+					"openspec/changes/archive/2026-11-24-inspection-conflict-card",
 					"openspec/changes/outbox-cards-with-summary"
 				],
 				"requirement": [

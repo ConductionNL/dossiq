@@ -35,7 +35,8 @@ const fragment = readJson('lib', 'Settings', 'register.d', '99-case-type-quick-a
 
 describe('quick actions per case type', () => {
 	it('reads them from the case type', () => {
-		expect(simple.quickActionsFrom).toBe('@context.caseType.quickActions')
+		// After the case type's headerActions (case-type-declares-its-header-actions).
+		expect(simple.quickActionsFrom).toContain('@context.caseType.quickActions')
 	})
 
 	it('keeps the page\'s three for a case type that lists none', () => {

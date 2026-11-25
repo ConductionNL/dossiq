@@ -63,7 +63,24 @@ const OBJECT_TYPES = [
 	{ type: 'kvkCompany', key: 'kvk_company_schema', fallback: 'kvkCompany' },
 ]
 
-/** @spec openspec/specs/openregister-integration/spec.md */
+let markStoresReady = () => {}
+
+/**
+ * Settles once `initializeStores()` has registered the object types, so
+ * start-up work that needs them (the case list's label lookups) can wait for
+ * them without importing the app shell.
+ *
+ * @type {Promise<void>}
+ * @spec openspec/specs/case-management/spec.md
+ */
+export const storesReady = new Promise((resolve) => {
+	markStoresReady = resolve
+})
+
+/**
+ * @spec openspec/specs/openregister-integration/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ */
 export async function initializeStores() {
 	const settingsStore = useSettingsStore()
 	const objectStore = useObjectStore()
@@ -73,6 +90,7 @@ export async function initializeStores() {
 	if (config?.register) {
 		registerObjectTypes(objectStore, config)
 	}
+	markStoresReady()
 
 	return { settingsStore, objectStore }
 }

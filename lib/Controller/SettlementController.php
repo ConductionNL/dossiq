@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * The settlements of a case, for a reader of that case.
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 class SettlementController extends Controller {
 
@@ -71,7 +71,7 @@ class SettlementController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+	 * @spec openspec/specs/case-page/spec.md
 	 */
 	#[NoAdminRequired]
 	public function forCase(string $caseId): JSONResponse {

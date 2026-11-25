@@ -27,8 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Tenant\TenantMembershipCache;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCP\App\IAppManager;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
@@ -38,7 +41,9 @@ use RuntimeException;
  * Golden tests for TenantAuthenticationService's lookups.
  *
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
+ * @uses \OCA\Dossiq\Service\Tenant\MandateMatrix
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Service\Tenant\TenantMembershipCache
  */
 class TenantAuthenticationLookupsGoldenTest extends TestCase {
 
@@ -55,6 +60,13 @@ class TenantAuthenticationLookupsGoldenTest extends TestCase {
 	 * @var array<int, array<int, mixed>>
 	 */
 	private array $logged = [];
+
+	/**
+	 * The membership cache segment, by key.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $kept = [];
 
 	/**
 	 * A service whose store answers per schema, or throws when the answer is an exception.
@@ -114,8 +126,51 @@ class TenantAuthenticationLookupsGoldenTest extends TestCase {
 			}
 		};
 
-		return new TenantAuthenticationService($appManager, $container, $logger);
+		return new TenantAuthenticationService(appManager: $appManager, container: $container, logger: $logger, memberships: $this->memberships());
 	}//end auth()
+
+	/**
+	 * The membership cache over an in-memory segment shared by every service this test builds.
+	 *
+	 * @return TenantMembershipCache
+	 */
+	private function memberships(): TenantMembershipCache {
+		$store = &$this->kept;
+		$cache = $this->createMock(originalClassName: ICache::class);
+		$cache->method('get')->willReturnCallback(static function (string $key) use (&$store) {
+			return ($store[$key] ?? null);
+		});
+		$cache->method('set')->willReturnCallback(static function (string $key, mixed $value) use (&$store): bool {
+			$store[$key] = $value;
+			return true;
+		});
+		$cache->method('remove')->willReturnCallback(static function (string $key) use (&$store): bool {
+			unset($store[$key]);
+			return true;
+		});
+		$factory = $this->createMock(originalClassName: ICacheFactory::class);
+		$factory->method('createDistributed')->willReturn($cache);
+
+		return new TenantMembershipCache(cacheFactory: $factory);
+	}//end memberships()
+
+	/**
+	 * A membership list read once is kept: the next ask in the minute reads nothing, a forget reads again.
+	 *
+	 * @return void
+	 */
+	public function testAMembershipListIsKeptUntilItIsForgotten(): void {
+		$rows = [['tenantRef' => 'tenant-a']];
+		$auth = $this->auth(bySchema: ['tenantUser' => $rows]);
+
+		self::assertSame(expected: ['tenant-a'], actual: $auth->listTenantsForUser(userId: 'alice'));
+		self::assertTrue(condition: $auth->isMemberOf(tenantId: 'tenant-a', userId: 'alice'));
+		self::assertCount(expectedCount: 1, haystack: $this->queries);
+
+		$this->memberships()->forget(userId: 'alice');
+		$auth->listTenantsForUser(userId: 'alice');
+		self::assertCount(expectedCount: 2, haystack: $this->queries);
+	}//end testAMembershipListIsKeptUntilItIsForgotten()
 
 	/**
 	 * The membership list: trimmed, de-duplicated, empty refs skipped, one scoped query.
@@ -144,6 +199,7 @@ class TenantAuthenticationLookupsGoldenTest extends TestCase {
 		);
 
 		$this->queries = [];
+		$this->kept = [];
 		self::assertSame([], $this->auth(['tenantUser' => $rows])->listTenantsForUser(''));
 		self::assertSame([], $this->queries);
 		self::assertSame([], $this->auth(['tenantUser' => []])->listTenantsForUser('alice'));

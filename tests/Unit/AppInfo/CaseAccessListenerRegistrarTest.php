@@ -21,6 +21,7 @@ use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDecisionAccessListener;
 use OCA\Dossiq\Listener\CaseReassignGuardListener;
 use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
+use OCA\Dossiq\Listener\CaseTypeRightsSourcesListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -47,6 +48,9 @@ class CaseAccessListenerRegistrarTest extends TestCase {
 				['OCA\OpenRegister\Event\DecisionChangeRequestedEvent', CaseDecisionAccessListener::class],
 				['OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent', CaseDecisionAccessListener::class],
 				['OCA\OpenRegister\Event\MatrixRowsRequestedEvent', CaseTypeRightsRowsListener::class],
+				['OCA\OpenRegister\Event\ObjectCreatedEvent', CaseTypeRightsSourcesListener::class],
+				['OCA\OpenRegister\Event\ObjectUpdatedEvent', CaseTypeRightsSourcesListener::class],
+				['OCA\OpenRegister\Event\ObjectDeletedEvent', CaseTypeRightsSourcesListener::class],
 			],
 			$registered
 		);

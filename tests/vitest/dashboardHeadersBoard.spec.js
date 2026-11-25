@@ -80,7 +80,7 @@ describe('the dashboard headers', () => {
 		// Dashboard's, not the shared definition's.
 		const overlay = simple.pages.find((entry) => entry.id === 'Dashboard')
 		const patch = overlay.configPatch.widgets[id]
-		expect(patch.subtitle).toBe('Open cases')
+		expect(patch.subtitle).toBe('Ongoing cases')
 		expect(patch.content.dataSource.filter.isFinalStatus).toBe(false)
 		expect(page('Dashboard').config.widgets.find((entry) => entry.id === id).subtitle).toBeUndefined()
 	})

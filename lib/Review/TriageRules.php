@@ -22,8 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
@@ -108,60 +106,11 @@ class TriageRules implements TriageRulesInterface {
 	 * @return list<array<string, mixed>> The rules with `decided` and `overturned`.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function forCase(string $caseId): array {
-		$reviews = $this->reviews->forCase(caseId: $caseId);
-		$decided = $this->decidedPerRule(reviews: $reviews);
-		$overturned = $this->overturnedPerRule(reviews: $reviews);
-
-		$listed = [];
-		foreach ($this->rows(caseId: $caseId) as $rule) {
-			$name = (string)($rule['name'] ?? '');
-			$rule['decided'] = ($decided[$name] ?? 0);
-			$rule['overturned'] = ($overturned[$name] ?? 0);
-			$listed[] = $rule;
-		}
-
-		return $listed;
+		return (new RuleMarkings(reviews: $this->reviews->forCase(caseId: $caseId)))->onRules(rules: $this->rows(caseId: $caseId));
 	}//end forCase()
-
-	/**
-	 * How many documents each rule decided: reviews whose relevance a rule set.
-	 *
-	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
-	 *
-	 * @return array<string, int> Count per rule name.
-	 */
-	private function decidedPerRule(array $reviews): array {
-		$decided = [];
-		foreach ($reviews as $review) {
-			$rule = (string)($review['rule'] ?? '');
-			if ($rule !== '' && ($review['relevanceSource'] ?? '') === 'rule') {
-				$decided[$rule] = (($decided[$rule] ?? 0) + 1);
-			}
-		}
-
-		return $decided;
-	}//end decidedPerRule()
-
-	/**
-	 * How many of each rule's markings a reviewer overturned.
-	 *
-	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
-	 *
-	 * @return array<string, int> Count per rule name.
-	 */
-	private function overturnedPerRule(array $reviews): array {
-		$overturned = [];
-		foreach ($reviews as $review) {
-			$over = (string)($review['overturnedRule'] ?? '');
-			if ($over !== '') {
-				$overturned[$over] = (($overturned[$over] ?? 0) + 1);
-			}
-		}
-
-		return $overturned;
-	}//end overturnedPerRule()
 
 	/**
 	 * Create a rule, or change the case's rule `ruleId`.
@@ -242,6 +191,7 @@ class TriageRules implements TriageRulesInterface {
 	 * @throws RefusedException When the rules, the reviews or a document's facts cannot be read or written.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function apply(string $caseId): array {
 		$rules = $this->activeRules(caseId: $caseId);
@@ -252,6 +202,7 @@ class TriageRules implements TriageRulesInterface {
 
 		$created = 0;
 		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$markings = new RuleMarkings(reviews: $reviews);
 		$open = $this->reviewsOpenToRules(caseId: $caseId, reviews: $reviews);
 		$considered = count($open);
 		foreach ($open as [$documentId, $review]) {
@@ -260,7 +211,7 @@ class TriageRules implements TriageRulesInterface {
 				continue;
 			}
 
-			$this->reviews->save(review: $this->markedByRule(review: $review, rule: $rule));
+			$this->reviews->save(review: $markings->marked(review: $review, rule: $rule));
 			$counts[(string)$rule['name']]++;
 			if (isset($reviews[$documentId]) === false) {
 				$created++;
@@ -272,23 +223,6 @@ class TriageRules implements TriageRulesInterface {
 
 		return ['counts' => $counts, 'marked' => array_sum($counts), 'considered' => $considered];
 	}//end apply()
-
-	/**
-	 * A review as the rule marks it: its effect, the rule as source and name, and the moment.
-	 *
-	 * @param array<string, mixed> $review The review.
-	 * @param array<string, mixed> $rule   The rule that matched.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function markedByRule(array $review, array $rule): array {
-		$review['relevance'] = (string)$rule['effect'];
-		$review['relevanceSource'] = 'rule';
-		$review['rule'] = (string)$rule['name'];
-		$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-
-		return $review;
-	}//end markedByRule()
 
 	/**
 	 * The documents of the case a rule may still mark, in order, each with its review (a new one when it has none).

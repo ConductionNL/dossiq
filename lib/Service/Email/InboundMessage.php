@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Email;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
  */
 final class InboundMessage {
@@ -80,7 +80,7 @@ final class InboundMessage {
 	 *
 	 * @return self The message.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function fromRow(array $row, int $accountId = 0, string $mailbox = ''): self {
 		$headers = self::rowHeaders(row: $row);
@@ -128,22 +128,45 @@ final class InboundMessage {
 	 *
 	 * @return self A new message carrying the source.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function withSource(string $source): self {
+		$headers = array_merge(self::parseHeaders(source: $source), $this->headers);
+
 		return new self(
 			accountId: $this->accountId,
 			mailbox: $this->mailbox,
 			uid: $this->uid,
 			messageId: $this->messageId,
 			subject: $this->subject,
-			from: $this->from,
-			to: $this->to,
+			from: self::firstFilled(value: $this->from, fallback: ($headers['from'] ?? '')),
+			to: self::firstFilled(value: $this->to, fallback: ($headers['to'] ?? '')),
 			sentAt: $this->sentAt,
-			headers: array_merge(self::parseHeaders(source: $source), $this->headers),
+			headers: $headers,
 			source: $source,
 		);
 	}//end withSource()
+
+	/**
+	 * The value, or the fallback when the value is empty.
+	 *
+	 * Mail 5's message table carries no sender or recipient, so a row from it
+	 * leaves both empty and the source's From and To headers name them.
+	 *
+	 * @param string $value    The value the row carried.
+	 * @param string $fallback The header value.
+	 *
+	 * @return string The value to keep.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 */
+	private static function firstFilled(string $value, string $fallback): string {
+		if (trim($value) !== '') {
+			return $value;
+		}
+
+		return trim($fallback);
+	}//end firstFilled()
 
 	/**
 	 * One header, case-insensitively.
@@ -152,7 +175,7 @@ final class InboundMessage {
 	 *
 	 * @return string The value, or '' when the message does not carry it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function header(string $name): string {
 		return ($this->headers[strtolower($name)] ?? '');
@@ -168,7 +191,7 @@ final class InboundMessage {
 	 *
 	 * @return boolean True when the header is present.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function hasHeader(string $name): bool {
 		return array_key_exists(strtolower($name), $this->headers);
@@ -179,7 +202,7 @@ final class InboundMessage {
 	 *
 	 * @return string The address, lowercased, or '' when there is none.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function senderAddress(): string {
 		return self::addressIn(value: $this->from);
@@ -193,7 +216,7 @@ final class InboundMessage {
 	 *
 	 * @return array<int, string> The referenced ids, possibly empty.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function referencedMessageIds(): array {
 		$raw = trim($this->header(name: 'in-reply-to') . ' ' . $this->header(name: 'references'));
@@ -219,7 +242,7 @@ final class InboundMessage {
 	 *
 	 * @return array<string, mixed> The row.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function toArray(): array {
 		return [
@@ -242,7 +265,7 @@ final class InboundMessage {
 	 *
 	 * @return string The address, lowercased.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function addressIn(string $value): string {
 		if (preg_match('/<([^<>]+)>/', $value, $matches) === 1) {
@@ -265,7 +288,7 @@ final class InboundMessage {
 	 *
 	 * @return array<string, string> Lowercased header name to value.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private static function parseHeaders(string $source): array {
 		$normalised = str_replace(["\r\n", "\r"], "\n", $source);

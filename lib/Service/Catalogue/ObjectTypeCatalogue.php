@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+ * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use RuntimeException;
 /**
  * Lists the object types cases link, with the number of cases per type.
  *
- * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+ * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
  */
 class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
@@ -92,7 +92,7 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
 	 */
 	public function list(): array {
 		$register = $this->settingsService->getConfigValue(key: 'register');
@@ -123,7 +123,7 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 *
 	 * @return array{0: array<string, array<string, true>>, 1: array<string, string>} The cases and the urls, by type.
 	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
 	 */
 	private function collectAll(CatalogueRegister $target, string $schema): array {
 		$casesByType = [];
@@ -153,7 +153,7 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The unsorted rows.
 	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-catalogue-object-types/specs/catalogue/spec.md
 	 */
 	private function rowsFor(array $collected, ?array $caseTypeOf): array {
 		[$casesByType, $urlByType] = $collected;

@@ -10,7 +10,7 @@
  * The subsidie case type lists the card; it shows on a case of the
  * Subsidies folder, as the other grant cards do.
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'

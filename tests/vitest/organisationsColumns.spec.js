@@ -7,7 +7,7 @@
  * aggregate `op: max` and the built-in `masked` formatter, so dossiq keeps no
  * formatter of its own for either.
  *
- * @spec openspec/changes/screens-round12-relations/specs/initiator-display/spec.md
+ * @spec openspec/specs/initiator-display/spec.md
  */
 
 import { readFileSync } from 'fs'
@@ -32,7 +32,7 @@ describe('the relation lists read their derived columns from the library', () =>
 	})
 
 	it('offers the organisations with an open case through the reverse reference', () => {
-		const chip = page('Organisations').config.quickFilters.find((q) => q.label === 'With an open case')
+		const chip = page('Organisations').config.quickFilters.find((q) => q.label === 'With open case')
 		expect(chip.filter).toEqual({ '_related[case][requester][isFinalStatus]': false })
 		expect(chip.showCount).toBe(true)
 	})

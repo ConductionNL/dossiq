@@ -50,6 +50,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Hearing\SessionWrites
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
  */
@@ -212,6 +213,65 @@ class HearingServiceTest extends TestCase {
 			$this->assertArrayNotHasKey('status', $this->store->row('hearingSession', 'session-3'), 'nothing may change without its entry');
 		}
 	}
+	/**
+	 * A late correction is recorded before the attendance changes, and a failed
+	 * patch leaves a not-applied row carrying the error.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testALateCorrectionIsRecordedBeforeThePatchAndAFailedPatchLeavesANotAppliedRow(): void {
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+		$yesterday = (new DateTimeImmutable(datetime: '-1 day'))->format(format: DateTimeInterface::ATOM);
+		$entry = ['invitee' => 'person-1', 'present' => true, 'correctionReason' => 'Niet geregistreerd'];
+
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'scheduledDate' => $yesterday, 'attendance' => []]);
+		$updated = $service->recordAttendance(sessionId: 'session-1', entries: [$entry]);
+		$this->assertSame(expected: ['dossiq.bezwaar.attendance-late-correction'], actual: $this->trail->actionsOn('session-1'));
+		$this->assertCount(expectedCount: 1, haystack: $updated['attendance']);
+		$this->assertArrayHasKey(key: 'attendanceFrozenAt', array: $this->store->row('hearingSession', 'session-1'));
+
+		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1', 'scheduledDate' => $yesterday, 'attendance' => []]);
+		$this->store->refuseSaves = true;
+		try {
+			$service->recordAttendance(sessionId: 'session-2', entries: [$entry]);
+			$this->fail(message: 'a failed patch must raise');
+		} catch (RuntimeException $failed) {
+			$this->assertSame(expected: 'Could not record attendance', actual: $failed->getMessage());
+		}
+
+		$this->assertSame(
+			expected: [
+				'dossiq.bezwaar.attendance-late-correction',
+				'dossiq.bezwaar.attendance-late-correction-not-applied',
+			],
+			actual: $this->trail->actionsOn('session-2')
+		);
+		$context = $this->rowContext(uuid: 'session-2', action: 'dossiq.bezwaar.attendance-late-correction-not-applied');
+		$this->assertSame(expected: 'awb-art-7:7', actual: $context['tag']);
+		$this->assertArrayHasKey(key: 'error', array: $context['payload']);
+		$this->assertSame(expected: [], actual: $this->store->row('hearingSession', 'session-2')['attendance']);
+	}
+
+	/**
+	 * An attendance inside the grace window writes no entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAttendanceInsideTheGraceWindowWritesNoEntry(): void {
+		$tomorrow = (new DateTimeImmutable(datetime: '+1 day'))->format(format: DateTimeInterface::ATOM);
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'scheduledDate' => $tomorrow, 'attendance' => [['invitee' => 'person-0']]]);
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		$updated = $service->recordAttendance(sessionId: 'session-1', entries: [['invitee' => 'person-1', 'present' => true]]);
+
+		$this->assertSame(expected: [], actual: $this->trail->actionsOn('session-1'));
+		$this->assertSame(expected: [['invitee' => 'person-0'], ['invitee' => 'person-1', 'present' => true]], actual: $updated['attendance']);
+	}
+
 	/**
 	 * A waiver opens in the hearing's initial status and is moved to afgezien
 	 * by the declared `waive` transition, because the register refuses a

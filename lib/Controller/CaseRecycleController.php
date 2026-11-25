@@ -7,7 +7,8 @@
  *  - POST /api/case/{caseId}/restore                get a case back
  *  - GET  /api/case/{caseId}/destruction-preview    what a destruction takes
  *  - POST /api/case/{caseId}/destroy                the second act
- *  - GET  /api/case/{caseId}/retention-clocks       the two clocks, apart
+ *
+ * The two retention clocks of a live case are {@see RetentionClocksController}'s.
  *
  * These live beside {@see CaseLifecycleController} rather than on it, because
  * every gesture here acts on a case that is already in OpenRegister's recycle
@@ -40,11 +41,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
-use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseRecycleServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,10 +61,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the recycle, destruction,
- * retention and access services each own one rule of the gesture; the
- * translator says the list's window note and a refusal in the reader's language.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class CaseRecycleController extends Controller {
 
@@ -89,20 +84,18 @@ class CaseRecycleController extends Controller {
 	 * @param IRequest $request The HTTP request
 	 * @param CaseRecycleServiceInterface $recycle The window, the lens and the restore
 	 * @param CaseDestructionServiceInterface $destruction The destroying role and the act
-	 * @param RetentionClocksInterface $clocks The two clocks, read apart
-	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization for the clocks read
 	 * @param IGroupManager $groupManager Reads whether the caller is an administrator
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 * @param IL10N $l10n The translator, for the sentence a refusal is said in
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly CaseRecycleServiceInterface $recycle,
 		private readonly CaseDestructionServiceInterface $destruction,
-		private readonly RetentionClocksInterface $clocks,
-		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -227,42 +220,6 @@ class CaseRecycleController extends Controller {
 			caseId: $caseId
 		);
 	}//end destroy()
-
-	/**
-	 * The lawful-purpose clock and the archive clock of a live case.
-	 *
-	 * Guarded per case, because this is a read of a case that still exists and
-	 * the ordinary case authority applies to it.
-	 *
-	 * @param string $caseId The case UUID
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	#[NoAdminRequired]
-	public function clocks(string $caseId): JSONResponse {
-		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		try {
-			$case = $this->recycle->liveCase(caseId: $caseId);
-			if ($case === null) {
-				return new JSONResponse(['error' => 'The case does not allow this', 'code' => 'case_not_found'], Http::STATUS_NOT_FOUND);
-			}
-
-			return new JSONResponse($this->clocks->clocksFor(case: $case));
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: could not read the retention clocks: ' . $e->getMessage());
-
-			return new JSONResponse(
-				['error' => 'Could not read the retention clocks'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}
-	}//end clocks()
 
 	/**
 	 * Run one gesture behind the session, and turn a refusal into a code.

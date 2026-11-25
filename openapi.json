@@ -2,7 +2,7 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Dossiq",
-        "version": "0.4.59-unstable.20261121210548",
+        "version": "0.4.63-unstable.20261124054908",
         "description": "The JSON API of Dossiq, the case management app for Nextcloud: cases and their tasks, deadlines, decisions, documents, mandates, work queues, intake and the settings behind them. The case objects themselves are stored in OpenRegister and read and written through its API; this document covers the endpoints Dossiq adds on top.\n\nEvery path is served under `/api/v1/`, the version this document describes. The unversioned `/api/` paths keep working, are deprecated, and name their `/api/v1/` successor in a `Link` header next to a `Deprecation` header. Errors are RFC 9457 problem details (`application/problem+json`), and every response carries an `API-Version` header. Paths that implement an external standard keep the formats of that standard and are not described here.",
         "contact": {
             "name": "Conduction B.V.",
@@ -773,6 +773,218 @@
         }
     ],
     "paths": {
+        "/supervision-plans/year/{year}/progress": {
+            "get": {
+                "operationId": "supervision-plan-progress-for-year",
+                "summary": "Read the progress of a year's supervision plan",
+                "description": "The figures of the supervision plan for a year, as `/supervision-plans/{id}/progress` answers them, with the frequency per risk profile in `risk`. The plan is looked up by its year in the caller's own scope; a year with no plan, or a value that is not four digits, answers 404. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "path",
+                        "required": true,
+                        "description": "The plan year, four digits.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
+        "/supervision-plans/{id}/progress": {
+            "get": {
+                "operationId": "supervision-plan-progress",
+                "summary": "Read a supervision plan's progress",
+                "description": "Scheduled, completed, cancelled and remaining inspections in total, per category and per quarter, with capacity and demand in hours. Completed and cancelled are counted from the field inspections naming a category, read in the caller's own scope. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The supervisionPlan UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
+        "/supervision-plans/{id}/schedule-proposal": {
+            "get": {
+                "operationId": "supervision-plan-schedule-proposal",
+                "summary": "Propose a supervision plan's schedule",
+                "description": "Proposed inspection dates per category from the frequency per risk profile and the capacity, on working days, highest risk first. Nothing is written (`written` is false); the supervisor accepts a proposal before anything is planned. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The supervisionPlan UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "description": "The first day a date may fall on (Y-m-d); today when absent.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
+        "/supervision-plans/year/{year}/schedule-proposal": {
+            "get": {
+                "operationId": "supervision-plan-schedule-proposal-for-year",
+                "summary": "Propose the schedule of a year's supervision plan",
+                "description": "The proposed schedule of the supervision plan for a year, as `/supervision-plans/{id}/schedule-proposal` answers it, each category with the span of its visits in `firstDate` and `lastDate`. The plan is looked up by its year in the caller's own scope; a year with no plan, or a value that is not four digits, answers 404. Nothing is written (`written` is false). Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "supervision-plan"
+                ],
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "path",
+                        "required": true,
+                        "description": "The plan year, four digits.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "description": "The first day a date may fall on (Y-m-d); today when absent.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            }
+        },
         "/access-links/case/{caseId}": {
             "get": {
                 "operationId": "case-access-link-index",
@@ -8922,6 +9134,60 @@
                 }
             }
         },
+        "/cases/{caseId}/files/{fileId}/editor": {
+            "post": {
+                "operationId": "case-file-editor-open",
+                "summary": "Make one case file editable for the caller and answer with the link that opens it",
+                "description": "Make one case file editable for the caller and answer with the link that opens it. Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`, then the case folder, the file restriction and the document write rule, before the share. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-file-editor"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case the file is on.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The Nextcloud file id.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
         "/cases/{caseId}/goals": {
             "get": {
                 "operationId": "case-goal-index",
@@ -9844,6 +10110,124 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/scoring": {
+            "get": {
+                "operationId": "scoring-sheet",
+                "summary": "The scoring sheet of the case",
+                "description": "The formula the case scores its bids by (the case's scoringFormula), the values the case holds for it, the values an evaluator enters per bid, and the admissible bids with the caller's own total so far; `refusal` says in words why nothing can be scored. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "scoring"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "scoring-score",
+                "summary": "Score one bid of the case",
+                "description": "Applies the case's scoring formula to one admissible bid with the values the evaluator entered (price and lowest price are read from the bids) and stores the caller's own evaluation with its weighted total. Body: `{bid, scores}`. A refusal (no formula, a bid that is not admissible, a missing value, a finalised evaluation) answers 422 with the sentence. Needs a user who may change the case.",
+                "tags": [
+                    "scoring"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "bid",
+                                    "scores"
+                                ],
+                                "properties": {
+                                    "bid": {
+                                        "type": "string",
+                                        "description": "The bid uuid."
+                                    },
+                                    "scores": {
+                                        "type": "object",
+                                        "description": "The evaluator's number per value the formula takes per bid.",
+                                        "additionalProperties": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Problem422"
                     },
                     "503": {
                         "$ref": "#/components/responses/Problem503"

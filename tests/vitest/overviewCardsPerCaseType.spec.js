@@ -9,7 +9,7 @@
  * while that list is empty, so a case type that lists nothing keeps today's
  * Overview. A domain card follows its own condition.
  *
- * @spec openspec/changes/overview-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'
@@ -63,6 +63,14 @@ describe('overview cards per case type', () => {
 		}
 		expect(JSON.stringify(widget('case-overview-sections').visibleWhen)).toContain('@context.caseType.overviewSections')
 		expect(overview.slice(0, 3)).toEqual(['case-objection-grounds', 'case-objection-advice-card', 'case-summary'])
+	})
+
+	// 1.6b: the cards a case type lists take their places in the list's
+	// order (nextcloud-vue CnTabsWidget `orderFrom`), every other card keeps
+	// its own place.
+	it('draws the listed cards in the order the case type lists them', () => {
+		expect(simple.widgets.find((candidate) => candidate.id === 'case-panels').content.tabs[0].orderFrom)
+			.toBe('@context.caseType.overviewCards')
 	})
 
 	it('lets the packages list cards of the Overview tab', () => {

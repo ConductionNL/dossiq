@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * The resolve endpoint of conflict records.
  *
- * @spec openspec/changes/inspection-conflict-card/tasks.md
+ * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
  */
 class ConflictRecordController extends Controller {
 
@@ -53,7 +53,7 @@ class ConflictRecordController extends Controller {
 	 * @param ConflictResolutionServiceInterface $resolution  Checks access and writes the choice.
 	 * @param IUserSession              $userSession The signed-in user.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function __construct(
 		string $appName,
@@ -73,7 +73,7 @@ class ConflictRecordController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/specs/mobiel-inspectie-offline/spec.md
+	 * @spec openspec/specs/mobiel-inspectie-offline/spec.md
 	 */
 	#[NoAdminRequired]
 	public function resolve(string $id): JSONResponse {

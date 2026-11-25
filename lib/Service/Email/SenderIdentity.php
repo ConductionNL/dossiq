@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 /**
  * Resolves the sending account for a case, a case type or a requested address.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
  */
 class SenderIdentity {
 
@@ -79,7 +79,7 @@ class SenderIdentity {
 	 * @throws RefusedException sender-not-held when the case type names an address no account holds,
 	 *                          mail-account-unavailable when no account can be used at all.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
 	public function accountForCase(array $caseData): array {
 		return $this->accountFor(address: $this->declaredFor(caseData: $caseData));
@@ -94,7 +94,7 @@ class SenderIdentity {
 	 *
 	 * @throws RefusedException sender-not-held or mail-account-unavailable.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
 	public function accountFor(string $address): array {
 		$address = trim($address);
@@ -156,7 +156,7 @@ class SenderIdentity {
 	 *
 	 * @return array<int, string> One finding naming the account, or none.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
 	public function publicationFindings(array $caseType): array {
 		$declared = trim((string)($caseType[self::CASE_TYPE_PROPERTY] ?? ''));

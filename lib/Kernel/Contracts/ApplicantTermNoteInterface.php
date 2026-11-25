@@ -49,7 +49,7 @@ interface ApplicantTermNoteInterface {
 	 *
 	 * @return array{termNote: string, legalDecisionDate: string|null} The two fields.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-applicant-reads-the-decision-date-and-the-state-of-the-term-req-wds-002
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-applicant-reads-the-decision-date-and-the-state-of-the-term-req-wds-002
 	 */
 	public function fieldsFor(array $case, string $deadline, callable $extensionPeriod): array;
 }//end interface

@@ -18,6 +18,11 @@
  * Only current case types count: a draft or a superseded version grants
  * nothing, so a rights change takes effect when its version is published.
  *
+ * The compiled case type rows do not depend on the caller and are kept for a
+ * minute in {@see \OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache}; a case
+ * type or organisation role change drops them at once. A compile that may
+ * come from a failed read is not kept, so it costs one request, not a minute.
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -69,10 +74,10 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStoreInterface            $store     Reads every case type.
-	 * @param OrganisationRolesInterface        $roles     Reads the organisation roles.
-	 * @param CaseRightsRowSources     $sources   The case type rights rows and the assigned group's read rows.
-	 * @param LoggerInterface          $logger    The logger.
+	 * @param CaseTypeStoreInterface     $store   Reads every case type.
+	 * @param OrganisationRolesInterface $roles   Reads the organisation roles.
+	 * @param CaseRightsRowSources       $sources The case type rights rows, the kept ones, and the assigned group's read rows.
+	 * @param LoggerInterface            $logger  The logger.
 	 */
 	public function __construct(
 		private readonly CaseTypeStoreInterface $store,
@@ -91,6 +96,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
+	#[\Override]
 	public function handle(Event $event): void {
 		if (is_a($event, self::EVENT) === false
 			|| method_exists($event, 'getProvider') === false
@@ -102,10 +108,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 		$event->addRows(rows: $this->sources->assignedGroup->rows(), appId: AppIdentity::APP_ID);
 
 		try {
-			$event->addRows(
-				rows: $this->sources->caseTypes->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped()),
-				appId: AppIdentity::APP_ID,
-			);
+			$event->addRows(rows: $this->caseTypeRows(), appId: AppIdentity::APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case type rights could not be read; they grant nothing this request',
@@ -113,6 +116,55 @@ class CaseTypeRightsRowsListener implements IEventListener {
 			);
 		}
 	}//end handle()
+
+	/**
+	 * The rows of the current case types' matrices: the kept ones, or compiled and kept.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function caseTypeRows(): array {
+		$kept = $this->sources->kept->get();
+		if ($kept !== null) {
+			return $kept;
+		}
+
+		$caseTypes = $this->currentCaseTypes();
+		$rows = $this->sources->caseTypes->rows(caseTypes: $caseTypes, roles: $this->roles->allUnscoped());
+		if (self::worthKeeping(caseTypes: $caseTypes, rows: $rows) === true) {
+			$this->sources->kept->remember(rows: $rows);
+		}
+
+		return $rows;
+	}//end caseTypeRows()
+
+	/**
+	 * Whether a compile can be kept: it read case types, and it is empty only when no matrix asks for rows.
+	 *
+	 * A read that failed answers no case types, and a role read that failed
+	 * answers no rows for matrices that have some; neither is kept.
+	 *
+	 * @param array<int, array{id: string, rightsMatrix: mixed}> $caseTypes The current case types.
+	 * @param array<int, array<string, mixed>>                   $rows      The compiled rows.
+	 *
+	 * @return bool
+	 */
+	private static function worthKeeping(array $caseTypes, array $rows): bool {
+		if ($caseTypes === []) {
+			return false;
+		}
+
+		if ($rows !== []) {
+			return true;
+		}
+
+		foreach ($caseTypes as $caseType) {
+			if (empty($caseType['rightsMatrix']) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end worthKeeping()
 
 	/**
 	 * The published, not superseded case types with their rights rows.

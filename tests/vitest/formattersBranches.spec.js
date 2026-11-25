@@ -152,7 +152,7 @@ describe('the own label lookup', () => {
 			{ title: 'No id' },
 			null,
 		])
-		expect(formatters.statusTypeName('s-1')).toBe('s-1')
+		expect(formatters.statusTypeName('s-1')).toBe('')
 		await flush()
 		expect(formatters.statusTypeName('s-1')).toBe('Open')
 		expect(formatters.statusTypeName('s-2')).toBe('Closed')

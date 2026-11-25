@@ -210,7 +210,9 @@ const relatedFetchStarted = {}
  *
  * @param {string} type Registered object type ('caseType' / 'statusType').
  * @param {string} uuid The related object's UUID.
- * @return {string} The label, or the raw UUID while unresolved.
+ * @return {string} The label; '' while the lookup is under way, so a list
+ *   never shows ids before the names (DqZaken); the raw UUID when no lookup
+ *   can find it.
  */
 function lookupRelatedName(type, uuid) {
 	if (!uuid) return '-'
@@ -228,7 +230,7 @@ function lookupRelatedName(type, uuid) {
 	if (!relatedFetchStarted[type] && canLookUp(store, type)) {
 		startRelatedLookup(store, type)
 	}
-	return uuid
+	return relatedFetchStarted[type] && relatedLabels[type] === undefined ? '' : uuid
 }
 
 /**
@@ -324,6 +326,56 @@ function rowLabel(row) {
  */
 function lookedUpId(row) {
 	return row && (row.id || (row['@self'] && row['@self'].id))
+}
+
+/**
+ * The related types whose labels the case list shows (Case type, Status).
+ *
+ * @type {Array<string>}
+ */
+export const CASE_LIST_LABEL_TYPES = ['caseType', 'statusType']
+
+/**
+ * Start the label lookups of the given types now, instead of when the first
+ * cell asks. A list's cells ask only once its rows have arrived, which put
+ * the labels in a second request wave after the list; started beside the
+ * list request, they arrive with it. A type already looked up, under way, or
+ * not registered yet is skipped.
+ *
+ * @spec openspec/specs/case-management/spec.md
+ * @param {Array<string>} [types] The registered object types.
+ * @return {Array<string>} The types whose lookup this call started.
+ */
+export function primeRelatedLabels(types = CASE_LIST_LABEL_TYPES) {
+	const store = objectStoreOrNull()
+	const due = store ? types.filter((type) => lookupDue(store, type)) : []
+	due.forEach((type) => startRelatedLookup(store, type))
+	return due
+}
+
+/**
+ * The object store, or null when no store can be had (no active pinia).
+ *
+ * @return {object|null} The store.
+ */
+function objectStoreOrNull() {
+	try {
+		return useObjectStore()
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whether a type's labels still need a lookup the store can make.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ * @return {boolean} True when not looked up, not under way, and lookable.
+ */
+function lookupDue(store, type) {
+	const known = Boolean(relatedFetchStarted[type]) || relatedLabels[type] !== undefined
+	return !known && canLookUp(store, type)
 }
 
 /**
@@ -479,6 +531,23 @@ function momentWords(entry, moments) {
 function sentTime(value, when) {
 	const sentAt = value ? new Date(value) : null
 	return sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
+}
+
+/**
+ * Who a document's access exception names: "Only Pieter Jansen and Woo team", or '' without one.
+ *
+ * @param {Array<string>} value The display names, people first, then groups.
+ * @return {string} The sentence.
+ */
+function exceptionSentence(value) {
+	const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
+	if (names.length === 0) {
+		return ''
+	}
+	if (names.length === 1) {
+		return t('dossiq', 'Only {name}', { name: names[0] })
+	}
+	return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
 }
 
 export default {
@@ -906,16 +975,20 @@ export default {
 	 * @return {string} The sentence, or '' when the document carries no exception.
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
 	 */
-	accessExceptionNames: (value) => {
-		const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
-		if (names.length === 0) {
-			return ''
-		}
-		if (names.length === 1) {
-			return t('dossiq', 'Only {name}', { name: names[0] })
-		}
-		return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
+	/**
+	 * Who may see a document, as the Files list's Visible to column reads it (board DqDocumentenBeheer):
+	 * everyone on the case, unless the document carries an access exception.
+	 *
+	 * @param {Array<string>} value The exception's display names, when the document carries one.
+	 * @return {string} The sentence.
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	visibleTo: (value) => {
+		const exception = exceptionSentence(value)
+		return exception !== '' ? exception : t('dossiq', 'Everyone on the case')
 	},
+
+	accessExceptionNames: (value) => exceptionSentence(value),
 
 	confidentialityLabel: (value) => {
 		const labels = {

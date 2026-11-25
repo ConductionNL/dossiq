@@ -65,6 +65,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Service\Notification\CaseNoticeLog
+ * @uses \OCA\Dossiq\Service\Notification\PortalInboxChannel
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Term\TermLetter

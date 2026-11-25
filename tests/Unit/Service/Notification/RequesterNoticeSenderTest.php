@@ -34,6 +34,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Service\Notification\CaseNoticeLog
+ * @uses \OCA\Dossiq\Service\Notification\PortalInboxChannel
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
  * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy

@@ -66,7 +66,7 @@ describe('closing a goal from its row', () => {
 
 	it('is a dialog the registry knows', () => {
 		const registry = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')
-		expect(registry).toContain("import RowRecordActionDialog from './dialogs/RowRecordActionDialog.vue'")
+		expect(registry).toContain("const RowRecordActionDialog = lazyComponent(() => import('./dialogs/RowRecordActionDialog.vue'), 'RowRecordActionDialog')")
 		expect(registry).toMatch(/RowRecordActionDialog: \{\n\t\tkind: 'modal',\n\t\tcomponent: RowRecordActionDialog,/)
 	})
 })

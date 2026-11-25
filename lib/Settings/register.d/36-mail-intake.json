@@ -10,9 +10,12 @@
         "schemas": {
             "mailIntakeEntry": {
                 "slug": "mailIntakeEntry",
-                "version": "1.0.0",
+                "version": "1.2.0",
                 "type": "object",
                 "title": "Mail intake entry",
+                "configuration": {
+                    "linkedTypes": []
+                },
                 "description": "One message the intake mailbox processed, with its original, its authentication results, the filter that decided and what became of it.",
                 "properties": {
                     "mailMessageId": {

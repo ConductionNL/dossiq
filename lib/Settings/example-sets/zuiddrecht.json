@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved views \"Woo-verzoeken\" and \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved views \"Woo requests\" and \"Deadline this week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
 	"after": [
 		"opencatalogi"
 	],
@@ -220,7 +220,7 @@
 		{
 			"user": "{{cast:pieter.uid}}",
 			"key": "pref_cn_saved_view_menu",
-			"value": "[{\"id\":\"{{view:pieter-woo-verzoeken.uuid}}\",\"page\":\"Cases\",\"name\":\"Woo-verzoeken\"},{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Termijn deze week\"}]"
+			"value": "[{\"id\":\"{{view:pieter-woo-verzoeken.uuid}}\",\"page\":\"Cases\",\"name\":\"Woo requests\"},{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Deadline this week\"}]"
 		}
 	],
 	"objects": [
@@ -2389,7 +2389,7 @@
 					{
 						"id": "2b98dffe-9f76-56b2-b684-9d9939ce864c",
 						"slug": "aanvullende-gegevens-vragen",
-						"label": "Aanvullende gegevens vragen",
+						"label": {"nl": "Aanvullende gegevens vragen", "en": "Ask for more information"},
 						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
@@ -2402,7 +2402,7 @@
 					{
 						"id": "9e722b6d-38be-5a56-9064-a28a42a91e44",
 						"slug": "aanvraag-compleet",
-						"label": "Aanvraag compleet",
+						"label": {"nl": "Aanvraag compleet", "en": "Application complete"},
 						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
@@ -2415,7 +2415,7 @@
 					{
 						"id": "80fba3a1-2111-5555-9cdc-bcd95eee6d0c",
 						"slug": "gegevens-ontvangen",
-						"label": "Gegevens ontvangen",
+						"label": {"nl": "Gegevens ontvangen", "en": "Information received"},
 						"fromStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
 						"fromStatusName": "Aanvullende gegevens gevraagd",
 						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
@@ -2428,7 +2428,7 @@
 					{
 						"id": "73263024-892c-5ab8-b0be-f50870f22447",
 						"slug": "besluit-voorbereiden",
-						"label": "Besluit voorbereiden",
+						"label": {"nl": "Besluit voorbereiden", "en": "Prepare the decision"},
 						"fromStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
 						"fromStatusName": "In behandeling",
 						"toStatus": "{{object:statustype-regulier-v4-besluit.id}}",
@@ -2441,7 +2441,7 @@
 					{
 						"id": "e15525d6-9e90-56d5-8a41-cef8a672f4d2",
 						"slug": "verlenen",
-						"label": "Vergunning verlenen",
+						"label": {"nl": "Vergunning verlenen", "en": "Grant the permit"},
 						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v4-verleend.id}}",
@@ -2454,7 +2454,7 @@
 					{
 						"id": "7d85cd81-da1d-56e7-81f1-60a0aa80fba9",
 						"slug": "weigeren",
-						"label": "Vergunning weigeren",
+						"label": {"nl": "Vergunning weigeren", "en": "Refuse the permit"},
 						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v4-geweigerd.id}}",
@@ -3159,7 +3159,7 @@
 					{
 						"id": "974277ce-7397-50ac-89ce-7a0343531dc7",
 						"slug": "aanvullende-gegevens-vragen",
-						"label": "Aanvullende gegevens vragen",
+						"label": {"nl": "Aanvullende gegevens vragen", "en": "Ask for more information"},
 						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
@@ -3172,7 +3172,7 @@
 					{
 						"id": "61e851c9-6f9c-50f6-b273-64aba2f188e9",
 						"slug": "aanvraag-compleet",
-						"label": "Aanvraag compleet",
+						"label": {"nl": "Aanvraag compleet", "en": "Application complete"},
 						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
 						"fromStatusName": "Ontvangen",
 						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
@@ -3185,7 +3185,7 @@
 					{
 						"id": "0fbfbd1f-c475-5f60-b16f-defd58238856",
 						"slug": "gegevens-ontvangen",
-						"label": "Gegevens ontvangen",
+						"label": {"nl": "Gegevens ontvangen", "en": "Information received"},
 						"fromStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
 						"fromStatusName": "Aanvullende gegevens gevraagd",
 						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
@@ -3198,7 +3198,7 @@
 					{
 						"id": "14ad02b5-aa61-557a-a4be-a1752fb342e2",
 						"slug": "besluit-voorbereiden",
-						"label": "Besluit voorbereiden",
+						"label": {"nl": "Besluit voorbereiden", "en": "Prepare the decision"},
 						"fromStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
 						"fromStatusName": "In behandeling",
 						"toStatus": "{{object:statustype-regulier-v5-besluit.id}}",
@@ -3211,7 +3211,7 @@
 					{
 						"id": "4efa1005-f332-5463-a56e-a0fc100d3766",
 						"slug": "verlenen",
-						"label": "Vergunning verlenen",
+						"label": {"nl": "Vergunning verlenen", "en": "Grant the permit"},
 						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v5-verleend.id}}",
@@ -3224,7 +3224,7 @@
 					{
 						"id": "75a43f40-e78c-5d90-aab5-90f5e71d7bf4",
 						"slug": "weigeren",
-						"label": "Vergunning weigeren",
+						"label": {"nl": "Vergunning weigeren", "en": "Refuse the permit"},
 						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
 						"fromStatusName": "Besluit",
 						"toStatus": "{{object:statustype-regulier-v5-geweigerd.id}}",
@@ -9641,8 +9641,8 @@
 		{
 			"key": "zoek-lindelaan",
 			"data": {
-				"name": "Meldingen verlichting",
-				"description": "Meldingen en verzoeken over de verlichting aan de Lindelaan: zaken, objecten en documenten.",
+				"name": "Lighting reports",
+				"description": "Reports and requests about the lighting on the Lindelaan: cases, objects and documents.",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
@@ -9663,8 +9663,8 @@
 		{
 			"key": "pieter-termijn-deze-week",
 			"data": {
-				"name": "Termijn deze week",
-				"description": "Mijn zaken, termijn binnen 7 dagen",
+				"name": "Deadline this week",
+				"description": "My cases, deadline within 7 days",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
@@ -9700,8 +9700,8 @@
 		{
 			"key": "pieter-wacht-op-inwoner",
 			"data": {
-				"name": "Wacht op inwoner",
-				"description": "Status wacht op inwoner, gedeeld met team Woo",
+				"name": "Waiting for resident",
+				"description": "Status waiting for resident, shared with team Woo",
 				"sharedWith": [
 					{
 						"group": "{{cast:woo-en-informatie.gid}}",
@@ -9749,8 +9749,8 @@
 		{
 			"key": "pieter-opgeschort",
 			"data": {
-				"name": "Opgeschort",
-				"description": "Status opgeschort, alle teams",
+				"name": "Suspended",
+				"description": "Status suspended, all teams",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
@@ -9788,8 +9788,8 @@
 		{
 			"key": "anouk-woo-verzoeken-team",
 			"data": {
-				"name": "Woo-verzoeken team",
-				"description": "Door Anouk Bakker, team Woo en informatie",
+				"name": "Woo requests team",
+				"description": "By Anouk Bakker, team Woo and information",
 				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
 				"owner": "{{cast:anouk.uid}}",
 				"isPublic": false,

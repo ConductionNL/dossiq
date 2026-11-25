@@ -16,10 +16,17 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   delete `dossiq-coordinators`), version 1.2.0 (REQ-WSA-001).
   - done: `lib/Settings/register.d/83-woo-document-assessment.json`; digests regenerated, register 0.20.30.
     Decision 185: the shipped JSON is procedure configuration, proven by Newman (1.2), no unit test.
-- [ ] 1.2 Prove the block reaches the instance and is enforced (REQ-WSA-001).
+- [x] 1.2 Prove the block reaches the instance and is enforced (REQ-WSA-001).
   - Newman `tests/newman/woo-request-scoped-access.postman_collection.json`, folder `private`:
     read the schema and assert `authorization.scope` is `private`; as an unassigned user, list
     assessments and read one by uuid; assert none listed and the read refused. Cite REQ-WSA-001.
+  - written, runs on the live pass (decision 139; `tests/newman/run-all.sh`, not run here): folder
+    `private` reads the schema list for `authorization.scope: private`, then as a provisioned colleague
+    who is neither handler nor reviewer lists the case's assessments (none of them listed) and reads
+    one by uuid (refused), with the handler's read as control. Setup provisions four accounts and a
+    throwaway Woo case of the seeded Woo case type, the reviewer by batch and share as in
+    `tests/e2e/woo-blind-review.spec.ts`; teardown removes them. Folder `reassign` is the Newman
+    half of 2.3.
 
 ## 2. Grants follow the assignment
 
@@ -78,10 +85,14 @@ red; put the failing line in the PR body. Double OpenRegister classes with
     (in the service that holds the rule, not the assist service, which is doubled there);
     `WOOAssessmentControllerTest::testReviewRedactionProposalRefusesAnotherReviewersProposal` and
     `testProposeRedactionRefusesAnotherReviewersAssessment` (403 with the rule, was a 400).
-- [ ] 3.3 Newman folder `ownership` in the collection of 1.2: reviewer A assesses a document,
+- [x] 3.3 Newman folder `ownership` in the collection of 1.2: reviewer A assesses a document,
   reviewer B posts another verdict for it through `/api/cases/{id}/woo/assessment` and through the
   OpenRegister object API; both are refused and the verdict is unchanged; a coordinator's change is
   stored. Cite REQ-WSA-003.
+  - written, runs on the live pass (decision 139, not run here): folder `ownership`, the case route
+    (403 or 422 `owned-by-another-reviewer` without the author) and a PUT on the object API both
+    refused, the verdict read back unchanged, then a `dossiq-coordinators` member's PATCH stored and
+    read back.
 
 ## 4. Hiding another reviewer's verdict
 

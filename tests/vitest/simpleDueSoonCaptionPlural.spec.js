@@ -72,6 +72,13 @@ describe('simple profile "Due this week" caption', () => {
 		expect(caption(en, 2)).toBe('2 end today')
 	})
 
+	it('keeps its figure in ink and turns only the caption red while a case ends today, as DqMijnWerk draws it', () => {
+		expect(tile.content.variant).toBeUndefined()
+		expect(tile.content.captionVariantWhen).toEqual([{ op: 'gt', value: 0, variant: 'error' }])
+		const closed = findWidget(read('src', 'menu-layout.simple.json'), 'simple-closed-month')
+		expect(closed.content.variant).toBeUndefined()
+	})
+
 	it('keeps its zero text', () => {
 		expect(nl[tile.content.captionSource.zeroText]).toBe('niets loopt vandaag af')
 	})

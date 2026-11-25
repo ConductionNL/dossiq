@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class JunkRules implements JunkRulesInterface {
 
@@ -72,7 +72,7 @@ class JunkRules implements JunkRulesInterface {
 	 *
 	 * @return array<int, array{name: string, description: string}> The rules.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function rules(): array {
 		$rules = [
@@ -99,7 +99,7 @@ class JunkRules implements JunkRulesInterface {
 	 *
 	 * @return array{name: string, description: string}|null The rule, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function matching(InboundMessage $message): ?array {
 		if (strtolower(trim($message->header(name: 'x-spam-flag'))) === 'yes') {
@@ -131,7 +131,7 @@ class JunkRules implements JunkRulesInterface {
 	 *
 	 * @return boolean True when it matches.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function matches(string $rule, InboundMessage $message): bool {
 		$position = strpos($rule, ':');
@@ -153,7 +153,7 @@ class JunkRules implements JunkRulesInterface {
 	 *
 	 * @return array<int, string> The rules.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function administeredRules(): array {
 		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::RULES_KEY, '');

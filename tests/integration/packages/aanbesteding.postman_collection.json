@@ -1,0 +1,895 @@
+{
+  "info": {
+    "name": "dossiq package: aanbesteding",
+    "description": "Reads every kind of row the aanbesteding package writes back through the OpenRegister objects API, after the packages workflow installed it on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/aanbesteding/. Written by scripts/packages/package-to-newman.py. The tender chain requests after the read-backs are hand-written (openspec change tenders-run-on-the-tender-case-type task 1.5): they seed a supplier and a tender in evaluation scored by the price-quality formula, register two bids, refuse a late one naming the closing date, read the scoring sheet, score a bid through dossiq's scoring route and read its evaluation back, and refuse making the award final before the standstill ends (REQ-TND-CASE-01).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    },
+    {
+      "key": "tenderClosing",
+      "value": ""
+    },
+    {
+      "key": "tenderStandstillEnd",
+      "value": ""
+    },
+    {
+      "key": "tenderKvk",
+      "value": ""
+    },
+    {
+      "key": "tenderSupplierId",
+      "value": ""
+    },
+    {
+      "key": "tenderCaseId",
+      "value": ""
+    },
+    {
+      "key": "tenderBidA",
+      "value": ""
+    },
+    {
+      "key": "tenderBidB",
+      "value": ""
+    },
+    {
+      "key": "tenderEvaluationId",
+      "value": ""
+    },
+    {
+      "key": "tenderAwardCaseId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "case type aanbesteding",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/d2b26387-ec33-533a-bd75-4ded3719a932"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Aanbesteding\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"aanbesteding\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P26W\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"zaakvertrouwelijk\"));",
+              "pm.test('publicationRequired as shipped', () => pm.expect(row.publicationRequired).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/775cbdfe-31e7-5ec8-8405-f2ff35d32fa4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Voorbereiding\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/75d3e370-0966-5da7-9a89-e2da989ce41f"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Ingetrokken\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: role Inkoopadviseur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/09102496-66b2-5b57-a0a1-d54ffc7d42fe"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Inkoopadviseur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: role Beoordelaar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/9cd5c1d0-7481-5195-913b-3c0d3954d940"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Beoordelaar\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: role Budgethouder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/e5cc697f-6951-55b5-9db6-63c0b7eab93d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Budgethouder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: property vragenTermijnEinde",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/cbc480ae-b7d9-5bc2-8ffd-97fdacf623ff"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"vragenTermijnEinde\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: flow",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/c825bba9-3f44-5aa9-992e-e93ecc6231e5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Aanbesteding Standaard Workflow\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: 10-decision-types Gunningsbeslissing",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/decisionType/5f4e51d5-288c-52e8-b82d-cbd4272b08a3"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gunningsbeslissing\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "aanbesteding: 10-decision-types Afwijzingsbeslissing",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/decisionType/f299a4e4-9d38-5dff-830f-db40eafa97da"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afwijzingsbeslissing\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"d2b26387-ec33-533a-bd75-4ded3719a932\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20-standstill-term 0b94015f-42f0-56b8-9fd8-f9f7fecae070",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/termijnDefinitie/0b94015f-42f0-56b8-9fd8-f9f7fecae070"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"aanbesteding\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: a supplier",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/supplier",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"kvkNumber\": \"{{tenderKvk}}\", \"legalName\": \"Newman Inschrijver BV\", \"status\": \"active\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);",
+              "pm.collectionVariables.set('tenderClosing', day(-3));",
+              "pm.collectionVariables.set('tenderStandstillEnd', day(20));",
+              "pm.collectionVariables.set('tenderKvk', String(90000000 + Math.floor(Math.random() * 999999)));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the supplier is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('the supplier has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('tenderSupplierId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: a tender in evaluation, scored by price-quality 60/40",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Newman tender chain\", \"caseType\": \"d2b26387-ec33-533a-bd75-4ded3719a932\", \"status\": \"f7d821cb-59f6-52b4-bc18-772734ad5336\", \"identifier\": \"NEWMAN-TENDER-{{$timestamp}}\", \"impact\": \"medium\", \"urgency\": \"medium\", \"intakeChannel\": \"manual\", \"properties\": [{\"propertyDefinition\": \"a4936ffd-1ac0-53b7-81b1-c361e68b13a3\", \"name\": \"sluiting\", \"value\": \"{{tenderClosing}}\"}, {\"propertyDefinition\": \"49eb18e1-e586-521a-995e-58223c022c01\", \"name\": \"scoringFormula\", \"value\": \"price-quality\"}, {\"propertyDefinition\": \"6b3e461d-5f1c-5bc6-9e2d-c1dccba50198\", \"name\": \"maxPoints\", \"value\": 100}, {\"propertyDefinition\": \"bc458f42-9dc5-5e42-bad3-6c309d3c37dd\", \"name\": \"qualityWeight\", \"value\": 0.6}, {\"propertyDefinition\": \"2ded9613-2333-5734-ae72-9d1acd66e910\", \"name\": \"priceWeight\", \"value\": 0.4}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the tender is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('the tender has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('tenderCaseId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: register a bid received on the closing day",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/bid",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tender\": \"{{tenderCaseId}}\", \"case\": \"{{tenderCaseId}}\", \"supplier\": \"{{tenderSupplierId}}\", \"submittedAt\": \"{{tenderClosing}}T09:00:00+00:00\", \"submissionRef\": \"NEWMAN-A\", \"priceAmount\": 80000, \"responses\": {}, \"state\": \"admissible\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the first bid is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('the first bid has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('tenderBidA', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: register a second bid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/bid",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tender\": \"{{tenderCaseId}}\", \"case\": \"{{tenderCaseId}}\", \"supplier\": \"{{tenderSupplierId}}\", \"submittedAt\": \"{{tenderClosing}}T10:00:00+00:00\", \"submissionRef\": \"NEWMAN-B\", \"priceAmount\": 100000, \"responses\": {}, \"state\": \"admissible\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the second bid is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('the second bid has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('tenderBidB', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: a bid after the closing date is refused, naming the date",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/bid",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tender\": \"{{tenderCaseId}}\", \"case\": \"{{tenderCaseId}}\", \"supplier\": \"{{tenderSupplierId}}\", \"submittedAt\": \"{{$isoTimestamp}}\", \"submissionRef\": \"NEWMAN-LATE\", \"responses\": {}, \"state\": \"received\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a late bid is refused, not stored', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+              "pm.test('the refusal names the closing date', () => pm.expect(pm.response.text()).to.include(pm.collectionVariables.get('tenderClosing')));",
+              "pm.test('the refusal carries its code', () => pm.expect(pm.response.text()).to.include('submission-after-closing-date'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: the scoring sheet names the formula and asks only for quality",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/cases/{{tenderCaseId}}/scoring"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the sheet is read (200)', () => pm.expect(pm.response.code).to.eql(200));",
+              "const sheet = pm.response.json();",
+              "pm.test('scored by price-quality', () => pm.expect(sheet.formula.key).to.eql('price-quality'));",
+              "pm.test('the evaluator enters only quality', () => pm.expect(sheet.inputs).to.eql(['quality']));",
+              "pm.test('the case holds the weights', () => pm.expect(sheet.fixed).to.include({ qualityWeight: 0.6, priceWeight: 0.4, maxPoints: 100 }));",
+              "pm.test('both admissible bids are offered, the late one is not there', () => pm.expect(sheet.submissions.map((s) => s.label).sort()).to.eql(['NEWMAN-A', 'NEWMAN-B']));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: score the second bid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/cases/{{tenderCaseId}}/scoring",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"bid\": \"{{tenderBidB}}\", \"scores\": {\"quality\": 70}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the bid is scored (200)', () => pm.expect(pm.response.code).to.eql(200));",
+              "const body = pm.response.json();",
+              "pm.test('0.6 x 70 + 0.4 x 100 x 80000 / 100000 = 74', () => pm.expect(body.total).to.eql(74));",
+              "pm.collectionVariables.set('tenderEvaluationId', String(body.evaluationId || ''));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: a score that is no number is refused",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/cases/{{tenderCaseId}}/scoring",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"bid\": \"{{tenderBidA}}\", \"scores\": {\"quality\": \"veel\"}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('refused with 422', () => pm.expect(pm.response.code).to.eql(422));",
+              "pm.test('the refusal says what to enter', () => pm.expect(pm.response.json().message).to.include('quality'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: the evaluation reached the store",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/evaluation/{{tenderEvaluationId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the evaluation is read (200)', () => pm.expect(pm.response.code).to.eql(200));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const evaluation = unwrap(pm.response.json());",
+              "pm.test('it carries the total', () => pm.expect(evaluation.weightedTotal).to.eql(74));",
+              "pm.test('it scores the second bid', () => pm.expect(String(evaluation.bid)).to.eql(pm.collectionVariables.get('tenderBidB')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: a tender whose award was sent today",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Newman tender standstill\", \"caseType\": \"d2b26387-ec33-533a-bd75-4ded3719a932\", \"status\": \"c6314335-bd99-5577-af9a-4520bf3bfa15\", \"identifier\": \"NEWMAN-TENDER-AWARD-{{$timestamp}}\", \"impact\": \"medium\", \"urgency\": \"medium\", \"intakeChannel\": \"manual\", \"properties\": [{\"propertyDefinition\": \"a4936ffd-1ac0-53b7-81b1-c361e68b13a3\", \"name\": \"sluiting\", \"value\": \"{{tenderClosing}}\"}, {\"propertyDefinition\": \"2c8f83ac-a7e2-5817-8570-dac4ae7e861e\", \"name\": \"opschortendeTermijnEinde\", \"value\": \"{{tenderStandstillEnd}}\"}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the award case is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('the award case has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('tenderAwardCaseId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tender chain: making the award final waits for the standstill",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/case/{{tenderAwardCaseId}}/transition",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"transitionId\": \"71c9bc37-22bd-507c-9b82-9601ef2cfa20\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('refused with 409', () => pm.expect(pm.response.code).to.eql(409));",
+              "const body = pm.response.json();",
+              "pm.test('a guard refused it', () => pm.expect(body.error).to.eql('transition-guard-failed'));",
+              "const standstill = (body.failedGuards || []).find((g) => g.type === 'dateReached');",
+              "pm.test('the refusal names the day the standstill ends', () => pm.expect(String(standstill && standstill.failureMessage)).to.include(pm.collectionVariables.get('tenderStandstillEnd')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ledger records the package",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetObject=d2b26387-ec33-533a-bd75-4ded3719a932&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('ledger reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const row = rows.find(r => r.targetObject === 'd2b26387-ec33-533a-bd75-4ded3719a932');",
+              "pm.test('a ledger row names the package and its version', () => {",
+              "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
+              "    pm.expect(row.set).to.eql('aanbesteding');",
+              "    pm.expect(row.setVersion).to.eql('1.12.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

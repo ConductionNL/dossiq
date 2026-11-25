@@ -14,10 +14,7 @@
 				data-testid="case-type-flow-back">
 				{{ t('dossiq', 'Back to the case type') }}
 			</router-link>
-			<h2 class="case-type-flow__title">
-				{{ t('dossiq', 'Flow') }}
-			</h2>
-			<WorkflowTab v-if="storesReady" :caseTypeId="caseTypeId" />
+			<WorkflowTab v-if="storesReady" :caseTypeId="caseTypeId" boardHeader />
 			<NcLoadingIcon v-else data-testid="case-type-flow-loading" />
 		</div>
 	</NcAppContent>
@@ -67,7 +64,7 @@ export default {
 	text-decoration: underline;
 }
 
-.case-type-flow__title {
-	margin: 12px 0 16px;
+.case-type-flow__back + * {
+	margin-top: 12px;
 }
 </style>

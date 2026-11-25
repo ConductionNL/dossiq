@@ -28,7 +28,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use DateTime;
 use OCA\Dossiq\Controller\MailIntakeController;
+use OCA\Dossiq\Kernel\Contracts\FilingFollowUpsInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\BounceAction;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
@@ -61,7 +62,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  * @uses \OCA\Dossiq\Controller\Support\IntakeRoleGate
  */
 final class MailIntakeControllerTest extends TestCase {
@@ -102,11 +103,19 @@ final class MailIntakeControllerTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The Link to case dialog's choices.
+	 *
+	 * @var FilingFollowUpsInterface&MockObject
+	 */
+	private FilingFollowUpsInterface $followUps;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->followUps = $this->createMock(FilingFollowUpsInterface::class);
 		$this->amended = [];
 
 		// The per-case guard the `file-on-case` act needs
@@ -171,6 +180,7 @@ final class MailIntakeControllerTest extends TestCase {
 			$session,
 			$time,
 			$this->caseAccessGuard,
+			$this->followUps,
 		);
 	}//end controller()
 
@@ -436,6 +446,69 @@ final class MailIntakeControllerTest extends TestCase {
 	}//end testFileOnCaseMovesTheMessageAndRecordsTheOverride()
 
 	/**
+	 * The dialog's two choices run after the filing, each when chosen, and say what they did.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseRunsTheChosenFollowUps(): void {
+		$this->log->method('find')->willReturn(
+			$this->entry(['sender' => 'henk@example.org', 'subject' => 'Vraag 2026-0206', 'original' => "From: Henk Bakker <henk@example.org>\r\n\r\nHallo"])
+		);
+		$this->intake->method('fileOnCase')->willReturn('case-114');
+		$this->followUps->expects($this->once())
+			->method('addSenderAsParty')
+			->with('case-114', 'henk@example.org', 'Henk Bakker')
+			->willReturn('added');
+		$this->followUps->expects($this->once())
+			->method('notifyHandler')
+			->with('case-114', 'intaker', 'Henk Bakker', 'Vraag 2026-0206')
+			->willReturn('notified');
+
+		$data = $this->controller()->fileOnCase('entry-1', 'case-114', 'Het zaaknummer staat in het onderwerp', true, true)->getData();
+
+		$this->assertSame('added', $data['party']);
+		$this->assertSame('notified', $data['handler']);
+	}//end testFileOnCaseRunsTheChosenFollowUps()
+
+	/**
+	 * A sender without a display name is named by address in the handler's notice, and only that choice runs.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseNamesASenderWithoutANameByAddress(): void {
+		$this->log->method('find')->willReturn(
+			$this->entry(overrides: ['sender' => 'henk@example.org', 'subject' => 'Vraag', 'original' => "From: henk@example.org\r\n\r\nHallo"])
+		);
+		$this->intake->method('fileOnCase')->willReturn('case-114');
+		$this->followUps->expects($this->never())->method('addSenderAsParty');
+		$this->followUps->expects($this->once())
+			->method('notifyHandler')
+			->with('case-114', 'intaker', 'henk@example.org', 'Vraag')
+			->willReturn('notified');
+
+		$data = $this->controller()->fileOnCase('entry-1', 'case-114', 'Hoort hier.', false, true)->getData();
+
+		$this->assertArrayNotHasKey(key: 'party', array: $data);
+		$this->assertSame(expected: 'notified', actual: $data['handler']);
+	}//end testFileOnCaseNamesASenderWithoutANameByAddress()
+
+	/**
+	 * Without the choices nothing else happens.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseWithoutChoicesRunsNoFollowUp(): void {
+		$this->log->method('find')->willReturn($this->entry([]));
+		$this->intake->method('fileOnCase')->willReturn('case-114');
+		$this->followUps->expects($this->never())->method('addSenderAsParty');
+		$this->followUps->expects($this->never())->method('notifyHandler');
+
+		$data = $this->controller()->fileOnCase('entry-1', 'case-114', 'Hoort hier.')->getData();
+
+		$this->assertArrayNotHasKey('party', $data);
+	}//end testFileOnCaseWithoutChoicesRunsNoFollowUp()
+
+	/**
 	 * Bounce and move answer 404 for a missing entry, and nothing is sent or moved.
 	 *
 	 * @return void
@@ -495,6 +568,7 @@ final class MailIntakeControllerTest extends TestCase {
 			$session,
 			$time,
 			$guard,
+			$this->createMock(FilingFollowUpsInterface::class),
 		);
 
 		$response = $controller->fileOnCase('entry-1', 'case-114', 'Hoort hier.');

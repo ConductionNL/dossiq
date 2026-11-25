@@ -10,6 +10,8 @@
 - [x] 5 nextcloud-vue `CnReportsPage`: a card MAY carry `href` instead of `route`, plus `requiredApp`; a card whose app is missing shows its `unavailable` sentence and no link. Build it there (separate PR on nextcloud-vue), with a vitest.
   - Already in `@conduction/nextcloud-vue` (2.181): a `CnReportsPage` card takes `href` instead of `route`, with `requiresApp` and `missingText` (drawn in place of the link while the app is missing). The `TaskFieldCosts` and `KccVolume` cards use it; nothing left to build there.
 - [x] 6 `src/manifest.json` page `Reports`: card `ShillinqIv3` "Kosten per taakveld staat in Shillinq", `href` to Shillinq's reporting page, `requiredApp: shillinq`, category `costs` (REQ-IV3-CLASS-03).
-- [ ] 7 `tests/e2e/iv3-link-to-shillinq.spec.ts`: the card opens Shillinq; without Shillinq it shows the sentence and no figure; no money figure per taakveld anywhere on the Reports page.
+- [x] 7 `tests/e2e/iv3-link-to-shillinq.spec.ts`: the card opens Shillinq; without Shillinq it shows the sentence and no figure; no money figure per taakveld anywhere on the Reports page.
+  - Written, runs in nightly (`tests/e2e/iv3-link-to-shillinq.spec.ts`, #6685); not run here, the live pass owns it.
 - [ ] 8 Board DqRapportages amended to the link card (design-system PR); then the live pass against it.
-- [ ] 9 `openspec/parity/capabilities.json` row 10.20: provider shillinq, dossiq classifies; built once tasks 2 to 7 land.
+- [x] 9 `openspec/parity/capabilities.json` row 10.20: provider shillinq, dossiq classifies; built once tasks 2 to 7 land.
+  - Done 24 Nov 2026: provider `shillinq` (`note-names-app`), built state `built` with the evidence of tasks 2 to 7; the dossiq rating comes from the corpus and is not edited here.

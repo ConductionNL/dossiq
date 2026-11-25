@@ -28,17 +28,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\FilingChoices;
 use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilingFollowUpsInterface;
 use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
 use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
@@ -64,7 +66,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the surface reaches every
  *  part of the intake path by design; each collaborator knows only its own.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -88,6 +90,13 @@ class MailIntakeController extends Controller {
 	private const PAGE_SIZE = 100;
 
 	/**
+	 * The Link to case dialog's choices, run after a filing by hand.
+	 *
+	 * @var FilingChoices
+	 */
+	private readonly FilingChoices $choices;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest          $request     Inbound request.
@@ -101,6 +110,7 @@ class MailIntakeController extends Controller {
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
 	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization, for the case a handler picks.
+	 * @param FilingFollowUpsInterface   $followUps       The Link to case dialog's choices: the sender as a party, the handler told.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -114,8 +124,10 @@ class MailIntakeController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		FilingFollowUpsInterface $followUps,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+		$this->choices = new FilingChoices(followUps: $followUps);
 	}//end __construct()
 
 	/**
@@ -126,7 +138,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse The entries, or 403 when the caller lacks the intake role.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $sender = '', string $outcome = ''): JSONResponse {
@@ -160,7 +172,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse The entry, 403 without the intake role, 404 when it is gone.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(string $entryId): JSONResponse {
@@ -183,7 +195,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse What the released message became.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function release(string $entryId): JSONResponse {
@@ -209,7 +221,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return string The outcome the intake answered.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function fileReleased(array $entry): string {
 		return $this->intake->fileOnCase(
@@ -230,7 +242,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function markReleased(string $entryId): void {
 		$this->log->amend(
@@ -255,7 +267,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse What the corrected message became.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function junk(string $entryId, bool $junk = false): JSONResponse {
@@ -298,7 +310,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse Whether it was sent.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function bounce(string $entryId, string $address = '', string $reason = ''): JSONResponse {
@@ -364,7 +376,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse Whether the mail server confirmed it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function move(string $entryId, string $target = '', string $note = ''): JSONResponse {
@@ -441,16 +453,28 @@ class MailIntakeController extends Controller {
 	 * case id they cared to guess, and the case would then show a message from
 	 * a citizen to a handler who may not read it.
 	 *
-	 * @param string $entryId The log entry.
-	 * @param string $caseId  The case the handler picked.
-	 * @param string $reason  Why they overrode the match.
+	 * The two choices of the Link to case dialog (DqKoppelAanZaak) run after
+	 * the filing and never undo it: the sender put on the case as a party,
+	 * and the case's handler told.
+	 *
+	 * @param string $entryId       The log entry.
+	 * @param string $caseId        The case the handler picked.
+	 * @param string $reason        Why they overrode the match.
+	 * @param bool   $addSender     Put the sender on the case as a party.
+	 * @param bool   $notifyHandler Tell the case's handler.
 	 *
 	 * @return JSONResponse What happened.
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	#[NoAdminRequired]
-	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {
+	public function fileOnCase(
+		string $entryId,
+		string $caseId = '',
+		string $reason = '',
+		bool $addSender = false,
+		bool $notifyHandler = false,
+	): JSONResponse {
 		$refusal = $this->fileOnCaseRefusal(caseId: $caseId, reason: $reason);
 		if ($refusal !== null) {
 			return $refusal;
@@ -467,7 +491,19 @@ class MailIntakeController extends Controller {
 		$filing->caseId = trim($caseId);
 		$filing->reason = $reason;
 
-		return $this->fileByHand(filing: $filing);
+		$response = $this->fileByHand(filing: $filing);
+		$response->setData(
+			array_merge(
+				(array)$response->getData(),
+				$this->choices->run(
+					filing: $filing,
+					choices: ['addSender' => $addSender, 'notifyHandler' => $notifyHandler],
+					callerId: $this->callerId()
+				)
+			)
+		);
+
+		return $response;
 	}//end fileOnCase()
 
 	/**
@@ -592,7 +628,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
 		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
@@ -605,7 +641,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, mixed>|JSONResponse The entry, or the 401, 403 or 404.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function workableEntry(string $entryId): array|JSONResponse {
 		$refusal = $this->requireIntakeRole();
@@ -635,7 +671,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The entry, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function entryOrNull(string $entryId): ?array {
 		try {
@@ -653,7 +689,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return string The uid, or '' when there is no session.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function callerId(): string {
 		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
@@ -666,7 +702,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return InboundMessage The message.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function messageOf(array $entry): InboundMessage {
 		$message = InboundMessage::fromRow(
@@ -697,7 +733,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return array<string, string> The results.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function resultsOf(array $entry): array {
 		return [

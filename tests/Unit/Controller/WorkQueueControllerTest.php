@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\Support\WorkloadScope;
 use OCA\Dossiq\Controller\WorkQueueController;
 use OCA\Dossiq\Service\Substitution\CoveredWork;
 use OCA\Dossiq\Service\Team\PrimaryTeamService;
@@ -42,6 +43,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\WorkQueueController
+ * @covers \OCA\Dossiq\Controller\Support\WorkloadScope
  */
 class WorkQueueControllerTest extends TestCase {
 
@@ -103,12 +105,15 @@ class WorkQueueControllerTest extends TestCase {
 		$this->controller = new WorkQueueController(
 			$this->request,
 			$this->userSession,
-			$this->groupManager,
 			$this->workQueueService,
 			$this->logger,
-			$this->userManager,
 			$this->coveredWork,
-			$this->teams,
+			new WorkloadScope(
+				groupManager: $this->groupManager,
+				userManager: $this->userManager,
+				teams: $this->teams,
+				logger: $this->logger,
+			),
 		);
 	}//end setUp()
 
@@ -230,6 +235,7 @@ class WorkQueueControllerTest extends TestCase {
 		$user = $this->mockUser('jan');
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->groupManager->method('isAdmin')->with('jan')->willReturn(false);
+		$this->teams->method('teamsOf')->willReturn([]);
 
 		$this->workQueueService->expects($this->never())->method('computeWorkload');
 
@@ -237,6 +243,49 @@ class WorkQueueControllerTest extends TestCase {
 
 		self::assertSame(403, $response->getStatus());
 	}//end testWorkloadReturns403ForNonCoordinator()
+
+	/**
+	 * A reader whose teams cannot be read is not let in on a team: 403 unless a coordinator.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 *
+	 * @return void
+	 */
+	public function testWorkloadReturns403WhenTheTeamsCannotBeReadForANonCoordinator(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser(uid: 'jan'));
+		$this->groupManager->method('isAdmin')->with('jan')->willReturn(false);
+		$this->teams->method('teamsOf')->willThrowException(new \RuntimeException('teams offline'));
+		$this->workQueueService->expects($this->never())->method('computeWorkload');
+
+		self::assertSame(expected: 403, actual: $this->controller->workload()->getStatus());
+	}//end testWorkloadReturns403WhenTheTeamsCannotBeReadForANonCoordinator()
+
+	/**
+	 * A team member who is no coordinator sees the workload of their own team's people only.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 *
+	 * @return void
+	 */
+	public function testWorkloadShowsATeamMemberTheirOwnTeam(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser(uid: 'pieter'));
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->teams->method('teamsOf')->willReturn([['groupId' => 'team-a', 'name' => 'Team A']]);
+		$this->groupManager->method('displayNamesInGroup')->with('team-a')->willReturn(
+			['anouk' => 'Anouk Bakker', 'pieter' => 'Pieter Jansen']
+		);
+		$this->workQueueService->method('computeWorkload')->willReturn([
+			['handler' => 'outsider', 'openCaseCount' => 12],
+			['handler' => 'pieter', 'openCaseCount' => 3],
+		]);
+		$this->userManager->method('getDisplayName')->willReturnArgument(0);
+
+		$response = $this->controller->workload();
+
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertSame(expected: ['pieter', 'anouk'], actual: array_column($response->getData()['handlers'], 'handler'));
+		self::assertSame(expected: [3, 0], actual: array_column($response->getData()['handlers'], 'openCaseCount'));
+	}//end testWorkloadShowsATeamMemberTheirOwnTeam()
 
 	/**
 	 * @return void

@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class IntakeAccount implements IntakeAccountInterface {
 
@@ -84,7 +84,7 @@ class IntakeAccount implements IntakeAccountInterface {
 	 *
 	 * @return integer The account id, or 0 when none is picked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accountId(): int {
 		return (int)$this->appConfig->getValueString(AppIdentity::APP_ID, self::ACCOUNT_KEY, '0');
@@ -95,7 +95,7 @@ class IntakeAccount implements IntakeAccountInterface {
 	 *
 	 * @return string The folder name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function folder(): string {
 		$folder = trim(
@@ -113,7 +113,7 @@ class IntakeAccount implements IntakeAccountInterface {
 	 *
 	 * @return boolean True when an account is picked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->accountId() > 0);
@@ -127,7 +127,7 @@ class IntakeAccount implements IntakeAccountInterface {
 	 *
 	 * @return boolean True when both match.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function matches(int $accountId, string $mailbox): bool {
 		if ($accountId <= 0 || $accountId !== $this->accountId()) {

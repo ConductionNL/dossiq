@@ -194,13 +194,13 @@ describe('the simple profile', () => {
 		}
 		// The team queue is worded for the simple menu; it opens its view of Cases.
 		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
-			label: 'Team queue',
+			label: 'Queue',
 			route: 'Cases',
 			query: { savedView: 'default:team-queue' },
 		})
 		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
-			label: 'Board',
+			label: 'Work board',
 			route: 'Cases',
 			query: { _view: 'board' },
 		})
@@ -337,7 +337,7 @@ describe('the simple profile', () => {
 		// Help is the documentation link already in the footer, renamed, so
 		// the footer does not list the same page twice.
 		expect(entry('Documentation')).toMatchObject({
-			label: 'Help and explanation',
+			label: 'Help and guidance',
 			icon: 'HelpCircleOutline',
 			href: 'https://dossiq.conduction.nl',
 			section: 'footer',
@@ -493,10 +493,11 @@ describe('the simple profile', () => {
 	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
 	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
 	// 74 -> 73: CasesDeleted retires; a case is never deleted (cases-are-archival-no-delete).
-	it('builds the same 73 pages as the full profile, so every route stays', () => {
+	// 73 -> 74: the supervision plan gets a page (DqToezichtplan), reached from Reports (supervision-plan-page).
+	it('builds the same 74 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(73)
+		expect(built.pages).toHaveLength(74)
 	})
 })
 

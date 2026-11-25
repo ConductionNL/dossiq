@@ -115,7 +115,7 @@ class AanbestedingTenderChainTest extends TestCase {
 
 		$this->assertTrue($caseType['tenderChain']);
 		$this->assertSame(['case-tender-ranking', 'case-overview-sections'], $caseType['overviewCards']);
-		$this->assertSame('1.11.0', self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version']);
+		$this->assertSame('1.12.0', self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version']);
 	}//end testThePackageRunsItsCaseTypeOnTheTenderChain()
 
 	/**

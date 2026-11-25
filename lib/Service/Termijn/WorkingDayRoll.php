@@ -445,7 +445,7 @@ class WorkingDayRoll {
 	 *
 	 * @return DateTimeImmutable|null The first working moment, or null when the calendar did not answer.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function firstWorkingMomentAtOrAfter(DateTimeImmutable $moment): ?DateTimeImmutable {
 		if ($this->isAvailable() === false) {

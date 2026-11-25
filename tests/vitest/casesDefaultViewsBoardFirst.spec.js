@@ -39,7 +39,7 @@ describe('the case list default views', () => {
 	})
 
 	it('filters the three as the list\'s own lenses do', () => {
-		expect(views[0].filters).toEqual(lens('Mine'))
+		expect(views[0].filters).toEqual(lens('My cases'))
 		expect(views[2].filters).toEqual(lens('Overdue'))
 		expect(views[1].filters).toEqual({ isFinalStatus: false, statusHiddenInLists: false, isDraft: false })
 	})

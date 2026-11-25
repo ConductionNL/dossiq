@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
 
 declare(strict_types=1);
@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * REQ-WDS-001 and REQ-WDS-003 through the contribution portaliq reads.
  *
  * @covers \OCA\Dossiq\Portal\CitizenManifest
+ * @uses \OCA\Dossiq\Portal\CitizenCaseCollection
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Portal\PortalPages

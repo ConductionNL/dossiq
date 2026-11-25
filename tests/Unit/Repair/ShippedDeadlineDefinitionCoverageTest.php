@@ -342,7 +342,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/omgevingsvergunning-starts-its-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testTheRegistersOmgevingsvergunningHasATermijnDefinitie(): void {
 		$caseType = null;

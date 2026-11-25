@@ -85,7 +85,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 	 */
 	public function testWaitingViewHasTheBoardsDescription(): void {
 		$this->assertSame(
-			expected: 'Status wacht op inwoner, gedeeld met team Woo',
+			expected: 'Status waiting for resident, shared with team Woo',
 			actual: $this->views()['pieter-wacht-op-inwoner']['description']
 		);
 	}//end testWaitingViewHasTheBoardsDescription()
@@ -102,8 +102,8 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 		$this->assertArrayHasKey(key: 'pieter-opgeschort', array: $views);
 
 		$view = $views['pieter-opgeschort'];
-		$this->assertSame(expected: 'Opgeschort', actual: $view['name']);
-		$this->assertSame(expected: 'Status opgeschort, alle teams', actual: $view['description']);
+		$this->assertSame(expected: 'Suspended', actual: $view['name']);
+		$this->assertSame(expected: 'Status suspended, all teams', actual: $view['description']);
 		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
 		$this->assertFalse(condition: $view['isPublic']);
 		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
@@ -132,7 +132,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 		$this->assertArrayHasKey(key: 'anouk-woo-verzoeken-team', array: $views);
 
 		$view = $views['anouk-woo-verzoeken-team'];
-		$this->assertSame(expected: 'Woo-verzoeken team', actual: $view['name']);
+		$this->assertSame(expected: 'Woo requests team', actual: $view['name']);
 		$this->assertSame(expected: '{{cast:anouk.uid}}', actual: $view['owner']);
 		$this->assertFalse(condition: $view['isPublic']);
 		$this->assertSame(expected: [['group' => '{{cast:woo-en-informatie.gid}}', 'mode' => 'read']], actual: $view['sharedWith']);

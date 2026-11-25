@@ -10,7 +10,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { resolveOverviewSections } from '../../src/utils/caseOverviewSections.js'
+import { labelIn, resolveOverviewSections } from '../../src/utils/caseOverviewSections.js'
 
 const read = (...parts) => JSON.parse(fs.readFileSync(path.join(__dirname, '../..', ...parts), 'utf8'))
 
@@ -42,6 +42,26 @@ describe('resolveOverviewSections', () => {
 		expect(resolveOverviewSections([{ id: 'x' }], {})).toEqual([])
 	})
 
+	it('writes a stored date or date-time as a date in words, not as the stored string', () => {
+		const rows = [{ label: 'Received', field: 'receivedAt' }, { label: 'Day', field: 'day' }, { label: 'Code', field: 'code' }]
+		const [section] = resolveOverviewSections([{ id: 'a', title: 'A', rows }], { receivedAt: '2026-11-23T00:50:43+00:00', day: '2026-11-20', code: '2026-4833' })
+		const words = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+
+		expect(section.rows.map((row) => row.value)).toEqual([words('2026-11-23T00:50:43+00:00'), words('2026-11-20'), '2026-4833'])
+	})
+
+	it('reads a label written per language in the reader\'s language, then Dutch', () => {
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'en')).toBe('Details')
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'en_GB')).toBe('Details')
+		expect(labelIn({ nl: 'Gegevens', en: 'Details' }, 'de')).toBe('Gegevens')
+		expect(labelIn('Gegevens', 'en')).toBe('Gegevens')
+		expect(labelIn(undefined, 'en')).toBe('')
+		const [section] = resolveOverviewSections([{ id: 'a', title: { nl: 'Gegevens', en: 'Details' }, intro: { nl: 'Uitleg', en: 'Explanation' }, rows: [{ label: { nl: 'Klager', en: 'Complainant' }, field: 'who' }] }], { who: 'R. de Boer' })
+		expect(section.title).toBe('Details')
+		expect(section.intro).toBe('Explanation')
+		expect(section.rows).toEqual([{ label: 'Complainant', value: 'R. de Boer' }])
+	})
+
 	it('shows no object as a value', () => {
 		const [section] = resolveOverviewSections([{ id: 'a', title: 'A', rows: [{ label: 'L', field: 'o' }] }], { o: { secret: 1 } })
 
@@ -53,7 +73,7 @@ describe('the procedure case types', () => {
 	const types = [
 		read('lib', 'Settings', 'packages', 'subsidie', 'case-type.json').caseType,
 		read('lib', 'Settings', 'packages', 'aanbesteding', 'case-type.json').caseType,
-		read('lib', 'Settings', 'dossiq_register.json').components.objects.find((row) => row.title === 'Klacht behandeling'),
+		read('lib', 'Settings', 'dossiq_register.json').components.objects.find((row) => (row.title?.nl ?? row.title) === 'Klacht behandeling'),
 	]
 
 	it('declare their sections and leave out the generic priority and locations cards', () => {

@@ -59,7 +59,7 @@ describe('the Files tab columns as the library reads them', () => {
 			.filter((column) => column.hidden !== true && column.when === undefined)
 			.map((column) => column.key)
 
-		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+		expect(keys).toEqual(['name', 'scanVerdict', 'accessExceptionNames'])
 		// The library keeps a `when` column only once the page resolved its condition to true.
 		expect(columns.map((column) => column.key)).not.toContain('reviewVerdict')
 		const resolved = withScanner(filesProps().columns).map((column) =>
@@ -74,6 +74,12 @@ describe('the Files tab columns as the library reads them', () => {
 				.filter((column) => column.hidden === true)
 				.map((column) => column.key),
 		).toEqual(['documentType', 'direction', 'partyName', 'keywords'])
+		// On a case type that reviews its documents, Type, Direction and Author show before Assessment (DqZaakDocumenten).
+		const reviewing = filesProps().columns.map((column) =>
+			column?.hidden?.not !== undefined ? { ...column, hidden: { not: true } } : column?.when !== undefined ? { ...column, when: true } : column,
+		)
+		expect(normaliseFileColumns(reviewing).filter((column) => column.hidden !== true).map((column) => column.label))
+			.toEqual(expect.arrayContaining(['Type', 'Direction', 'Author', 'Assessment']))
 		expect(
 			normaliseFileColumns(filesProps().columns)[0].label,
 			'board DqDocumentenBeheer heads the name column Document',
@@ -126,13 +132,13 @@ describe('the Files tab columns as the library reads them', () => {
 				.map((column) => column.key),
 		).toEqual(['name'])
 		expect(review.map((column) => column.key)).toEqual(
-			expect.arrayContaining(['scanVerdict', 'vertrouwelijkheidaanduiding']),
+			expect.arrayContaining(['scanVerdict', 'accessExceptionNames']),
 		)
 		expect(
 			columnsFor(false)
 				.filter((column) => column.hidden !== true)
 				.map((column) => column.key),
-		).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+		).toEqual(['name', 'scanVerdict', 'accessExceptionNames'])
 	})
 
 	// @spec openspec/specs/scan-column-needs-a-scanner/spec.md#requirement-the-scan-column-shows-only-with-a-virus-scanner

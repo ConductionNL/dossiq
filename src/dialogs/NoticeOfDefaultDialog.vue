@@ -139,7 +139,7 @@ export default {
 				{ value: 'post', label: t('dossiq', 'Letter') },
 				{ value: 'email', label: t('dossiq', 'Email') },
 				{ value: 'portal', label: t('dossiq', 'Portal') },
-				{ value: 'balie', label: t('dossiq', 'Desk') },
+				{ value: 'balie', label: t('dossiq', 'Service desk') },
 				{ value: 'phone', label: t('dossiq', 'Phone') },
 			]
 		},

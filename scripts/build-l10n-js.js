@@ -24,6 +24,10 @@
 //   `npm run check:l10n` still asserts the two carry identical pairs — this
 //   script makes that assertion cheap to satisfy rather than replacing it.
 //
+//   One exception: l10n/en.js leaves out every entry equal to its own key (see
+//   SOURCE_LOCALE). `t()` falls back to the key, so the browser renders the
+//   same English, and the file shrinks from about 1.25 MB to about 16 KB.
+//
 // EVERY locale in l10n/ is generated, not just en/nl. larpinq ships 37 locale
 // catalogues and had .js for none of them, so 35 languages' translations were
 // unreachable on top of the two this script was first written for.
@@ -50,6 +54,15 @@ const fs = require('fs')
 const path = require('path')
 
 const REPO_ROOT = path.resolve(__dirname, '..')
+
+/**
+ * The locale the keys are written in. Its browser catalogue drops every entry
+ * equal to its own key: `t()` already falls back to the key, so those entries
+ * only add weight (about 99% of l10n/en.json). l10n/en.json itself stays
+ * complete, because the PHP side, the extraction step and the en/nl parity
+ * checks read it.
+ */
+const SOURCE_LOCALE = 'en'
 
 /** Fallback when a catalogue declares no pluralForm — see the header note. */
 const DEFAULT_PLURAL_FORM = 'nplurals=2; plural=(n != 1);'
@@ -104,6 +117,28 @@ function appId() {
 		process.exit(1)
 	}
 	return match[1].trim()
+}
+
+/**
+ * The entries the browser needs from one catalogue: all of them, except for
+ * the source locale, where an entry equal to its own key is dropped.
+ *
+ * @spec PERF-HANDOFF.md (all apps: drop identity entries from the English catalogue at build time)
+ * @param {string} locale - the catalogue's locale code
+ * @param {object} translations - key -> translation
+ * @return {object} key -> translation, as served to the browser
+ */
+function browserEntries(locale, translations) {
+	if (locale !== SOURCE_LOCALE) {
+		return translations
+	}
+	const kept = {}
+	for (const key of Object.keys(translations)) {
+		if (translations[key] !== key) {
+			kept[key] = translations[key]
+		}
+	}
+	return kept
 }
 
 /**
@@ -171,9 +206,10 @@ function main() {
 			process.exit(1)
 		}
 
+		const entries = browserEntries(locale, doc.translations)
 		const rendered = renderJs(
 			id,
-			doc.translations,
+			entries,
 			doc.pluralForm || DEFAULT_PLURAL_FORM,
 		)
 		const current = fs.existsSync(jsFile)
@@ -182,7 +218,7 @@ function main() {
 
 		if (current === rendered) {
 			console.log(
-				`  ✓ l10n/${locale}.js up to date (${Object.keys(doc.translations).length} keys)`,
+				`  ✓ l10n/${locale}.js up to date (${Object.keys(entries).length} keys)`,
 			)
 			continue
 		}
@@ -192,7 +228,7 @@ function main() {
 		}
 		fs.writeFileSync(jsFile, rendered)
 		console.log(
-			`  ✎ l10n/${locale}.js written (${Object.keys(doc.translations).length} keys)`,
+			`  ✎ l10n/${locale}.js written (${Object.keys(entries).length} keys)`,
 		)
 	}
 
@@ -211,4 +247,10 @@ if (require.main === module) {
 	main()
 }
 
-module.exports = { renderJs, sortKeys, DEFAULT_PLURAL_FORM }
+module.exports = {
+	browserEntries,
+	renderJs,
+	sortKeys,
+	DEFAULT_PLURAL_FORM,
+	SOURCE_LOCALE,
+}

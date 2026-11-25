@@ -68,6 +68,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
+use OCA\Dossiq\Service\Workflow\DefinitionLifecycleRows;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
@@ -100,6 +101,13 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	public const VARIANT_DEFAULT = WorkflowLifecycleGuard::VARIANT_DEFAULT;
 
 	/**
+	 * Builds the rows a draft, a clone, a publish and a deprecation write.
+	 *
+	 * @var DefinitionLifecycleRows
+	 */
+	private readonly DefinitionLifecycleRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WorkflowDefinitionRepository $repository The OpenRegister persistence layer
@@ -108,6 +116,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 *                                                freezing
 	 * @param WorkflowJsonProperty $json The JSON-string property codec
 	 * @param LoggerInterface $logger The logger
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
@@ -116,6 +125,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		private readonly WorkflowJsonProperty $json,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->rows = new DefinitionLifecycleRows(guard: $this->guard, json: $this->json);
 	}//end __construct()
 
 	/**
@@ -287,6 +297,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function publish(string $id): ?array {
 		$current = $this->publishableDraft(id: $id);
@@ -310,7 +321,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		// enriched transitions (JSON-encoded STRING per the workflowTemplate
 		// schema) when any were resolved.
 		$updated = $this->repository->save(
-			payload: $this->buildPublishPayload(authoredTransitions: $authoredTransitions),
+			payload: $this->rows->published(authoredTransitions: $authoredTransitions),
 			uuid: $id,
 		);
 		if ($updated === null) {
@@ -373,6 +384,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function deprecate(string $id): ?array {
 		$current = $this->repository->findById(id: $id);
@@ -385,10 +397,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		}
 
 		return $this->repository->save(
-			payload: [
-				'lifecycleStatus' => self::STATUS_DEPRECATED,
-				'isActive' => false,
-			],
+			payload: $this->rows->deprecated(),
 			uuid: $id,
 		);
 	}//end deprecate()
@@ -402,6 +411,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * @return array<string, mixed>|null New draft definition or null
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function cloneDefinition(string $id): ?array {
 		$source = $this->repository->findById(id: $id);
@@ -412,22 +422,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		$caseTypeId = (string)($source['caseType'] ?? '');
 		$nextVersion = $this->repository->nextVersionFor(caseTypeId: $caseTypeId);
 
-		$draft = [
-			'title' => $this->cloneTitle(base: (string)($source['title'] ?? 'Workflow')),
-			'description' => (string)($source['description'] ?? ''),
-			'caseType' => $caseTypeId,
-			// A clone stays on its source's route. Cloning the spoedeisende
-			// route to get a draft of the ordinary one is not a thing anyone
-			// means, and it is what dropping this line would produce.
-			'variant' => $this->guard->variantOf(row: $source),
-			'version' => $nextVersion,
-			'isActive' => false,
-			'isDraft' => true,
-			'lifecycleStatus' => self::STATUS_DRAFT,
-			'steps' => (string)($source['steps'] ?? ''),
-			'transitions' => (string)($source['transitions'] ?? ''),
-			'nodePositions' => (string)($source['nodePositions'] ?? ''),
-		];
+		$draft = $this->rows->cloned(source: $source, version: $nextVersion);
 
 		return $this->repository->save(payload: $draft);
 	}//end cloneDefinition()
@@ -455,6 +450,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * @return array<string, mixed>|null The created draft or null on failure
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createDraft(array $payload): ?array {
 		$caseTypeId = (string)($payload['caseType'] ?? '');
@@ -467,7 +463,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		}
 
 		$version = $this->draftVersion(payload: $payload, caseTypeId: $caseTypeId);
-		$draft = $this->draftRow(payload: $payload, version: $version);
+		$draft = $this->rows->draft(payload: $payload, version: $version);
 
 		return $this->repository->save(payload: $draft);
 	}//end createDraft()
@@ -490,50 +486,6 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 		return $version;
 	}//end draftVersion()
-
-	/**
-	 * The draft row to store.
-	 *
-	 * @param array<string, mixed> $payload The draft payload, naming its case type
-	 * @param int                  $version The version
-	 *
-	 * @return array<string, mixed> The row
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function draftRow(array $payload, int $version): array {
-		$stepsValue = $this->json->encode(value: ($payload['steps'] ?? []));
-		$transitionsValue = $this->json->encode(value: ($payload['transitions'] ?? []));
-
-		return [
-			'title' => (string)$payload['title'],
-			'description' => (string)($payload['description'] ?? ''),
-			'caseType' => (string)($payload['caseType'] ?? ''),
-			'variant' => $this->guard->variantOf(row: $payload),
-			'version' => $version,
-		] + $this->draftState(encoded: ['steps' => $stepsValue, 'transitions' => $transitionsValue], payload: $payload);
-	}//end draftRow()
-
-	/**
-	 * The draft's lifecycle flags and its content.
-	 *
-	 * @param array{steps: string|false, transitions: string|false} $encoded The encoded steps and transitions
-	 * @param array<string, mixed>                                 $payload The draft payload
-	 *
-	 * @return array<string, mixed> The fields
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function draftState(array $encoded, array $payload): array {
-		return [
-			'isActive' => false,
-			'isDraft' => true,
-			'lifecycleStatus' => self::STATUS_DRAFT,
-			'steps' => $encoded['steps'],
-			'transitions' => $encoded['transitions'],
-			'nodePositions' => (string)($payload['nodePositions'] ?? ''),
-		];
-	}//end draftState()
 
 	// -----------------------------------------------------------------
 	// Internal helpers.
@@ -598,6 +550,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * @return bool True when nothing had to change or the write succeeded.
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function deprecatePreviousActive(array $route): bool {
 		$previousActive = $this->getActiveDefinitionFor(caseTypeId: $route['caseTypeId'], variant: $route['variant']);
@@ -606,46 +559,10 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		}
 
 		$saved = $this->repository->save(
-			payload: [
-				'lifecycleStatus' => self::STATUS_DEPRECATED,
-				'isActive' => false,
-			],
+			payload: $this->rows->deprecated(),
 			uuid: (string)$previousActive['id'],
 		);
 
 		return ($saved !== null);
 	}//end deprecatePreviousActive()
-
-	/**
-	 * Build the saveObject payload that flips a draft to published+active,
-	 * including the authorization-enriched transitions when any resolved.
-	 *
-	 * @param array<int, array<string, mixed>>|null $authoredTransitions Enriched transitions, or null when none.
-	 *
-	 * @return array<string, mixed> The publish payload.
-	 */
-	private function buildPublishPayload(?array $authoredTransitions): array {
-		$payload = [
-			'lifecycleStatus' => self::STATUS_PUBLISHED,
-			'isActive' => true,
-			'isDraft' => false,
-		];
-
-		if ($authoredTransitions !== null) {
-			$payload['transitions'] = json_encode($authoredTransitions);
-		}
-
-		return $payload;
-	}//end buildPublishPayload()
-
-	/**
-	 * Build a title for a cloned draft.
-	 *
-	 * @param string $base The source title
-	 *
-	 * @return string
-	 */
-	private function cloneTitle(string $base): string {
-		return rtrim($base) . ' (kopie)';
-	}//end cloneTitle()
 }//end class

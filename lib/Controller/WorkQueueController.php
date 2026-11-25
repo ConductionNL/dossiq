@@ -28,29 +28,26 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTime;
+use OCA\Dossiq\Controller\Support\WorkloadScope;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CoveredWorkInterface;
-use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUser;
-use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
  * Controller for the intelligent work-queue endpoints.
  *
- * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * The queue and the covered work read their own collaborator; which handlers
+ * the workload shows is the workload scope's answer.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the queue, the workload and
- *  the covered work each read their own collaborator; the workload also needs
- *  the reader's teams.
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class WorkQueueController extends Controller {
 	/**
@@ -58,24 +55,22 @@ class WorkQueueController extends Controller {
 	 *
 	 * @param IRequest $request The HTTP request.
 	 * @param IUserSession $userSession The user session.
-	 * @param IGroupManager $groupManager The group manager (coordinator = NC admin guard).
 	 * @param WorkQueueServiceInterface $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
-	 * @param IUserManager $userManager Resolves a handler's display name.
 	 * @param CoveredWorkInterface $coveredWork The cases the caller covers for an absent colleague.
-	 * @param PrimaryTeamServiceInterface $teams The reader's teams, which scope the workload.
+	 * @param WorkloadScope $scope The reader's teams and coordinator role, which scope the workload.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private IUserSession $userSession,
-		private IGroupManager $groupManager,
 		private WorkQueueServiceInterface $workQueueService,
 		private LoggerInterface $logger,
-		private IUserManager $userManager,
 		private CoveredWorkInterface $coveredWork,
-		private PrimaryTeamServiceInterface $teams,
+		private WorkloadScope $scope,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -125,13 +120,15 @@ class WorkQueueController extends Controller {
 	}//end index()
 
 	/**
-	 * Return per-handler open-case counts. Coordinator-only (NC admin).
+	 * Return per-handler open-case counts: for a coordinator (NC admin), and
+	 * for a member of a team, who sees the people of their own teams only.
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function workload(): JSONResponse {
@@ -140,13 +137,18 @@ class WorkQueueController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->isCoordinator(userId: $user->getUID()) === false) {
-			return new JSONResponse(['error' => 'This action requires the coordinator role'], Http::STATUS_FORBIDDEN);
+		$teamGroupIds = $this->scope->teamGroupIds(user: $user);
+		$inATeam      = ($teamGroupIds !== null && $teamGroupIds !== []);
+		if ($inATeam === false && $this->scope->isCoordinator(userId: $user->getUID()) === false) {
+			return new JSONResponse(
+				['error' => 'This action requires the coordinator role or a team'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		try {
-			$handlers = $this->withDisplayNames(
-				handlers: $this->ofReadersTeams(user: $user, handlers: $this->workQueueService->computeWorkload())
+			$handlers = $this->scope->withDisplayNames(
+				handlers: $this->scope->ofTeams(teamGroupIds: $teamGroupIds, handlers: $this->workQueueService->computeWorkload())
 			);
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
@@ -154,128 +156,4 @@ class WorkQueueController extends Controller {
 			return new JSONResponse(['error' => 'Failed to compute workload'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end workload()
-
-	/**
-	 * Keep the handlers who are members of one of the reader's teams, and list
-	 * a member without open cases with 0, so a free colleague shows; every
-	 * handler for a reader in no team.
-	 *
-	 * @param IUser                                                  $user     The reader.
-	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
-	 *
-	 * @return array<int, array{handler: string, openCaseCount: int}> The handlers of the reader's teams.
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
-	 */
-	private function ofReadersTeams(IUser $user, array $handlers): array {
-		$teamGroupIds = $this->teamGroupIds(user: $user);
-		if ($teamGroupIds === null || $teamGroupIds === []) {
-			return $handlers;
-		}
-
-		return $this->withMembers(handlers: $handlers, members: $this->membersOf(groupIds: $teamGroupIds));
-	}//end ofReadersTeams()
-
-	/**
-	 * The groups of the reader's teams, or null (logged) when they cannot be read.
-	 *
-	 * @param IUser $user The reader.
-	 *
-	 * @return array<mixed>|null
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
-	 */
-	private function teamGroupIds(IUser $user): ?array {
-		try {
-			return array_column($this->teams->teamsOf(user: $user), 'groupId');
-		} catch (\Throwable $e) {
-			$this->logger->warning('WorkQueue: the reader\'s teams could not be read', ['error' => $e->getMessage()]);
-			return null;
-		}
-	}//end teamGroupIds()
-
-	/**
-	 * Everyone in the given groups, as a set keyed by uid.
-	 *
-	 * @param array<mixed> $groupIds The groups.
-	 *
-	 * @return array<true>
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
-	 */
-	private function membersOf(array $groupIds): array {
-		$members = [];
-		foreach ($groupIds as $groupId) {
-			foreach (array_keys($this->groupManager->displayNamesInGroup(gid: $groupId)) as $uid) {
-				$members[(string)$uid] = true;
-			}
-		}
-
-		return $members;
-	}//end membersOf()
-
-	/**
-	 * The handler rows of the members, then a zero row for each member without one.
-	 *
-	 * @param array<int, array<string, mixed>> $handlers The workload rows.
-	 * @param array<true>                      $members  The members, keyed by uid.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
-	 */
-	private function withMembers(array $handlers, array $members): array {
-		$listed = [];
-		$result = [];
-		foreach ($handlers as $row) {
-			if (isset($members[$row['handler']]) === true) {
-				$result[] = $row;
-				$listed[$row['handler']] = true;
-			}
-		}
-
-		foreach (array_keys($members) as $uid) {
-			if (isset($listed[$uid]) === false) {
-				$result[] = ['handler' => $uid, 'openCaseCount' => 0];
-			}
-		}
-
-		return $result;
-	}//end withMembers()
-
-	/**
-	 * Add each handler's display name, so a list can show a person rather than a user id.
-	 *
-	 * A handler that is no longer a user keeps the id as its name.
-	 *
-	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
-	 *
-	 * @return array<int, array{handler: string, openCaseCount: int, displayName: string}> The counts with names.
-	 */
-	private function withDisplayNames(array $handlers): array {
-		foreach ($handlers as $index => $row) {
-			$handlers[$index]['displayName'] = ($this->userManager->getDisplayName($row['handler']) ?? $row['handler']);
-		}
-
-		return $handlers;
-	}//end withDisplayNames()
-
-	/**
-	 * Whether a user holds the dossiq coordinator role (NC admin).
-	 *
-	 * Coordinator authority is delegated to Nextcloud admin membership, the
-	 * same model used elsewhere in dossiq (e.g.
-	 * {@see \OCA\Dossiq\Controller\SubstitutionController::isCoordinator()}).
-	 *
-	 * @param string $userId The user id.
-	 *
-	 * @return bool
-	 */
-	private function isCoordinator(string $userId): bool {
-		if ($userId === '') {
-			return false;
-		}
-
-		return $this->groupManager->isAdmin($userId);
-	}//end isCoordinator()
 }//end class

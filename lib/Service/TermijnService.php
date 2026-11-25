@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -94,6 +95,8 @@ class TermijnService implements TermijnServiceInterface {
 	 * @param CaseDeadlineMirror|null $mirror Writes a statutory term's end date onto its case after
 	 *        every save of that term, so the case list and the case page read one date (REQ-OTE-01).
 	 *        Optional so a test build that never chose it saves terms exactly as before.
+	 * @param IL10N|null $l10n Writes the start event's sentence in Nextcloud's language; left out it is the
+	 *        Dutch sentence the case history keys on.
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
@@ -104,6 +107,7 @@ class TermijnService implements TermijnServiceInterface {
 		?TermDefinitions $definitions = null,
 		?TermInstanceStore $store = null,
 		private readonly ?CaseDeadlineMirror $mirror = null,
+		private readonly ?IL10N $l10n = null,
 	) {
 		$this->definitions = ($definitions ?? new TermDefinitions(
 			settingsService: $settingsService,
@@ -200,11 +204,28 @@ class TermijnService implements TermijnServiceInterface {
 			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
 			basis: (string)($start->definitie['legalBasis'] ?? 'AWB 4:13'),
-			rationale: 'Termijn gestart bij zaak-aanmaak',
+			rationale: $this->startRationale(),
 			daysImpact: $start->durationDays,
 			moment: $start->startDate,
 		);
 	}//end recordStart()
+
+	/**
+	 * Why a term starts when its case is created, in the language Nextcloud writes the case's notes in.
+	 *
+	 * Without a translator the stored sentence is the Dutch one the case history keys on.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function startRationale(): string {
+		if ($this->l10n === null) {
+			return 'Termijn gestart bij zaak-aanmaak';
+		}
+
+		return $this->l10n->t('Deadline started when the case was created');
+	}//end startRationale()
 
 	/**
 	 * Arm the engine timer, or bring the case in line when no timer was armed.

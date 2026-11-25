@@ -125,7 +125,7 @@ test.describe('Inbound mail filters', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#an-administrator-picks-the-account-instead-of-typing-a-password
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#an-administrator-picks-the-account-instead-of-typing-a-password
 	test('the mail settings offer an account, not a password', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		await page.goto(ADMIN_SETTINGS_URL, PAGE_LOAD)
@@ -142,7 +142,7 @@ test.describe('Inbound mail filters', () => {
 		await expect(
 			page.locator('.email-settings #email_imap_password'),
 		).toHaveCount(0)
-		// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#nothing-in-dossiq-holds-a-sending-password
+		// @e2e openspec/specs/inbound-mail-filters/spec.md#nothing-in-dossiq-holds-a-sending-password
 		// Nor an outbound one: case mail leaves on the Mail account's own
 		// authentication (REQ-IMF-11).
 		await expect(
@@ -152,7 +152,7 @@ test.describe('Inbound mail filters', () => {
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#somebody-says-they-mailed-us
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#somebody-says-they-mailed-us
 	test('a message that became no case is found by its sender', async ({
 		page,
 	}) => {
@@ -170,7 +170,7 @@ test.describe('Inbound mail filters', () => {
 		await expect(row).not.toContainText('passed')
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#an-administrator-reads-why-a-message-was-junked
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#an-administrator-reads-why-a-message-was-junked
 	test('a junk verdict names the rule behind it', async ({ page }) => {
 		await navToRoute(page, LOG_ROUTE)
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
@@ -180,7 +180,7 @@ test.describe('Inbound mail filters', () => {
 		await expect(row).toContainText('spam-header')
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-person-corrects-a-wrong-junk-verdict
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#a-person-corrects-a-wrong-junk-verdict
 	test('a wrong junk verdict is corrected, and the correction is recorded', async ({
 		page,
 		playwright,
@@ -215,7 +215,7 @@ test.describe('Inbound mail filters', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-released-message-becomes-a-case
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#a-released-message-becomes-a-case
 	test('a held message is released by hand, and the release is recorded', async ({
 		page,
 		playwright,
@@ -250,9 +250,9 @@ test.describe('Inbound mail filters', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-case-mail-goes-out-on-the-accounts-own-authentication
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#sent-mail-is-filed-in-the-mailbox
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-case-type-with-no-declaration-uses-the-default-account
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#a-case-mail-goes-out-on-the-accounts-own-authentication
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#sent-mail-is-filed-in-the-mailbox
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#a-case-type-with-no-declaration-uses-the-default-account
 	test('a case mail leaves through the picked Mail account and is filed', async ({
 		playwright,
 		baseURL,
@@ -289,7 +289,7 @@ test.describe('Inbound mail filters', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-bezwaar-goes-out-from-juridische-zaken
+	// @e2e openspec/specs/inbound-mail-filters/spec.md#a-bezwaar-goes-out-from-juridische-zaken
 	test('a case type that names a team account sends from that account', async ({
 		playwright,
 		baseURL,

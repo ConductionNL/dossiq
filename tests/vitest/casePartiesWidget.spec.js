@@ -129,7 +129,7 @@ describe('the Parties widget', () => {
 		const where = panels.caseTabOf('case-parties')
 
 		expect(where, 'case-parties is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('People')
+		expect(where.tab).toBe('Parties')
 		expect(where.label).toBe('Parties')
 
 		// First, above the contact moments: who is involved, then the contact
@@ -285,7 +285,7 @@ describe('the Team column and the Mine chip', () => {
 		const chips = page(id).config.quickFilters
 
 		expect(chips).toBeTruthy()
-		const mine = chips.find((chip) => chip.label === 'Mine')
+		const mine = chips.find((chip) => chip.label === 'My cases')
 		expect(mine).toBeTruthy()
 		// `one-case-list` added the open-work condition beside the assignee
 		// (`isFinalStatus` on Cases, `isTerminalStatus` on Tasks), so this
@@ -345,7 +345,7 @@ describe('the Tasks index after it moved to the engine', () => {
 
 	it('offers Mine as a scope, and still opens on everything', () => {
 		const chips = page('Tasks').config.quickFilters
-		const mine = chips.find((chip) => chip.label === 'Mine')
+		const mine = chips.find((chip) => chip.label === 'My cases')
 
 		// `assignee: '@me'` became `scope: 'assigned'`. The engine resolves
 		// the caller itself, which is what lets the same lens mean the same

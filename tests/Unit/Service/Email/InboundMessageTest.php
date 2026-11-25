@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -104,6 +104,39 @@ class InboundMessageTest extends TestCase {
 		// The original message is not changed by enriching it.
 		self::assertSame(['x-spam-flag' => 'NO'], $message->headers);
 	}//end testWithSourceParsesFoldedRepeatedHeadersButKeepsKnownOnes()
+
+	/**
+	 * Mail 5's message rows carry no sender or recipient: the source's From and To name them.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 *
+	 * @return void
+	 */
+	public function testWithSourceNamesSenderAndRecipientARowLeftEmpty(): void {
+		$source  = "From: Ahmed Bakker <Ahmed.Bakker@Example.org>\r\nTo: Cases Zuiddrecht <zaken@zuiddrecht.example>\r\nSubject: Hi\r\n\r\nBody\r\n";
+		$message = new InboundMessage(accountId: 2, mailbox: 'INBOX', uid: 1, subject: 'Hi');
+
+		$enriched = $message->withSource(source: $source);
+
+		self::assertSame(expected: 'ahmed.bakker@example.org', actual: $enriched->senderAddress());
+		self::assertSame(expected: 'zaken@zuiddrecht.example', actual: InboundMessage::addressIn(value: $enriched->to));
+	}//end testWithSourceNamesSenderAndRecipientARowLeftEmpty()
+
+	/**
+	 * A sender and recipient the row already carries are kept over the source's.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 *
+	 * @return void
+	 */
+	public function testWithSourceKeepsTheRowsOwnSenderAndRecipient(): void {
+		$message = new InboundMessage(accountId: 2, mailbox: 'INBOX', uid: 1, from: 'row@x.example', to: 'box@x.example');
+
+		$enriched = $message->withSource(source: "From: other@y.example\r\nTo: else@y.example\r\n\r\n");
+
+		self::assertSame(expected: 'row@x.example', actual: $enriched->from);
+		self::assertSame(expected: 'box@x.example', actual: $enriched->to);
+	}//end testWithSourceKeepsTheRowsOwnSenderAndRecipient()
 
 	public function testToArrayCarriesTheMessageIdUnderBothNames(): void {
 		$message = new InboundMessage(accountId: 2, mailbox: 'INBOX', uid: 3, messageId: 'm@id', subject: 's', from: 'f', to: 't', sentAt: '2026-01-01');

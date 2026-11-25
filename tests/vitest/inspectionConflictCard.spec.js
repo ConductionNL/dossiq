@@ -8,7 +8,7 @@
  * the resolve endpoint's capability, and the example set carries the board's
  * conflict with the field both sides changed.
  *
- * @spec openspec/changes/inspection-conflict-card/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits
+ * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits
  */
 
 import fs from 'fs'

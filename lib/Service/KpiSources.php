@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Where the KPI figures are read from: the engine task inbox and the queue figures, with the text and day helpers they use.
+ * Where the KPI figures are read from: the engine task inbox and the queue figures, with the text and day helpers they use
+ * and the measures over closed cases.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -24,17 +25,26 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Dashboard\ClosedCaseMeasures;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Term\DayCount;
 
 /**
- * Where the KPI figures are read from: the engine task inbox and the queue figures, with the text and day helpers they use.
+ * Where the KPI figures are read from: the engine task inbox and the queue figures, with the text and day helpers they use
+ * and the measures over closed cases.
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
 final class KpiSources {
+	/**
+	 * The average duration and the deadline compliance of closed cases, counted with `$days`.
+	 *
+	 * @var ClosedCaseMeasures
+	 */
+	public readonly ClosedCaseMeasures $measures;
+
 	/**
 	 * Constructor.
 	 *
@@ -49,5 +59,6 @@ final class KpiSources {
 		public readonly LanguageMapText $text = new LanguageMapText(),
 		public readonly DayCount $days = new DayCount(),
 	) {
+		$this->measures = new ClosedCaseMeasures(days: $days);
 	}//end __construct()
 }//end class

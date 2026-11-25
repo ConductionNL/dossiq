@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCA\Dossiq\Service\Email\OutboundState;
 /**
  * An in-memory mail account the intake tests read.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class FakeMailGateway implements MailGatewayInterface {
 
@@ -142,7 +142,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when it is.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->available;
@@ -153,7 +153,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accounts(): array {
 		if ($this->available === false) {
@@ -170,7 +170,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, string> The folder names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mailboxes(int $accountId): array {
 		if ($this->available === false) {
@@ -189,7 +189,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function messages(int $accountId, string $mailbox, int $limit): array {
 		if ($this->available === false) {
@@ -208,7 +208,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string The source, or ''.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function source(int $accountId, string $mailbox, int $uid): string {
 		if ($this->available === false) {
@@ -226,7 +226,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True only when it really does.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function holdsMessageId(int $accountId, string $messageId): bool {
 		if ($this->available === false) {
@@ -248,7 +248,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when the folder exists.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function moveMessage(int $accountId, string $mailbox, int $uid, string $target): bool {
 		if ($this->available === false) {
@@ -291,7 +291,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function dkimResult(string $source): string {
 		if ($this->available === false) {
@@ -312,7 +312,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when it does.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isTrustedSender(string $email): bool {
 		if ($this->available === false) {
@@ -331,7 +331,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function attachments(int $accountId, string $mailbox, int $uid): array {
 		unset($accountId, $mailbox, $uid);
@@ -346,7 +346,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array{accountId: int, mailbox: string, messages: array<int, array<string, mixed>>}|null The unpacked event.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function unpackSynchronisation(object $event): ?array {
 		unset($event);
@@ -368,7 +368,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array{state: string, outboxId: int|null} The configured answer.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendMessage(int $accountId, array $message): array {
 		if ($this->available === false || $this->sendState === OutboundState::UNAVAILABLE) {
@@ -390,7 +390,7 @@ class FakeMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<string, mixed> The row, as the gateway would answer it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function deliver(int $accountId, string $mailbox, int $uid, string $source): array {
 		$row = [

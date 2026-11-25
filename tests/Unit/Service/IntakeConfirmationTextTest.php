@@ -33,7 +33,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class IntakeConfirmationTextTest extends TestCase {
@@ -64,7 +64,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testTheSundayFilingIsExplained(): void {
 		$rendered = $this->render(
@@ -92,7 +92,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testNoExplanationWhenNoneIsNeeded(): void {
 		$rendered = $this->render(
@@ -117,7 +117,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testTheEnglishBodySaysTheSame(): void {
 		$rendered = $this->render(
@@ -140,7 +140,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testAnUnstampedCaseNamesNoStart(): void {
 		$rendered = $this->render(locale: 'nl', context: []);
@@ -163,7 +163,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testTheCitizenMaySeeTheThreeFields(): void {
 		self::assertSame(
@@ -188,7 +188,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	public function testTheSubmitResponseCarriesTheFlag(): void {
 		$register = json_decode(

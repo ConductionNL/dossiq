@@ -29,6 +29,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CasePartyIndex
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */

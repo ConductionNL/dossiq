@@ -82,11 +82,11 @@ class CaseEndingActs {
 	public const ENDING_FIELD = 'endingAct';
 
 	/**
-	 * Reads a case type's status rows: their ids, which are final, and their process order.
+	 * Where an ending lands the case: its terminal status, result and skipped phases.
 	 *
-	 * @var StatusRows
+	 * @var EndingLanding
 	 */
-	private readonly StatusRows $rows;
+	private readonly EndingLanding $landings;
 
 	/**
 	 * Constructor.
@@ -106,15 +106,19 @@ class CaseEndingActs {
 	public function __construct(
 		private readonly CaseStatusStore $store,
 		private readonly CaseResultWriter $results,
-		private readonly StatusTypeLookup $statuses,
+		StatusTypeLookup $statuses,
 		private readonly LifecycleActorGate $gate,
 		private readonly CaseIncompleteness $incompleteness,
 		private readonly CaseJournal $journal,
 		private readonly LoggerInterface $logger,
 		private readonly CaseArchiveState $archiveState,
-		private readonly LanguageMapText $text = new LanguageMapText(),
+		LanguageMapText $text = new LanguageMapText(),
 	) {
-		$this->rows = new StatusRows(text: $this->text);
+		$this->landings = new EndingLanding(
+			results: $results,
+			statuses: $statuses,
+			rows: new StatusRows(text: $text),
+		);
 	}//end __construct()
 
 	/**
@@ -497,7 +501,7 @@ class CaseEndingActs {
 	private function end(string $act, array $request): array {
 		$case = $this->endableCase(act: $act, request: $request);
 
-		$ending = ['act' => $act] + $request + $this->landing(case: $case, request: $request);
+		$ending = ['act' => $act] + $request + $this->landings->resolve(case: $case, request: $request);
 		$this->writeEnding(case: $this->endedCase(case: $case, ending: $ending), ending: $ending);
 
 		$this->logger->info(
@@ -556,50 +560,6 @@ class CaseEndingActs {
 			'skippedPhases' => $ending['skippedPhases'],
 		];
 	}//end endingAnswer()
-
-	/**
-	 * Where the case lands: its terminal status, its result, its end date and the phases it skips.
-	 *
-	 * The result is resolved BEFORE anything is written. `resolveClosingResult`
-	 * refuses a close with no result on a case type that offers some, and a
-	 * refusal after the status had moved would leave a case closed with no
-	 * outcome, which is the state nobody can read afterwards.
-	 *
-	 * @param array<string, mixed> $case The loaded case.
-	 * @param array<string, string> $request The act's caseId, reason, resultTypeId and toStatus.
-	 *
-	 * @return array{from: string, status: string, result: ?string, endDate: string, skippedPhases: list<string>} The landing.
-	 *
-	 * @throws RefusedException When the case type has no terminal status, or no result can be named.
-	 *
-	 * @spec exclude one step of end(), which carries the requirement
-	 */
-	private function landing(array $case, array $request): array {
-		$caseTypeId = (string)($case['caseType'] ?? '');
-		$fromStatus = (string)($case['status'] ?? '');
-		$target = $this->terminalStatus(caseTypeId: $caseTypeId, named: $request['toStatus']);
-
-		$chosenResult = null;
-		if ($request['resultTypeId'] !== '') {
-			$chosenResult = $request['resultTypeId'];
-		}
-
-		$resultId = $this->results->resolveClosingResult(
-			caseId: $request['caseId'],
-			caseTypeId: $caseTypeId,
-			resultTypeId: $chosenResult,
-		);
-
-		$landing = [
-			'from' => $fromStatus,
-			'status' => $target,
-			'result' => $resultId,
-			'endDate' => (new DateTimeImmutable())->format('Y-m-d'),
-		];
-		$landing['skippedPhases'] = $this->skippedPhases(caseTypeId: $caseTypeId, landing: $landing);
-
-		return $landing;
-	}//end landing()
 
 	/**
 	 * The case as the ending leaves it.
@@ -684,79 +644,6 @@ class CaseEndingActs {
 			noWorkflowTemplate: true,
 		);
 	}//end writeEnding()
-
-	/**
-	 * The terminal status the act lands the case on.
-	 *
-	 * A named status is honoured when it belongs to the case type and is
-	 * terminal. An unnamed one resolves to the case type's lowest-ordered
-	 * terminal status, which is the one the process was drawn to end on.
-	 *
-	 * @param string $caseTypeId The case type UUID.
-	 * @param string $named The status the caller asked for, possibly empty.
-	 *
-	 * @return string The statusType UUID to land on.
-	 *
-	 * @throws RefusedException When the case type declares no terminal status.
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 * @spec openspec/changes/method-decomposition/tasks.md
-	 */
-	private function terminalStatus(string $caseTypeId, string $named): string {
-		return $this->rows->namedTerminal(terminal: $this->terminalRows(caseTypeId: $caseTypeId), named: $named);
-	}//end terminalStatus()
-
-	/**
-	 * The case type's terminal status rows, in the order the case type lists them.
-	 *
-	 * @param string $caseTypeId The case type UUID.
-	 *
-	 * @return list<array<string, mixed>> The terminal rows.
-	 *
-	 * @throws RefusedException When the case type declares no terminal status.
-	 *
-	 * @spec exclude one step of terminalStatus(), which carries the requirement
-	 * @spec openspec/changes/method-decomposition/tasks.md
-	 */
-	private function terminalRows(string $caseTypeId): array {
-		$terminal = array_values(array_filter(
-			$this->statuses->rowsOf(caseTypeId: $caseTypeId),
-			fn (array $row): bool => $this->rows->isFinal(row: $row),
-		));
-		if ($terminal === []) {
-			throw new RefusedException(
-				rule: 'no-terminal-status',
-				sentence: 'This case type has no status to end on.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		return $terminal;
-	}//end terminalRows()
-
-	/**
-	 * The phases the case never reached, by name.
-	 *
-	 * Ordered statuses between the one the case is leaving and the terminal one
-	 * it lands on. A case closed from its last phase skips nothing and records
-	 * nothing, which is why an ordinary close does not gain a field.
-	 *
-	 * @param string               $caseTypeId The case type UUID.
-	 * @param array<string, mixed> $landing    The status the case is leaving as `from`, and the terminal
-	 *                                         status it lands on as `status`.
-	 *
-	 * @return list<string> The skipped phase names, in process order.
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 * @spec openspec/changes/method-decomposition/tasks.md
-	 */
-	private function skippedPhases(string $caseTypeId, array $landing): array {
-		return $this->rows->skippedNames(
-			rows: $this->statuses->rowsOf(caseTypeId: $caseTypeId),
-			fromStatus: (string)$landing['from'],
-			toStatus: (string)$landing['status']
-		);
-	}//end skippedPhases()
 
 	/**
 	 * Whether the case has already been ended by one of these acts.

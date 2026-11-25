@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\TestCase;
@@ -46,8 +47,9 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$settings = dirname(__DIR__, 3) . '/lib/Settings';
-		$base = json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true);
+		$base = SeedAsReadInDutch::resolve(value: json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true));
 		[$this->merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $settings . '/register.d');
+		$this->merged = SeedAsReadInDutch::resolve(value: $this->merged);
 	}//end setUp()
 
 	/**

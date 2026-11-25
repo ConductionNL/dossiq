@@ -53,11 +53,11 @@ exports[`The general admin field lists > builds houseStyleFields exactly as pinn
   },
   {
     "key": "municipality_city",
-    "label": "[dossiq] City of the municipality",
+    "label": "[dossiq] Municipality city",
   },
   {
     "key": "staff_app_name",
-    "label": "[dossiq] Name of the app for staff",
+    "label": "[dossiq] Name of the app for employees",
     "placeholder": "Dossiq",
   },
   {

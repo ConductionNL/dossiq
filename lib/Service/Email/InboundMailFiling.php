@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\EmailArchivalService;
 /**
  * Where an inbound mail is filed: on its case, as unmatched mail, and in the archive.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class InboundMailFiling {
 	/**

@@ -231,7 +231,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         "id": "case-act-reason",
         "label": "Reason",
         "labelOutside": true,
-        "note": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step.",
+        "note": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.",
         "required": true,
         "rows": 2,
         "testid": "case-act-reason-input",
@@ -247,9 +247,9 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       },
     ],
     "notice": {
-      "heading": "Read only afterwards",
+      "heading": "Read-only after that",
       "icon": "LockOutline",
-      "text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
+      "text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.",
       "type": "info",
     },
     "summary": {
@@ -265,7 +265,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       "facts": [
         {
           "fallback": "Not set",
-          "label": "Archive nomination",
+          "label": "Archive designation",
           "path": "kase.archiveNomination",
         },
         {
@@ -275,14 +275,14 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         },
         {
           "fallback": "Archived",
-          "label": "Archive status afterwards",
+          "label": "Archive status after archiving",
         },
       ],
       "testid": "case-act-archive",
-      "title": "Retention under the case type",
+      "title": "Retention according to the case type",
       "when": "kase",
     },
-    "title": "Archive this case",
+    "title": "Archive case",
   },
   {
     "columns": 1,
@@ -293,7 +293,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         "id": "case-act-reason",
         "label": "Reason",
         "labelOutside": true,
-        "note": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step.",
+        "note": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.",
         "required": true,
         "rows": 2,
         "testid": "case-act-reason-input",
@@ -309,9 +309,9 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       },
     ],
     "notice": {
-      "heading": "Read only afterwards",
+      "heading": "Read-only after that",
       "icon": "LockOutline",
-      "text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
+      "text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.",
       "type": "info",
     },
     "summary": {
@@ -327,7 +327,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       "facts": [
         {
           "fallback": "Not set",
-          "label": "Archive nomination",
+          "label": "Archive designation",
           "path": "kase.archiveNomination",
         },
         {
@@ -337,14 +337,14 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         },
         {
           "fallback": "Archived",
-          "label": "Archive status afterwards",
+          "label": "Archive status after archiving",
         },
       ],
       "testid": "case-act-archive",
-      "title": "Retention under the case type",
+      "title": "Retention according to the case type",
       "when": "kase",
     },
-    "title": "Archive this case",
+    "title": "Archive case",
   },
   {
     "columns": 1,
@@ -355,7 +355,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         "id": "case-act-reason",
         "label": "Reason",
         "labelOutside": true,
-        "note": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step.",
+        "note": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.",
         "required": true,
         "rows": 2,
         "testid": "case-act-reason-input",
@@ -371,9 +371,9 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       },
     ],
     "notice": {
-      "heading": "Read only afterwards",
+      "heading": "Read-only after that",
       "icon": "LockOutline",
-      "text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
+      "text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.",
       "type": "info",
     },
     "summary": {
@@ -389,7 +389,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       "facts": [
         {
           "fallback": "Not set",
-          "label": "Archive nomination",
+          "label": "Archive designation",
           "path": "kase.archiveNomination",
         },
         {
@@ -399,14 +399,14 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         },
         {
           "fallback": "Archived",
-          "label": "Archive status afterwards",
+          "label": "Archive status after archiving",
         },
       ],
       "testid": "case-act-archive",
-      "title": "Retention under the case type",
+      "title": "Retention according to the case type",
       "when": "kase",
     },
-    "title": "Archive this case",
+    "title": "Archive case",
   },
   {
     "columns": 1,
@@ -417,7 +417,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         "id": "case-act-reason",
         "label": "Reason",
         "labelOutside": true,
-        "note": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step.",
+        "note": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.",
         "required": true,
         "rows": 2,
         "testid": "case-act-reason-input",
@@ -433,9 +433,9 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       },
     ],
     "notice": {
-      "heading": "Read only afterwards",
+      "heading": "Read-only after that",
       "icon": "LockOutline",
-      "text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
+      "text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.",
       "type": "info",
     },
     "summary": {
@@ -451,7 +451,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       "facts": [
         {
           "fallback": "Not set",
-          "label": "Archive nomination",
+          "label": "Archive designation",
           "path": "kase.archiveNomination",
         },
         {
@@ -461,14 +461,14 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         },
         {
           "fallback": "Archived",
-          "label": "Archive status afterwards",
+          "label": "Archive status after archiving",
         },
       ],
       "testid": "case-act-archive",
-      "title": "Retention under the case type",
+      "title": "Retention according to the case type",
       "when": "kase",
     },
-    "title": "Archive this case",
+    "title": "Archive case",
   },
   {
     "columns": 1,
@@ -479,7 +479,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         "id": "case-act-reason",
         "label": "Reason",
         "labelOutside": true,
-        "note": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step.",
+        "note": "Goes into the case history. You can retrieve it with Retrieve from the archive, under Next step.",
         "required": true,
         "rows": 2,
         "testid": "case-act-reason-input",
@@ -495,9 +495,9 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       },
     ],
     "notice": {
-      "heading": "Read only afterwards",
+      "heading": "Read-only after that",
       "icon": "LockOutline",
-      "text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
+      "text": "After archiving you can no longer change the documents, tasks and messages of this case. The case stays findable until the destruction date.",
       "type": "info",
     },
     "summary": {
@@ -513,7 +513,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
       "facts": [
         {
           "fallback": "Not set",
-          "label": "Archive nomination",
+          "label": "Archive designation",
           "path": "kase.archiveNomination",
         },
         {
@@ -523,14 +523,14 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
         },
         {
           "fallback": "Archived",
-          "label": "Archive status afterwards",
+          "label": "Archive status after archiving",
         },
       ],
       "testid": "case-act-archive",
-      "title": "Retention under the case type",
+      "title": "Retention according to the case type",
       "when": "kase",
     },
-    "title": "Archive this case",
+    "title": "Archive case",
   },
 ]
 `;

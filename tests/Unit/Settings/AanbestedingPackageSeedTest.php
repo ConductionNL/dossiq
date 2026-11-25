@@ -80,7 +80,7 @@ class AanbestedingPackageSeedTest extends TestCase {
 		$this->assertSame([], $result['warnings']);
 		$this->assertTrue($result['valid']);
 		$this->assertContains('seed', $result['manifest']['parts']);
-		$this->assertSame('1.11.0', $result['manifest']['version']);
+		$this->assertSame('1.12.0', $result['manifest']['version']);
 	}//end testThePackagePassesTheShippedPackageRulesWithItsSeed()
 
 	public function testTheAwardAndTheRefusalAreDecisionTypesOfTheTenderCaseType(): void {
@@ -133,7 +133,7 @@ class AanbestedingPackageSeedTest extends TestCase {
 		$transitions = json_decode($flow['transitions'], true, 512, JSON_THROW_ON_ERROR);
 		$actions     = [];
 		foreach ($transitions as $transition) {
-			$actions[$transition['label']] = $transition['automaticActions'];
+			$actions[$transition['label']['nl']] = $transition['automaticActions'];
 		}
 
 		$this->assertSame([['type' => 'raiseDecision', 'decisionType' => 'tender-award']], $actions['Definitief gunnen']);

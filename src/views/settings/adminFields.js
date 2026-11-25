@@ -26,11 +26,11 @@ export function houseStyleFields(t) {
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
 			key: 'municipality_city',
-			label: t('dossiq', 'City of the municipality'),
+			label: t('dossiq', 'Municipality city'),
 		},
 		{
 			key: 'staff_app_name',
-			label: t('dossiq', 'Name of the app for staff'),
+			label: t('dossiq', 'Name of the app for employees'),
 			placeholder: 'Dossiq',
 		},
 		themeField(t),
@@ -1512,7 +1512,7 @@ export const WIDGET_AUDIENCE_URL = '/apps/dossiq/api/settings/widget-audience'
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<{id: string, title: string}>} The widgets.
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
  */
 export function contributedWidgets(t) {
 	return [
@@ -1532,7 +1532,7 @@ export function contributedWidgets(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md#requirement-req-dwv-004-an-administrator-sets-the-audience-per-widget
  */
 export function widgetAudienceFields(t) {
 	const hint = t('dossiq', 'Group names, separated by commas. Empty: everybody sees the widget.')

@@ -25,7 +25,7 @@ describe('DqPostvak filter panel', () => {
 	it('filters on the channel the endpoint takes, with its labels', () => {
 		const channel = config.sidebar.fields.channel
 		expect(channel).toMatchObject({ facetable: true, inputControl: 'select', enum: ['email', 'portal', 'webform'] })
-		expect(channel.enumLabels).toEqual({ email: 'E-mail', portal: 'Portal', webform: 'Web form' })
+		expect(channel.enumLabels).toEqual({ email: 'Email', portal: 'Portal', webform: 'Web form' })
 		expect(Object.keys(config.sidebar.fields).every((key) => key in config.sourceConfig.searchFields)).toBe(true)
 	})
 })

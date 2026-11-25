@@ -128,7 +128,7 @@ are where local stubs lie).
   (`dossiq:case:import-records <caseType> [--import=<key>] [--dry-run]`), registered in `appinfo/info.xml`.
   - Through the caller: `tests/Unit/Command/ImportCaseRecordsCommandTest.php`
     `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with an in-memory register.
-- [ ] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
+- [x] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
   - e2e `tests/e2e/woo-takeover.spec.ts`: seed one imported case and search "WOO-2026-A1B2C3" on
     the cases list. Cite REQ-WTO-004.
   - written (11 Oct): `tests/e2e/woo-takeover.spec.ts` seeds an opencatalogi `wooRequest`, runs
@@ -136,6 +136,7 @@ are where local stubs lie).
     formerReferences, the source's `migratedTo`), finds it with `_search` on the old number, and runs
     the import again expecting 0 imported. It skips on a shared instance (the import reads every
     wooRequest) and when opencatalogi is absent. The run is owed to the live pass (decision 139).
+  - Written, runs in nightly (ticked 24 Nov 2026; no `test.fixme` in the spec).
 
 ## 5. Drafting through filinq
 

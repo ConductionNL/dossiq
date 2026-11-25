@@ -107,12 +107,12 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(7, $kpis['myCompletedCount'], 'myCompletedCount must count this month for the reader.');
 		$this->assertSame(5, $kpis['myCompletedLastMonth'], 'myCompletedLastMonth must count the month before.');
 		$this->assertSame(
-			mb_strtolower(date('F')),
+			date('F'),
 			$kpis['thisMonthName'],
 			'thisMonthName must name the current month.'
 		);
 		$this->assertSame(
-			mb_strtolower((new \DateTimeImmutable('first day of last month'))->format('F')),
+			(new \DateTimeImmutable('first day of last month'))->format('F'),
 			$kpis['lastMonthName'],
 			'lastMonthName must name the month before, also in January.'
 		);

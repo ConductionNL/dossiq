@@ -60,14 +60,9 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	public const STATUS_DEPRECATED = 'deprecated';
 
 	/**
-	 * The route a definition is on when it names none.
-	 *
-	 * Every definition that predates the `variant` property carries no route,
-	 * so reading absent as this value puts the whole existing corpus on one
-	 * route per case type. The per-route uniqueness rule then reduces to the
-	 * per-case-type rule it replaces, and no backfill has to run.
+	 * The route a definition is on when it names none; see DefaultRoute.
 	 */
-	public const VARIANT_DEFAULT = 'standaard';
+	public const VARIANT_DEFAULT = DefaultRoute::VARIANT_DEFAULT;
 
 	/**
 	 * Constructor.
@@ -90,6 +85,7 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 *                                                  block (SLA, escalation, auto-actions).
 	 *
 	 * @return void
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
@@ -97,6 +93,7 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 		private readonly ?ContainerInterface $container = null,
 		private readonly StepConfigCheck $stepConfigs = new StepConfigCheck(),
 	) {
+		$this->routes = new DefaultRoute(repository: $repository, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -139,6 +136,13 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 * @var TaskDeclarationValidator|null
 	 */
 	private ?TaskDeclarationValidator $taskDeclarations = null;
+
+	/**
+	 * Reads a definition's route and picks a case type's default route.
+	 *
+	 * @var DefaultRoute
+	 */
+	private readonly DefaultRoute $routes;
 
 	/**
 	 * The refusals of the most recent publish check, newest call only.
@@ -227,14 +231,10 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 * @return string The route slug, never empty.
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function variantOf(array $row): string {
-		$variant = trim((string)($row['variant'] ?? ''));
-		if ($variant === '') {
-			return self::VARIANT_DEFAULT;
-		}
-
-		return $variant;
+		return $this->routes->variantOf(row: $row);
 	}//end variantOf()
 
 	/**
@@ -250,23 +250,10 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 * @return string The definition UUID, or the empty string.
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function defaultDefinitionIdFor(string $caseTypeId): string {
-		if ($caseTypeId === '') {
-			return '';
-		}
-
-		$caseType = $this->repository->findCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === null) {
-			return '';
-		}
-
-		$pinned = ($caseType['workflowDefinition'] ?? '');
-		if (is_array($pinned) === true) {
-			return $this->idOf(row: $pinned);
-		}
-
-		return (string)$pinned;
+		return $this->routes->definitionIdFor(caseTypeId: $caseTypeId);
 	}//end defaultDefinitionIdFor()
 
 	/**
@@ -285,57 +272,11 @@ class WorkflowLifecycleGuard implements WorkflowLifecycleGuardInterface {
 	 * @return array<string, mixed> The chosen definition.
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function defaultAmong(array $active, string $caseTypeId): array {
-		if (count($active) === 1) {
-			return $active[0];
-		}
-
-		$pinned = $this->defaultDefinitionIdFor(caseTypeId: $caseTypeId);
-		foreach ($active as $candidate) {
-			if ($pinned !== '' && $this->idOf(row: $candidate) === $pinned) {
-				return $candidate;
-			}
-		}
-
-		usort($active, fn (array $left, array $right): int => ($this->routeOrder(row: $left)
-			<=> $this->routeOrder(row: $right)));
-
-		$this->logger->warning(
-			'Dossiq: case type has several active workflow definitions and no usable default route',
-			[
-				'app' => AppIdentity::APP_ID,
-				'caseType' => $caseTypeId,
-				'routes' => array_map(fn (array $row): string => $this->variantOf(row: $row), $active),
-				'chose' => $this->idOf(row: $active[0]),
-			]
-		);
-
-		return $active[0];
+		return $this->routes->among(active: $active, caseTypeId: $caseTypeId);
 	}//end defaultAmong()
-
-	/**
-	 * The sort key that makes an ambiguous pick reproducible: route slug first,
-	 * then the highest version of that route.
-	 *
-	 * @param array<string, mixed> $row Definition row.
-	 *
-	 * @return array{0: string, 1: int} The sort key.
-	 */
-	private function routeOrder(array $row): array {
-		return [$this->variantOf(row: $row), -(int)($row['version'] ?? 0)];
-	}//end routeOrder()
-
-	/**
-	 * The uuid of a row, whichever of the two keys OpenRegister answered with.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or the empty string.
-	 */
-	private function idOf(array $row): string {
-		return (string)($row['id'] ?? ($row['uuid'] ?? ''));
-	}//end idOf()
 
 	/**
 	 * Assert a row may be published: it MUST be a draft, carry a caseType

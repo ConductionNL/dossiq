@@ -38,11 +38,10 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
+use OCA\Dossiq\Service\Advice\AdviceRequestFiling;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
 use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,14 +49,12 @@ use RuntimeException;
 /**
  * Service for advice request (adviesAanvraag) workflow.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
- * CaseDateNormaliser, and it replaced inline date handling rather than adding a
- * concern: the two calls here are the received moment and the deadline, both of
- * which used to be formatted in this class. Control: phpmd on this file at
- * 8f9dc479^ is clean at twelve, so dropping the dependency is the only way back
- * under the threshold and it puts a second date write path back.
+ * Saving a new advice request and raising its decidesk Decision is
+ * AdviceRequestFiling's; this class keeps the reads, the transitions, the
+ * reminders and the payload.
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class AdviceService implements AdviceServiceInterface {
 
@@ -90,17 +87,19 @@ class AdviceService implements AdviceServiceInterface {
 	 * @param SettingsService $settingsService The settings service
 	 * @param IUserSession $userSession The current user session
 	 * @param LoggerInterface $logger The logger
-	 * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
+	 * @param AdviceRequestFiling $filing Saves a new advice request and raises its decidesk Decision (ADR-019)
 	 * @param AdviceRepository $repository OpenRegister access for adviesAanvraag records
 	 * @param AdviceAuthorizationGuard $guard Per-object transition IDOR guard (Wilco #6)
 	 * @param AdviceNotifier $notifier Advice notification fan-out
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly AdviceDelegationService $adviceDelegation,
+		private readonly AdviceRequestFiling $filing,
 		private readonly AdviceRepository $repository,
 		private readonly AdviceAuthorizationGuard $guard,
 		private readonly AdviceNotifier $notifier,
@@ -251,20 +250,6 @@ class AdviceService implements AdviceServiceInterface {
 
 		return implode(': ', $parts);
 	}//end summaryOf()
-
-	/**
-	 * The configured advice request schema.
-	 *
-	 * @return string The schema id or slug.
-	 */
-	private function adviceSchema(): string {
-		$schema = (string)$this->settingsService->getConfigValue('advies_aanvraag_schema');
-		if ($schema === '') {
-			return 'adviesAanvraag';
-		}
-
-		return $schema;
-	}//end adviceSchema()
 
 	/**
 	 * Dispatch a reminder on behalf of the authenticated caller.
@@ -439,6 +424,7 @@ class AdviceService implements AdviceServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function requestAdvice(string $caseId, array $data, string $requestedBy): array {
 		$objectService = $this->requireObjectService();
@@ -447,11 +433,14 @@ class AdviceService implements AdviceServiceInterface {
 
 		$payload = $this->advicePayload(data: $data, request: ['case' => $caseId, 'requestedBy' => $requestedBy]);
 
-		$advice = ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload];
-		$savedRecord = $this->savedAdvice(advice: $advice);
-		$advice['saved'] = $savedRecord;
-
-		$this->delegateAdviceDecision(advice: $advice);
+		$savedRecord = $this->filing->file(
+			advice: [
+				'objectService' => $objectService,
+				'register' => $register,
+				'data' => $data,
+				'payload' => $payload,
+			]
+		);
 
 		$this->notifyAdviseurUnlessExternal(payload: $payload, savedRecord: $savedRecord);
 
@@ -520,111 +509,4 @@ class AdviceService implements AdviceServiceInterface {
 			'questions' => (string)($data['question'] ?? ''),
 		];
 	}//end advicePayload()
-
-	/**
-	 * Save the adviceRequest payload and answer the stored record.
-	 *
-	 * @param array{objectService: object, register: string, data: array, payload: array} $advice The OpenRegister ObjectService,
-	 *        the register id, the request data and the adviceRequest payload.
-	 *
-	 * @return array<string, mixed> The stored record, or [] when the save answered no array.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
-	 */
-	private function savedAdvice(array $advice): array {
-		$saved = $advice['objectService']->saveObject(
-			object: $advice['payload'],
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $advice['register'], schema: $this->adviceSchema()))
-		);
-
-		$savedRecord = [];
-		if (is_array($saved) === true) {
-			$savedRecord = $saved;
-		}
-
-		return $savedRecord;
-	}//end savedAdvice()
-
-	/**
-	 * Raise the decidesk `advice` Decision for a new advice request and
-	 * persist its reference on the saved adviceRequest.
-	 *
-	 * The advice request travels as requestAdvice() wrote it: `objectService` (the
-	 * OpenRegister ObjectService), `register` (the register id), `data` (the advice
-	 * request data), `payload` (the persisted adviceRequest payload) and `saved`
-	 * (the normalized saveObject() result).
-	 *
-	 * @param array<string, mixed> $advice The advice request.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException If decidesk fails closed
-	 */
-	private function delegateAdviceDecision(array $advice): void {
-		// REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
-		// decidesk `advice` Decision for this request and persist its ref. Fail
-		// CLOSED — never author an advice outcome locally as a fallback.
-		$saved = $advice['saved'];
-		$adviceId = (string)($saved['id'] ?? ($saved['uuid'] ?? ''));
-		$subjectId = (string)$advice['payload']['case'];
-		if ($adviceId !== '') {
-			$subjectId = $adviceId;
-		}
-
-		try {
-			$decisionRef = $this->adviceDelegation->raiseAdviceDecision(
-				subjectSchema: 'adviesAanvraag',
-				subjectId: $subjectId,
-				payload: $this->decisionPayload(advice: $advice),
-			);
-
-			if ($adviceId !== '') {
-				$this->storeDecisionRef(advice: $advice + ['adviceId' => $adviceId], decisionRef: $decisionRef);
-			}
-		} catch (RuntimeException $e) {
-			$this->logger->error(
-				'Dossiq: requestAdvice: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
-			// REQ-PDRD-002: fail closed; surface the error.
-			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
-		}//end try
-	}//end delegateAdviceDecision()
-
-	/**
-	 * Persist the decidesk Decision reference on the saved adviceRequest.
-	 *
-	 * @param array<string, mixed> $advice      The advice request, with its `adviceId`.
-	 * @param string               $decisionRef The decidesk Decision reference.
-	 *
-	 * @return void
-	 */
-	private function storeDecisionRef(array $advice, string $decisionRef): void {
-		$advice['objectService']->saveObject(
-			object: array_merge($advice['saved'], ['decisionRef' => $decisionRef]),
-			options: new ObjectSaveOptions(
-				target: new ObjectFindTarget(register: $advice['register'], schema: $this->adviceSchema()),
-				uuid: $advice['adviceId']
-			)
-		);
-	}//end storeDecisionRef()
-
-	/**
-	 * What decidesk is told about the advice request.
-	 *
-	 * @param array<string, mixed> $advice See {@see self::delegateAdviceDecision()}.
-	 *
-	 * @return array<string, string>
-	 */
-	private function decisionPayload(array $advice): array {
-		$data = $advice['data'];
-
-		return [
-			'subjectRegister' => $advice['register'],
-			'externalReference' => (string)$advice['payload']['case'],
-			'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
-			'question' => (string)($data['question'] ?? ''),
-			'advisor' => (string)$advice['payload']['advisor'],
-		];
-	}//end decisionPayload()
 }//end class

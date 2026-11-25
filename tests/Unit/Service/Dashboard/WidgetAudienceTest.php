@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-widgets-declare-who-may-see-them/specs/dashboard-widget-visibility/spec.md
+ * @spec openspec/specs/dashboard-widget-visibility/spec.md
  */
 
 declare(strict_types=1);

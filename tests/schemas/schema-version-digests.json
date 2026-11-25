@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.54.0",
+        "version": "1.54.1",
         "digest": "8ad81e9f232daafac4dde683aadb37d648e57fceb45b0dc361735d4fd286928c"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -943,13 +943,17 @@
         "version": "1.1.1",
         "digest": "d15a7db3d754ef5563ce3081a78532a4e1e7e0b4ee4fd0474ae6f4898f559ec3"
     },
+    "lib/Settings/register.d/36-case-mail-blocks.json::case": {
+        "version": "1.64.0",
+        "digest": "89f993ffd0ef0e05bd3e064a0ba2ab43381b9c374693f2d6d2a68fb8e4f9299b"
+    },
     "lib/Settings/register.d/36-mail-intake.json::caseType": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/36-mail-intake.json::mailIntakeEntry": {
-        "version": "1.0.0",
-        "digest": "eade782a53a71dc88b595291c1bdb7d13c4b5bd90324bac4a0d09e01f602ab18"
+        "version": "1.2.0",
+        "digest": "44eb8960e5f63f032054e9537843c795900dd6f212fb477259274ec570e7de41"
     },
     "lib/Settings/register.d/36-ontvangstbevestiging.json::case": {
         "version": "",
@@ -1351,6 +1355,10 @@
         "version": "",
         "digest": "ca25fb91adab5bddc75a610a0e7fe3c45f6f6f10eeff5009afd350e609c8d4c0"
     },
+    "lib/Settings/register.d/69-field-mail-value.json::propertyDefinition": {
+        "version": "1.11.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/69-field-option-labels.json::propertyDefinition": {
         "version": "1.10.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1675,6 +1683,10 @@
         "version": "",
         "digest": "5210193e6f6cf3560ecbc363cbb26c8d0d26d2b5c5bd744b734b662e9bc87f91"
     },
+    "lib/Settings/register.d/90-case-type-header-actions.json::caseType": {
+        "version": "1.52.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/92-admin-data-access.json::avgIncident": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1954,6 +1966,18 @@
     "lib/Settings/register.d/99-status-type-off-path.json::statusType": {
         "version": "1.9.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-supervision-plan.json::fieldInspection": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-supervision-plan.json::supervisionPlan": {
+        "version": "1.0.0",
+        "digest": "4389bdc1be8f209557fcab73d9d8d87123f982b10b331a3fd252b715e8657052"
+    },
+    "lib/Settings/register.d/99-supervision-plan.json::supervisionPlanCategory": {
+        "version": "1.0.0",
+        "digest": "e0b59ae0162c390025ddee6b8702917b34769903c0be9784c157612e2220a039"
     },
     "lib/Settings/register.d/99-template-category.json::workflowTemplate": {
         "version": "",

@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -106,7 +106,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return boolean True when the register and schema resolve.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->settingsService->getObjectService() !== null
@@ -131,7 +131,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return string The entry id, or '' when nothing was stored.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function record(
 		InboundMessage $message,
@@ -156,7 +156,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return string The entry id, or '' when nothing was stored.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function recordMessage(InboundMessage $message, array $placed): string {
 		$outcome = $placed['outcome'];
@@ -306,6 +306,43 @@ class IntakeLog implements IntakeLogInterface {
 	}//end findChannelEntry()
 
 	/**
+	 * The entry an earlier sweep already wrote for this mail message, if any.
+	 *
+	 * The sweep reads the whole intake folder each run and a message that stays in it (inbox, quarantined) is
+	 * read again, so a message is known by its account, folder and uid.
+	 *
+	 * @param integer $accountId The Mail account.
+	 * @param string  $mailbox   The folder.
+	 * @param integer $uid       The message uid.
+	 *
+	 * @return array<string, mixed>|null The entry, or null when this message is new.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 */
+	public function findMailEntry(int $accountId, string $mailbox, int $uid): ?array {
+		if ($accountId <= 0 || $uid <= 0 || trim($mailbox) === '') {
+			return null;
+		}
+
+		$rows = $this->search(
+			filters: [
+				'accountId' => $accountId,
+				'mailbox' => $mailbox,
+				'uid' => $uid,
+				'_limit' => 1,
+			]
+		);
+
+		foreach ($rows as $row) {
+			if (is_array($row) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findMailEntry()
+
+	/**
 	 * Put a message that reached a case on that case's timeline.
 	 *
 	 * Only a message that BECAME a case gets a line. A message the filters
@@ -360,7 +397,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return boolean True when the write landed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function amend(string $entryId, array $changes): bool {
 		$target = $this->target();
@@ -394,7 +431,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array<string, mixed>|null The entry, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function find(string $entryId): ?array {
 		$target = $this->target();
@@ -425,7 +462,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The entries.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function search(array $filters = []): array {
 		$target = $this->target();
@@ -454,7 +491,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array{objectService: object, register: string, schema: string}|null The store, register and schema.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function target(): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -475,7 +512,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return string|null The stored entry's id ('' when it has none), or null when nothing was stored.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function saveEntry(array $write, array $failure): ?string {
 		$stored = null;
@@ -504,7 +541,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array<string, mixed> Identity, correspondents, subject and dates.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function messageFields(InboundMessage $message): array {
 		return [
@@ -528,7 +565,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array<string, string> The verdict, then spf, dkim, dmarc and threading.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function verdictFields(FilterVerdict $verdict, array $results): array {
 		return [
@@ -549,7 +586,7 @@ class IntakeLog implements IntakeLogInterface {
 	 *
 	 * @return array{original: string, originalTruncated: bool} The original fields.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function originalFields(InboundMessage $message): array {
 		if (strlen($message->source) > self::ORIGINAL_LIMIT_BYTES) {

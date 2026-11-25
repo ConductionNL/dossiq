@@ -345,6 +345,13 @@
 				</NcButton>
 			</div>
 		</div>
+
+		<!-- Done closes the panel; every field above already wrote through (board DqZaaktypeFlow, flow-page-list-beside-canvas) -->
+		<div class="step-config-panel__footer">
+			<NcButton variant="primary" data-testid="step-config-done" @click="$emit('close')">
+				{{ t('dossiq', 'Done') }}
+			</NcButton>
+		</div>
 	</div>
 </template>
 
@@ -620,6 +627,13 @@ export default {
 @use './_configPanel.scss' as panel;
 
 @include panel.config-panel(step-config-panel, 360px);
+
+.step-config-panel__footer {
+	border-top: 1px solid var(--color-border);
+	display: flex;
+	justify-content: flex-end;
+	padding: 12px 16px;
+}
 
 .step-config-panel {
 	overflow-y: auto;

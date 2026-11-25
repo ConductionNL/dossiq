@@ -163,7 +163,8 @@ describe('what is new since the reader last looked', () => {
 		expect(panels.content.badgeSource).toBe('readState')
 		const tabs = panels.content.tabs
 		expect(tabs.find((tab) => tab.widgetId === 'case-files' || (tab.widgetIds || []).includes('case-files')).unreadKey).toBe('files')
-		expect(tabs.find((tab) => tab.widgetId === 'case-notes-panel').unreadKey).toBe('notes')
+		// The simple page's Notes tab is its own widget with the composer open (DqZaakNotities).
+		expect(tabs.find((tab) => tab.widgetId === 'case-notes-panel' || tab.widgetId === 'case-notes-tab').unreadKey).toBe('notes')
 	})
 
 	it('leaves Mark as unread and the read stamp to the detail page', () => {

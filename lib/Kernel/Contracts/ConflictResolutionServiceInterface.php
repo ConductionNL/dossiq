@@ -60,7 +60,7 @@ interface ConflictResolutionServiceInterface {
 	 *
 	 * @return ConflictResolutionOutcome The status and body to answer with.
 	 *
-	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 * @spec openspec/changes/archive/2026-11-24-inspection-conflict-card/tasks.md
 	 */
 	public function resolve(string $id, string $resolution, string $userId): ConflictResolutionOutcome;
 }//end interface

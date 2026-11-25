@@ -266,8 +266,8 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		return [
 			'statusBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'status'), label: 'status'),
 			'typeBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'caseType'), label: 'type'),
-			'avgProcessingDays' => $this->averageProcessingDays(closed: $run->closed),
-			'slaCompliance' => $this->slaCompliance(closed: $run->closed),
+			'avgProcessingDays' => $this->sources->measures->averageProcessingDays(closed: $run->closed),
+			'slaCompliance' => $this->sources->measures->slaCompliance(closed: $run->closed),
 		];
 	}//end openWorkShape()
 
@@ -285,7 +285,8 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		}
 
 		$titles = [];
-		foreach ($this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])) as $row) {
+		$rows   = $this->withAllTranslations(read: fn (): array => $this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])));
+		foreach ($rows as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
@@ -451,11 +452,13 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * The month's name in the reader's language, through the app catalogue.
 	 *
 	 * The English names are the catalogue keys, so a language without them
-	 * reads English rather than a blank.
+	 * reads English rather than a blank. The case is the language's own: the
+	 * catalogue writes "oktober" in Dutch and "October" in English, and the
+	 * tile's caption starts with the name ("October: 0").
 	 *
 	 * @param DateTimeImmutable $date Any day of the month.
 	 *
-	 * @return string The month name, lower case.
+	 * @return string The month name.
 	 */
 	private function monthName(DateTimeImmutable $date): string {
 		$names = [
@@ -473,7 +476,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 			12 => 'December',
 		];
 
-		return mb_strtolower($this->l10n->t($names[(int)$date->format('n')]));
+		return $this->l10n->t($names[(int)$date->format('n')]);
 	}//end monthName()
 
 	/**
@@ -535,92 +538,6 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	}//end labelled()
 
 	/**
-	 * Mean days from start to end across the closed cases.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The average, or null when nothing closed.
-	 */
-	private function averageProcessingDays(array $closed): ?float {
-		$total = 0;
-		$counted = 0;
-
-		foreach ($closed as $row) {
-			$days = $this->daysBetween(from: ($row['startDate'] ?? null), to: ($row['endDate'] ?? null));
-			if ($days === null) {
-				continue;
-			}
-
-			$total += $days;
-			$counted++;
-		}
-
-		if ($counted === 0) {
-			return null;
-		}
-
-		return round(($total / $counted), 1);
-	}//end averageProcessingDays()
-
-	/**
-	 * Share of the closed cases that met their deadline, as a percentage.
-	 *
-	 * A case with no deadline is not counted either way: it had no target to
-	 * meet, so including it would flatter or punish the figure arbitrarily.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The percentage, or null when nothing measurable closed.
-	 */
-	private function slaCompliance(array $closed): ?float {
-		$within = 0;
-		$measurable = 0;
-
-		foreach ($closed as $row) {
-			$deadline = substr((string)($row['deadline'] ?? ''), 0, 10);
-			$end = substr((string)($row['endDate'] ?? ''), 0, 10);
-			if ($deadline === '' || $end === '') {
-				continue;
-			}
-
-			$measurable++;
-			if ($end <= $deadline) {
-				$within++;
-			}
-		}
-
-		if ($measurable === 0) {
-			return null;
-		}
-
-		return round((($within / $measurable) * 100), 0);
-	}//end slaCompliance()
-
-	/**
-	 * Whole days between two dates.
-	 *
-	 * @param mixed $from The earlier date.
-	 * @param mixed $to The later date.
-	 *
-	 * @return int|null The difference in days, or null when either is unusable.
-	 */
-	private function daysBetween(mixed $from, mixed $to): ?int {
-		$fromDate = substr((string)$from, 0, 10);
-		$toDate = substr((string)$to, 0, 10);
-		if ($fromDate === '' || $toDate === '') {
-			return null;
-		}
-
-		$start = date_create_immutable($fromDate);
-		$end = date_create_immutable($toDate);
-		if ($start === false || $end === false) {
-			return null;
-		}
-
-		return $this->sources->days->signed(from: $start, to: $end);
-	}//end daysBetween()
-
-	/**
 	 * The register and schema ids these metrics read.
 	 *
 	 * 🔴 `task_schema` IS DELIBERATELY ABSENT. It used to be required here,
@@ -642,6 +559,63 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 
 		return $ids;
 	}//end ids()
+
+	/**
+	 * Run a read with OpenRegister answering every language of a translatable
+	 * property, so a title reaches the reader's language through textOr()
+	 * rather than OpenRegister's default language. An internal read has no
+	 * request language of its own: OpenRegister's language middleware runs on
+	 * its own routes only.
+	 *
+	 * @param callable(): array $read The read.
+	 *
+	 * @return array The read's rows.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function withAllTranslations(callable $read): array {
+		$language = $this->languageService();
+		if ($language === null) {
+			return $read();
+		}
+
+		$before = (bool)$language->shouldReturnAllTranslations();
+		$language->setReturnAllTranslations(true);
+		try {
+			return $read();
+		} finally {
+			$language->setReturnAllTranslations($before);
+		}
+	}//end withAllTranslations()
+
+	/**
+	 * OpenRegister's request-scoped language service, or null when OpenRegister
+	 * is absent or the service cannot answer for all translations.
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function languageService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return null;
+		}
+
+		$serviceId = 'OCA\OpenRegister\Service\LanguageService';
+		if ($this->container->has($serviceId) === false) {
+			return null;
+		}
+
+		$service = $this->container->get($serviceId);
+		if (is_object($service) === false
+			|| method_exists($service, 'setReturnAllTranslations') === false
+			|| method_exists($service, 'shouldReturnAllTranslations') === false
+		) {
+			return null;
+		}
+
+		return $service;
+	}//end languageService()
 
 	/**
 	 * OpenRegister's ObjectService, or null when the app is absent.

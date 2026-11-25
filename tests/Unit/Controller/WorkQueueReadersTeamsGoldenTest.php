@@ -23,25 +23,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Controller\WorkQueueController;
-use OCA\Dossiq\Service\Substitution\CoveredWork;
+use OCA\Dossiq\Controller\Support\WorkloadScope;
 use OCA\Dossiq\Service\Team\PrimaryTeamService;
-use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IGroupManager;
-use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserManager;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use ReflectionMethod;
 use RuntimeException;
 
 /**
- * Golden test for WorkQueueController::ofReadersTeams.
+ * Golden test for the workload's narrowing to the reader's teams (WorkloadScope: teamGroupIds, then ofTeams).
  *
- * @covers \OCA\Dossiq\Controller\WorkQueueController
+ * @covers \OCA\Dossiq\Controller\Support\WorkloadScope
  */
 class WorkQueueReadersTeamsGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -78,9 +73,8 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 		$record = [];
 		foreach ($worlds as $name => $world) {
 			$this->logLines = [];
-			$narrow = new ReflectionMethod(WorkQueueController::class, 'ofReadersTeams');
-			$narrow->setAccessible(true);
-			$kept = $narrow->invoke($this->controllerFor(teams: $world['teams'], groups: $groups), $this->createMock(IUser::class), $handlers);
+			$scope = $this->scopeFor(teams: $world['teams'], groups: $groups);
+			$kept  = $scope->ofTeams(teamGroupIds: $scope->teamGroupIds(user: $this->createMock(originalClassName: IUser::class)), handlers: $handlers);
 			$record[$name] = ['kept' => $kept, 'log' => $this->logLines];
 		}
 
@@ -88,14 +82,14 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 	}//end testNarrowingAcrossWorlds()
 
 	/**
-	 * A controller whose reader is in $teams.
+	 * The workload scope of a reader who is in $teams.
 	 *
 	 * @param array<mixed>|string                $teams  The reader's teams, or 'throw'.
 	 * @param array<string, array<mixed, string>> $groups Members per group.
 	 *
-	 * @return WorkQueueController
+	 * @return WorkloadScope
 	 */
-	private function controllerFor(array|string $teams, array $groups): WorkQueueController {
+	private function scopeFor(array|string $teams, array $groups): WorkloadScope {
 		$teamService = $this->createMock(PrimaryTeamService::class);
 		if ($teams === 'throw') {
 			$teamService->method('teamsOf')->willThrowException(new RuntimeException('teams offline'));
@@ -117,15 +111,11 @@ class WorkQueueReadersTeamsGoldenTest extends TestCase {
 			);
 		}
 
-		return new WorkQueueController(
-			$this->createMock(IRequest::class),
-			$this->createMock(IUserSession::class),
-			$groupManager,
-			$this->createMock(WorkQueueService::class),
-			$logger,
-			$this->createMock(IUserManager::class),
-			$this->createMock(CoveredWork::class),
-			$teamService,
+		return new WorkloadScope(
+			groupManager: $groupManager,
+			userManager: $this->createMock(originalClassName: IUserManager::class),
+			teams: $teamService,
+			logger: $logger,
 		);
-	}//end controllerFor()
+	}//end scopeFor()
 }//end class

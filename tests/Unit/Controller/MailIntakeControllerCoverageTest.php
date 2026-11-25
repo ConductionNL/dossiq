@@ -21,7 +21,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\FilingFollowUpsInterface;
 use OCA\Dossiq\Controller\MailIntakeController;
 use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -58,7 +59,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  * @uses \OCA\Dossiq\Service\Support\SessionUid
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class MailIntakeControllerCoverageTest extends TestCase {
 
@@ -165,6 +166,7 @@ final class MailIntakeControllerCoverageTest extends TestCase {
 			userSession: $this->session,
 			time: $time,
 			caseAccessGuard: $this->caseAccessGuard,
+			followUps: $this->createMock(FilingFollowUpsInterface::class),
 		);
 	}//end controller()
 

@@ -156,6 +156,9 @@ $extra = [
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
     // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
     ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
+    // The scoring sheet of a case and the scoring of one submission with the case's formula (tenders-run-on-the-tender-case-type 3.2).
+    ['name' => 'scoring#sheet', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'GET'],
+    ['name' => 'scoring#score', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -435,6 +438,8 @@ $extra = [
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
+    // The files browser's actions, fetched by the bundle on an object's page.
+    ['name' => 'dashboard#filesSurfaces', 'url' => '/files-surfaces',              'verb' => 'GET'],
 
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
@@ -514,7 +519,7 @@ $extra = [
     ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
     ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
     ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
-    ['name' => 'caseRecycle#clocks',             'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
+    ['name' => 'retentionClocks#clocks',         'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
 
         // Claim and release (case-claim-action, row 2.4). Who holds a case is
         // one field, and OpenRegister would take that write straight from the
@@ -751,6 +756,13 @@ $extra = [
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
         // The sync frame's conflict card keeps the device's text or the office's.
     ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
+        // A supervision plan's figures, counted from its inspections, and a
+        // proposed schedule that is shown before anything is planned
+        // (supervision-plan-page).
+    ['name' => 'supervisionPlan#progressForYear',  'url' => '/api/supervision-plans/year/{year}/progress',   'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposalForYear', 'url' => '/api/supervision-plans/year/{year}/schedule-proposal', 'verb' => 'GET'],
+    ['name' => 'supervisionPlan#progress',         'url' => '/api/supervision-plans/{id}/progress',          'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposal', 'url' => '/api/supervision-plans/{id}/schedule-proposal', 'verb' => 'GET'],
         // Per-case advice requests, on any case type.
     ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
@@ -815,9 +827,9 @@ $extra = [
     // Which groups may see each contributed dashboard widget. Admin only.
     ['name' => 'widgetAudience#show', 'url' => '/api/settings/widget-audience', 'verb' => 'GET'],
     ['name' => 'widgetAudience#save', 'url' => '/api/settings/widget-audience', 'verb' => 'PUT'],
-    ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
-    ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
-    ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
+    ['name' => 'emailSettings#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
+    ['name' => 'emailSettings#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
+    ['name' => 'emailSettings#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
 
     // Inbound-mail-filters: the intake log as a surface, and the two named acts
     // a handler can perform on a message that should not have come to us. Every
@@ -1280,6 +1292,8 @@ $extra = [
         // to integriq's MessageParser and the parsed message is filed on the
         // case beside the original, which is never moved or deleted.
     ['name' => 'savedMail#read',                   'url' => '/api/cases/{caseId}/files/{fileId}/read-as-message', 'verb' => 'POST'],
+    // A case file opened in the editor: the file is shared with the caller for editing after the case checks.
+    ['name' => 'caseFileEditor#open',              'url' => '/api/cases/{caseId}/files/{fileId}/editor',      'verb' => 'POST'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],

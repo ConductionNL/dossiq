@@ -234,7 +234,6 @@ test.describe('A saved case view shared with a team', () => {
 
 	// @e2e openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-share-targets-are-the-readers-own-teams
 	test('the share picker offers the lead\'s own two teams and no other group', async ({ browser, baseURL }) => {
-		test.fixme(true, 'task 2 open: the list pages in src/manifest.json do not set savedViewsShareGroups: mine, so the picker lists every group')
 		const { context, page } = await loggedInPage(browser, String(baseURL), LEAD)
 		try {
 			trackDossiqErrors(page)

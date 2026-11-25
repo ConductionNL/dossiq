@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\Email\Filters;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 final class FilterOutcome {
 
@@ -90,7 +90,7 @@ final class FilterOutcome {
 	 *
 	 * @return boolean True for everything except `pass`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public static function isDecisive(string $outcome): bool {
 		return ($outcome !== self::PASS && in_array($outcome, self::ALL, true) === true);

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
 
 declare(strict_types=1);
@@ -47,6 +47,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Portal\PortalAssertionVerifier
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekService
+ * @uses \OCA\Dossiq\Service\Support\AskedItems
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
