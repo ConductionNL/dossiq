@@ -33,7 +33,9 @@ import {
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	updateObject,
 } from '../helpers/fixtures.ts'
+import { openCasePanel } from '../helpers/case-panels.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
@@ -197,14 +199,19 @@ async function seedParentWithChildren(options: {
 
 		const children: any[] = []
 		for (const [index, fields] of options.children.entries()) {
+			// Created in its lifecycle's initial state, THEN moved to this run's
+			// status. OpenRegister refuses a create that sets any other state
+			// ("A new object starts in <initial>; <status> cannot be set when it
+			// is created", 422), which turned every leg of this file red before
+			// it reached the page.
 			const created = await seedCase(api, token, {
 				title: `${RUN_PREFIX} deelzaak child ${index + 1}`,
 				caseType: caseType.id,
 				parentCase: parentId,
-				status: statusId,
 				description: 'Seeded by deelzaak-support.spec.ts (section legs).',
 				...fields,
 			})
+			await updateObject(api, token, 'case', objectId(created), { status: statusId })
 			children.push(await showObject(api, 'case', objectId(created)))
 		}
 		return { parentId, children, statusName }
@@ -283,7 +290,7 @@ function escapeForRegExp(value: string): string {
  * The cell may carry the ISO string the server stored or the localised form
  * the renderer chose, and which of the two is a rendering decision rather than
  * something this requirement has an opinion about. What it does have an
- * opinion about is that the deadline is SHOWN, so both spellings pass and an
+ * opinion about is that the deadline is SHOWN, so every spelling passes and an
  * empty cell, or another date, fails.
  *
  * @param  iso The stored date, `YYYY-MM-DD`.
@@ -297,6 +304,12 @@ function deadlineSpellings(iso: string): RegExp {
 			escapeForRegExp(`${day}-${month}-${year}`),
 			escapeForRegExp(`${Number(day)}-${Number(month)}-${year}`),
 			escapeForRegExp(`${day}/${month}/${year}`),
+			// The medium forms the list's date formatter prints in the two
+			// languages the suite runs in ("Jan 20, 2027", "20 jan 2027").
+			...['en-US', 'nl-NL'].map((locale) => escapeForRegExp(
+				new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+					.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC', year: 'numeric' }),
+			)),
 		].join('|'),
 	)
 }
@@ -354,59 +367,35 @@ async function openSubCasesSectionOrSkip(page, onCase?: string) {
 	// still displays the section — but reaching it takes a click, and the panel is
 	// LAZY, so its table does not exist in the DOM until the tab is opened.
 	// Asserting the container alone would pass while the list below never renders.
-	const tab = page
-		.locator('.cn-tabs-widget')
-		.getByRole('tab', { name: 'Related', exact: true })
-		.first()
-	if ((await tab.count()) > 0) {
-		await expect(
-			tab,
-			'CaseDetail must offer the "Sub-cases" section (deelzaak-support: '
-				+ '"Sub-cases section on parent case detail")',
-		).toBeVisible({ timeout: 15_000 })
-		await tab.click()
+	// The sub-cases section is on the Related tab, and since REQ-CDV-16 the
+	// strip shows five tabs with the rest under More, Related among them. A
+	// lookup for a Related TAB therefore found nothing and fell through to a
+	// "card on the grid" branch that no layout has any more, so every leg
+	// failed before it reached the section. `openCasePanel` opens the tab
+	// through the More menu when it is folded, and asserts the section renders.
+	const panel = await openCasePanel(page, 'subCases')
 
-		// WAIT for the panel to fill. The panel is lazy, so the click starts a
-		// mount AND a fetch, and the caller's `count()` takes one snapshot that
-		// cannot retry — it fired against an empty panel and reported the
-		// section missing. Same trap the comment above guards for the tab
-		// itself; making the panel lazy moved it one step later.
-		// Scoped to the sub-cases SECTION and not to the whole panel. Since the
-		// strip came down from fourteen tabs to six, the Related tab holds the
-		// related-cases list ABOVE this one, so an unscoped `table` count is
-		// satisfied by the neighbouring table and this test would pass with the
-		// sub-cases list missing entirely.
-		const panel = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-sub-cases"]',
+	// WAIT for the panel to fill. The panel is lazy, so opening the tab starts
+	// a mount AND a fetch, and a one-shot `count()` fired against an empty
+	// panel and reported the section missing. Scoped to the sub-cases SECTION:
+	// the Related tab holds the related-cases list above this one, so an
+	// unscoped `table` count is satisfied by the neighbouring table.
+	await expect
+		.poll(
+			async () =>
+				(await panel.locator('.viewTable, table').count())
+				+ (await panel
+					.getByText(
+						/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
+					)
+					.count()),
+			{
+				timeout: 20_000,
+				message:
+					'the Sub-cases panel rendered neither a table nor an empty state within 20s',
+			},
 		)
-		await expect
-			.poll(
-				async () =>
-					(await panel.locator('.viewTable, table').count())
-					+ (await panel
-						.getByText(
-							/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
-						)
-						.count()),
-				{
-					timeout: 20_000,
-					message:
-						'the Sub-cases panel rendered neither a table nor an empty state within 20s',
-				},
-			)
-			.toBeGreaterThan(0)
-	} else {
-		// Pre-tabs layout: the section is a card on the grid.
-		const section = page
-			.locator('.cn-widget-wrapper, section, [class*="widget"]')
-			.filter({ hasText: /Sub-cases/i })
-			.first()
-		await expect(
-			section,
-			'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
-				+ '"Sub-cases section on parent case detail")',
-		).toBeVisible({ timeout: 15_000 })
-	}
+		.toBeGreaterThan(0)
 
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true
