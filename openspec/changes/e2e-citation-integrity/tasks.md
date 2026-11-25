@@ -36,8 +36,21 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       first tab and was red on a page that does what the scenario asks: AdminRoot.vue is tabbed, and both sections the
       scenario names ("Case type management", "ZGW API connection") sit on the Advanced tab. It now names the page
       by its title, opens Advanced and asserts both sections; renaming the section in the served bundle turns it red.
-- [ ] 1.2 `handler-vervanging-waarneming#self-substitution-is-rejected`. Submit a substitution naming the same user as absentee and substitute. Assert the validation error and that no `substitution` object was created. The current test opens the form and reads its labels.
-- [ ] 1.3 `handler-vervanging-waarneming#bulk-reassignment-is-coordinator-only`. Probe with a user who does not hold the coordinator role and assert the refusal. Asserting the button is visible to an authorised user is the wrong half of the scenario.
+- [x] 1.2 `handler-vervanging-waarneming#self-substitution-is-rejected`. Submit a substitution naming the same user as absentee and substitute. Assert the validation error and that no `substitution` object was created. The current test opens the form and reads its labels.
+      **Proven live 2026-11-25** (same sandbox as 1.1). The test from #2476 posts the same user as absentee and
+      substitute, asserts the 400 naming the rule and that no substitution row was written; green. Watched red with
+      the equality check in `SubstitutionValidator::assertIdentities()` disabled: `Expected: 400, Received: 201`.
+- [x] 1.3 `handler-vervanging-waarneming#bulk-reassignment-is-coordinator-only`. Probe with a user who does not hold the coordinator role and assert the refusal. Asserting the button is visible to an authorised user is the wrong half of the scenario.
+      **Proven live 2026-11-25.** The execute half probed `/api/reassignments/execute`, a route #2832 removed: it
+      answered 404 to everyone, so the 403 assertion was red on a correct build and would have stayed meaningless on a
+      broken one. Since #2832 the execute is `POST /api/substitutions/release-caseload` (with a written reason), and
+      the test now probes that route; the preview half, the nothing-moved check and the coordinator control are
+      unchanged. Green; watched red with `SubstitutionController::coordinatorRefusal()`'s coordinator check disabled
+      (`Expected: 403, Received: 500`, the release itself then failed for the seeded user).
+      FOUND, not fixed here: `src/modals/BulkReassignModal.vue` still executes through
+      `substitutionApi.executeReassignment()`, which posts to the removed `/api/reassignments/execute`, so the
+      coordinator's bulk reassign in the substitution admin answers 404. Its replacement asks for a written reason and
+      commits the previewed bulk job through OpenRegister's commit route (D-6), which is UI work for its own change.
 - [ ] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.
 - [ ] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
 - [ ] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
@@ -53,7 +66,17 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       stayed.
 - [ ] 1.10 `case-types` cycle refusal. The test saves the cyclical parent successfully and asserts only that blueprint traversal terminates. The scenario requires the save to fail with a message naming the cycle. Assert the refusal and the message.
 - [ ] 1.11 `friendly-case-create-form#req-fcf-003`. The test accepts the answer on `case.properties` OR as a `caseProperty` row, so the "never as properties of the case itself" clause cannot fail. If both stores really are live during a transition, the requirement is wrong and should say so; if not, assert the single store.
-- [ ] 1.12 `handler-vervanging-waarneming#scope-limited-substitution-only-routes-matching-items`, `#all-actions-under-a-substitution-are-queryable`, `#timeline-shows-the-substituted-capacity`, `#preview-before-execution`. Four more on the same file, all page-load or affordance-present assertions. This file is the densest cluster in the audit: 9 of 9 citations non-verified, three of its five tests falling back to `test.skip` when a heading fails to appear. Rewrite the file against seeded substitutions or exclude its scenarios with reasons.
+- [x] 1.12 `handler-vervanging-waarneming#scope-limited-substitution-only-routes-matching-items`, `#all-actions-under-a-substitution-are-queryable`, `#timeline-shows-the-substituted-capacity`, `#preview-before-execution`. Four more on the same file, all page-load or affordance-present assertions. This file is the densest cluster in the audit: 9 of 9 citations non-verified, three of its five tests falling back to `test.skip` when a heading fails to appear. Rewrite the file against seeded substitutions or exclude its scenarios with reasons.
+      **Proven live 2026-11-25.** All three cited tests (#2476's rewrite against seeded substitutions) are green, each
+      watched red under a mutation of the code it guards: the caseTypes scope check in
+      `SubstitutedWorkResolver::caseInScope()` answering true (the out-of-scope case is routed), the action list sorted
+      newest first in `SubstitutionAuditService::actionsOn()` (order differs), and the coordinator preview answering no
+      cases (`Received array: []`). `#timeline-shows-the-substituted-capacity` is a reason-bearing `@e2e exclude` on
+      the spec (no call site writes the capacity stamp yet).
+      Seen in the same file, outside group 1: `#handler-registers-their-own-substitution` is red on OpenRegister main,
+      which refuses a non-admin create on a schema with no authorization block (`User 'E2E Ordinary User' does not have
+      permission to 'create' objects in schema 'Substitution'`, served as a 500). Which group may register a
+      substitution is an access-control decision, left to Ruben (COORDINATOR-QUEUE).
 - [ ] 1.13 `document-zaakdossier#req-zak-004a` and `#req-zak-004b` on `cases index renders so a case dossier tab can be opened`. The opening example. The test loads `/cases` and asserts no 500. Neither anchor belongs on it.
 
 ## 2. Remaining smoke (23 citations)

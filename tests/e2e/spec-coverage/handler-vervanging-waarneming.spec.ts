@@ -725,15 +725,19 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 			`the reassignment PREVIEW must be denied to a non-coordinator; body was ${await preview.text()}`,
 		).toBe(403)
 
+		// The execute half. Since #2832 a bulk reassignment is executed by
+		// releasing the caseload into the shared bulk job, with a written
+		// reason; `/reassignments/execute` is gone and answers 404 to anyone,
+		// which a refusal check must not mistake for a 403.
 		const execute = await postDossiq(
 			plainApi,
 			plainToken,
-			'/reassignments/execute',
-			{ fromUser: PLAIN_USER, toUser: ADMIN_USER },
+			'/substitutions/release-caseload',
+			{ fromUser: PLAIN_USER, toUser: ADMIN_USER, justification: 'e2e: a non-coordinator tries to move work' },
 		)
 		expect(
 			execute.status(),
-			`the reassignment EXECUTE must be denied to a non-coordinator; body was ${await execute.text()}`,
+			`the reassignment EXECUTE (release-caseload) must be denied to a non-coordinator; body was ${await execute.text()}`,
 		).toBe(403)
 
 		// Denied, and nothing moved: an execute that refused after writing would
