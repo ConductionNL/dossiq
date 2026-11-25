@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\CaseRegisterReads;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
+use Override;
 use RuntimeException;
 use Throwable;
 
@@ -85,6 +86,7 @@ class SessionService implements SessionServiceInterface {
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-case-type-declares-the-sessions-a-case-holds-req-css-1
 	 */
+	#[Override]
 	public function sessionsFor(string $caseId): array {
 		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
@@ -118,6 +120,7 @@ class SessionService implements SessionServiceInterface {
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-planning-a-session-keeps-the-inspection-floor-and-the-invitee-roles-req-css-2
 	 */
+	#[Override]
 	public function schedule(
 		string $caseId,
 		string $sessionKey,
