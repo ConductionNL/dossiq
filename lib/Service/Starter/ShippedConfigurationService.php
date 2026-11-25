@@ -280,7 +280,7 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 	 * @return boolean True when the record was written.
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function recordPackage(string $set, string $version, string $digest): bool {
 		return $this->stamp(
@@ -304,7 +304,7 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 	 *
 	 * @return boolean True when nothing about the package changed since it was recorded.
 	 *
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function isPackageCurrent(string $set, string $version, string $digest): bool {
 		$row = $this->ledgerRow(targetSchema: self::PACKAGE_RECORD, targetObject: $set);
@@ -525,7 +525,7 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 	 * @return array{refreshed: array<int, string>, kept: array<int, string>} The ids of each.
 	 *
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function refreshRows(string $set, string $version, array $rows, bool $overLocalChanges): array {
