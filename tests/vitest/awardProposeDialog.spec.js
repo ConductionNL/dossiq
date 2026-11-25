@@ -5,7 +5,8 @@
  *
  * Propose the award from a tender case: the dialog lists the admissible bids
  * of the scoring sheet highest total first, preselects the best scored one
- * (or the one proposed now), posts the chosen bid and keeps a refusal as the
+ * (or the one proposed now), walks the bids' lifecycle (release the lot's
+ * earlier proposal, then propose the chosen bid) and keeps a refusal as the
  * server words it. Also checks the header action is offered on a tender case
  * type only and that the registry knows the dialog.
  *
@@ -44,9 +45,10 @@ const STUBS = {
 const SHEET = {
 	formula: { key: 'price-quality', title: 'Best price-quality ratio' },
 	submissions: [
-		{ id: 'bid-a', label: 'INS-A', price: 80000, total: 74, state: 'evaluated' },
-		{ id: 'bid-b', label: 'INS-B', price: 100000, total: 81.5, state: 'evaluated' },
-		{ id: 'bid-c', label: 'INS-C', price: 90000, total: null, state: 'admissible' },
+		{ id: 'bid-a', label: 'INS-A', price: 80000, total: 74, state: 'evaluated', lot: 'lot-1' },
+		{ id: 'bid-b', label: 'INS-B', price: 100000, total: 81.5, state: 'evaluated', lot: 'lot-1' },
+		{ id: 'bid-c', label: 'INS-C', price: 90000, total: null, state: 'admissible', lot: 'lot-1' },
+		{ id: 'bid-d', label: 'INS-D', price: 70000, total: 60, state: 'proposed-award', lot: 'lot-2' },
 	],
 	refusal: null,
 }
@@ -66,14 +68,14 @@ describe('propose the award', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		mockGet.mockResolvedValue({ data: SHEET })
-		mockPost.mockResolvedValue({ data: { proposed: 'bid-b', released: [] } })
+		mockPost.mockResolvedValue({ data: {} })
 	})
 
 	it('lists the bids highest total first and proposes the best scored one', async () => {
 		const wrapper = await mountDialog()
 
 		expect(mockGet).toHaveBeenCalledWith('/apps/dossiq/api/cases/case-1/scoring')
-		expect(wrapper.vm.bidOptions.map((option) => option.id)).toEqual(['bid-b', 'bid-a', 'bid-c'])
+		expect(wrapper.vm.bidOptions.map((option) => option.id)).toEqual(['bid-b', 'bid-a', 'bid-d', 'bid-c'])
 		expect(wrapper.vm.bidOptions[0].label).toContain('INS-B')
 		expect(wrapper.vm.bidId).toBe('bid-b')
 		expect(wrapper.find('[data-testid="award-propose-current"]').exists()).toBe(false)
@@ -81,14 +83,16 @@ describe('propose the award', () => {
 		await wrapper.find('[data-testid="award-propose-submit"]').trigger('click')
 		await flushPromises()
 
-		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/case-1/award-proposal', { bid: 'bid-b' })
+		// Lot 2's proposal is another lot's: it is not released.
+		expect(mockPost).toHaveBeenCalledTimes(1)
+		expect(mockPost).toHaveBeenCalledWith('/apps/openregister/api/objects/bid-b/transition', { action: 'proposeAward' })
 		expect(mockSuccess).toHaveBeenCalledWith('Award proposed.')
 		expect(wrapper.emitted('done')).toHaveLength(1)
 		expect(wrapper.emitted('close')).toHaveLength(1)
 	})
 
-	it('starts from the bid proposed now and does not propose it again', async () => {
-		mockGet.mockResolvedValue({ data: { ...SHEET, submissions: SHEET.submissions.map((row) => (row.id === 'bid-a' ? { ...row, state: 'proposed-award' } : row)) } })
+	it('starts from the bid proposed now and releases it when another bid of its lot is proposed', async () => {
+		mockGet.mockResolvedValue({ data: { ...SHEET, submissions: SHEET.submissions.filter((row) => row.id !== 'bid-d').map((row) => (row.id === 'bid-a' ? { ...row, state: 'proposed-award' } : row)) } })
 		const wrapper = await mountDialog()
 
 		expect(wrapper.vm.bidId).toBe('bid-a')
@@ -96,7 +100,15 @@ describe('propose the award', () => {
 		expect(wrapper.vm.canPropose).toBe(false)
 
 		wrapper.vm.bidId = 'bid-b'
+		await flushPromises()
 		expect(wrapper.vm.canPropose).toBe(true)
+		await wrapper.find('[data-testid="award-propose-submit"]').trigger('click')
+		await flushPromises()
+
+		expect(mockPost.mock.calls).toEqual([
+			['/apps/openregister/api/objects/bid-a/transition', { action: 'releaseAward' }],
+			['/apps/openregister/api/objects/bid-b/transition', { action: 'proposeAward' }],
+		])
 	})
 
 	it('shows the sheet refusal when nothing can be proposed', async () => {
@@ -108,12 +120,12 @@ describe('propose the award', () => {
 	})
 
 	it('keeps a refused proposal in the dialog as the server words it', async () => {
-		mockPost.mockRejectedValue({ response: { data: { message: 'Only an admissible bid on this case can be proposed for the award.' } } })
+		mockPost.mockRejectedValue({ response: { data: { message: "Transition 'proposeAward' is not allowed from 'received'." } } })
 		const wrapper = await mountDialog()
 		await wrapper.find('[data-testid="award-propose-submit"]').trigger('click')
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="award-propose-error"]').text()).toBe('Only an admissible bid on this case can be proposed for the award.')
+		expect(wrapper.find('[data-testid="award-propose-error"]').text()).toBe("Transition 'proposeAward' is not allowed from 'received'.")
 		expect(wrapper.emitted('close')).toBeUndefined()
 	})
 })

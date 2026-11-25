@@ -6472,7 +6472,6 @@ OC.L10N.register(
         "Only a sampled document can be judged in the sample.": "Alleen een document uit de steekproef kan in de steekproef worden beoordeeld.",
         "Only after a decision has been made known.": "Pas na een bekendgemaakt besluit.",
         "Only an administrator can read the rules of a case.": "Alleen een beheerder kan de regels van een zaak lezen.",
-        "Only an admissible bid on this case can be proposed for the award.": "Alleen een geldige inschrijving op deze zaak kan voor gunning worden voorgesteld.",
         "Only an admissible bid on this case can be scored.": "Alleen een ontvankelijke inschrijving op deze zaak kan worden gescoord.",
         "Only flows the case type allows.": "Alleen flows die het zaaktype toestaat.",
         "Only for a finished or archived case.": "Alleen bij een afgeronde of gearchiveerde zaak.",

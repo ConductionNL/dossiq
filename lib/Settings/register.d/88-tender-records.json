@@ -139,7 +139,6 @@
       "final": [
        "inadmissible",
        "excluded",
-       "evaluated",
        "withdrawn"
       ],
       "transitions": {
@@ -170,6 +169,21 @@
         ],
         "to": "evaluated",
         "description": "Every evaluation of the bid is final."
+       },
+       "proposeAward": {
+        "from": [
+         "admissible",
+         "evaluated"
+        ],
+        "to": "proposed-award",
+        "description": "The buyer proposes the bid for the award of its lot; the award becomes final through the case flow after the standstill term."
+       },
+       "releaseAward": {
+        "from": [
+         "proposed-award"
+        ],
+        "to": "evaluated",
+        "description": "Another bid of the lot is proposed for the award, so this one is evaluated again."
        },
        "withdraw": {
         "from": [

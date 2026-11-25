@@ -6,10 +6,12 @@
 
   Reads the case's scoring sheet (`GET /api/cases/{caseId}/scoring`) and lists
   its admissible bids, highest total first, with the bid proposed now marked.
-  The buyer picks the bid (the highest scored one is preselected) and the
-  dialog posts it (`POST /api/cases/{caseId}/award-proposal`). The bid then
-  holds the proposal, one per lot, and the case's flow makes the award final
-  after the standstill term. A refusal is shown as the server words it.
+  The buyer picks the bid (the highest scored one is preselected). The bid
+  holds the proposal, one per lot, through its own declared lifecycle: the
+  dialog walks OpenRegister's transition endpoint, `releaseAward` on the bid
+  of the same lot proposed so far, then `proposeAward` on the chosen one. The
+  case's flow makes the award final after the standstill term. A refusal is
+  shown as the server words it.
 
   @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 -->
@@ -93,6 +95,17 @@ function caseUrl(caseId, path) {
 }
 
 /**
+ * Walk one transition of a bid's declared lifecycle.
+ *
+ * @param {string} bidId The bid uuid.
+ * @param {string} action The transition.
+ * @return {Promise<object>}
+ */
+function transition(bidId, action) {
+	return axios.post(generateUrl(`/apps/openregister/api/objects/${encodeURIComponent(bidId)}/transition`), { action })
+}
+
+/**
  * The message a refused call carries, else the fallback.
  *
  * @param {Error} e The axios error.
@@ -163,14 +176,26 @@ export default {
 		},
 
 		/**
-		 * The bid proposed now, if any.
+		 * The bid of the chosen bid's lot proposed now, if any.
 		 *
 		 * @return {object|null}
 		 *
 		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
 		 */
 		proposedNow() {
-			return this.submissions.find((row) => row.state === PROPOSED) ?? null
+			const lot = this.selected?.lot ?? ''
+			return this.submissions.find((row) => row.state === PROPOSED && (row.lot ?? '') === lot) ?? null
+		},
+
+		/**
+		 * The chosen bid.
+		 *
+		 * @return {object|null}
+		 *
+		 * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
+		 */
+		selected() {
+			return this.submissions.find((row) => row.id === this.bidId) ?? null
 		},
 
 		/**
@@ -193,7 +218,7 @@ export default {
 		t,
 
 		/**
-		 * Read the scoring sheet; preselect the highest scored bid.
+		 * Read the scoring sheet; preselect the highest scored bid, or the proposal of its lot.
 		 *
 		 * @return {Promise<void>}
 		 *
@@ -206,8 +231,10 @@ export default {
 				const { data } = await axios.get(caseUrl(this.caseId, 'scoring'))
 				this.submissions = Array.isArray(data?.submissions) ? data.submissions : []
 				this.refusal = data?.refusal || ''
-				const best = this.ranked.find((row) => row.total !== null && row.total !== undefined)
-				this.bidId = this.proposedNow?.id ?? best?.id ?? null
+				// The best scored bid, unless its lot already has a proposal: then that one.
+				const best = this.ranked.find((row) => row.total !== null && row.total !== undefined) ?? null
+				const proposed = this.submissions.find((row) => row.state === PROPOSED && (best === null || (row.lot ?? '') === (best.lot ?? ''))) ?? null
+				this.bidId = proposed?.id ?? best?.id ?? null
 			} catch (e) {
 				this.submissions = []
 				this.error = refusalOf(e, t('dossiq', 'The bids of this case could not be read.'))
@@ -217,7 +244,8 @@ export default {
 		},
 
 		/**
-		 * Post the chosen bid; close on success, keep a refusal in the dialog.
+		 * Release the lot's earlier proposal, then propose the chosen bid; close
+		 * on success, keep a refusal in the dialog.
 		 *
 		 * @return {Promise<void>}
 		 *
@@ -229,10 +257,14 @@ export default {
 			}
 			this.saving = true
 			this.error = ''
+			const chosen = this.bidId
 			try {
-				const { data } = await axios.post(caseUrl(this.caseId, 'award-proposal'), { bid: this.bidId })
+				if (this.proposedNow !== null) {
+					await transition(this.proposedNow.id, 'releaseAward')
+				}
+				await transition(chosen, 'proposeAward')
 				showSuccess(t('dossiq', 'Award proposed.'))
-				this.$emit('done', data)
+				this.$emit('done', { proposed: chosen })
 				this.$emit('close')
 			} catch (e) {
 				this.error = refusalOf(e, t('dossiq', 'The award could not be proposed.'))
