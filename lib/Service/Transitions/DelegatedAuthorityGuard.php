@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
+ * @spec openspec/changes/archive/2026-11-25-delegated-authority-guard/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Asks decidiq whether the acting person holds the authority for a transition.
  *
- * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
+ * @spec openspec/changes/archive/2026-11-25-delegated-authority-guard/specs/status-transition-engine/spec.md
  */
 class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 
@@ -84,7 +84,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return self
 	 *
-	 * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-delegated-authority-guard/specs/status-transition-engine/spec.md
 	 */
 	public function withDefaults(array $defaults): self {
 		$copy           = clone $this;
@@ -102,7 +102,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult
 	 *
-	 * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-delegated-authority-guard/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$config = ($guardConfig + $this->defaults);
