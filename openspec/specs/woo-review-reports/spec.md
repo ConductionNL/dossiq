@@ -21,11 +21,15 @@ member of the reader group while that report is on, the parties half for any sig
 that report is on.
 
 #### Scenario: Off on a fresh install
+@e2e tests/e2e/woo-review-reports.spec.ts
+
 - **GIVEN** a fresh install
 - **WHEN** a handler requests the throughput report of a Woo case
 - **THEN** the route SHALL answer 403 with the not-switched-on sentence
 
 #### Scenario: No reader group, no throughput report
+@e2e tests/e2e/woo-review-reports.spec.ts
+
 - **GIVEN** an administrator with no reader group set
 - **WHEN** they try to switch `wooReviewerThroughputReport` on
 - **THEN** the setting SHALL be refused, naming the missing reader group
@@ -40,16 +44,22 @@ refused like anyone else. Each read SHALL write an audit entry with the reader, 
 scope. A CSV of the same rows SHALL be offered on the screen.
 
 #### Scenario: Assessments per reviewer per day
+@e2e tests/e2e/woo-review-reports.spec.ts
+
 - **GIVEN** the report switched on, reader group "woo-leiding", and on 2026-11-10 reviewer A assessed 3 documents openbaar and 1 niet_openbaar, and reviewer B assessed 2 deels_openbaar
 - **WHEN** a member of "woo-leiding" reads the report for that case
 - **THEN** it SHALL answer a row for A on 2026-11-10 with openbaar 3, niet_openbaar 1, total 4, and a row for B with deels_openbaar 2, total 2
 
 #### Scenario: A reviewer cannot read their colleagues' numbers
+@e2e tests/e2e/woo-review-reports.spec.ts
+
 - **GIVEN** the report switched on and reviewer A not in the reader group
 - **WHEN** A requests the report
 - **THEN** it SHALL answer 403
 
 #### Scenario: Every read is recorded
+@e2e exclude the audit row is OpenRegister's audit trail, which no page shows; WooReportReadLogTest and WooReportControllerTest::testAReadIsAudited cover it, and the 25 Nov 2026 live pass read the entry back
+
 - **GIVEN** a reader reads the report
 - **WHEN** the audit trail is read
 - **THEN** it SHALL hold that reader, the time and the case or period read
@@ -63,6 +73,8 @@ headers cannot be read SHALL be added with `provenance.mail.unreadable: true`, a
 under `unreadable` in the report rather than left out.
 
 #### Scenario: An eml keeps its sender and recipients
+@e2e exclude parsing happens in the gather add over bytes from a source; WooGatherAddTest::testAnEmlKeepsItsSenderAndRecipients runs it over a real .eml fixture, and the e2e reads the stored fields through the parties report
+
 - **GIVEN** an `.eml` from `a.jansen@gemeente.nl` to `b@aannemer.nl` and cc `c@gemeente.nl`
 - **WHEN** it is added to a Woo case
 - **THEN** its provenance SHALL hold those three addresses and the message id
@@ -85,6 +97,8 @@ The half is the generic component `src/components/reports/CaseMailPartiesReport.
 182), which the reports screen mounts.
 
 #### Scenario: By sender, recipient and domain
+@e2e tests/e2e/woo-review-reports.spec.ts
+
 - **GIVEN** the switch on, and three collected mails: two from a.jansen@gemeente.nl to b@aannemer.nl, one from b@aannemer.nl to a.jansen@gemeente.nl
 - **WHEN** the parties report is read
 - **THEN** sender a.jansen@gemeente.nl SHALL count 2 and b@aannemer.nl 1
