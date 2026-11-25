@@ -119,7 +119,11 @@ class GrantChainFlagTest extends TestCase {
 		$caseType = (array)self::json(path: 'lib/Settings/packages/subsidie/case-type.json')['caseType'];
 
 		$this->assertTrue(condition: $caseType['grantChain']);
-		$this->assertSame(expected: '1.9.0', actual: self::json(path: 'lib/Settings/packages/subsidie/package.json')['version']);
+		$version = (string)self::json(path: 'lib/Settings/packages/subsidie/package.json')['version'];
+		$this->assertTrue(
+			condition: version_compare(version1: $version, version2: '1.9.0', operator: '>='),
+			message: 'the subsidie package must carry 1.9.0 or later, the version that set grantChain'
+		);
 	}//end testThePackageRunsItsCaseTypeOnTheGrantChain()
 
 	/**
