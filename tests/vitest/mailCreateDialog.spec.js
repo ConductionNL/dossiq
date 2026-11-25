@@ -150,4 +150,18 @@ describe('the case type\'s questions answered from the mail', () => {
 		mockAxiosGet.mockRejectedValueOnce(new Error('offline'))
 		expect(await mailAnswersFor('woo-type', values)).toEqual({})
 	})
+
+	it('hands back the question records it read, for the dialog to show without reading them again', async () => {
+		const { readMailQuestions } = await import('../../src/mailCreateDialog/mailAnswers.js')
+		const records = [{ id: 'q-name', mailValue: '{{senderName}}' }, { id: 'q-other' }]
+		mockAxiosGet.mockResolvedValueOnce({ data: { results: records } })
+		expect(await readMailQuestions('woo-type', values)).toEqual({ answers: { 'x-prop:q-name': 'Ahmed Bakker' }, definitions: records })
+		mockAxiosGet.mockResolvedValueOnce({ data: { results: records } })
+		expect(await readMailQuestions('woo-type', undefined)).toEqual({ answers: {}, definitions: records })
+		expect(await readMailQuestions(undefined, values)).toEqual({ answers: {}, definitions: null })
+		mockAxiosGet.mockRejectedValueOnce(new Error('offline'))
+		expect(await readMailQuestions('woo-type', values)).toEqual({ answers: {}, definitions: null })
+		mockAxiosGet.mockResolvedValueOnce({ data: {} })
+		expect(await readMailQuestions('woo-type', values)).toEqual({ answers: {}, definitions: null })
+	})
 })
