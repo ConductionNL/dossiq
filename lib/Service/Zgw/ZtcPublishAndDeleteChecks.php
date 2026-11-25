@@ -84,9 +84,13 @@ class ZtcPublishAndDeleteChecks {
 	/**
 	 * Validate a caseType is publishable (isDraft true → false).
 	 *
-	 * REQ-CT-02b. Loads the case type's statusType objects and verifies
-	 * preconditions: at least one statusType exists, at least one is final,
-	 * and the case type itself has a validFrom date.
+	 * REQ-CT-02b as the ZGW API reads it (REQ-ZBR-024, decision on
+	 * Q-dossiq-L11-6). Loads the case type's statusType objects and verifies
+	 * preconditions: when it has status types, one of them is final, by its
+	 * own flag or as the one with the highest volgnummer (ZGW derives
+	 * isEindstatus); and the case type itself has a validFrom date. A zaaktype
+	 * without status types may be published over ZGW, as the standard allows;
+	 * the admin publish (CaseTypePublishService) still requires them (CT-02c).
 	 *
 	 * @param string $register Register slug.
 	 * @param string $caseTypeId Case type id.
@@ -94,6 +98,7 @@ class ZtcPublishAndDeleteChecks {
 	 * @return array<int, string> Error strings (empty = valid).
 	 *
 	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function validatePublish(string $register, string $caseTypeId): array {
 		$refusal = $this->publishCannotRun(caseTypeId: $caseTypeId);
@@ -153,22 +158,20 @@ class ZtcPublishAndDeleteChecks {
 	}//end caseTypeRows()
 
 	/**
-	 * What the status types lack for a publish: any at all, and a final one.
+	 * What the status types lack for a publish: a final one, when there are any.
 	 *
 	 * @param array<int, mixed> $statusTypes The statusType rows for a case type.
 	 *
 	 * @return array<int, string> Error strings.
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private static function statusTypeErrors(array $statusTypes): array {
-		if (count($statusTypes) === 0) {
-			return ['At least one status type must be defined before publishing'];
+		if (count($statusTypes) === 0 || self::hasFinalStatusType(statusTypes: $statusTypes) === true) {
+			return [];
 		}
 
-		if (self::hasFinalStatusType(statusTypes: $statusTypes) === false) {
-			return ['At least one status type must be marked as final'];
-		}
-
-		return [];
+		return ['At least one status type must be marked as final'];
 	}//end statusTypeErrors()
 
 	/**
@@ -187,15 +190,24 @@ class ZtcPublishAndDeleteChecks {
 	}//end validFromErrors()
 
 	/**
-	 * Test whether any of the supplied statusType rows is marked final.
+	 * Whether one of the statusType rows is final: by its own flag, or, as in ZGW,
+	 * by a volgnummer, since the row with the highest one is then the eindstatus.
 	 *
 	 * @param array<int, mixed> $statusTypes The statusType rows for a case type.
 	 *
-	 * @return bool True when at least one row carries isFinal.
+	 * @return bool True when a row carries isFinal or a positive volgnummer.
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private static function hasFinalStatusType(array $statusTypes): bool {
 		foreach ($statusTypes as $row) {
-			if (is_array($row) === true && (bool)($row['isFinal'] ?? false) === true) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			if (in_array($row['isFinal'] ?? false, [true, 1, '1', 'true'], true) === true
+				|| (int)($row['order'] ?? ($row['sequenceNumber'] ?? 0)) > 0
+			) {
 				return true;
 			}
 		}

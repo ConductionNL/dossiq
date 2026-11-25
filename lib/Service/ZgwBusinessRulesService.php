@@ -154,13 +154,23 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 		try {
 			return $this->guardThenDispatch(write: $write);
 		} catch (LookupNotCompleted $e) {
-			return $this->results->notVerified(
-				rule: "{$write->zgwApi}/{$write->resource} {$write->action}",
-				object: $e->lookup,
-				cause: $e->getMessage()
-			);
+			return $this->lookupRefusal(rule: "{$write->zgwApi}/{$write->resource} {$write->action}", e: $e);
 		}
 	}//end checkWrite()
+
+	/**
+	 * The refusal for a rule whose store read could not finish (REQ-ZBR-020/022).
+	 *
+	 * @param string             $rule The rule that read the store
+	 * @param LookupNotCompleted $e    The unfinished read
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function lookupRefusal(string $rule, LookupNotCompleted $e): array {
+		return $this->results->notVerified(rule: $rule, object: $e->lookup, cause: $e->getMessage());
+	}//end lookupRefusal()
 
 	/**
 	 * Set the rules context, return the first guard refusal, or else hand the
@@ -239,6 +249,42 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	private function caseTypeGuardRefusal(ZgwWriteCheck $write): ?array {
 		return $this->guardCaseTypePublish(write: $write) ?? $this->guardCaseTypeDestroy(write: $write);
 	}//end caseTypeGuardRefusal()
+
+	/**
+	 * The CT-02b publish guard for the ZGW publish endpoint, which saves a stored type back as published.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param array $existingObject The stored type
+	 * @param object|null $objectService The OpenRegister ObjectService
+	 * @param array|null $mappingConfig The mapping config
+	 *
+	 * @return array|null The refusal, or null when the publish may proceed
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function guardPublishEndpoint(
+		string $resource,
+		array $existingObject,
+		?object $objectService,
+		?array $mappingConfig,
+	): ?array {
+		try {
+			$this->ztcRules->setContext($objectService, $mappingConfig);
+
+			$write = new ZgwWriteCheck();
+			$write->zgwApi = 'catalogi';
+			$write->resource = $resource;
+			$write->action = 'update';
+			$write->body = ['isDraft' => false];
+			$write->existingObject = $existingObject;
+			$write->objectService = $objectService;
+			$write->mappingConfig = $mappingConfig;
+
+			return $this->guardCaseTypePublish(write: $write);
+		} catch (LookupNotCompleted $e) {
+			return $this->lookupRefusal(rule: "catalogi/{$resource} publish", e: $e);
+		}
+	}//end guardPublishEndpoint()
 
 	/**
 	 * Apply the ZTC concept defaults/preservation and the ztc-009/ztc-010

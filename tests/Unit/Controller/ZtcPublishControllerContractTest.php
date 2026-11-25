@@ -23,10 +23,10 @@
  *  - an unavailable OpenRegister answers 503 and a missing mapping 404, two
  *    distinct deployment facts a client can act on.
  *
- * NOTE: unlike DRC's write routes, these publish endpoints check NO ZGW scope —
- * a valid JWT is the whole gate. That is asserted as observed behaviour (the
- * happy-path test publishes without any scope being granted), so that adding or
- * removing a scope check here becomes a visible, deliberate change.
+ *  - the catalogi write scope is required on all three routes, like the other
+ *    ZTC writes (decision 245);
+ *  - a zaaktype passes the CT-02b publish guard before it is saved, and its
+ *    refusal reaches the client as a ZGW error (REQ-ZBR-024).
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZtcPublishController;
+use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -158,7 +159,118 @@ class ZtcPublishControllerContractTest extends TestCase {
 	 */
 	private function acceptJwt(): void {
 		$this->zgwService->method('validateJwtAuth')->willReturn(null);
+		$this->zgwService->method('consumerHasScope')->willReturnCallback(
+			static fn (IRequest $request, string $component, string $scope): bool => $component === 'ztc' && $scope === 'catalogi.schrijven'
+		);
 	}//end acceptJwt()
+
+	/**
+	 * A stored draft zaaktype zt-1, its publish guard answering $refusal, and the saves recorded.
+	 *
+	 * @param array|null $refusal What the publish guard answers.
+	 * @param array $saved The saves, filled by reference.
+	 *
+	 * @return ZgwBusinessRulesService|MockObject The guard, to assert on.
+	 */
+	private function storedDraftZaaktype(?array $refusal, array &$saved): ZgwBusinessRulesService {
+		$this->acceptJwt();
+
+		$objectService = $this->createMock(originalClassName: ZtcContractObjectServiceStub::class);
+		$objectService->method('find')->willReturn(['id' => 'zt-1', 'isDraft' => true, 'title' => 'Melding']);
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+				$saved[] = $object;
+				return $object;
+			}
+		);
+
+		$guard = $this->createMock(originalClassName: ZgwBusinessRulesService::class);
+		$guard->method('guardPublishEndpoint')->willReturn($refusal);
+
+		$this->zgwService->method('getObjectService')->willReturn($objectService);
+		$this->zgwService->method('getBusinessRulesService')->willReturn($guard);
+		$this->zgwService->method('loadMappingConfig')->willReturn(
+			['sourceRegister' => 'ztc-register', 'sourceSchema' => 'zaaktype']
+		);
+		$this->zgwService->method('buildValidationError')->willReturnCallback(
+			static fn (array $ruleResult): array => ['detail' => $ruleResult['detail'], 'code' => $ruleResult['code']]
+		);
+		$this->zgwService->method('createOutboundMapping')->willReturn(new \stdClass());
+		$this->zgwService->method('applyOutboundMapping')->willReturn(['concept' => false]);
+
+		return $guard;
+	}//end storedDraftZaaktype()
+
+	/**
+	 * A caller without the catalogi write scope gets the ZGW permission error on all three routes, and nothing is read or saved.
+	 *
+	 * @return void
+	 */
+	public function testAllThreePublishRoutesRequireTheCatalogiWriteScope(): void {
+		$this->zgwService->method('validateJwtAuth')->willReturn(null);
+		$this->zgwService->method('consumerHasScope')->willReturn(false);
+		$this->zgwService->expects($this->never())->method('getObjectService');
+
+		$responses = [
+			$this->controller->publishZaaktype(uuid: 'zt-1'),
+			$this->controller->publishBesluittype(uuid: 'bt-1'),
+			$this->controller->publishInformatieobjecttype(uuid: 'iot-1'),
+		];
+
+		foreach ($responses as $response) {
+			$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+			$this->assertSame(expected: 'permission_denied', actual: $response->getData()['code']);
+			$this->assertSame(expected: 'Scope catalogi.schrijven is required for this operation.', actual: $response->getData()['detail']);
+		}
+	}//end testAllThreePublishRoutesRequireTheCatalogiWriteScope()
+
+	/**
+	 * A zaaktype the publish guard refuses answers the guard's status and code, and is not saved.
+	 *
+	 * @return void
+	 */
+	public function testAZaaktypeThePublishGuardRefusesIsNotSaved(): void {
+		$saved = [];
+		$refusal = [
+			'valid' => false,
+			'status' => Http::STATUS_UNPROCESSABLE_ENTITY,
+			'detail' => 'At least one status type must be marked as final',
+			'code' => 'publish_validation_failed',
+			'enrichedBody' => [],
+		];
+		$guard = $this->storedDraftZaaktype(refusal: $refusal, saved: $saved);
+		$guard->expects($this->once())->method('guardPublishEndpoint')->with(
+			'zaaktypen',
+			['id' => 'zt-1', 'isDraft' => true, 'title' => 'Melding'],
+			$this->anything(),
+			['sourceRegister' => 'ztc-register', 'sourceSchema' => 'zaaktype']
+		);
+
+		$response = $this->controller->publishZaaktype(uuid: 'zt-1');
+
+		$this->assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
+		$this->assertSame(
+			expected: ['detail' => 'At least one status type must be marked as final', 'code' => 'publish_validation_failed'],
+			actual: $response->getData()
+		);
+		$this->assertSame(expected: [], actual: $saved, message: 'a refused publish must not save the type');
+	}//end testAZaaktypeThePublishGuardRefusesIsNotSaved()
+
+	/**
+	 * A zaaktype the publish guard lets through is saved as published and answers 201.
+	 *
+	 * @return void
+	 */
+	public function testAZaaktypeThePublishGuardPassesIsPublished(): void {
+		$saved = [];
+		$this->storedDraftZaaktype(refusal: null, saved: $saved);
+
+		$response = $this->controller->publishZaaktype(uuid: 'zt-1');
+
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertCount(expectedCount: 1, haystack: $saved);
+		$this->assertFalse(condition: $saved[0]['isDraft']);
+	}//end testAZaaktypeThePublishGuardPassesIsPublished()
 
 	/**
 	 * All three publish routes consult the JWT gate first and return its
