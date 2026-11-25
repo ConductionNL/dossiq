@@ -108,11 +108,21 @@ from `today`.
   `tests/e2e/woo-term-rolls.spec.ts`, asserting the dates `one-term-engine` computes: the case
   deadline is the statutory instance's, and the one extension counts from the unrolled end)
   - Run on the live-pass rig (fresh NC 34 + openregister main, 2026-11-16): passed.
-- [ ] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
+- [x] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
   the portal intake. Read `deadline` and the term instance's `endDateCurrent` through the
   OpenRegister API, and record both. This proves the removed calculation no longer overwrites the
   listener. (live pass, decision 139. Since `one-term-engine` the calculation stays as the fallback
   for a case with no statutory term, so the check reads that the instance's date wins.)
+  - Run 25 Nov 2026 on a sandbox (NC 34.0.6, MariaDB, openregister main 03495635, dossiq
+    development): the portal form's dossiq handler `WooRequestIntake::receive()` (origin
+    `portal-form`, sent 2026-11-27T10:00+01:00) answered `armed`, due 2026-12-28. Through the
+    OpenRegister API the case reads `startDate` 2026-11-27, `deadline` 2026-12-28; its one
+    statutory `deadlineInstance` reads `endDateCalculated` 2026-12-28, `endDateCurrent` 2026-12-28,
+    status `lopend`, with an engine timer. Four weeks end on Christmas Day, so the date rolled past
+    25 and 26 December and the weekend, and the case deadline is the instance's.
+    `GET /api/termijn/reports/kwartaal?period=2026-Q4` lists it under `woo-verzoek` (title
+    Woo-verzoek, received 1, running 1, metShare null) with no `unknown` key and
+    `unresolvedInstances` empty (REQ-WTR-004, REQ-WTR-005).
 
 ## 6. Verify and deliver
 
@@ -125,6 +135,8 @@ from `today`.
   `npm run check:manifest`, plus any other leg that `code-quality.yml` requires. Then run hydra's
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran.
 - [x] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured. (not projectable: no coverage driver here, and `development`'s last green push run, 35823727270 on 23 Sep, published no clover artifact. The PR body lists the test class that pins each added class instead.)
-- [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means
+- [x] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means
   merged on `development` with CI green. Rows 10.9 and 16.2 then read `yes` (build), and
   `production` only with a store release.
+  - Merged on development as a455a5499 (sections 4.1 and 4.2); sections 1 to 3 were built under
+    `archive/2026-11-21-one-term-engine`.
