@@ -6,7 +6,7 @@
  * and the quarterly report: the running terms that end first, with progress
  * and the days left, worked out when the page is opened.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md
  */
 import fs from 'fs'
 import path from 'path'

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * The complaint patterns, behind the reporting audience gate.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  *
  * @SuppressWarnings(PHPMD.StaticAccess) QuarterPeriod::fromParam is a named constructor of a value object.
  */
@@ -84,7 +84,7 @@ class ComplaintPatternsController extends Controller {
 	 *
 	 * @return Response
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	#[NoAdminRequired]
 	public function index(string $quarter = '', string $format = ''): Response {

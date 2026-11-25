@@ -47,7 +47,7 @@ interface ComplaintPatternsInterface {
 	 *
 	 * @throws Throwable When the complaints cannot be read; an empty answer would read "no complaints".
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function forQuarter(QuarterPeriod $period): array;
 }//end interface

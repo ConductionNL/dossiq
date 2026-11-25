@@ -7,7 +7,7 @@
  * department, channel and month, and the handling time per category. All of
  * it reads one endpoint, and none of it is drawn before that endpoint answers.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md
  */
 import fs from 'fs'
 import path from 'path'
