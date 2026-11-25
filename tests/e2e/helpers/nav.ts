@@ -544,6 +544,25 @@ export function caseActOption(page: Page, act: string): Locator {
 }
 
 /**
+ * The sentence that says why an act in the case's acts dialog is greyed out.
+ *
+ * Drawn inside the act's own choice row (CnChoiceCards), where the per-act
+ * `case-act-reason-<id>` line used to be, so the row is what a spec reads.
+ *
+ * @param page The page with the dialog open.
+ * @param act  The act id.
+ * @return That act's row.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActReason(page: Page, act: string): Locator {
+	// The row is the label around the act's radio; its text carries the
+	// title, and for a greyed-out act the reason in place of the description.
+	return page
+		.getByTestId('case-acts-list')
+		.locator('label', { has: page.locator(`input[value$=":${act}"]`) })
+}
+
+/**
  * Click one of a detail page's manifest header actions.
  *
  * These used to be buttons in the page header, so a test clicked them
