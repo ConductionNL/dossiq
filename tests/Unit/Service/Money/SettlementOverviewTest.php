@@ -143,6 +143,133 @@ class SettlementOverviewTest extends TestCase {
 	}//end testWithoutOpenRegisterOrCaseNothingIsRead()
 
 	/**
+	 * The grant actions read every execution of the case with its granted
+	 * amount, advances, interim reports and settlements.
+	 *
+	 * @return void
+	 */
+	public function testTheGrantChainCarriesWhatTheNextStepNeeds(): void {
+		$this->seedChain();
+
+		$result = $this->overview()->chainForCase(caseId: 'case-1');
+
+		$this->assertFalse(condition: $result['empty']);
+		$this->assertSame(expected: ['execution-1'], actual: array_column(array: $result['executions'], column_key: 'id'));
+		$execution = $result['executions'][0];
+		$this->assertSame(expected: 'application-1', actual: $execution['applicationId']);
+		$this->assertSame(expected: 'SUB-2026-1', actual: $execution['applicationNumber']);
+		$this->assertSame(expected: 'in_execution', actual: $execution['status']);
+		$this->assertSame(expected: 50000.0, actual: $execution['grantedAmount']);
+		$this->assertSame(expected: 40000.0, actual: $execution['advancesPaid']);
+		$this->assertSame(expected: ['report-1', 'report-2'], actual: array_column(array: $execution['interimReports'], column_key: 'id'));
+		$this->assertSame(
+			expected: ['settlement-2025', 'settlement-2026', 'settlement-draft'],
+			actual: array_column(array: $execution['settlements'], column_key: 'id')
+		);
+		$this->assertSame(expected: 'draft', actual: $execution['settlements'][2]['status']);
+	}//end testTheGrantChainCarriesWhatTheNextStepNeeds()
+
+	/**
+	 * An interim report reads its number, period, state and whether it was assessed.
+	 *
+	 * @return void
+	 */
+	public function testAnInterimReportSaysWhetherItWasAssessed(): void {
+		$this->seedChain();
+
+		[$open, $assessed] = $this->overview()->chainForCase(caseId: 'case-1')['executions'][0]['interimReports'];
+
+		$this->assertSame(
+			expected: [
+				'id' => 'report-1',
+				'number' => 'TR-1',
+				'periodStart' => '2026-01-01',
+				'periodEnd' => '2026-06-30',
+				'status' => 'expected',
+				'opinion' => '',
+				'assessed' => false,
+			],
+			actual: $open
+		);
+		$this->assertTrue(condition: $assessed['assessed']);
+		$this->assertSame(expected: 'voldoende', actual: $assessed['opinion']);
+	}//end testAnInterimReportSaysWhetherItWasAssessed()
+
+	/**
+	 * Without a decision of its own, an execution takes the granted amount
+	 * only from the single decision of its application that names one.
+	 *
+	 * @return void
+	 */
+	public function testTheGrantedAmountFallsBackOnlyToASingleDecision(): void {
+		$this->seedChain();
+		$this->register->seed(schema: 'subsidieUitvoering', id: 'execution-1', row: ['subsidieaanvraag' => 'application-1']);
+		$this->assertNull(actual: $this->overview()->chainForCase(caseId: 'case-1')['executions'][0]['grantedAmount']);
+
+		$this->register->seed(schema: 'subsidieAanvraag', id: 'application-3', row: ['case' => 'case-3']);
+		$this->register->seed(
+			schema: 'subsidieBeschikking',
+			id: 'decision-3',
+			row: ['subsidieaanvraag' => 'application-3', 'grantedAmount' => '12500.255']
+		);
+		$this->register->seed(
+			schema: 'subsidieUitvoering',
+			id: 'execution-3',
+			row: ['subsidieaanvraag' => 'application-3', 'betaaldeVoorschotten' => 'n/a']
+		);
+		$execution = $this->overview()->chainForCase(caseId: 'case-3')['executions'][0];
+		$this->assertSame(expected: 12500.26, actual: $execution['grantedAmount']);
+		$this->assertNull(actual: $execution['advancesPaid']);
+		$this->assertSame(expected: [], actual: $execution['interimReports']);
+		$this->assertSame(expected: [], actual: $execution['settlements']);
+	}//end testTheGrantedAmountFallsBackOnlyToASingleDecision()
+
+	/**
+	 * A case without an execution, or without a case id, has an empty chain.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnExecutionTheChainIsEmpty(): void {
+		$this->register->seed(schema: 'subsidieAanvraag', id: 'application-4', row: ['case' => 'case-4']);
+
+		$this->assertSame(expected: ['empty' => true, 'executions' => []], actual: $this->overview()->chainForCase(caseId: 'case-4'));
+		$this->assertSame(expected: ['empty' => true, 'executions' => []], actual: $this->overview()->chainForCase(caseId: ''));
+	}//end testWithoutAnExecutionTheChainIsEmpty()
+
+	/**
+	 * The rows the grant chain reads beside the settlements of setUp().
+	 *
+	 * @return void
+	 */
+	private function seedChain(): void {
+		$this->register->seed(schema: 'subsidieAanvraag', id: 'application-1', row: ['case' => 'case-1', 'aanvraagnummer' => 'SUB-2026-1']);
+		$this->register->seed(schema: 'subsidieBeschikking', id: 'decision-1', row: ['subsidieaanvraag' => 'application-1', 'grantedAmount' => 50000]);
+		$this->register->seed(schema: 'subsidieBeschikking', id: 'decision-2', row: ['subsidieaanvraag' => 'application-1', 'grantedAmount' => 12500]);
+		$this->register->seed(
+			schema: 'subsidieUitvoering',
+			id: 'execution-1',
+			row: ['subsidieaanvraag' => 'application-1', 'subsidyDecision' => 'decision-1', 'status' => 'in_execution', 'betaaldeVoorschotten' => '40000']
+		);
+		$this->register->seed(
+			schema: 'interimReport',
+			id: 'report-1',
+			row: [
+				'subsidieuitvoering' => 'execution-1',
+				'rapportagenummer' => 'TR-1',
+				'rapportagePeriodStart' => '2026-01-01T00:00:00+00:00',
+				'rapportagePeriodEnd' => '2026-06-30',
+				'status' => 'expected',
+			]
+		);
+		$this->register->seed(
+			schema: 'interimReport',
+			id: 'report-2',
+			row: ['subsidieuitvoering' => 'execution-1', 'status' => 'approved', 'beoordelingsoordeel' => 'voldoende']
+		);
+		$this->register->seed(schema: 'interimReport', id: 'report-elsewhere', row: ['subsidieuitvoering' => 'execution-other']);
+	}//end seedChain()
+
+	/**
 	 * The overview over the in-memory register.
 	 *
 	 * @return SettlementOverview

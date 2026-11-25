@@ -7,114 +7,77 @@
   Reads the case's grant executions (`GET /api/cases/{caseId}/grant-chain`),
   lets the handler pick one (the only one is picked for them), takes the
   report's number, period and progress, and posts it to the existing grant
-  route (`POST /api/subsidies/uitvoeringen/{id}/tussenrapportages`). A refusal
-  stays in the dialog as the server words it.
+  route (`POST /api/subsidies/uitvoeringen/{id}/tussenrapportages`).
 
   @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 -->
 <template>
-	<NcDialog
+	<GrantStepDialog
 		:name="t('dossiq', 'Record an interim report')"
-		data-testid="interim-report-record-dialog"
-		@closing="$emit('close')">
-		<div class="grant-dialog">
-			<p v-if="loading" data-testid="interim-report-record-loading">
-				{{ t('dossiq', 'Loading the grants …') }}
-			</p>
-			<p v-else-if="executions.length === 0 && !error" data-testid="interim-report-record-empty">
-				{{ t('dossiq', 'This case has no grant in execution to report on.') }}
-			</p>
-			<template v-else-if="executions.length > 0">
-				<NcSelect
-					v-if="executions.length > 1"
-					v-model="executionId"
-					data-testid="interim-report-record-execution"
-					:inputLabel="t('dossiq', 'Grant')"
-					:options="executionOptions"
-					:reduce="(option) => option.id"
-					label="label" />
-				<NcTextField
-					v-model="number"
-					data-testid="interim-report-record-number"
-					:label="t('dossiq', 'Report number')" />
-				<NcTextField
-					v-model="periodStart"
-					data-testid="interim-report-record-start"
-					:label="t('dossiq', 'Period from')"
-					type="date" />
-				<NcTextField
-					v-model="periodEnd"
-					data-testid="interim-report-record-end"
-					:label="t('dossiq', 'Period until')"
-					type="date" />
-				<NcTextArea
-					v-model="progress"
-					data-testid="interim-report-record-progress"
-					:label="t('dossiq', 'Progress')"
-					resize="vertical" />
-			</template>
-			<p
-				v-if="error"
-				class="grant-dialog__error"
-				role="alert"
-				data-testid="interim-report-record-error">
-				{{ error }}
-			</p>
-		</div>
-		<template #actions>
-			<NcButton data-testid="interim-report-record-cancel" @click="$emit('close')">
-				{{ t('dossiq', 'Cancel') }}
-			</NcButton>
-			<NcButton
-				data-testid="interim-report-record-submit"
-				:disabled="!canRecord"
-				variant="primary"
-				@click="record">
-				<template #icon>
-					<FileChartOutline :size="20" />
-				</template>
-				{{ saving ? t('dossiq', 'Recording …') : t('dossiq', 'Record report') }}
-			</NcButton>
+		testid="interim-report-record"
+		:submitLabel="t('dossiq', 'Record report')"
+		:loading="loading"
+		:empty="executions.length === 0 ? t('dossiq', 'This case has no grant in execution to report on.') : ''"
+		:error="error"
+		:canSubmit="canRecord"
+		:saving="saving"
+		@close="$emit('close')"
+		@submit="record">
+		<NcSelect
+			v-if="executions.length > 1"
+			v-model="executionId"
+			data-testid="interim-report-record-execution"
+			:inputLabel="t('dossiq', 'Grant')"
+			:options="executionOptions"
+			:reduce="(option) => option.id"
+			label="label" />
+		<NcTextField
+			v-model="number"
+			data-testid="interim-report-record-number"
+			:label="t('dossiq', 'Report number')" />
+		<NcTextField
+			v-model="periodStart"
+			data-testid="interim-report-record-start"
+			:label="t('dossiq', 'Period from')"
+			type="date" />
+		<NcTextField
+			v-model="periodEnd"
+			data-testid="interim-report-record-end"
+			:label="t('dossiq', 'Period until')"
+			type="date" />
+		<NcTextArea
+			v-model="progress"
+			data-testid="interim-report-record-progress"
+			:label="t('dossiq', 'Progress')"
+			resize="vertical" />
+		<template #icon>
+			<FileChartOutline :size="20" />
 		</template>
-	</NcDialog>
+	</GrantStepDialog>
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { showSuccess } from '@nextcloud/dialogs'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FileChartOutline from 'vue-material-design-icons/FileChartOutline.vue'
-import { executionLabel, loadGrantChain, refusalOf } from './grantChain.js'
+import GrantStepDialog from './GrantStepDialog.vue'
+import { executionLabel, grantStep } from './grantChain.js'
 
 export default {
 	name: 'InterimReportRecordDialog',
 
-	components: { FileChartOutline, NcButton, NcDialog, NcSelect, NcTextArea, NcTextField },
+	components: { FileChartOutline, GrantStepDialog, NcSelect, NcTextArea, NcTextField },
 
-	props: {
-		/** The case uuid whose grant the report is on. */
-		caseId: { type: String, required: true },
-	},
-
-	emits: ['close', 'done'],
+	mixins: [grantStep],
 
 	data() {
 		return {
-			executions: [],
 			executionId: null,
 			number: '',
 			periodStart: '',
 			periodEnd: '',
 			progress: '',
-			loading: false,
-			saving: false,
-			error: '',
 		}
 	},
 
@@ -139,40 +102,24 @@ export default {
 		 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 		 */
 		canRecord() {
-			if (this.saving || !this.executionId || this.number.trim() === '') {
+			if (!this.executionId || this.number.trim() === '') {
 				return false
 			}
 			return this.periodStart === '' || this.periodEnd === '' || this.periodEnd >= this.periodStart
 		},
 	},
 
-	mounted() {
-		this.load()
-	},
-
 	methods: {
-		t,
-
 		/**
-		 * Read the case's grants; the only one is picked.
+		 * The only grant of the case is the one reported on.
 		 *
-		 * @return {Promise<void>}
+		 * @return {void}
 		 *
 		 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 		 */
-		async load() {
-			this.loading = true
-			this.error = ''
-			try {
-				this.executions = await loadGrantChain(this.caseId)
-				if (this.executions.length === 1) {
-					this.executionId = this.executions[0].id
-				}
-			} catch (e) {
-				this.executions = []
-				this.error = refusalOf(e, t('dossiq', 'The grants of this case could not be read.'))
-			} finally {
-				this.loading = false
+		afterLoad() {
+			if (this.executions.length === 1) {
+				this.executionId = this.executions[0].id
 			}
 		},
 
@@ -188,41 +135,23 @@ export default {
 				return
 			}
 			const body = { rapportagenummer: this.number.trim() }
-			if (this.periodStart !== '') {
-				body.rapportagePeriodStart = this.periodStart
+			const optional = {
+				rapportagePeriodStart: this.periodStart,
+				rapportagePeriodEnd: this.periodEnd,
+				substantiveProgress: this.progress.trim(),
 			}
-			if (this.periodEnd !== '') {
-				body.rapportagePeriodEnd = this.periodEnd
+			for (const [field, value] of Object.entries(optional)) {
+				if (value !== '') {
+					body[field] = value
+				}
 			}
-			if (this.progress.trim() !== '') {
-				body.substantiveProgress = this.progress.trim()
-			}
-			this.saving = true
-			this.error = ''
-			try {
-				const url = generateUrl(`/apps/dossiq/api/subsidies/uitvoeringen/${encodeURIComponent(this.executionId)}/tussenrapportages`)
-				const { data } = await axios.post(url, body)
-				showSuccess(t('dossiq', 'Interim report recorded.'))
-				this.$emit('done', data)
-				this.$emit('close')
-			} catch (e) {
-				this.error = refusalOf(e, t('dossiq', 'The interim report could not be recorded.'))
-			} finally {
-				this.saving = false
-			}
+			await this.send(
+				`uitvoeringen/${encodeURIComponent(this.executionId)}/tussenrapportages`,
+				body,
+				() => this.t('dossiq', 'Interim report recorded.'),
+				this.t('dossiq', 'The interim report could not be recorded.'),
+			)
 		},
 	},
 }
 </script>
-
-<style scoped>
-.grant-dialog {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 3);
-}
-
-.grant-dialog__error {
-	color: var(--color-error-text);
-}
-</style>

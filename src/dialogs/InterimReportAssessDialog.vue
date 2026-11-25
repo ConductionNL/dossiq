@@ -15,71 +15,44 @@
   @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 -->
 <template>
-	<NcDialog
+	<GrantStepDialog
 		:name="t('dossiq', 'Assess an interim report')"
-		data-testid="interim-report-assess-dialog"
-		@closing="$emit('close')">
-		<div class="grant-dialog">
-			<p v-if="loading" data-testid="interim-report-assess-loading">
-				{{ t('dossiq', 'Loading the interim reports …') }}
-			</p>
-			<p v-else-if="reports.length === 0 && !error" data-testid="interim-report-assess-empty">
-				{{ t('dossiq', 'This case has no interim report waiting for an assessment.') }}
-			</p>
-			<template v-else-if="reports.length > 0">
-				<NcSelect
-					v-model="reportId"
-					data-testid="interim-report-assess-report"
-					:inputLabel="t('dossiq', 'Interim report')"
-					:options="reportOptions"
-					:reduce="(option) => option.id"
-					label="label" />
-				<p class="grant-dialog__note" data-testid="interim-report-assess-opinion">
-					{{ t('dossiq', 'The report is approved with the assessment voldoende (sufficient).') }}
-				</p>
-				<NcTextField
-					v-model="approvedAmount"
-					data-testid="interim-report-assess-amount"
-					:label="t('dossiq', 'Approved amount (optional)')"
-					type="number" />
-			</template>
-			<p
-				v-if="error"
-				class="grant-dialog__error"
-				role="alert"
-				data-testid="interim-report-assess-error">
-				{{ error }}
-			</p>
-		</div>
-		<template #actions>
-			<NcButton data-testid="interim-report-assess-cancel" @click="$emit('close')">
-				{{ t('dossiq', 'Cancel') }}
-			</NcButton>
-			<NcButton
-				data-testid="interim-report-assess-submit"
-				:disabled="!canAssess"
-				variant="primary"
-				@click="assess">
-				<template #icon>
-					<CheckDecagramOutline :size="20" />
-				</template>
-				{{ saving ? t('dossiq', 'Assessing …') : t('dossiq', 'Assess') }}
-			</NcButton>
+		testid="interim-report-assess"
+		:submitLabel="t('dossiq', 'Assess')"
+		:loading="loading"
+		:empty="reports.length === 0 ? t('dossiq', 'This case has no interim report waiting for an assessment.') : ''"
+		:error="error"
+		:canSubmit="canAssess"
+		:saving="saving"
+		@close="$emit('close')"
+		@submit="assess">
+		<NcSelect
+			v-model="reportId"
+			data-testid="interim-report-assess-report"
+			:inputLabel="t('dossiq', 'Interim report')"
+			:options="reportOptions"
+			:reduce="(option) => option.id"
+			label="label" />
+		<NcTextField
+			v-model="approvedAmount"
+			data-testid="interim-report-assess-amount"
+			:label="t('dossiq', 'Approved amount (optional)')"
+			type="number" />
+		<template #note>
+			{{ reports.length === 0 ? '' : t('dossiq', 'The report is approved with the assessment voldoende (sufficient).') }}
 		</template>
-	</NcDialog>
+		<template #icon>
+			<CheckDecagramOutline :size="20" />
+		</template>
+	</GrantStepDialog>
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { showSuccess } from '@nextcloud/dialogs'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import CheckDecagramOutline from 'vue-material-design-icons/CheckDecagramOutline.vue'
-import { executionLabel, loadGrantChain, refusalOf } from './grantChain.js'
+import GrantStepDialog from './GrantStepDialog.vue'
+import { executionLabel, grantStep } from './grantChain.js'
 
 /** The assessment the approve route records. */
 const SUFFICIENT = 'voldoende'
@@ -87,27 +60,31 @@ const SUFFICIENT = 'voldoende'
 export default {
 	name: 'InterimReportAssessDialog',
 
-	components: { CheckDecagramOutline, NcButton, NcDialog, NcSelect, NcTextField },
+	components: { CheckDecagramOutline, GrantStepDialog, NcSelect, NcTextField },
 
-	props: {
-		/** The case uuid whose grant reports are assessed. */
-		caseId: { type: String, required: true },
-	},
-
-	emits: ['close', 'done'],
+	mixins: [grantStep],
 
 	data() {
 		return {
-			reports: [],
 			reportId: null,
 			approvedAmount: '',
-			loading: false,
-			saving: false,
-			error: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The interim reports of the case's grants not assessed yet, each with its grant.
+		 *
+		 * @return {Array<object>}
+		 *
+		 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+		 */
+		reports() {
+			return this.executions.flatMap((execution) => (Array.isArray(execution.interimReports) ? execution.interimReports : [])
+				.filter((report) => report.assessed !== true)
+				.map((report) => ({ ...report, grant: executionLabel(execution) })))
+		},
+
 		/**
 		 * The reports in the picker: number, period and grant.
 		 *
@@ -134,44 +111,22 @@ export default {
 		 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 		 */
 		canAssess() {
-			if (this.saving || !this.reportId) {
-				return false
-			}
 			const amount = String(this.approvedAmount).trim()
-			return amount === '' || (Number.isFinite(Number(amount)) && Number(amount) >= 0)
+			return Boolean(this.reportId) && (amount === '' || Number(amount) >= 0)
 		},
 	},
 
-	mounted() {
-		this.load()
-	},
-
 	methods: {
-		t,
-
 		/**
-		 * Read the reports of the case's grants that wait for an assessment.
+		 * The only open report of the case is the one assessed.
 		 *
-		 * @return {Promise<void>}
+		 * @return {void}
 		 *
 		 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 		 */
-		async load() {
-			this.loading = true
-			this.error = ''
-			try {
-				const executions = await loadGrantChain(this.caseId)
-				this.reports = executions.flatMap((execution) => (Array.isArray(execution.interimReports) ? execution.interimReports : [])
-					.filter((report) => report.assessed !== true)
-					.map((report) => ({ ...report, grant: executionLabel(execution) })))
-				if (this.reports.length === 1) {
-					this.reportId = this.reports[0].id
-				}
-			} catch (e) {
-				this.reports = []
-				this.error = refusalOf(e, t('dossiq', 'The interim reports of this case could not be read.'))
-			} finally {
-				this.loading = false
+		afterLoad() {
+			if (this.reports.length === 1) {
+				this.reportId = this.reports[0].id
 			}
 		},
 
@@ -191,37 +146,13 @@ export default {
 			if (amount !== '') {
 				body.approvedAmount = Number(amount)
 			}
-			this.saving = true
-			this.error = ''
-			try {
-				const url = generateUrl(`/apps/dossiq/api/subsidies/tussenrapportages/${encodeURIComponent(this.reportId)}/beoordelen`)
-				const { data } = await axios.post(url, body)
-				showSuccess(t('dossiq', 'Interim report assessed as voldoende.'))
-				this.$emit('done', data)
-				this.$emit('close')
-			} catch (e) {
-				this.error = refusalOf(e, t('dossiq', 'The interim report could not be assessed.'))
-			} finally {
-				this.saving = false
-			}
+			await this.send(
+				`tussenrapportages/${encodeURIComponent(this.reportId)}/beoordelen`,
+				body,
+				() => this.t('dossiq', 'Interim report assessed as voldoende.'),
+				this.t('dossiq', 'The interim report could not be assessed.'),
+			)
 		},
 	},
 }
 </script>
-
-<style scoped>
-.grant-dialog {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 3);
-}
-
-.grant-dialog__note {
-	color: var(--color-text-maxcontrast);
-	margin: 0;
-}
-
-.grant-dialog__error {
-	color: var(--color-error-text);
-}
-</style>

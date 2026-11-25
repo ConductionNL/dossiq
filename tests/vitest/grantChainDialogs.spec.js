@@ -67,8 +67,8 @@ const EXECUTION = {
 		{ id: 'report-0', number: 'TR-0', periodStart: '', periodEnd: '', status: 'approved', opinion: 'voldoende', assessed: true },
 	],
 	settlements: [
-		{ id: 'settlement-1', actualCostTotal: 35000, determinedAmount: null, determined: false },
-		{ id: 'settlement-0', actualCostTotal: 1000, determinedAmount: 1000, determined: true },
+		{ id: 'settlement-1', actualCostTotal: 35000, determinedAmount: null, status: 'draft' },
+		{ id: 'settlement-0', actualCostTotal: 1000, determinedAmount: 1000, status: 'determined' },
 	],
 }
 

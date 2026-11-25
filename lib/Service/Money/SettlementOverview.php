@@ -63,7 +63,24 @@ class SettlementOverview implements SettlementOverviewInterface {
 		self::APPLICATION_SCHEMA => 'case',
 		self::EXECUTION_SCHEMA => 'subsidieaanvraag',
 		self::SETTLEMENT_SCHEMA => 'subsidieuitvoering',
+		self::DECISION_SCHEMA => 'subsidieaanvraag',
+		self::INTERIM_REPORT_SCHEMA => 'subsidieuitvoering',
 	];
+
+	/**
+	 * The schema of a grant decision; it names the application.
+	 */
+	public const DECISION_SCHEMA = 'subsidieBeschikking';
+
+	/**
+	 * The schema of an interim report; it names the execution.
+	 */
+	public const INTERIM_REPORT_SCHEMA = 'interimReport';
+
+	/**
+	 * The states of an interim report that mean it has been assessed.
+	 */
+	private const ASSESSED_REPORT_STATES = ['approved', 'rejected', 'gedeeltelijk_approved'];
 
 	/**
 	 * Rows read per step.
@@ -111,6 +128,113 @@ class SettlementOverview implements SettlementOverviewInterface {
 			'settlements' => $settlements,
 		];
 	}//end forCase()
+
+	/**
+	 * The executions of the case's grants, each with what the grant actions
+	 * of its case page need: the granted amount, the advances paid, its
+	 * interim reports and its settlements.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{empty: bool, executions: list<array<string, mixed>>}
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	public function chainForCase(string $caseId): array {
+		$executions = [];
+		foreach ($this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId) as $application) {
+			$granted = $this->grantedAmounts(applicationId: $this->idOf(row: $application));
+			foreach ($this->rows(schema: self::EXECUTION_SCHEMA, value: $this->idOf(row: $application)) as $execution) {
+				$executions[] = $this->executionOf(execution: $execution, application: $application, granted: $granted);
+			}
+		}
+
+		return [
+			'empty' => $executions === [],
+			'executions' => $executions,
+		];
+	}//end chainForCase()
+
+	/**
+	 * One execution as the grant actions read it.
+	 *
+	 * @param array<string, mixed> $execution   The execution row.
+	 * @param array<string, mixed> $application The application it executes.
+	 * @param array<string, float> $granted     Granted amount per decision id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	private function executionOf(array $execution, array $application, array $granted): array {
+		$executionId   = $this->idOf(row: $execution);
+		$settles       = ['applicationId' => $this->idOf(row: $application), 'executionId' => $executionId];
+		$grantedAmount = ($granted[(string)($execution['subsidyDecision'] ?? '')] ?? null);
+		if ($grantedAmount === null && count($granted) === 1) {
+			$grantedAmount = array_values($granted)[0];
+		}
+
+		return [
+			'id' => $executionId,
+			'applicationId' => $settles['applicationId'],
+			'applicationNumber' => (string)($application['aanvraagnummer'] ?? ''),
+			'status' => (string)($execution['status'] ?? ''),
+			'grantedAmount' => $grantedAmount,
+			'advancesPaid' => $this->amountOf(value: $execution['betaaldeVoorschotten'] ?? null),
+			'interimReports' => array_map(
+				fn (array $report): array => $this->reportOf(report: $report),
+				$this->rows(schema: self::INTERIM_REPORT_SCHEMA, value: $executionId)
+			),
+			'settlements' => array_map(
+				fn (array $settlement): array => $this->rowOf(settlement: $settlement, settles: $settles),
+				$this->rows(schema: self::SETTLEMENT_SCHEMA, value: $executionId)
+			),
+		];
+	}//end executionOf()
+
+	/**
+	 * The amount each decision of the application granted, by decision id.
+	 *
+	 * @param string $applicationId The application id.
+	 *
+	 * @return array<string, float>
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	private function grantedAmounts(string $applicationId): array {
+		$granted = [];
+		foreach ($this->rows(schema: self::DECISION_SCHEMA, value: $applicationId) as $decision) {
+			$amount = $this->amountOf(value: $decision['grantedAmount'] ?? null);
+			if ($amount !== null) {
+				$granted[$this->idOf(row: $decision)] = $amount;
+			}
+		}
+
+		return $granted;
+	}//end grantedAmounts()
+
+	/**
+	 * One interim report as the assess action lists it.
+	 *
+	 * @param array<string, mixed> $report The interim report row.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	private function reportOf(array $report): array {
+		$status = (string)($report['status'] ?? '');
+
+		return [
+			'id' => $this->idOf(row: $report),
+			'number' => (string)($report['rapportagenummer'] ?? ''),
+			'periodStart' => substr((string)($report['rapportagePeriodStart'] ?? ''), 0, 10),
+			'periodEnd' => substr((string)($report['rapportagePeriodEnd'] ?? ''), 0, 10),
+			'status' => $status,
+			'opinion' => (string)($report['beoordelingsoordeel'] ?? ''),
+			'assessed' => in_array($status, self::ASSESSED_REPORT_STATES, true),
+		];
+	}//end reportOf()
 
 	/**
 	 * One settlement as the case page reads it.
