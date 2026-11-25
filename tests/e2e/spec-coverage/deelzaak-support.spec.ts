@@ -24,6 +24,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
+import { openCasePanel } from '../helpers/case-panels.ts'
 import {
 	createObject,
 	ensureCaseType,
@@ -33,6 +34,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	updateObject,
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 
@@ -197,14 +199,19 @@ async function seedParentWithChildren(options: {
 
 		const children: any[] = []
 		for (const [index, fields] of options.children.entries()) {
+			// Created in its lifecycle's initial state, THEN moved to this run's
+			// status. OpenRegister refuses a create that sets any other state
+			// ("A new object starts in <initial>; <status> cannot be set when it
+			// is created", 422), which turned every leg of this file red before
+			// it reached the page.
 			const created = await seedCase(api, token, {
 				title: `${RUN_PREFIX} deelzaak child ${index + 1}`,
 				caseType: caseType.id,
 				parentCase: parentId,
-				status: statusId,
 				description: 'Seeded by deelzaak-support.spec.ts (section legs).',
 				...fields,
 			})
+			await updateObject(api, token, 'case', objectId(created), { status: statusId })
 			children.push(await showObject(api, 'case', objectId(created)))
 		}
 		return { parentId, children, statusName }
@@ -283,7 +290,7 @@ function escapeForRegExp(value: string): string {
  * The cell may carry the ISO string the server stored or the localised form
  * the renderer chose, and which of the two is a rendering decision rather than
  * something this requirement has an opinion about. What it does have an
- * opinion about is that the deadline is SHOWN, so both spellings pass and an
+ * opinion about is that the deadline is SHOWN, so every spelling passes and an
  * empty cell, or another date, fails.
  *
  * @param  iso The stored date, `YYYY-MM-DD`.
@@ -297,6 +304,12 @@ function deadlineSpellings(iso: string): RegExp {
 			escapeForRegExp(`${day}-${month}-${year}`),
 			escapeForRegExp(`${Number(day)}-${Number(month)}-${year}`),
 			escapeForRegExp(`${day}/${month}/${year}`),
+			// The medium forms the list's date formatter prints in the two
+			// languages the suite runs in ("Jan 20, 2027", "20 jan 2027").
+			...['en-US', 'nl-NL'].map((locale) => escapeForRegExp(
+				new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+					.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC', year: 'numeric' }),
+			)),
 		].join('|'),
 	)
 }
@@ -354,59 +367,35 @@ async function openSubCasesSectionOrSkip(page, onCase?: string) {
 	// still displays the section — but reaching it takes a click, and the panel is
 	// LAZY, so its table does not exist in the DOM until the tab is opened.
 	// Asserting the container alone would pass while the list below never renders.
-	const tab = page
-		.locator('.cn-tabs-widget')
-		.getByRole('tab', { name: 'Related', exact: true })
-		.first()
-	if ((await tab.count()) > 0) {
-		await expect(
-			tab,
-			'CaseDetail must offer the "Sub-cases" section (deelzaak-support: '
-				+ '"Sub-cases section on parent case detail")',
-		).toBeVisible({ timeout: 15_000 })
-		await tab.click()
+	// The sub-cases section is on the Related tab, and since REQ-CDV-16 the
+	// strip shows five tabs with the rest under More, Related among them. A
+	// lookup for a Related TAB therefore found nothing and fell through to a
+	// "card on the grid" branch that no layout has any more, so every leg
+	// failed before it reached the section. `openCasePanel` opens the tab
+	// through the More menu when it is folded, and asserts the section renders.
+	const panel = await openCasePanel(page, 'subCases')
 
-		// WAIT for the panel to fill. The panel is lazy, so the click starts a
-		// mount AND a fetch, and the caller's `count()` takes one snapshot that
-		// cannot retry — it fired against an empty panel and reported the
-		// section missing. Same trap the comment above guards for the tab
-		// itself; making the panel lazy moved it one step later.
-		// Scoped to the sub-cases SECTION and not to the whole panel. Since the
-		// strip came down from fourteen tabs to six, the Related tab holds the
-		// related-cases list ABOVE this one, so an unscoped `table` count is
-		// satisfied by the neighbouring table and this test would pass with the
-		// sub-cases list missing entirely.
-		const panel = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-sub-cases"]',
+	// WAIT for the panel to fill. The panel is lazy, so opening the tab starts
+	// a mount AND a fetch, and a one-shot `count()` fired against an empty
+	// panel and reported the section missing. Scoped to the sub-cases SECTION:
+	// the Related tab holds the related-cases list above this one, so an
+	// unscoped `table` count is satisfied by the neighbouring table.
+	await expect
+		.poll(
+			async () =>
+				(await panel.locator('.viewTable, table').count())
+				+ (await panel
+					.getByText(
+						/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
+					)
+					.count()),
+			{
+				timeout: 20_000,
+				message:
+					'the Sub-cases panel rendered neither a table nor an empty state within 20s',
+			},
 		)
-		await expect
-			.poll(
-				async () =>
-					(await panel.locator('.viewTable, table').count())
-					+ (await panel
-						.getByText(
-							/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
-						)
-						.count()),
-				{
-					timeout: 20_000,
-					message:
-						'the Sub-cases panel rendered neither a table nor an empty state within 20s',
-				},
-			)
-			.toBeGreaterThan(0)
-	} else {
-		// Pre-tabs layout: the section is a card on the grid.
-		const section = page
-			.locator('.cn-widget-wrapper, section, [class*="widget"]')
-			.filter({ hasText: /Sub-cases/i })
-			.first()
-		await expect(
-			section,
-			'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
-				+ '"Sub-cases section on parent case detail")',
-		).toBeVisible({ timeout: 15_000 })
-	}
+		.toBeGreaterThan(0)
 
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true
@@ -648,13 +637,13 @@ test.describe('Sub-cases list + create (deelzaak-support REQ — section / creat
 })
 
 test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigation / progress)', () => {
-	// @e2e deelzaak-support::sub-case-shows-parent-breadcrumb
-	// @e2e deelzaak-support::top-level-case-has-no-breadcrumb
+	// @e2e deelzaak-support::sub-case-shows-its-parent-in-the-trail
+	// @e2e deelzaak-support::top-level-case-has-no-parent-in-the-trail
 	// @e2e deelzaak-support::roll-up-shows-completion-progress
 	// @e2e deelzaak-support::roll-up-with-no-completed-sub-cases
 	// The roll-up is the Sub-cases section's summary line on the parent's
-	// Related tab, and the parent is named, as a link, in the sub-case's own
-	// related-cases section. Each test seeds the exact shape it asserts, so
+	// Related tab, and the parent is named, as a link, in the trail under the
+	// sub-case's title (REQ-CDV-15). Each test seeds the exact shape it asserts, so
 	// "some X/Y" or "some link" cannot pass for the scenario.
 	test('the roll-up counts completed sub-cases exactly', async ({ page }) => {
 		// Two sub-cases, one completed. Completion is an endDate and nothing
@@ -691,28 +680,52 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
+	/**
+	 * The trail under the title, read crumb by crumb.
+	 *
+	 * The requirement places the parent's NUMBER in the trail between "All
+	 * cases" and the case's own number, as a link (REQ-CDV-15: the trail never
+	 * repeats a title). These two tests used to look for a link with the
+	 * parent's TITLE in the Related section, which shows the parent as a
+	 * collapsed, unlinked row, and for a `nav[aria-label="breadcrumb"]` that no
+	 * page renders any more, so the top-level leg passed on any page at all.
+	 *
+	 * @param page The page, on a case.
+	 * @return The trail.
+	 */
+	function trail(page) {
+		return page.locator('[data-testid="cn-detail-page-breadcrumbs"]')
+	}
+
 	test('a sub-case names its parent, as a link back to it', async ({ page }) => {
 		const parentTitle = `${RUN_PREFIX} breadcrumb parent`
 		const { parentId, children } = await seedParentWithChildren({
 			title: parentTitle,
 			children: [{}],
 		})
-		const childId = objectId(children[0])
+		const child = children[0]
+		const api = await request.newContext({ storageState: STORAGE_STATE })
+		const parent = await showObject(api, 'case', parentId)
+		await api.dispose()
+		const parentNumber = String(parent?.identifier ?? '')
+		const childNumber = String(child?.identifier ?? '')
+		expect(parentNumber, 'the seeded parent must carry a case number').not.toBe('')
+		expect(childNumber, 'the seeded sub-case must carry a case number').not.toBe('')
 
-		// The sub-case is a case: it opens as one, on its own Related tab.
-		await openSubCasesSectionOrSkip(page, childId)
-		const related = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
-		)
-
-		// THE PARENT BY NAME, and the way BACK rather than a label.
-		const back = related.getByRole('link', {
-			name: new RegExp(escapeForRegExp(parentTitle)),
+		await page.goto(`/index.php/apps/dossiq/cases/${objectId(child)}`, {
+			waitUntil: 'domcontentloaded',
 		})
+		await dismissSupportDialog(page).catch(() => {})
+
+		// "All cases / <parent number> / <own number>", in that order.
 		await expect(
-			back,
-			'a sub-case must name its parent case and link to it',
-		).toHaveCount(1, { timeout: 30_000 })
+			trail(page).locator('[data-testid^="cn-breadcrumbs-crumb-"]'),
+			'the trail must read All cases / parent number / own number',
+		).toHaveText([/^(All cases|Alle zaken)$/, parentNumber, childNumber], { timeout: 30_000 })
+
+		// The parent's number is the way BACK.
+		const back = trail(page).getByRole('link', { name: parentNumber, exact: true })
+		await expect(back, 'the parent number in the trail must be a link').toHaveCount(1)
 		await back.click()
 		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), { timeout: 30_000 })
 
@@ -720,26 +733,25 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	})
 
 	test('a top-level case shows no parent breadcrumb', async ({ page }) => {
-		// The other direction, without which `top-level-case-has-no-breadcrumb`
-		// is cited by a test that only ever looks at sub-cases. The parent
-		// seeded here has `parentCase` null, which is exactly the scenario's
-		// precondition.
+		// The other direction. The parent seeded here has `parentCase` null,
+		// which is exactly the scenario's precondition.
 		const { parentId } = await seedParentWithChildren({ children: [{}] })
+		const api = await request.newContext({ storageState: STORAGE_STATE })
+		const parent = await showObject(api, 'case', parentId)
+		await api.dispose()
+		const ownNumber = String(parent?.identifier ?? '')
+		expect(ownNumber, 'the seeded case must carry a case number').not.toBe('')
 
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
 			waitUntil: 'domcontentloaded',
 		})
 		await dismissSupportDialog(page).catch(() => {})
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
-			timeout: 30_000,
-		})
 
+		// Exactly two crumbs: nothing between "All cases" and the case itself.
 		await expect(
-			page.locator(
-				'nav[aria-label="breadcrumb"], .deelzaak-detail__breadcrumb',
-			),
-			'a case with no parent must display no parent breadcrumb',
-		).toHaveCount(0)
+			trail(page).locator('[data-testid^="cn-breadcrumbs-crumb-"]'),
+			'a case with no parent must have no parent in its trail',
+		).toHaveText([/^(All cases|Alle zaken)$/, ownNumber], { timeout: 30_000 })
 
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})

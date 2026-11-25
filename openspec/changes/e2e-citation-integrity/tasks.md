@@ -26,12 +26,60 @@ Two rules apply throughout.
 
 These say a refusal, a permission or a guard is proven. None of them prove one.
 
-- [ ] 1.1 `admin-settings#regular-users-cannot-access-admin-settings`. The scenario names a regular non-admin user and requires HTTP 403. The test probes anonymous (`storageState: undefined`) and asserts `not.toBe(200)`. Rewrite against an authenticated non-admin principal and assert 403 exactly. An anonymous 401 proves nothing about a logged-in user, which is the case the scenario is about. Keep an anonymous probe as a second test if it is wanted, but it does not carry this anchor.
-- [ ] 1.2 `handler-vervanging-waarneming#self-substitution-is-rejected`. Submit a substitution naming the same user as absentee and substitute. Assert the validation error and that no `substitution` object was created. The current test opens the form and reads its labels.
-- [ ] 1.3 `handler-vervanging-waarneming#bulk-reassignment-is-coordinator-only`. Probe with a user who does not hold the coordinator role and assert the refusal. Asserting the button is visible to an authorised user is the wrong half of the scenario.
-- [ ] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.
-- [ ] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
-- [ ] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
+- [x] 1.1 `admin-settings#regular-users-cannot-access-admin-settings`. The scenario names a regular non-admin user and requires HTTP 403. The test probes anonymous (`storageState: undefined`) and asserts `not.toBe(200)`. Rewrite against an authenticated non-admin principal and assert 403 exactly. An anonymous 401 proves nothing about a logged-in user, which is the case the scenario is about. Keep an anonymous probe as a second test if it is wanted, but it does not carry this anchor.
+      **Proven live 2026-11-25** (sandbox Nextcloud 34 + MariaDB, OpenRegister main, dossiq development, seeded by
+      `tests/e2e/ci-seed.sh`). The rewrite from #2476 (a signed-in `e2euser`, named by whoami, with a
+      `/settings/user` 200 control, asserting 403 exactly) passes. Watched red: with the dossiq admin setting
+      delegated to a group holding `e2euser` (`occ admin-delegation:add 'OCA\Dossiq\Settings\AdminSettings' <group>`)
+      it fails with `Expected: 403, Received: 200`; delegation removed after. The sibling
+      `#admin-settings-page-is-accessible` test in the same file looked for a "Case Type Management" heading on the
+      first tab and was red on a page that does what the scenario asks: AdminRoot.vue is tabbed, and both sections the
+      scenario names ("Case type management", "ZGW API connection") sit on the Advanced tab. It now names the page
+      by its title, opens Advanced and asserts both sections; renaming the section in the served bundle turns it red.
+- [x] 1.2 `handler-vervanging-waarneming#self-substitution-is-rejected`. Submit a substitution naming the same user as absentee and substitute. Assert the validation error and that no `substitution` object was created. The current test opens the form and reads its labels.
+      **Proven live 2026-11-25** (same sandbox as 1.1). The test from #2476 posts the same user as absentee and
+      substitute, asserts the 400 naming the rule and that no substitution row was written; green. Watched red with
+      the equality check in `SubstitutionValidator::assertIdentities()` disabled: `Expected: 400, Received: 201`.
+- [x] 1.3 `handler-vervanging-waarneming#bulk-reassignment-is-coordinator-only`. Probe with a user who does not hold the coordinator role and assert the refusal. Asserting the button is visible to an authorised user is the wrong half of the scenario.
+      **Proven live 2026-11-25.** The execute half probed `/api/reassignments/execute`, a route #2832 removed: it
+      answered 404 to everyone, so the 403 assertion was red on a correct build and would have stayed meaningless on a
+      broken one. Since #2832 the execute is `POST /api/substitutions/release-caseload` (with a written reason), and
+      the test now probes that route; the preview half, the nothing-moved check and the coordinator control are
+      unchanged. Green; watched red with `SubstitutionController::coordinatorRefusal()`'s coordinator check disabled
+      (`Expected: 403, Received: 500`, the release itself then failed for the seeded user).
+      FOUND, not fixed here: `src/modals/BulkReassignModal.vue` still executes through
+      `substitutionApi.executeReassignment()`, which posts to the removed `/api/reassignments/execute`, so the
+      coordinator's bulk reassign in the substitution admin answers 404. Its replacement asks for a written reason and
+      commits the previewed bulk job through OpenRegister's commit route (D-6), which is UI work for its own change.
+- [x] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.
+      **Proven live 2026-11-25.** The three refusals each have their own fixture and test (#2489 and later): an
+      empty `subCaseTypes` allow-list, a closed parent and a parent that is itself a sub-case are refused by
+      `POST /api/deelzaken/validate` and show no Create control. All three green; all three red with
+      `DeelzaakService::parentRefusal()` answering no reason ("must be refused by the server"). Before they could run,
+      every leg of the file was red on two suite defects, fixed here: (1) sub-cases were seeded with a non-initial
+      status, which OpenRegister main refuses at create (422 "A new object starts in ..."), so the child is now
+      created in its initial state and then moved to the run's status; (2) the sub-cases section is on the Related
+      tab, which REQ-CDV-16 folds into the strip's overflow menu, and the shared `openCaseTab` helper looked for a
+      `.cn-tabs__more` button the strip no longer draws (it is an NcActions toggle labelled Actions), so it now
+      accepts both.
+      Fixed in the app on the way: the full profile's `case-sub-cases` Status column printed the status id,
+      truncated ("689fcd5c..."), not its name; it now uses the `statusTypeName` formatter the simple profile and the
+      other case lists already use.
+      The trail legs (`#sub-case-shows-its-parent-in-the-trail`, `#top-level-case-has-no-parent-in-the-trail`; the
+      anchors followed the renamed scenarios) looked for the parent's title in the Related section and for a
+      `nav[aria-label="breadcrumb"]` no page renders, so the top-level leg passed on any page. Both now read the trail
+      under the title crumb by crumb; green, and red with the trail's parent crumb broken in the served bundle.
+      Still red, not this row: `#create-sub-case-from-parent-case-detail` - the Create sub-case dialog opens and says
+      "No allowed sub-case types" for a parent whose type the server's validate call has just accepted, so the
+      modal reads the allow-list differently from the server (a DeelzaakCreateModal bug, not a test one).
+      Flaky, group 2: `#sub-case-counts-batch-loaded-per-page` saw 3 count requests in one of three runs (limit 2).
+- [x] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
+      **Settled:** the scenario carries a reason-bearing `@e2e exclude` (the section renders on every case and
+      shows its empty state; no conditional visibility exists to hide it), which is the repair this row names when
+      the feature is not built. Nothing cites it any more.
+- [x] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
+      **Settled:** both delete scenarios left `openspec/specs/deelzaak-support/spec.md` with the archival rule (a case
+      is not deleted, cases-are-archival-no-delete), and their tests went with them; nothing cites them.
 - [ ] 1.7 `document-zaakdossier`, four citations on unconditionally fixme'd tests: `#req-zak-005a` (dialog must not close before required fields), `#req-zak-005c` (executable uploads blocked by extension and magic bytes), `#req-zak-006b` (restore disabled on definitief), `#req-zak-008c` (per-document bulk result). The tests are blocked on a seeded case fixture (#764). Until that fixture exists, these anchors are claims nothing backs: move them to `@e2e exclude` naming #764, or land the fixture. The upload guard is the one to land first.
 - [ ] 1.8 `document-zaakdossier#req-zak-006b` again, its second home in `case-documents.spec.ts`. The `toBeDisabled()` check sits in a loop over `restore.count()`, so a panel with zero Restore buttons is green. Assert the button exists before asserting it is disabled.
 - [x] 1.9 `first-time-setup` REQ-SETUP-PRO-001. The test asserts the wizard's step list does **not** contain `seed` while the cited requirement mandates a `seed` step. This is the only anti-coverage in the set: implementing the cited requirement turns the test red. Settle which of the two is current, then fix the other. Do not fix the test without reading the spec.
@@ -44,7 +92,17 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       stayed.
 - [ ] 1.10 `case-types` cycle refusal. The test saves the cyclical parent successfully and asserts only that blueprint traversal terminates. The scenario requires the save to fail with a message naming the cycle. Assert the refusal and the message.
 - [ ] 1.11 `friendly-case-create-form#req-fcf-003`. The test accepts the answer on `case.properties` OR as a `caseProperty` row, so the "never as properties of the case itself" clause cannot fail. If both stores really are live during a transition, the requirement is wrong and should say so; if not, assert the single store.
-- [ ] 1.12 `handler-vervanging-waarneming#scope-limited-substitution-only-routes-matching-items`, `#all-actions-under-a-substitution-are-queryable`, `#timeline-shows-the-substituted-capacity`, `#preview-before-execution`. Four more on the same file, all page-load or affordance-present assertions. This file is the densest cluster in the audit: 9 of 9 citations non-verified, three of its five tests falling back to `test.skip` when a heading fails to appear. Rewrite the file against seeded substitutions or exclude its scenarios with reasons.
+- [x] 1.12 `handler-vervanging-waarneming#scope-limited-substitution-only-routes-matching-items`, `#all-actions-under-a-substitution-are-queryable`, `#timeline-shows-the-substituted-capacity`, `#preview-before-execution`. Four more on the same file, all page-load or affordance-present assertions. This file is the densest cluster in the audit: 9 of 9 citations non-verified, three of its five tests falling back to `test.skip` when a heading fails to appear. Rewrite the file against seeded substitutions or exclude its scenarios with reasons.
+      **Proven live 2026-11-25.** All three cited tests (#2476's rewrite against seeded substitutions) are green, each
+      watched red under a mutation of the code it guards: the caseTypes scope check in
+      `SubstitutedWorkResolver::caseInScope()` answering true (the out-of-scope case is routed), the action list sorted
+      newest first in `SubstitutionAuditService::actionsOn()` (order differs), and the coordinator preview answering no
+      cases (`Received array: []`). `#timeline-shows-the-substituted-capacity` is a reason-bearing `@e2e exclude` on
+      the spec (no call site writes the capacity stamp yet).
+      Seen in the same file, outside group 1: `#handler-registers-their-own-substitution` is red on OpenRegister main,
+      which refuses a non-admin create on a schema with no authorization block (`User 'E2E Ordinary User' does not have
+      permission to 'create' objects in schema 'Substitution'`, served as a 500). Which group may register a
+      substitution is an access-control decision, left to Ruben (COORDINATOR-QUEUE).
 - [ ] 1.13 `document-zaakdossier#req-zak-004a` and `#req-zak-004b` on `cases index renders so a case dossier tab can be opened`. The opening example. The test loads `/cases` and asserts no 500. Neither anchor belongs on it.
 
 ## 2. Remaining smoke (23 citations)
