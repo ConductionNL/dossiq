@@ -104,8 +104,19 @@ named change is archived.
     renders `items[0]` (fields in the served order, grouped by `sections`) and
     offers `drafts`; hidden presets arrive only in `presets[]` and are written
     on save, never shown (buildiq `registration-form-builder` 4.4).
-  - [ ] 15.5 Write `case.intakeChannel` from the served form's `channel` when a
+    > Partly done 25 Nov 2026 (with 15.5): the hidden presets are written on save,
+    > filling only fields the handler left empty. Left: render `items[0]`'s fields
+    > in the served order grouped by `sections`, and offer `drafts`; the create
+    > dialog is nextcloud-vue's CnAdvancedFormDialog, so that needs a library prop
+    > that takes a served field list first.
+  - [x] 15.5 Write `case.intakeChannel` from the served form's `channel` when a
     case is created from it (buildiq `forms-per-case-type` 8.4).
+    > Done 25 Nov 2026: `src/services/servedRegistrationForm.js`, read in the
+    > `new-case` create-override beside the requester; the desk asks with
+    > `audience=employee`, `channel=balie` (dossiq's own desk value, since buildiq
+    > checks a channel against the case's `intakeChannel` enum). The channel is
+    > written only when it is in that enum and the handler left the field empty
+    > or at its default `manual`. Test: tests/vitest/servedRegistrationForm.spec.js.
   - [ ] 15.6 Field half of gap-register row B16: `order`, `group` and
     `placeholder` on `propertyDefinition`, in the CT-1 change (buildiq
     `competitor-parity-2026-09` 2.1).

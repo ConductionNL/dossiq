@@ -30,6 +30,11 @@ vi.mock('../../src/services/intakeTriageApi.js', () => ({
 	fetchIntakeRequirements: async (caseTypeId) => { calls.push(['policy', caseTypeId]); return { duplicatePolicy: 'warn', mayOverrideDuplicates: true } },
 }))
 
+vi.mock('../../src/services/servedRegistrationForm.js', () => ({
+	fetchServedRegistrationForm: async () => null,
+	withServedForm: (candidate) => candidate,
+}))
+
 const { createCaseWithDuplicateCheck } = await import('../../src/services/createCaseWithDuplicateCheck.js')
 
 /**

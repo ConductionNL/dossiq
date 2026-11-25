@@ -33,6 +33,7 @@ import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
 import { initiatorChoice } from './initiatorSearch.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
+import { fetchServedRegistrationForm, withServedForm } from './servedRegistrationForm.js'
 
 /** The case field carrying why a case was filed over a warning. */
 export const FIELD_REASON = 'duplicateOverrideReason'
@@ -140,6 +141,7 @@ async function withRequester(payload) {
  * @throws {Error} When the handler cancelled, so the dialog stays open.
  *
  * @spec openspec/specs/friendly-case-create-form/spec.md
+ * @spec openspec/changes/competitor-parity-2026-09/tasks.md#15
  */
 export async function createCaseWithDuplicateCheck(payload, context) {
 	// 🔴 THE LIBRARY'S STORE, NOT DOSSIQ'S. `CnActionButtons` resolved
@@ -151,7 +153,13 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	// somewhere a reader would look.
 	const store = useObjectStore()
 	const type = context?.type || 'case'
-	const candidate = await withRequester(payload)
+	// The form buildiq serves for the case type (if any) is read beside the
+	// requester, so filing waits on one round trip, not two.
+	const [withParty, served] = await Promise.all([
+		withRequester(payload),
+		fetchServedRegistrationForm(payload?.caseType),
+	])
+	const candidate = withServedForm(withParty, served)
 	const verdict = await duplicateVerdict(candidate)
 	if (verdict.affordances.show === false) {
 		return store.saveObject(type, candidate)
