@@ -133,6 +133,7 @@ const BidScoreDialog = lazyComponent(() => import('./dialogs/BidScoreDialog.vue'
 const InterimReportRecordDialog = lazyComponent(() => import('./dialogs/InterimReportRecordDialog.vue'), 'InterimReportRecordDialog')
 const InterimReportAssessDialog = lazyComponent(() => import('./dialogs/InterimReportAssessDialog.vue'), 'InterimReportAssessDialog')
 const GrantSettleDialog = lazyComponent(() => import('./dialogs/GrantSettleDialog.vue'), 'GrantSettleDialog')
+const SessionScheduleDialog = lazyComponent(() => import('./dialogs/SessionScheduleDialog.vue'), 'SessionScheduleDialog')
 const AssessmentDecisionDialog = lazyComponent(() => import('./dialogs/AssessmentDecisionDialog.vue'), 'AssessmentDecisionDialog')
 const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')
 const CaseCopyDialog = lazyComponent(() => import('./dialogs/CaseCopyDialog.vue'), 'CaseCopyDialog')
@@ -482,6 +483,14 @@ const registry = {
 		propsSchema: {},
 		_note: "CaseDetail `grant-settle` header action (REQ-SUB-CASE-01). Lists the case's settlements not determined yet with the granted amount, the advances and the actual costs as stored (GET /api/cases/{caseId}/grant-chain), and posts the three figures to POST /api/subsidies/vaststellingen/{id}/vast; the server settles and proposes a draft recovery when the advances exceed the settled amount, which the dialog reports.",
 	},
+	// @spec openspec/changes/complaints-are-a-case-type/tasks.md#2.3
+	SessionScheduleDialog: {
+		kind: 'modal',
+		component: SessionScheduleDialog,
+		propsSchema: {},
+		_note: "CaseDetail `session-schedule` header action (complaints-are-a-case-type 2.3, REQ-CSS-2). Reads the sessions the case type declares (GET /api/cases/{caseId}/sessions, from caseType.sessions[]), takes when, where and one name per invitee role, and posts the plan to POST /api/cases/{caseId}/sessions; the server keeps the inspection floor and the invitee roles and the caller chairs the session.",
+	},
+
 
 	// @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	NoticeOfDefaultDialog: {

@@ -6807,6 +6807,28 @@
 						}
 					},
 					{
+						"id": "session-schedule",
+						"type": "open-modal",
+						"label": "Plan a session",
+						"icon": "CalendarClock",
+						"target": "SessionScheduleDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.sessions",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "log-contact",
 						"type": "open-modal",
 						"label": "Record contact",
