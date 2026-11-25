@@ -9,10 +9,10 @@
  * times. Mounting the case page's own manifest config with the app's widget
  * registry and recording every read showed seven reads of the case type, five
  * of them by the data cards, each reading the related record by itself.
- * nextcloud-vue 2.218.1 shares that read across the cards, which leaves three:
- * the cards' shared read, the visibility rows and the object store. If a
- * widget or a library change starts reading the case type per card again,
- * this file goes red.
+ * nextcloud-vue 2.218.1 shares that read across the cards, and 2.218.3 shares
+ * it with the visibility rows too, which leaves two: the shared read and the
+ * object store's. If a widget or a library change starts reading the case
+ * type per card again, this file goes red.
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -115,7 +115,7 @@ describe('the case page on open', () => {
 		}
 	})
 
-	it('reads its case type at most three times, once for all its data cards', async () => {
+	it('reads its case type at most twice, once for all its data cards and visibility rows', async () => {
 		const pinia = createPinia()
 		setActivePinia(pinia)
 		const wrapper = mount(CnDetailPage, {
@@ -130,7 +130,7 @@ describe('the case page on open', () => {
 
 		const caseTypeReads = reads.filter((url) => CASE_TYPE_READ.test(url))
 		expect(caseTypeReads.length, caseTypeReads.join('\n')).toBeGreaterThan(0)
-		expect(caseTypeReads.length, caseTypeReads.join('\n')).toBeLessThanOrEqual(3)
+		expect(caseTypeReads.length, caseTypeReads.join('\n')).toBeLessThanOrEqual(2)
 		wrapper.unmount()
 	}, 60000)
 })
