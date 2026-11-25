@@ -637,13 +637,13 @@ test.describe('Sub-cases list + create (deelzaak-support REQ — section / creat
 })
 
 test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigation / progress)', () => {
-	// @e2e deelzaak-support::sub-case-shows-parent-breadcrumb
-	// @e2e deelzaak-support::top-level-case-has-no-breadcrumb
+	// @e2e deelzaak-support::sub-case-shows-its-parent-in-the-trail
+	// @e2e deelzaak-support::top-level-case-has-no-parent-in-the-trail
 	// @e2e deelzaak-support::roll-up-shows-completion-progress
 	// @e2e deelzaak-support::roll-up-with-no-completed-sub-cases
 	// The roll-up is the Sub-cases section's summary line on the parent's
-	// Related tab, and the parent is named, as a link, in the sub-case's own
-	// related-cases section. Each test seeds the exact shape it asserts, so
+	// Related tab, and the parent is named, as a link, in the trail under the
+	// sub-case's title (REQ-CDV-15). Each test seeds the exact shape it asserts, so
 	// "some X/Y" or "some link" cannot pass for the scenario.
 	test('the roll-up counts completed sub-cases exactly', async ({ page }) => {
 		// Two sub-cases, one completed. Completion is an endDate and nothing
@@ -680,28 +680,52 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
+	/**
+	 * The trail under the title, read crumb by crumb.
+	 *
+	 * The requirement places the parent's NUMBER in the trail between "All
+	 * cases" and the case's own number, as a link (REQ-CDV-15: the trail never
+	 * repeats a title). These two tests used to look for a link with the
+	 * parent's TITLE in the Related section, which shows the parent as a
+	 * collapsed, unlinked row, and for a `nav[aria-label="breadcrumb"]` that no
+	 * page renders any more, so the top-level leg passed on any page at all.
+	 *
+	 * @param page The page, on a case.
+	 * @return The trail.
+	 */
+	function trail(page) {
+		return page.locator('[data-testid="cn-detail-page-breadcrumbs"]')
+	}
+
 	test('a sub-case names its parent, as a link back to it', async ({ page }) => {
 		const parentTitle = `${RUN_PREFIX} breadcrumb parent`
 		const { parentId, children } = await seedParentWithChildren({
 			title: parentTitle,
 			children: [{}],
 		})
-		const childId = objectId(children[0])
+		const child = children[0]
+		const api = await request.newContext({ storageState: STORAGE_STATE })
+		const parent = await showObject(api, 'case', parentId)
+		await api.dispose()
+		const parentNumber = String(parent?.identifier ?? '')
+		const childNumber = String(child?.identifier ?? '')
+		expect(parentNumber, 'the seeded parent must carry a case number').not.toBe('')
+		expect(childNumber, 'the seeded sub-case must carry a case number').not.toBe('')
 
-		// The sub-case is a case: it opens as one, on its own Related tab.
-		await openSubCasesSectionOrSkip(page, childId)
-		const related = page.locator(
-			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]',
-		)
-
-		// THE PARENT BY NAME, and the way BACK rather than a label.
-		const back = related.getByRole('link', {
-			name: new RegExp(escapeForRegExp(parentTitle)),
+		await page.goto(`/index.php/apps/dossiq/cases/${objectId(child)}`, {
+			waitUntil: 'domcontentloaded',
 		})
+		await dismissSupportDialog(page).catch(() => {})
+
+		// "All cases / <parent number> / <own number>", in that order.
 		await expect(
-			back,
-			'a sub-case must name its parent case and link to it',
-		).toHaveCount(1, { timeout: 30_000 })
+			trail(page).locator('[data-testid^="cn-breadcrumbs-crumb-"]'),
+			'the trail must read All cases / parent number / own number',
+		).toHaveText([/^(All cases|Alle zaken)$/, parentNumber, childNumber], { timeout: 30_000 })
+
+		// The parent's number is the way BACK.
+		const back = trail(page).getByRole('link', { name: parentNumber, exact: true })
+		await expect(back, 'the parent number in the trail must be a link').toHaveCount(1)
 		await back.click()
 		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), { timeout: 30_000 })
 
@@ -709,26 +733,25 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	})
 
 	test('a top-level case shows no parent breadcrumb', async ({ page }) => {
-		// The other direction, without which `top-level-case-has-no-breadcrumb`
-		// is cited by a test that only ever looks at sub-cases. The parent
-		// seeded here has `parentCase` null, which is exactly the scenario's
-		// precondition.
+		// The other direction. The parent seeded here has `parentCase` null,
+		// which is exactly the scenario's precondition.
 		const { parentId } = await seedParentWithChildren({ children: [{}] })
+		const api = await request.newContext({ storageState: STORAGE_STATE })
+		const parent = await showObject(api, 'case', parentId)
+		await api.dispose()
+		const ownNumber = String(parent?.identifier ?? '')
+		expect(ownNumber, 'the seeded case must carry a case number').not.toBe('')
 
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
 			waitUntil: 'domcontentloaded',
 		})
 		await dismissSupportDialog(page).catch(() => {})
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
-			timeout: 30_000,
-		})
 
+		// Exactly two crumbs: nothing between "All cases" and the case itself.
 		await expect(
-			page.locator(
-				'nav[aria-label="breadcrumb"], .deelzaak-detail__breadcrumb',
-			),
-			'a case with no parent must display no parent breadcrumb',
-		).toHaveCount(0)
+			trail(page).locator('[data-testid^="cn-breadcrumbs-crumb-"]'),
+			'a case with no parent must have no parent in its trail',
+		).toHaveText([/^(All cases|Alle zaken)$/, ownNumber], { timeout: 30_000 })
 
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})

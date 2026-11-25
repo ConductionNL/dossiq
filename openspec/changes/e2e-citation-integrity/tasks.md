@@ -51,9 +51,35 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       `substitutionApi.executeReassignment()`, which posts to the removed `/api/reassignments/execute`, so the
       coordinator's bulk reassign in the substitution admin answers 404. Its replacement asks for a written reason and
       commits the previewed bulk job through OpenRegister's commit route (D-6), which is UI work for its own change.
-- [ ] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.
-- [ ] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
-- [ ] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
+- [x] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.
+      **Proven live 2026-11-25.** The three refusals each have their own fixture and test (#2489 and later): an
+      empty `subCaseTypes` allow-list, a closed parent and a parent that is itself a sub-case are refused by
+      `POST /api/deelzaken/validate` and show no Create control. All three green; all three red with
+      `DeelzaakService::parentRefusal()` answering no reason ("must be refused by the server"). Before they could run,
+      every leg of the file was red on two suite defects, fixed here: (1) sub-cases were seeded with a non-initial
+      status, which OpenRegister main refuses at create (422 "A new object starts in ..."), so the child is now
+      created in its initial state and then moved to the run's status; (2) the sub-cases section is on the Related
+      tab, which REQ-CDV-16 folds into the strip's overflow menu, and the shared `openCaseTab` helper looked for a
+      `.cn-tabs__more` button the strip no longer draws (it is an NcActions toggle labelled Actions), so it now
+      accepts both.
+      Fixed in the app on the way: the full profile's `case-sub-cases` Status column printed the status id,
+      truncated ("689fcd5c..."), not its name; it now uses the `statusTypeName` formatter the simple profile and the
+      other case lists already use.
+      The trail legs (`#sub-case-shows-its-parent-in-the-trail`, `#top-level-case-has-no-parent-in-the-trail`; the
+      anchors followed the renamed scenarios) looked for the parent's title in the Related section and for a
+      `nav[aria-label="breadcrumb"]` no page renders, so the top-level leg passed on any page. Both now read the trail
+      under the title crumb by crumb; green, and red with the trail's parent crumb broken in the served bundle.
+      Still red, not this row: `#create-sub-case-from-parent-case-detail` - the Create sub-case dialog opens and says
+      "No allowed sub-case types" for a parent whose type the server's validate call has just accepted, so the
+      modal reads the allow-list differently from the server (a DeelzaakCreateModal bug, not a test one).
+      Flaky, group 2: `#sub-case-counts-batch-loaded-per-page` saw 3 count requests in one of three runs (limit 2).
+- [x] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
+      **Settled:** the scenario carries a reason-bearing `@e2e exclude` (the section renders on every case and
+      shows its empty state; no conditional visibility exists to hide it), which is the repair this row names when
+      the feature is not built. Nothing cites it any more.
+- [x] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
+      **Settled:** both delete scenarios left `openspec/specs/deelzaak-support/spec.md` with the archival rule (a case
+      is not deleted, cases-are-archival-no-delete), and their tests went with them; nothing cites them.
 - [ ] 1.7 `document-zaakdossier`, four citations on unconditionally fixme'd tests: `#req-zak-005a` (dialog must not close before required fields), `#req-zak-005c` (executable uploads blocked by extension and magic bytes), `#req-zak-006b` (restore disabled on definitief), `#req-zak-008c` (per-document bulk result). The tests are blocked on a seeded case fixture (#764). Until that fixture exists, these anchors are claims nothing backs: move them to `@e2e exclude` naming #764, or land the fixture. The upload guard is the one to land first.
 - [ ] 1.8 `document-zaakdossier#req-zak-006b` again, its second home in `case-documents.spec.ts`. The `toBeDisabled()` check sits in a loop over `restore.count()`, so a panel with zero Restore buttons is green. Assert the button exists before asserting it is disabled.
 - [x] 1.9 `first-time-setup` REQ-SETUP-PRO-001. The test asserts the wizard's step list does **not** contain `seed` while the cited requirement mandates a `seed` step. This is the only anti-coverage in the set: implementing the cited requirement turns the test red. Settle which of the two is current, then fix the other. Do not fix the test without reading the spec.
