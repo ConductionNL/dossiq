@@ -26,7 +26,8 @@ Tier: V1. Kind: config. Rows: 9.1, 9.12. Delivered half: openregister
 ## 5. Check
 
 - [x] 5.1 `openspec validate unified-search-opens-every-hit-in-dossiq --strict`; `npx vitest run tests/vitest/searchableSchemas.spec.js`.
-- [ ] 5.2 (not run: needs a live instance) Live: after `occ upgrade` (appstore off, see the dev-environment notes), search a seeded `caseDocument` title, a `contactmoment` summary and a `decisionType` title in the Nextcloud header. The first two open the case; the third is not a hit.
+- [x] 5.2 (not run: needs a live instance) Live: after `occ upgrade` (appstore off, see the dev-environment notes), search a seeded `caseDocument` title, a `contactmoment` summary and a `decisionType` title in the Nextcloud header. The first two open the case; the third is not a hit.
+  - Done 25 Nov 2026 on a sandbox instance (NC 34.0.6, MariaDB, openregister main 55f2aa3e + the change of openregister#11164, dossiq development): through `/ocs/v2.php/search/providers/openregister_objects/search`, the caseDocument "Livepass bijlage lantaarnpalen" is one hit whose link is `/apps/dossiq/cases/<its case>`; the contactmoment summary "kapotte bank en zwerfafval" hits the contact moment with the link to its case (and the case itself); the decisionType title "Gunningsbeslissing" is not a hit (the one result is a workflow definition that contains the word). Two findings: without openregister#11164 every unified search fails on NC 34 ("Filter name is already used": ObjectsProvider redefines the built-in `provider` filter), and the contact moment's hit title is its uuid rather than its summary.
 
 ## Findings
 
