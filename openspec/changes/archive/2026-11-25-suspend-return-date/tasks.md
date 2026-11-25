@@ -1,0 +1,4 @@
+- [x] 1.1 days input dateField (tests/vitest/suspendComesBackOn.spec.js)
+- [x] 1.2 Live check on DqVolgendeStap after the library lands
+  - Done on a sandbox instance, 25 Nov 2026 (NC 34.0.6, MariaDB, dossiq/opencatalogi development, openregister main, Zuiddrecht set), Dutch locale: Termijn opschorten opens with "Dagen die de aanvrager krijgt" 14 above its field and "De zaak komt terug op" 09-12-2026 (today + 14); setting the date to 15-12-2026 sets the days to 20.
+- [x] 1.3 days label above its field (labelOutside, id case-act-days); no history line under the reason on suspend (r26a)
