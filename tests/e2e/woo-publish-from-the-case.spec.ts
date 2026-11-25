@@ -16,6 +16,8 @@
  * case here is seeded with `assignee: admin`.
  */
 
+import type { APIRequestContext } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -35,6 +37,39 @@ const ADMIN_USER = 'admin'
 
 /** One case per scenario, so no test depends on another's writes. */
 const cases: Record<string, string> = {}
+
+/** The fixture file of the public document, in the admin's Files root. */
+const attachmentName = `${RUN_PREFIX}-woo-besluit-bijlage.pdf`
+
+/**
+ * The WebDAV path of a file in the admin's Files root.
+ *
+ * @param name The file name.
+ * @return The path.
+ */
+function davPath(name: string): string {
+	return `/remote.php/dav/files/${encodeURIComponent(ADMIN_USER)}/${encodeURIComponent(name)}`
+}
+
+/**
+ * Put a small PDF in the admin's Files and answer its file id.
+ *
+ * @param api The request context, signed in as the admin.
+ * @param token The request token of that session.
+ * @param name The file name.
+ * @return The Nextcloud file id.
+ */
+async function uploadFixtureFile(api: APIRequestContext, token: string, name: string): Promise<number> {
+	const put = await api.put(davPath(name), {
+		headers: { requesttoken: token, 'Content-Type': 'application/pdf' },
+		data: Buffer.from('%PDF-1.4\n% woo-publish-from-the-case fixture\n%%EOF\n'),
+	})
+	expect(put.ok(), `upload -> ${put.status()}`).toBeTruthy()
+	// Nextcloud answers the file id of a PUT in OC-FileId: the id, zero-padded, then the instance id.
+	const id = Number(put.headers()['oc-fileid']?.replace(/^0+/, '').replace(/oc.*$/, '') ?? 0)
+	expect(id, 'the fixture file has an id').toBeGreaterThan(0)
+	return id
+}
 
 /**
  * The headers a dossiq write needs.
@@ -71,9 +106,13 @@ test.describe('Publish a Woo decision from the case', () => {
 
 		// The ready case gets one document assessed as public and an assembled
 		// decision, through the same routes a handler's screens use.
+		// A public document is published with its bytes, and a document whose
+		// file cannot be read refuses the publish (`documents_unreadable`), so
+		// the fixture carries a real file in the admin's Files.
 		const document = await seedDocument(api, token, {
 			title: `${RUN_PREFIX} Woo besluit bijlage`,
 			case: cases.ready,
+			fileId: await uploadFixtureFile(api, token, attachmentName),
 		})
 		const assessed = await api.post(
 			`/index.php/apps/${REGISTER}/api/cases/${cases.ready}/woo/assessment`,
@@ -107,12 +146,14 @@ test.describe('Publish a Woo decision from the case', () => {
 
 	test.afterAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
-		await cleanupRunObjects(api, await getRequestToken(api))
+		const token = await getRequestToken(api)
+		await cleanupRunObjects(api, token)
+		await api.fetch(davPath(attachmentName), { method: 'DELETE', headers: { requesttoken: token } })
 		await api.dispose()
 	})
 
 	// @e2e openspec/specs/woo-publication-via-opencatalogi/spec.md#scenario-no-woo-decision-yet
-	test('a case without a Woo decision answers 409 no_woo_decision', async ({
+	test('a case without a Woo decision is not at the publication step: 422, nothing sent', async ({
 		request,
 	}) => {
 		const token = await getRequestToken(request)
@@ -125,8 +166,13 @@ test.describe('Publish a Woo decision from the case', () => {
 			body?.reason === 'opencatalogi_unavailable',
 			'OpenCatalogi is not installed on this instance',
 		)
-		expect(res.status()).toBe(409)
-		expect(body.reason).toBe('no_woo_decision')
+		// The step check comes first (REQ-ACC-13): a case without a decision
+		// never reached `wooPublicationStatus` ready, so the publish is refused
+		// before anything is read or sent.
+		expect(res.status()).toBe(422)
+		expect(body.error).toBe('not-at-this-step')
+		const after = await showObject(request, 'case', cases.none)
+		expect(after.wooPublicationStatus ?? '').not.toBe('published')
 	})
 
 	// @e2e openspec/specs/woo-publication-via-opencatalogi/spec.md#scenario-unpublished-decision-shows-a-publish-action
