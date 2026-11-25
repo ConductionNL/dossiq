@@ -46,7 +46,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 
 declare(strict_types=1);
@@ -68,7 +68,7 @@ use Throwable;
 /**
  * Hands a requester notice to a real transport and answers what it said.
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 class RequesterNoticeSender {
 
@@ -147,7 +147,7 @@ class RequesterNoticeSender {
 	 *
 	 * @return string The moment; `stage` for a template not named in MOMENTS.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
 	public function momentFor(string $template): string {
 		return (self::MOMENTS[$template] ?? 'stage');
@@ -168,7 +168,7 @@ class RequesterNoticeSender {
 	 *
 	 * @return array<string, mixed> The delivery result, with the `record` it appended.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function send(array $case, string $template, array $rendered, string $moment, array $options = []): array {
@@ -574,7 +574,7 @@ class RequesterNoticeSender {
 	 *
 	 * @return array<string, mixed> The record.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
 	private function recordOn(array $case, array $record): array {
 		$caseId = (string)($case['id'] ?? '');

@@ -80,7 +80,7 @@ class NoticeNotSentException extends RuntimeException {
 	 *
 	 * @return array<string, mixed> The result, or [].
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function getDelivery(): array {
 		return $this->delivery;

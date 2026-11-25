@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Records a notice on the case; a record that cannot be written is logged, the notice stands.
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
  */
 final class CaseNoticeLog {
 	use SearchesObjects;
@@ -60,7 +60,7 @@ final class CaseNoticeLog {
 	 *
 	 * @return array<string, mixed> The record.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
 	public function record(array $result, array $extras): array {
 		$record = $extras + [
@@ -88,7 +88,7 @@ final class CaseNoticeLog {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
 	public function append(array $location, array $record): void {
 		try {

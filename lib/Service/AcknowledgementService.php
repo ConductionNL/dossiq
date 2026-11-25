@@ -155,7 +155,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @throws RefusedException When the case carries no address, or no transport took the acknowledgement.
 	 *
 	 * @spec openspec/specs/burger-notifications/spec.md
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
@@ -208,7 +208,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 *
 	 * @throws RefusedException When no transport took the acknowledgement.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 */
 	private function sentPayload(string $caseId, array $ack): array {
 		// The sender picks the channel (portal inbox, digital post, e-mail),
@@ -405,7 +405,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 *
 	 * @return RefusedException The refusal, carrying the transport's sentence.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function notSent(string $caseId, NoticeNotSentException $notice): RefusedException {
@@ -422,7 +422,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 */
 	private function recordNotSent(string $caseId, NoticeNotSentException $notice): void {
 		$delivery = $notice->getDelivery();
