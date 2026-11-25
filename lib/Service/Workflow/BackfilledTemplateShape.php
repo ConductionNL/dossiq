@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
  * One step per status that is not final, one transition between each status
  * and the next, each with its own identifier and a label read as text.
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 class BackfilledTemplateShape {
 
@@ -59,7 +59,7 @@ class BackfilledTemplateShape {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function steps(array $statuses): array {
 		$steps = [];
@@ -91,7 +91,7 @@ class BackfilledTemplateShape {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function transitions(array $statuses): array {
 		$transitions = [];
@@ -139,7 +139,7 @@ class BackfilledTemplateShape {
 	 *
 	 * @return array<int, array<string, mixed>> The statuses, in order.
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function ordered(array $statuses): array {

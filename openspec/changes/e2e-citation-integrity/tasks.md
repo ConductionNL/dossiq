@@ -69,9 +69,10 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       anchors followed the renamed scenarios) looked for the parent's title in the Related section and for a
       `nav[aria-label="breadcrumb"]` no page renders, so the top-level leg passed on any page. Both now read the trail
       under the title crumb by crumb; green, and red with the trail's parent crumb broken in the served bundle.
-      Still red, not this row: `#create-sub-case-from-parent-case-detail` - the Create sub-case dialog opens and says
-      "No allowed sub-case types" for a parent whose type the server's validate call has just accepted, so the
-      modal reads the allow-list differently from the server (a DeelzaakCreateModal bug, not a test one).
+      `#create-sub-case-from-parent-case-detail` was red: the dialog said "No allowed sub-case types" for an allowed
+      parent because the list widget forwards the createAction's `parentCase: "@objectId"` unresolved, and the modal
+      read a case called `@objectId`. Fixed in the modal (#6964, it takes the case on screen for an unresolved
+      token); green live after the fix.
       Flaky, group 2: `#sub-case-counts-batch-loaded-per-page` saw 3 count requests in one of three runs (limit 2).
 - [x] 1.5 `deelzaak-support#case-without-sub-case-type-support-hides-section`. The assertion is `expect(hasTable || hasEmpty).toBeTruthy()`, which requires the section to render. The requirement is that it must not. Invert it against a case type without sub-case support. The spec body says the feature is unimplemented, in which case the honest repair is `@e2e exclude` on the scenario with that reason, not a test.
       **Settled:** the scenario carries a reason-bearing `@e2e exclude` (the section renders on every case and

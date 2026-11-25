@@ -257,7 +257,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
@@ -283,7 +283,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	private function patchHealed(BackfillTarget $target, array $healed): void {
 		['id' => $id, 'changes' => $changes] = $healed;
