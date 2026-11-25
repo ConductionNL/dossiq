@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Dossiq\Service\CaseType\CaseConditionEvaluator;
 /**
  * Refuses entering a status while one of its required documents is missing.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class StatusEntryRequirementsGuard implements GuardEvaluatorInterface {
 
@@ -65,7 +65,7 @@ class StatusEntryRequirementsGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The first unmet requirement's refusal, or a pass.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$target = trim((string)($guardConfig['toStatus'] ?? ''));

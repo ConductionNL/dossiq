@@ -6,7 +6,7 @@
  * 0.15em higher as for a first line of text (r31 DqZaaktypeOverzicht Regels
  * gapBelowTitle 27.2 vs 29.5). Read from the component's style.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 import fs from 'fs'

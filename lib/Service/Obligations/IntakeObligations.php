@@ -303,17 +303,8 @@ class IntakeObligations {
 			return ['status' => 503, 'body' => ['error' => 'try_again_later']];
 		}
 
-		if ($answer === self::ANSWER_REFUSE) {
-			$state = self::STATE_REFUSED;
-			$done  = $this->applyUnmetRule(case: $case, kind: $kind, obligationId: $obligationId, reason: 'Refused from the portal.');
-		} else {
-			$state = self::STATE_SIGNED;
-			$done  = $this->obligations->meet(
-				obligationId: $obligationId,
-				note: 'Signed from the portal.',
-				fields: ['settledBySubject' => $holder['subject'], 'settledTrust' => $holder['trust']]
-			);
-		}
+		$state = [self::STATE_SIGNED, self::STATE_REFUSED][(int)($answer === self::ANSWER_REFUSE)];
+		$done  = $this->settleObligation(case: $case, kind: $kind, obligationId: $obligationId, answer: ['answer' => $answer, 'holder' => $holder]);
 
 		if ($done === false || $this->cases->writeState(case: $case, kind: $kind, state: $state) === false) {
 			return ['status' => 503, 'body' => ['error' => 'try_again_later']];
@@ -321,6 +312,30 @@ class IntakeObligations {
 
 		return ['status' => 200, 'body' => ['case' => $caseId, 'kind' => $kind, 'state' => $state]];
 	}//end settleAs()
+
+	/**
+	 * Settle the obligation the way the holder answered: a refusal applies the unmet rule, a signature meets it.
+	 *
+	 * @param array<string, mixed>                                   $case         The case.
+	 * @param string                                                 $kind         The obligation kind.
+	 * @param string                                                 $obligationId The obligation.
+	 * @param array{answer: string, holder: array<string, mixed>}    $answer       The answer, and the holder who gave it.
+	 *
+	 * @return bool Whether the obligation was settled.
+	 *
+	 * @spec exclude one step of settleAs(), which carries the requirement
+	 */
+	private function settleObligation(array $case, string $kind, string $obligationId, array $answer): bool {
+		if ($answer['answer'] === self::ANSWER_REFUSE) {
+			return $this->applyUnmetRule(case: $case, kind: $kind, obligationId: $obligationId, reason: 'Refused from the portal.');
+		}
+
+		return $this->obligations->meet(
+			obligationId: $obligationId,
+			note: 'Signed from the portal.',
+			fields: ['settledBySubject' => $answer['holder']['subject'], 'settledTrust' => $answer['holder']['trust']]
+		);
+	}//end settleObligation()
 
 	/**
 	 * Why this holder may not answer this entry, or null when they may.

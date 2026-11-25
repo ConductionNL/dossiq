@@ -527,6 +527,42 @@ export async function tickCheckbox(checkbox: Locator): Promise<void> {
 }
 
 /**
+ * The option of one act in the case's "What you can do with this case" dialog.
+ *
+ * The dialog draws its acts as choice rows (board DqVolgendeStap,
+ * CnChoiceCards): one radio per act, valued `<kind>:<id>`, disabled with its
+ * reason when the case does not allow it now. It replaced the per-act buttons
+ * (`case-act-button-<id>`) the specs used to click.
+ *
+ * @param page The page with the dialog open.
+ * @param act  The act id (a gesture such as `extend`, or a transition id).
+ * @return The act's radio input.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActOption(page: Page, act: string): Locator {
+	return page.getByTestId('case-acts-list').locator(`input[value$=":${act}"]`)
+}
+
+/**
+ * The sentence that says why an act in the case's acts dialog is greyed out.
+ *
+ * Drawn inside the act's own choice row (CnChoiceCards), where the per-act
+ * `case-act-reason-<id>` line used to be, so the row is what a spec reads.
+ *
+ * @param page The page with the dialog open.
+ * @param act  The act id.
+ * @return That act's row.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActReason(page: Page, act: string): Locator {
+	// The row is the label around the act's radio; its text carries the
+	// title, and for a greyed-out act the reason in place of the description.
+	return page
+		.getByTestId('case-acts-list')
+		.locator('label', { has: page.locator(`input[value$=":${act}"]`) })
+}
+
+/**
  * Click one of a detail page's manifest header actions.
  *
  * These used to be buttons in the page header, so a test clicked them

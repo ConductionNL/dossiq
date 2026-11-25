@@ -75,7 +75,7 @@ class PortalAssertionGate {
 		$assertion = (string)$request->getHeader(PortalAssertionVerifier::HEADER);
 		$claims    = $this->verifier->verify($assertion);
 		if ($claims === null) {
-			$this->countRejected(ip: $request->getRemoteAddress(), throttleAction: $throttleAction);
+			$this->countRejected(address: $request->getRemoteAddress(), throttleAction: $throttleAction);
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -90,14 +90,14 @@ class PortalAssertionGate {
 	/**
 	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
 	 *
-	 * @param string $ip             The caller's address.
+	 * @param string $address        The caller's address.
 	 * @param string $throttleAction The brute-force bucket.
 	 *
 	 * @return void
 	 */
-	private function countRejected(string $ip, string $throttleAction): void {
+	private function countRejected(string $address, string $throttleAction): void {
 		try {
-			$this->throttler->registerAttempt(action: $throttleAction, ip: $ip);
+			$this->throttler->registerAttempt(action: $throttleAction, ip: $address);
 		} catch (Throwable $e) {
 			$this->logger->warning('PortalAssertionGate: registerAttempt failed', ['action' => $throttleAction, 'error' => $e->getMessage()]);
 		}

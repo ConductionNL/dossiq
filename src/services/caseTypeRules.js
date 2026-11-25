@@ -8,7 +8,7 @@
  * "Als … / dan …" row. Dossiq evaluates no rule; the case type's publish
  * projects them onto the engines that own the actions.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 import { conditionSentence } from '@conduction/nextcloud-vue'

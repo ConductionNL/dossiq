@@ -6,7 +6,7 @@
   this type's own fields (the library's condition editor) and what happens.
   Emits the rule; the Rules tab stores it on the case type.
 
-  @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+  @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 -->
 <template>
 	<NcDialog

@@ -30,8 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener\Registrar;
 
-use OCA\Dossiq\Listener\ApplicantTermNoteListener;
-use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseOpeningDefaultsListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
@@ -49,10 +47,6 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * Registers the case type inheritance listeners.
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) A registrar names every
- * listener and event it wires; that list is the class. One over the threshold
- * since the request-reads listener joined it.
  *
  * @spec openspec/specs/case-types/spec.md
  */
@@ -102,11 +96,14 @@ class CaseTypeListenerRegistrar {
 	 * @spec openspec/specs/case-types/spec.md
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/specs/case-access-control/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerSavingListeners(context: $context);
 		$this->registerSavedListeners(context: $context);
-		$this->registerTermListeners(context: $context);
+		// The statutory term's deadline and the applicant's note, after the
+		// inherited deadline (method-decomposition 8cs).
+		(new CaseTermListenerRegistrar())->register(context: $context);
 		// Before any other saved listener, so none of them reads a row the save replaced.
 		foreach (RequestReadsForgetListener::EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: RequestReadsForgetListener::class, priority: self::STORE_FORGET_PRIORITY);
@@ -165,31 +162,4 @@ class CaseTypeListenerRegistrar {
 			);
 		}
 	}//end registerSavedListeners()
-
-	/**
-	 * Register the listeners that write the statutory term's deadline and the applicant's term note.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/termijn-binding/spec.md
-	 */
-	private function registerTermListeners(IRegistrationContext $context): void {
-		// UPDATE ONLY. No term exists before the case does; the bind that
-		// follows the create writes the date back through the mirror.
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: CaseDeadlineFollowsTermListener::class,
-			priority: self::TERM_DEADLINE_PRIORITY
-		);
-
-		// UPDATE ONLY, for the same reason: a new case has no open request
-		// and no extension, and its first update writes the date.
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: ApplicantTermNoteListener::class,
-			priority: self::TERM_NOTE_PRIORITY
-		);
-	}//end registerTermListeners()
 }//end class

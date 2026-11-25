@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
  * type guard and the rule's conditions, so the scope is never the only thing
  * standing between a rule and another type's case.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class CaseTypeRuleFlowDocument {
 
@@ -91,7 +91,7 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * @return string The marker.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function marker(string $caseTypeId, string $ruleId = ''): string {
 		$marker = self::MARKER_PREFIX . $caseTypeId . ':';
@@ -111,8 +111,8 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * @return array<string, mixed>|null The flow document.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	public function build(array $rule, array $action, RuleFlowScope $scope): ?array {
 		$step = $this->step(rule: $rule, action: $action, scope: $scope);
@@ -137,7 +137,7 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * @return array<string, mixed> The document fields before its nodes.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	private function header(array $rule, RuleFlowScope $scope): array {
 		$ruleId = (string)($rule['id'] ?? '');
@@ -163,7 +163,7 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * @return array<int, array<string, mixed>> The nodes.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	private function nodes(array $rule, array $step, RuleFlowScope $scope): array {
 		$conditions = $this->conditionsOf(rule: $rule, step: $step);

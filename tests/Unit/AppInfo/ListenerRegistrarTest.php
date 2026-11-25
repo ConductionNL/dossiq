@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseTermListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\CasePriorityListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\DerivedStatusListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar

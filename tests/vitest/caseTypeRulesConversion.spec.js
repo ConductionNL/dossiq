@@ -7,7 +7,7 @@
  * an editor row and back, the fields a condition can name, and the role
  * names per group a rule's group is labelled with.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
