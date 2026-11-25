@@ -78,4 +78,33 @@ class ZuiddrechtPieterReadsTheHouseholdTest extends TestCase {
 		$this->assertSame(expected: 'dossiq-sociaal-domein', actual: $team);
 		$this->assertContains(needle: 'pieter', haystack: $this->members(group: 'dossiq-sociaal-domein'));
 	}//end testPieterIsInTheJeugdwetHandlingTeam()
+
+	/**
+	 * Every member of a dossiq group in the set is also dossiq staff.
+	 *
+	 * The dossiq register lets only its staff group (`dossiq-medewerkers`,
+	 * SeedStaffGroup) read, and a schema without its own authorization, such
+	 * as caseType, inherits that. Pieter and Fatma were in the coordinator,
+	 * sensitive and social-domain groups but not in the staff group, so they
+	 * could read their case yet not its case type, and the household card
+	 * refused Pieter (`household-not-allowed`, live 25 Nov 2026).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-set-pieter-reads-the-household/tasks.md
+	 */
+	public function testEveryDossiqGroupMemberIsDossiqStaff(): void {
+		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$staff = $this->members(group: 'dossiq-medewerkers');
+		foreach ($set['groups'] as $entry) {
+			$group = (string)$entry['group'];
+			if (str_starts_with($group, 'dossiq-') === false || in_array($group, ['dossiq-medewerkers', 'dossiq-background-service'], true) === true) {
+				continue;
+			}
+
+			foreach ($entry['members'] as $member) {
+				$this->assertContains(needle: $member, haystack: $staff, message: $member.' is in '.$group.' but not dossiq staff');
+			}
+		}
+	}//end testEveryDossiqGroupMemberIsDossiqStaff()
 }//end class
