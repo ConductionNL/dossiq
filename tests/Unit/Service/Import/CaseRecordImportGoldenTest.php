@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Import\CaseRecordImport;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
 use OCA\Dossiq\Service\Import\RecordImportReferences;
 use OCA\Dossiq\Service\Import\RecordImportStore;
+use OCA\Dossiq\Service\Intake\CaseCreationAnnouncer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\TermCarryOver;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
@@ -136,7 +137,7 @@ class CaseRecordImportGoldenTest extends TestCase {
 			 *
 			 * @return string The case id, or ''.
 			 */
-			public function writeCase(object $objectService, array $mapped): string {
+			public function writeCase(object $objectService, array $mapped, ?CaseCreationAnnouncer $announcer = null): string {
 				$this->test->calls[] = ['writeCase', $mapped];
 				$id = (string)$mapped['recordId'];
 				return (string)($this->test->world['write'][$id] ?? ('case-' . $id));

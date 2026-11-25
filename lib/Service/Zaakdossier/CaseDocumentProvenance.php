@@ -198,7 +198,7 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 *     messageId: string
 	 * }
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function mailOf(string $caseId, string $documentId, ?array $record = null): array {
 		return $this->mailFields(stored: $this->stored(document: [$caseId, $documentId], record: $record));
@@ -245,7 +245,7 @@ class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 	 *
 	 * @return array<string, array<string, mixed>> mailOf() per document uuid.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function mailForCase(string $caseId): array {
 		$mails = [];

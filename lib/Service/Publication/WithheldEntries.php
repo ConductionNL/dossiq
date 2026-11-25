@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Publication;
 /**
  * Builds the `{position, grounds}` entries of a publication's withheld list.
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  */
 class WithheldEntries {
 
@@ -51,7 +51,7 @@ class WithheldEntries {
 	 *
 	 * @return list<array{position: int, grounds: list<string>}>
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+	 * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function fromAssessments(array $assessments, string $withheldValue, string $groundsField): array {
 		$entries = [];

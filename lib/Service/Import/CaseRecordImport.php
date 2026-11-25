@@ -471,7 +471,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	private function existingOrWritten(array $run, array $mapped): string {
 		$caseId = $run['existing'];
 		if ($caseId === '') {
-			$caseId = $this->steps->store->writeCase(objectService: $run['objectService'], mapped: $mapped);
+			$caseId = $this->steps->store->writeCase(objectService: $run['objectService'], mapped: $mapped, announcer: $this->steps->announcer);
 		}
 
 		return $caseId;

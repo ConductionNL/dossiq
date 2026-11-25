@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -43,7 +43,7 @@ use Throwable;
  * zone, read through CaseDateNormaliser (the one class that resolves a zone),
  * so an assessment at 23:30 UTC on a CET instance counts on the next day.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
 class WooThroughputReport implements WooThroughputReportInterface {
 
@@ -89,7 +89,7 @@ class WooThroughputReport implements WooThroughputReportInterface {
 	 *
 	 * @throws RefusedException When OpenRegister or the assessment schema is not available.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forCase(string $caseId): array {
 		return $this->report(filters: ['caseRef' => $caseId], period: new ReportPeriod(from: null, to: null));
@@ -105,7 +105,7 @@ class WooThroughputReport implements WooThroughputReportInterface {
 	 *
 	 * @throws RefusedException When a day is not a date, or OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forPeriod(string $from, string $to): array {
 		foreach ([$from, $to] as $day) {
@@ -128,7 +128,7 @@ class WooThroughputReport implements WooThroughputReportInterface {
 	 *
 	 * @return string The CSV text.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function toCsv(array $rows): string {
 		$columns = array_merge(['reviewer', 'displayName', 'day'], self::VERDICTS, ['total']);

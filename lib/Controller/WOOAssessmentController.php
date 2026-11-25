@@ -197,7 +197,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function tellRequester(array $extended): array {
 		// The term engine already told the requester: every statutory

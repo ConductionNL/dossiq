@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
 use DateTime;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
+use OCA\Dossiq\Service\Intake\CaseCreationAnnouncer;
 use OCA\Dossiq\Service\Import\RecordImportStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -118,6 +119,70 @@ class RecordImportStoreBehaviourTest extends TestCase {
 	}//end testUnreadableSourcesAreNullAndLogged()
 
 	/**
+	 * An announcer that is told about a written case and answers that the event went out.
+	 *
+	 * @return CaseCreationAnnouncer&MockObject
+	 */
+	private function quietAnnouncer(): CaseCreationAnnouncer {
+		$announcer = $this->createMock(originalClassName: CaseCreationAnnouncer::class);
+		$announcer->method('announce')->willReturn(value: true);
+
+		return $announcer;
+	}//end quietAnnouncer()
+
+	/**
+	 * A written case is announced once, with the object service and what the write answered.
+	 *
+	 * The import runs as the system, where OpenRegister withholds the created
+	 * event, so without this no listener binds the new case's term.
+	 *
+	 * @return void
+	 */
+	public function testAWrittenCaseIsAnnounced(): void {
+		$register = new InMemoryRegister();
+		$announcer = $this->createMock(originalClassName: CaseCreationAnnouncer::class);
+		$announcer->expects($this->once())->method('announce')->with(
+			$this->identicalTo(value: $register),
+			$this->callback(callback: static fn (mixed $saved): bool => is_array($saved) === true && ($saved['id'] ?? '') === 'generated-1')
+		)->willReturn(value: true);
+
+		$caseId = $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => ''], announcer: $announcer);
+
+		self::assertSame(expected: 'generated-1', actual: $caseId);
+	}//end testAWrittenCaseIsAnnounced()
+
+	/**
+	 * A refused case write announces nothing.
+	 *
+	 * @return void
+	 */
+	public function testARefusedCaseIsNotAnnounced(): void {
+		$register = new InMemoryRegister();
+		$register->refusedSchemas = ['case'];
+		$announcer = $this->createMock(originalClassName: CaseCreationAnnouncer::class);
+		$announcer->expects($this->never())->method('announce');
+
+		$caseId = $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => ''], announcer: $announcer);
+
+		self::assertSame(expected: '', actual: $caseId);
+	}//end testARefusedCaseIsNotAnnounced()
+
+	/**
+	 * Without an announcer the case is still written, and the gap is logged.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnAnnouncerTheCaseIsWrittenAndTheGapLogged(): void {
+		$register = new InMemoryRegister();
+		$this->logger->expects($this->once())->method('warning')->with('RecordImportStore: no announcer, so the imported case was written unannounced');
+
+		$caseId = $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => '']);
+
+		self::assertSame(expected: 'generated-1', actual: $caseId);
+		self::assertSame(expected: 1, actual: $register->writes);
+	}//end testWithoutAnAnnouncerTheCaseIsWrittenAndTheGapLogged()
+
+	/**
 	 * Without a result type, only the case is written.
 	 *
 	 * @return void
@@ -125,7 +190,12 @@ class RecordImportStoreBehaviourTest extends TestCase {
 	public function testACaseWithoutAResultWritesNoResult(): void {
 		$register = new InMemoryRegister();
 
-		self::assertSame('generated-1', $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => '']));
+		$caseId = $this->store()->writeCase(
+			objectService: $register,
+			mapped: ['case' => ['title' => 'T'], 'result' => ''],
+			announcer: $this->quietAnnouncer()
+		);
+		self::assertSame(expected: 'generated-1', actual: $caseId);
 		self::assertSame([], $register->all('result'));
 		self::assertSame(1, $register->writes);
 	}//end testACaseWithoutAResultWritesNoResult()
@@ -144,7 +214,12 @@ class RecordImportStoreBehaviourTest extends TestCase {
 			$this->callback(static fn (array $context): bool => $context['case'] === 'generated-1')
 		);
 
-		self::assertSame('generated-1', $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => 'r-1']));
+		$caseId = $this->store()->writeCase(
+			objectService: $register,
+			mapped: ['case' => ['title' => 'T'], 'result' => 'r-1'],
+			announcer: $this->quietAnnouncer()
+		);
+		self::assertSame(expected: 'generated-1', actual: $caseId);
 		self::assertSame([['title' => 'T', 'id' => 'generated-1']], $register->all('case'));
 	}//end testARefusedResultKeepsTheCase()
 
@@ -159,7 +234,12 @@ class RecordImportStoreBehaviourTest extends TestCase {
 
 		$this->logger->expects($this->once())->method('error')->with('RecordImportStore: the case could not be written', $this->anything());
 
-		self::assertSame('', $this->store()->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => 'r-1']));
+		$caseId = $this->store()->writeCase(
+			objectService: $register,
+			mapped: ['case' => ['title' => 'T'], 'result' => 'r-1'],
+			announcer: $this->quietAnnouncer()
+		);
+		self::assertSame(expected: '', actual: $caseId);
 		self::assertSame([], $register->all('result'));
 	}//end testARefusedCaseAnswersNoId()
 

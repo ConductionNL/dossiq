@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,7 +38,7 @@ use OCP\IUserSession;
  * report cannot be switched on without a named group that exists. An unset,
  * empty or unreadable value reads as off: off is the safe state.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
 class WooReportSwitches {
 
@@ -102,7 +102,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True when the organisation switched the report on.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function isOn(string $switch): bool {
 		if ($switch !== self::THROUGHPUT && $switch !== self::PARTIES) {
@@ -125,7 +125,7 @@ class WooReportSwitches {
 	 *
 	 * @return string The group id.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function readerGroup(): string {
 		return trim($this->stored(key: self::READERS));
@@ -141,7 +141,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True when the user is in the existing reader group.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function maySeeThroughput(string $userId): bool {
 		$group = $this->readerGroup();
@@ -162,7 +162,7 @@ class WooReportSwitches {
 	 *
 	 * @return array{throughput: bool, parties: bool} What the user is offered.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function offeredToCurrentUser(): array {
 		$user = $this->userSession?->getUser();
@@ -189,7 +189,7 @@ class WooReportSwitches {
 	 *
 	 * @throws RefusedException When the throughput report would be on with no existing reader group.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
 		$data = (new RenamedSettingKeys(earlierKeys: self::LEGACY_KEYS))->carry(data: $data);
@@ -221,7 +221,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True for 'true', '1', 'yes' or 'on'.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public static function truthy(mixed $value): bool {
 		if (is_bool($value) === true) {

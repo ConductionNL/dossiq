@@ -3,8 +3,8 @@
 /**
  * Dossiq ThreadingLookup.
  *
- * The Mail account and Mail's manager a threading lookup asks whether the
- * account holds a message id.
+ * The Mail account and Mail's manager one call on that account asks: a
+ * threading lookup, a source read, a move or an attachment list.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Email
@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 /**
- * What one threading lookup asks, built and read by NextcloudMailGateway only.
+ * The account and the manager one call asks, built by MailServices for NextcloudMailGateway.
  *
  * @spec openspec/specs/inbound-mail-filters/spec.md
  */

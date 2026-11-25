@@ -5,6 +5,7 @@
     "title": "Subsidie",
     "category": "Subsidies",
     "grantChain": true,
+    "primaryAction": "grant-settle",
     "description": "Subsidieaanvraag- en verstrekkingsproces conform Awb titel 4.2 en de gemeentelijke subsidieverordening",
     "purpose": "Behandeling van subsidieaanvragen van ontvangst tot beschikking",
     "trigger": "Subsidieaanvraag van een aanvrager onder een subsidieregeling",
