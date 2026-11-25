@@ -79,11 +79,22 @@ class ZuiddrechtSetNeedsNoOnRequestPackageTest extends TestCase {
 	 * @return array<int, array{key: string, schema: string, value: string}> The lookups.
 	 */
 	private function lookups(): array {
-		$set = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$root = __DIR__ . '/../../../lib/Settings/example-sets/';
+		$set  = json_decode((string)file_get_contents($root . 'zuiddrecht.json'), true);
 		self::assertIsArray(actual: $set, message: 'The Zuiddrecht set must parse.');
 
+		// The installer reads the zuiddrecht.d fragments as part of the set.
+		$objects   = (array)($set['objects'] ?? []);
+		$fragments = (array)glob($root . 'zuiddrecht.d/*.json');
+		self::assertNotSame(expected: [], actual: $fragments, message: 'The set has fragments; finding none means this test reads them wrongly.');
+		foreach ($fragments as $fragment) {
+			$part = json_decode((string)file_get_contents((string)$fragment), true);
+			self::assertIsArray(actual: $part, message: basename((string)$fragment) . ' must parse.');
+			$objects = array_merge($objects, (array)($part['objects'] ?? []));
+		}
+
 		$lookups = [];
-		foreach ((array)($set['objects'] ?? []) as $object) {
+		foreach ($objects as $object) {
 			foreach ((array)($object['lookups'] ?? []) as $lookup) {
 				$schema = (string)($lookup['schema'] ?? '');
 				$value = match ($schema) {

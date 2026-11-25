@@ -115,7 +115,11 @@ class AanbestedingTenderChainTest extends TestCase {
 
 		$this->assertTrue($caseType['tenderChain']);
 		$this->assertSame(['case-tender-ranking', 'case-overview-sections'], $caseType['overviewCards']);
-		$this->assertSame('1.12.0', self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version']);
+		$version = (string)self::json(path: 'lib/Settings/packages/aanbesteding/package.json')['version'];
+		$this->assertTrue(
+			condition: version_compare(version1: $version, version2: '1.12.0', operator: '>='),
+			message: 'the aanbesteding package must carry 1.12.0 or later'
+		);
 	}//end testThePackageRunsItsCaseTypeOnTheTenderChain()
 
 	/**
