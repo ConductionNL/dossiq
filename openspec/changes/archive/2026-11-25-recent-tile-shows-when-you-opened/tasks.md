@@ -15,5 +15,6 @@ Kind: config. Size S. Product owner decision on the DqDashboard board,
   `test:l10n`. Needs nextcloud-vue#1421, carried by 2.77.0 (#3582).
 - [x] 1.3 `openspec/parity/capabilities.json`: row 2.19 `built.spec` points
   at `openspec/specs/case-management`.
-- [ ] 2.1 Live check once the OpenRegister read-history change is merged:
+- [x] 2.1 Live check once the OpenRegister read-history change is merged:
+  - Done on a sandbox instance, 25 Nov 2026 (NC 34.0.6, MariaDB, dossiq/opencatalogi development, openregister main, Zuiddrecht set), Dutch locale, as admin: after opening three cases, the Dashboard tile "Recent geopend" lists them with "vandaag" on each row (and Mijn werk's "Verder werken" reads "zojuist", "2 min geleden").
   open a case, return to the Dashboard, and read "today" ("vandaag") on its row.

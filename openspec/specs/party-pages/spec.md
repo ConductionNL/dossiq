@@ -213,3 +213,24 @@ card title.
 
 - **GIVEN** a contact moment that names no case
 - **THEN** its meta line ends at the direction, without "zaak"
+
+### Requirement: An organisation's contact persons have their own tab
+
+The organisation page SHALL show the board's six tabs in its strip: Overview, Cases, Contact moments, Contact persons,
+Files and Record history. The main contact card's link SHALL open the Contact persons tab.
+
+#### Scenario: DqOrganisatie
+
+- **GIVEN** Buurtvereniging Oost with two contact persons
+- **THEN** the strip reads Overzicht, Zaken, Contactmomenten, Contactpersonen, Bestanden, Historie
+- **AND** "Alle 2 contactpersonen" opens the Contact persons tab
+
+### Requirement: The organisation's side lists are short stacked lists
+
+The OrganisationDetail side cards "Open cases" and "Open tickets" SHALL draw their rows as a stacked list
+(`density: "stacked"`), with no rule above the row.
+
+#### Scenario: DqOrganisatie Lopende zaken
+
+- **GIVEN** an organisation with one open case
+- **THEN** the case starts 10px under the "Lopende zaken" title, with no hairline above it
