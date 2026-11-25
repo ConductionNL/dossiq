@@ -117,6 +117,26 @@ class InMemoryRegister {
 	}//end seed()
 
 	/**
+	 * Slugs find() also answers, as OpenRegister's find matches a slug as well as a uuid.
+	 *
+	 * @var array<string, array<string, string>> Schema slug => object slug => uuid.
+	 */
+	private array $slugs = [];
+
+	/**
+	 * Let find() answer a stored row by its slug too.
+	 *
+	 * @param string $schema The schema slug.
+	 * @param string $slug   The object's slug.
+	 * @param string $uuid   The row's uuid.
+	 *
+	 * @return void
+	 */
+	public function slug(string $schema, string $slug, string $uuid): void {
+		$this->slugs[$schema][$slug] = $uuid;
+	}//end slug()
+
+	/**
 	 * One stored row as the test sees it.
 	 *
 	 * @param string $schema The schema slug.
@@ -170,7 +190,9 @@ class InMemoryRegister {
 			throw new \RuntimeException("User 'Anonymous' does not have permission to 'read' objects in schema '" . (string)$schema . "'");
 		}
 
-		return ($this->rows[(string)$schema][(string)$id] ?? null);
+		$key = ($this->slugs[(string)$schema][(string)$id] ?? (string)$id);
+
+		return ($this->rows[(string)$schema][$key] ?? null);
 	}//end find()
 
 	/**

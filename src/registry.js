@@ -483,7 +483,7 @@ const registry = {
 		_note: "CaseDetail `grant-settle` header action (REQ-SUB-CASE-01). Lists the case's settlements not determined yet with the granted amount, the advances and the actual costs as stored (GET /api/cases/{caseId}/grant-chain), and posts the three figures to POST /api/subsidies/vaststellingen/{id}/vast; the server settles and proposes a draft recovery when the advances exceed the settled amount, which the dialog reports.",
 	},
 
-	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	// @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	NoticeOfDefaultDialog: {
 		kind: 'modal',
 		component: NoticeOfDefaultDialog,
@@ -1226,7 +1226,7 @@ const registry = {
 		handler: openIntegriqConnections,
 		_note: "The Integrations page's Add integration header action. A function because a header action's `navigate` keyword only pushes a route name inside this app's router, which cannot leave the app.",
 	},
-	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	// @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 	prepareNoticePayout: {
 		kind: 'handler',
 		handler: prepareNoticePayout,

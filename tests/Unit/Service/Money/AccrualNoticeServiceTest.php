@@ -348,7 +348,7 @@ class AccrualNoticeServiceTest extends TestCase {
 	 * The case's statutory term is the one a notice is given on; a planned or
 	 * internal clock on the same case is not.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 *
 	 * @return void
 	 */
@@ -371,7 +371,7 @@ class AccrualNoticeServiceTest extends TestCase {
 	 * A notice while the term runs gets the reason naming the end date; one
 	 * after the term has passed gets none.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 *
 	 * @return void
 	 */
@@ -388,7 +388,7 @@ class AccrualNoticeServiceTest extends TestCase {
 	/**
 	 * Who sent the notice is stored with it.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 *
 	 * @return void
 	 */

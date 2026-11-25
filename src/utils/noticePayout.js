@@ -12,7 +12,7 @@ import PayoutPrepareDialog from '../dialogs/PayoutPrepareDialog.vue'
  *
  * @param {Array<object>} args The dispatch arguments.
  * @return {object|null} The row, or null.
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 export function noticeRowOf(args) {
 	let row = null
@@ -35,7 +35,7 @@ export function noticeRowOf(args) {
  *
  * @param {...object} args The dispatch arguments.
  * @return {void}
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 export function prepareNoticePayout(...args) {
 	const row = noticeRowOf(args)

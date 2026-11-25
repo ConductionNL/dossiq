@@ -288,7 +288,10 @@ class RecordImportStore {
 		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
 		try {
 			$found = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseType);
-			if ($found !== null) {
+			// OpenRegister's find also matches a slug, and version 1 of a case type keeps the
+			// identifier as its slug: a superseded version found that way gives way to the
+			// version in use. One asked for by its own uuid is answered as it is.
+			if ($found !== null && ($this->inUse(row: $found) === true || $this->idOf(row: $found) === $caseType)) {
 				return $found;
 			}
 
