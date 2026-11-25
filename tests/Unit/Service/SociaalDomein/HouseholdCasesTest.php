@@ -141,8 +141,14 @@ class HouseholdCasesTest extends TestCase {
 	 * @spec openspec/changes/family-plan-by-case/tasks.md
 	 */
 	public function testACaseFindsThePlanThatNamesIt(): void {
-		$this->objects->seed('gezinsplan', ['id' => 'plan-by-case', 'caseId' => 'case-linked', 'preparedDate' => '2026-11-19', 'gezinsleden' => [['role' => 'jeugdige', 'bsn' => self::CHILD]]]);
-		$this->objects->seed('gezinsplan', ['id' => 'plan-older', 'caseId' => 'case-linked', 'preparedDate' => '2026-01-01', 'gezinsleden' => [['role' => 'ouder', 'bsn' => self::PARENT]]]);
+		$this->objects->seed(
+			'gezinsplan',
+			['id' => 'plan-by-case', 'caseId' => 'case-linked', 'preparedDate' => '2026-11-19', 'gezinsleden' => [['role' => 'jeugdige', 'bsn' => self::CHILD]]]
+		);
+		$this->objects->seed(
+			'gezinsplan',
+			['id' => 'plan-older', 'caseId' => 'case-linked', 'preparedDate' => '2026-01-01', 'gezinsleden' => [['role' => 'ouder', 'bsn' => self::PARENT]]]
+		);
 
 		self::assertSame(expected: [self::CHILD], actual: $this->household->householdBsns(case: ['id' => 'case-linked']));
 	}//end testACaseFindsThePlanThatNamesIt()
