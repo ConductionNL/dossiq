@@ -13,7 +13,7 @@
  * days back from a date, at least 1) is tested there
  * (nextcloud-vue tests/utils/transitionInputsDateFor.spec.js).
  *
- * @spec openspec/changes/suspend-return-date/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-11-25-suspend-return-date/specs/case-management/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
