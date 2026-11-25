@@ -5,7 +5,7 @@
  * Board DqTaken names an unclaimed task's team in the Behandelaar column:
  * "TW  Team Woo, niet geclaimd".
  *
- * @spec openspec/changes/task-list-pooled-handler/specs/task-list/spec.md#requirement-the-task-list-names-the-team-of-an-unclaimed-task
+ * @spec openspec/changes/archive/2026-11-25-task-list-pooled-handler/specs/task-list/spec.md#requirement-the-task-list-names-the-team-of-an-unclaimed-task
  */
 
 import fs from 'fs'
