@@ -50,7 +50,7 @@ interface TermsEndingFirstInterface {
 	 *
 	 * @throws Throwable When the terms cannot be read; an empty list would read "nothing is running".
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	public function list(int $limit = self::DEFAULT_LIMIT, ?DateTimeImmutable $now = null): array;
 }//end interface

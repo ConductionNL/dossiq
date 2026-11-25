@@ -21,5 +21,12 @@
 ## 4. Checks
 
 - [ ] 4.1 `tests/e2e/complaint-case-type.spec.ts`: both scenarios of REQ-CMP-CT-01 (the second after 2.3).
+  - 25 Nov 2026 live: the first scenario is green (after the spec sends the request token on the terms read); the second stays skipped until 2.3.
 - [ ] 4.2 Live pass against board DqKlachten.
+  - 25 Nov 2026 live, complaint 2026-4874 (Zuiddrecht set) against the board. Matches: stepper (Ontvangen, Bevestigd, Hoorgesprek, Oordeel, Antwoordbrief, Afgehandeld), Gegevens card (Klager, Onderwerp, Gaat over, Ontvangen, Afdeling, Categorie), Hoorgesprek card (Wanneer, Waar, Verslag, Soort, Aanwezig). Differs:
+    - the what-now card reads "Stap 2: in behandeling ... Daarna: naar stap 3, besluit" while the stepper stands on Hoorgesprek (step 3); the board reads "Stap 3: hoorgesprek ... Daarna: naar stap 4, oordeel" with the complaint's own checklist;
+    - header: board Hoorgesprek plannen, Bewerken, Oordeel vastleggen (primary); live Bericht, Document, Contact vastleggen, Bewerken, Meer;
+    - the Hoorgesprek card lacks Verslag vastleggen and Klager ziet af van horen and the invitation note;
+    - side column: board Termijn (Nog 23 dagen; Wettelijk 6 weken, Verdaging, Ontvangstbevestiging rows) and Wie (Klager, Behandelaar, Klachtencoördinator); live a generic Termijn card (18 dagen) and Aanvrager "Nog geen aanvrager";
+    - breadcrumb: board Klachten / KL-2026-0041, live Alle zaken / 2026-4874; case-type pill Klacht behandeling vs Klacht (Awb hoofdstuk 9).
 - [ ] 4.3 `openspec/parity/capabilities.json` row 2.53: built, evidence the case type and the view.

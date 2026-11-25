@@ -92,7 +92,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	 *
 	 * @return array<string, mixed>|null The instance, or null when it does not exist.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function termInstance(string $termInstanceId): ?array {
 		return $this->termService->getTermijnInstance($termInstanceId);
@@ -109,7 +109,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	 *
 	 * @return array<string, mixed>|null The instance, or null when the case has none.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function statutoryTermOf(string $caseId): ?array {
 		foreach ($this->termService->instancesForCase($caseId) as $instance) {
@@ -131,7 +131,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	 *
 	 * @return string The reason, in the handler's terms, or '' when the notice may be registered.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function prematureReason(array $instance, DateTimeImmutable $receiptDate): string {
 		if ($this->termHasPassed(instance: $instance, receiptDate: $receiptDate) === true) {
@@ -175,7 +175,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	 * @throws RuntimeException When the instance is missing.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function registerNotice(
 		string $termInstanceId,

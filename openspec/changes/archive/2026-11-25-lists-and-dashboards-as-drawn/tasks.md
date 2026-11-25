@@ -14,4 +14,5 @@
   - Files: src/manifest.json, l10n/
   - Test: tests/vitest/processComplaintPatterns.spec.js
 - [x] 4.2 GET /api/complaints/patterns (SIG, R20/DQB-C/FOR-SIG.md)
-- [ ] 5.1 Live: the five tiles on /dashboard, Ending first and the complaint cards after SIG lands
+- [x] 5.1 Live: the five tiles on /dashboard, Ending first and the complaint cards after SIG lands
+  - Done 25 Nov 2026 on a sandbox instance (NC 34.0.6, MariaDB, openregister main, dossiq development, Dutch locale): /dashboard draws Mijn open werk, Wachtrij van uw teams, Termijnsignalen, Taakherinneringen and Woo-termijnen; Termijnbewaking draws "Verloopt het eerst" from `GET /api/deadlines/ending-first` (200, rows with daysLeft); the process analysis page draws "Klachten: terugkerende patronen" and the per category, department, month and channel cards from `GET /api/complaints/patterns` (200, `available: true`).

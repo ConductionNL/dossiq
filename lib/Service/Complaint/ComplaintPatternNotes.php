@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\IL10N;
 /**
  * Words the four figures against their targets.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 class ComplaintPatternNotes {
 	/**
@@ -54,7 +54,7 @@ class ComplaintPatternNotes {
 	 *
 	 * @return array<string, int|string|null>
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function kpis(array $figures, array $targets): array {
 		$handling = $figures['handling'];
@@ -74,7 +74,7 @@ class ComplaintPatternNotes {
 	 *
 	 * @return array<string, int|string>
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function perMonthKpi(array $figures, array $targets): array {
 		$perMonth = (int)round(((int)$figures['count']) / 3);
@@ -95,7 +95,7 @@ class ComplaintPatternNotes {
 	 *
 	 * @return array<string, int|string|null>
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function withinAwbKpi(array $handling, array $goal): array {
 		['target' => $awbTarget, 'noneHandled' => $noneHandled] = $goal;
@@ -123,7 +123,7 @@ class ComplaintPatternNotes {
 	 *
 	 * @return array<string, int|string|null>
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function upheldKpi(array $handling, array $goal): array {
 		['target' => $upheldTarget, 'noneHandled' => $noneHandled] = $goal;
@@ -151,7 +151,7 @@ class ComplaintPatternNotes {
 	 *
 	 * @return array<string, int|string|null>
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function averageDaysKpi(array $handling, string $noneHandled): array {
 		$averageDays = $handling['averageDays'];

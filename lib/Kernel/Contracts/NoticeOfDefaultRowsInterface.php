@@ -50,7 +50,7 @@ interface NoticeOfDefaultRowsInterface {
 	 *
 	 * @throws Throwable When the notices or the penalty calculations cannot be read.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
 	 */
 	public function forCase(string $caseId): array;
 

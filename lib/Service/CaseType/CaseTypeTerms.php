@@ -66,7 +66,7 @@ class CaseTypeTerms implements CaseTypeTermsInterface {
 	 *         The sentences, whether a late decision costs a penalty, or null when the case type cannot be read.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function termsFor(string $caseTypeId): ?array {
 		$caseType = $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId);
