@@ -166,7 +166,7 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function lookupRefusal(string $rule, LookupNotCompleted $e): array {
 		return $this->results->notVerified(rule: $rule, object: $e->lookup, cause: $e->getMessage());
@@ -260,7 +260,7 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 	 *
 	 * @return array|null The refusal, or null when the publish may proceed
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function guardPublishEndpoint(
 		string $resource,
