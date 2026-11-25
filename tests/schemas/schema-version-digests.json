@@ -1588,7 +1588,7 @@
         "digest": "c125afbf43c582848d7e4d4f1866ad2025851b6825a8825a44da54bd6976e7d8"
     },
     "lib/Settings/register.d/88-tender-records.json::bid": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "682b5985d0204f55cd722c2fe7b5bacf7b633253fd54c9f78a794fbbc127c97f"
     },
     "lib/Settings/register.d/88-tender-records.json::evaluation": {

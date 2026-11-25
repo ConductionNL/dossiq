@@ -164,6 +164,8 @@ $extra = [
     // The scoring sheet of a case and the scoring of one submission with the case's formula (tenders-run-on-the-tender-case-type 3.2).
     ['name' => 'scoring#sheet', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'GET'],
     ['name' => 'scoring#score', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'POST'],
+    // Propose one admissible bid for the award of its lot (tenders-run-on-the-tender-case-type 3.2).
+    ['name' => 'awardProposal#propose', 'url' => '/api/cases/{caseId}/award-proposal', 'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],

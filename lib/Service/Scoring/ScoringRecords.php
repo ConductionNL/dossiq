@@ -62,11 +62,11 @@ class ScoringRecords {
 	public const FORMULA_SCHEMA = 'scoringFormula';
 
 	/**
-	 * The submission states that can be scored.
+	 * The submission states that can be scored; a bid proposed for the award stays on the sheet.
 	 *
 	 * @var list<string>
 	 */
-	public const SCORABLE_STATES = ['admissible', 'evaluated'];
+	public const SCORABLE_STATES = ['admissible', 'evaluated', 'proposed-award'];
 
 	/**
 	 * How many rows one read takes (read by ReadsRegisterRows).

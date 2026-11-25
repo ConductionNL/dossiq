@@ -15,7 +15,7 @@
    "bid": {
     "slug": "bid",
     "icon": "HandCoin",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "searchable": false,
     "title": "Bid",
     "description": "One supplier's submission (inschrijving) on a tender case or one of its lots (REQ-TND-007). Its state follows a declared lifecycle; no bid service decides it.",
@@ -90,13 +90,14 @@
      "state": {
       "type": "string",
       "title": "State",
-      "description": "Received, admissible, inadmissible, excluded, evaluated or withdrawn.",
+      "description": "Received, admissible, inadmissible, excluded, evaluated, proposed-award (the bid the buyer proposes to award its lot to, one per lot of the case) or withdrawn.",
       "enum": [
        "received",
        "admissible",
        "inadmissible",
        "excluded",
        "evaluated",
+       "proposed-award",
        "withdrawn"
       ],
       "default": "received",
