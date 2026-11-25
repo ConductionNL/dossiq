@@ -24,6 +24,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
+import { openCasePanel } from '../helpers/case-panels.ts'
 import {
 	createObject,
 	ensureCaseType,
@@ -35,7 +36,6 @@ import {
 	showObject,
 	updateObject,
 } from '../helpers/fixtures.ts'
-import { openCasePanel } from '../helpers/case-panels.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
