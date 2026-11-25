@@ -83,8 +83,8 @@ class CasePublicationState {
 	 *
 	 * @return array{record: array<string, mixed>, note: string} The recorder's answer and the case's sentence.
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-published-woo-decision-records-its-withheld-documents-in-opencatalogi-req-wrw-001
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-published-woo-decision-records-its-withheld-documents-in-opencatalogi-req-wrw-001
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
 	 */
 	public function recordWithheld(string $publicationId, array $assessments): array {
 		if ($this->withheldRecorder === null) {

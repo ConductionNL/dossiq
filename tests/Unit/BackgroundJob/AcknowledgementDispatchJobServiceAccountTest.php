@@ -187,7 +187,7 @@ class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 */
 	public function testThreeUnsentAttemptsLeaveTheDutyUnmet(): void {
 		$job = $this->job(realSender: $this->realTermNoticeSender(mailerThrows: true));

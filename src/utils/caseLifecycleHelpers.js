@@ -154,7 +154,7 @@ export function extensionNotice(body, translate) {
  * @param {object|null} body The archive answer (`{..., notice: {noticeStatus, noticeReason}}`).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 export function archiveNotice(body, translate) {
 	const t = translatorFor(translate)

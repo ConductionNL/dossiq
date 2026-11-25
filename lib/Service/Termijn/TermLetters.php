@@ -178,7 +178,7 @@ class TermLetters {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(TermLetter $letter): array {
 		// Dutch wording only, so a Dutch date, as in the ingebrekestelling receipt.

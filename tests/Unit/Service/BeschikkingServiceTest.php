@@ -746,7 +746,7 @@ class BeschikkingServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function testABeschikkingNoTransportTookIsNotMarkedSent(): void {
 		// Addressed to a burger with no BSN, on a case with no address.
@@ -781,7 +781,7 @@ class BeschikkingServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function testABeschikkingDigitalPostRefusedStaysSigned(): void {
 		$this->postAnswer = ['refused' => true, 'code' => 'no-message-box', 'error' => 'This person has no MijnOverheid message box.'];
@@ -811,7 +811,7 @@ class BeschikkingServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function testASentBeschikkingCarriesTheTransportsMessageId(): void {
 		$id = $this->composeWmo()['id'];

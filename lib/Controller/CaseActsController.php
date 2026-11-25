@@ -286,7 +286,7 @@ class CaseActsController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/case-management/spec.md
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	#[NoAdminRequired]
 	public function archive(string $caseId): JSONResponse {
@@ -315,7 +315,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @return array<string, string> Whether the requester was told, and why not.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	private function tellRequester(string $caseId): array {
 		if ($this->archiveNotice === null) {
