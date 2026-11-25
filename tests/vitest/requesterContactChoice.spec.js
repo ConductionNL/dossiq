@@ -26,6 +26,7 @@ vi.mock('../../src/services/duplicateCheckApi.js', () => ({
 }))
 vi.mock('../../src/services/intakeTriageApi.js', () => ({ fetchIntakeRequirements: async () => ({}) }))
 vi.mock('../../src/services/initiatorSearch.js', () => ({ initiatorChoice }))
+vi.mock('../../src/services/servedRegistrationForm.js', () => ({ fetchServedRegistrationForm: async () => null, withServedForm: (candidate) => candidate }))
 
 const { createCaseWithDuplicateCheck } = await import('../../src/services/createCaseWithDuplicateCheck.js')
 

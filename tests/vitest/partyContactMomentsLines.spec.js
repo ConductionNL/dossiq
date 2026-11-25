@@ -6,7 +6,7 @@
  * "4 okt, 10:52 · e-mail · inkomend · zaak 2026-0070", the count sits at the
  * right of the card title.
  *
- * @spec openspec/changes/party-contact-moments-board-lines/specs/party-pages/spec.md#requirement-a-partys-latest-contact-moments-read-moment-channel-direction-and-case
+ * @spec openspec/changes/archive/2026-11-25-party-contact-moments-board-lines/specs/party-pages/spec.md#requirement-a-partys-latest-contact-moments-read-moment-channel-direction-and-case
  */
 
 import fs from 'fs'

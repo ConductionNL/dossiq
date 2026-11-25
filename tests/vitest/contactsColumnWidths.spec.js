@@ -6,7 +6,7 @@
  * Zuiddrecht" under the name), BSN 211px, Woonplaats 157px, Omschrijving the
  * rest; Omschrijving sorts.
  *
- * @spec openspec/changes/contacts-list-columns-as-drawn/specs/party-pages/spec.md#requirement-the-contacts-list-sizes-its-columns-as-the-board
+ * @spec openspec/changes/archive/2026-11-25-contacts-list-columns-as-drawn/specs/party-pages/spec.md#requirement-the-contacts-list-sizes-its-columns-as-the-board
  */
 
 import fs from 'fs'
@@ -24,6 +24,10 @@ describe('contacts list columns (DqContacten)', () => {
 		expect(column('citizenServiceNumber').width).toBe('211px')
 		expect(column('residence.city').width).toBe('157px')
 		expect(column('description').width).toBeUndefined()
+	})
+
+	it('wraps the name cell, so the address under the name reads in full (live, 25 Nov: "Oosthavenweg 12, Zuid...")', () => {
+		expect(column('displayName').cellClass).toBe('cn-cell--wrap')
 	})
 
 	it('sorts on the description', () => {

@@ -42,7 +42,8 @@
 			"group": "dossiq-sociaal-domein",
 			"displayName": "Dossiq sociaal domein",
 			"members": [
-				"fatma"
+				"fatma",
+				"pieter"
 			]
 		},
 		{
@@ -4604,6 +4605,9 @@
 			],
 			"data": {
 				"title": "Melding Jeugdwet gezin Oosthaven",
+				"gdprClassification": [
+					"health"
+				],
 				"description": "De huisarts meldt zorgen over een kind van 9 jaar: slaapproblemen en schoolverzuim. Ouders staan open voor ondersteuning.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",

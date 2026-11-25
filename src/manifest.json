@@ -15683,6 +15683,7 @@
 						"key": "displayName",
 						"label": "Name",
 						"width": "250px",
+						"cellClass": "cn-cell--wrap",
 						"widget": "avatar",
 						"widgetProps": {
 							"size": 36,

@@ -5,7 +5,7 @@
  * Board DqTaken draws a task's subject as a link to its case with the case
  * number under it ("Bezwaar parkeerboete Havenstraat" / "2026-0074").
  *
- * @spec openspec/changes/task-list-subject-links-its-case/specs/task-list/spec.md#requirement-the-task-list-links-a-tasks-case-with-its-number
+ * @spec openspec/changes/archive/2026-11-25-task-list-subject-links-its-case/specs/task-list/spec.md#requirement-the-task-list-links-a-tasks-case-with-its-number
  */
 
 import fs from 'fs'

@@ -5,7 +5,7 @@
  * Board DqTaken draws a task's title and subject over as many lines as they
  * need ("Bezwaarschrift aanvullen bij de indiener"), not cut to "Bezwaarschrift a...".
  *
- * @spec openspec/changes/task-list-titles-wrap/specs/task-list/spec.md#requirement-the-task-list-shows-a-title-and-subject-in-full
+ * @spec openspec/changes/archive/2026-11-25-task-list-titles-wrap/specs/task-list/spec.md#requirement-the-task-list-shows-a-title-and-subject-in-full
  */
 
 import fs from 'fs'

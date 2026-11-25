@@ -48,7 +48,7 @@ interface DocumentProjectionServiceInterface {
 	 *
 	 * @return mixed What the projection returns.
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	public function asSystem(callable $operation): mixed;
 
