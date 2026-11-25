@@ -142,6 +142,9 @@ test.describe('Lifecycle acts on the case', () => {
 	test.beforeAll(async ({ request }) => {
 		token = await getRequestToken(request)
 		machine = await seedStateMachine(request, token)
+		// A statutory term to bind: promoting a draft binds the deadline the
+		// register calculates from startDate and this processingDeadline.
+		await updateObject(request, token, 'caseType', machine.caseTypeId, { processingDeadline: 'P56D' })
 
 		const hidden = await createObject(request, token, 'statusType', {
 			name: `${RUN_PREFIX} Afgesloten en verborgen`,
