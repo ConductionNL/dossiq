@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+ * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
  * page's next step (src/utils/caseNextStep.js). The case and the statuses are
  * read under the user's rights: a case the user may not read gives no answer.
  *
- * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+ * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
  */
 class CaseNextStatus implements CaseNextStatusInterface {
 
@@ -63,7 +63,7 @@ class CaseNextStatus implements CaseNextStatusInterface {
 	 *
 	 * @throws Throwable When the register cannot be read.
 	 *
-	 * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+	 * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
 	 */
 	public function forCase(string $caseId): ?array {
 		$case = ($this->rows(schema: 'case', filters: ['_ids' => [$caseId], '_limit' => 1])[0] ?? null);
