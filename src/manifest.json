@@ -6737,6 +6737,75 @@
 						}
 					},
 					{
+						"id": "interim-report-record",
+						"type": "open-modal",
+						"label": "Record interim report",
+						"icon": "FileChartOutline",
+						"target": "InterimReportRecordDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.grantChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
+						"id": "interim-report-assess",
+						"type": "open-modal",
+						"label": "Assess interim report",
+						"icon": "CheckDecagramOutline",
+						"target": "InterimReportAssessDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.grantChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
+						"id": "grant-settle",
+						"type": "open-modal",
+						"label": "Settle grant",
+						"icon": "ScaleBalance",
+						"target": "GrantSettleDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.grantChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "log-contact",
 						"type": "open-modal",
 						"label": "Record contact",

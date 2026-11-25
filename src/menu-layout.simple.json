@@ -2157,6 +2157,15 @@
 					"bid-score": {
 						"group": "Case"
 					},
+					"interim-report-record": {
+						"group": "Case"
+					},
+					"interim-report-assess": {
+						"group": "Case"
+					},
+					"grant-settle": {
+						"group": "Case"
+					},
 					"case-acknowledgement-met": {
 						"group": "Case"
 					},
@@ -7273,6 +7282,9 @@
 					"tender-answer-publish",
 					"bid-register",
 					"bid-score",
+					"interim-report-record",
+					"interim-report-assess",
+					"grant-settle",
 					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
