@@ -5,7 +5,7 @@
  * Board DqOrganisatie draws "Lopende zaken" and "Open tickets" as short
  * stacked lists: the row 10px under the title, no rule above it.
  *
- * @spec openspec/changes/organisation-side-lists-stacked/specs/party-pages/spec.md#requirement-the-organisations-side-lists-are-short-stacked-lists
+ * @spec openspec/changes/archive/2026-11-25-organisation-side-lists-stacked/specs/party-pages/spec.md#requirement-the-organisations-side-lists-are-short-stacked-lists
  */
 
 import fs from 'fs'

@@ -14,7 +14,7 @@
  * the bare package name to a stub, and a stub cannot answer what the
  * installed library renders.
  *
- * @spec openspec/changes/recent-tile-shows-when-you-opened/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-11-25-recent-tile-shows-when-you-opened/specs/case-management/spec.md
  */
 
 import fs from 'fs'
