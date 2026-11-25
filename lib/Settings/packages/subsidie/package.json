@@ -2,11 +2,12 @@
   "id": "subsidie",
   "title": "Subsidie",
   "summary": "Case type with assessment, award, advance and settlement; flow for the payment.",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "requires": [],
   "parts": [
     "case-type",
-    "flows"
+    "flows",
+    "examples"
   ],
   "install": "on-request",
   "description": "The generic subsidie case type (Awb titel 4.2) with its statuses, roles, the beschiktBedrag field and a published flow. Sets grantChain, the case type flag the case page's grant parts (interim reports, evidence, settlement, recovery) and their header actions gate on. Settling the grant (board DqSubsidie: Adopt) is the case type's primary button through `primaryAction`. Installed on request: POST /api/packages/subsidie/install, or occ dossiq:package:install subsidie. Converted by scripts/packages/seed-to-package.py from the parked subsidie entry in the old bezwaar seed."
