@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 47 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 50 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -297,10 +297,12 @@ describe('the actions', () => {
 		// Case (tenders-run-on-the-tender-case-type 3.2), and 46: Publish
 		// answer joined it beside Register bid (same task). 47: Score bid
 		// joined Case beside Register bid (same task, the bid-score half).
-		expect(placed).toHaveLength(47)
+		// 50: Record interim report, Assess interim report and Settle grant
+		// joined Case beside Score bid (grant-cases-from-application-to-settlement 1.2).
+		expect(placed).toHaveLength(50)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(32)
+		expect(count('Case')).toBe(35)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)

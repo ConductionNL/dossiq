@@ -10117,6 +10117,51 @@
                 }
             }
         },
+        "/cases/{caseId}/grant-chain": {
+            "get": {
+                "operationId": "settlement-grant-chain",
+                "summary": "The grant chain of the case",
+                "description": "The executions of the case's grants, each with the amount its decision granted, the advances paid, its interim reports and its settlements, reached through the case's applications. The case page's grant actions (record and assess an interim report, settle the grant) read it to pick the row they act on. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "settlement"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
         "/cases/{caseId}/scoring": {
             "get": {
                 "operationId": "scoring-sheet",

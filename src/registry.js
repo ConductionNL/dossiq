@@ -130,6 +130,9 @@ const AdviceRequestDialog = lazyComponent(() => import('./dialogs/AdviceRequestD
 const AdviceResponseDialog = lazyComponent(() => import('./dialogs/AdviceResponseDialog.vue'), 'AdviceResponseDialog')
 const AnswerPublishDialog = lazyComponent(() => import('./dialogs/AnswerPublishDialog.vue'), 'AnswerPublishDialog')
 const BidScoreDialog = lazyComponent(() => import('./dialogs/BidScoreDialog.vue'), 'BidScoreDialog')
+const InterimReportRecordDialog = lazyComponent(() => import('./dialogs/InterimReportRecordDialog.vue'), 'InterimReportRecordDialog')
+const InterimReportAssessDialog = lazyComponent(() => import('./dialogs/InterimReportAssessDialog.vue'), 'InterimReportAssessDialog')
+const GrantSettleDialog = lazyComponent(() => import('./dialogs/GrantSettleDialog.vue'), 'GrantSettleDialog')
 const AssessmentDecisionDialog = lazyComponent(() => import('./dialogs/AssessmentDecisionDialog.vue'), 'AssessmentDecisionDialog')
 const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')
 const CaseCopyDialog = lazyComponent(() => import('./dialogs/CaseCopyDialog.vue'), 'CaseCopyDialog')
@@ -454,6 +457,30 @@ const registry = {
 		component: BidScoreDialog,
 		propsSchema: {},
 		_note: "CaseDetail `bid-score` header action, board DqAanbesteding (REQ-TND-CASE-01). Reads the case's scoring sheet (GET /api/cases/{caseId}/scoring: the formula the case names in `scoringFormula`, the values the case holds under the formula's variable names, the values the evaluator enters per bid, and the admissible bids), and posts the entered values for one bid; the server applies the formula (FormulaScorer), with price and lowestPrice read from the bids, and stores the caller's evaluation with its weightedTotal, which the Evaluation card ranks by. Computes nothing itself.",
+	},
+
+	// @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	InterimReportRecordDialog: {
+		kind: 'modal',
+		component: InterimReportRecordDialog,
+		propsSchema: {},
+		_note: "CaseDetail `interim-report-record` header action (REQ-SUB-CASE-01). Reads the case's grant executions (GET /api/cases/{caseId}/grant-chain), picks the only one or lets the handler pick, and posts the report's number, period and progress to POST /api/subsidies/uitvoeringen/{id}/tussenrapportages.",
+	},
+
+	// @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	InterimReportAssessDialog: {
+		kind: 'modal',
+		component: InterimReportAssessDialog,
+		propsSchema: {},
+		_note: "CaseDetail `interim-report-assess` header action (REQ-SUB-CASE-01). Lists the case's interim reports not assessed yet (GET /api/cases/{caseId}/grant-chain) and posts the assessment voldoende, with an optional approved amount, to POST /api/subsidies/tussenrapportages/{id}/beoordelen; the route stores the assessor from the session. Rejection and partial approval have no route, so they are not offered.",
+	},
+
+	// @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	GrantSettleDialog: {
+		kind: 'modal',
+		component: GrantSettleDialog,
+		propsSchema: {},
+		_note: "CaseDetail `grant-settle` header action (REQ-SUB-CASE-01). Lists the case's settlements not determined yet with the granted amount, the advances and the actual costs as stored (GET /api/cases/{caseId}/grant-chain), and posts the three figures to POST /api/subsidies/vaststellingen/{id}/vast; the server settles and proposes a draft recovery when the advances exceed the settled amount, which the dialog reports.",
 	},
 
 	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01

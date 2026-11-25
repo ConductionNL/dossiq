@@ -48,4 +48,20 @@ interface SettlementOverviewInterface {
 	 * @spec openspec/specs/case-page/spec.md
 	 */
 	public function forCase(string $caseId): array;
+
+	/**
+	 * The executions of the case's grants, each with the granted amount, the
+	 * advances paid, its interim reports and its settlements (in the shape
+	 * forCase gives a settlement), so the case page's grant actions can pick
+	 * the row they act on.
+	 *
+	 * `empty` is true while the case has no execution, so a dialog can say so.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{empty: bool, executions: list<array<string, mixed>>}
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	public function chainForCase(string $caseId): array;
 }//end interface

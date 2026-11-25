@@ -116,6 +116,40 @@ class SettlementControllerTest extends TestCase {
 	}//end testAFailingReadAnswersUnavailable()
 
 	/**
+	 * A reader of the case gets its grant chain; anyone else is refused before it is read.
+	 *
+	 * @return void
+	 */
+	public function testAReaderGetsTheGrantChainAndANonReaderIsRefused(): void {
+		$chain = ['empty' => false, 'executions' => [['id' => 'execution-1', 'interimReports' => [], 'settlements' => []]]];
+		$this->caseAccess->method('hasCaseReadAccess')->willReturnCallback(
+			fn (string $caseId): bool => $caseId === 'case-1'
+		);
+		$this->overview->expects($this->once())->method('chainForCase')->with('case-1')->willReturn($chain);
+
+		$response = $this->controller()->grantChain(caseId: ' case-1 ');
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: $chain, actual: $response->getData());
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->grantChain(caseId: 'case-2')->getStatus());
+	}//end testAReaderGetsTheGrantChainAndANonReaderIsRefused()
+
+	/**
+	 * A failing read of the grant chain answers unavailable with its own sentence.
+	 *
+	 * @return void
+	 */
+	public function testAFailingGrantChainReadAnswersUnavailable(): void {
+		$this->caseAccess->method('hasCaseReadAccess')->willReturn(true);
+		$this->overview->method('chainForCase')->willThrowException(new RuntimeException('down'));
+
+		$response = $this->controller()->grantChain(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: 'The grants of this case could not be read. Try again later.', actual: $response->getData()['message']);
+	}//end testAFailingGrantChainReadAnswersUnavailable()
+
+	/**
 	 * The controller over the doubles.
 	 *
 	 * @return SettlementController

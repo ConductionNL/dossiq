@@ -17,9 +17,10 @@
  *    `GET /api/cases/{caseId}/settlements`, the endpoint the case page's
  *    Settlement card reads.
  *  - THE CASE PAGE. The header actions `interim-report-record`,
- *    `interim-report-assess`, `grant-settle` and `grant-recover` (task 1.2),
- *    and the interim report, evidence and recovery widgets (task 1.1b), are
- *    not built, so the page halves are `test.fixme` naming that task.
+ *    `interim-report-assess` and `grant-settle` are built (task 1.2a);
+ *    `grant-recover` (1.2b) and the interim report, evidence and recovery
+ *    widgets (task 1.1b) are not, so the page halves are `test.fixme`
+ *    naming those tasks.
  *
  * Settling writes nothing to the case's costs (decision 258, ADR-081): the
  * settled amount stays on the vaststelling, which is what is asserted.
@@ -167,7 +168,7 @@ test.describe('A handler runs a grant from its case page', () => {
 
 	// @e2e openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#scenario-recording-and-assessing-an-interim-report
 	test('the handler records and assesses the report from the case page and the history shows both', async ({ page }) => {
-		test.fixme(true, 'tasks 1.1b and 1.2: the interim-report-record and interim-report-assess header actions and the interim report widget are not built')
+		test.fixme(true, 'task 1.1b: the interim report widget is not built, and the seeded case type declares no grantChain, so the interim-report-record and interim-report-assess actions (task 1.2a) do not show on it')
 
 		const { caseId } = await grantedSubsidy('interim-page')
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
@@ -228,7 +229,7 @@ test.describe('A handler runs a grant from its case page', () => {
 
 	// @e2e openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#scenario-settling-lower-than-granted-starts-a-recovery
 	test('the handler settles from the case page and the proposed recovery shows on the case', async ({ page }) => {
-		test.fixme(true, 'tasks 1.1b and 1.2: the grant-settle and grant-recover header actions and the recovery widget are not built')
+		test.fixme(true, 'tasks 1.1b and 1.2b: the recovery widget and grant-recover are not built, and the seeded case type declares no grantChain, so grant-settle (task 1.2a) does not show on it')
 
 		const { caseId } = await grantedSubsidy('settle-page')
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)

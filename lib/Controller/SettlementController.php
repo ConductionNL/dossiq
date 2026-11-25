@@ -75,6 +75,45 @@ class SettlementController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function forCase(string $caseId): JSONResponse {
+		return $this->readFor(
+			caseId: $caseId,
+			read: fn (string $id): array => $this->overview->forCase(caseId: $id),
+			failure: 'The settlement could not be read. Try again later.'
+		);
+	}//end forCase()
+
+	/**
+	 * The executions of the case's grants with what the grant actions need.
+	 *
+	 * A case the user may not read answers 403 before anything is read.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	#[NoAdminRequired]
+	public function grantChain(string $caseId): JSONResponse {
+		return $this->readFor(
+			caseId: $caseId,
+			read: fn (string $id): array => $this->overview->chainForCase(caseId: $id),
+			failure: 'The grants of this case could not be read. Try again later.'
+		);
+	}//end grantChain()
+
+	/**
+	 * Answer a read of the case for a reader of it, refusing anyone else first.
+	 *
+	 * @param string   $caseId  The case UUID, as routed.
+	 * @param callable $read    Reads the answer for the trimmed case id.
+	 * @param string   $failure What a failed read answers.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
+	 */
+	private function readFor(string $caseId, callable $read, string $failure): JSONResponse {
 		$caseId = trim($caseId);
 		$user   = $this->userSession->getUser();
 		if ($user === null || $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
@@ -82,9 +121,9 @@ class SettlementController extends Controller {
 		}
 
 		try {
-			return new JSONResponse($this->overview->forCase(caseId: $caseId));
+			return new JSONResponse($read($caseId));
 		} catch (Throwable) {
-			return new JSONResponse(['message' => 'The settlement could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+			return new JSONResponse(['message' => $failure], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
-	}//end forCase()
+	}//end readFor()
 }//end class

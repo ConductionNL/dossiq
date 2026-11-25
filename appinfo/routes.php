@@ -156,6 +156,8 @@ $extra = [
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
     // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
     ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
+    // The executions of a case's grants with what the grant header actions need (grant-cases-from-application-to-settlement 1.2).
+    ['name' => 'settlement#grantChain', 'url' => '/api/cases/{caseId}/grant-chain', 'verb' => 'GET'],
     // The scoring sheet of a case and the scoring of one submission with the case's formula (tenders-run-on-the-tender-case-type 3.2).
     ['name' => 'scoring#sheet', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'GET'],
     ['name' => 'scoring#score', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'POST'],
