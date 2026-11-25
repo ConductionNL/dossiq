@@ -107,8 +107,16 @@ export async function openCaseTab(page: Page, name: RegExp): Promise<void> {
 		await tab.first().click()
 		return
 	}
-	await strip.locator('.cn-tabs__more button').first().click()
-	await page.getByRole('menuitem', { name }).click()
+	// The folded tabs sit in the strip's overflow menu. It used to be a
+	// `.cn-tabs__more` button labelled More; the strip now draws it as an
+	// NcActions toggle labelled Actions, which lists the folded tabs (Notes,
+	// Parties, Email, Decisions, Related, ...) beside the page actions. Both
+	// shapes are accepted, so the helper does not depend on the library build.
+	await strip
+		.locator('.cn-tabs__more button, .action-item__menutoggle')
+		.first()
+		.click()
+	await page.getByRole('menuitem', { name }).first().click()
 }
 
 /**

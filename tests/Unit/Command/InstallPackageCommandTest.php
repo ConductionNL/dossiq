@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
  */
 
 declare(strict_types=1);

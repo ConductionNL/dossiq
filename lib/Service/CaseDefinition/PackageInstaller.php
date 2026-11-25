@@ -208,7 +208,7 @@ class PackageInstaller implements PackageInstallerInterface {
 	 *
 	 * @return array<string, mixed> As install().
 	 *
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function installOverLocalChanges(string $id): array {
 		return $this->installPackage(id: $id, overLocalChanges: true);

@@ -1,0 +1,14 @@
+{
+  "schema": "termijn_instance_schema",
+  "rows": [
+    {
+      "id": "ea6f0916-af02-56d4-9f77-1abf3c0a620e",
+      "case": "de0eba19-0788-5d84-b505-78b036c80578",
+      "kind": "statutory",
+      "startDate": "{{datetime:-40 09:00}}",
+      "endDateCalculated": "{{date:60}}",
+      "endDateCurrent": "{{date:60}}",
+      "status": "lopend"
+    }
+  ]
+}

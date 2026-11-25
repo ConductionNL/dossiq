@@ -4,6 +4,9 @@
     {
       "id": "e0b306d2-c523-5938-9b5c-3474d292dc01",
       "title": "Melding Jeugdwet gezin Oosthaven",
+      "gdprClassification": [
+        "health"
+      ],
       "description": "De huisarts meldt zorgen over een kind van 9 jaar: slaapproblemen en schoolverzuim. Ouders staan open voor ondersteuning.",
       "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
       "status": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",

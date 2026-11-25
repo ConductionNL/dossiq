@@ -4,6 +4,9 @@
     {
       "id": "59547a3e-c601-58be-8f59-00b354c78575",
       "title": "Werkfit maken met jobcoaching",
+      "gdprClassification": [
+        "health"
+      ],
       "description": "Alleenstaande ouder met bijstand sinds februari. Doel: binnen een jaar aan het werk in de zorg, eerst werkfit maken met een jobcoach en een korte opleiding.",
       "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
       "status": "0f339c0f-64b5-50a6-8bbb-524f2e62e7f1",
