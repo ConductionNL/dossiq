@@ -85,7 +85,9 @@ test.describe('A complaint is a case of the shipped complaint case type', () => 
 			}),
 		)
 
-		const res = await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/terms`)
+		const res = await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/terms`, {
+			headers: { requesttoken: token },
+		})
 		expect(res.status(), await res.text()).toBe(200)
 		const terms = ((await res.json()).terms ?? []) as any[]
 		const statutory = terms.find((term) => term.kind === 'statutory')

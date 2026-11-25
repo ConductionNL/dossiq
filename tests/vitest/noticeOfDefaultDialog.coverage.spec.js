@@ -10,7 +10,7 @@
  * sentence when an earlier notice already started the penalty; and a save
  * that is refused locally because there is no case to save on.
  *
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

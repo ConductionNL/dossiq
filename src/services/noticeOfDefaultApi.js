@@ -11,7 +11,7 @@ import { generateUrl } from '@nextcloud/router'
  * @param {string} caseId The case.
  * @param {{receiptDate: string, notificationChannel: string, sender: string}} notice What came in.
  * @return {Promise<object>} The stored notice, with the accruing amount it started when it counts.
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
  */
 export async function registerNotice(caseId, notice) {
 	const { data } = await axios.post(
@@ -30,7 +30,7 @@ export async function registerNotice(caseId, notice) {
  * @param {string} accruingAmountId The accruing amount.
  * @param {{accountHolderName: string, iban: string}} account Where the money goes.
  * @return {Promise<object>} The payout as raised.
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 export async function preparePayout(accruingAmountId, account) {
 	const { data } = await axios.post(
@@ -49,7 +49,7 @@ export async function preparePayout(accruingAmountId, account) {
  * @param {object} error The axios error.
  * @param {string} fallback The sentence when the server said nothing usable.
  * @return {string} The sentence.
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
  */
 export function noticeRefusal(error, fallback) {
 	const data = error?.response?.data || {}

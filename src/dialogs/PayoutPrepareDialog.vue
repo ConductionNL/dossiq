@@ -7,7 +7,7 @@
 	route. A payout the finance app took reads as a payment signal sent; without
 	a finance app it stays prepared here.
 
-	@spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	@spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 -->
 <template>
 	<CnDialog
@@ -115,7 +115,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
 		amountText() {
 			const euros = Number(this.notice?.penaltyEuros)
 			if (!Number.isFinite(euros) || euros <= 0) {
@@ -128,7 +128,7 @@ export default {
 			return t('dossiq', 'Definitive penalty: € {amount}', { amount })
 		},
 
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
 		canSave() {
 			return (
 				this.busy === false
@@ -138,7 +138,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02 */
 		raisedSentence() {
 			if (String(this.raised?.payableId || '') !== '') {
 				return t(
@@ -158,7 +158,7 @@ export default {
 		 * Raise the payout and refresh the notices.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+		 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 		 */
 		async save() {
 			if (!this.canSave) {

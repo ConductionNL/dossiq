@@ -48,7 +48,7 @@ use Throwable;
  * not fixed yet.
  *
  * @spec openspec/specs/termijn-reporting/spec.md
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	use SearchesObjects;
@@ -85,7 +85,7 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	 *
 	 * @throws Throwable When the notices or the penalty calculations cannot be read.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$caseId = trim($caseId);
@@ -228,7 +228,7 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	 *
 	 * @return array<string, array<string, mixed>> The payout per calculation id.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 	 */
 	private function payoutsByCalculation(object $objectService, string $register): array {
 		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
@@ -261,7 +261,7 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	 *
 	 * @return array{penaltyState: string, penaltyEuros: float, penaltySince: string, financeState: string|null, accruingAmountId: string}
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 	 */
 	private function penaltyOf(?array $calculation, array $payouts): array {
 		if ($calculation === null) {
@@ -325,7 +325,7 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	 *
 	 * @return string payout-due, prepared, signal-sent, paid, rejected or on-hold.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 	 */
 	private function payoutState(?array $payout): string {
 		if ($payout === null) {
