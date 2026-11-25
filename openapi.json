@@ -536,6 +536,10 @@
             "description": "The payment schedule of a case, for a reader of that case."
         },
         {
+            "name": "case-session",
+            "description": "The declared sessions of a case: read them, and plan one."
+        },
+        {
             "name": "payout",
             "description": "REST surface that prepares a payout."
         },
@@ -10149,6 +10153,148 @@
                                 "schema": {}
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/sessions": {
+            "get": {
+                "operationId": "case-session-index",
+                "summary": "The sessions the case's case type declares and the sessions the case holds",
+                "description": "The sessions the case's case type declares (`caseType.sessions[]`, each with its label, invitee roles, minimum invitees and inspection floor) and the sessions the case holds. The case page's Plan a session action reads it. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-session"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "case-session-create",
+                "summary": "Plan a session the case type declares",
+                "description": "Plan one of the sessions the case type declares, chaired by the caller unless `chairpersonId` names someone. The plan keeps the session's inspection floor and invitee roles; a plan they refuse answers 400 with the rule's sentence. A case the user may not change answers 403 before anything is written. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-session"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "sessionKey",
+                                    "scheduledDate"
+                                ],
+                                "properties": {
+                                    "sessionKey": {
+                                        "type": "string",
+                                        "description": "The `sessions[]` entry of the case type."
+                                    },
+                                    "scheduledDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "description": "When the session starts."
+                                    },
+                                    "chairpersonId": {
+                                        "type": "string",
+                                        "description": "Who chairs the session; the caller when left out."
+                                    },
+                                    "invitees": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "role": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "channel": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "description": "The invited parties, each in one of the roles the session invites."
+                                    },
+                                    "payload": {
+                                        "type": "object",
+                                        "description": "Extra fields of the session, such as location and videoCallUrl."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The session was planned.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
