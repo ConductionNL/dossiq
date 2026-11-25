@@ -6,5 +6,6 @@
 - [x] 4 The card `case-advice-requests` (record-list on the Decisions tab of the default simple layout): advisor initials, subject and advisor, asked and due or received, the status pill, Remind on an open request (`/api/advice/{id}/remind`). Withdraw is not drawn and `adviesAanvraag` has no withdrawn state, so it is left out.
 - [x] 5 Queue rows: an advice request opens its case on `#case-decisions-panel` (the tabs widget opens the tab named by the route hash) and leaves the queue once received or expired; a consultation opens its case, without the `tab=consultations` query no tab answered. `tests/Unit/Service/Queue/AdviceQueueRowsTest.php`.
 - [x] 6 `tests/e2e/advice-on-the-case.spec.ts`: the three scenarios of REQ-ADV-CASE-01 (written, not yet run against a live instance).
-- [ ] 7 Live pass against DqZaakBesluiten, DqZaak and DqUwWachtrij.
+- [x] 7 Live pass against DqZaakBesluiten, DqZaak and DqUwWachtrij.
+  - Done 25 Nov 2026 on a sandbox instance (NC 34.0.6, MariaDB, openregister main, dossiq development e03bb264): `tests/e2e/advice-on-the-case.spec.ts` 3/3 passed (the card on the Decisions tab lists the request with its deadline and state, shows the answer once received, reminds an open request; no console errors). The queue rows rest on `tests/Unit/Service/Queue/AdviceQueueRowsTest.php`; they were not compared with DqUwWachtrij in this pass.
 - [x] 8 `openspec/parity/capabilities.json` row 3.35: built, evidence the card, the routes and the queue rows. The dossiq rating stays with the parity corpus.
