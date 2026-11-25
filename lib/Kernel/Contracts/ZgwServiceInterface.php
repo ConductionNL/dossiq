@@ -447,7 +447,7 @@ interface ZgwServiceInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notFoundResponse(): JSONResponse;
 
@@ -461,7 +461,7 @@ interface ZgwServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notifyDeleted(IRequest $request, string $zgwApi, string $resource, string $uuid): void;
 
@@ -563,7 +563,7 @@ interface ZgwServiceInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function storeFailureResponse(\Throwable $error, string $operation, string $object): JSONResponse;
 
