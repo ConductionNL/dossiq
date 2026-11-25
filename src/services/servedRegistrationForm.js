@@ -67,24 +67,45 @@ export async function fetchServedRegistrationForm(caseTypeId, ask = DESK_ASK) {
 	if (typeof caseTypeId !== 'string' || caseTypeId === '') {
 		return null
 	}
-	const params = {}
-	for (const key of ['audience', 'channel']) {
-		if (typeof ask?.[key] === 'string' && ask[key] !== '') {
-			params[key] = ask[key]
-		}
-	}
 	try {
 		const { data } = await axios.get(
 			generateUrl(`/apps/openregister/api/objects/dossiq/caseType/${encodeURIComponent(caseTypeId)}/integrations/${REGISTRATION_FORM_LEAF}`),
-			{ params },
+			{ params: askParams(ask) },
 		)
-		const first = Array.isArray(data?.items) ? data.items[0] : null
-		return first && typeof first === 'object' ? first : null
+		return firstForm(data)
 	} catch {
 		// Not installed (unknown leaf), no access or unreachable: the
 		// manifest form stands, as it does on an instance without buildiq.
 		return null
 	}
+}
+
+/**
+ * The leaf's query: the non-empty `audience` and `channel` of an ask.
+ *
+ * @param {{audience?: string, channel?: string}} ask Who asks, on which channel.
+ * @return {object} The query parameters.
+ */
+function askParams(ask) {
+	const params = {}
+	for (const key of ['audience', 'channel']) {
+		const value = ask?.[key]
+		if (typeof value === 'string' && value !== '') {
+			params[key] = value
+		}
+	}
+	return params
+}
+
+/**
+ * The first served form of a leaf answer.
+ *
+ * @param {object} data The leaf's `{items, total, ...}` answer.
+ * @return {object|null} `items[0]`, or null.
+ */
+function firstForm(data) {
+	const first = Array.isArray(data?.items) ? data.items[0] : null
+	return first && typeof first === 'object' ? first : null
 }
 
 /**
