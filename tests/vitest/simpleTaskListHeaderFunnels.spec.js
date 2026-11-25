@@ -5,7 +5,7 @@
  * Board DqTaken: Onderwerp, Status, Prioriteit and Deadline filter from their
  * headers through the inbox's search fields; Taak and Behandelaar do not.
  *
- * @spec openspec/changes/task-list-header-funnels/specs/task-list/spec.md#requirement-the-task-list-filters-from-its-column-headers
+ * @spec openspec/changes/archive/2026-11-25-task-list-header-funnels/specs/task-list/spec.md#requirement-the-task-list-filters-from-its-column-headers
  */
 
 import fs from 'fs'

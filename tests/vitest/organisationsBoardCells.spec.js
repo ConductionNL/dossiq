@@ -6,7 +6,7 @@
  * / Van Wijk B.V."), and an organisation without open cases reads "Geen", as
  * its open tickets do.
  *
- * @spec openspec/changes/organisations-list-cells-as-drawn/specs/party-pages/spec.md#requirement-the-organisations-list-draws-its-cells-as-the-board
+ * @spec openspec/changes/archive/2026-11-25-organisations-list-cells-as-drawn/specs/party-pages/spec.md#requirement-the-organisations-list-draws-its-cells-as-the-board
  */
 
 import fs from 'fs'

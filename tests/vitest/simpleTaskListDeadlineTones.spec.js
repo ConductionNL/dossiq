@@ -6,7 +6,7 @@
  * edge on the row, "Morgen" and "Vrijdag 9 okt" in orange, a finished task's
  * deadline as "Klaar op 6 okt" in grey.
  *
- * @spec openspec/changes/task-list-deadline-tones/specs/task-list/spec.md#requirement-the-task-list-draws-a-deadline-in-its-urgency
+ * @spec openspec/changes/archive/2026-11-25-task-list-deadline-tones/specs/task-list/spec.md#requirement-the-task-list-draws-a-deadline-in-its-urgency
  */
 
 import fs from 'fs'
