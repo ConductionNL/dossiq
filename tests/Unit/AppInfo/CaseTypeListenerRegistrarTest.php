@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
  *
  * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseTermListenerRegistrar
  */
 class CaseTypeListenerRegistrarTest extends TestCase {
 	use RecordsRegistrations;

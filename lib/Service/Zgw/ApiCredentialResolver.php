@@ -46,6 +46,7 @@ use OCP\IUserSession;
 use OCP\Security\Ip\IFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use WeakMap;
 
 /**
  * Resolves a request's credential to an OpenRegister consumer and binds its user.
@@ -81,9 +82,9 @@ class ApiCredentialResolver {
 	 * same request (the middleware, then a controller) neither resolves nor
 	 * binds again.
 	 *
-	 * @var \WeakMap<IRequest, object>|null
+	 * @var WeakMap<IRequest, object>|null
 	 */
-	private ?\WeakMap $resolved = null;
+	private ?WeakMap $resolved = null;
 
 	/**
 	 * What a refusal says, per resolver or validator message: the kind of
@@ -140,7 +141,7 @@ class ApiCredentialResolver {
 	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
 	 */
 	public function resolve(IRequest $request): ?object {
-		$this->resolved ??= new \WeakMap();
+		$this->resolved ??= new WeakMap();
 		if (isset($this->resolved[$request]) === true) {
 			return $this->resolved[$request];
 		}
