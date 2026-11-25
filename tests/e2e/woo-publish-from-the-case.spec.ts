@@ -16,7 +16,9 @@
  * case here is seeded with `assignee: admin`.
  */
 
-import { type APIRequestContext, expect, test } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	ensureCaseType,
