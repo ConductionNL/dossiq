@@ -49,7 +49,7 @@ import {
 	seedStateMachine,
 	showObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, PAGE_LOAD } from './helpers/nav.ts'
+import { caseActOption, clickHeaderAction, PAGE_LOAD } from './helpers/nav.ts'
 
 /** dossiq's own act endpoints, the ones the page uses. */
 const DOSSIQ = '/index.php/apps/dossiq/api'
@@ -231,7 +231,7 @@ test.describe('Lifecycle acts on the case', () => {
 		// Resume on a case that is not suspended is REFUSED, and the menu says
 		// so rather than hiding it. This is the requirement: an act that is
 		// simply absent teaches nobody why.
-		await expect(page.getByTestId('case-act-button-resume')).toBeDisabled()
+		await expect(caseActOption(page, 'resume')).toBeDisabled()
 		await expect(page.getByTestId('case-act-reason-resume')).toHaveText(
 			/not suspended|niet opgeschort/i,
 		)

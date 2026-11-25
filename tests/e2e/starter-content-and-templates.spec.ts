@@ -50,7 +50,7 @@ import {
 	seedStateMachine,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+import { caseActOption, clickHeaderAction, dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
@@ -491,7 +491,7 @@ test.describe('a result template presets the close form', () => {
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({
 			timeout: 25_000,
 		})
-		await page.getByTestId('case-act-button-finish').click()
+		await caseActOption(page, 'finish').click()
 
 		const picker = page.getByTestId('template-picker')
 		await expect(picker).toBeVisible({ timeout: 15_000 })

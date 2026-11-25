@@ -52,7 +52,7 @@ import {
 	showObject,
 	tryDeleteObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, journeyBudget, openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
+import { caseActOption, clickHeaderAction, journeyBudget, openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
 
 /** The Woo request case type the app seeds (WooRequestIntake::CASE_TYPE_ID). */
 const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
@@ -280,7 +280,7 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		// 2. Extend once, with a reason; the requester has no reachable channel.
 		await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({ timeout: 25_000 })
-		const extend = page.getByTestId('case-act-button-extend')
+		const extend = caseActOption(page, 'extend')
 		await expect(extend).toBeEnabled({ timeout: 25_000 })
 		await extend.click()
 		const acts = page.getByTestId('case-acts-dialog')
@@ -304,7 +304,7 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		// Extend term is greyed out from then on, with the limit sentence.
 		await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({ timeout: 25_000 })
-		await expect(page.getByTestId('case-act-button-extend')).toBeDisabled()
+		await expect(caseActOption(page, 'extend')).toBeDisabled()
 		await expect(page.getByTestId('case-act-reason-extend')).toContainText(
 			'already extended as often as its case type allows',
 		)

@@ -527,6 +527,23 @@ export async function tickCheckbox(checkbox: Locator): Promise<void> {
 }
 
 /**
+ * The option of one act in the case's "What you can do with this case" dialog.
+ *
+ * The dialog draws its acts as choice rows (board DqVolgendeStap,
+ * CnChoiceCards): one radio per act, valued `<kind>:<id>`, disabled with its
+ * reason when the case does not allow it now. It replaced the per-act buttons
+ * (`case-act-button-<id>`) the specs used to click.
+ *
+ * @param page The page with the dialog open.
+ * @param act  The act id (a gesture such as `extend`, or a transition id).
+ * @return The act's radio input.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActOption(page: Page, act: string): Locator {
+	return page.getByTestId('case-acts-list').locator(`input[value$=":${act}"]`)
+}
+
+/**
  * Click one of a detail page's manifest header actions.
  *
  * These used to be buttons in the page header, so a test clicked them

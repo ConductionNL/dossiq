@@ -75,7 +75,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
+import { caseActOption, clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /** A day in milliseconds, for the extension arithmetic. */
 const DAY = 24 * 60 * 60 * 1000
@@ -111,7 +111,7 @@ async function openLifecycleMenu(page: Page) {
  */
 async function pickAct(page: Page, act: string) {
 	await openLifecycleMenu(page)
-	const entry = page.getByTestId(`case-act-button-${act}`)
+	const entry = caseActOption(page, act)
 	await expect(entry).toBeVisible({ timeout: 25_000 })
 	await expect(entry).toBeEnabled()
 	await entry.click()
@@ -702,7 +702,7 @@ test.describe('Case lifecycle on the case page', () => {
 		// with its reason, so presence no longer proves the gate let it
 		// through and the enabled state is the assertion that does.
 		await openLifecycleMenu(page)
-		const reopen = page.getByTestId('case-act-button-reopen')
+		const reopen = caseActOption(page, 'reopen')
 		await expect(reopen).toBeVisible({ timeout: 25_000 })
 		await expect(reopen).toBeEnabled()
 		await reopen.click()
