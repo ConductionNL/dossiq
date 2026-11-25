@@ -333,17 +333,48 @@ test.describe('Case lifecycle on the case page', () => {
 		page.getByTestId(`cn-stages-widget-reason-${statusId}`)
 
 	/**
-	 * The clickable element of one stage, which is the list item, not the
-	 * label. CnTimelineStages puts the role and the click handler on the
-	 * `<li>`; the testid above is on the label inside it.
+	 * The library's transition dialog. CnTransitionInputDialog marks its
+	 * modal with `data-testid-modal`, the content with `cn-modal`.
+	 *
+	 * @param page The Playwright page.
+	 */
+	const transitionDialog = (page: any) =>
+		page.locator('[data-testid-modal="cn-transition-input-dialog"]')
+
+	/**
+	 * Pick a result type in the transition dialog. The result is picked from
+	 * the case type's result types (a select), not typed as an id.
+	 *
+	 * @param page   The Playwright page.
+	 * @param dialog The open dialog.
+	 * @param name   The end of the result type's name.
+	 */
+	const pickResult = async (page: any, dialog: any, name: string) => {
+		await dialog.getByTestId('cn-transition-input-resultTypeId').locator('input, .vs__dropdown-toggle').first().click()
+		await page.locator('[role="option"]').filter({ hasText: name }).first().click()
+	}
+
+	/**
+	 * The clickable element of one stage. The case page draws the stages as
+	 * bars (CnStagesWidget `bars`): a stage the case can move to is a
+	 * `<button>` label carrying the stage testid and, when refused,
+	 * `aria-disabled="true"`; the current stage is a plain label.
 	 *
 	 * @param page The Playwright page.
 	 * @param statusId The statusType uuid.
 	 */
 	const stageControl = (page: any, statusId: string) =>
-		page.locator('.cn-timeline-stages__stage').filter({
-			has: page.getByTestId(`cn-stages-widget-stage-${statusId}`),
-		})
+		page.getByTestId(`cn-stages-widget-stage-${statusId}`)
+
+	/**
+	 * One stage's bar step, the `<li>` that carries the state class
+	 * (`--done`, `--current`, `--todo`) and `aria-current="step"`.
+	 *
+	 * @param page The Playwright page.
+	 * @param statusId The statusType uuid.
+	 */
+	const stageStep = (page: any, statusId: string) =>
+		page.getByTestId(`cn-stages-widget-bar-${statusId}`)
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#display-available-transitions-on-case-detail
 	test('the timeline offers only the moves this user may make', async ({
@@ -413,8 +444,13 @@ test.describe('Case lifecycle on the case page', () => {
 		// The record moved.
 		const token = await getRequestToken(request)
 		expect(token).not.toBe('')
-		const moved = await showObject(request, 'case', cases.advance)
-		expect(moved.status).toBe(statusProgress)
+		// The click posts the move; read the record once it has landed.
+		await expect
+			.poll(async () => (await showObject(request, 'case', cases.advance)).status, {
+				timeout: 20_000,
+				message: 'the record moved',
+			})
+			.toBe(statusProgress)
 
 		// The transition history holds the move, with the signed-in user as actor.
 		// `StatusTransitionController::history()` carries `@NoAdminRequired` and
@@ -435,7 +471,7 @@ test.describe('Case lifecycle on the case page', () => {
 		// And the timeline shows the NEW stage as current without a reload: the
 		// widget moves its own marker and fires cn:page:refresh, then re-reads
 		// which stages the case can reach from where it now is.
-		await expect(stageControl(page, statusProgress)).toHaveAttribute(
+		await expect(stageStep(page, statusProgress)).toHaveAttribute(
 			'aria-current',
 			'step',
 			{ timeout: 20_000 },
@@ -492,7 +528,9 @@ test.describe('Case lifecycle on the case page', () => {
 		// disabled control that answers silence reads as broken, which is why
 		// CnTimelineStages emits `stageBlocked` for a disabled stage instead of
 		// swallowing the click.
-		await stageControl(page, statusHeld).click()
+		// Forced: Playwright never clicks an `aria-disabled` control by itself,
+		// and clicking the disabled stage is the point here.
+		await stageControl(page, statusHeld).click({ force: true })
 		const blocked = page.getByTestId('cn-stages-widget-blocked')
 		await expect(blocked).toBeVisible({ timeout: 20_000 })
 		await expect(blocked).toContainText(REQUIRED_DOC)
@@ -525,12 +563,9 @@ test.describe('Case lifecycle on the case page', () => {
 		// type's result types in a select. That is the sharpest thing this
 		// change gives up, and it is written into the PR body rather than left
 		// for the next reader to find.
-		const dialog = page.getByTestId('cn-transition-input-dialog')
+		const dialog = transitionDialog(page)
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog
-			.getByTestId('cn-transition-input-resultTypeId')
-			.getByRole('textbox')
-			.fill(resultGranted)
+		await pickResult(page, dialog, 'Verleend')
 		await page.getByTestId('cn-transition-input-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -550,7 +585,7 @@ test.describe('Case lifecycle on the case page', () => {
 		await openCase(page, 'noresult')
 		await stageControl(page, statusDone).click()
 
-		await expect(page.getByTestId('cn-transition-input-dialog')).toBeVisible({
+		await expect(transitionDialog(page)).toBeVisible({
 			timeout: 15_000,
 		})
 		await expect(
@@ -738,19 +773,19 @@ test.describe('Case lifecycle on the case page', () => {
 		const widget = page.getByTestId('cn-stages-widget')
 		await expect(widget).toBeVisible({ timeout: 25_000 })
 
-		const stages = widget.locator('.cn-timeline-stages__stage')
+		const stages = widget.locator('.cn-stages-widget__bar-step')
 		// Four, in the case type's `order`: the stage list is the PROCESS, not
 		// the moves on offer, which is why a role-hidden target still renders.
 		await expect(stages).toHaveCount(4, { timeout: 25_000 })
 		await expect(stages.nth(0)).toHaveClass(
-			/cn-timeline-stages__stage--completed/,
+			/cn-stages-widget__bar-step--done/,
 		)
-		await expect(stages.nth(1)).toHaveClass(/cn-timeline-stages__stage--current/)
+		await expect(stages.nth(1)).toHaveClass(/cn-stages-widget__bar-step--current/)
 		await expect(stages.nth(2)).toHaveClass(
-			/cn-timeline-stages__stage--upcoming/,
+			/cn-stages-widget__bar-step--todo/,
 		)
 		await expect(stages.nth(3)).toHaveClass(
-			/cn-timeline-stages__stage--upcoming/,
+			/cn-stages-widget__bar-step--todo/,
 		)
 		// The active stage is the one a screen reader is told about.
 		await expect(widget.locator('[aria-current="step"]')).toHaveCount(1)
@@ -761,21 +796,18 @@ test.describe('Case lifecycle on the case page', () => {
 		await openCase(page, 'stepper')
 		const stages = page
 			.getByTestId('cn-stages-widget')
-			.locator('.cn-timeline-stages__stage')
+			.locator('.cn-stages-widget__bar-step')
 		await expect(stages.nth(1)).toHaveClass(
-			/cn-timeline-stages__stage--current/,
+			/cn-stages-widget__bar-step--current/,
 			{
 				timeout: 25_000,
 			},
 		)
 
 		await stageControl(page, statusDone).click()
-		const dialog = page.getByTestId('cn-transition-input-dialog')
+		const dialog = transitionDialog(page)
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog
-			.getByTestId('cn-transition-input-resultTypeId')
-			.getByRole('textbox')
-			.fill(resultGranted)
+		await pickResult(page, dialog, 'Verleend')
 		await page.getByTestId('cn-transition-input-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -783,13 +815,13 @@ test.describe('Case lifecycle on the case page', () => {
 		// cn:page:refresh so the page re-reads the case, and re-reads which
 		// stages the case can reach from where it now is.
 		await expect(stages.nth(3)).toHaveClass(
-			/cn-timeline-stages__stage--current/,
+			/cn-stages-widget__bar-step--current/,
 			{
 				timeout: 25_000,
 			},
 		)
 		await expect(stages.nth(1)).toHaveClass(
-			/cn-timeline-stages__stage--completed/,
+			/cn-stages-widget__bar-step--done/,
 		)
 	})
 })
