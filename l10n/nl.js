@@ -13030,7 +13030,7 @@ OC.L10N.register(
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{years} years": "{years} jaar",
         "Advances paid": "Betaalde voorschotten",
-        "Approved amount (optional)": "Goedgekeurd bedrag (optioneel)",
+        "Approved amount (optional)": "Goedgekeurd bedrag (niet verplicht)",
         "Assess an interim report": "Een tussenrapportage beoordelen",
         "Assess interim report": "Tussenrapportage beoordelen",
         "Grant": "Subsidie",
