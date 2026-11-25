@@ -41,7 +41,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
@@ -56,13 +55,10 @@ use RuntimeException;
  * BAC service: committee assignment + advice request lifecycle.
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
- *
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 	use SearchesObjects;
-	use ReadsPanelMembers;
 	use SavesIntoStore;
 
 	/**
@@ -88,23 +84,6 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	];
 
 	/**
-	 * Trail event and message of an independence refusal: 0 names a
-	 * conflicting member, 1 could not verify independence.
-	 */
-	private const INDEPENDENCE_REFUSALS = [
-		['independence-check-failed', 'Panel member conflict (Awb Art. 7:13 lid 3): '],
-		['independence-check-unverifiable', 'Panel independence could not be verified (Awb Art. 7:13 lid 3): '],
-	];
-
-	/**
-	 * Required structured-advice fields when transitioning to advice-issued.
-	 */
-	private const REQUIRED_ADVICE_FIELDS = [
-		'conclusion',
-		'recommendation',
-	];
-
-	/**
 	 * Default deadline in days for advice delivery (12 weeks per Awb 7:24(1)).
 	 */
 	private const DEFAULT_DEADLINE_DAYS = 84;
@@ -113,6 +92,20 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 * The statuses the committee chair signs.
 	 */
 	private const SIGNED_STATUSES = ['advice-issued', 'inadmissible'];
+
+	/**
+	 * The panel and advice guards a move passes before it is written.
+	 *
+	 * @var AdviceTransitionGuards
+	 */
+	private readonly AdviceTransitionGuards $guards;
+
+	/**
+	 * Writes a move once its guards have passed.
+	 *
+	 * @var AdviceTransitionWriter
+	 */
+	private readonly AdviceTransitionWriter $writer;
 
 	/**
 	 * Constructor.
@@ -128,12 +121,19 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly AdviceDelegationService $adviceDelegation,
+		AdviceDelegationService $adviceDelegation,
 		private readonly BezwaarAuditTrail $auditTrail,
-		private readonly PanelIndependenceChecker $independence,
+		PanelIndependenceChecker $independence,
 		private readonly ?GovernanceBodyReader $governanceBodies = null,
-		private readonly InternalWriteMarker $internalWrites = new InternalWriteMarker(),
+		InternalWriteMarker $internalWrites = new InternalWriteMarker(),
 	) {
+		$this->guards = new AdviceTransitionGuards(
+			logger: $logger,
+			adviceDelegation: $adviceDelegation,
+			auditTrail: $auditTrail,
+			independence: $independence,
+		);
+		$this->writer = new AdviceTransitionWriter(auditTrail: $auditTrail, internalWrites: $internalWrites);
 	}//end __construct()
 
 	/**
@@ -450,7 +450,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 		return $this->buildTransitionUpdate(
 			update: $update,
-			adviceDecisionRef: $this->guardTransition(request: $request, move: ['from' => $from] + $update),
+			adviceDecisionRef: $this->guards->guardMove(request: $request, move: ['from' => $from] + $update),
 		);
 	}//end transitionUpdate()
 
@@ -469,7 +469,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	private function applyOrFail(array $request, array $change): array {
 		['update' => $update, 'requestId' => $requestId] = $change;
 		try {
-			return $this->applyTransition(request: $request, update: $update);
+			return $this->writer->apply(request: $request, update: $update);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to transition advice request '
@@ -521,60 +521,6 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 		return $current;
 	}//end readForDeviation()
-
-	/**
-	 * The structured advice must carry every required field.
-	 *
-	 * @param array<string, mixed> $advice The stored request with the caller's patch over it.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When a required field is missing or empty.
-	 *
-	 * @spec exclude one guard of issueAdviceDecision(), which carries the requirement
-	 */
-	private function requireAdviceFields(array $advice): void {
-		$missing = array_values(
-			array_filter(
-				self::REQUIRED_ADVICE_FIELDS,
-				static fn (string $field): bool => in_array(($advice[$field] ?? null), [null, '', []], true)
-			)
-		);
-		if ($missing !== []) {
-			throw new RuntimeException(
-				'Advice cannot be issued: missing required field '
-				. $missing[0]
-			);
-		}
-	}//end requireAdviceFields()
-
-	/**
-	 * Run the guard the move needs, and answer the advice decision it raised.
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 * @param array<string, mixed> $move The caller's patch with its `from` and target `status`.
-	 *
-	 * @return string The decidesk Decision reference, '' when the move raises none.
-	 *
-	 * @throws RuntimeException|GuardFailedException When the guard refuses.
-	 *
-	 * @spec exclude one step of transitionAdviceStatus(), which carries the requirement
-	 */
-	private function guardTransition(array $request, array $move): string {
-		// Guard: assigned → in-deliberation requires panel and
-		// independence (REQ-BAC-2).
-		if ($move['from'] === 'assigned' && $move['status'] === 'in-deliberation') {
-			$this->guardPanel(request: $request);
-		}
-
-		// Guard: in-deliberation → advice-issued requires the structured
-		// advice content (REQ-BAC-4).
-		if ($move['from'] === 'in-deliberation' && $move['status'] === 'advice-issued') {
-			return $this->issueAdviceDecision(request: $request, payload: $move);
-		}
-
-		return '';
-	}//end guardTransition()
 
 	/**
 	 * Refuse a signature by anyone but the chair of the request's committee.
@@ -630,77 +576,6 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		// store resolves still names the object the guard sees being saved.
 		return $store + ['id' => (string)($current['id'] ?? ($current['@self']['id'] ?? $requestId)), 'current' => $current];
 	}//end loadAdviceRequest()
-
-	/**
-	 * Write a transition's patch, recording the chair's signature first on a terminal state.
-	 *
-	 * A terminal state carries the chair's signature, with the chair from the
-	 * session. It is recorded before the status moves; a status write that
-	 * then fails leaves an `advice-signed-by-chair-not-applied` row
-	 * (REQ-BAT-003).
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 * @param array<string, mixed> $update The patch.
-	 *
-	 * @return array<string, mixed> The updated advice request record.
-	 *
-	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
-	 */
-	private function applyTransition(array $request, array $update): array {
-		if (isset($update['adviceIssuedAt']) === false) {
-			return $this->transitionWrite(request: $request, update: $update)();
-		}
-
-		return $this->signThenApply(request: $request, update: $update);
-	}//end applyTransition()
-
-	/**
-	 * The write of a transition's patch, marked as internal.
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 * @param array<string, mixed>                                                                                       $update  The patch.
-	 *
-	 * @return callable(): array<string, mixed> The write.
-	 */
-	private function transitionWrite(array $request, array $update): callable {
-		// Marked so DeliberationStartGuard lets this save reach an outcome status.
-		return fn (): array => $this->internalWrites->runInternal(
-			objectId: $request['id'],
-			write: fn (): array => ($this->patchObjectAsArray(
-				objectService: $request['objectService'],
-				register: $request['register'],
-				schema: $request['schema'],
-				id: $request['id'],
-				changes: $update
-			) ?? array_merge($request['current'], $update))
-		);
-	}//end transitionWrite()
-
-	/**
-	 * Record the chair's signature, then apply the terminal transition.
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 * @param array<string, mixed>                                                                                       $update  The patch.
-	 *
-	 * @return array<string, mixed> The updated advice request record.
-	 *
-	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
-	 */
-	private function signThenApply(array $request, array $update): array {
-		return $this->auditTrail->recordThenApply(
-			register: $request['register'],
-			schema: $request['schema'],
-			objectUuid: $request['id'],
-			event: 'advice-signed-by-chair',
-			payload: [
-				'chair' => $this->auditTrail->resolveActor(),
-				'signatureEvidence' => $update['signatureEvidence'] ?? ($request['current']['signatureEvidence'] ?? null),
-				'conclusion' => $update['conclusion'] ?? ($request['current']['conclusion'] ?? null),
-			],
-			tag: '',
-			apply: $this->transitionWrite(request: $request, update: $update),
-		);
-	}//end signThenApply()
 
 	/**
 	 * Listener entry-point: when a bezwaar enters status
@@ -843,94 +718,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 */
 	public function guardDeliberationStart(array $request, string $requestId): void {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
-		$this->guardPanel(request: $store + ['id' => $requestId, 'current' => $request]);
+		$this->guards->guardPanel(request: $store + ['id' => $requestId, 'current' => $request]);
 	}//end guardDeliberationStart()
-
-	/**
-	 * Guard the assigned → in-deliberation transition (REQ-BAC-2): a panel
-	 * must be set and every member must be independent. An independence
-	 * failure is recorded on the request's trail before the guard raises.
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When no panel has been set, it holds only blank members, or a member is not a user id
-	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
-	 */
-	private function guardPanel(array $request): void {
-		$panel = $this->requirePanelMembers(panel: (array)($request['current']['panel'] ?? []));
-
-		$independence = $this->independence->check(
-			objectionId: $this->objectionIdOf(request: $request['current']),
-			panel: $panel,
-		);
-
-		if ($independence['ok'] !== false) {
-			return;
-		}
-
-		// A refusal without a member means independence could not be verified.
-		[$event, $message] = self::INDEPENDENCE_REFUSALS[(int)($independence['member'] === null)];
-
-		// Recorded before raising, and refused whether or not the entry is
-		// written; an unwritten entry goes to the error log in full.
-		$this->auditTrail->recordRefusal(
-			register: $request['register'],
-			schema: $request['schema'],
-			objectUuid: $request['id'],
-			event: $event,
-			payload: [
-				'conflictingMember' => $independence['member'],
-				'reason' => $independence['reason'],
-			],
-		);
-
-		throw new GuardFailedException(
-			failedGuards: [],
-			message: $message . $independence['reason']
-		);
-	}//end guardPanel()
-
-	/**
-	 * Validate the structured advice content (REQ-BAC-4) and raise the
-	 * decidesk `advice` Decision (REQ-PDRD-001 / REQ-PDRD-002).
-	 *
-	 * The BAC advice is *made* in decidesk; this fails CLOSED and never
-	 * authors the advice outcome locally as a fallback.
-	 *
-	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
-	 * @param array<string, mixed> $payload Caller-supplied patch
-	 *
-	 * @return string The decidesk Decision reference
-	 *
-	 * @throws RuntimeException When a required advice field is missing or the
-	 *                          decision service is unavailable
-	 */
-	private function issueAdviceDecision(array $request, array $payload): string {
-		$merged = array_merge($request['current'], $payload);
-		$this->requireAdviceFields(advice: $merged);
-
-		try {
-			return $this->adviceDelegation->raiseAdviceDecision(
-				subjectSchema: 'bacAdviceRequest',
-				subjectId: $request['id'],
-				payload: [
-					'subjectRegister' => $request['register'],
-					'externalReference' => $this->externalReferenceFor(request: $request['current'], requestId: $request['id']),
-					'subjectLabel' => (string)($merged['conclusion'] ?? 'BAC-advies'),
-					'adviceType' => (string)($merged['recommendation'] ?? ''),
-					'question' => (string)($merged['conclusion'] ?? ''),
-				],
-			);
-		} catch (RuntimeException $e) {
-			$this->logger->error(
-				'Dossiq BAC: decidesk advice Decision raise failed — failing closed: '
-				. $e->getMessage()
-			);
-			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
-		}//end try
-	}//end issueAdviceDecision()
 
 	/**
 	 * Compose the advice-request patch for a lifecycle transition, stamping
@@ -957,54 +746,4 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		return $update;
 	}//end buildTransitionUpdate()
 
-	/**
-	 * The objection this advice request belongs to.
-	 *
-	 * `bezwaar` is the schema-declared property; `objectionProceeding` is the
-	 * schema it $refs, and was written into the object by mistake for as long as
-	 * this service has existed. Rows created before the fix carry only the wrong
-	 * key, so the legacy branch stays until `BackfillAdviceRequestObjection` has
-	 * run everywhere.
-	 *
-	 * The legacy branch LOGS. A silent fallback would make the repair step look
-	 * unnecessary — the reads would keep working, the manifest filters would keep
-	 * showing nothing, and the only symptom would stay invisible.
-	 *
-	 * @param array<string, mixed> $request The stored advice request.
-	 *
-	 * @return string The objection id, or '' when neither key is present.
-	 */
-	private function objectionIdOf(array $request): string {
-		$objectionId = (string)($request['bezwaar'] ?? '');
-		if ($objectionId !== '') {
-			return $objectionId;
-		}
-
-		$legacy = (string)($request['objectionProceeding'] ?? '');
-		if ($legacy !== '') {
-			$this->logger->warning(
-				'Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step',
-				['app' => AppIdentity::APP_ID, 'requestId' => ($request['id'] ?? null)]
-			);
-		}
-
-		return $legacy;
-	}//end objectionIdOf()
-
-	/**
-	 * The external reference a raised advice decision carries.
-	 *
-	 * Prefers the objection, falling back to the advice request's own id so the
-	 * decision is never raised with an empty reference.
-	 *
-	 * @param array<string, mixed> $request The stored advice request.
-	 * @param string $requestId The advice request's own id.
-	 *
-	 * @return string The reference.
-	 */
-	private function externalReferenceFor(array $request, string $requestId): string {
-		$objectionId = $this->objectionIdOf(request: $request);
-
-		return [$objectionId, $requestId][(int)($objectionId === '')];
-	}//end externalReferenceFor()
 }//end class

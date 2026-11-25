@@ -1750,3 +1750,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8cp `Scoring/ScoringSheet` (1: a stale CouplingBetweenObjects suppression). PHPMD reports nothing on the class
         without it under either ruleset, so the line went; nothing else changed. `@SuppressWarnings(PHPMD.*)` lines in
         `lib/` 188 to 187.
+  - [x] 8cq `Bezwaar/AdvisoryCommitteeService` (1: TooManyMethods 33 against 25; plus ExcessiveClassComplexity 64 against
+        50, which development reported unsuppressed). Its suppression said the total was the sum of small private steps;
+        they were three concerns. `Bezwaar/AdviceTransitionGuards` holds the checks a move passes before it is written: the
+        panel check before deliberation (REQ-BAC-2: panel members, the independence check, the refusal on the trail before
+        the raise) and the advice before it is issued (REQ-BAC-4: the required fields, the decidesk decision raised fail-closed,
+        its external reference), with the legacy objection key read that both need. `Bezwaar/AdviceTransitionWriter` writes the
+        move once they passed: the internal-marked patch, and for a terminal state the chair's signature on the trail first
+        (REQ-BAT-003). The service keeps the referral, the lookups, the lifecycle and chair checks and the council deviation.
+        Both are built in its constructor from the collaborators it already took, so its constructor signature, its interface
+        and the container are unchanged; `guardDeliberationStart()` hands its request to the same panel guard. Bodies moved
+        unchanged, log lines and refusal messages included. The service went from 1,010 to about 750 lines. phpmd: zero findings
+        on the three files under both rulesets; `@SuppressWarnings(PHPMD.*)` lines in `lib/` 187 to 186.
+        Characterisation, green on the old class first and unchanged after: `AdvisoryCommitteeServiceTest`,
+        `AdvisoryCommitteeServiceGoldenTest`, `AdvisoryCommitteeDeliberationStartTest`, the Bezwaar, DecisionDocument and
+        Governance suites, `BezwaarAdviceRequestControllerTest` and the Listener suite (1,219 tests).
+        Own tests: `AdviceTransitionGuardsTest` (8) and `AdviceTransitionWriterTest` (3).
