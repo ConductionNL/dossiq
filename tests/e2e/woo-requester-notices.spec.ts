@@ -39,9 +39,9 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-no-address-at-all
-	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-duty-is-not-recorded-as-met-when-nothing-went-out
-	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-extension-notice-could-not-go-out
+	// @e2e openspec/specs/burger-notifications/spec.md#scenario-no-address-at-all
+	// @e2e openspec/specs/burger-notifications/spec.md#scenario-the-duty-is-not-recorded-as-met-when-nothing-went-out
+	// @e2e openspec/specs/burger-notifications/spec.md#scenario-the-extension-notice-could-not-go-out
 	test('A Woo case with no address never reads as told', async ({
 		playwright,
 		baseURL,
@@ -123,8 +123,8 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-a-portal-requester-gets-the-notice-in-the-portal-inbox
-	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-duty-is-met-when-the-acknowledgement-went-out
+	// @e2e openspec/specs/burger-notifications/spec.md#scenario-a-portal-requester-gets-the-notice-in-the-portal-inbox
+	// @e2e openspec/specs/burger-notifications/spec.md#scenario-the-duty-is-met-when-the-acknowledgement-went-out
 	test('A Woo request from the portal is acknowledged in the portal inbox and the duty reads met', async ({
 		playwright,
 		baseURL,

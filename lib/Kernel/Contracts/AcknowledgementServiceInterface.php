@@ -52,7 +52,7 @@ interface AcknowledgementServiceInterface {
 	 * @throws RefusedException When the case carries no address, or no transport took the acknowledgement.
 	 *
 	 * @spec openspec/specs/burger-notifications/spec.md
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array;

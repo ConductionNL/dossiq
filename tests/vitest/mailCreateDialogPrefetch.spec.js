@@ -13,7 +13,7 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { formTypeSlug, prefetchFormSchema } from '../../src/mailCreateDialog/prefetchFormSchema.js'
+import { formTypeSlug, prefetchFormSchema, prefetchReferencedObject } from '../../src/mailCreateDialog/prefetchFormSchema.js'
 
 const mockStore = {
 	objectTypeRegistry: {},
@@ -21,6 +21,8 @@ const mockStore = {
 		this.objectTypeRegistry[slug] = { schema, register }
 	}),
 	fetchSchema: vi.fn(),
+	createObjectTypeSlug: (...parts) => parts.join('-'),
+	fetchObject: vi.fn(),
 }
 vi.mock('@conduction/nextcloud-vue', () => ({
 	DYNAMIC_KEY_PREFIX: 'x-prop:',
@@ -51,6 +53,7 @@ afterEach(() => {
 	mockStore.objectTypeRegistry = {}
 	mockStore.registerObjectType.mockClear()
 	mockStore.fetchSchema.mockReset()
+	mockStore.fetchObject.mockReset()
 	mockHostProps.mockReset()
 	mockMailAnswersFor.mockClear()
 	document.body.innerHTML = ''
@@ -85,6 +88,23 @@ describe('the form schema read before the dialog opens', () => {
 	})
 })
 
+describe('the case type read before the dialog opens', () => {
+	it('reads it under the slug the form dialog names a reference by, and never fails', async () => {
+		mockStore.fetchObject.mockResolvedValueOnce({ id: 'woo-type', title: 'Woo-verzoek' })
+		expect(await prefetchReferencedObject(mockStore, 'dossiq', 'caseType', 'woo-type')).toEqual({ id: 'woo-type', title: 'Woo-verzoek' })
+		expect(mockStore.registerObjectType).toHaveBeenCalledWith('dossiq-caseType', 'caseType', 'dossiq')
+		expect(mockStore.fetchObject).toHaveBeenCalledWith('dossiq-caseType', 'woo-type')
+		mockStore.fetchObject.mockRejectedValueOnce(new Error('offline'))
+		expect(await prefetchReferencedObject(mockStore, 'dossiq', 'caseType', 'woo-type')).toBeNull()
+	})
+
+	it('reads nothing without a case type', async () => {
+		expect(await prefetchReferencedObject(mockStore, 'dossiq', 'caseType', undefined)).toBeNull()
+		expect(await prefetchReferencedObject(mockStore, 'dossiq', 'caseType', '')).toBeNull()
+		expect(mockStore.fetchObject).not.toHaveBeenCalled()
+	})
+})
+
 describe('opening New case from a mail', () => {
 	it('reads the schema while the questions are still being read, then opens with the mail answers', async () => {
 		mockStore.fetchSchema.mockResolvedValue({ slug: 'case' })
@@ -94,6 +114,7 @@ describe('opening New case from a mail', () => {
 
 		expect(mockMailAnswersFor).toHaveBeenCalledWith('woo-type', { senderName: 'Ahmed Bakker' })
 		expect(mockStore.fetchSchema).toHaveBeenCalledWith('dossiq/case')
+		expect(mockStore.fetchObject).toHaveBeenCalledWith('dossiq-caseType', 'woo-type')
 		expect(mockHostProps).not.toHaveBeenCalled()
 
 		releaseAnswers({ answers: { 'x-prop:q-name': 'Ahmed Bakker' }, definitions: [{ id: 'q-name' }] })

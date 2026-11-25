@@ -105,19 +105,34 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
   the parties report lists the fixture mails. Cite REQ-WRR-001 to REQ-WRR-004.
   - Written, not run (live pass, decision 139). Five tests in one serial block; the signed-in administrator
     is first the non-member and then, added to the run's reader group, the member.
-- [ ] 5.2 Live check after merge on the dev instance: switch on, read both reports for one Woo case,
+- [x] 5.2 Live check after merge on the dev instance: switch on, read both reports for one Woo case,
   and read the audit entry of the throughput read. Record them.
+  - Run 25 Nov 2026 on a sandbox (NC 34.0.6, MariaDB, openregister main 03495635, dossiq
+    development), on a Woo case filed through the portal form handler with one collected mail and one
+    assessment through `POST /api/cases/{id}/woo/assessment`. Switched on with reader group
+    `woo-report-readers` (settings 200; `/api/reports/offered` `{throughput: true, parties: true}`).
+    Throughput for 2026-11: one row `admin`, day 2026-11-25, openbaar 1, total 1, cases [the case],
+    truncated false. Parties: mails 1, unreadable 0, sender a.jansen@gemeente.nl, recipients
+    b@aannemer.nl and c@provincie.nl, three domains; the CSV carries the same rows. Audit: one
+    OpenRegister audit trail entry on the case, action `dossiq.woo.report.throughput-read`, user admin,
+    `{reader: admin, scope: {from: 2026-11-01, to: 2026-11-30}}`. The e2e of 5.1 ran 5/5 on the same
+    sandbox after it opens the Advanced foldout the footer entry sits in.
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone.
-- [ ] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone.
+  - Done in the build PRs, merged on development (092e4b6f2, a2c687d7c, 4b01867fb).
+- [x] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on
   the touched classes. Judge by the `Tests:` line.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+  - Done in the build PRs, merged on development (092e4b6f2, a2c687d7c, 4b01867fb).
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
-- [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+  - Done in the build PRs, merged on development (092e4b6f2, a2c687d7c, 4b01867fb).
+- [x] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+  - Done in the build PRs, merged on development (092e4b6f2, a2c687d7c, 4b01867fb).
+- [x] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 16.10 and 16.11 then read `yes` (build) as opt-in features, and
   `production` only with a store release.
+  - Merged on development: 092e4b6f2, a2c687d7c, 4b01867fb; archived 25 Nov 2026.

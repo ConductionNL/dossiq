@@ -178,7 +178,7 @@ class CaseDocumentProvenanceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function testAMailAnswersItsHeaderFields(): void {
 		$this->copied(id: 'mail-1', provenance: ['source' => 'files', 'mail' => ['from' => 'A.Jansen@Gemeente.nl', 'to' => ['b@aannemer.nl'], 'cc' => 'C@gemeente.nl', 'date' => '2026-03-03T10:00:00+01:00', 'messageId' => '<m1@gemeente.nl>']]);
@@ -198,7 +198,7 @@ class CaseDocumentProvenanceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function testADocumentWithoutMailHeadersAnswersUnknown(): void {
 		$this->copied(id: 'doc-x', provenance: ['source' => 'files']);

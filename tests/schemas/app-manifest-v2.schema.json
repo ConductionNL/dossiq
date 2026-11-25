@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.201.0",
+	"version": "2.202.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5851,6 +5851,21 @@
 							"type": "boolean",
 							"default": false,
 							"description": "type='dashboard': an \"Arrange page\" header button that opens a side panel where the user shows, hides and reorders the page's sections, with \"Back to default\" and \"Save layout\" (dashboard-layout-panel, 2.189.0). Stored per user in the app's preferences, as `userLayout`, which this turns on. Maps to CnDashboardPage `layoutPanel`."
+						},
+						"autoRefresh": {
+							"oneOf": [
+								{ "type": "boolean" },
+								{
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"intervalSeconds": { "type": "number", "exclusiveMinimum": 0 },
+										"staleAfterSeconds": { "type": "number", "exclusiveMinimum": 0 },
+										"button": { "type": "boolean" }
+									}
+								}
+							],
+							"description": "type='dashboard': read the page's widgets again on a timer (`intervalSeconds`, default 300) with a refresh button in the header (`button`, default true), in place: no reload, the scroll position stays. When the reads keep failing and the last good one is older than `staleAfterSeconds` (default 600), a warning names its time and offers Retry. `true` takes the defaults. Maps to CnDashboardPage `autoRefresh` (2.202.0)."
 						},
 						"layoutPanelLocked": {
 							"type": "array",

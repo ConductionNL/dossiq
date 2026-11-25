@@ -292,6 +292,22 @@ class RecordImportStoreBehaviourTest extends TestCase {
 	}//end testTheCaseTypeByIdentifierIsTheHighestVersionInUse()
 
 	/**
+	 * Version 1 keeps the identifier as its slug, and find() answers a slug: that superseded
+	 * version gives way to the version in use. Asked for by its own uuid it is answered as it is.
+	 *
+	 * @return void
+	 */
+	public function testASupersededVersionFoundBySlugGivesWayToTheVersionInUse(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'caseType', uuid: 'v1', row: ['identifier' => 'woo-verzoek', 'version' => 1, 'supersededBy' => 'v2']);
+		$register->seed(schema: 'caseType', uuid: 'v2', row: ['identifier' => 'woo-verzoek', 'version' => 2]);
+		$register->slug(schema: 'caseType', slug: 'woo-verzoek', uuid: 'v1');
+
+		self::assertSame('v2', $this->store()->caseType(objectService: $register, caseType: 'woo-verzoek')['id']);
+		self::assertSame('v1', $this->store()->caseType(objectService: $register, caseType: 'v1')['id']);
+	}//end testASupersededVersionFoundBySlugGivesWayToTheVersionInUse()
+
+	/**
 	 * When no version is in use, the first one found is answered rather than nothing.
 	 *
 	 * @return void

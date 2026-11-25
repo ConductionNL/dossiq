@@ -432,7 +432,7 @@ class DeadlineExtensionService implements DeadlineExtensionServiceInterface {
 	 *
 	 * @return array<string, string> The notice keys, or [] for a term that is not statutory or no sender.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function tellRequester(ExtensionRun $run): array {
 		// Only the citizen's own term: a planned end, a phase term or an

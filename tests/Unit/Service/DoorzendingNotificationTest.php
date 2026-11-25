@@ -98,7 +98,7 @@ class DoorzendingNotificationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function testANotSentNoticeIsNotRecordedAsSent(): void {
 		$notifications = $this->createMock(originalClassName: TermijnNotificationService::class);

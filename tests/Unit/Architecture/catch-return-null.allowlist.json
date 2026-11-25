@@ -3,6 +3,7 @@
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-25, method-decomposition slice 8n: NextcloudMailGateway's work moved into five collaborators that name no Nextcloud Mail symbol, and its three degradations with it: `findAccount()` and `service()` to `Email/MailServices`, `attachments()` to `Email/MailMessageCalls`. Same sites, same answers and log lines; the ceiling stays.",
     "2026-11-24, method-decomposition slice 8cc: carrying the legacy onboarding rows moved from `TenantOnboardingService` into `Onboarding/LegacyStepRows`, and `legacyRows()` with it as `read()`. Same site, same answer; the ceiling stays.",
     "2026-11-23, email match readiness: `getEmailLinkService()` moved with the run checks into `Email/MatchRunReadiness`, and `emailLeafRefusal()` now resolves the leaf itself and refuses on a throw, so its catch no longer answers null. The ceiling went 231 to 230.",
     "2026-11-16, mandate usage reads: `getDecisionAuditTrail()` and `mandateRows()` read their rows through one private `usageRows()`, so their two catches became one. The ceiling went 232 to 231.",
@@ -625,21 +626,21 @@
       "reason": "`mailboxesOf()` answers `return []` when the Nextcloud Mail tables are absent; the catch logs at warning (\"Dossiq: listing Mail folders failed\") and the folder picker offers nothing to move a message to."
     },
     {
-      "file": "lib/Service/Email/NextcloudMailGateway.php",
+      "file": "lib/Service/Email/MailServices.php",
       "method": "findAccount",
       "occurrence": 1,
       "class": "degradation",
       "reason": "`findAccount()`, the read behind `account()`, answers `return null` when Nextcloud Mail's account service refuses the configured id; the catch logs at warning (\"Dossiq: the configured intake account could not be read\") and intake reports itself unavailable rather than throwing on a cron run."
     },
     {
-      "file": "lib/Service/Email/NextcloudMailGateway.php",
+      "file": "lib/Service/Email/MailMessageCalls.php",
       "method": "attachments",
       "occurrence": 1,
       "class": "degradation",
       "reason": "`attachments()` answers `return []` when Nextcloud Mail cannot hand over a message's attachments; the catch logs at warning (\"Dossiq: reading attachments failed\") and the message is still filed without them."
     },
     {
-      "file": "lib/Service/Email/NextcloudMailGateway.php",
+      "file": "lib/Service/Email/MailServices.php",
       "method": "service",
       "occurrence": 1,
       "class": "degradation",

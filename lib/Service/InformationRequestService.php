@@ -356,7 +356,7 @@ class InformationRequestService {
 	 *               record: array<string, mixed>|null, error: string, reasonCode: string,
 	 *               notice: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
 	 */
 	private function recordFailedSend(InformationRequestRun $run, \Throwable $failure): array {
 		$notice = $this->noticeOf(failure: $failure);

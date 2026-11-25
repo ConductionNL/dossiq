@@ -146,9 +146,18 @@ failure line in the PR body.
   REQ-WRN-003.
   - Written, runs in nightly (24 Nov 2026): both halves are in the spec now; the portal half (`portaalBericht` to the case's `portalSubject`, delivery `sent` on `portal-inbox`, duty `met`, the public timeline line) skips where portaliq is not enabled.
   - Live pass 2026-11-16: the spec as written (the no-address case) passes on a fresh rig once a background service account is set; the portal-inbox half of this task needs portaliq installed, so the box stays open.
-- [ ] 5.2 (live pass, decision 139) Live check after merge on the dev instance: one Woo case with no address. Read
+- [x] 5.2 (live pass, decision 139) Live check after merge on the dev instance: one Woo case with no address. Read
   `acknowledgementDuty` through the OpenRegister API and the public timeline through the portal.
   Record both in the PR or issue.
+  - Run 25 Nov 2026 on a sandbox (NC 34.0.6, MariaDB, openregister main 03495635, dossiq
+    development, background service account set): a Woo request with no e-mail and no address
+    through the portal form handler (`WooRequestIntake::receive()`, origin `portal-form`) answered
+    `armed`. After its queued `AcknowledgementDispatchJob` ran, the case read through the OpenRegister
+    API carries `acknowledgementDuty` `{required: true, status: pending, attempts: 1, lastError: "This
+    case carries no address, so receipt could not be confirmed. ..."}`: not met. The public timeline
+    the portal reads (`PortalContributionProvider::caseTimeline()`, the call portaliq makes) answers
+    no entries, so no "verzonden" line. `tests/e2e/woo-requester-notices.spec.ts` on the same sandbox:
+    the no-address test passed, the portal-inbox test skipped (portaliq not installed).
 
 ## 6. Verify and deliver
 
@@ -156,12 +165,16 @@ failure line in the PR body.
 - [x] 6.2 While building, run the unit tests of the touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'`. Judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
   `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`. Run any other leg that `code-quality.yml` requires, after checking
   `package.json`. Then run hydra's `scripts/run-hydra-gates.sh --base origin/development` and
   count the gates that ran.
-- [ ] 6.4 The coverage guard needs tests for every added statement. Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
-- [ ] 6.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By`
+  - Done in the build PRs, merged on development (05775eb6e, c16884e4a).
+- [x] 6.4 The coverage guard needs tests for every added statement. Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+  - Done in the build PRs, merged on development (05775eb6e, c16884e4a).
+- [x] 6.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By`
   on any commit. Done means merged on `development` with CI green. Row 7.11 moves to `yes` (build)
   then, and to `production` only with a store release.
+
+  - Merged on development: 05775eb6e, c16884e4a; archived 25 Nov 2026.

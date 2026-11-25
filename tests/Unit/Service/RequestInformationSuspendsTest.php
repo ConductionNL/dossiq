@@ -180,7 +180,7 @@ class RequestInformationSuspendsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
 	 */
 	public function testAnUnsentRequestDoesNotSuspendTheTerm(): void {
 		$delivery = [
