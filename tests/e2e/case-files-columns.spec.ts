@@ -34,6 +34,36 @@ const PARTIES_BASE = '/index.php/apps/openregister/api'
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
+let personSchemaId = ''
+const seededPeople: string[] = []
+
+/**
+ * Seed a person party. OpenRegister has no `POST /api/parties`: a party is an
+ * object of a schema that declares `x-openregister-party`, here `brpPerson`
+ * (kind person, name from `displayName`; its `name` block is required). The schema is addressed by id,
+ * because the objects route does not resolve the camel-case slug.
+ *
+ * @param displayName The name the party shows.
+ * @return The party's uuid.
+ */
+async function seedPerson(displayName: string): Promise<string> {
+	if (personSchemaId === '') {
+		const schemas = await api.get(`${PARTIES_BASE}/schemas?_limit=1000`)
+		expect(schemas.ok(), await schemas.text()).toBeTruthy()
+		const body = await schemas.json()
+		const person = (body.results ?? body).find((schema: any) => schema.slug === 'brpPerson')
+		expect(person, 'the brpPerson party schema is installed').toBeTruthy()
+		personSchemaId = String(person.id)
+	}
+	const created = await api.post(`${PARTIES_BASE}/objects/brp/${personSchemaId}`, {
+		headers: { requesttoken: token, 'Content-Type': 'application/json' },
+		data: { displayName, name: { surname: displayName } },
+	})
+	expect(created.ok(), await created.text()).toBeTruthy()
+	const id = objectId(await created.json())
+	seededPeople.push(id)
+	return id
+}
 
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
@@ -42,6 +72,17 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 })
 
 test.afterAll(async () => {
+	// The Columns chooser stores the ticks as admin's preference; put it back
+	// so a later spec, or a person on this instance, sees the default columns.
+	await api.put(`/index.php/apps/${REGISTER}/api/preferences/case-files-columns`, {
+		headers: { requesttoken: token, 'Content-Type': 'application/json' },
+		data: { value: null },
+	})
+	for (const id of seededPeople) {
+		await api.delete(`${PARTIES_BASE}/objects/brp/${personSchemaId}/${id}`, {
+			headers: { requesttoken: token },
+		})
+	}
 	await cleanupRunObjects(api, token)
 	await api.dispose()
 })
@@ -55,12 +96,7 @@ test.describe('the case files list columns', () => {
 			}),
 		)
 
-		const party = await api.post(`${PARTIES_BASE}/parties`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: { name: `${RUN_PREFIX} J. de Vries`, kind: 'person' },
-		})
-		expect(party.ok(), await party.text()).toBeTruthy()
-		const partyId = objectId(await party.json())
+		const partyId = await seedPerson(`${RUN_PREFIX} J. de Vries`)
 
 		const linked = await api.post(
 			`${PARTIES_BASE}/objects/${REGISTER}/case/${caseId}/parties`,
@@ -89,7 +125,9 @@ test.describe('the case files list columns', () => {
 		})
 		expect(filed.ok(), await filed.text()).toBeTruthy()
 
-		const listed = await api.get(`${DOSSIER_BASE}/${caseId}/dossier`)
+		const listed = await api.get(`${DOSSIER_BASE}/${caseId}/dossier`, {
+			headers: { requesttoken: token },
+		})
 		expect(listed.ok(), await listed.text()).toBeTruthy()
 		const document = (await listed.json()).informatieobjecten.find((row: any) =>
 			String(row.title || '').startsWith(RUN_PREFIX),
@@ -104,14 +142,20 @@ test.describe('the case files list columns', () => {
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
 
-		// The three columns sit in the Columns chooser, off until ticked.
+		// The three columns sit in the Columns chooser, off by default. The
+		// choice is a stored user preference, so an earlier run may have left
+		// them on: tick only what is off, or a second run hides them again.
+		await page.waitForLoadState('networkidle')
 		await page
 			.getByTestId('cn-files-browser-columns')
 			.getByRole('button')
 			.first()
 			.click()
 		for (const key of ['documentType', 'direction', 'partyName']) {
-			await page.getByTestId(`cn-files-browser-column-${key}`).click()
+			const item = page.getByTestId(`cn-files-browser-column-${key}`)
+			if ((await item.locator('input[type="checkbox"]').isChecked()) === false) {
+				await item.click()
+			}
 		}
 		await page.keyboard.press('Escape')
 
