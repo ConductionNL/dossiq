@@ -23,6 +23,7 @@
 
 - [x] 4.1 `tests/e2e/decision-table-advice.spec.ts`: the three scenarios of REQ-LHS-CASE-01.
   - Written, runs in nightly (`tests/e2e/decision-table-advice.spec.ts`, #6685); not run here, the live pass owns it.
-- [ ] 4.2 Newman: `tests/integration/packages/lhs-intervention.postman_collection.json` gains a recommend and an override call on an example handhavingszaak.
+- [x] 4.2 Newman: `tests/integration/packages/lhs-intervention.postman_collection.json` gains a recommend and an override call on an example handhavingszaak.
+  - Written, runs in the packages workflow: six `advice on a case:` requests file a handhavingszaak (case type `9e4fe525`, which names `dossiq.lhs-intervention`) through the OpenRegister objects API. They then read its advice form (the table, inputs `behaviour` and `consequence`, outcome Waarschuwen) and ask advice for cell A:2 (Waarschuwen). Another outcome without a reason is refused (400). The same outcome with a reason is kept, with `accepted` false and the advice unchanged. A second decision is refused (409). Not run against a live instance in this build. The case is left in place, since cases are archival.
 - [ ] 4.3 Live pass against board DqHandhaving.
 - [x] 4.4 `openspec/parity/capabilities.json` row 7.10: built, evidence the header action and dialog, `reachedOn` CaseDetail.
