@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
  * Progress and days left come from {@see CaseTermsService::standingOf()}, so
  * this list and the case page count a term the same way, and neither is stored.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
  *
  * @SuppressWarnings(PHPMD.StaticAccess) TermKind is a vocabulary of pure predicates.
  */
@@ -80,7 +80,7 @@ class TermsEndingFirst implements TermsEndingFirstInterface {
 	 *
 	 * @throws Throwable When the terms cannot be read; an empty list would read "nothing is running".
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	public function list(int $limit = self::DEFAULT_LIMIT, ?DateTimeImmutable $now = null): array {
 		$store = $this->termStore();

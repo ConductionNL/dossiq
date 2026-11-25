@@ -47,7 +47,7 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	public function testEndingFirstAnswersTheTerms(): void {
 		$terms = $this->createMock(originalClassName: TermsEndingFirst::class);
@@ -91,7 +91,7 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function testPatternsRefuseOutsideTheAudience(): void {
 		$patterns = $this->createMock(originalClassName: ComplaintPatterns::class);
@@ -203,7 +203,7 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function testTheCardsAreAnsweredByTheVisibilityEndpoint(): void {
 		$manifest = json_decode((string)file_get_contents(filename: __DIR__.'/../../../src/manifest.json'), true);

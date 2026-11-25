@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Tests for QuarterPeriod, ComplaintPatternFigures, ComplaintPatterns and ComplaintPatternsPdf.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 class ComplaintPatternsTest extends TestCase {
 

@@ -5,7 +5,7 @@
  * Board DqZaken names a label filter on the Active line "Label: wijk-noord",
  * not the schema's own "Tags: wijk-noord".
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/cases-filter-labels-for-views/spec.md
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/cases-filter-labels-for-views/spec.md
  */
 import fs from 'fs'
 import path from 'path'
