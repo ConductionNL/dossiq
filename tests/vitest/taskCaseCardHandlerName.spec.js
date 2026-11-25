@@ -4,7 +4,7 @@
  *
  * Board DqTaak: the Zaak card names the case handler, not the user id.
  *
- * @spec openspec/changes/task-case-card-handler-name/specs/task-page/spec.md#requirement-the-tasks-case-card-names-the-case-handler
+ * @spec openspec/changes/archive/2026-11-25-task-case-card-handler-name/specs/task-page/spec.md#requirement-the-tasks-case-card-names-the-case-handler
  */
 
 import fs from 'fs'

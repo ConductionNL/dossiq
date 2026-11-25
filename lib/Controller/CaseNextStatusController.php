@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+ * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Throwable;
 /**
  * `GET /api/cases/{caseId}/next-status`: `{name, number}`, `{}` at the last status, 404 for a case the user may not read.
  *
- * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+ * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
  */
 class CaseNextStatusController extends Controller {
 
@@ -62,7 +62,7 @@ class CaseNextStatusController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
+	 * @spec openspec/changes/archive/2026-11-25-task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {

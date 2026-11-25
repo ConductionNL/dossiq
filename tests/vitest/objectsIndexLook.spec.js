@@ -4,7 +4,7 @@
  *
  * The Objects index in the All cases look, over the case object schema.
  *
- * @spec openspec/changes/objects-index-like-cases/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-11-25-objects-index-like-cases/specs/case-management/spec.md
  */
 
 import fs from 'fs'

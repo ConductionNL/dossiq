@@ -13221,7 +13221,7 @@
 				],
 				"plan": [
 					"openspec/changes/archive/2026-11-24-catalogue-object-types",
-					"openspec/changes/objects-index-like-cases"
+					"openspec/changes/archive/2026-11-25-objects-index-like-cases"
 				]
 			},
 			"evidence": {
@@ -14089,10 +14089,10 @@
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-flow-human-steps :: A person fills in and submits a task's form, and an invalid answer is refused (REQ-CRS-29)"
 				],
 				"plan": [
-					"openspec/changes/task-case-card-handler-name",
-					"openspec/changes/task-description-in-side-card",
-					"openspec/changes/task-header-case-and-deadline",
-					"openspec/changes/task-holds-up-next-status",
+					"openspec/changes/archive/2026-11-25-task-case-card-handler-name",
+					"openspec/changes/archive/2026-11-25-task-description-in-side-card",
+					"openspec/changes/archive/2026-11-25-task-header-case-and-deadline",
+					"openspec/changes/archive/2026-11-25-task-holds-up-next-status",
 					"openspec/changes/task-list-states-in-task-words",
 					"openspec/changes/task-list-subject-links-its-case"
 				]
@@ -14173,7 +14173,7 @@
 					"openspec/specs/task-management :: A task shows its own number, due date and lock (REQ-TASK-046)"
 				],
 				"plan": [
-					"openspec/changes/task-header-case-and-deadline",
+					"openspec/changes/archive/2026-11-25-task-header-case-and-deadline",
 					"openspec/changes/task-list-deadline-tones",
 					"openspec/changes/task-list-sorts-by-deadline"
 				]
@@ -14550,7 +14550,7 @@
 				"requirement": [
 					"openspec/specs/termijn-reporting :: Progress and days left are computed at read time (REQ-TERM-068)"
 				],
-				"plan": "openspec/changes/task-holds-up-next-status"
+				"plan": "openspec/changes/archive/2026-11-25-task-holds-up-next-status"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue has no phase or progress element; the only progress bar is on a document's workflow (src/views/DocumentDetailView.vue:42-50) | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -19263,7 +19263,7 @@
 				],
 				"plan": [
 					"openspec/changes/history-note-card",
-					"openspec/changes/task-side-history-in-words"
+					"openspec/changes/archive/2026-11-25-task-side-history-in-words"
 				]
 			},
 			"evidence": {
@@ -22393,7 +22393,7 @@
 					"openspec/changes/example-set-pieter-reads-the-household",
 					"openspec/changes/family-plan-by-case",
 					"openspec/changes/investigation-steps-in-the-case-type",
-					"openspec/changes/report-card-handler-name",
+					"openspec/changes/archive/2026-11-25-report-card-handler-name",
 					"openspec/changes/social-history-people-and-files",
 					"openspec/changes/social-people-stacked"
 				],

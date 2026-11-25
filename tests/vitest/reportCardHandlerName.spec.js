@@ -5,8 +5,8 @@
  * Board DqSociaalDomein: De melding names the handler, not the user id, in
  * three columns of facts.
  *
- * @spec openspec/changes/report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-names-the-handler
- * @spec openspec/changes/report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-lays-its-facts-out-in-three-columns
+ * @spec openspec/changes/archive/2026-11-25-report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-names-the-handler
+ * @spec openspec/changes/archive/2026-11-25-report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-lays-its-facts-out-in-three-columns
  */
 
 import fs from 'fs'
