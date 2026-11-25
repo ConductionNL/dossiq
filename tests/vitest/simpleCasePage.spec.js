@@ -520,7 +520,9 @@ describe('the tabs', () => {
 			completeAny: true,
 			cancel: true,
 			rowRoute: 'TaskDetail',
-			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+			// `objectUuid` is the key the tasks source forwards (its allowlist);
+			// a `case` key is dropped and the list opens on the default month.
+			viewAllRoute: { name: 'Tasks', query: { objectUuid: '@objectId' } },
 		})
 		// Status tones as DqZaakTaken draws them: in progress purple, open amber,
 		// done grey (nextcloud-vue tasks-state-variants).
