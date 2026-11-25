@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  */
+const { withLeanBundles } = require('@conduction/nextcloud-vue/webpack')
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
@@ -248,4 +249,7 @@ webpackConfig.optimization = {
 	},
 }
 
-module.exports = webpackConfig
+// css-loader writes no source maps into the JS (they put 483 KB of CSS
+// mappings in dossiq-shared-nc-vue.js), and any cache group taking all chunks
+// is narrowed to initial ones. See nextcloud-vue docs/tooling/lean-bundles.md.
+module.exports = withLeanBundles(webpackConfig)
