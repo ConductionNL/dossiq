@@ -31,6 +31,7 @@ use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\Contracts\SettlementOverviewInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ReadsRegisterRows;
+use Override;
 
 /**
  * The settlements of one case, reached through its applications and their executions.
@@ -111,6 +112,7 @@ class SettlementOverview implements SettlementOverviewInterface {
 	 *
 	 * @spec openspec/specs/case-page/spec.md
 	 */
+	#[Override]
 	public function forCase(string $caseId): array {
 		$settlements = [];
 		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId)) as $applicationId) {
@@ -140,6 +142,7 @@ class SettlementOverview implements SettlementOverviewInterface {
 	 *
 	 * @spec openspec/changes/grant-cases-from-application-to-settlement/tasks.md#1.2
 	 */
+	#[Override]
 	public function chainForCase(string $caseId): array {
 		$executions = [];
 		foreach ($this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId) as $application) {
