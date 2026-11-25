@@ -141,6 +141,45 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	}//end testACompleteCaseTypeMayBePublished()
 
 	/**
+	 * ZGW: without a flag the status type with the highest volgnummer is final, so a
+	 * zaaktype whose status types carry volgnummers may be published.
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAVolgnummerMakesTheHighestStatusTypeFinal(): void {
+		$this->assertSame(
+			[],
+			$this->checks(
+				rows: ['status_type_schema' => [['order' => 1], ['sequenceNumber' => 2, 'isFinal' => false]]],
+				caseType: ['validFrom' => '2026-01-01']
+			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+		$this->assertSame(
+			['At least one status type must be marked as final'],
+			$this->checks(
+				rows: ['status_type_schema' => [['order' => 0, 'isFinal' => 'no']]],
+				caseType: ['validFrom' => '2026-01-01']
+			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+	}//end testAVolgnummerMakesTheHighestStatusTypeFinal()
+
+	/**
+	 * A zaaktype without status types may be published over ZGW; only its valid-from date is asked.
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAZaaktypeWithoutStatusTypesMayBePublished(): void {
+		$this->assertSame(
+			[],
+			$this->checks(rows: [], caseType: ['validFrom' => '2026-01-01'])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+	}//end testAZaaktypeWithoutStatusTypesMayBePublished()
+
+	/**
 	 * Every missing precondition is named; a case type that cannot be read has no valid-from date.
 	 *
 	 * @return void
@@ -149,7 +188,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 		$validFrom = "'Valid from' date must be set before publishing";
 
 		$this->assertSame(
-			['At least one status type must be defined before publishing', $validFrom],
+			[$validFrom],
 			$this->checks(rows: [])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
 		);
 		$this->assertSame(

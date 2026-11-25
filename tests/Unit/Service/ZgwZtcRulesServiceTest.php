@@ -133,11 +133,12 @@ class ZgwZtcRulesServiceTest extends TestCase {
 		};
 	}
 
-	public function testValidatePublishFailsWithNoStatusTypes(): void {
+	public function testValidatePublishAllowsNoStatusTypes(): void {
 		$os = $this->stubObjectService([]);
 		$this->svc->setContext($os, []);
 		$errors = $this->svc->validatePublish('reg', 'ct-1');
-		$this->assertContains('At least one status type must be defined before publishing', $errors);
+		$this->assertNotContains('At least one status type must be defined before publishing', $errors);
+		$this->assertNotContains('At least one status type must be marked as final', $errors);
 	}
 
 	public function testValidatePublishFailsWithNoFinalStatus(): void {
@@ -295,7 +296,7 @@ class ZgwZtcRulesServiceTest extends TestCase {
 
 		$this->svc->setContext($this->scriptedObjectService($none), []);
 		$this->assertSame(
-			['At least one status type must be defined before publishing', "'Valid from' date must be set before publishing"],
+			["'Valid from' date must be set before publishing"],
 			$this->svc->validatePublish('reg', 'ct-1')
 		);
 
