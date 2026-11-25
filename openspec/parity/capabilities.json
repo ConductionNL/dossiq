@@ -19498,7 +19498,7 @@
 				],
 				"plan": [
 					"openspec/changes/case-definition-packages",
-					"openspec/changes/package-reinstall-applies-changed-content"
+					"openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content"
 				]
 			},
 			"evidence": {

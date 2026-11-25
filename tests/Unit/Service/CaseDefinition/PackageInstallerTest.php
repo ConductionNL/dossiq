@@ -1916,7 +1916,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function testTheSameVersionWithChangedContentRefreshesUntouchedRows(): void {
 		$this->installer()->install(id: 'fixture-case-type');
@@ -1942,7 +1942,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function testARecordWithoutADigestInstallsOnceMore(): void {
 		$this->installer()->install(id: 'fixture-case-type');
@@ -1964,7 +1964,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest(): void {
 		$this->installer()->install(id: 'fixture-case-type');

@@ -2410,6 +2410,72 @@ The installer SHALL record every row it writes in the shipped-set ledger, with t
 - **AND** their ledger rows SHALL name the newer version
 - **AND** a row the newer version did not change SHALL not be written
 
+#### Scenario: The same version with changed content
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testTheSameVersionWithChangedContentRefreshesUntouchedRows
+
+- **GIVEN** an installed package nobody edited here
+- **WHEN** the same version, with a changed case type description, installs
+- **THEN** the outcome SHALL be `installed`, not `current`
+- **AND** the case type SHALL hold the description the package now ships
+- **AND** a third install SHALL be `current` and write nothing
+
+#### Scenario: A record from before the digest
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testARecordWithoutADigestInstallsOnceMore
+
+- **GIVEN** a package recorded at its version without a digest
+- **WHEN** the same version installs
+- **THEN** the outcome SHALL be `installed` and write no row
+- **AND** the next install SHALL be `current`
+
+### Requirement: An operator can take a package's keys over a local edit (REQ-CT-57)
+
+`occ dossiq:package:install <id> --over-local-changes` SHALL install as above, and for a row the ledger records under this package that was changed here SHALL write every key the package ships and keep the value of every key it does not ship, and SHALL stamp the row with the version. A row another set or nobody shipped SHALL still be kept. Without the option an edited row SHALL be kept. The option SHALL apply even when the version and digest are current.
+
+#### Scenario: An edited case type takes the package's keys
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest
+
+- **GIVEN** an installed package whose case type title was edited here and that holds a local key the package does not ship
+- **WHEN** the same version installs with `--over-local-changes`
+- **THEN** the case type SHALL hold the title the package ships
+- **AND** the local key SHALL keep its value
+- **AND** the outcome SHALL not name the case type as kept
+
+### Requirement: A translatable case type title or status name is read as text (REQ-CT-58)
+
+Wherever dossiq reads a case type's `title`, or the `name` of a status,
+result or role type, as text, it SHALL read a language map in the reader's
+language when one is known, then Dutch, then the first text in the map. It
+SHALL NOT show, store or log the string "Array" for such a value. The
+workflow backfill SHALL name a basis template "{case type title} (basis)",
+and SHALL heal a basis template it stored with "Array" in its title, step
+titles, step descriptions or move labels, keeping every step and move id and
+leaving any template it did not write untouched.
+
+#### Scenario: a refusal names the statuses, not Array
+@e2e exclude a save refusal on the case type import path with no screen of its own; covered in tests/Unit/Listener/CaseTypePortalWithdrawalListenerTest.php::testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal
+
+- **GIVEN** a case type whose status names are stored as language maps
+- **WHEN** its withdrawal names a status no move reaches
+- **THEN** the refusal SHALL read "A case in Ontvangen cannot move to Ingetrokken"
+- **AND** it SHALL NOT contain "Array"
+
+#### Scenario: a new basis template is named in text
+@e2e exclude a repair step with no screen; covered in tests/Unit/Repair/MigrateWorkflowDefinitionsLabelsTest.php::testANewBasisTemplateIsNamedInText
+
+- **GIVEN** a Woo case type whose title and status names are language maps
+- **WHEN** the workflow backfill builds its basis template
+- **THEN** the template SHALL be titled "Woo-verzoek (basis)"
+- **AND** each move SHALL be labelled with its target status name
+
+#### Scenario: a basis template stored with Array labels is healed
+@e2e exclude a repair step with no screen; the lifecycle dialog's buttons read these labels, checked live on review-check; covered in tests/Unit/Repair/MigrateWorkflowDefinitionsLabelsTest.php::testABasisTemplateStoredWithArrayLabelsIsHealed and testATemplateTheBackfillDidNotWriteIsLeftAlone
+
+- **GIVEN** a basis template stored as "Array — basis" with steps and moves labelled "Array"
+- **WHEN** the workflow backfill runs again
+- **THEN** the template SHALL be titled "Woo-verzoek (basis)"
+- **AND** its steps and moves SHALL carry the status names, with their ids unchanged
+- **AND** a template the backfill did not write SHALL NOT be changed
+
 ### Requirement: A case type a seeder already wrote is adopted, not duplicated (REQ-CT-51)
 
 A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and, when none exists, for a case type with the same `title` that carries no identifier (a seeder that keyed its case types by slug, such as the VTH seeder, never set one). When one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).

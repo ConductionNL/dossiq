@@ -172,6 +172,32 @@ import {
 import { subCaseInitialStatus } from '../utils/deelzaakHelpers.js'
 
 /**
+ * The parent case id a create works under.
+ *
+ * A prop that still reads as a token (`@objectId`, `@object.case`) was never
+ * resolved by whoever opened the modal; the case on screen, from the route,
+ * is the parent then. A real id wins. The case page opens this modal from the
+ * `case-sub-cases` list's `createAction` with `props: {"parentCase":
+ * "@objectId"}`, and the list widget forwards an `open-modal` action's props
+ * without resolving their tokens: the modal read a case called `@objectId`
+ * (a 404), had no parent type and told every handler "No allowed sub-case
+ * types". The modal only opens on the parent's own page.
+ *
+ * @param {string} prop The `parentCase` prop.
+ * @param {object|null} route The current route, with `params.id`.
+ * @return {string} The parent case id, or '' when there is none.
+ *
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+ */
+export function resolvedParentCase(prop, route) {
+	const value = String(prop ?? '').trim()
+	if (value !== '' && value.startsWith('@') === false) {
+		return value
+	}
+	return String(route?.params?.id ?? '')
+}
+
+/**
  * A date as its `YYYY-MM-DD` day, followed by a time of day.
  *
  * @param {Date} date The date.
@@ -210,7 +236,7 @@ function subCaseRecord(modal) {
 		caseType: caseType.id,
 		...(initialStatus ? { status: initialStatus } : {}),
 		...dates,
-		...subCaseDefaults(caseType, modal.parentCase),
+		...subCaseDefaults(caseType, resolvedParentCase(modal.parentCase, modal.$route)),
 		...startedHistory(caseType, now),
 	}
 }
@@ -324,7 +350,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
  */
 async function refusedByServerCheck(modal) {
 	const v = await modal.deelzaakStore.validateSubCase({
-		parentCaseUuid: modal.parentCase,
+		parentCaseUuid: resolvedParentCase(modal.parentCase, modal.$route),
 		childCaseTypeId: modal.selectedCaseType.id,
 	})
 	if (v && v.ok === false) {
@@ -362,7 +388,7 @@ async function createWhenAllowed(modal) {
  */
 function deriveSubCase(modal) {
 	return createSubCase({
-		parentCaseUuid: modal.parentCase,
+		parentCaseUuid: resolvedParentCase(modal.parentCase, modal.$route),
 		childCaseTypeId: modal.selectedCaseType.id,
 		object: subCaseRecord(modal),
 	})
@@ -538,7 +564,7 @@ export default {
 		 */
 		async loadParent() {
 			try {
-				this.parent = await this.objectStore.fetchObject('case', this.parentCase)
+				this.parent = await this.objectStore.fetchObject('case', resolvedParentCase(this.parentCase, this.$route))
 				const typeId = this.parent?.caseType
 				if (!this.parentCaseType && typeId) {
 					this.loadedParentCaseType = await this.objectStore.fetchObject('caseType', typeId)
