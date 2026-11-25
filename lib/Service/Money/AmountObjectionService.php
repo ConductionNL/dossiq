@@ -287,13 +287,13 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 	 * @return void
 	 */
 	private function holdPayout(ObjectionRun $run, array $payout): void {
-		$u = $payout;
+		$row = $payout;
 		try {
-			$u = ($this->payouts?->withdrawFromFinance(row: $u, reason: $run->reason()) ?? $u);
-			$u['status'] = 'on-hold-objection';
-			$this->savePayout(run: $run, payout: $u);
+			$row = ($this->payouts?->withdrawFromFinance(row: $row, reason: $run->reason()) ?? $row);
+			$row['status'] = 'on-hold-objection';
+			$this->savePayout(run: $run, payout: $row);
 		} catch (\Throwable $e) {
-			$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
+			$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $row['id'] ?? '', 'error' => $e->getMessage()]);
 		}
 	}//end holdPayout()
 

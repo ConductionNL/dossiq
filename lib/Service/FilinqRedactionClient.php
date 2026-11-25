@@ -199,21 +199,37 @@ class FilinqRedactionClient {
 		$fileId = $request['fileId'];
 		$entities = $request['entities'];
 		$service = $call['service'];
-		$options = $call['options'];
 
 		try {
-			if ($options === null) {
-				// A filinq from before AnonymizeOptions takes the format and the user positionally.
-				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $call['userId']);
-			} else {
-				$result = (array)$service->anonymizeDocument($fileId, $entities, $options);
-			}
+			$result = $this->anonymizeCall(service: $service, document: [$fileId, $entities], call: $call);
 		} catch (Throwable $e) {
 			return $this->refusedOrThrow(error: $e, request: $request);
 		}
 
 		return $this->completed(result: $result, request: $request);
 	}//end anonymized()
+
+	/**
+	 * One anonymise call to filinq, in the shape its version takes.
+	 *
+	 * @param object                                              $service  Filinq's anonymisation service.
+	 * @param array{0: int, 1: array<int, array<string, mixed>>}  $document The file id and the entities to redact.
+	 * @param array{service: object, options: object|null, userId: string} $call The options (null on a filinq without
+	 *                                                                     AnonymizeOptions) and the acting user.
+	 *
+	 * @return array<string, mixed> Filinq's answer.
+	 *
+	 * @spec exclude one step of anonymized(), which carries the requirement
+	 */
+	private function anonymizeCall(object $service, array $document, array $call): array {
+		[$fileId, $entities] = $document;
+		if ($call['options'] === null) {
+			// A filinq from before AnonymizeOptions takes the format and the user positionally.
+			return (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $call['userId']);
+		}
+
+		return (array)$service->anonymizeDocument($fileId, $entities, $call['options']);
+	}//end anonymizeCall()
 
 	/**
 	 * Filinq's options for one anonymise call: the PDF output, the acting user
