@@ -6,7 +6,7 @@
  * The notice-of-default row action: read the row from either dispatch shape
  * and open the payout dialog only for a definitive penalty with an amount.
  *
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'

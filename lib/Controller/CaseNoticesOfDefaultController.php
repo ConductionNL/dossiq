@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Answers the notices of default on one case.
  *
- * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+ * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
  */
 class CaseNoticesOfDefaultController extends Controller {
 
@@ -50,7 +50,7 @@ class CaseNoticesOfDefaultController extends Controller {
 	 * @param NoticeOfDefaultRowsInterface $notices  The notice rows.
 	 * @param ReadableObjectsInterface     $readable Whether a caller is signed in and may read the case.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -72,7 +72,7 @@ class CaseNoticesOfDefaultController extends Controller {
 	 *
 	 * @return JSONResponse The notices, or the refusal.
 	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {

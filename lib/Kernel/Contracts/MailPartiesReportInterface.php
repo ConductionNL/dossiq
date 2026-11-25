@@ -48,7 +48,7 @@ interface MailPartiesReportInterface {
 	 *     domains: list<array{domain: string, count: int}>
 	 * } Each list sorted by count, highest first, then by name.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function forCase(string $caseId): array;
 
@@ -59,7 +59,7 @@ interface MailPartiesReportInterface {
 	 *
 	 * @return string The CSV, with a header line.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function toCsv(array $report): string;
 }//end interface

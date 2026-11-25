@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Turns a collected mail file into its `provenance.mail` fields.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
  */
 class MailHeaderReader {
 
@@ -83,7 +83,7 @@ class MailHeaderReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function isMail(string $fileName, string $mimeType = ''): bool {
 		$extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
@@ -104,7 +104,7 @@ class MailHeaderReader {
 	 *
 	 * @return array<string, mixed> `{from, to, cc, date?, messageId}`, or `{unreadable: true}`.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function read(File $file): array {
 		$unreadable = ['unreadable' => true];

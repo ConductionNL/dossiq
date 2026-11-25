@@ -42,6 +42,11 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  * Characterisation tests for the threading lookup and the outbox.
  *
  * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway
+ * @uses \OCA\Dossiq\Service\Email\MailServices
+ * @uses \OCA\Dossiq\Service\Email\MailEntityValues
+ * @uses \OCA\Dossiq\Service\Email\MailMessageCalls
+ * @uses \OCA\Dossiq\Service\Email\MailSenderChecks
+ * @uses \OCA\Dossiq\Service\Email\MailOutboxDelivery
  * @uses \OCA\Dossiq\Service\Email\ThreadingLookup
  */
 class NextcloudMailGatewayThreadingTest extends TestCase {

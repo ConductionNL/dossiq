@@ -8,7 +8,7 @@
 	starts the accruing amount. Every verdict is the server's; the dialog only
 	says it.
 
-	@spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	@spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 -->
 <template>
 	<CnDialog
@@ -133,7 +133,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
 		channels() {
 			return [
 				{ value: 'post', label: t('dossiq', 'Letter') },
@@ -144,7 +144,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
 		canSave() {
 			return (
 				this.busy === false
@@ -154,7 +154,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
+		/** @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
 		savedSentence() {
 			const start = this.saved?.penaltyPaymentCalculation?.startDate
 			if (start) {
@@ -185,7 +185,7 @@ export default {
 		 * A failed read leaves the list empty; a name can still be typed.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+		 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 		 */
 		async loadParties() {
 			if (this.targetCaseId === '') {
@@ -213,7 +213,7 @@ export default {
 		 * Register the notice and show what the server decided.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+		 * @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 		 */
 		async save() {
 			if (!this.canSave) {

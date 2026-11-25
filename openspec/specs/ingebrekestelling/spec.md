@@ -1,41 +1,31 @@
----
-status: done
-status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change; capability code confirmed present on development.
----
-# ingebrekestelling Specification
 
-## Purpose
-Registers and validates a formal ingebrekestelling (AWB 4:17), accepting it only when the termijn is genuinely overschreden and rejecting premature notices. A valid registration auto-creates the grace-period DwangsomBerekening starting 14 days after receipt; only the first valid notice forms the dwangsom basis, so later notices are recorded for the audit trail without spawning a second berekening.
-## Requirements
-### Requirement: Ingebrekestelling-registratie en validatie (REQ-TERM-005)
 
-The system SHALL register a formal ingebrekestelling (AWB 4:17) only when the termijn is genuinely overschreden, and SHALL create the grace-period `DwangsomBerekening` on a valid registration.
+### Requirement: A handler registers a notice of default on the case (REQ-ING-CASE-01)
 
-#### Scenario: Valid ingebrekestelling creates DwangsomBerekening
+On a case whose case type carries a penalty on a late decision, the case page SHALL offer "Ingebrekestelling registreren", which records the date the notice was received and who sent it, links the notice to the case and its running decision term, and starts the accruing amount. A notice on a case whose term has not passed SHALL be refused with the reason.
 
-- **GIVEN** a `TermijnInstance` has been `overschreden` for several days
-- **WHEN** the handler registers an ingebrekestelling with an `ontvangstDatum` after `einddatumActueel`
-- **THEN** the system SHALL validate `status = overschreden` AND `einddatumActueel < ontvangstDatum`
-- **AND** validation SHALL pass: `gevalideerd = true`, `geldigheidStatus = geldig`
-- **AND** a `DwangsomBerekening` SHALL be auto-created with `startDatum = ontvangstDatum + 14 days` and `status = lopend`
+#### Scenario: A notice after the term starts the accrual
 
-#### Scenario: Premature ingebrekestelling is rejected
+- **GIVEN** a case whose decision term ended 3 days ago
+- **WHEN** the handler registers a notice received today from the applicant
+- **THEN** the notice SHALL be stored and linked to the case
+- **AND** an accruing amount SHALL start two weeks after the notice, per Awb 4:17
+- @e2e tests/e2e/notice-of-default.spec.ts
 
-- **GIVEN** the termijn has not yet expired (`einddatumActueel` is in the future)
-- **WHEN** the handler registers an ingebrekestelling with an earlier `ontvangstDatum`
-- **THEN** validation SHALL fail: `gevalideerd = false`, `geldigheidStatus = premaat`
-- **AND** no `DwangsomBerekening` SHALL be created
-- **AND** the system SHALL advise the handler to instruct the burger to re-register after overschrijding
+#### Scenario: A notice before the term ends is refused
 
-### Requirement: One dwangsom per termijn (REQ-TERM-005-B)
+- **GIVEN** a case whose decision term has 10 days left
+- **WHEN** the handler registers a notice
+- **THEN** the dialog SHALL say the term has not passed and store nothing
+- @e2e tests/e2e/notice-of-default.spec.ts
 
-The system SHALL treat only the first valid ingebrekestelling as the dwangsom basis; subsequent notices SHALL be recorded but SHALL NOT spawn a second `DwangsomBerekening`.
+### Requirement: A definitive penalty is prepared for payout from its notice (REQ-ING-CASE-02)
 
-#### Scenario: Second ingebrekestelling does not spawn a second berekening
+A notice whose accruing amount is definitive SHALL offer "Uitbetaling voorbereiden", which raises the payout with the finance app through the existing payout route, and the notice SHALL show the payout state (prepared, signal sent, paid).
 
-- **GIVEN** a first valid ingebrekestelling has set `relevantIngbrekes` and created a `DwangsomBerekening`
-- **WHEN** a second ingebrekestelling is registered for the same termijn
-- **THEN** the second notice SHALL be recorded for the audit trail
-- **AND** no second `DwangsomBerekening` SHALL be created
-- **AND** the handler SHALL receive an info message naming the first notice's date as the dwangsom basis
+#### Scenario: Preparing the payout sends the signal
 
+- **GIVEN** a notice with a definitive amount of 1.442 euro
+- **WHEN** the handler prepares the payout
+- **THEN** the payout SHALL be raised with the finance app and the row SHALL read "Betaalsignaal verstuurd"
+- @e2e tests/e2e/notice-of-default.spec.ts

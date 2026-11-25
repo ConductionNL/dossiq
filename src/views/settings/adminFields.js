@@ -488,7 +488,7 @@ function consultationBottleneckField(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
 export function reviewReportFields(t) {
 	return [
