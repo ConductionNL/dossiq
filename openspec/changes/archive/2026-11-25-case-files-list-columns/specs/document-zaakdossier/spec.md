@@ -2,7 +2,7 @@
 
 ### Requirement: The case files list shows the document columns of the board (REQ-ZAK-COL-01)
 
-The Files tab on a case SHALL offer, next to the name, the columns board DqZaakDocumenten names: document type, direction (incoming or outgoing), sender or recipient, and the review verdict. The board draws the document and its assessment by default, so document type, direction and sender or recipient SHALL sit in the Columns chooser, off until the handler turns them on, and the review verdict SHALL show only on a case type that reviews its documents. Values that are not on the file node SHALL come from the case's dossier listing, fetched once per folder, and an empty value SHALL show an empty cell.
+The Files tab on a case SHALL offer, next to the name, the columns board DqZaakDocumenten names: document type, direction (incoming or outgoing), sender or recipient, and the review verdict. Document type, direction and sender or recipient SHALL sit in the Columns chooser: on by default on a case type that reviews its documents (board DqZaakDocumenten draws Document, Type, Richting, Auteur, Beoordeling there, with scan result and visibility off), off until the handler turns them on elsewhere. The review verdict SHALL show only on a case type that reviews its documents. Values that are not on the file node SHALL come from the case's dossier listing, fetched once per folder, and an empty value SHALL show an empty cell.
 
 #### Scenario: A received letter shows its sender and type
 

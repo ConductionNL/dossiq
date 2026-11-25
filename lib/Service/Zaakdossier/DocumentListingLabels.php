@@ -24,7 +24,7 @@ use RuntimeException;
  * Both are added to the rows of the dossier listing, which the Files tab
  * reads once per folder, so a column costs no request of its own.
  *
- * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+ * @spec openspec/changes/archive/2026-11-25-case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
  */
 class DocumentListingLabels {
 
@@ -59,7 +59,7 @@ class DocumentListingLabels {
 	 *
 	 * @throws RuntimeException When OpenRegister cannot be read.
 	 *
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+	 * @spec openspec/changes/archive/2026-11-25-case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
 	 */
 	public function label(array $documents): array {
 		if ($documents === []) {
