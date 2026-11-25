@@ -15,4 +15,5 @@
 - [x] 1.5 Tour, docs and e2e name Case types under Advanced
   - Files: src/manifest.json, docs/Features/besluitvorming-workflow.md, tests/e2e/app-chrome.spec.ts, tests/e2e/spec-coverage/store-surface.spec.ts
 - [ ] 1.6 design-system: DqCatalogus redrawn as the Object types page (separate PR)
-- [ ] 1.7 Live check on :8080 once integrated
+- [x] 1.7 Live check on :8080 once integrated
+  - Done 25 Nov 2026 on a sandbox instance (NC 34.0.6, MariaDB, openregister main, dossiq development), not :8080: as admin, Advanced lists Case types, Attributes, Templates, Object types in that order, no Catalogue entry, and the Store entry reads Marketplace; `/settings/catalogue?category=Vergunningen` lands on Case types with that folder, `/settings/catalogue` on Object types. As a non-admin (Thomas, behandelaars) Advanced lists Case types, Attributes, Templates without Object types, `/settings/object-types` returns to the start page and its API answers 403, and the category redirect still lands on Case types.
