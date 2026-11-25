@@ -113,7 +113,7 @@ class ScoringSheetTest extends TestCase {
 		$this->assertSame('INS-A', $sheet['submissions'][0]['label']);
 		$this->assertSame(80000.0, $sheet['submissions'][0]['price']);
 		$this->assertNull($sheet['submissions'][0]['total']);
-		$this->assertSame('admissible', $sheet['submissions'][0]['state'], 'the row says its state, so the award dialog shows the proposed bid');
+		$this->assertSame(expected: 'admissible', actual: $sheet['submissions'][0]['state'], message: 'the row says its state, so the award dialog shows the proposed bid');
 		$this->assertNull($sheet['refusal']);
 	}//end testTheSheetSplitsTheFormulaIntoTheCasesValuesAndWhatIsEntered()
 
