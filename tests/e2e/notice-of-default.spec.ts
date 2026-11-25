@@ -11,13 +11,17 @@
  * wiring is covered by tests/vitest/noticeOfDefaultFromTheCase.spec.js.
  */
 
+import type { APIRequestContext } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
 	ensureCaseType,
 	getRequestToken,
+	listObjects,
 	objectId,
+	REGISTER,
 	seedCase,
 	trackCreatedObject,
 } from './helpers/fixtures.ts'
@@ -30,16 +34,57 @@ const APP = '/index.php/apps/dossiq/api'
  * @param offset Days from today.
  * @return The calendar day.
  */
+// A term's startDate is a date-time (60-termijnbewaking.json); its end dates are dates.
 function day(offset: number): string {
 	const d = new Date()
 	d.setDate(d.getDate() + offset)
 	return d.toISOString().slice(0, 10)
 }
 
+let token = ''
+
+/**
+ * Give a case's statutory decision term the dates a scenario needs.
+ *
+ * A new case already carries its statutory term (the case type's decision
+ * period from today), and the notice controller reads THAT term. Seeding a
+ * second one beside it left the controller on the real one (term-running
+ * until eight weeks out), so the scenario's own dates never counted.
+ *
+ * @param api    The API context.
+ * @param caseId The case.
+ * @param fields The term's dates and status.
+ * @return The term's id.
+ */
+async function setStatutoryTerm(
+	api: APIRequestContext,
+	caseId: string,
+	fields: Record<string, unknown>,
+): Promise<string> {
+	const terms = (await listObjects(api, 'deadlineInstance', { case: caseId })).filter(
+		(term: any) => term.kind === 'statutory',
+	)
+	if (terms.length === 0) {
+		return objectId(
+			await createObject(api, token, 'deadlineInstance', {
+				case: caseId,
+				kind: 'statutory',
+				...fields,
+			}),
+		)
+	}
+	const id = objectId(terms[0])
+	const res = await api.patch(`/index.php/apps/openregister/api/objects/${REGISTER}/deadlineInstance/${id}`, {
+		headers: { requesttoken: token, 'Content-Type': 'application/json' },
+		data: fields,
+	})
+	expect(res.ok(), `patch deadlineInstance -> ${res.status()} ${await res.text()}`).toBeTruthy()
+	return id
+}
+
 test.describe('Notice of default from the case', () => {
 	test.setTimeout(120_000)
 
-	let token = ''
 	let lateCase = ''
 	let runningCase = ''
 	let lateTerm = ''
@@ -62,20 +107,14 @@ test.describe('Notice of default from the case', () => {
 			}),
 		)
 
-		lateTerm = objectId(
-			await createObject(api, token, 'deadlineInstance', {
-				case: lateCase,
-				kind: 'statutory',
-				startDate: day(-60),
-				endDateCalculated: day(-3),
-				endDateCurrent: day(-3),
-				status: 'exceeded',
-			}),
-		)
-		await createObject(api, token, 'deadlineInstance', {
-			case: runningCase,
-			kind: 'statutory',
-			startDate: day(-46),
+		lateTerm = await setStatutoryTerm(api, lateCase, {
+			startDate: `${day(-60)}T09:00:00+00:00`,
+			endDateCalculated: day(-3),
+			endDateCurrent: day(-3),
+			status: 'exceeded',
+		})
+		await setStatutoryTerm(api, runningCase, {
+			startDate: `${day(-46)}T09:00:00+00:00`,
 			endDateCalculated: day(10),
 			endDateCurrent: day(10),
 			status: 'lopend',
@@ -157,7 +196,9 @@ test.describe('Notice of default from the case', () => {
 		)
 
 		const rowOf = async () => {
-			const list = await (await request.get(`${APP}/deadlines/notices`)).json()
+			const list = await (
+				await request.get(`${APP}/deadlines/notices`, { headers: { requesttoken: token } })
+			).json()
 			return (list.notices || []).find(
 				(row: any) => row.id === objectId(notice),
 			)

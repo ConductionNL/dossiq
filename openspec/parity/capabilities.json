@@ -18211,14 +18211,14 @@
 				"note": "Built by notice-of-default-from-the-case. Not built yet: a notices list on the case page itself (task 3, second half).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
-					"openspec/changes/notice-of-default-from-the-case",
+					"openspec/changes/archive/2026-11-25-notice-of-default-from-the-case",
 					"openspec/changes/case-money-is-configuration",
 					"openspec/changes/penalty-is-a-stored-calculation"
 				],
 				"requirement": [
 					"openspec/specs/dwangsom-calculation :: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)",
-					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A handler registers a notice of default on the case (REQ-ING-CASE-01)",
-					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A definitive penalty is prepared for payout from its notice (REQ-ING-CASE-02)"
+					"openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling :: A handler registers a notice of default on the case (REQ-ING-CASE-01)",
+					"openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling :: A definitive penalty is prepared for payout from its notice (REQ-ING-CASE-02)"
 				]
 			},
 			"evidence": {
