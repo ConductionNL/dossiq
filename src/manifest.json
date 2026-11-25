@@ -5292,7 +5292,8 @@
 												},
 												{
 													"key": "status",
-													"label": "Status"
+													"label": "Status",
+													"formatter": "statusTypeName"
 												},
 												{
 													"key": "assignee",

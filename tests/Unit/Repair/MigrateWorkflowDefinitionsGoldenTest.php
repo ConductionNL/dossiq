@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 
 declare(strict_types=1);

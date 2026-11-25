@@ -125,6 +125,18 @@ describe('DeelzaakCreateModal mounted', () => {
 		expect(wrapper.findComponent({ name: 'NcLoadingIcon' }).exists()).toBe(false)
 	})
 
+	it('reads the case on screen when the parent arrives as an unresolved @objectId token', async () => {
+		const wrapper = mount(DeelzaakCreateModal, {
+			props: { parentCase: '@objectId' },
+			global: { mocks: { $route: { params: { id: 'parent-1' } } } },
+		})
+		await flushPromises()
+
+		expect(objectStore.fetchObject).toHaveBeenCalledWith('case', 'parent-1')
+		expect(objectStore.fetchObject).not.toHaveBeenCalledWith('case', '@objectId')
+		expect(wrapper.findComponent({ name: 'NcSelect' }).props('options').map((ct) => ct.id)).toEqual(['ct-advies', 'ct-x'])
+	})
+
 	it('uses a given parent case type without reading it', async () => {
 		const wrapper = await mounted({ parentCaseType: { id: 'ct-given', name: 'Gegeven', subCaseTypes: ['ct-other'] } })
 

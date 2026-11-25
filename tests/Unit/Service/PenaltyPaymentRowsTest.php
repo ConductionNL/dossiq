@@ -95,7 +95,7 @@ class PenaltyPaymentRowsTest extends TestCase {
 	/**
 	 * A case type title stored as a language map reads as its Dutch text, not "Array".
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 *
 	 * @return void
 	 */

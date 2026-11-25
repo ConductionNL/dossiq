@@ -1,0 +1,74 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "de0eba19-0788-5d84-b505-78b036c80578",
+      "title": "Subsidie Buurtvereniging Oost, activiteiten 2026",
+      "description": "Aanvraag van Buurtvereniging Oost voor de activiteiten van 2026.",
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "status": "7d1c6a40-5b1e-5c55-9f3a-1e2d6f0a4b21",
+      "intakeChannel": "website",
+      "confidentiality": "openbaar",
+      "startDate": "{{date:-80}}",
+      "receivedAt": "{{datetime:-80 09:00}}",
+      "lastActivityAt": "{{datetime:-40 09:00}}",
+      "currentStatusEnteredAt": "{{datetime:-40 09:00}}",
+      "statusHistory": [
+        {
+          "status": "b3c1a000-0000-4000-a000-00005ab50001",
+          "enteredAt": "{{datetime:-80 09:00}}"
+        },
+        {
+          "status": "2318408c-cb66-5b32-b06a-7809499ec77f",
+          "enteredAt": "{{datetime:-74 09:00}}"
+        },
+        {
+          "status": "7d1c6a40-5b1e-5c55-9f3a-1e2d6f0a4b21",
+          "enteredAt": "{{datetime:-40 09:00}}"
+        }
+      ],
+      "deadline": "{{date:60}}",
+      "properties": [
+        {
+          "name": "aanvrager",
+          "value": "Buurtvereniging Oost"
+        },
+        {
+          "name": "regeling",
+          "value": "Subsidieregeling bewonersinitiatieven 2026"
+        },
+        {
+          "name": "aangevraagd",
+          "value": "€ 27.500 op 8 jan 2026"
+        },
+        {
+          "name": "verleend",
+          "value": "€ 24.000, beschikking van 12 feb 2026"
+        },
+        {
+          "name": "beschikking",
+          "value": "Verleningsbeschikking van 12 feb"
+        },
+        {
+          "name": "tussenrapportage",
+          "value": "Ontvangen 15 jul, beoordeeld als voldoende op 29 jul"
+        },
+        {
+          "name": "eindverantwoording",
+          "value": "Uiterlijk 1 apr 2027"
+        },
+        {
+          "name": "vaststelling",
+          "value": "Nog niet: binnen 13 weken na de eindverantwoording"
+        },
+        {
+          "name": "terugvordering",
+          "value": "Nog geen voorstel"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ]
+    }
+  ]
+}

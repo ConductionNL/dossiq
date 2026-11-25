@@ -35,6 +35,7 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Override;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -71,7 +72,7 @@ class CaseCreationActivityStampListener implements IEventListener {
 	 *
 	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
-	#[\Override]
+	#[Override]
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent) {
 			$this->stampIfMissing(creating: $event);

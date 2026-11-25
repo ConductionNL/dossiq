@@ -1750,3 +1750,45 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8cp `Scoring/ScoringSheet` (1: a stale CouplingBetweenObjects suppression). PHPMD reports nothing on the class
         without it under either ruleset, so the line went; nothing else changed. `@SuppressWarnings(PHPMD.*)` lines in
         `lib/` 188 to 187.
+  - [x] 8cq `Bezwaar/AdvisoryCommitteeService` (1: TooManyMethods 33 against 25; plus ExcessiveClassComplexity 64 against
+        50, which development reported unsuppressed). Its suppression said the total was the sum of small private steps;
+        they were three concerns. `Advice/AdviceTransitionGuards` holds the checks a move passes before it is written: the
+        panel check before deliberation (REQ-BAC-2: panel members, the independence check, the refusal on the trail before
+        the raise) and the advice before it is issued (REQ-BAC-4: the required fields, the decidesk decision raised fail-closed,
+        its external reference), with the legacy objection key read that both need. `Advice/AdviceTransitionWriter` writes the
+        move once they passed: the internal-marked patch, and for a terminal state the chair's signature on the trail first
+        (REQ-BAT-003). Both sit under `Service/Advice`, not `Bezwaar`, so the procedure-named file count (gate 119) does not grow. The service keeps the referral, the lookups, the lifecycle and chair checks and the council deviation.
+        Both are built in its constructor from the collaborators it already took, so its constructor signature, its interface
+        and the container are unchanged; `guardDeliberationStart()` hands its request to the same panel guard. Bodies moved
+        unchanged, log lines and refusal messages included. The service went from 1,010 to about 750 lines. phpmd: zero findings
+        on the three files under both rulesets; `@SuppressWarnings(PHPMD.*)` lines in `lib/` 187 to 186.
+        Characterisation, green on the old class first and unchanged after: `AdvisoryCommitteeServiceTest`,
+        `AdvisoryCommitteeServiceGoldenTest`, `AdvisoryCommitteeDeliberationStartTest`, the Bezwaar, DecisionDocument and
+        Governance suites, `BezwaarAdviceRequestControllerTest` and the Listener suite (1,219 tests).
+        Own tests: `AdviceTransitionGuardsTest` (8) and `AdviceTransitionWriterTest` (3).
+  - [x] 8cr Eight small findings development reported without a suppression (TASK-VERIFY-006: PHPMD reports 0
+        violations). MissingImport (4): the three listeners' `#[\Override]` and `ApiCredentialResolver`'s `\WeakMap` are
+        imported. ElseExpression (2): `FilinqRedactionClient::anonymized()` hands the version-dependent anonymise call
+        to `anonymizeCall()` (the pre-AnonymizeOptions positional call first, then an early return), and
+        `IntakeObligations::settleAs()` hands the refuse-or-sign settle to `settleObligation()`; the state comes from the
+        same answer. ShortVariable (2): `$ip` is `$address` in `PortalAssertionGate::countRejected()`, `$u` is `$row` in
+        `AmountObjectionService::holdPayout()`. Nothing else changed; log lines, refusals and calls are the same.
+        phpmd: those eight findings gone and none new on the eight files under both rulesets (left there:
+        `FilinqRedactionClient::anonymize` BooleanArgumentFlag and `ApiCredentialResolver::remoteAddress` Superglobals,
+        a signature change and a request-boundary decision, not cleanups). Covered by the classes' existing tests,
+        green before and after: `FilinqRedactionClientTest`, `FilinqRedactionTest`, `IntakeObligationsTest`,
+        `IntakeObligationListenerTest`, `ApiCredentialResolverTest`, `ApiCredentialResolverEdgesTest`,
+        `AmountObjectionServiceTest`, `AmountObjectionServiceFailuresTest` and the three listener tests (`CaseTypeRightsEnforcedAccessTest`
+        fails its 12 on development as well).
+  - [x] 8cs `Registrar/CaseTypeListenerRegistrar` (1: CouplingBetweenObjects 14 against 13). The statutory term's two
+        listeners (`CaseDeadlineFollowsTermListener` at -110, `ApplicantTermNoteListener` at -120, updates only) moved to
+        `Registrar/CaseTermListenerRegistrar`, which the case type registrar calls where `registerTermListeners()` ran,
+        so the order of every registration is unchanged and `ListenerRegistrar` is untouched. The three deadline
+        priorities stay on `CaseTypeListenerRegistrar`, side by side, as the listeners' docblocks and tests cite them.
+        Coupling 14 to 12; phpmd: zero findings on both files under both rulesets; `@SuppressWarnings(PHPMD.*)` lines in
+        `lib/` 186 to 185.
+        Characterisation, green before and after: `CaseTypeListenerRegistrarTest` (the full ordered registration list,
+        unchanged but for one `@uses` line), `ListenerRegistrarTest` and the three deadline listener suites
+        (`CaseDeadlineFollowsTermListenerTest`, `ApplicantTermNoteListenerTest`, `CaseInheritedDeadlineListenerTest`).
+        Dropping the new registrar's call turns `CaseTypeListenerRegistrarTest` red (checked).
+        Own test: `CaseTermListenerRegistrarTest` (2).
