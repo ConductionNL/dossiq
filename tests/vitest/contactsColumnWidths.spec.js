@@ -6,7 +6,7 @@
  * Zuiddrecht" under the name), BSN 211px, Woonplaats 157px, Omschrijving the
  * rest; Omschrijving sorts.
  *
- * @spec openspec/changes/contacts-list-columns-as-drawn/specs/party-pages/spec.md#requirement-the-contacts-list-sizes-its-columns-as-the-board
+ * @spec openspec/changes/archive/2026-11-25-contacts-list-columns-as-drawn/specs/party-pages/spec.md#requirement-the-contacts-list-sizes-its-columns-as-the-board
  */
 
 import fs from 'fs'
