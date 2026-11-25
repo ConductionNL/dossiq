@@ -1752,12 +1752,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `lib/` 188 to 187.
   - [x] 8cq `Bezwaar/AdvisoryCommitteeService` (1: TooManyMethods 33 against 25; plus ExcessiveClassComplexity 64 against
         50, which development reported unsuppressed). Its suppression said the total was the sum of small private steps;
-        they were three concerns. `Bezwaar/AdviceTransitionGuards` holds the checks a move passes before it is written: the
+        they were three concerns. `Advice/AdviceTransitionGuards` holds the checks a move passes before it is written: the
         panel check before deliberation (REQ-BAC-2: panel members, the independence check, the refusal on the trail before
         the raise) and the advice before it is issued (REQ-BAC-4: the required fields, the decidesk decision raised fail-closed,
-        its external reference), with the legacy objection key read that both need. `Bezwaar/AdviceTransitionWriter` writes the
+        its external reference), with the legacy objection key read that both need. `Advice/AdviceTransitionWriter` writes the
         move once they passed: the internal-marked patch, and for a terminal state the chair's signature on the trail first
-        (REQ-BAT-003). The service keeps the referral, the lookups, the lifecycle and chair checks and the council deviation.
+        (REQ-BAT-003). Both sit under `Service/Advice`, not `Bezwaar`, so the procedure-named file count (gate 119) does not grow. The service keeps the referral, the lookups, the lifecycle and chair checks and the council deviation.
         Both are built in its constructor from the collaborators it already took, so its constructor signature, its interface
         and the container are unchanged; `guardDeliberationStart()` hands its request to the same panel guard. Bodies moved
         unchanged, log lines and refusal messages included. The service went from 1,010 to about 750 lines. phpmd: zero findings

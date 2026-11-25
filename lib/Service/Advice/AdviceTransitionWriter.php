@@ -7,7 +7,7 @@
  * or, for a terminal state, the chair's signature on the request's trail first.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Advice
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,8 +23,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Advice;
 
+use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;

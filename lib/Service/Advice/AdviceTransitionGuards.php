@@ -8,7 +8,7 @@
  * decision, before advice is issued.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Advice
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,10 +24,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
+use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
+use OCA\Dossiq\Service\Bezwaar\ReadsPanelMembers;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;

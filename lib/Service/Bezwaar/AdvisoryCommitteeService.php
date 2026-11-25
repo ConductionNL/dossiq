@@ -42,6 +42,8 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Service\Advice\AdviceTransitionGuards;
+use OCA\Dossiq\Service\Advice\AdviceTransitionWriter;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\InternalWriteMarker;

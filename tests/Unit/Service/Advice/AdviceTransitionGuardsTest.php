@@ -4,7 +4,7 @@
  * AdviceTransitionGuards tests: the panel check before deliberation and the advice decision before advice is issued.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Bezwaar
+ * @package  OCA\Dossiq\Tests\Unit\Service\Advice
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
+namespace OCA\Dossiq\Tests\Unit\Service\Advice;
 
 use OCA\Dossiq\Service\AdviceDelegationService;
-use OCA\Dossiq\Service\Bezwaar\AdviceTransitionGuards;
+use OCA\Dossiq\Service\Advice\AdviceTransitionGuards;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -37,7 +37,7 @@ use RuntimeException;
 /**
  * The guards of an advice request's moves.
  *
- * @covers \OCA\Dossiq\Service\Bezwaar\AdviceTransitionGuards
+ * @covers \OCA\Dossiq\Service\Advice\AdviceTransitionGuards
  * @uses   \OCA\Dossiq\Service\Bezwaar\ReadsPanelMembers
  */
 class AdviceTransitionGuardsTest extends TestCase {
@@ -64,9 +64,9 @@ class AdviceTransitionGuardsTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->delegation   = $this->createMock(AdviceDelegationService::class);
-		$this->auditTrail   = $this->createMock(BezwaarAuditTrail::class);
-		$this->independence = $this->createMock(PanelIndependenceChecker::class);
+		$this->delegation   = $this->createMock(originalClassName: AdviceDelegationService::class);
+		$this->auditTrail   = $this->createMock(originalClassName: BezwaarAuditTrail::class);
+		$this->independence = $this->createMock(originalClassName: PanelIndependenceChecker::class);
 	}//end setUp()
 
 	/**
@@ -76,7 +76,7 @@ class AdviceTransitionGuardsTest extends TestCase {
 	 */
 	private function guards(): AdviceTransitionGuards {
 		return new AdviceTransitionGuards(
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			adviceDelegation: $this->delegation,
 			auditTrail: $this->auditTrail,
 			independence: $this->independence,
@@ -108,7 +108,7 @@ class AdviceTransitionGuardsTest extends TestCase {
 			move: ['from' => 'in-deliberation', 'status' => 'inadmissible']
 		);
 
-		$this->assertSame('', $ref);
+		$this->assertSame(expected: '', actual: $ref);
 	}//end testAMoveWithoutAGuardPasses()
 
 	/**
@@ -127,7 +127,7 @@ class AdviceTransitionGuardsTest extends TestCase {
 			move: ['from' => 'assigned', 'status' => 'in-deliberation']
 		);
 
-		$this->assertSame('', $ref);
+		$this->assertSame(expected: '', actual: $ref);
 	}//end testAnIndependentPanelStartsDeliberation()
 
 	/**
@@ -145,8 +145,8 @@ class AdviceTransitionGuardsTest extends TestCase {
 			['conflictingMember' => 'bob', 'reason' => 'party'],
 		);
 
-		$this->expectException(GuardFailedException::class);
-		$this->expectExceptionMessage('Panel member conflict (Awb Art. 7:13 lid 3): party');
+		$this->expectException(exception: GuardFailedException::class);
+		$this->expectExceptionMessage(message: 'Panel member conflict (Awb Art. 7:13 lid 3): party');
 
 		$this->guards()->guardPanel(request: $this->request(current: ['objectionProceeding' => 'bz-1', 'panel' => ['bob']]));
 	}//end testAConflictingMemberIsRecordedAndRefused()
@@ -161,8 +161,8 @@ class AdviceTransitionGuardsTest extends TestCase {
 		$this->auditTrail->expects($this->once())->method('recordRefusal')
 			->with($this->anything(), $this->anything(), $this->anything(), 'independence-check-unverifiable', $this->anything());
 
-		$this->expectException(GuardFailedException::class);
-		$this->expectExceptionMessage('Panel independence could not be verified (Awb Art. 7:13 lid 3): no lookup');
+		$this->expectException(exception: GuardFailedException::class);
+		$this->expectExceptionMessage(message: 'Panel independence could not be verified (Awb Art. 7:13 lid 3): no lookup');
 
 		$this->guards()->guardPanel(request: $this->request(current: ['bezwaar' => 'bz-1', 'panel' => ['bob']]));
 	}//end testUnverifiableIndependenceIsRefused()
@@ -190,7 +190,7 @@ class AdviceTransitionGuardsTest extends TestCase {
 			move: ['from' => 'in-deliberation', 'status' => 'advice-issued', 'conclusion' => 'Gegrond']
 		);
 
-		$this->assertSame('dec-9', $ref);
+		$this->assertSame(expected: 'dec-9', actual: $ref);
 	}//end testIssuingAdviceRaisesTheDecision()
 
 	/**
@@ -200,7 +200,7 @@ class AdviceTransitionGuardsTest extends TestCase {
 	 */
 	public function testTheDecisionFallsBackToTheRequestId(): void {
 		$this->delegation->expects($this->once())->method('raiseAdviceDecision')
-			->with($this->anything(), $this->anything(), $this->callback(static fn (array $p): bool => $p['externalReference'] === 'req-1'))
+			->with($this->anything(), $this->anything(), $this->callback(callback: static fn (array $p): bool => $p['externalReference'] === 'req-1'))
 			->willReturn('dec-1');
 
 		$this->guards()->guardMove(
@@ -217,8 +217,8 @@ class AdviceTransitionGuardsTest extends TestCase {
 	public function testAdviceWithoutAConclusionIsRefused(): void {
 		$this->delegation->expects($this->never())->method('raiseAdviceDecision');
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('Advice cannot be issued: missing required field conclusion');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Advice cannot be issued: missing required field conclusion');
 
 		$this->guards()->guardMove(
 			request: $this->request(current: ['recommendation' => 'b']),
@@ -234,8 +234,8 @@ class AdviceTransitionGuardsTest extends TestCase {
 	public function testAFailingDecisionServiceFailsClosed(): void {
 		$this->delegation->method('raiseAdviceDecision')->willThrowException(new RuntimeException('down'));
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('Decision service unavailable: down');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Decision service unavailable: down');
 
 		$this->guards()->guardMove(
 			request: $this->request(current: ['conclusion' => 'a', 'recommendation' => 'b']),

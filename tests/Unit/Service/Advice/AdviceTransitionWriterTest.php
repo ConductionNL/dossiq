@@ -4,7 +4,7 @@
  * AdviceTransitionWriter tests: a plain patch is written as an internal save, a terminal one after the chair signs.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Bezwaar
+ * @package  OCA\Dossiq\Tests\Unit\Service\Advice
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,9 +22,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
+namespace OCA\Dossiq\Tests\Unit\Service\Advice;
 
-use OCA\Dossiq\Service\Bezwaar\AdviceTransitionWriter;
+use OCA\Dossiq\Service\Advice\AdviceTransitionWriter;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\InternalWriteMarker;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The write of an advice request's transition.
  *
- * @covers \OCA\Dossiq\Service\Bezwaar\AdviceTransitionWriter
+ * @covers \OCA\Dossiq\Service\Advice\AdviceTransitionWriter
  * @uses   \OCA\Dossiq\Service\InternalWriteMarker
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
@@ -51,7 +51,7 @@ class AdviceTransitionWriterTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->auditTrail = $this->createMock(BezwaarAuditTrail::class);
+		$this->auditTrail = $this->createMock(originalClassName: BezwaarAuditTrail::class);
 	}//end setUp()
 
 	/**
@@ -109,10 +109,10 @@ class AdviceTransitionWriterTest extends TestCase {
 			update: ['status' => 'in-deliberation'],
 		);
 
-		$this->assertSame(['id' => 'req-1', 'status' => 'in-deliberation'], $saved);
-		$this->assertCount(1, $store->patches);
-		$this->assertTrue($store->patches[0][1]);
-		$this->assertFalse($marker->isInternal('req-1'));
+		$this->assertSame(expected: ['id' => 'req-1', 'status' => 'in-deliberation'], actual: $saved);
+		$this->assertCount(expectedCount: 1, haystack: $store->patches);
+		$this->assertTrue(condition: $store->patches[0][1]);
+		$this->assertFalse(condition: $marker->isInternal('req-1'));
 	}//end testAPlainPatchIsAnInternalWrite()
 
 	/**
@@ -134,7 +134,7 @@ class AdviceTransitionWriterTest extends TestCase {
 			update: ['status' => 'in-deliberation'],
 		);
 
-		$this->assertSame(['status' => 'in-deliberation', 'bezwaar' => 'bz-1'], $saved);
+		$this->assertSame(expected: ['status' => 'in-deliberation', 'bezwaar' => 'bz-1'], actual: $saved);
 	}//end testAnEmptyAnswerGivesTheMergedRequest()
 
 	/**
@@ -153,7 +153,7 @@ class AdviceTransitionWriterTest extends TestCase {
 			'advice-signed-by-chair',
 			['chair' => 'chair-1', 'signatureEvidence' => 'sig', 'conclusion' => 'Gegrond'],
 			'',
-			$this->isType('callable'),
+			$this->isType(type: 'callable'),
 		)->willReturnCallback(static fn (mixed ...$args): mixed => $args[6]());
 
 		$saved = (new AdviceTransitionWriter(auditTrail: $this->auditTrail, internalWrites: $marker))->apply(
@@ -161,7 +161,7 @@ class AdviceTransitionWriterTest extends TestCase {
 			update: ['status' => 'advice-issued', 'adviceIssuedAt' => '2026-11-25T10:00:00+00:00', 'signatureEvidence' => 'sig'],
 		);
 
-		$this->assertSame(['id' => 'req-1', 'status' => 'advice-issued'], $saved);
-		$this->assertTrue($store->patches[0][1]);
+		$this->assertSame(expected: ['id' => 'req-1', 'status' => 'advice-issued'], actual: $saved);
+		$this->assertTrue(condition: $store->patches[0][1]);
 	}//end testATerminalPatchIsSignedFirst()
 }//end class
