@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
 use DateTime;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
+use OCA\Dossiq\Service\Intake\CaseCreationAnnouncer;
 use OCA\Dossiq\Service\Import\RecordImportStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -60,9 +61,16 @@ class RecordImportStoreBehaviourTest extends TestCase {
 	/**
 	 * The store under test.
 	 *
+	 * @param CaseCreationAnnouncer|null $announcer The announcer; a quiet double when not given.
+	 * @param boolean                    $announces False to build the store with no announcer at all.
+	 *
 	 * @return RecordImportStore
 	 */
-	private function store(): RecordImportStore {
+	private function store(?CaseCreationAnnouncer $announcer = null, bool $announces = true): RecordImportStore {
+		if ($announcer === null && $announces === true) {
+			$announcer = $this->createMock(CaseCreationAnnouncer::class);
+		}
+
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			fn (string $key, string $default = ''): string => [
@@ -81,6 +89,7 @@ class RecordImportStoreBehaviourTest extends TestCase {
 			mapping: $this->createMock(RecordCaseMapping::class),
 			time: $time,
 			logger: $this->logger,
+			announcer: $announcer,
 		);
 	}//end store()
 
@@ -116,6 +125,61 @@ class RecordImportStoreBehaviourTest extends TestCase {
 
 		self::assertNull($this->store()->sources(objectService: $register, import: ['key' => 'woo', 'sourceSchema' => 'record']));
 	}//end testUnreadableSourcesAreNullAndLogged()
+
+	/**
+	 * A written case is announced once, with the object service and what the write answered.
+	 *
+	 * The import runs as the system, where OpenRegister withholds the created
+	 * event, so without this no listener binds the new case's term.
+	 *
+	 * @return void
+	 */
+	public function testAWrittenCaseIsAnnounced(): void {
+		$register = new InMemoryRegister();
+		$announcer = $this->createMock(CaseCreationAnnouncer::class);
+		$announcer->expects($this->once())->method('announce')->with(
+			$this->identicalTo($register),
+			$this->callback(static fn (mixed $saved): bool => is_array($saved) === true && ($saved['id'] ?? '') === 'generated-1')
+		)->willReturn(true);
+
+		self::assertSame(
+			'generated-1',
+			$this->store(announcer: $announcer)->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => ''])
+		);
+	}//end testAWrittenCaseIsAnnounced()
+
+	/**
+	 * A refused case write announces nothing.
+	 *
+	 * @return void
+	 */
+	public function testARefusedCaseIsNotAnnounced(): void {
+		$register = new InMemoryRegister();
+		$register->refusedSchemas = ['case'];
+		$announcer = $this->createMock(CaseCreationAnnouncer::class);
+		$announcer->expects($this->never())->method('announce');
+
+		self::assertSame(
+			'',
+			$this->store(announcer: $announcer)->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => ''])
+		);
+	}//end testARefusedCaseIsNotAnnounced()
+
+	/**
+	 * Without an announcer the case is still written, and the gap is logged.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnAnnouncerTheCaseIsWrittenAndTheGapLogged(): void {
+		$register = new InMemoryRegister();
+		$this->logger->expects($this->once())->method('warning')->with('RecordImportStore: no announcer, so the imported case was written unannounced');
+
+		self::assertSame(
+			'generated-1',
+			$this->store(announces: false)->writeCase(objectService: $register, mapped: ['case' => ['title' => 'T'], 'result' => ''])
+		);
+		self::assertSame(1, $register->writes);
+	}//end testWithoutAnAnnouncerTheCaseIsWrittenAndTheGapLogged()
 
 	/**
 	 * Without a result type, only the case is written.
