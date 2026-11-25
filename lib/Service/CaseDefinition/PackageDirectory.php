@@ -136,7 +136,7 @@ class PackageDirectory {
 	 *         or null when no such package directory exists.
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
-	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-package-reinstall-applies-changed-content/specs/case-types/spec.md
 	 */
 	public function read(string $id): ?array {
 		if (preg_match(self::ID_PATTERN, $id) !== 1) {
