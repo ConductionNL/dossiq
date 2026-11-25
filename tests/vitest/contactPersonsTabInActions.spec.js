@@ -5,7 +5,7 @@
  * Board DqOrganisatie draws six tabs, Contactpersonen among them; the
  * Hoofdcontact card opens that tab too.
  *
- * @spec openspec/changes/organisation-contact-persons-tab/specs/party-pages/spec.md#requirement-an-organisations-contact-persons-have-their-own-tab
+ * @spec openspec/changes/archive/2026-11-25-organisation-contact-persons-tab/specs/party-pages/spec.md#requirement-an-organisations-contact-persons-have-their-own-tab
  */
 
 import fs from 'fs'

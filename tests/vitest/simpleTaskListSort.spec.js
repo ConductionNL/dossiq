@@ -5,7 +5,7 @@
  * Board DqTaken opens sorted on Deadline, ascending ("gesorteerd op deadline"),
  * and its Priority and Deadline headers sort the inbox.
  *
- * @spec openspec/changes/task-list-sorts-by-deadline/specs/task-list/spec.md#requirement-the-task-list-sorts-by-deadline-and-priority
+ * @spec openspec/changes/archive/2026-11-25-task-list-sorts-by-deadline/specs/task-list/spec.md#requirement-the-task-list-sorts-by-deadline-and-priority
  */
 
 import fs from 'fs'

@@ -6,7 +6,7 @@
  * Board DqZaakMeer: every case tab in the Acties menu carries an icon dossiq
  * registers, so the menu draws it in front of the label.
  *
- * @spec openspec/changes/case-menu-tabs-carry-icons/specs/case-page/spec.md
+ * @spec openspec/changes/archive/2026-11-25-case-menu-tabs-carry-icons/specs/case-page/spec.md
  */
 import fs from 'fs'
 import path from 'path'

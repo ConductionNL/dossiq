@@ -26,6 +26,10 @@ describe('contacts list columns (DqContacten)', () => {
 		expect(column('description').width).toBeUndefined()
 	})
 
+	it('wraps the name cell, so the address under the name reads in full (live, 25 Nov: "Oosthavenweg 12, Zuid...")', () => {
+		expect(column('displayName').cellClass).toBe('cn-cell--wrap')
+	})
+
 	it('sorts on the description', () => {
 		expect(column('description').sortable).not.toBe(false)
 	})
