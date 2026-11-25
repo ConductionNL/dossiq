@@ -10,7 +10,7 @@
  * prefix, never by position: a shared instance collects other sessions'
  * fixtures while this one runs.
  *
- * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+ * @spec openspec/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
  */
 
 import type { APIRequestContext } from '@playwright/test'

@@ -6,7 +6,7 @@
  *
  * The type and party names the case Files tab shows beside a document.
  *
- * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+ * @spec openspec/changes/archive/2026-11-25-case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
  */
 
 declare(strict_types=1);
