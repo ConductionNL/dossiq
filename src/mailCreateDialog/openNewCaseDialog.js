@@ -15,7 +15,7 @@ import MailNewCaseHost from './MailNewCaseHost.vue'
 import bundledManifest from '../manifest.json'
 import pinia from '../pinia.js'
 import registry from '../registry.js'
-import { mailAnswersFor } from './mailAnswers.js'
+import { readMailQuestions } from './mailAnswers.js'
 import { actionFromMail, findNewCaseAction } from './newCaseAction.js'
 import { prefetchFormSchema } from './prefetchFormSchema.js'
 
@@ -36,16 +36,23 @@ export async function openNewCaseDialog(context) {
 	// The case type's questions and the form's schema are read side by side:
 	// the dialog's own open reads the schema from the store, so it no longer
 	// waits for the questions first.
-	const [answers] = await Promise.all([
-		mailAnswersFor(context?.initialData?.caseType, context?.mail?.values),
+	const caseType = context?.initialData?.caseType
+	const [{ answers, definitions }] = await Promise.all([
+		readMailQuestions(caseType, context?.mail?.values),
 		prefetchFormSchema(useObjectStore(pinia), action),
 	])
+	const opened = actionFromMail(action, { ...(context?.initialData || {}), ...answers })
+	// The questions were read for the case type the form opens on: the
+	// dialog shows them instead of reading them a second time.
+	if (definitions) {
+		opened.preloadedDefinitions = { caseType: { value: caseType, records: definitions } }
+	}
 	return new Promise((resolve) => {
 		const host = document.createElement('div')
 		document.body.appendChild(host)
 		const app = createApp({
 			render: () => h(MailNewCaseHost, {
-				action: actionFromMail(action, { ...(context?.initialData || {}), ...answers }),
+				action: opened,
 				onDone: (created) => {
 					app.unmount()
 					host.remove()

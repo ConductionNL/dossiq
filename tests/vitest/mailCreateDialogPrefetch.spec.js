@@ -44,7 +44,7 @@ const mockMailAnswersFor = vi.fn(() => new Promise((resolve) => {
 	releaseAnswers = resolve
 }))
 vi.mock('../../src/mailCreateDialog/mailAnswers.js', () => ({
-	mailAnswersFor: (...args) => mockMailAnswersFor(...args),
+	readMailQuestions: (...args) => mockMailAnswersFor(...args),
 }))
 
 afterEach(() => {
@@ -96,10 +96,22 @@ describe('opening New case from a mail', () => {
 		expect(mockStore.fetchSchema).toHaveBeenCalledWith('dossiq/case')
 		expect(mockHostProps).not.toHaveBeenCalled()
 
-		releaseAnswers({ 'x-prop:q-name': 'Ahmed Bakker' })
+		releaseAnswers({ answers: { 'x-prop:q-name': 'Ahmed Bakker' }, definitions: [{ id: 'q-name' }] })
 		await flushPromises()
 		expect(mockHostProps).toHaveBeenCalledTimes(1)
 		expect(mockHostProps.mock.calls[0][0].props).toMatchObject({ caseType: 'woo-type', title: 'Street light', 'x-prop:q-name': 'Ahmed Bakker' })
+		expect(mockHostProps.mock.calls[0][0].preloadedDefinitions).toEqual({ caseType: { value: 'woo-type', records: [{ id: 'q-name' }] } })
 		expect(opened).toBeInstanceOf(Promise)
+	})
+
+	it('hands the dialog no questions when they could not be read, so it reads them itself', async () => {
+		mockStore.fetchSchema.mockResolvedValue({ slug: 'case' })
+		const { openNewCaseDialog } = await import('../../src/mailCreateDialog/openNewCaseDialog.js')
+		openNewCaseDialog({ initialData: { caseType: 'woo-type' }, mail: { values: {} } })
+		await flushPromises()
+		releaseAnswers({ answers: {}, definitions: null })
+		await flushPromises()
+		expect(mockHostProps).toHaveBeenCalledTimes(1)
+		expect(mockHostProps.mock.calls[0][0].preloadedDefinitions).toBeUndefined()
 	})
 })
