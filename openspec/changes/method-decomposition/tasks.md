@@ -1780,3 +1780,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `IntakeObligationListenerTest`, `ApiCredentialResolverTest`, `ApiCredentialResolverEdgesTest`,
         `AmountObjectionServiceTest`, `AmountObjectionServiceFailuresTest` and the three listener tests (`CaseTypeRightsEnforcedAccessTest`
         fails its 12 on development as well).
+  - [x] 8cs `Registrar/CaseTypeListenerRegistrar` (1: CouplingBetweenObjects 14 against 13). The statutory term's two
+        listeners (`CaseDeadlineFollowsTermListener` at -110, `ApplicantTermNoteListener` at -120, updates only) moved to
+        `Registrar/CaseTermListenerRegistrar`, which the case type registrar calls where `registerTermListeners()` ran,
+        so the order of every registration is unchanged and `ListenerRegistrar` is untouched. The three deadline
+        priorities stay on `CaseTypeListenerRegistrar`, side by side, as the listeners' docblocks and tests cite them.
+        Coupling 14 to 12; phpmd: zero findings on both files under both rulesets; `@SuppressWarnings(PHPMD.*)` lines in
+        `lib/` 186 to 185.
+        Characterisation, green before and after: `CaseTypeListenerRegistrarTest` (the full ordered registration list,
+        unchanged but for one `@uses` line), `ListenerRegistrarTest` and the three deadline listener suites
+        (`CaseDeadlineFollowsTermListenerTest`, `ApplicantTermNoteListenerTest`, `CaseInheritedDeadlineListenerTest`).
+        Dropping the new registrar's call turns `CaseTypeListenerRegistrarTest` red (checked).
+        Own test: `CaseTermListenerRegistrarTest` (2).
