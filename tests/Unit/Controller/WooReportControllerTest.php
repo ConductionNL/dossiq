@@ -55,7 +55,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  * @uses \OCA\Dossiq\Woo\ReportPeriod
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  */
 class WooReportControllerTest extends TestCase {
 

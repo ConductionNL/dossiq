@@ -23,7 +23,7 @@ namespace OCA\Dossiq\Woo;
 /**
  * A period of calendar days, `Y-m-d`, bounds included.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
 final class ReportPeriod {
 	/**
@@ -45,7 +45,7 @@ final class ReportPeriod {
 	 *
 	 * @return bool True when it does.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function contains(string $day): bool {
 		if ($this->from !== null && $day < $this->from) {

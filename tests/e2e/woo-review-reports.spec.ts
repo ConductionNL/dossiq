@@ -21,10 +21,10 @@
  *
  * NOT RUN YET (decision 139): written with the build, run in the live pass.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -286,6 +286,12 @@ test.describe('Review reports', () => {
 		expect(Array.isArray(rows)).toBe(true)
 
 		await navToRoute(page, '/cases')
+		// The entry sits in the footer section, which the menu folds under
+		// "Advanced": it is in the DOM but hidden until a user opens it.
+		await sidebarNav(page)
+			.getByRole('button', { name: 'Advanced', exact: true })
+			.first()
+			.click()
 		await expect(
 			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toBeVisible(PAGE_LOAD)

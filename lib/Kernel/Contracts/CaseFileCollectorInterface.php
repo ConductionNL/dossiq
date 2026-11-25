@@ -52,7 +52,7 @@ interface CaseFileCollectorInterface {
 	 * @return string The document record uuid, '' when the file could not be written or no record resulted.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function collect(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string;
