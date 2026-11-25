@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Import;
 
+use OCA\Dossiq\Service\Intake\CaseCreationAnnouncer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -96,14 +97,16 @@ class RecordImportStore {
 	/**
 	 * Write the case, and the result a closed record ended with.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $mapped        What the mapping answered.
+	 * @param object                     $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed>       $mapped        What the mapping answered.
+	 * @param CaseCreationAnnouncer|null $announcer     Announces the written case; null where the
+	 *                                                  container could not build one.
 	 *
 	 * @return string The case uuid, or '' when it was not written.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
-	public function writeCase(object $objectService, array $mapped): string {
+	public function writeCase(object $objectService, array $mapped, ?CaseCreationAnnouncer $announcer = null): string {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		try {
 			$saved = $objectService->saveObject(
@@ -121,12 +124,43 @@ class RecordImportStore {
 		}
 
 		$caseId = $this->savedId(saved: $saved);
+		if ($caseId !== '') {
+			$this->announce(objectService: $objectService, saved: $saved, announcer: $announcer);
+		}
+
 		if ($caseId !== '' && $mapped['result'] !== '') {
 			$this->writeResult(objectService: $objectService, result: ['register' => $register, 'case' => $caseId, 'resultType' => $mapped['result']]);
 		}
 
 		return $caseId;
 	}//end writeCase()
+
+	/**
+	 * Tell the app's listeners about the case the import wrote.
+	 *
+	 * The import runs as the system, and OpenRegister withholds the created
+	 * event of a write in a system operation. Without it no listener that
+	 * answers a new case ran: the statutory term was never bound, so every
+	 * running record answered "its term could not be armed (missing)" on a
+	 * live run (25 Nov 2026). The announcer sends the withheld event once,
+	 * as it does for a case a resident files through the portal.
+	 *
+	 * @param object                     $objectService The OpenRegister ObjectService the case was written through.
+	 * @param mixed                      $saved         What the write returned.
+	 * @param CaseCreationAnnouncer|null $announcer     Sends the withheld created event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-an-imported-records-running-term-is-carried-onto-the-case-req-cri-003
+	 */
+	private function announce(object $objectService, mixed $saved, ?CaseCreationAnnouncer $announcer): void {
+		if ($announcer === null) {
+			$this->logger->warning('RecordImportStore: no announcer, so the imported case was written unannounced');
+			return;
+		}
+
+		$announcer->announce(objectService: $objectService, saved: $saved);
+	}//end announce()
 
 	/**
 	 * The uuid of a saved case: its getUuid(), else the id its array form carries.

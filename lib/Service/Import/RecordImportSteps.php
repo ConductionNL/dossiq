@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Import;
 
+use OCA\Dossiq\Service\Intake\CaseCreationAnnouncer;
 use OCA\Dossiq\Service\Term\TermCarryOver;
 
 /**
@@ -35,14 +36,17 @@ final class RecordImportSteps {
 	/**
 	 * Constructor.
 	 *
-	 * @param RecordCaseMapping $mapping One record onto a case payload.
-	 * @param TermCarryOver     $term    The term carried onto the written case.
-	 * @param RecordImportStore $store   Reads the sources and cases, writes the case and the stamp.
+	 * @param RecordCaseMapping          $mapping   One record onto a case payload.
+	 * @param TermCarryOver              $term      The term carried onto the written case.
+	 * @param RecordImportStore          $store     Reads the sources and cases, writes the case and the stamp.
+	 * @param CaseCreationAnnouncer|null $announcer Sends the created event OpenRegister withholds from the
+	 *                                              import's system write, so the case's term is bound.
 	 */
 	public function __construct(
 		public readonly RecordCaseMapping $mapping,
 		public readonly TermCarryOver $term,
 		public readonly RecordImportStore $store,
+		public readonly ?CaseCreationAnnouncer $announcer = null,
 	) {
 	}//end __construct()
 }//end class
