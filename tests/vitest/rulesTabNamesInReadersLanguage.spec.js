@@ -8,7 +8,7 @@
  * as an object it left the placeholder standing: r31 DqZaaktypeOverzicht read
  * "Als status {status} wordt".
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

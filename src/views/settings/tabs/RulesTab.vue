@@ -305,7 +305,7 @@ export default {
 		 * The case type's own rules, in their order.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 		 */
 		caseRules() {
 			return Array.isArray(this.caseType?.rules) ? this.caseType.rules : []
@@ -333,7 +333,7 @@ export default {
 		 * The case type's rules as "If … / then …" rows.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 		 */
 		caseRuleRows() {
 			const byId = (list) => Object.fromEntries(list.map((o) => [o.id, o.label]))
@@ -437,7 +437,7 @@ export default {
 		 * Read the case type and what its rules can point at.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 		 */
 		async loadCaseType() {
 			if (!this.caseTypeId) {
@@ -464,7 +464,7 @@ export default {
 		 *
 		 * @param {Array<object>} rules The rules.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 		 */
 		async storeRules(rules) {
 			const next = { ...this.caseType, rules }

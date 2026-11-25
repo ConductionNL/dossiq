@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 declare(strict_types=1);

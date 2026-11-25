@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Throwable;
  * Reads the case as stored, replaces the value of the entry with that name or
  * appends one, and saves the case. Every other answer is kept as it was.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandlerInterface {
 
@@ -63,7 +63,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 	 *
 	 * @return ActionResult The result.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		$name = trim((string)($actionConfig['name'] ?? ''));
@@ -94,7 +94,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	private function writeAnswer(object $objects, string $caseId, string $name, array $actionConfig): void {
 		$stored = $this->storedCase(objects: $objects, caseId: $caseId);
@@ -120,7 +120,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 	 *
 	 * @return array<string, mixed> The stored case.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	private function storedCase(object $objects, string $caseId): array {
 		$stored = $objects->find($caseId);
@@ -140,7 +140,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 	 *
 	 * @return array<int, mixed> The list.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public static function withAnswer(array $answers, string $name, mixed $value): array {
 		foreach ($answers as $index => $answer) {
