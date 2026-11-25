@@ -15,12 +15,12 @@
  * @spec openspec/changes/remote-conditions-read-once-per-record/specs/action-buttons/spec.md#requirement-a-header-actions-remote-conditions-are-read-once-per-record
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
-import CnActionButtons from '@conduction/nextcloud-vue/src/components/CnActionButtons/CnActionButtons.vue'
 import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import CnActionButtons from '@conduction/nextcloud-vue/src/components/CnActionButtons/CnActionButtons.vue'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -52,12 +52,14 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
  * @param {object} [self] Overrides of its `@self`.
  * @return {object} The case.
  */
-const theCase = (self = {}) => ({
+function theCase (self = {}) {
+  return {
 	id: 'case-1',
 	title: 'Woo request',
 	isFinalStatus: false,
 	'@self': { id: 'case-1', locked: null, updated: '2026-11-25T03:00:00Z', ...self },
-})
+}
+}
 
 /**
  * How often the lifecycle endpoint was asked.
