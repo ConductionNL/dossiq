@@ -54,19 +54,16 @@ class RecordImportStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService            $settingsService Register, schemas and OpenRegister.
-	 * @param RecordCaseMapping          $mapping         Reads a dot path of a case.
-	 * @param ITimeFactory               $time            The moment of the stamp.
-	 * @param LoggerInterface            $logger          Logger.
-	 * @param CaseCreationAnnouncer|null $announcer       Announces a case the import wrote; null where
-	 *                                                    the container cannot build one.
+	 * @param SettingsService   $settingsService Register, schemas and OpenRegister.
+	 * @param RecordCaseMapping $mapping         Reads a dot path of a case.
+	 * @param ITimeFactory      $time            The moment of the stamp.
+	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly RecordCaseMapping $mapping,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
-		private readonly ?CaseCreationAnnouncer $announcer = null,
 	) {
 	}//end __construct()
 
@@ -100,14 +97,16 @@ class RecordImportStore {
 	/**
 	 * Write the case, and the result a closed record ended with.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $mapped        What the mapping answered.
+	 * @param object                     $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed>       $mapped        What the mapping answered.
+	 * @param CaseCreationAnnouncer|null $announcer     Announces the written case; null where the
+	 *                                                  container could not build one.
 	 *
 	 * @return string The case uuid, or '' when it was not written.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
-	public function writeCase(object $objectService, array $mapped): string {
+	public function writeCase(object $objectService, array $mapped, ?CaseCreationAnnouncer $announcer = null): string {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		try {
 			$saved = $objectService->saveObject(
@@ -126,7 +125,7 @@ class RecordImportStore {
 
 		$caseId = $this->savedId(saved: $saved);
 		if ($caseId !== '') {
-			$this->announce(objectService: $objectService, saved: $saved);
+			$this->announce(objectService: $objectService, saved: $saved, announcer: $announcer);
 		}
 
 		if ($caseId !== '' && $mapped['result'] !== '') {
@@ -146,20 +145,21 @@ class RecordImportStore {
 	 * live run (25 Nov 2026). The announcer sends the withheld event once,
 	 * as it does for a case a resident files through the portal.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService the case was written through.
-	 * @param mixed  $saved         What the write returned.
+	 * @param object                     $objectService The OpenRegister ObjectService the case was written through.
+	 * @param mixed                      $saved         What the write returned.
+	 * @param CaseCreationAnnouncer|null $announcer     Sends the withheld created event.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-an-imported-records-running-term-is-carried-onto-the-case-req-cri-003
 	 */
-	private function announce(object $objectService, mixed $saved): void {
-		if ($this->announcer === null) {
+	private function announce(object $objectService, mixed $saved, ?CaseCreationAnnouncer $announcer): void {
+		if ($announcer === null) {
 			$this->logger->warning('RecordImportStore: no announcer, so the imported case was written unannounced');
 			return;
 		}
 
-		$this->announcer->announce(objectService: $objectService, saved: $saved);
+		$announcer->announce(objectService: $objectService, saved: $saved);
 	}//end announce()
 
 	/**
