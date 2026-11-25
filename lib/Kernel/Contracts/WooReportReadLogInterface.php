@@ -48,7 +48,7 @@ interface WooReportReadLogInterface {
 	 *
 	 * @throws RefusedException When an entry cannot be written.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function recordThroughputRead(string $readerId, array $scope, array $caseIds): int;
 }//end interface

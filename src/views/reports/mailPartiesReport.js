@@ -6,7 +6,7 @@
  * case's collected mail counted by sender, recipient and domain. The endpoint
  * refuses a reader who may not read the case, with its own sentence.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 export const mailPartiesReport = Object.freeze({
 	url: '/apps/dossiq/api/cases/{id}/reports/mail-parties',

@@ -53,3 +53,32 @@ export async function prefetchFormSchema(store, action) {
 		return null
 	}
 }
+
+/**
+ * Read the object a reference field opens on into the store, under the slug
+ * the form dialog resolves its label by (`createObjectTypeSlug(register,
+ * schema)`), so the dialog takes the name from the store's copy instead of
+ * reading the object again after it mounts. Never fails: without the copy the
+ * dialog reads the object itself as it always did.
+ *
+ * @param {object} store The object store.
+ * @param {string} register The register slug.
+ * @param {string} schema The referenced schema slug.
+ * @param {string|undefined} id The referenced object's id.
+ * @return {Promise<object|null>} The object, or null.
+ * @spec openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-011-the-same-new-case-dialog-from-a-mail
+ */
+export async function prefetchReferencedObject(store, register, schema, id) {
+	if (typeof id !== 'string' || id === '' || !register || !schema || typeof store?.createObjectTypeSlug !== 'function') {
+		return null
+	}
+	try {
+		const slug = store.createObjectTypeSlug(register, schema)
+		if (!store.objectTypeRegistry?.[slug]) {
+			store.registerObjectType(slug, schema, register)
+		}
+		return await store.fetchObject(slug, id)
+	} catch {
+		return null
+	}
+}

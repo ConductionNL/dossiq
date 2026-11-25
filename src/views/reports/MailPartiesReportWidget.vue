@@ -18,7 +18,7 @@ import { mailPartiesReport } from './mailPartiesReport.js'
  * CnCountTablesReport with this report's config, starting on the case the
  * address names (`?case=`).
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 export default {
 	name: 'MailPartiesReportWidget',
@@ -34,7 +34,7 @@ export default {
 		 * The case the address names, or ''.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+		 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 		 */
 		startCase() {
 			const named = this.$route?.query?.case

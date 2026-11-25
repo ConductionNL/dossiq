@@ -17,7 +17,7 @@ import pinia from '../pinia.js'
 import registry from '../registry.js'
 import { readMailQuestions } from './mailAnswers.js'
 import { actionFromMail, findNewCaseAction } from './newCaseAction.js'
-import { prefetchFormSchema } from './prefetchFormSchema.js'
+import { prefetchFormSchema, prefetchReferencedObject } from './prefetchFormSchema.js'
 
 import '@conduction/nextcloud-vue/css/index.css'
 
@@ -33,13 +33,16 @@ export async function openNewCaseDialog(context) {
 	if (!action) {
 		throw new Error('dossiq has no New case action')
 	}
-	// The case type's questions and the form's schema are read side by side:
-	// the dialog's own open reads the schema from the store, so it no longer
-	// waits for the questions first.
+	// The case type's questions, the form's schema and the case type itself
+	// are read side by side: the dialog's own open reads the schema from the
+	// store and names the case type from the store's copy, so it no longer
+	// waits for the questions first or reads the case type again.
 	const caseType = context?.initialData?.caseType
+	const store = useObjectStore(pinia)
 	const [{ answers, definitions }] = await Promise.all([
 		readMailQuestions(caseType, context?.mail?.values),
-		prefetchFormSchema(useObjectStore(pinia), action),
+		prefetchFormSchema(store, action),
+		prefetchReferencedObject(store, action.register, 'caseType', caseType),
 	])
 	const opened = actionFromMail(action, { ...(context?.initialData || {}), ...answers })
 	// The questions were read for the case type the form opens on: the
