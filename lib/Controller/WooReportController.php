@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -48,7 +48,7 @@ use OCP\IUserSession;
  * outside it is refused like anyone else (REQ-WRR-002). While a switch is off
  * its report answers 403 with the not-switched-on sentence (REQ-WRR-001).
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  */
 class WooReportController extends Controller {
 
@@ -85,7 +85,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse The offer, or 401 without a session.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	#[NoAdminRequired]
 	public function offered(): JSONResponse {
@@ -106,7 +106,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse|DataDownloadResponse The rows, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -133,7 +133,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse|null The 403, or null when the caller may read the report.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 * @spec openspec/specs/woo-review-reports/spec.md
 	 */
 	private function throughputRefusal(IUser $user): ?JSONResponse {
 		if ($this->switches->isOn(switch: WooReportSwitches::THROUGHPUT) === false) {
@@ -162,7 +162,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse|DataDownloadResponse
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 * @spec openspec/specs/woo-review-reports/spec.md
 	 */
 	private function recordedThroughput(IUser $user): JSONResponse|DataDownloadResponse {
 		$caseId = trim((string)$this->request->getParam('case', ''));
@@ -194,7 +194,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse|DataDownloadResponse
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 * @spec openspec/specs/woo-review-reports/spec.md
 	 */
 	private function throughputAnswer(array $scope, array $report): JSONResponse|DataDownloadResponse {
 		if ($this->request->getParam('format', '') === 'csv') {
@@ -250,7 +250,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	private function notSwitchedOn(): JSONResponse {
 		return new JSONResponse(
@@ -281,7 +281,7 @@ class WooReportController extends Controller {
 	 *
 	 * @return JSONResponse|DataDownloadResponse
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 *
 	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
 	 */

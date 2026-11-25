@@ -81,7 +81,7 @@ interface CaseDocumentProvenanceInterface {
 	 *     messageId: string
 	 * }
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function mailOf(string $caseId, string $documentId, ?array $record = null): array;
 

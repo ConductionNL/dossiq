@@ -7,7 +7,7 @@
  * its refusal and no rows. The admin switches are declared fields
  * (adminSettingsForms.spec.js).
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  */
 
 import { mount } from '@vue/test-utils'

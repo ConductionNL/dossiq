@@ -46,7 +46,7 @@ interface WooThroughputReportInterface {
 	 *
 	 * @throws RefusedException When OpenRegister or the assessment schema is not available.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forCase(string $caseId): array;
 
@@ -60,7 +60,7 @@ interface WooThroughputReportInterface {
 	 *
 	 * @throws RefusedException When a day is not a date, or OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forPeriod(string $from, string $to): array;
 
@@ -71,7 +71,7 @@ interface WooThroughputReportInterface {
 	 *
 	 * @return string The CSV text.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function toCsv(array $rows): string;
 }//end interface

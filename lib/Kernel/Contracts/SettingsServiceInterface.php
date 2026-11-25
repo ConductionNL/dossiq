@@ -269,7 +269,7 @@ interface SettingsServiceInterface {
 	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array;
 }//end interface

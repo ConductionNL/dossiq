@@ -223,7 +223,7 @@ class SettingsControllerWriteTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function testARefusedThroughputSwitchAnswers422WithTheSentence(): void {
 		$this->request->method('getParams')->willReturn(['reviewerThroughputReport' => 'true']);

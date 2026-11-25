@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -36,7 +36,7 @@ use OCA\Dossiq\Kernel\Contracts\MailPartiesReportInterface;
 /**
  * The parties of a case's collected mail, counted.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 class MailPartiesReport implements MailPartiesReportInterface {
 
@@ -65,7 +65,7 @@ class MailPartiesReport implements MailPartiesReportInterface {
 	 *     domains: list<array{domain: string, count: int}>
 	 * } Each list sorted by count, highest first, then by name.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function forCase(string $caseId): array {
 		$mails = $this->provenance->mailForCase(caseId: $caseId);
@@ -132,7 +132,7 @@ class MailPartiesReport implements MailPartiesReportInterface {
 	 *
 	 * @return string The CSV, with a header line.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function toCsv(array $report): string {
 		$stream = fopen('php://memory', 'r+');
