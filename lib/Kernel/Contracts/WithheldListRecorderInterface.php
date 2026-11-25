@@ -47,7 +47,7 @@ interface WithheldListRecorderInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
 	 */
 	public function describe(array $answer): string;
 
@@ -59,7 +59,7 @@ interface WithheldListRecorderInterface {
 	 *
 	 * @return array<string, mixed> `{status: 'recorded', recorded, refused}` or `{status: 'not-recorded', reason}`.
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+	 * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function record(string $publicationId, array $entries): array;
 }//end interface
