@@ -122,7 +122,7 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @return array<int, QueueItem> The items.
 	 *
 	 * @spec openspec/specs/my-work/spec.md
-	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+	 * @spec openspec/changes/archive/2026-11-25-advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
 		return $this->waitingItems(

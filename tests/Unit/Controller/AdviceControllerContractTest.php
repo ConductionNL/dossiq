@@ -673,7 +673,7 @@ class AdviceControllerContractTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+	 * @spec openspec/changes/archive/2026-11-25-advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function testTheLegacyPathsAnswerAsTheGenericOnes(): void {
 		$this->authenticate();
@@ -694,7 +694,7 @@ class AdviceControllerContractTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+	 * @spec openspec/changes/archive/2026-11-25-advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function testTheGenericAddressCarriesTheCanonicalRouteNames(): void {
 		$routes = (require __DIR__ . '/../../../appinfo/routes.php')['routes'];
