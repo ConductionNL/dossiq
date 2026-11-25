@@ -366,8 +366,10 @@ the case that carries a `wooSummary`. With none they MUST answer 409
 - **GIVEN** a Woo case with no assembled decision
 - **WHEN** the handler presses "Publish (Woo)" or calls the endpoint without a
   decision id
-- **THEN** the system MUST answer 409 `no_woo_decision`
+- **THEN** the system MUST answer 422 `not-at-this-step`: a case without a decision never
+  reached `wooPublicationStatus` ready, and the step is checked before anything else (REQ-ACC-13)
 - **AND** nothing MUST be sent to OpenCatalogi
+- **AND** a case at the step whose Woo decision cannot be found MUST answer 409 `no_woo_decision`
 
 ### Requirement: The decision schema declares the Woo fields its writers send (REQ-WPI-006)
 The `decision` schema MUST declare `wooPublication`, `wooSummary`,
