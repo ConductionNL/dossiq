@@ -149,7 +149,11 @@ class ZuiddrechtFragmentInstallsTest extends TestCase {
 		$caseTypes = [];
 		foreach (glob($settings.'/packages/*/case-type.json') as $file) {
 			$declared = json_decode((string)file_get_contents($file), true)['caseType'] ?? [];
-			foreach ((array_is_list($declared) === true ? $declared : [$declared]) as $caseType) {
+			if (array_is_list($declared) === false) {
+				$declared = [$declared];
+			}
+
+			foreach ($declared as $caseType) {
 				if (($caseType['requiresSpecialCategory'] ?? false) === true) {
 					$caseTypes[$caseType['identifier']] = ($caseType['specialDataCategories'] ?? []);
 				}
