@@ -115,7 +115,7 @@ named change is archived.
     > as a form role and refuses any other unknown role, which rejects the whole
     > case schema at import (ShippedDeclarationsOpenRegisterAcceptsTest). Map
     > `sort: order`, `group: group`, `placeholder: placeholder` once OpenRegister's
-    > ExtendingFormDeclarationInterface::FORM_ROLES carries them (nextcloud-vue
+    > ExtendingFormDeclarationInterface::FORM_ROLES carries them (openregister#11163; nextcloud-vue
     > already orders by `sort`; group and placeholder need its dynamicProperties
     > to read them). Test: tests/vitest/propertyDefinitionFormLayout.spec.js.
   - [ ] 15.7 With openregister: the portal flag on a property, on the field and
