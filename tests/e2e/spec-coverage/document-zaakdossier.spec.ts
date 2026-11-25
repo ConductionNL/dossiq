@@ -60,8 +60,13 @@ import {
 } from '../helpers/fixtures.ts'
 
 test.describe('document-zaakdossier spec coverage', () => {
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004a-dossier-groups-documents-by-type-with-count-badge
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004b-empty-dossier-shows-upload-cta-with-drag-and-drop-zone
+	// Deliberately carries no `@e2e` anchor any more (e2e-citation-integrity
+	// 1.13). It cited REQ-ZAK-004a (documents grouped by type) and 004b (an
+	// empty dossier's upload call to action) while asserting only that the
+	// cases index answers without a 500. Both scenarios are reason-bearing
+	// `@e2e exclude`s on the spec since the grouped dossier view was retired
+	// (2026-09-13), so a citation here claimed what the spec says nothing can
+	// show. The smoke stays, uncited.
 	test('cases index renders so a case dossier tab can be opened', async ({
 		page,
 	}) => {

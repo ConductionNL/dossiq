@@ -496,7 +496,7 @@ const registry = {
 		kind: 'modal',
 		component: AwardProposeDialog,
 		propsSchema: {},
-		_note: "CaseDetail `award-propose` header action (REQ-TND-CASE-01). Lists the case's admissible bids from its scoring sheet (GET /api/cases/{caseId}/scoring), highest total first with the bid proposed now marked, and posts the chosen bid to POST /api/cases/{caseId}/award-proposal; the bid holds the proposal (state proposed-award, one per lot) and the flow makes the award final after the standstill term.",
+		_note: "CaseDetail `award-propose` header action (REQ-TND-CASE-01). Lists the case's admissible bids from its scoring sheet (GET /api/cases/{caseId}/scoring), highest total first with the bid proposed now marked, and walks the bid lifecycle through OpenRegister's transition endpoint (releaseAward on the lot's earlier proposal, then proposeAward); the bid holds the proposal (state proposed-award, one per lot) and the flow makes the award final after the standstill term.",
 	},
 
 

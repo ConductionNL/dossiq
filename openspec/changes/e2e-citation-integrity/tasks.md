@@ -104,7 +104,12 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
       which refuses a non-admin create on a schema with no authorization block (`User 'E2E Ordinary User' does not have
       permission to 'create' objects in schema 'Substitution'`, served as a 500). Which group may register a
       substitution is an access-control decision, left to Ruben (COORDINATOR-QUEUE).
-- [ ] 1.13 `document-zaakdossier#req-zak-004a` and `#req-zak-004b` on `cases index renders so a case dossier tab can be opened`. The opening example. The test loads `/cases` and asserts no 500. Neither anchor belongs on it.
+- [x] 1.13 `document-zaakdossier#req-zak-004a` and `#req-zak-004b` on `cases index renders so a case dossier tab can be opened`. The opening example. The test loads `/cases` and asserts no 500. Neither anchor belongs on it.
+      **Settled 2026-11-25.** Both scenarios are reason-bearing `@e2e exclude`s on the spec since the grouped dossier
+      view was retired (2026-09-13); the two anchors came off the cases-index smoke test, which stays uncited.
+      Seen live in the same file while checking 1.7 (not ticked): `#req-zak-005a` is red because the metadata
+      dialog (`.dossier-metadata-dialog`) never appears after a file is chosen, and `#req-zak-008a` is red because the
+      dossier ZIP holds only `manifest.csv` and none of the uploaded documents; 005c and 008c are green.
 
 ## 2. Remaining smoke (23 citations)
 

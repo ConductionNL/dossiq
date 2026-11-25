@@ -133,6 +133,30 @@ class HouseholdCasesTest extends TestCase {
 	}//end testACaseWithoutAPlanHasNoHousehold()
 
 	/**
+	 * A case that names no plan reads the plan that names the case, the way
+	 * the plan card finds it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/family-plan-by-case/tasks.md
+	 */
+	public function testACaseFindsThePlanThatNamesIt(): void {
+		$this->objects->seed(
+			'gezinsplan',
+			[
+				'id' => 'plan-by-case', 'caseId' => 'case-linked', 'preparedDate' => '2026-11-19',
+				'gezinsleden' => [['role' => 'jeugdige', 'bsn' => self::CHILD]],
+			]
+		);
+		$this->objects->seed(
+			'gezinsplan',
+			['id' => 'plan-older', 'caseId' => 'case-linked', 'preparedDate' => '2026-01-01', 'gezinsleden' => [['role' => 'ouder', 'bsn' => self::PARENT]]]
+		);
+
+		self::assertSame(expected: [self::CHILD], actual: $this->household->householdBsns(case: ['id' => 'case-linked']));
+	}//end testACaseFindsThePlanThatNamesIt()
+
+	/**
 	 * In this domain: the household's cases the reader may open, in full, and
 	 * not the case itself, an unreadable one or one of another category.
 	 *
