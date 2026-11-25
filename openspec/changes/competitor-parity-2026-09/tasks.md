@@ -83,3 +83,31 @@ named change is archived.
   missing-value chip in the facet sidebar waits on
   ConductionNL/nextcloud-vue#1176 and is not built here; the change ships
   a not-set lens instead, which needs no facet payload
+- [ ] 15 Consumer halves of what buildiq serves (handed over 25 Nov 2026 by the
+  buildiq lane; leaf ids and example answers in `buildiq-consumer-halves.md`).
+  Each stays optional: with buildiq absent or answering nothing, dossiq keeps
+  its manifest shape.
+  - [ ] 15.1 Case page: ask `buildiq-page-layout` for the case being opened,
+    as the signed-in handler with no audience filter (the desk channel); merge
+    the one answered layout over the manifest config, render the manifest
+    unchanged when `items` is empty (buildiq `case-page-layout-per-case-type`,
+    `screen-overrides-as-a-patch-with-fall-through` 5.1).
+  - [ ] 15.2 Task panel: place the case's task list where the answered
+    `taskList.panel.placement` says (`side`, `tab` beside the named `tabs`, or
+    `none`), collapsed when `collapsed` is true (buildiq
+    `pages-task-panel-beside-case-tabs`, REQ-BQTP-003).
+  - [ ] 15.3 Task list and upload dialog may read the same leaf answer
+    (`taskList`, `uploadFields`) and keep their manifest shape when nothing
+    answers (buildiq `case-page-layout-per-case-type` 8.5).
+  - [ ] 15.4 Create form: `friendly-case-create-form` asks
+    `buildiq-registration-form` on the case type with `audience` and `channel`,
+    renders `items[0]` (fields in the served order, grouped by `sections`) and
+    offers `drafts`; hidden presets arrive only in `presets[]` and are written
+    on save, never shown (buildiq `registration-form-builder` 4.4).
+  - [ ] 15.5 Write `case.intakeChannel` from the served form's `channel` when a
+    case is created from it (buildiq `forms-per-case-type` 8.4).
+  - [ ] 15.6 Field half of gap-register row B16: `order`, `group` and
+    `placeholder` on `propertyDefinition`, in the CT-1 change (buildiq
+    `competitor-parity-2026-09` 2.1).
+  - [ ] 15.7 With openregister: the portal flag on a property, on the field and
+    not on the form (decision D16 in buildiq `competitor-parity-2026-09` 2.2).
