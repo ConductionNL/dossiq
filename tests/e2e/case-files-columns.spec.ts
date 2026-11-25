@@ -145,7 +145,7 @@ test.describe('the case files list columns', () => {
 		// The three columns sit in the Columns chooser, off by default. The
 		// choice is a stored user preference, so an earlier run may have left
 		// them on: tick only what is off, or a second run hides them again.
-		await page.waitForLoadState('networkidle')
+		await expect(page.getByRole('row', { name: new RegExp(RUN_PREFIX) })).toBeVisible()
 		await page
 			.getByTestId('cn-files-browser-columns')
 			.getByRole('button')
