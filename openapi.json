@@ -10426,6 +10426,73 @@
                 }
             }
         },
+        "/cases/{caseId}/award-proposal": {
+            "post": {
+                "operationId": "award-proposal-propose",
+                "summary": "Propose a bid of the case for the award of its lot",
+                "description": "Proposes one admissible bid of the case for the award of its lot. The bid holds the proposal (state `proposed-award`), one per lot of the case: an earlier proposal of the same lot goes back to `evaluated`. The case flow makes the award final after the standstill term. A case the user may not change answers 403 before anything is read; a bid that is not an admissible bid of the case answers 422 with the reason. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "scoring"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "bid"
+                                ],
+                                "properties": {
+                                    "bid": {
+                                        "type": "string",
+                                        "description": "The bid uuid."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Problem422"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
         "/cases/{caseId}/pipelinq/contact-moments": {
             "get": {
                 "operationId": "pipelinq-contact-moment-contact-moments",

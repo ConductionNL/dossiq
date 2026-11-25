@@ -6738,6 +6738,29 @@
 						}
 					},
 					{
+						"id": "award-propose",
+						"type": "open-modal",
+						"label": "Propose award",
+						"icon": "HandshakeOutline",
+						"target": "AwardProposeDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.tenderChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "interim-report-record",
 						"type": "open-modal",
 						"label": "Record interim report",
