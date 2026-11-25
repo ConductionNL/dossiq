@@ -16,7 +16,7 @@ SPDX-License-Identifier: EUPL-1.2
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { companyResult, personResult } from '../../services/initiatorSearch.js'
-import { initializeStores } from '../../store/store.js'
+import { storesReady } from '../../store/store.js'
 
 /**
  * Derive a case's requester projection from its canonical `requester` uuid.
@@ -134,11 +134,18 @@ export default {
 		unsubscribe(PAGE_REFRESH, this.run)
 	},
 
+	/**
+	 * Wait for the app's start-up, then write the projection.
+	 *
+	 * @spec openspec/specs/initiator-display/spec.md
+	 */
 	async mounted() {
 		// The manifest mounts this before App.vue's initializeStores() has
 		// resolved the app-config, so the 'case' object type may not be
-		// registered yet; awaiting it here is idempotent.
-		await initializeStores()
+		// registered yet. Wait for that start-up rather than run a second
+		// one: a second initializeStores() read /api/settings again on every
+		// case page (two settings reads on open, measured live 25 Nov).
+		await storesReady
 		await this.run()
 	},
 
