@@ -52,9 +52,21 @@ class MailMessageCallsTest extends TestCase {
 			/** @var array<int, array<int, mixed>> */
 			public array $calls = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param array $answers The answers.
+			 */
 			public function __construct(private array $answers) {
 			}
 
+			/**
+			 * Stand-in for Mail's answer().
+			 *
+			 * @param string $method The method.
+			 * @param array $args The args.
+			 * @return mixed
+			 */
 			private function answer(string $method, array $args): mixed {
 				$this->calls[] = [$method, ...$args];
 				$answer = ($this->answers[$method] ?? null);
@@ -65,20 +77,53 @@ class MailMessageCallsTest extends TestCase {
 				return $answer;
 			}
 
+			/**
+			 * Stand-in for Mail's getSource().
+			 *
+			 * @param object $account The account.
+			 * @param string $mailbox The mailbox.
+			 * @param int $uid The uid.
+			 * @return mixed
+			 */
 			public function getSource(object $account, string $mailbox, int $uid): mixed {
-				return $this->answer('getSource', [$mailbox, $uid]);
+				return $this->answer(method: 'getSource', args: [$mailbox, $uid]);
 			}
 
+			/**
+			 * Stand-in for Mail's getByMessageId().
+			 *
+			 * @param object $account The account.
+			 * @param string $messageId The messageId.
+			 * @return mixed
+			 */
 			public function getByMessageId(object $account, string $messageId): mixed {
-				return $this->answer('getByMessageId', [$messageId]);
+				return $this->answer(method: 'getByMessageId', args: [$messageId]);
 			}
 
+			/**
+			 * Stand-in for Mail's moveMessage().
+			 *
+			 * @param object $account The account.
+			 * @param string $mailbox The mailbox.
+			 * @param int $uid The uid.
+			 * @param object $target The target.
+			 * @param string $folder The folder.
+			 * @return mixed
+			 */
 			public function moveMessage(object $account, string $mailbox, int $uid, object $target, string $folder): mixed {
-				return $this->answer('moveMessage', [$mailbox, $uid, $folder]);
+				return $this->answer(method: 'moveMessage', args: [$mailbox, $uid, $folder]);
 			}
 
+			/**
+			 * Stand-in for Mail's getMailAttachments().
+			 *
+			 * @param object $account The account.
+			 * @param string $mailbox The mailbox.
+			 * @param int $uid The uid.
+			 * @return mixed
+			 */
 			public function getMailAttachments(object $account, string $mailbox, int $uid): mixed {
-				return $this->answer('getMailAttachments', [$mailbox, $uid]);
+				return $this->answer(method: 'getMailAttachments', args: [$mailbox, $uid]);
 			}
 		};
 
@@ -102,16 +147,16 @@ class MailMessageCallsTest extends TestCase {
 	 * @return void
 	 */
 	public function testEachCallAnswersWhatMailAnswered(): void {
-		$call = self::call(['getSource' => 'raw', 'getByMessageId' => [1], 'getMailAttachments' => [['name' => 'a', 'size' => 1]]]);
-		$calls = self::calls(new MailCollaboratorLog());
+		$call = self::call(answers: ['getSource' => 'raw', 'getByMessageId' => [1], 'getMailAttachments' => [['name' => 'a', 'size' => 1]]]);
+		$calls = self::calls(log: new MailCollaboratorLog());
 
-		self::assertSame('raw', $calls->source(call: $call, clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5]));
-		self::assertTrue($calls->holds(call: $call, accountId: 1, messageId: 'a@b'));
-		self::assertTrue($calls->move(call: $call, move: [1, 'INBOX', 5, 'Done']));
-		self::assertSame([['name' => 'a', 'mimeType' => '', 'size' => 1]], $calls->attachments(call: $call, message: [1, 'INBOX', 5]));
+		self::assertSame(expected: 'raw', actual: $calls->source(call: $call, clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5]));
+		self::assertTrue(condition: $calls->holds(call: $call, accountId: 1, messageId: 'a@b'));
+		self::assertTrue(condition: $calls->move(call: $call, move: [1, 'INBOX', 5, 'Done']));
+		self::assertSame(expected: [['name' => 'a', 'mimeType' => '', 'size' => 1]], actual: $calls->attachments(call: $call, message: [1, 'INBOX', 5]));
 		self::assertSame(
-			[['getSource', 'INBOX', 5], ['getByMessageId', 'a@b'], ['moveMessage', 'INBOX', 5, 'Done'], ['getMailAttachments', 'INBOX', 5]],
-			$call->manager->calls
+			expected: [['getSource', 'INBOX', 5], ['getByMessageId', 'a@b'], ['moveMessage', 'INBOX', 5, 'Done'], ['getMailAttachments', 'INBOX', 5]],
+			actual: $call->manager->calls
 		);
 	}//end testEachCallAnswersWhatMailAnswered()
 
@@ -122,15 +167,15 @@ class MailMessageCallsTest extends TestCase {
 	 */
 	public function testAFailedCallGivesTheEmptyAnswer(): void {
 		$boom = new RuntimeException('down');
-		$call = self::call(['getSource' => $boom, 'getByMessageId' => $boom, 'moveMessage' => $boom, 'getMailAttachments' => $boom]);
+		$call = self::call(answers: ['getSource' => $boom, 'getByMessageId' => $boom, 'moveMessage' => $boom, 'getMailAttachments' => $boom]);
 		$log = new MailCollaboratorLog();
-		$calls = self::calls($log);
+		$calls = self::calls(log: $log);
 
-		self::assertSame('', $calls->source(call: $call, clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5]));
-		self::assertFalse($calls->holds(call: $call, accountId: 1, messageId: 'a@b'));
-		self::assertFalse($calls->move(call: $call, move: [1, 'INBOX', 5, 'Done']));
-		self::assertSame([], $calls->attachments(call: $call, message: [1, 'INBOX', 5]));
-		self::assertSame(['warning', 'warning', 'warning', 'warning'], array_column($log->records, 0));
+		self::assertSame(expected: '', actual: $calls->source(call: $call, clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5]));
+		self::assertFalse(condition: $calls->holds(call: $call, accountId: 1, messageId: 'a@b'));
+		self::assertFalse(condition: $calls->move(call: $call, move: [1, 'INBOX', 5, 'Done']));
+		self::assertSame(expected: [], actual: $calls->attachments(call: $call, message: [1, 'INBOX', 5]));
+		self::assertSame(expected: ['warning', 'warning', 'warning', 'warning'], actual: array_column($log->records, 0));
 	}//end testAFailedCallGivesTheEmptyAnswer()
 
 	/**
@@ -139,9 +184,15 @@ class MailMessageCallsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEmptyAnswerIsNo(): void {
-		$calls = self::calls(new MailCollaboratorLog());
-		self::assertFalse($calls->holds(call: self::call(['getByMessageId' => []]), accountId: 1, messageId: 'a@b'));
-		self::assertFalse($calls->holds(call: self::call(['getByMessageId' => 'yes']), accountId: 1, messageId: 'a@b'));
-		self::assertSame('', $calls->source(call: self::call(['getSource' => 42]), clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5]));
+		$calls = self::calls(log: new MailCollaboratorLog());
+		$none = self::call(answers: ['getByMessageId' => []]);
+		$notAList = self::call(answers: ['getByMessageId' => 'yes']);
+		$notText = self::call(answers: ['getSource' => 42]);
+		self::assertFalse(condition: $calls->holds(call: $none, accountId: 1, messageId: 'a@b'));
+		self::assertFalse(condition: $calls->holds(call: $notAList, accountId: 1, messageId: 'a@b'));
+		self::assertSame(
+			expected: '',
+			actual: $calls->source(call: $notText, clientFactory: static fn (): ?object => null, message: [1, 'INBOX', 5])
+		);
 	}//end testAnEmptyAnswerIsNo()
 }//end class

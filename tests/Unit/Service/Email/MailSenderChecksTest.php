@@ -46,7 +46,7 @@ class MailSenderChecksTest extends TestCase {
 	 * @return MailSenderChecks
 	 */
 	private function checks(array $owners, MailCollaboratorLog $log): MailSenderChecks {
-		$tables = $this->createMock(MailMessageSource::class);
+		$tables = $this->createMock(originalClassName: MailMessageSource::class);
 		$tables->method('allAccounts')->willReturn(array_map(static fn (int $id): array => ['id' => $id], array_keys($owners)));
 		$tables->method('ownerOf')->willReturnCallback(static fn (int $accountId): string => $owners[$accountId]);
 
@@ -59,13 +59,19 @@ class MailSenderChecksTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheDkimVerdict(): void {
-		self::assertSame(AuthenticationResult::PASS, MailSenderChecks::dkimVerdictOf(valid: true));
-		self::assertSame(AuthenticationResult::FAIL, MailSenderChecks::dkimVerdictOf(valid: false));
-		self::assertSame(AuthenticationResult::UNAVAILABLE, MailSenderChecks::dkimVerdictOf(valid: 'yes'));
+		self::assertSame(expected: AuthenticationResult::PASS, actual: MailSenderChecks::dkimVerdictOf(valid: true));
+		self::assertSame(expected: AuthenticationResult::FAIL, actual: MailSenderChecks::dkimVerdictOf(valid: false));
+		self::assertSame(expected: AuthenticationResult::UNAVAILABLE, actual: MailSenderChecks::dkimVerdictOf(valid: 'yes'));
 
 		$log = new MailCollaboratorLog();
-		$checks = $this->checks([], $log);
+		$checks = $this->checks(owners: [], log: $log);
 		$validator = new class() {
+			/**
+			 * Stand-in for Mail's validateRaw().
+			 *
+			 * @param string $source The source.
+			 * @return bool
+			 */
 			public function validateRaw(string $source): bool {
 				if ($source === 'broken') {
 					throw new RuntimeException('no key');
@@ -74,10 +80,10 @@ class MailSenderChecksTest extends TestCase {
 				return $source === 'signed';
 			}
 		};
-		self::assertSame(AuthenticationResult::PASS, $checks->dkim(validator: $validator, source: 'signed'));
-		self::assertSame(AuthenticationResult::FAIL, $checks->dkim(validator: $validator, source: 'tampered'));
-		self::assertSame(AuthenticationResult::UNAVAILABLE, $checks->dkim(validator: $validator, source: 'broken'));
-		self::assertSame([['debug', 'Dossiq: the DKIM check could not run']], $log->records);
+		self::assertSame(expected: AuthenticationResult::PASS, actual: $checks->dkim(validator: $validator, source: 'signed'));
+		self::assertSame(expected: AuthenticationResult::FAIL, actual: $checks->dkim(validator: $validator, source: 'tampered'));
+		self::assertSame(expected: AuthenticationResult::UNAVAILABLE, actual: $checks->dkim(validator: $validator, source: 'broken'));
+		self::assertSame(expected: [['debug', 'Dossiq: the DKIM check could not run']], actual: $log->records);
 	}//end testTheDkimVerdict()
 
 	/**
@@ -90,6 +96,13 @@ class MailSenderChecksTest extends TestCase {
 			/** @var array<int, string> */
 			public array $asked = [];
 
+			/**
+			 * Stand-in for Mail's isTrusted().
+			 *
+			 * @param string $owner The owner.
+			 * @param string $address The address.
+			 * @return bool
+			 */
 			public function isTrusted(string $owner, string $address): bool {
 				$this->asked[] = $owner;
 				if ($owner === 'ann') {
@@ -100,11 +113,11 @@ class MailSenderChecksTest extends TestCase {
 			}
 		};
 		$log = new MailCollaboratorLog();
-		$checks = $this->checks([1 => 'ann', 2 => '', 3 => 'bob', 4 => 'cas'], $log);
+		$checks = $this->checks(owners: [1 => 'ann', 2 => '', 3 => 'bob', 4 => 'cas'], log: $log);
 
-		self::assertTrue($checks->trusted(service: $service, address: 'x@y.nl'));
-		self::assertSame(['ann', 'bob'], $service->asked);
-		self::assertSame([['debug', 'Dossiq: the trusted-sender lookup failed']], $log->records);
-		self::assertFalse($checks->trusted(service: $service, address: 'z@y.nl'));
+		self::assertTrue(condition: $checks->trusted(service: $service, address: 'x@y.nl'));
+		self::assertSame(expected: ['ann', 'bob'], actual: $service->asked);
+		self::assertSame(expected: [['debug', 'Dossiq: the trusted-sender lookup failed']], actual: $log->records);
+		self::assertFalse(condition: $checks->trusted(service: $service, address: 'z@y.nl'));
 	}//end testEachMailboxOwnerIsAskedInTurn()
 }//end class

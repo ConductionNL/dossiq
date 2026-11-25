@@ -54,8 +54,7 @@ use OCP\IL10N;
  * @link     https://github.com/ConductionNL/dossiq
  *
  * @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Reads the case, its submissions and formulas, and writes the evaluation.
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class ScoringSheet implements ScoringSheetInterface {
 	use SearchesObjects;

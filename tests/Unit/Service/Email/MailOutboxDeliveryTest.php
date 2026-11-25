@@ -52,9 +52,26 @@ class MailOutboxDeliveryTest extends TestCase {
 			/** @var array<int, mixed> */
 			public array $saved = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param mixed $save The save.
+			 * @param mixed $send The send.
+			 */
 			public function __construct(private mixed $save, private mixed $send) {
 			}
 
+			/**
+			 * Stand-in for Mail's saveMessage().
+			 *
+			 * @param object $account The account.
+			 * @param object $local The local.
+			 * @param array $to The to.
+			 * @param array $cc The cc.
+			 * @param array $bcc The bcc.
+			 * @param array $attachments The attachments.
+			 * @return object
+			 */
 			public function saveMessage(object $account, object $local, array $to, array $cc, array $bcc, array $attachments): object {
 				if ($this->save instanceof \Throwable) {
 					throw $this->save;
@@ -62,21 +79,43 @@ class MailOutboxDeliveryTest extends TestCase {
 
 				$this->saved = [$local, $to, $attachments];
 				return new class() {
+					/**
+					 * Stand-in for Mail's getId().
+					 *
+					 * @return int
+					 */
 					public function getId(): int {
 						return 9;
 					}
 				};
 			}
 
+			/**
+			 * Stand-in for Mail's sendMessage().
+			 *
+			 * @param object $saved The saved.
+			 * @param object $account The account.
+			 * @return object
+			 */
 			public function sendMessage(object $saved, object $account): object {
 				if ($this->send instanceof \Throwable) {
 					throw $this->send;
 				}
 
 				return new class($this->send) {
+					/**
+					 * Constructor.
+					 *
+					 * @param int $status The status.
+					 */
 					public function __construct(private int $status) {
 					}
 
+					/**
+					 * Stand-in for Mail's getStatus().
+					 *
+					 * @return int
+					 */
 					public function getStatus(): int {
 						return $this->status;
 					}
@@ -106,16 +145,16 @@ class MailOutboxDeliveryTest extends TestCase {
 	 * @return void
 	 */
 	public function testATakenMessageIsSent(): void {
-		$outbox = self::outbox(null, 12);
-		$answer = self::delivery(new MailCollaboratorLog())->deliver(
+		$outbox = self::outbox(save: null, send: 12);
+		$answer = self::delivery(log: new MailCollaboratorLog())->deliver(
 			through: [4, new \stdClass(), $outbox],
 			message: ['to' => ['a@b.nl'], 'subject' => 'Hi', 'attachments' => ['/Case/a.pdf']]
 		);
 
-		self::assertSame(['state' => OutboundState::SENT, 'outboxId' => 9], $answer);
-		self::assertEquals((object)['account' => 4, 'subject' => 'Hi'], $outbox->saved[0]);
-		self::assertSame([['email' => 'a@b.nl']], $outbox->saved[1]);
-		self::assertSame([['type' => 'cloud', 'fileName' => '/Case/a.pdf']], $outbox->saved[2]);
+		self::assertSame(expected: ['state' => OutboundState::SENT, 'outboxId' => 9], actual: $answer);
+		self::assertEquals(expected: (object)['account' => 4, 'subject' => 'Hi'], actual: $outbox->saved[0]);
+		self::assertSame(expected: [['email' => 'a@b.nl']], actual: $outbox->saved[1]);
+		self::assertSame(expected: [['type' => 'cloud', 'fileName' => '/Case/a.pdf']], actual: $outbox->saved[2]);
 	}//end testATakenMessageIsSent()
 
 	/**
@@ -125,18 +164,18 @@ class MailOutboxDeliveryTest extends TestCase {
 	 */
 	public function testARefusedOrUnsentMessage(): void {
 		$log = new MailCollaboratorLog();
-		$delivery = self::delivery($log);
+		$delivery = self::delivery(log: $log);
 		$message = ['to' => [], 'subject' => 'Hi'];
 
 		self::assertSame(
-			['state' => OutboundState::UNAVAILABLE, 'outboxId' => null],
-			$delivery->deliver(through: [4, new \stdClass(), self::outbox(new RuntimeException('full'), 12)], message: $message)
+			expected: ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null],
+			actual: $delivery->deliver(through: [4, new \stdClass(), self::outbox(save: new RuntimeException('full'), send: 12)], message: $message)
 		);
 		self::assertSame(
-			['state' => OutboundState::QUEUED, 'outboxId' => 9],
-			$delivery->deliver(through: [4, new \stdClass(), self::outbox(null, new RuntimeException('smtp'))], message: $message)
+			expected: ['state' => OutboundState::QUEUED, 'outboxId' => 9],
+			actual: $delivery->deliver(through: [4, new \stdClass(), self::outbox(save: null, send: new RuntimeException('smtp'))], message: $message)
 		);
-		self::assertSame(['warning', 'warning'], array_column($log->records, 0));
+		self::assertSame(expected: ['warning', 'warning'], actual: array_column($log->records, 0));
 	}//end testARefusedOrUnsentMessage()
 
 	/**
@@ -145,10 +184,10 @@ class MailOutboxDeliveryTest extends TestCase {
 	 * @return void
 	 */
 	public function testStatusNumbersMapToStates(): void {
-		self::assertSame(OutboundState::SENT, MailOutboxDelivery::stateOfStatus(status: 12));
-		self::assertSame(OutboundState::SENT_NOT_FILED, MailOutboxDelivery::stateOfStatus(status: 11));
-		self::assertSame(OutboundState::QUEUED, MailOutboxDelivery::stateOfStatus(status: -1));
-		self::assertSame(OutboundState::QUEUED, $this->sentWithStatus(status: 3));
+		self::assertSame(expected: OutboundState::SENT, actual: MailOutboxDelivery::stateOfStatus(status: 12));
+		self::assertSame(expected: OutboundState::SENT_NOT_FILED, actual: MailOutboxDelivery::stateOfStatus(status: 11));
+		self::assertSame(expected: OutboundState::QUEUED, actual: MailOutboxDelivery::stateOfStatus(status: -1));
+		self::assertSame(expected: OutboundState::QUEUED, actual: $this->sentWithStatus(status: 3));
 	}//end testStatusNumbersMapToStates()
 
 	/**
@@ -159,8 +198,8 @@ class MailOutboxDeliveryTest extends TestCase {
 	 * @return string
 	 */
 	private function sentWithStatus(int $status): string {
-		return self::delivery(new MailCollaboratorLog())->deliver(
-			through: [4, new \stdClass(), self::outbox(null, $status)],
+		return self::delivery(log: new MailCollaboratorLog())->deliver(
+			through: [4, new \stdClass(), self::outbox(save: null, send: $status)],
 			message: ['subject' => '']
 		)['state'];
 	}//end sentWithStatus()

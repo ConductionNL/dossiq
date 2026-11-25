@@ -48,14 +48,14 @@ class MailServicesTest extends TestCase {
 	 * @return MailServices
 	 */
 	private function services(array $services, bool|RuntimeException $installed, MailCollaboratorLog $log): MailServices {
-		$apps = $this->createMock(IAppManager::class);
+		$apps = $this->createMock(originalClassName: IAppManager::class);
 		if ($installed instanceof RuntimeException) {
 			$apps->method('isInstalled')->willThrowException($installed);
 		} else {
 			$apps->method('isInstalled')->with('mail')->willReturn($installed);
 		}
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $name) use ($services): mixed {
 				$answer = ($services[$name] ?? null);
@@ -77,13 +77,13 @@ class MailServicesTest extends TestCase {
 	 */
 	public function testAbsentMailResolvesNothing(): void {
 		$log = new MailCollaboratorLog();
-		$absent = $this->services(['Manager' => new \stdClass()], false, $log);
-		self::assertFalse($absent->isAvailable());
-		self::assertNull($absent->service(name: 'Manager'));
+		$absent = $this->services(services: ['Manager' => new \stdClass()], installed: false, log: $log);
+		self::assertFalse(condition: $absent->isAvailable());
+		self::assertNull(actual: $absent->service(name: 'Manager'));
 
-		$throwing = $this->services(['Manager' => new \stdClass()], new RuntimeException('down'), $log);
-		self::assertFalse($throwing->isAvailable());
-		self::assertSame([['debug', 'Dossiq: could not ask whether the Mail app is installed']], $log->records);
+		$throwing = $this->services(services: ['Manager' => new \stdClass()], installed: new RuntimeException('down'), log: $log);
+		self::assertFalse(condition: $throwing->isAvailable());
+		self::assertSame(expected: [['debug', 'Dossiq: could not ask whether the Mail app is installed']], actual: $log->records);
 	}//end testAbsentMailResolvesNothing()
 
 	/**
@@ -93,13 +93,17 @@ class MailServicesTest extends TestCase {
 	 */
 	public function testAServiceThatCannotBeUsedIsNull(): void {
 		$log = new MailCollaboratorLog();
-		$services = $this->services(['Broken' => new RuntimeException('moved'), 'Scalar' => 'x', 'Plain' => new \stdClass()], true, $log);
+		$services = $this->services(
+			services: ['Broken' => new RuntimeException('moved'), 'Scalar' => 'x', 'Plain' => new \stdClass()],
+			installed: true,
+			log: $log
+		);
 
-		self::assertNull($services->service(name: 'Broken'));
-		self::assertSame('warning', $log->records[0][0]);
-		self::assertNull($services->service(name: 'Scalar'));
-		self::assertInstanceOf(\stdClass::class, $services->service(name: 'Plain'));
-		self::assertNull($services->serviceWith(name: 'Plain', method: 'getSource'));
+		self::assertNull(actual: $services->service(name: 'Broken'));
+		self::assertSame(expected: 'warning', actual: $log->records[0][0]);
+		self::assertNull(actual: $services->service(name: 'Scalar'));
+		self::assertInstanceOf(expected: \stdClass::class, actual: $services->service(name: 'Plain'));
+		self::assertNull(actual: $services->serviceWith(name: 'Plain', method: 'getSource'));
 	}//end testAServiceThatCannotBeUsedIsNull()
 
 	/**
@@ -110,36 +114,56 @@ class MailServicesTest extends TestCase {
 	public function testAccountsComeFromTheNamedAccountService(): void {
 		$account = new \stdClass();
 		$accounts = new class($account) {
+			/**
+			 * Constructor.
+			 *
+			 * @param object $account The account.
+			 */
 			public function __construct(private object $account) {
 			}
 
+			/**
+			 * Stand-in for Mail's findById().
+			 *
+			 * @param int $id The id.
+			 * @return mixed
+			 */
 			public function findById(int $id): mixed {
 				if ($id === 2) {
 					throw new RuntimeException('no such account');
 				}
 
-				return ($id === 1) ? $this->account : null;
+				if ($id === 1) {
+					return $this->account;
+				}
+
+				return null;
 			}
 		};
 		$manager = new class() {
+			/**
+			 * Stand-in for Mail's getSource().
+			 *
+			 * @return string
+			 */
 			public function getSource(): string {
 				return '';
 			}
 		};
 		$log = new MailCollaboratorLog();
-		$services = $this->services(['Accounts' => $accounts, 'Manager' => $manager], true, $log);
+		$services = $this->services(services: ['Accounts' => $accounts, 'Manager' => $manager], installed: true, log: $log);
 
-		self::assertNull($services->account(accountId: 0));
-		self::assertSame($account, $services->account(accountId: 1));
-		self::assertNull($services->account(accountId: 2));
-		self::assertSame([['warning', 'Dossiq: the configured intake account could not be read']], $log->records);
-		self::assertNull($services->account(accountId: 3));
+		self::assertNull(actual: $services->account(accountId: 0));
+		self::assertSame(expected: $account, actual: $services->account(accountId: 1));
+		self::assertNull(actual: $services->account(accountId: 2));
+		self::assertSame(expected: [['warning', 'Dossiq: the configured intake account could not be read']], actual: $log->records);
+		self::assertNull(actual: $services->account(accountId: 3));
 
 		$pair = $services->accountWith(accountId: 1, name: 'Manager', method: 'getSource');
-		self::assertNotNull($pair);
-		self::assertSame($account, $pair->account);
-		self::assertSame($manager, $pair->manager);
-		self::assertNull($services->accountWith(accountId: 1, name: 'Manager', method: 'moveMessage'));
-		self::assertNull($services->accountWith(accountId: 3, name: 'Manager', method: 'getSource'));
+		self::assertNotNull(actual: $pair);
+		self::assertSame(expected: $account, actual: $pair->account);
+		self::assertSame(expected: $manager, actual: $pair->manager);
+		self::assertNull(actual: $services->accountWith(accountId: 1, name: 'Manager', method: 'moveMessage'));
+		self::assertNull(actual: $services->accountWith(accountId: 3, name: 'Manager', method: 'getSource'));
 	}//end testAccountsComeFromTheNamedAccountService()
 }//end class

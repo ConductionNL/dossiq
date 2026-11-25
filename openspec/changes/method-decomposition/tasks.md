@@ -1744,3 +1744,6 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own tests: `MailServicesTest` (3), `MailEntityValuesTest` (3), `MailMessageCallsTest` (3),
         `MailSenderChecksTest` (2) and `MailOutboxDeliveryTest` (3); turning a DKIM pass into a fail or moving
         Mail's processed status number turns them red, and the gateway suites with them (checked).
+  - [x] 8cp `Scoring/ScoringSheet` (1: a stale CouplingBetweenObjects suppression). PHPMD reports nothing on the class
+        without it under either ruleset, so the line went; nothing else changed. `@SuppressWarnings(PHPMD.*)` lines in
+        `lib/` 188 to 187.
