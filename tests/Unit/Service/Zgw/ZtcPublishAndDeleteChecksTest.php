@@ -144,7 +144,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	 * ZGW: without a flag the status type with the highest volgnummer is final, so a
 	 * zaaktype whose status types carry volgnummers may be published.
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 *
 	 * @return void
 	 */
@@ -168,7 +168,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	/**
 	 * A zaaktype without status types may be published over ZGW; only its valid-from date is asked.
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 *
 	 * @return void
 	 */

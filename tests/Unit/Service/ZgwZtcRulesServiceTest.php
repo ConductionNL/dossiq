@@ -136,7 +136,7 @@ class ZgwZtcRulesServiceTest extends TestCase {
 	/**
 	 * A zaaktype without status types may be published over ZGW (decision on Q-dossiq-L11-6).
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 *
 	 * @return void
 	 */

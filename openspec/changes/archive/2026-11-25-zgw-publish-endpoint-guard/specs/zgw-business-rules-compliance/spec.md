@@ -39,3 +39,16 @@ Publishing a draft zaaktype SHALL run the same CT-02b guard as an update that se
 - **GIVEN** a draft zaaktype with a valid-from date and no status types
 - **WHEN** a client with `catalogi.schrijven` publishes it
 - **THEN** the answer is 201 and the type is published
+
+### Requirement: The gateway asks the catalogi write scope for a publish
+
+The ZGW authorization middleware SHALL require `catalogi.schrijven` for a POST to `/catalogi/v1/{zaaktypen|besluittypen|informatieobjecttypen}/{uuid}/publish`, the same scope the publish routes check. Every other catalogi request keeps the scope its method maps to. Before this, the middleware asked `catalogi.aanmaken`, which the Catalogi API does not define, so a client holding `catalogi.schrijven` was refused before the publish guard ran (sandbox live pass, 25 Nov 2026).
+
+#### Scenario: a client with the write scope publishes
+
+@e2e exclude {scope gate, asserted in tests/Unit/Middleware/ZgwAuthMiddlewarePublishScopeTest.php; run live in the 2.1 pass}
+
+- **GIVEN** a consumer whose ztc grant is `catalogi.lezen` and `catalogi.schrijven`
+- **WHEN** it posts `/catalogi/v1/zaaktypen/{uuid}/publish`
+- **THEN** the middleware SHALL let the request through to the publish guard
+- **AND** a consumer with only `catalogi.lezen` SHALL be refused with 403

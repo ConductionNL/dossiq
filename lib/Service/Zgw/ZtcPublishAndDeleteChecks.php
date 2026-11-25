@@ -98,7 +98,7 @@ class ZtcPublishAndDeleteChecks {
 	 * @return array<int, string> Error strings (empty = valid).
 	 *
 	 * @spec openspec/specs/case-types/spec.md
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function validatePublish(string $register, string $caseTypeId): array {
 		$refusal = $this->publishCannotRun(caseTypeId: $caseTypeId);
@@ -164,7 +164,7 @@ class ZtcPublishAndDeleteChecks {
 	 *
 	 * @return array<int, string> Error strings.
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private static function statusTypeErrors(array $statusTypes): array {
 		if (count($statusTypes) === 0 || self::hasFinalStatusType(statusTypes: $statusTypes) === true) {
@@ -197,7 +197,7 @@ class ZtcPublishAndDeleteChecks {
 	 *
 	 * @return bool True when a row carries isFinal or a positive volgnummer.
 	 *
-	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private static function hasFinalStatusType(array $statusTypes): bool {
 		foreach ($statusTypes as $row) {
