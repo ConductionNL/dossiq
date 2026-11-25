@@ -133,12 +133,19 @@ class ZgwZtcRulesServiceTest extends TestCase {
 		};
 	}
 
+	/**
+	 * A zaaktype without status types may be published over ZGW (decision on Q-dossiq-L11-6).
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 *
+	 * @return void
+	 */
 	public function testValidatePublishAllowsNoStatusTypes(): void {
 		$os = $this->stubObjectService([]);
 		$this->svc->setContext($os, []);
 		$errors = $this->svc->validatePublish('reg', 'ct-1');
-		$this->assertNotContains('At least one status type must be defined before publishing', $errors);
-		$this->assertNotContains('At least one status type must be marked as final', $errors);
+		$this->assertNotContains(needle: 'At least one status type must be defined before publishing', haystack: $errors);
+		$this->assertNotContains(needle: 'At least one status type must be marked as final', haystack: $errors);
 	}
 
 	public function testValidatePublishFailsWithNoFinalStatus(): void {

@@ -150,15 +150,15 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	 */
 	public function testAVolgnummerMakesTheHighestStatusTypeFinal(): void {
 		$this->assertSame(
-			[],
-			$this->checks(
+			expected: [],
+			actual: $this->checks(
 				rows: ['status_type_schema' => [['order' => 1], ['sequenceNumber' => 2, 'isFinal' => false]]],
 				caseType: ['validFrom' => '2026-01-01']
 			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
 		);
 		$this->assertSame(
-			['At least one status type must be marked as final'],
-			$this->checks(
+			expected: ['At least one status type must be marked as final'],
+			actual: $this->checks(
 				rows: ['status_type_schema' => [['order' => 0, 'isFinal' => 'no']]],
 				caseType: ['validFrom' => '2026-01-01']
 			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
@@ -174,8 +174,8 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	 */
 	public function testAZaaktypeWithoutStatusTypesMayBePublished(): void {
 		$this->assertSame(
-			[],
-			$this->checks(rows: [], caseType: ['validFrom' => '2026-01-01'])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+			expected: [],
+			actual: $this->checks(rows: [], caseType: ['validFrom' => '2026-01-01'])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
 		);
 	}//end testAZaaktypeWithoutStatusTypesMayBePublished()
 

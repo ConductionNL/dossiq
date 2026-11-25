@@ -154,13 +154,23 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 		try {
 			return $this->guardThenDispatch(write: $write);
 		} catch (LookupNotCompleted $e) {
-			return $this->results->notVerified(
-				rule: "{$write->zgwApi}/{$write->resource} {$write->action}",
-				object: $e->lookup,
-				cause: $e->getMessage()
-			);
+			return $this->lookupRefusal(rule: "{$write->zgwApi}/{$write->resource} {$write->action}", e: $e);
 		}
 	}//end checkWrite()
+
+	/**
+	 * The refusal for a rule whose store read could not finish (REQ-ZBR-020/022).
+	 *
+	 * @param string             $rule The rule that read the store
+	 * @param LookupNotCompleted $e    The unfinished read
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function lookupRefusal(string $rule, LookupNotCompleted $e): array {
+		return $this->results->notVerified(rule: $rule, object: $e->lookup, cause: $e->getMessage());
+	}//end lookupRefusal()
 
 	/**
 	 * Set the rules context, return the first guard refusal, or else hand the
@@ -272,11 +282,7 @@ class ZgwBusinessRulesService implements ZgwBusinessRulesServiceInterface {
 
 			return $this->guardCaseTypePublish(write: $write);
 		} catch (LookupNotCompleted $e) {
-			return $this->results->notVerified(
-				rule: "catalogi/{$resource} publish",
-				object: $e->lookup,
-				cause: $e->getMessage()
-			);
+			return $this->lookupRefusal(rule: "catalogi/{$resource} publish", e: $e);
 		}
 	}//end guardPublishEndpoint()
 

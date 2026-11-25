@@ -66,11 +66,11 @@ class ZgwBusinessRulesServicePublishEndpointTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->ztc = $this->createMock(ZgwZtcRulesService::class);
+		$this->ztc = $this->createMock(originalClassName: ZgwZtcRulesService::class);
 		$this->service = new ZgwBusinessRulesService(
 			ztcRules: $this->ztc,
-			dispatcher: $this->createMock(ZgwRulesDispatcher::class),
-			results: new ZgwRuleResults(logger: $this->createMock(LoggerInterface::class))
+			dispatcher: $this->createMock(originalClassName: ZgwRulesDispatcher::class),
+			results: new ZgwRuleResults(logger: $this->createMock(originalClassName: LoggerInterface::class))
 		);
 	}//end setUp()
 
@@ -103,14 +103,14 @@ class ZgwBusinessRulesServicePublishEndpointTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'valid' => false,
 				'status' => 422,
 				'detail' => "At least one status type must be marked as final; 'Valid from' date must be set before publishing",
 				'code' => 'publish_validation_failed',
 				'enrichedBody' => ['isDraft' => false],
 			],
-			$this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => true])
+			actual: $this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => true])
 		);
 	}//end testAnIncompleteDraftZaaktypeIsRefused()
 
@@ -122,7 +122,7 @@ class ZgwBusinessRulesServicePublishEndpointTest extends TestCase {
 	public function testACompleteDraftZaaktypePasses(): void {
 		$this->ztc->expects($this->once())->method('validatePublish')->with('reg', 'zt-1')->willReturn([]);
 
-		$this->assertNull($this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => true]));
+		$this->assertNull(actual: $this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => true]));
 	}//end testACompleteDraftZaaktypePasses()
 
 	/**
@@ -133,9 +133,9 @@ class ZgwBusinessRulesServicePublishEndpointTest extends TestCase {
 	public function testOnlyADraftZaaktypeIsChecked(): void {
 		$this->ztc->expects($this->never())->method('validatePublish');
 
-		$this->assertNull($this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => false]));
-		$this->assertNull($this->publish(resource: 'besluittypen', stored: ['id' => 'bt-1', 'isDraft' => true]));
-		$this->assertNull($this->publish(resource: 'informatieobjecttypen', stored: ['id' => 'iot-1', 'isDraft' => true]));
+		$this->assertNull(actual: $this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => false]));
+		$this->assertNull(actual: $this->publish(resource: 'besluittypen', stored: ['id' => 'bt-1', 'isDraft' => true]));
+		$this->assertNull(actual: $this->publish(resource: 'informatieobjecttypen', stored: ['id' => 'iot-1', 'isDraft' => true]));
 	}//end testOnlyADraftZaaktypeIsChecked()
 
 	/**
@@ -150,7 +150,7 @@ class ZgwBusinessRulesServicePublishEndpointTest extends TestCase {
 
 		$refusal = $this->publish(resource: 'zaaktypen', stored: ['id' => 'zt-1', 'isDraft' => true]);
 
-		$this->assertSame([503, 'check-not-completed'], [$refusal['status'], $refusal['code']]);
-		$this->assertFalse($refusal['valid']);
+		$this->assertSame(expected: [503, 'check-not-completed'], actual: [$refusal['status'], $refusal['code']]);
+		$this->assertFalse(condition: $refusal['valid']);
 	}//end testACheckThatCouldNotRunRefusesThePublish()
 }//end class

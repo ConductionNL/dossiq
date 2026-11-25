@@ -175,7 +175,7 @@ class ZtcPublishControllerContractTest extends TestCase {
 	private function storedDraftZaaktype(?array $refusal, array &$saved): ZgwBusinessRulesService {
 		$this->acceptJwt();
 
-		$objectService = $this->createMock(ZtcContractObjectServiceStub::class);
+		$objectService = $this->createMock(originalClassName: ZtcContractObjectServiceStub::class);
 		$objectService->method('find')->willReturn(['id' => 'zt-1', 'isDraft' => true, 'title' => 'Melding']);
 		$objectService->method('saveObject')->willReturnCallback(
 			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
@@ -184,7 +184,7 @@ class ZtcPublishControllerContractTest extends TestCase {
 			}
 		);
 
-		$guard = $this->createMock(ZgwBusinessRulesService::class);
+		$guard = $this->createMock(originalClassName: ZgwBusinessRulesService::class);
 		$guard->method('guardPublishEndpoint')->willReturn($refusal);
 
 		$this->zgwService->method('getObjectService')->willReturn($objectService);
@@ -218,9 +218,9 @@ class ZtcPublishControllerContractTest extends TestCase {
 		];
 
 		foreach ($responses as $response) {
-			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-			$this->assertSame('permission_denied', $response->getData()['code']);
-			$this->assertSame('Scope catalogi.schrijven is required for this operation.', $response->getData()['detail']);
+			$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+			$this->assertSame(expected: 'permission_denied', actual: $response->getData()['code']);
+			$this->assertSame(expected: 'Scope catalogi.schrijven is required for this operation.', actual: $response->getData()['detail']);
 		}
 	}//end testAllThreePublishRoutesRequireTheCatalogiWriteScope()
 
@@ -248,12 +248,12 @@ class ZtcPublishControllerContractTest extends TestCase {
 
 		$response = $this->controller->publishZaaktype(uuid: 'zt-1');
 
-		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
 		$this->assertSame(
-			['detail' => 'At least one status type must be marked as final', 'code' => 'publish_validation_failed'],
-			$response->getData()
+			expected: ['detail' => 'At least one status type must be marked as final', 'code' => 'publish_validation_failed'],
+			actual: $response->getData()
 		);
-		$this->assertSame([], $saved, 'a refused publish must not save the type');
+		$this->assertSame(expected: [], actual: $saved, message: 'a refused publish must not save the type');
 	}//end testAZaaktypeThePublishGuardRefusesIsNotSaved()
 
 	/**
@@ -267,9 +267,9 @@ class ZtcPublishControllerContractTest extends TestCase {
 
 		$response = $this->controller->publishZaaktype(uuid: 'zt-1');
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-		$this->assertCount(1, $saved);
-		$this->assertFalse($saved[0]['isDraft']);
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertCount(expectedCount: 1, haystack: $saved);
+		$this->assertFalse(condition: $saved[0]['isDraft']);
 	}//end testAZaaktypeThePublishGuardPassesIsPublished()
 
 	/**
