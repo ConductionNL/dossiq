@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Access\CaseTypeRightsRowsCache;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Override;
 
 /**
  * Forgets the case type rights rows on a case type or organisation role change.
@@ -77,7 +78,7 @@ class CaseTypeRightsSourcesListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
-	#[\Override]
+	#[Override]
 	public function handle(Event $event): void {
 		if ($this->isObjectEvent(event: $event) === false) {
 			return;

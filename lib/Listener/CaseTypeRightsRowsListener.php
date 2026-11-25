@@ -50,6 +50,7 @@ use OCA\Dossiq\Kernel\Contracts\OrganisationRolesInterface;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Override;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -96,7 +97,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
 	 */
-	#[\Override]
+	#[Override]
 	public function handle(Event $event): void {
 		if (is_a($event, self::EVENT) === false
 			|| method_exists($event, 'getProvider') === false
