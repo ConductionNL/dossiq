@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: A translatable case type title or status name is read as text (REQ-CT-46)
+### Requirement: A translatable case type title or status name is read as text (REQ-CT-58)
 
 Wherever dossiq reads a case type's `title`, or the `name` of a status,
 result or role type, as text, it SHALL read a language map in the reader's

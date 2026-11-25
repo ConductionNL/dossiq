@@ -21,7 +21,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @covers \OCA\Dossiq\Service\Workflow\BackfillCaseType
  * @covers \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Workflow\BackfilledTemplateShape
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -69,7 +69,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testANewBasisTemplateIsNamedInText(): void {
 		$this->runStep(caseType: self::caseType(), versions: []);
@@ -85,7 +85,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testABasisTemplateStoredWithArrayLabelsIsHealed(): void {
 		$this->runStep(caseType: self::caseType(pinned: true), versions: [self::brokenTemplate()]);
@@ -109,7 +109,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testATemplateTheBackfillDidNotWriteIsLeftAlone(): void {
 		$template = array_merge(self::brokenTemplate(), ['description' => 'Mijn eigen flow']);
