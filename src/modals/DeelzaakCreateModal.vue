@@ -176,7 +176,12 @@ import { subCaseInitialStatus } from '../utils/deelzaakHelpers.js'
  *
  * A prop that still reads as a token (`@objectId`, `@object.case`) was never
  * resolved by whoever opened the modal; the case on screen, from the route,
- * is the parent then. A real id wins.
+ * is the parent then. A real id wins. The case page opens this modal from the
+ * `case-sub-cases` list's `createAction` with `props: {"parentCase":
+ * "@objectId"}`, and the list widget forwards an `open-modal` action's props
+ * without resolving their tokens: the modal read a case called `@objectId`
+ * (a 404), had no parent type and told every handler "No allowed sub-case
+ * types". The modal only opens on the parent's own page.
  *
  * @param {string} prop The `parentCase` prop.
  * @param {object|null} route The current route, with `params.id`.
@@ -231,7 +236,7 @@ function subCaseRecord(modal) {
 		caseType: caseType.id,
 		...(initialStatus ? { status: initialStatus } : {}),
 		...dates,
-		...subCaseDefaults(caseType, modal.parentCaseId),
+		...subCaseDefaults(caseType, resolvedParentCase(modal.parentCase, modal.$route)),
 		...startedHistory(caseType, now),
 	}
 }
@@ -345,7 +350,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
  */
 async function refusedByServerCheck(modal) {
 	const v = await modal.deelzaakStore.validateSubCase({
-		parentCaseUuid: modal.parentCaseId,
+		parentCaseUuid: resolvedParentCase(modal.parentCase, modal.$route),
 		childCaseTypeId: modal.selectedCaseType.id,
 	})
 	if (v && v.ok === false) {
@@ -383,7 +388,7 @@ async function createWhenAllowed(modal) {
  */
 function deriveSubCase(modal) {
 	return createSubCase({
-		parentCaseUuid: modal.parentCaseId,
+		parentCaseUuid: resolvedParentCase(modal.parentCase, modal.$route),
 		childCaseTypeId: modal.selectedCaseType.id,
 		object: subCaseRecord(modal),
 	})
@@ -507,26 +512,6 @@ export default {
 		},
 
 		/**
-		 * The parent case's id: the prop, or the case on screen when the prop
-		 * arrived as an unresolved token.
-		 *
-		 * The case page opens this modal from the `case-sub-cases` list's
-		 * `createAction` with `props: {"parentCase": "@objectId"}`, and the
-		 * list widget forwards an `open-modal` action's props without
-		 * resolving their tokens. The modal then read the case `@objectId`
-		 * (a 404), had no parent and no case type, and told every handler
-		 * "No allowed sub-case types". The modal only ever opens on the
-		 * parent's own page, so the route's case id is that parent.
-		 *
-		 * @return {string} The parent case uuid, or '' when there is none.
-		 *
-		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
-		 */
-		parentCaseId() {
-			return resolvedParentCase(this.parentCase, this.$route)
-		},
-
-		/**
 		 * Why the parent cannot take a sub-case, or '' when it can.
 		 *
 		 * @return {string} The translated reason.
@@ -579,7 +564,7 @@ export default {
 		 */
 		async loadParent() {
 			try {
-				this.parent = await this.objectStore.fetchObject('case', this.parentCaseId)
+				this.parent = await this.objectStore.fetchObject('case', resolvedParentCase(this.parentCase, this.$route))
 				const typeId = this.parent?.caseType
 				if (!this.parentCaseType && typeId) {
 					this.loadedParentCaseType = await this.objectStore.fetchObject('caseType', typeId)
