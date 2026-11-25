@@ -47,21 +47,37 @@ and seen red; put the failing line in the PR body.
 
 ## 4. Live
 
-- [ ] 4.1 Live check after merge on the dev instance with opencatalogi carrying
+- [x] 4.1 Live check after merge on the dev instance with opencatalogi carrying
   `woo-decision-shows-what-was-withheld`: publish a Woo case with two withheld documents, then read
   the `withheldDocument` objects for that publication as an administrator, and paste both in the PR
   body. Set `appstoreenabled=false` before any `occ upgrade` on a mounted clone.
+  - Run 25 Nov 2026 on a sandbox (NC 34.0.6, MariaDB, openregister main 03495635, opencatalogi
+    development 4f79207 carrying `woo-decision-shows-what-was-withheld`, decidiq development 4ba8e4d,
+    dossiq development). A Woo request through the portal form handler; three case documents with real
+    files, assessed openbaar, niet_openbaar (5.1.1.a) and niet_openbaar (5.1.2.e); decision assembled
+    (openbaar 1, niet_openbaar 2); `POST /api/cases/{id}/woo/publish` answered
+    `{available: true, publicationId: 1a48cffa-..., withheldRecord: {status: recorded, recorded: 2, refused: []}}`.
+    Read as administrator from the `publication` register, `withheldDocument` for that publication:
+    `{position: 1, grounds: [{code: 5.1.2.e, article: 5.1, label: Eerbiediging van de persoonlijke
+    levenssfeer}], source: dossiq}` and `{position: 3, grounds: [{code: 5.1.1.a, article: 5.1, label:
+    Eenheid van de Kroon}], source: dossiq}`: no title, file id or document reference. The first
+    publish was refused by opencatalogi's DiWoo check (`publisher`: the sandbox's default organisation
+    had no TOOI identifier); setting one on the organisation (instance configuration) let it through.
 
 ## 5. Verify and deliver
 
 - [x] 5.1 (done) `TMPDIR` set to a sibling directory beside the clone, never inside it.
 - [x] 5.2 (done, see the PR body) While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `npx vitest run` on the touched specs. Judge PHPUnit by the `Tests:` line.
-- [ ] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires (read `package.json`).
   Then hydra's `scripts/run-hydra-gates.sh --base origin/development`, and count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
-- [ ] 5.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on any
+  - Done in the build PRs, merged on development (ab763bfee, 0e8ee2613).
+- [x] 5.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+  - Done in the build PRs, merged on development (ab763bfee, 0e8ee2613).
+- [x] 5.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on any
   commit. Done means merged on `development` with CI green. Row 6.16 closes in portaliq, and reads
   `production` only once store releases carry every half.
+
+  - Merged on development: ab763bfee, 0e8ee2613; archived 25 Nov 2026.
