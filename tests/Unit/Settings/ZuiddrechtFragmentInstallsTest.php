@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-the-zuiddrecht-fragment-passes-the-install-check
+ * @spec openspec/changes/archive/2026-11-25-example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-the-zuiddrecht-fragment-passes-the-install-check
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Order and types of the Zuiddrecht fragment's objects.
  *
- * @spec openspec/changes/example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-the-zuiddrecht-fragment-passes-the-install-check
+ * @spec openspec/changes/archive/2026-11-25-example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-the-zuiddrecht-fragment-passes-the-install-check
  *
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
@@ -142,7 +142,7 @@ class ZuiddrechtFragmentInstallsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-a-case-of-a-special-category-case-type-says-which-categories-it-processes
+	 * @spec openspec/changes/archive/2026-11-25-example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-a-case-of-a-special-category-case-type-says-which-categories-it-processes
 	 */
 	public function testACaseOfASpecialCategoryCaseTypeSaysWhichCategories(): void {
 		$settings  = __DIR__.'/../../../lib/Settings';

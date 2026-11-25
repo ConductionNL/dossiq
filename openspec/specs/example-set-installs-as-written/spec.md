@@ -1,6 +1,9 @@
-# example-set-installs-as-written
+# example-set-installs-as-written Specification
 
-## ADDED Requirements
+## Purpose
+The Zuiddrecht example set installs as written: the install check and the real install write every object of dossiq's fragment.
+
+## Requirements
 
 ### Requirement: The Zuiddrecht fragment passes the install check
 
@@ -16,6 +19,9 @@ Every object in dossiq's Zuiddrecht fragment SHALL refer only to objects of the 
 Every case in dossiq's Zuiddrecht fragment (`zuiddrecht.json` and `zuiddrecht.d/`) whose case type sets `requiresSpecialCategory` SHALL carry a non-empty `gdprClassification`, within the case type's `specialDataCategories` when it lists them. The install's save check refuses such a case otherwise, although `--check` passes (only the schema is validated there), and every object that refers to the case is refused with it.
 
 #### Scenario: The Oosthaven Jeugdwet case is written
+
+@e2e exclude {an occ install on a fresh instance, asserted in tests/Unit/Settings/ZuiddrechtFragmentInstallsTest.php}
+
 - **GIVEN** a fresh instance with the jeugdwet and re-integratietraject packages
 - **WHEN** an administrator runs `occ openregister:example-set:install zuiddrecht`
 - **THEN** no line SHALL say "Choose the special categories of personal data this case processes" for an object of dossiq's fragment
