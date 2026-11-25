@@ -26,7 +26,16 @@ Two rules apply throughout.
 
 These say a refusal, a permission or a guard is proven. None of them prove one.
 
-- [ ] 1.1 `admin-settings#regular-users-cannot-access-admin-settings`. The scenario names a regular non-admin user and requires HTTP 403. The test probes anonymous (`storageState: undefined`) and asserts `not.toBe(200)`. Rewrite against an authenticated non-admin principal and assert 403 exactly. An anonymous 401 proves nothing about a logged-in user, which is the case the scenario is about. Keep an anonymous probe as a second test if it is wanted, but it does not carry this anchor.
+- [x] 1.1 `admin-settings#regular-users-cannot-access-admin-settings`. The scenario names a regular non-admin user and requires HTTP 403. The test probes anonymous (`storageState: undefined`) and asserts `not.toBe(200)`. Rewrite against an authenticated non-admin principal and assert 403 exactly. An anonymous 401 proves nothing about a logged-in user, which is the case the scenario is about. Keep an anonymous probe as a second test if it is wanted, but it does not carry this anchor.
+      **Proven live 2026-11-25** (sandbox Nextcloud 34 + MariaDB, OpenRegister main, dossiq development, seeded by
+      `tests/e2e/ci-seed.sh`). The rewrite from #2476 (a signed-in `e2euser`, named by whoami, with a
+      `/settings/user` 200 control, asserting 403 exactly) passes. Watched red: with the dossiq admin setting
+      delegated to a group holding `e2euser` (`occ admin-delegation:add 'OCA\Dossiq\Settings\AdminSettings' <group>`)
+      it fails with `Expected: 403, Received: 200`; delegation removed after. The sibling
+      `#admin-settings-page-is-accessible` test in the same file looked for a "Case Type Management" heading on the
+      first tab and was red on a page that does what the scenario asks: AdminRoot.vue is tabbed, and both sections the
+      scenario names ("Case type management", "ZGW API connection") sit on the Advanced tab. It now names the page
+      by its title, opens Advanced and asserts both sections; renaming the section in the served bundle turns it red.
 - [ ] 1.2 `handler-vervanging-waarneming#self-substitution-is-rejected`. Submit a substitution naming the same user as absentee and substitute. Assert the validation error and that no `substitution` object was created. The current test opens the form and reads its labels.
 - [ ] 1.3 `handler-vervanging-waarneming#bulk-reassignment-is-coordinator-only`. Probe with a user who does not hold the coordinator role and assert the refusal. Asserting the button is visible to an authorised user is the wrong half of the scenario.
 - [ ] 1.4 `deelzaak-support`, three refusals on one test: `#sub-case-of-sub-case-is-prohibited`, `#sub-case-creation-blocked-when-parent-case-is-closed`, `#sub-case-creation-blocked-when-parent-has-no-sub-case-types`. Each needs its own fixture (a sub-case, a closed case, a parent with no sub-case types) and an assertion that the Create sub-case control is absent. The present test treats "button absent" as one acceptable outcome of a happy path and returns, so a wrongly visible button passes.

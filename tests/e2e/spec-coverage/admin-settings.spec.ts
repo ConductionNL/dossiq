@@ -19,6 +19,7 @@ import {
 	storageStatePath,
 } from '../helpers/auth.ts'
 import { deleteObject, getRequestToken } from '../helpers/fixtures.ts'
+import { dismissSupportDialog, loadAllAdminSections } from '../helpers/nav.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
@@ -74,15 +75,42 @@ test.describe('Admin Settings spec coverage', () => {
 		await api?.dispose()
 	})
 
+	/**
+	 * The scenario: the page renders AdminRoot.vue with its case type
+	 * management and ZGW API sections.
+	 *
+	 * AdminRoot.vue is a tabbed page since the settings board (General,
+	 * System, Integrations, Mail, Map layers, VTH, Substitution, Advanced),
+	 * and both sections the scenario names sit on the Advanced tab: "Case
+	 * type management" and "ZGW API connection" (the mapping of English
+	 * OpenRegister fields to Dutch ZGW fields). This test used to look for a
+	 * "Case Type Management" heading on the page as it first opens, which is
+	 * the General tab, so it was red on a page that does what the scenario
+	 * asks. It now names the page by its own title, opens Advanced, and asks
+	 * for both sections there, each anchored at the start of the heading.
+	 */
 	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	test('admin settings page is accessible to admin users', async ({ page }) => {
+		test.setTimeout(120_000)
 		await page.goto(ADMIN_SETTINGS_URL)
 		// Nextcloud admin settings should render — not redirect to login
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
-		// The AdminRoot.vue component renders "Case Type Management" section heading
+		await dismissSupportDialog(page)
 		await expect(
-			page.getByRole('heading', { name: 'Case Type Management' }),
+			page.getByRole('heading', { name: /^Dossiq administration: / }),
+		).toBeVisible({ timeout: 30000 })
+
+		await page.getByRole('tab', { name: 'Advanced', exact: true }).click()
+		await expect(
+			page.getByRole('heading', { name: 'Dossiq administration: advanced' }),
 		).toBeVisible({ timeout: 15000 })
+		await loadAllAdminSections(page)
+		for (const section of [/^Case type management(?:\s|$)/, /^ZGW API connection(?:\s|$)/]) {
+			await expect(
+				page.getByRole('heading', { name: section }).first(),
+				`the Advanced tab must render the ${section.source} section`,
+			).toBeVisible({ timeout: 15000 })
+		}
 	})
 
 	/**
