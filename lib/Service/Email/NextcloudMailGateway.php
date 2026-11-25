@@ -374,20 +374,10 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function dkimResult(string $source): string {
-		if ($source === '') {
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		if (stripos($source, 'DKIM-Signature:') === false) {
-			return AuthenticationResult::NONE;
-		}
-
-		$validator = $this->services->serviceWith(name: self::DKIM_SERVICE, method: 'validateRaw');
-		if ($validator === null) {
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		return $this->senders->dkim(validator: $validator, source: $source);
+		return $this->senders->dkimResult(
+			source: $source,
+			validator: fn (): ?object => $this->services->serviceWith(name: self::DKIM_SERVICE, method: 'validateRaw')
+		);
 	}//end dkimResult()
 
 	/**
@@ -404,17 +394,10 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function isTrustedSender(string $email): bool {
-		$address = trim(strtolower($email));
-		if ($address === '') {
-			return false;
-		}
-
-		$service = $this->services->serviceWith(name: self::TRUSTED_SENDER_SERVICE, method: 'isTrusted');
-		if ($service === null) {
-			return false;
-		}
-
-		return $this->senders->trusted(service: $service, address: $address);
+		return $this->senders->isTrustedSender(
+			email: $email,
+			service: fn (): ?object => $this->services->serviceWith(name: self::TRUSTED_SENDER_SERVICE, method: 'isTrusted')
+		);
 	}//end isTrustedSender()
 
 	/**

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use Closure;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -51,6 +52,68 @@ final class MailSenderChecks {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * The DKIM verdict Mail reaches for a raw message.
+	 *
+	 * Mail's verifier answers a boolean, which cannot distinguish "no signature"
+	 * from "a signature that did not verify". So an unsigned message is `none`
+	 * from the absence of a `DKIM-Signature` header, and only a message that
+	 * carries one can be `pass` or `fail`. Mail's verifier is resolved only
+	 * then; when it is absent the answer is `unavailable`, never `pass`.
+	 *
+	 * @param string  $source    The raw message source.
+	 * @param Closure $validator Resolves Mail's DKIM service: fn (): ?object.
+	 *
+	 * @return string One of the {@see AuthenticationResult} values.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function dkimResult(string $source, Closure $validator): string {
+		if ($source === '') {
+			return AuthenticationResult::UNAVAILABLE;
+		}
+
+		if (stripos($source, 'DKIM-Signature:') === false) {
+			return AuthenticationResult::NONE;
+		}
+
+		$service = $validator();
+		if ($service === null) {
+			return AuthenticationResult::UNAVAILABLE;
+		}
+
+		return $this->dkim(validator: $service, source: $source);
+	}//end dkimResult()
+
+	/**
+	 * Whether Mail's trusted-sender list carries this address.
+	 *
+	 * An empty address is not trusted and Mail is not asked; otherwise Mail's
+	 * service is resolved and every mailbox owner asked in turn.
+	 *
+	 * @param string  $email   The sender address, in any case.
+	 * @param Closure $service Resolves Mail's trusted-sender service: fn (): ?object.
+	 *
+	 * @return boolean True when one owner trusts the address.
+	 *
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function isTrustedSender(string $email, Closure $service): bool {
+		$address = trim(strtolower($email));
+		if ($address === '') {
+			return false;
+		}
+
+		$trustedSenders = $service();
+		if ($trustedSenders === null) {
+			return false;
+		}
+
+		return $this->trusted(service: $trustedSenders, address: $address);
+	}//end isTrustedSender()
 
 	/**
 	 * Ask Mail's DKIM validator about a raw message.

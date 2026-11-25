@@ -1721,21 +1721,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         through it (186 tests), green before and unchanged after but for two `@uses` lines each.
         Own tests: `PortalInboxChannelTest` (1) and `CaseNoticeLogTest` (1); always copying the optional result fields
         turns 3 tests red (checked).
-  - [x] 8co `Email/NextcloudMailGateway` (1: ExcessiveClassComplexity 116 against 50; with it lifted, TooManyMethods 37
-        against 25 showed too). Its suppression said a split would spread the `OCA\Mail` coupling over several files
+  - [x] 8co `Email/NextcloudMailGateway` (1: ExcessiveClassComplexity 116 against 50; plus TooManyMethods 37 against 25,
+        which development reported unsuppressed). Its suppression said a split would spread the `OCA\Mail` coupling over several files
         (design D-1). It does not have to: every Mail class name stays a constant in the gateway, and the work moved to
         five collaborators that are handed Mail's resolved objects and name no Mail symbol, so the grep for `OCA\Mail`
         still measures the coupling. `Email/MailServices` resolves a service or an account by the name the gateway
         gives (`isAvailable`, `service`, `serviceWith`, `account`, `findAccount`, and `accountWith`, the account and
         manager pair every manager call starts from). `Email/MailMessageCalls` makes the four manager calls (source,
         message-id lookup, move, attachments). `Email/MailSenderChecks` holds the DKIM verdict and the trusted-sender
-        walk over the mailbox owners. `Email/MailOutboxDelivery` saves and sends through the outbox and maps Mail's
+        walk over the mailbox owners, with their guards (empty or unsigned source, empty address); Mail's service is
+        handed in as a resolver closure, so it is still resolved only once a guard has passed. `Email/MailOutboxDelivery` saves and sends through the outbox and maps Mail's
         status numbers; the gateway still builds Mail's outbox row (`LocalMessage`) and hands the builder in as a
         closure. `Email/MailEntityValues` reads getters off Mail's entities, the synchronisation event and attachment
         rows. The gateway builds all five in its constructor, so its constructor signature, its interface and the
         container are unchanged. Bodies moved unchanged, log lines and their levels included; the order of each
         resolution (account first, then the manager) is kept. phpmd: zero findings on the six files under both
-        rulesets; `@SuppressWarnings(PHPMD.*)` lines in `lib/` 189 to 188. The three swallowing catches moved with
+        rulesets, and a whole-`lib/` run against development finds nothing new and one finding gone (the TooManyMethods
+        above); `@SuppressWarnings(PHPMD.*)` lines in `lib/` 189 to 188. Measure with a fresh pdepend cache
+        (`~/.cache/pdepend`): a stale one reported this class at 52 after the split. The three swallowing catches moved with
         their code (`findAccount` and `service` to `MailServices`, `attachments` to `MailMessageCalls`); the
         catch-return-null allowlist names the new files, ceiling unchanged.
         Characterisation: the existing `NextcloudMailGatewayTest`, `...ThreadingTest`, `...LookupsTest`,
