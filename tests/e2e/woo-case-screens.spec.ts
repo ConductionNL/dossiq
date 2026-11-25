@@ -51,6 +51,7 @@ import {
 	seedDocument,
 	showObject,
 	tryDeleteObject,
+	uploadFixtureFile,
 } from './helpers/fixtures.ts'
 import { caseActOption, caseActReason, clickHeaderAction, journeyBudget, openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
 
@@ -190,8 +191,12 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		const documents: string[] = []
 		for (let n = 1; n <= count; n++) {
 			const title = `${RUN_PREFIX} ${label} stuk ${n}`
+			// A public document is published with its bytes; a document
+			// without a readable file refuses the publish
+			// (`documents_unreadable`), so each one carries a real file.
 			const document = await seedDocument(api, token, {
 				title,
+				fileId: await uploadFixtureFile(api, token, `${title.replace(/[^\w-]+/g, '-')}.pdf`),
 				provenance: { source: 'files', custodian: 'Wethouder Ruimte', searchedBy: ADMIN },
 			})
 			const ref = objectId(document)
