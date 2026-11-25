@@ -173,7 +173,7 @@ trait SearchesObjects {
 	 *
 	 * @return list<mixed> The leading arguments of searchObjectsBySlug().
 	 *
-	 * @spec openspec/changes/slug-search-takes-the-openregister-target/specs/or-object-search/spec.md#requirement-a-slug-search-passes-the-target-openregister-asks-for-req-sst-001
+	 * @spec openspec/specs/or-object-search/spec.md#requirement-a-slug-search-passes-the-target-openregister-asks-for-req-sst-001
 	 */
 	private static function slugSearchTarget(ObjectSearch $search): array {
 		$register = (string)$search->register;
