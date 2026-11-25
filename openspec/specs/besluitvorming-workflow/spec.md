@@ -149,34 +149,27 @@ When a besluit must be published, the system SHALL assemble the publication payl
 
 ### Requirement: REQ-BVW-007 Mandaatbesluit MUST validate signing authority against the mandaatregister
 
-Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL verify that the signing official has sufficient delegated authority for the subject matter of the decision.
+Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL ask decidiq's delegatie- en mandaatregister whether the signing official holds the authority for the case's `mandaatCategorie`, through the `delegatedAuthorityGuard`.
 
 #### Scenario REQ-BVW-007-A: Valid mandate allows transition to Besluit genomen
 
-- **GIVEN** a Mandaatbesluit case for "vergunningverlening kleine bouwwerken" where the signing official is the Afdelingshoofd Vergunningen
-- **WHEN** the workflow guard checks the mandate via `MandaatValidationService.validate()`
-- **AND** the mandaatregister confirms the Afdelingshoofd has authority for category "VTH-M-04" (small permits up to EUR 250.000)
+- **GIVEN** a Mandaatbesluit case with `mandaatCategorie` "VTH-M-04" whose signing official holds an effective toedeling in decidiq for that act
+- **WHEN** the workflow guard asks decidiq
 - **THEN** the transition guard MUST pass
-- **AND** the case MUST advance to "Besluit genomen"
 
 #### Scenario REQ-BVW-007-B: Insufficient mandate blocks transition with clear error
 
-- **GIVEN** a Mandaatbesluit case for a decision exceeding the mandate limit of the signing official
-- **WHEN** the workflow guard queries the mandaatregister
-- **AND** the mandaatregister returns that the official's mandate does not cover the decision scope
+- **GIVEN** a Mandaatbesluit case whose signing official holds no toedeling for the act, or one whose ceiling the amount exceeds
+- **WHEN** the workflow guard asks decidiq
 - **THEN** the transition to "Besluit genomen" MUST be blocked
-- **AND** the case handler MUST see an error message: "De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister."
-- **AND** a link to the relevant mandaatregister entry MUST be shown
+- **AND** the case handler MUST see: "De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister." (or the ceiling sentence)
 
 #### Scenario REQ-BVW-007-C: An unreachable register refuses
 
-- **GIVEN** the mandaatregister endpoint is configured but currently unreachable
-- **WHEN** the workflow guard attempts validation
-- **THEN** the guard MUST NOT silently pass
-- **AND** the handler MUST be prompted to confirm manually that the signing official has sufficient authority
-- **AND** the manual confirmation MUST be logged in the case audit trail
-
----
+- **GIVEN** decidiq is not installed or its register cannot be read
+- **WHEN** the workflow guard asks
+- **THEN** the guard MUST NOT pass, and the handler sees why
+- **AND** there is no manual confirmation path: the remedy is a toedeling in decidiq (open question for Ruben, refactor Q8)
 
 ### Requirement: REQ-BVW-008 Archival MUST link all case documents in the dossier before closing
 
