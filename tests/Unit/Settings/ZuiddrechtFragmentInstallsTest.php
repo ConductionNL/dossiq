@@ -136,6 +136,49 @@ class ZuiddrechtFragmentInstallsTest extends TestCase {
 	}//end testTheSocialDomainGroupHasAWorkerWithoutTheSensitiveGrant()
 
 	/**
+	 * A case whose case type requires a special-category classification carries one within the case type's list:
+	 * the install's save check refuses it otherwise, although `--check` passes (:8080 sandbox, 25 Nov: the Oosthaven
+	 * Jeugdwet case and the re-integration process-analysis case were refused, and every object pointing at them).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-a-case-of-a-special-category-case-type-says-which-categories-it-processes
+	 */
+	public function testACaseOfASpecialCategoryCaseTypeSaysWhichCategories(): void {
+		$settings  = __DIR__.'/../../../lib/Settings';
+		$caseTypes = [];
+		foreach (glob($settings.'/packages/*/case-type.json') as $file) {
+			$declared = json_decode((string)file_get_contents($file), true)['caseType'] ?? [];
+			foreach ((array_is_list($declared) === true ? $declared : [$declared]) as $caseType) {
+				if (($caseType['requiresSpecialCategory'] ?? false) === true) {
+					$caseTypes[$caseType['identifier']] = ($caseType['specialDataCategories'] ?? []);
+				}
+			}
+		}
+
+		$this->assertNotSame(expected: [], actual: $caseTypes);
+
+		$files = array_merge([$settings.'/example-sets/zuiddrecht.json'], glob($settings.'/example-sets/zuiddrecht.d/*.json'));
+		$wrong = [];
+		foreach ($files as $file) {
+			foreach (json_decode((string)file_get_contents($file), true)['objects'] ?? [] as $object) {
+				$identifier = $object['lookups']['caseType']['where']['identifier'] ?? null;
+				if (($object['schema'] ?? '') !== 'case' || isset($caseTypes[$identifier]) === false) {
+					continue;
+				}
+
+				$categories = (array)($object['data']['gdprClassification'] ?? []);
+				$outside    = array_diff($categories, $caseTypes[$identifier]);
+				if ($categories === [] || ($caseTypes[$identifier] !== [] && $outside !== [])) {
+					$wrong[] = $object['key'];
+				}
+			}
+		}
+
+		$this->assertSame(expected: [], actual: $wrong);
+	}//end testACaseOfASpecialCategoryCaseTypeSaysWhichCategories()
+
+	/**
 	 * Collect the fields whose value does not have the declared scalar type, walking nested objects.
 	 *
 	 * @param array<string, mixed> $data       The record's fields.
