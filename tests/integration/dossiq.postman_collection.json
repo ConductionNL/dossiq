@@ -72,6 +72,14 @@
 		{
 			"key": "apiKeyConsumerId",
 			"value": ""
+		},
+		{
+			"key": "crudCaseIdentifier",
+			"value": ""
+		},
+		{
+			"key": "crudCaseStatus",
+			"value": ""
 		}
 	],
 	"auth": {
@@ -172,21 +180,63 @@
 									"const body = pm.response.json();",
 									"const results = body.results || [];",
 									"pm.expect(results.length, 'at least one workflow template seeded in dev').to.be.above(0);",
-									"let chosen = null;",
-									"for (const t of results) {",
-									"  const trans = t.transitions || [];",
-									"  if (trans.length >= 2 && trans.some(x => (x.guards||[]).length > 0)) { chosen = t; break; }",
-									"}",
-									"if (chosen === null) { chosen = results.find(t => (t.transitions||[]).length >= 1) || results[0]; }",
-									"const trans = chosen.transitions || [];",
-									"pm.expect(trans.length, 'chosen template has transitions').to.be.above(0);",
-									"const start = trans.find(x => (x.guards||[]).length === 0) || trans[0];",
-									"const guarded = trans.find(x => (x.guards||[]).length > 0) || trans[trans.length - 1];",
-									"pm.collectionVariables.set('caseTypeId', String(chosen.caseType));",
-									"pm.collectionVariables.set('startStatusId', String(start.fromStatus));",
-									"pm.collectionVariables.set('startTransitionId', String(start.id));",
-									"pm.collectionVariables.set('midStatusId', String(guarded.fromStatus));",
-									"pm.collectionVariables.set('guardTransitionId', String(guarded.id));"
+									"// A case type that sets requiresSpecialCategory refuses a case without a",
+									"// gdprClassification (422 special-category-required). The seeds below carry",
+									"// none, so pick a template whose case type does not ask for one.",
+									"const auth = 'Basic ' + btoa(pm.variables.get('adminUser') + ':' + pm.variables.get('adminPass'));",
+									"pm.sendRequest({",
+									"  url: pm.variables.get('baseUrl') + '/index.php/apps/openregister/api/objects/' + pm.variables.get('register') + '/caseType?_limit=500',",
+									"  method: 'GET',",
+									"  header: { 'OCS-APIRequest': 'true', Authorization: auth },",
+									"}, (err, res) => {",
+									"  pm.test('Setup: case types retrieved (200)', () => pm.expect(err).to.equal(null) && pm.expect(res.code).to.equal(200));",
+									"  const types = (res && res.code === 200) ? (res.json().results || []) : [];",
+									"  const asksSpecial = new Set(types.filter(t => t.requiresSpecialCategory === true).map(t => String(t.id)));",
+									"  // The engine offers only the ACTIVE template of a case type's default route",
+									"  // (WorkflowTemplateLoader::getActiveTemplate); a draft or a variant route",
+									"  // template's transitions are never offered on a plain new case.",
+									"  const live = results.filter(t => t.isActive === true && t.isDraft !== true && (t.variant === undefined || t.variant === null || t.variant === 'regulier'));",
+									"  const usable = live.filter(t => asksSpecial.has(String(t.caseType)) === false);",
+									"  // OpenRegister's lifecycle starts a new case in its case type's first",
+									"  // status and refuses any other status on create, so the seeds carry none",
+									"  // and the template must offer a move out of that first status.",
+									"  pm.sendRequest({",
+									"    url: pm.variables.get('baseUrl') + '/index.php/apps/openregister/api/objects/' + pm.variables.get('register') + '/statusType?_limit=2000',",
+									"    method: 'GET',",
+									"    header: { 'OCS-APIRequest': 'true', Authorization: auth },",
+									"  }, (err2, res2) => {",
+									"    const statuses = (res2 && res2.code === 200) ? (res2.json().results || []) : [];",
+									"    const first = {};",
+									"    for (const s of statuses) {",
+									"      const k = String(s.caseType);",
+									"      if (first[k] === undefined || Number(s.order || 0) < Number(first[k].order || 0)) { first[k] = s; }",
+									"    }",
+									"    const initialOf = t => (first[String(t.caseType)] ? String(first[String(t.caseType)].id) : '');",
+									"    const startsAtInitial = usable.filter(t => (t.transitions || []).some(x => String(x.fromStatus) === initialOf(t)));",
+									"    pm.test('Setup: an active default-route template moves out of its case type\\'s first status', () => pm.expect(startsAtInitial.length, 'templates that start where the lifecycle starts a new case').to.be.above(0));",
+									"    pickTemplate(startsAtInitial.length > 0 ? startsAtInitial : (usable.length > 0 ? usable : results), initialOf);",
+									"  });",
+									"});",
+									"",
+									"function pickTemplate(results, initialOf) {",
+									"  let chosen = null;",
+									"  for (const t of results) {",
+									"    const trans = t.transitions || [];",
+									"    if (trans.length >= 2 && trans.some(x => (x.guards||[]).length > 0)) { chosen = t; break; }",
+									"  }",
+									"  if (chosen === null) { chosen = results.find(t => (t.transitions||[]).length >= 1) || results[0]; }",
+									"  const trans = chosen.transitions || [];",
+									"  pm.expect(trans.length, 'chosen template has transitions').to.be.above(0);",
+									"  const initial = initialOf(chosen);",
+									"  const fromInitial = trans.filter(x => String(x.fromStatus) === initial);",
+									"  const start = fromInitial.find(x => (x.guards||[]).length === 0) || fromInitial[0] || trans.find(x => (x.guards||[]).length === 0) || trans[0];",
+									"  const guarded = fromInitial.find(x => (x.guards||[]).length > 0) || trans.find(x => (x.guards||[]).length > 0) || trans[trans.length - 1];",
+									"  pm.collectionVariables.set('caseTypeId', String(chosen.caseType));",
+									"  pm.collectionVariables.set('startStatusId', String(start.fromStatus));",
+									"  pm.collectionVariables.set('startTransitionId', String(start.id));",
+									"  pm.collectionVariables.set('midStatusId', String(guarded.fromStatus));",
+									"  pm.collectionVariables.set('guardTransitionId', String(guarded.id));",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -216,7 +266,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/113?_limit=50",
+							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/workflowTemplate?_limit=50",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -227,7 +277,7 @@
 								"api",
 								"objects",
 								"{{register}}",
-								"113"
+								"workflowTemplate"
 							],
 							"query": [
 								{
@@ -239,7 +289,7 @@
 					}
 				},
 				{
-					"name": "Seed fresh case (at workflow start status)",
+					"name": "Seed fresh case (starts in its case type's first status)",
 					"event": [
 						{
 							"listen": "test",
@@ -284,7 +334,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"NEWMAN fresh case\",\n  \"description\": \"transition-engine happy path\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"status\": \"{{startStatusId}}\",\n  \"priority\": \"normal\"\n}"
+							"raw": "{\n  \"title\": \"NEWMAN fresh case\",\n  \"description\": \"transition-engine happy path\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"priority\": \"normal\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/{{caseSchema}}",
@@ -304,7 +354,7 @@
 					}
 				},
 				{
-					"name": "Seed guard case (at guarded-transition status, missing required field)",
+					"name": "Seed guard case (missing required field)",
 					"event": [
 						{
 							"listen": "test",
@@ -349,7 +399,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"NEWMAN guard case\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"status\": \"{{midStatusId}}\",\n  \"priority\": \"normal\"\n}"
+							"raw": "{\n  \"title\": \"NEWMAN guard case\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"priority\": \"normal\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/{{caseSchema}}",
@@ -820,7 +870,10 @@
 									"const id = b.id || (b['@self'] && b['@self'].id);",
 									"pm.test('returns an id', () => pm.expect(id).to.be.a('string').and.not.empty);",
 									"pm.test('persists the title', () => pm.expect(b.title).to.eql('NEWMAN crud case'));",
-									"pm.collectionVariables.set('crudCaseId', id);"
+									"pm.collectionVariables.set('crudCaseId', id);",
+									"// A PUT replaces the whole object: it must carry the generated identifier and the status back.",
+									"pm.collectionVariables.set('crudCaseIdentifier', String(b.identifier || ''));",
+									"pm.collectionVariables.set('crudCaseStatus', String(b.status || ''));"
 								],
 								"type": "text/javascript"
 							}
@@ -855,7 +908,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"NEWMAN crud case\",\n  \"description\": \"crud lifecycle\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"status\": \"{{startStatusId}}\",\n  \"priority\": \"normal\"\n}"
+							"raw": "{\n  \"title\": \"NEWMAN crud case\",\n  \"description\": \"crud lifecycle\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"priority\": \"normal\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/{{caseSchema}}",
@@ -975,7 +1028,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"NEWMAN crud case\",\n  \"description\": \"updated by newman\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"status\": \"{{startStatusId}}\",\n  \"priority\": \"high\"\n}"
+							"raw": "{\n  \"title\": \"NEWMAN crud case\",\n  \"description\": \"updated by newman\",\n  \"caseType\": \"{{caseTypeId}}\",\n  \"status\": \"{{crudCaseStatus}}\",\n  \"priority\": \"high\",\n  \"identifier\": \"{{crudCaseIdentifier}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/index.php/apps/openregister/api/objects/{{register}}/{{caseSchema}}/{{crudCaseId}}",
@@ -1066,13 +1119,17 @@
 					}
 				},
 				{
-					"name": "delete case (cleanup: 200/204)",
+					"name": "delete case (archival: 403 SCHEMA_ARCHIVAL_IMMUTABLE)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('case deleted (200 or 204)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+									"// Cases are archival (cases-are-archival-no-delete): the case schema declares",
+									"// x-openregister-archival, so OpenRegister refuses a user delete and the row",
+									"// expires through its retention. The refusal is the contract.",
+									"pm.test('case delete refused (403)', () => pm.response.to.have.status(403));",
+									"pm.test('refusal names the archival rule', () => pm.expect(pm.response.json().error).to.eql('SCHEMA_ARCHIVAL_IMMUTABLE'));"
 								],
 								"type": "text/javascript"
 							}
@@ -1815,7 +1872,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('cleanup fresh case (200/204/404)', () => pm.expect(pm.response.code).to.be.oneOf([200,204,404]));"
+									"// 403: cases are archival and are never deleted by a user (SCHEMA_ARCHIVAL_IMMUTABLE).",
+									"pm.test('cleanup fresh case (200/204/403/404)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 403, 404]));"
 								],
 								"type": "text/javascript"
 							}
@@ -1869,7 +1927,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('cleanup guard case (200/204/404)', () => pm.expect(pm.response.code).to.be.oneOf([200,204,404]));"
+									"// 403: cases are archival and are never deleted by a user (SCHEMA_ARCHIVAL_IMMUTABLE).",
+									"pm.test('cleanup guard case (200/204/403/404)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 403, 404]));"
 								],
 								"type": "text/javascript"
 							}

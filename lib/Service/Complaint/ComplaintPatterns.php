@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
  * per-employee threshold alert goes only to the hr coordinator and the
  * department head.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
  */
 class ComplaintPatterns implements ComplaintPatternsInterface {
 	use SearchesObjects;
@@ -83,7 +83,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 *
 	 * @throws Throwable When the complaints cannot be read; an empty answer would read "no complaints".
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function forQuarter(QuarterPeriod $period): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -110,7 +110,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 *
 	 * @return array<string, mixed> The filters.
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function receiptFilters(QuarterPeriod $period, array $months): array {
 		return [
@@ -127,7 +127,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 *
 	 * @return array<string, mixed> The answer.
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	private function patterns(QuarterPeriod $period, array $figures): array {
 		$months = $period->trailingMonths();

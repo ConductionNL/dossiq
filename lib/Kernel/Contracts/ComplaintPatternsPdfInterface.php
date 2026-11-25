@@ -42,7 +42,7 @@ interface ComplaintPatternsPdfInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function render(array $patterns): string;
 }//end interface

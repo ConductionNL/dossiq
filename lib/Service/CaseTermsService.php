@@ -561,7 +561,7 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 *
 	 * @return array{endDate: string, progressPercent: int, daysLeft: int}
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	public function standingOf(array $instance, ?DateTimeImmutable $now = null): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * The terms that end first, behind the reporting audience gate.
  *
- * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+ * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
  */
 class DeadlineEndingFirstController extends Controller {
 	use ReportingAudienceGuard;
@@ -76,7 +76,7 @@ class DeadlineEndingFirstController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 * @spec openspec/changes/archive/2026-11-25-lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	#[NoAdminRequired]
 	public function index(int $limit = TermsEndingFirstInterface::DEFAULT_LIMIT): JSONResponse {
