@@ -41,7 +41,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Zgw\LookupNotCompleted
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
- * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+ * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */
 final class ZgwBusinessRulesServiceLookupFailureTest extends TestCase {
 	/**

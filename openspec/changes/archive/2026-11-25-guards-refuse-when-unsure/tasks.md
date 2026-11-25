@@ -43,4 +43,5 @@ Decision 224. One PR, `--base development`, stacked on the method-decomposition 
 
 ## 7. Live
 
-- [ ] 7.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.
+- [x] 7.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.
+  - Done 25 Nov 2026 on a sandbox instance (NC 34.0.6, MariaDB, openregister main, ZGW over a superuser JWT consumer): with the store reachable nothing answers 503. Linking a document to a zaak (zaakinformatieobject 201) creates its objectinformatieobject, a second objectinformatieobject create for the same pair answers 400 `unique`; deleting a document without relations answers 204, one with an objectinformatieobject 400 `pending-relations`; deleting a concept zaaktype without cases answers 204.

@@ -352,7 +352,7 @@ class ZgwService implements ZgwServiceInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function storeFailureResponse(\Throwable $error, string $operation, string $object): JSONResponse {
 		return $this->storeFailures()->respond(error: $error, operation: $operation, object: $object);
@@ -363,7 +363,7 @@ class ZgwService implements ZgwServiceInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notFoundResponse(): JSONResponse {
 		return $this->storeFailures()->notFound();
@@ -1910,7 +1910,7 @@ class ZgwService implements ZgwServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notifyDeleted(IRequest $request, string $zgwApi, string $resource, string $uuid): void {
 		try {
