@@ -14194,7 +14194,10 @@
 					"description",
 					"isRequired",
 					"defaultValue",
-					"maxLength"
+					"maxLength",
+					"order",
+					"group",
+					"placeholder"
 				],
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`: CnFolderSidebar's validator takes custom, field and files only, and a sidebar declared as a facet falls through to `custom`, finds no `folders` array and renders an empty pane. The shape is the one `#CaseTypes` carries. Since nextcloud-vue 2.42.0 the `field` source PREFERS the facet, which OpenRegister computes over the whole query with pagination stripped, so a category is reachable even when all of its attributes sit on a later page; `facetable: true` on `propertyDefinition.category` plus this block is the whole contract and the object store adds `_facets=extend` on its own. AN ATTRIBUTE WITH NO CATEGORY GETS ITS FOLDER FROM THE SCHEMA DEFAULT, not from this pane: `fieldTree()` skips a row whose grouping value is null, undefined or empty, so there is nowhere here to name an empty bucket, and `category` defaults to Uncategorised on the register instead. ⚠️ The facet arrives up to an hour stale, because OpenRegister caches the response and no object write invalidates it (OpenRegister#3560), so a category added today may get no folder today.",
 				"folderSidebar": {

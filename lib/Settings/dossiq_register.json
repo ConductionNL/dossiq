@@ -1608,6 +1608,23 @@
                         "default": false,
                         "title": "Hide on the create form",
                         "description": "Leave this question off the form that creates a case, because dossiq answers it itself at creation. The case form still shows it once the case exists."
+                    },
+                    "order": {
+                        "type": "integer",
+                        "title": "Order",
+                        "description": "Where this question sits on the case form, lowest first. Questions without an order follow those that have one, in the order they were added."
+                    },
+                    "group": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Group",
+                        "description": "The heading this question is shown under on the case form, a free word such as Aanvrager or Locatie. Questions with the same group sit together."
+                    },
+                    "placeholder": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Placeholder",
+                        "description": "Example text shown in the empty input on the case form, never stored as an answer."
                     }
                 }
             },
@@ -3210,7 +3227,10 @@
                                 "default": "defaultValue",
                                 "calculation": "calculation",
                                 "conceptScheme": "conceptScheme",
-                                "hideOnCreate": "hideOnCreate"
+                                "hideOnCreate": "hideOnCreate",
+                                "sort": "order",
+                                "group": "group",
+                                "placeholder": "placeholder"
                             },
                             "values": {
                                 "mode": "array",
