@@ -313,6 +313,9 @@
 			],
 			"data": {
 				"title": "Re-integratie met een werkervaringsplek",
+				"gdprClassification": [
+					"health"
+				],
 				"description": "Een traject naar werk met een werkervaringsplek bij de groenvoorziening, afgerond met een arbeidscontract.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
