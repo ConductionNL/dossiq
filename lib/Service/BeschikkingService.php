@@ -444,7 +444,7 @@ class BeschikkingService implements BeschikkingServiceInterface {
 	 * @throws RefusedException When no transport took the beschikking.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function verzend(string $decisionId, string $actor): array {
