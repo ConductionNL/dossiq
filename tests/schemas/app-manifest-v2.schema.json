@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.199.0",
+	"version": "2.201.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5686,6 +5686,7 @@
 									"title": { "type": "string", "minLength": 1, "description": "type='dashboard': the page title while this view is open, e.g. \"My team\" (through the app's translations; view-title, 2.119.0). Without it the page keeps its own title." },
 									"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name, reserved for an icon-bearing switch." },
 									"emptyText": { "type": "string", "minLength": 1, "description": "The sentence shown when the view has nothing to draw." },
+									"visibleWhen": { "$ref": "#/$defs/visibleWhen", "description": "2.200.0 (view-visible-when): offer this view only when the condition holds for the reader, e.g. `{ \"endpoint\": \"/apps/learniq/api/timetable/mentor-classes\", \"field\": \"classes\", \"op\": \"notEmpty\" }` for a Mentor view only a mentor sees. Same shape as a widget's `visibleWhen`; fail-safe: a condition that cannot be read hides the view. A view whose condition does not hold leaves the switch, and when that leaves one view the page draws no switch." },
 									"widgets": { "type": "array", "description": "The view's widget definitions, the same shape as the page's `widgets`.", "items": { "type": "object", "additionalProperties": true } },
 									"layout": { "type": "array", "description": "The view's grid layout, the same shape as the page's `layout`.", "items": { "type": "object", "additionalProperties": true } },
 									"gridSideColumn": { "type": "object", "additionalProperties": false, "required": ["width"], "description": "type='dashboard': draw the grid's side column at a fixed width (2.142.0, dashboard-side-column-width). The placements with `track: side` are `width` px wide (the card without its margins) from column `from` (default 8), those with `track: main` share the rest; a placement without a track keeps the twelve shares. Only on the full twelve-column grid and not while editing.", "properties": { "width": { "type": "number", "exclusiveMinimum": 0 }, "from": { "type": "integer", "minimum": 1, "maximum": 11 } } }
@@ -5850,6 +5851,11 @@
 							"type": "boolean",
 							"default": false,
 							"description": "type='dashboard': an \"Arrange page\" header button that opens a side panel where the user shows, hides and reorders the page's sections, with \"Back to default\" and \"Save layout\" (dashboard-layout-panel, 2.189.0). Stored per user in the app's preferences, as `userLayout`, which this turns on. Maps to CnDashboardPage `layoutPanel`."
+						},
+						"layoutPanelLocked": {
+							"type": "array",
+							"items": { "type": "string" },
+							"description": "type='dashboard': widget ids the layout panel (`layoutPanel`) lists but does not let the user hide, such as the page's main work list. They can still be moved; their checkbox stays checked and reads \"Always shown\", and a stored layout that hid one draws it anyway. Maps to CnDashboardPage `layoutPanelLocked` (2.201.0)."
 						},
 						"greeting": {
 							"oneOf": [
