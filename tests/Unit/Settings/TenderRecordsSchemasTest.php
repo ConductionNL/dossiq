@@ -126,8 +126,14 @@ class TenderRecordsSchemasTest extends TestCase {
 		// The proposed award is a bid state, one per lot (tenders-run-on-the-tender-case-type 3.2): a scored bid is
 		// proposed, and released back to evaluated when another bid of its lot is proposed.
 		$transitions = $this->real->schemas['bid']['configuration']['x-openregister-lifecycle']['transitions'];
-		$this->assertSame([['admissible', 'evaluated'], 'proposed-award'], [$transitions['proposeAward']['from'], $transitions['proposeAward']['to']]);
-		$this->assertSame([['proposed-award'], 'evaluated'], [$transitions['releaseAward']['from'], $transitions['releaseAward']['to']]);
+		$this->assertSame(
+			expected: [['admissible', 'evaluated'], 'proposed-award'],
+			actual: [$transitions['proposeAward']['from'], $transitions['proposeAward']['to']]
+		);
+		$this->assertSame(
+			expected: [['proposed-award'], 'evaluated'],
+			actual: [$transitions['releaseAward']['from'], $transitions['releaseAward']['to']]
+		);
 	}//end testTheStatesFollowADeclaredLifecycle()
 
 	/**
