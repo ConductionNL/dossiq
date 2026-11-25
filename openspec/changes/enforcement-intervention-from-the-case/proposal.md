@@ -13,5 +13,5 @@ Row 7.10 (pick an enforcement intervention from the national enforcement strateg
 ## Impact
 
 - `src/manifest.json` CaseDetail: header action `advice-from-decision-table`, visible when `@context.caseType.adviceDecisionTable`; new dialog `src/dialogs/DecisionTableAdviceDialog.vue`.
-- `LhsController` routes stay as the backend; a generic alias `/api/decision-advice/recommend` and `/override` is added and the LHS paths forward to it for one release (rename per decision 184).
+- `LhsController` routes stay as the backend; a generic alias `/api/decision-advice/recommend` and `/override` is added and the LHS paths stay unchanged for one release, deprecated in the changelog, and are then removed (rename per decision 184; not forwarded, see tasks 2.2).
 - Packages: `lhs-matrix` sets `adviceDecisionTable` on the handhaving case types in `lib/Settings/packages/vth/case-type.json`.
