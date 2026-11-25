@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+ * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Sorts a store failure into not found (404), not allowed (403) and not reached (503).
  *
- * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+ * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */
 class StoreFailureAnswer {
 	/**
@@ -76,7 +76,7 @@ class StoreFailureAnswer {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function respond(Throwable $error, string $operation, string $object): JSONResponse {
 		$context = ['operation' => $operation, 'object' => $object, 'exception' => $error];
@@ -101,7 +101,7 @@ class StoreFailureAnswer {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function notAllowed(Throwable $error, array $context): JSONResponse {
 		$this->logger->warning('{operation}: not allowed on {object}: ' . $error->getMessage(), $context);
@@ -125,7 +125,7 @@ class StoreFailureAnswer {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function notCompleted(Throwable $error, array $context): JSONResponse {
 		$this->logger->error('{operation}: the store did not complete the call for {object}: ' . $error->getMessage(), $context);
@@ -143,7 +143,7 @@ class StoreFailureAnswer {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notFound(): JSONResponse {
 		return new JSONResponse(data: ['detail' => 'Not found'], statusCode: Http::STATUS_NOT_FOUND);

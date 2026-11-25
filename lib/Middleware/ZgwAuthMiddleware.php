@@ -95,6 +95,16 @@ class ZgwAuthMiddleware extends Middleware {
 	];
 
 	/**
+	 * The scope action a catalogi publish needs: `catalogi.schrijven`, the
+	 * Catalogi API's write scope (decision 245, REQ-ZBR-024). The method map
+	 * would ask `catalogi.aanmaken`, which the Catalogi API does not define, so a
+	 * client holding the write scope never reached the publish guard.
+	 *
+	 * @var string
+	 */
+	private const PUBLISH_SCOPE_SUFFIX = 'schrijven';
+
+	/**
 	 * Confidentiality levels from low to high.
 	 *
 	 * @var string[]
@@ -304,6 +314,10 @@ class ZgwAuthMiddleware extends Middleware {
 			throw $this->forbidden(message: 'Unsupported HTTP method');
 		}
 
+		if ($component === 'ztc' && $method === 'POST' && $this->isPublishRoute() === true) {
+			$requiredSuffix = self::PUBLISH_SCOPE_SUFFIX;
+		}
+
 		// Check if any scope grants cover this request.
 		$required = ['component' => $component, 'suffix' => $requiredSuffix];
 		foreach ($scopes as $scopeGrant) {
@@ -314,6 +328,20 @@ class ZgwAuthMiddleware extends Middleware {
 
 		throw $this->forbidden(message: "Scope '{$component}.{$requiredSuffix}' is required for this operation");
 	}//end enforceScopes()
+
+	/**
+	 * Whether the request is one of the three catalogi publish routes
+	 * (`/catalogi/v1/{zaaktypen|besluittypen|informatieobjecttypen}/{uuid}/publish`).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md#requirement-the-gateway-asks-the-catalogi-write-scope-for-a-publish
+	 */
+	private function isPublishRoute(): bool {
+		$path = (string)parse_url($this->request->getRequestUri(), PHP_URL_PATH);
+
+		return preg_match('#/api/zgw/catalogi/v1/(zaaktypen|besluittypen|informatieobjecttypen)/[^/]+/publish/?$#', $path) === 1;
+	}//end isPublishRoute()
 
 	/**
 	 * Check if a scope grant covers the required component and action.

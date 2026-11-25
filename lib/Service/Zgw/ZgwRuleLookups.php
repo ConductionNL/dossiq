@@ -112,7 +112,7 @@ class ZgwRuleLookups {
 	 *
 	 * @throws LookupNotCompleted When the search fails: a type that could not be read does not read as absent.
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findObjectByField(
 		string $register,
@@ -201,7 +201,7 @@ class ZgwRuleLookups {
 	 *
 	 * @throws LookupNotCompleted When the search fails.
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findAllObjectsByField(
 		string $register,
@@ -290,7 +290,7 @@ class ZgwRuleLookups {
 	 *
 	 * @throws LookupNotCompleted When the read fails for any other reason.
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findBySchemaKey(string $uuid, string $schemaKey): ?array {
 		if ($this->objectService === null) {
@@ -329,7 +329,7 @@ class ZgwRuleLookups {
 	 *
 	 * @return array|null The object data, or null when there is none
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function asArray(mixed $obj): ?array {
 		if ($obj === null || is_array($obj) === true) {
@@ -371,7 +371,7 @@ class ZgwRuleLookups {
 	 *
 	 * @throws LookupNotCompleted When the search fails.
 	 *
-	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function fieldPairExists(
 		string $field1Value,

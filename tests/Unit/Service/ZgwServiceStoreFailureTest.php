@@ -50,7 +50,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
  * @uses \OCA\Dossiq\Service\Zgw\ResourceWrite
  * @uses \OCA\Dossiq\Service\Zgw\RuleFlags
  *
- * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+ * @spec openspec/changes/archive/2026-11-25-guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */
 final class ZgwServiceStoreFailureTest extends TestCase {
 	/**

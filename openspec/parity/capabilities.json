@@ -15192,8 +15192,8 @@
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
 				},
-				"plan": "openspec/changes/case-files-list-columns",
-				"requirement": "openspec/changes/case-files-list-columns/specs/document-zaakdossier :: The case files list shows the document columns of the board (REQ-ZAK-COL-01)"
+				"plan": "openspec/changes/archive/2026-11-25-case-files-list-columns",
+				"requirement": "openspec/changes/archive/2026-11-25-case-files-list-columns/specs/document-zaakdossier :: The case files list shows the document columns of the board (REQ-ZAK-COL-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/DocumentList.vue renders fixed rows with Åbn and Slet actions (lines 25,29); grep -i 'column' finds no chooser or column setting | round 2 drive: procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
@@ -15980,7 +15980,7 @@
 				"plan": [
 					"openspec/changes/capability-rows-say-the-whole-capability",
 					"openspec/changes/contact-birth-longdate-social-history-stacked",
-					"openspec/changes/contact-persons-tab-in-actions",
+					"openspec/changes/archive/2026-11-25-contact-persons-tab-in-actions",
 					"openspec/changes/contact-reachability",
 					"openspec/changes/contact-side-cards-from-moments",
 					"openspec/changes/identity-bsn-inline",

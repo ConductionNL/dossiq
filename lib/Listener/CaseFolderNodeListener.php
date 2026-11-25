@@ -46,7 +46,7 @@ use Throwable;
  * folder.
  *
  * @spec openspec/specs/document-projection/spec.md
- * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+ * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
  *
  * @template-implements IEventListener<Event>
  */
@@ -71,7 +71,7 @@ class CaseFolderNodeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	private function asWriter(callable $operation): void {
 		if ($this->userSession === null || $this->userSession->getUser() !== null) {

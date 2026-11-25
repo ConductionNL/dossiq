@@ -45,6 +45,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
+use ReflectionMethod;
+use ReflectionNamedType;
 use RuntimeException;
 
 /**
@@ -139,9 +141,8 @@ trait SearchesObjects {
 		if ($search->byNumericIds() === false) {
 			return $this->normaliseObjectRows(
 				rows: $search->objectService->searchObjectsBySlug(
-					(string)$search->register,
-					(string)$search->schema,
-					$search->filters,
+					...self::slugSearchTarget(search: $search),
+					...[$search->filters],
 					// Passed only when asked, so a service without these
 					// parameters still accepts the call.
 					...$search->scope
@@ -159,6 +160,34 @@ trait SearchesObjects {
 
 		return $this->normaliseObjectRows(rows: $search->objectService->searchObjects($query, ...$search->scope));
 	}//end searchObjectsWithin()
+
+	/**
+	 * The register and schema slugs in the shape the service's slug search takes.
+	 *
+	 * OpenRegister main takes one `Contract\RegisterSchemaSlugs` value as the
+	 * first argument; released OpenRegister versions take the two slugs as
+	 * strings. The service's own first parameter decides, so dossiq runs on
+	 * both without a version check.
+	 *
+	 * @param ObjectSearch $search Where to look.
+	 *
+	 * @return list<mixed> The leading arguments of searchObjectsBySlug().
+	 *
+	 * @spec openspec/specs/or-object-search/spec.md#requirement-a-slug-search-passes-the-target-openregister-asks-for-req-sst-001
+	 */
+	private static function slugSearchTarget(ObjectSearch $search): array {
+		$register = (string)$search->register;
+		$schema = (string)$search->schema;
+
+		$first = (new ReflectionMethod($search->objectService, 'searchObjectsBySlug'))->getParameters()[0] ?? null;
+		$type = $first?->getType();
+		if ($type instanceof ReflectionNamedType && $type->isBuiltin() === false && class_exists($type->getName()) === true) {
+			$class = $type->getName();
+			return [new $class($register, $schema)];
+		}
+
+		return [$register, $schema];
+	}//end slugSearchTarget()
 
 	/**
 	 * Fetch a single OpenRegister object by id and return it as a plain array.

@@ -62,4 +62,20 @@ class ZuiddrechtPieterReadsTheHouseholdTest extends TestCase {
 		$this->assertContains(needle: 'pieter', haystack: $members);
 		$this->assertContains(needle: 'thomas', haystack: $members);
 	}//end testPieterIsInTheSensitiveGroup()
+
+	/**
+	 * Pieter is in the handling team of the Jeugdwet case type, so he may read the Oosthaven case the household card
+	 * sits on: the household endpoint asks for the sensitive group AND case read access, and the case falls to Fatma
+	 * (sandbox live pass, 25 Nov: Pieter got 403 household-not-allowed without it).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-set-pieter-reads-the-household/specs/zuiddrecht-example-set/spec.md
+	 */
+	public function testPieterIsInTheJeugdwetHandlingTeam(): void {
+		$caseType = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/packages/jeugdwet/case-type.json'), true)['caseType'];
+		$team     = ($caseType['handling']['defaultGroup'] ?? null);
+		$this->assertSame(expected: 'dossiq-sociaal-domein', actual: $team);
+		$this->assertContains(needle: 'pieter', haystack: $this->members(group: 'dossiq-sociaal-domein'));
+	}//end testPieterIsInTheJeugdwetHandlingTeam()
 }//end class
