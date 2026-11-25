@@ -43,7 +43,7 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\CaseType\RuleConditionLogic
  * @uses   \OCA\Dossiq\Service\CaseType\RuleFlowScope
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class CaseTypeRuleProjectorWarningsTest extends TestCase {
 

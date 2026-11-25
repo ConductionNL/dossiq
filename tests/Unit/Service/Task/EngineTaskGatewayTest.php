@@ -534,7 +534,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	public function testAOnceKeyIsTakenFreeOrUnknown(): void {
 		$service = new class {
@@ -555,7 +555,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	public function testAOnceKeyedTaskCarriesItAsItsEngineKey(): void {
 		$payload = $this->gatewayWith(null)->toEnginePayload(

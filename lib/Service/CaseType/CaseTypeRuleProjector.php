@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * An action this projection does not carry yet is named in the warnings
  * publication returns, so a rule that would do nothing never reads as active.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class CaseTypeRuleProjector {
 
@@ -84,7 +84,7 @@ class CaseTypeRuleProjector {
 	 *
 	 * @return array{flows: array<int, array<string, mixed>>, unprojected: array<int, string>} The plan.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function plan(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -147,7 +147,7 @@ class CaseTypeRuleProjector {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The requirements.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function entryRequirements(array $caseType): array {
 		$requirements = [];
@@ -220,7 +220,7 @@ class CaseTypeRuleProjector {
 	 *
 	 * @return array<int, string> Warnings for publication, empty when every rule landed.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function publish(string $caseTypeId): array {
 		$plan = $this->plan(caseTypeId: $caseTypeId);

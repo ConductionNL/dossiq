@@ -27,7 +27,7 @@ use OCP\IURLGenerator;
  * A thin wrapper over SetCaseAnswerHandler. A case type rule's
  * setField on a property definition is projected onto a flow ending in this step.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class DossiqTxSetCaseAnswerNode extends DossiqTransitionNode {
 
@@ -79,7 +79,7 @@ class DossiqTxSetCaseAnswerNode extends DossiqTransitionNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+     * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Set a case answer');
@@ -92,7 +92,7 @@ class DossiqTxSetCaseAnswerNode extends DossiqTransitionNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+     * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
      */
     public function getDescription(): string {
         return $this->l10n->t('Write the answer to one of the case type\'s property definitions on the case.');

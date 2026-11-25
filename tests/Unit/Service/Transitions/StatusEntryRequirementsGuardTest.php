@@ -31,7 +31,7 @@ use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class StatusEntryRequirementsGuardTest extends TestCase {
 
