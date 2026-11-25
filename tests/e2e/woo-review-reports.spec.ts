@@ -286,6 +286,12 @@ test.describe('Review reports', () => {
 		expect(Array.isArray(rows)).toBe(true)
 
 		await navToRoute(page, '/cases')
+		// The entry sits in the footer section, which the menu folds under
+		// "Advanced": it is in the DOM but hidden until a user opens it.
+		await sidebarNav(page)
+			.getByRole('button', { name: 'Advanced', exact: true })
+			.first()
+			.click()
 		await expect(
 			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toBeVisible(PAGE_LOAD)
