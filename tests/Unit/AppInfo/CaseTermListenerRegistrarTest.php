@@ -30,22 +30,32 @@ use PHPUnit\Framework\TestCase;
 class CaseTermListenerRegistrarTest extends TestCase {
 	use RecordsRegistrations;
 
+	/**
+	 * Both listeners run on updates, the note after the deadline.
+	 *
+	 * @return void
+	 */
 	public function testTheTermListenersRunOnUpdatesAtTheirPriorities(): void {
 		(new CaseTermListenerRegistrar())->register(context: $this->recordingContext());
 
 		self::assertSame(
-			[
+			expected: [
 				[ObjectUpdatingEvent::class, CaseDeadlineFollowsTermListener::class, CaseTypeListenerRegistrar::TERM_DEADLINE_PRIORITY],
 				[ObjectUpdatingEvent::class, ApplicantTermNoteListener::class, CaseTypeListenerRegistrar::TERM_NOTE_PRIORITY],
 			],
-			$this->listeners
+			actual: $this->listeners
 		);
 	}//end testTheTermListenersRunOnUpdatesAtTheirPriorities()
 
+	/**
+	 * The registrar registers no services and no other listeners.
+	 *
+	 * @return void
+	 */
 	public function testNothingElseIsRegistered(): void {
 		(new CaseTermListenerRegistrar())->register(context: $this->recordingContext());
 
-		self::assertSame([], $this->services);
-		self::assertCount(2, $this->listeners);
+		self::assertSame(expected: [], actual: $this->services);
+		self::assertCount(expectedCount: 2, haystack: $this->listeners);
 	}//end testNothingElseIsRegistered()
 }//end class
