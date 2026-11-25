@@ -109,12 +109,14 @@ named change is archived.
   - [x] 15.6 Field half of gap-register row B16: `order`, `group` and
     `placeholder` on `propertyDefinition`, in the CT-1 change (buildiq
     `competitor-parity-2026-09` 2.1).
-    > Done 25 Nov 2026: the three fields on `propertyDefinition` (none required),
-    > on the attribute catalogue's form, and in the case form's
-    > `x-openregister-extends-form` map: `order` under the library's `sort` role
-    > (nextcloud-vue already places extended fields by it), `group` and
-    > `placeholder` under their own names. The case form shows the group heading
-    > and placeholder once nextcloud-vue's dynamicProperties reads those two roles
-    > (library follow-up). Test: tests/vitest/propertyDefinitionFormLayout.spec.js.
+    > Done 25 Nov 2026: the three fields on `propertyDefinition` (none required)
+    > and on the attribute catalogue's form. NOT yet in the case form's
+    > `x-openregister-extends-form` map: OpenRegister accepts only `hideOnCreate`
+    > as a form role and refuses any other unknown role, which rejects the whole
+    > case schema at import (ShippedDeclarationsOpenRegisterAcceptsTest). Map
+    > `sort: order`, `group: group`, `placeholder: placeholder` once OpenRegister's
+    > ExtendingFormDeclarationInterface::FORM_ROLES carries them (nextcloud-vue
+    > already orders by `sort`; group and placeholder need its dynamicProperties
+    > to read them). Test: tests/vitest/propertyDefinitionFormLayout.spec.js.
   - [ ] 15.7 With openregister: the portal flag on a property, on the field and
     not on the form (decision D16 in buildiq `competitor-parity-2026-09` 2.2).

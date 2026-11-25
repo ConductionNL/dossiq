@@ -3227,10 +3227,7 @@
                                 "default": "defaultValue",
                                 "calculation": "calculation",
                                 "conceptScheme": "conceptScheme",
-                                "hideOnCreate": "hideOnCreate",
-                                "sort": "order",
-                                "group": "group",
-                                "placeholder": "placeholder"
+                                "hideOnCreate": "hideOnCreate"
                             },
                             "values": {
                                 "mode": "array",
