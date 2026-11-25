@@ -109,7 +109,11 @@ class DraftCaseTest extends TestCase {
 
 		$this->assertTrue(condition: $this->case['isDraft']);
 		$this->assertNull(actual: $this->case['startDate'], message: 'a draft that kept its start date is already counting down');
-		$this->assertArrayNotHasKey(key: 'deadline', array: $this->case, message: 'deadline is a read-only calculation; writing it makes the register refuse the save');
+		$this->assertArrayNotHasKey(
+			key: 'deadline',
+			array: $this->case,
+			message: 'deadline is a read-only calculation; writing it makes the register refuse the save'
+		);
 		$this->assertNull(actual: $this->case['plannedEndDate']);
 	}//end testADraftBindsNoTerm()
 
