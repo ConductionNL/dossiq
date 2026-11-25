@@ -8,7 +8,7 @@
  * case, on the tab that holds the advice card, and never a tab the case does
  * not have.
  *
- * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+ * @spec openspec/changes/archive/2026-11-25-advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
  */
 
 declare(strict_types=1);

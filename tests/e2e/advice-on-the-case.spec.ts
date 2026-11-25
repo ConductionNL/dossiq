@@ -9,7 +9,7 @@
  * Rows are addressed by their run prefix, never by position: a shared
  * instance collects other sessions' fixtures while this one runs.
  *
- * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+ * @spec openspec/changes/archive/2026-11-25-advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
  */
 
 import type { APIRequestContext } from '@playwright/test'
