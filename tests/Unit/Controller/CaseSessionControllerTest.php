@@ -49,11 +49,16 @@ class CaseSessionControllerTest extends TestCase {
 	/** @var array<string, mixed> */
 	private array $params = [];
 
+	/**
+	 * Doubles for the service, the guard and a signed-in caller 'pieter'.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
-		$this->sessions   = $this->createMock(SessionServiceInterface::class);
-		$this->caseAccess = $this->createMock(CaseAccessGuardInterface::class);
-		$this->session    = $this->createMock(IUserSession::class);
-		$user = $this->createMock(IUser::class);
+		$this->sessions   = $this->createMock(originalClassName: SessionServiceInterface::class);
+		$this->caseAccess = $this->createMock(originalClassName: CaseAccessGuardInterface::class);
+		$this->session    = $this->createMock(originalClassName: IUserSession::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('pieter');
 		$this->session->method('getUser')->willReturn($user);
 	}//end setUp()
@@ -70,8 +75,8 @@ class CaseSessionControllerTest extends TestCase {
 
 		$response = $this->controller()->index(caseId: ' case-1 ');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame($answer, $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: $answer, actual: $response->getData());
 	}//end testAReaderGetsTheSessions()
 
 	/**
@@ -83,7 +88,7 @@ class CaseSessionControllerTest extends TestCase {
 		$this->caseAccess->method('hasCaseReadAccess')->willReturn(false);
 		$this->sessions->expects($this->never())->method('sessionsFor');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->index(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->index(caseId: 'case-1')->getStatus());
 	}//end testANonReaderIsRefusedBeforeAnythingIsRead()
 
 	/**
@@ -97,8 +102,8 @@ class CaseSessionControllerTest extends TestCase {
 
 		$response = $this->controller()->index(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		$this->assertSame('The sessions of this case could not be read. Try again later.', $response->getData()['message']);
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: 'The sessions of this case could not be read. Try again later.', actual: $response->getData()['message']);
 	}//end testAFailingReadAnswersUnavailable()
 
 	/**
@@ -125,8 +130,8 @@ class CaseSessionControllerTest extends TestCase {
 
 		$response = $this->controller()->create(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-		$this->assertSame(['id' => 'session-1', 'status' => 'planned'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $response->getStatus());
+		$this->assertSame(expected: ['id' => 'session-1', 'status' => 'planned'], actual: $response->getData());
 	}//end testAHandlerPlansASessionAndChairsIt()
 
 	/**
@@ -141,7 +146,7 @@ class CaseSessionControllerTest extends TestCase {
 			->with('case-1', 'hoorgesprek', '2026-12-10T10:00:00+01:00', 'fatma', [], [])
 			->willReturn(['id' => 'session-1']);
 
-		$this->assertSame(Http::STATUS_CREATED, $this->controller()->create(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $this->controller()->create(caseId: 'case-1')->getStatus());
 	}//end testANamedChairpersonChairsTheSession()
 
 	/**
@@ -153,7 +158,7 @@ class CaseSessionControllerTest extends TestCase {
 		$this->caseAccess->method('hasCaseMutationAccess')->willReturn(false);
 		$this->sessions->expects($this->never())->method('schedule');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->create(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->create(caseId: 'case-1')->getStatus());
 	}//end testANonHandlerIsRefusedBeforeAnythingIsPlanned()
 
 	/**
@@ -162,13 +167,13 @@ class CaseSessionControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutAUserBothCallsAreRefused(): void {
-		$this->session = $this->createMock(IUserSession::class);
+		$this->session = $this->createMock(originalClassName: IUserSession::class);
 		$this->session->method('getUser')->willReturn(null);
 		$this->sessions->expects($this->never())->method('sessionsFor');
 		$this->sessions->expects($this->never())->method('schedule');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->index(caseId: 'case-1')->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->create(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->index(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->create(caseId: 'case-1')->getStatus());
 	}//end testWithoutAUserBothCallsAreRefused()
 
 	/**
@@ -183,8 +188,8 @@ class CaseSessionControllerTest extends TestCase {
 
 		$response = $this->controller()->create(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame('Hoorgesprek needs at least 1 invitee(s).', $response->getData()['message']);
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: 'Hoorgesprek needs at least 1 invitee(s).', actual: $response->getData()['message']);
 	}//end testARefusedPlanAnswersItsRule()
 
 	/**
@@ -197,7 +202,7 @@ class CaseSessionControllerTest extends TestCase {
 		$this->caseAccess->method('hasCaseMutationAccess')->willReturn(true);
 		$this->sessions->expects($this->never())->method('schedule');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->create(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $this->controller()->create(caseId: 'case-1')->getStatus());
 	}//end testInviteesThatAreNotAListAreRefused()
 
 	/**
@@ -212,8 +217,8 @@ class CaseSessionControllerTest extends TestCase {
 
 		$response = $this->controller()->create(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		$this->assertSame('The session could not be planned. Try again later.', $response->getData()['message']);
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		$this->assertSame(expected: 'The session could not be planned. Try again later.', actual: $response->getData()['message']);
 	}//end testAFailingWriteAnswersUnavailable()
 
 	/**
@@ -222,7 +227,7 @@ class CaseSessionControllerTest extends TestCase {
 	 * @return CaseSessionController
 	 */
 	private function controller(): CaseSessionController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default)
 		);
