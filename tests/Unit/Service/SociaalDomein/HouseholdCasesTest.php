@@ -143,7 +143,10 @@ class HouseholdCasesTest extends TestCase {
 	public function testACaseFindsThePlanThatNamesIt(): void {
 		$this->objects->seed(
 			'gezinsplan',
-			['id' => 'plan-by-case', 'caseId' => 'case-linked', 'preparedDate' => '2026-11-19', 'gezinsleden' => [['role' => 'jeugdige', 'bsn' => self::CHILD]]]
+			[
+				'id' => 'plan-by-case', 'caseId' => 'case-linked', 'preparedDate' => '2026-11-19',
+				'gezinsleden' => [['role' => 'jeugdige', 'bsn' => self::CHILD]],
+			]
 		);
 		$this->objects->seed(
 			'gezinsplan',
