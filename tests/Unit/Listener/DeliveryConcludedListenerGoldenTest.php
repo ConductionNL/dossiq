@@ -38,6 +38,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
  * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
+ * @covers \OCA\Dossiq\Listener\Support\PublicationDeliveryProjection
  */
 class DeliveryConcludedListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
