@@ -195,6 +195,11 @@ record. OpenRegister refuses a parent that references another schema
     182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
     and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
     the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
+  - Newman written, runs in nightly (26 Nov 2026, not verified): `tests/newman/woo-review-triage.postman_collection.json`
+    folder `schemas` reads the seven back and asserts `authorization.scope` private, no `authenticated` reader and no
+    hierarchy key. All seven carry the private block on `development` (`86-woo-corpus.json`, `86-woo-delivered-set.json`,
+    `87-document-review.json`). The collection carries `@newman exclude` like `woo-request-scoped-access`: it runs on the
+    live pass through `tests/newman/run-all.sh`.
 - [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
@@ -315,6 +320,9 @@ record. OpenRegister refuses a parent that references another schema
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
+  - Newman folder `scoped` written, runs in nightly (26 Nov 2026, not verified): two Woo cases, the reviewer in a batch of
+    one (document 2), a colleague holding document 1 and the second case's document; as the reviewer the OpenRegister API
+    lists only the own batch's review and batch, no rule and nothing of the second case; the handler is the control.
 - [x] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
   - unit: one test per controller, `testAUserWithoutAGrantOnTheCaseIsRefused`.
   - Built across the earlier rounds; checked in the second pass. Every controller that serves a Woo record of a
