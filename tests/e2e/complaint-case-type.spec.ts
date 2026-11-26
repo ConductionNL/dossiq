@@ -48,8 +48,8 @@ const RECEIVED_AT = '2021-03-01T09:00:00+01:00'
 const TERM_START = '2021-03-01'
 const TERM_END = '2021-04-12'
 
-/** When the hearing is planned, as typed into the date picker. */
-const WHEN_TYPED = '2027-01-15 10:00'
+/** When the hearing is planned, typed in the picker's own display format. */
+const WHEN_TYPED = 'Jan 15, 2027, 10:00 AM'
 
 let api: APIRequestContext
 let token = ''
@@ -138,13 +138,14 @@ test.describe('A complaint is a case of the shipped complaint case type', () => 
 		const when = dialog.getByTestId('session-schedule-when').locator('input').first()
 		await when.fill(WHEN_TYPED)
 		await when.press('Enter')
+		await expect(when).toHaveValue(WHEN_TYPED)
 
 		const planned = page.waitForResponse(
 			(r) => r.request().method() === 'POST' && r.url().includes(`/api/cases/${caseId}/sessions`),
 		)
 		await dialog.getByTestId('session-schedule-submit').click()
 		const answer = await planned
-		expect(answer.ok(), `plan the hearing -> ${answer.status()} ${await answer.text()}`).toBeTruthy()
+		expect(answer.ok(), `plan the hearing -> ${answer.status()} ${await answer.text()} sent ${answer.request().postData()}`).toBeTruthy()
 		await expect(dialog).toBeHidden({ timeout: 15_000 })
 
 		// The session is linked to the case, with those parties.
