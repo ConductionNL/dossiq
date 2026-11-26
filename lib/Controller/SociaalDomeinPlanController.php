@@ -134,7 +134,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The plan, or an empty one.
 	 *
-	 * @spec openspec/changes/family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
+	 * @spec openspec/changes/archive/2026-11-26-family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
 	 */
 	#[NoAdminRequired]
 	public function planOfCase(string $caseId): JSONResponse {
