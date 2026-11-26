@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Core\LifecycleStatesKeeperInterface;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
@@ -58,14 +59,20 @@ class PackageWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerInterface    $logger   What an import writes about itself.
-	 * @param SettingsService    $settings The register and schema names.
-	 * @param ExistingRowMatcher $matcher  Finds a row a seeder already wrote under another id.
+	 * @param LoggerInterface                     $logger   What an import writes about itself.
+	 * @param SettingsService                     $settings The register and schema names.
+	 * @param ExistingRowMatcher                  $matcher  Finds a row a seeder already wrote under another id.
+	 * @param LifecycleStatesKeeperInterface|null $states   OpenRegister's scope in which a create keeps the
+	 *                                                      lifecycle state it carries; null when OpenRegister
+	 *                                                      has none, and the rows are written as they are.
+	 *
+	 * @spec openspec/changes/zuiddrecht-example-set/tasks.md
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly SettingsService $settings,
 		private readonly ExistingRowMatcher $matcher,
+		private readonly ?LifecycleStatesKeeperInterface $states = null,
 	) {
 	}//end __construct()
 
@@ -166,7 +173,9 @@ class PackageWriter {
 		$run = $this->newRun(target: $target, package: $package);
 
 		try {
-			$this->writeGroups(groups: $groups, run: $run);
+			$this->keepingStates(operation: function () use ($groups, &$run): void {
+				$this->writeGroups(groups: $groups, run: $run);
+			});
 		} catch (\Throwable $e) {
 			$this->undo(written: $run['written']);
 
@@ -175,6 +184,33 @@ class PackageWriter {
 
 		return $this->installed(package: $package, run: $run);
 	}//end writePackage()
+
+	/**
+	 * Run a package write in which a create keeps the lifecycle state it carries.
+	 *
+	 * A package ships its example cases in flight: a Jeugdwet melding in
+	 * "Onderzoek", with the history that led there. OpenRegister refuses a
+	 * create in any state but the schema's initial one, except inside its
+	 * scope for an administrator's import of rows in their own states. That
+	 * scope lifts that one check and nothing else (OpenRegister ADR-099), and
+	 * an install is such an import. Without it every package with an example
+	 * case in flight failed whole ("A new object starts in ...", live 26 Nov
+	 * 2026), and the Zuiddrecht set lost the consent the Jeugdwet case cites.
+	 *
+	 * @param callable $operation The write.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/zuiddrecht-example-set/tasks.md
+	 */
+	private function keepingStates(callable $operation): void {
+		if ($this->states === null) {
+			$operation();
+			return;
+		}
+
+		$this->states->keepingStates($operation);
+	}//end keepingStates()
 
 	/**
 	 * The empty run state an install accumulates into.

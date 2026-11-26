@@ -141,4 +141,32 @@ class ZuiddrechtCaseGrantsTest extends TestCase {
 		}
 
 	}//end testEveryGrantHasOnlyFieldsASetMayWrite()
+
+	/**
+	 * Every grant's object is owned by the account the grant names as its sharer.
+	 *
+	 * OpenRegister writes a grant while the sharer is the active user, and its
+	 * sharing service lets only the owner or an administrator share. An object
+	 * the set does not hand to the sharer is owned by whoever runs the install,
+	 * so the grant was refused ("Only the owner or an administrator may change
+	 * sharing on this object", live 25 and 26 Nov 2026).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/zuiddrecht-example-set/tasks.md
+	 */
+	public function testEveryGrantedObjectIsOwnedByItsSharer(): void {
+		$owners = [];
+		foreach ($this->fragment()['objects'] as $object) {
+			$owners[(string)($object['key'] ?? '')] = ($object['owner'] ?? null);
+		}
+
+		foreach (($this->fragment()['grants'] ?? []) as $grant) {
+			$data = $grant['data'];
+			$this->assertSame(expected: 1, actual: preg_match('/^\{\{object:([^.}]+)\.id\}\}$/', (string)$data['object'], $match), message: (string)$grant['key']);
+			$this->assertArrayHasKey(key: $match[1], array: $owners, message: (string)$grant['key'].' names an object of this set');
+			$this->assertSame(expected: $data['sharedBy'], actual: $owners[$match[1]], message: (string)$grant['key'].': the shared object must be owned by its sharer');
+		}
+
+	}//end testEveryGrantedObjectIsOwnedByItsSharer()
 }//end class

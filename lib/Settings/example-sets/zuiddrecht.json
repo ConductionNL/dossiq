@@ -7423,6 +7423,7 @@
 			"key": "woo-fietspad-besluitklaar",
 			"register": "dossiq",
 			"schema": "case",
+			"owner": "{{cast:pieter.uid}}",
 			"lookups": {
 				"caseType": {
 					"schema": "caseType",
