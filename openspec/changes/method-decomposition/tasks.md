@@ -1828,3 +1828,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         read tests (12 in all). Keying the kept reads by id alone turns it red (checked).
         Whole unit suite: the same failures before and after, none in this class (`StatusEntryRequirementsGuardTest`
         needs a sibling openregister checkout with its vendor directory and fails without one on development too).
+  - [x] 8cw `Controller/SavedMailController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The storage side of
+        reading a saved mail file (the file as the caller reaches it by id, and its bytes, a storage failure logged and
+        answered as absent) moved to `Controller/SavedMailFiles` (beside `SavedMailRead`: a swallowing catch under `lib/Service` counts against the `ServiceCatchReturnsNullTest` ceiling) (`nodeFor()`, `contentOf()`; bodies and the log line
+        moved unchanged, `contentOf()` takes the file, the case and the file id instead of the controller's
+        `SavedMailRead`). The controller keeps the authentication, the case guard, the size cap and the hand-off to the
+        reader. Its constructor takes `SavedMailFiles` in place of `IRootFolder` and `LoggerInterface`; the container
+        autowires both, and no code but the one test builds the controller by hand. Coupling 14 to 12; phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `SavedMailControllerTest` (8: anonymous, refused case, no case,
+        unreachable file, the size cap, unreadable storage, the hand-off and a kept answer), which builds the controller
+        over the same doubles through `SavedMailFiles`. Own test: `tests/Unit/Controller/SavedMailFilesTest` (3);
+        answering a folder as a file turns it red (checked).

@@ -46,13 +46,9 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\Files\File;
-use OCP\Files\IRootFolder;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads one saved mail file on a case as a message.
@@ -79,17 +75,17 @@ class SavedMailController extends Controller {
 	 * @param IRequest        $request         Inbound request.
 	 * @param SavedMailImportInterface $import          Hands the bytes to integriq's reader.
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization.
-	 * @param IRootFolder     $rootFolder      Resolves the node as the caller.
+	 * @param SavedMailFiles  $files           The file as the caller reaches it, and its bytes.
 	 * @param IUserSession    $userSession     The caller.
-	 * @param LoggerInterface $logger          Logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly SavedMailImportInterface $import,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly IRootFolder $rootFolder,
+		private readonly SavedMailFiles $files,
 		private readonly IUserSession $userSession,
-		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -103,6 +99,7 @@ class SavedMailController extends Controller {
 	 * @return JSONResponse What was read, or why it could not be.
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function read(string $caseId, int $fileId): JSONResponse {
@@ -116,7 +113,7 @@ class SavedMailController extends Controller {
 			return $refusal;
 		}
 
-		$node = $this->nodeFor(uid: $user->getUID(), fileId: $fileId);
+		$node = $this->files->nodeFor(uid: $user->getUID(), fileId: $fileId);
 		if ($node === null) {
 			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
@@ -159,6 +156,8 @@ class SavedMailController extends Controller {
 	 * @param SavedMailRead $read The case and the file.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function importFile(SavedMailRead $read): JSONResponse {
 		if ($read->node->getSize() > self::MAX_BYTES) {
@@ -170,7 +169,7 @@ class SavedMailController extends Controller {
 			);
 		}
 
-		$raw = $this->contentOf(read: $read);
+		$raw = $this->files->contentOf(node: $read->node, caseId: $read->caseId, fileId: $read->fileId);
 		if ($raw === null) {
 			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
@@ -183,50 +182,4 @@ class SavedMailController extends Controller {
 			)
 		);
 	}//end importFile()
-
-	/**
-	 * The file's content, or null when storage will not give it up (logged).
-	 *
-	 * @param SavedMailRead $read The case and the file.
-	 *
-	 * @return string|null
-	 */
-	private function contentOf(SavedMailRead $read): ?string {
-		try {
-			return (string)$read->node->getContent();
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'SavedMailController: a saved mail file could not be read from storage',
-				['case' => $read->caseId, 'file' => $read->fileId, 'error' => $e->getMessage()]
-			);
-
-			return null;
-		}
-	}//end contentOf()
-
-	/**
-	 * The file, resolved as the caller, or null when they cannot reach it.
-	 *
-	 * @param string $uid    The caller.
-	 * @param int    $fileId The file id.
-	 *
-	 * @return File|null The file, or null.
-	 */
-	private function nodeFor(string $uid, int $fileId): ?File {
-		if ($fileId <= 0) {
-			return null;
-		}
-
-		try {
-			$node = $this->rootFolder->getUserFolder($uid)->getFirstNodeById($fileId);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if ($node instanceof File) {
-			return $node;
-		}
-
-		return null;
-	}//end nodeFor()
 }//end class
