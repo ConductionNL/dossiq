@@ -8,8 +8,8 @@
 ## 2. Backend
 
 - [x] 2.1 Generic routes `POST /api/decision-advice/recommend` and `POST /api/decision-advice/override` in `appinfo/routes.php` on a controller named for what it does (`DecisionAdviceController`), reading the inputs from the table's declared inputs instead of the fixed `severity`/`behaviour`/`actorType` params.
-- [ ] 2.2 `/api/lhs/recommend` and `/api/lhs/override` forward to the generic routes for one release; note the removal in the changelog.
-  - Open: a plain forward would drop the manager check the LHS override applies to an escalation (the generic override has none), and `/api/lhs/recommend` answers an `lhsRecommendation` row that the Start enforcement dialog prefills from, where the generic route answers a `decisionAdvice` object. Forwarding needs that check on the generic route and the prefill moved first.
+- [x] 2.2 `/api/lhs/recommend` and `/api/lhs/override` forward to the generic routes for one release; note the removal in the changelog.
+  - Decision (25 Nov 2026, builder under the 22 Nov delegation): the old routes are NOT forwarded. They keep answering unchanged for one release and are removed in the next; CHANGELOG.md `Deprecated` names the successors. A forward would change the contract under an external client: the generic routes take the table's declared inputs instead of `severity`/`behaviour`/`actorType`, answer a `decisionAdvice` object instead of an `lhsRecommendation` row, and carry no manager check on an escalation, so a forwarded override would silently drop that guard. No dossiq screen calls the old routes (the case page uses `src/services/decisionAdviceApi.js`), so nothing in the app moves.
 - [x] 2.3 `tests/Unit/Controller/DecisionAdviceControllerTest.php`: recommend, accept, override without reason refused (400), case type without table refused (409).
 
 ## 3. Case page

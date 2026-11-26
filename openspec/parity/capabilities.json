@@ -20605,7 +20605,7 @@
 				],
 				"plan": [
 					"openspec/changes/example-set-installs-as-written",
-					"openspec/changes/example-set-pieter-reads-the-household",
+					"openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household",
 					"openspec/changes/package-examples",
 					"openspec/changes/starter-content-and-templates",
 					"openspec/changes/zuiddrecht-example-set",
@@ -22390,8 +22390,8 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/social-domain-consent-and-safeguards",
-					"openspec/changes/example-set-pieter-reads-the-household",
-					"openspec/changes/family-plan-by-case",
+					"openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household",
+					"openspec/changes/archive/2026-11-26-family-plan-by-case",
 					"openspec/changes/investigation-steps-in-the-case-type",
 					"openspec/changes/archive/2026-11-25-report-card-handler-name",
 					"openspec/changes/social-history-people-and-files",
