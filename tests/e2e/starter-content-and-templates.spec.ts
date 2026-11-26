@@ -33,9 +33,10 @@
  * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
  */
 
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -50,7 +51,10 @@ import {
 	seedStateMachine,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+import { caseActOption, clickHeaderAction, dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+
+/** A case type id no template of this run names (`caseTypes` holds uuids). */
+const OTHER_CASE_TYPE = randomUUID()
 
 const APP_BASE = '/index.php/apps/dossiq'
 
@@ -146,12 +150,21 @@ test.describe('the shipped configuration', () => {
 			// is about the reading rather than about the hashing (which
 			// tests/Unit/Service/SeedDataOriginTest.php pins).
 			fingerprint: 'e2e-fingerprint-that-cannot-match',
-			seededAt: new Date().toISOString(),
+			// Stamped a minute ago, as the seed stamps a row when it writes
+			// it: an object nobody saved after its stamp reads as shipped
+			// (ShippedFingerprint::untouched), so the edit below must come
+			// after the stamp.
+			seededAt: new Date(Date.now() - 60_000).toISOString(),
 		})
 		expect(
 			objectId(ledger),
 			'the provenance row did not survive the write',
 		).toBeTruthy()
+
+		// The administrator's edit.
+		await updateObject(request, token, 'caseType', caseTypeId, {
+			description: 'Edited here.',
+		})
 
 		const res = await starterGet(request, '/shipped/caseType')
 		expect([200, 503]).toContain(res.status())
@@ -335,7 +348,7 @@ test.describe('a case starts from a template', () => {
 		// The control: the list has to be rendering SOMETHING, or an empty page
 		// would pass this assertion while proving nothing.
 		await expect(
-			page.getByTestId('cn-index-page').or(page.locator('main')),
+			page.getByTestId('cn-index-page').or(page.locator('main')).first(),
 		).toBeVisible()
 		await expect(page.getByText(templateName, { exact: true })).toHaveCount(0)
 	})
@@ -425,7 +438,7 @@ test.describe('a task template is offered where a task is created', () => {
 			`${APP_BASE}/api/content-templates/task`,
 			{
 				headers: { 'OCS-APIRequest': 'true' },
-				params: { caseType: 'a-case-type-this-template-does-not-name' },
+				params: { caseType: OTHER_CASE_TYPE },
 			},
 		)
 		expect(elsewhere.status()).toBe(200)
@@ -446,6 +459,20 @@ test.describe('a task template is offered where a task is created', () => {
  * own case type, preset into an empty form, and never written over text the
  * handler typed first.
  */
+/**
+ * One option of the open template picker. The picker ellipsises a long name in
+ * the middle (`E2EZAAK-…verklaring`), so the option's accessible name is not
+ * the template's full name: match the option by the run prefix and the end of
+ * the name, which the picker always keeps.
+ *
+ * @param page The page with the picker open.
+ * @param tail The end of the template's name.
+ * @return The option.
+ */
+function templateOption(page: Page, tail: string): Locator {
+	return page.locator('[role="option"]').filter({ hasText: tail.slice(-10) })
+}
+
 test.describe('a result template presets the close form', () => {
 	test.setTimeout(180_000)
 
@@ -468,16 +495,18 @@ test.describe('a result template presets the close form', () => {
 		await createObject(request, token, 'contentTemplate', {
 			name: `${RUN_PREFIX} Vergunning verleend`,
 			kind: 'result',
-			caseTypes: ['a-case-type-this-template-does-not-name'],
+			caseTypes: [OTHER_CASE_TYPE],
 			body: 'De vergunning is verleend.',
 			presets: { body: 'De vergunning is verleend.' },
 		})
 
+		// Created in its lifecycle's initial state, then moved: OpenRegister
+		// refuses a create that sets any other state (422).
 		const seeded = await seedCase(request, token, {
 			title: `${RUN_PREFIX} Bezwaar te laat`,
 			caseType: machine.caseTypeId,
-			status: machine.statusInProgress,
 		})
+		await updateObject(request, token, 'case', objectId(seeded), { status: machine.statusInProgress })
 
 		await page.goto(
 			`/index.php/apps/${REGISTER}/cases/${objectId(seeded)}`,
@@ -491,7 +520,7 @@ test.describe('a result template presets the close form', () => {
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({
 			timeout: 25_000,
 		})
-		await page.getByTestId('case-act-button-finish').click()
+		await caseActOption(page, 'finish').click()
 
 		const picker = page.getByTestId('template-picker')
 		await expect(picker).toBeVisible({ timeout: 15_000 })
@@ -500,23 +529,19 @@ test.describe('a result template presets the close form', () => {
 		await expect(
 			page.getByRole('option', { name: `${RUN_PREFIX} Vergunning verleend` }),
 		).toHaveCount(0)
-		await page
-			.getByRole('option', {
-				name: `${RUN_PREFIX} Niet-ontvankelijkverklaring`,
-			})
-			.click()
+		await templateOption(page, 'Niet-ontvankelijkverklaring').click()
 
-		const outcome = page.getByTestId('case-act-reason-input').locator('textarea')
+		// The act form puts the test id on the textarea itself (caseActInputs.js
+		// reasonInput), or on a wrapper around it.
+		const outcome = page.locator(
+			'textarea[data-testid="case-act-reason-input"], [data-testid="case-act-reason-input"] textarea',
+		)
 		await expect(outcome).toHaveValue(body)
 
 		// Typed text survives: clear, type, pick again, and the typing stands.
 		await outcome.fill("Twee alinea's die de behandelaar zelf schreef.")
 		await picker.click()
-		await page
-			.getByRole('option', {
-				name: `${RUN_PREFIX} Niet-ontvankelijkverklaring`,
-			})
-			.click()
+		await templateOption(page, 'Niet-ontvankelijkverklaring').click()
 		await expect(outcome).toHaveValue(
 			"Twee alinea's die de behandelaar zelf schreef.",
 		)
@@ -531,8 +556,18 @@ test.describe('a StUF endpoint is probed', () => {
 		await page.goto('/index.php/settings/admin/dossiq', PAGE_LOAD)
 		await dismissSupportDialog(page)
 
+		// The StUF-ZKN endpoints section sits on the Advanced tab of the
+		// admin page (AdminRoot `#tab-advanced`).
+		await page.getByRole('tab', { name: 'Advanced' }).click()
+
 		const table = page.getByTestId('stuf-endpoints-table')
-		await expect(table).toBeVisible()
+		const empty = page.getByTestId('stuf-endpoints-empty')
+		await expect(table.or(empty)).toBeVisible(PAGE_LOAD)
+		if (await empty.isVisible()) {
+			// No endpoint is configured, so the section draws its empty state
+			// instead of a table (StufEndpoints.vue): nothing to probe here.
+			return
+		}
 
 		const buttons = page.locator('[data-testid^="stuf-test-"]')
 		const count = await buttons.count()

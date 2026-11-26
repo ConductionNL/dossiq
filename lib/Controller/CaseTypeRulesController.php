@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * Answers a case type's rules in words.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 class CaseTypeRulesController extends Controller {
 	use RefusesUnreadableCaseTypes;
@@ -53,7 +53,7 @@ class CaseTypeRulesController extends Controller {
 	 * @param CaseTypeRuleSentencesInterface $sentences Writes the rules as rows.
 	 * @param ReadableObjectsInterface $readable Whether a caller is signed in and may read the requested object.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 	 */
 	public function __construct(
 		string $appName,
@@ -75,7 +75,7 @@ class CaseTypeRulesController extends Controller {
 	 *
 	 * @return JSONResponse The rows, or 404 when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {

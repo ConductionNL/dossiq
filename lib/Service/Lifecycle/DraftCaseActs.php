@@ -110,7 +110,12 @@ class DraftCaseActs {
 		$case[self::DRAFT_FIELD] = true;
 		$case[self::BEGUN_FIELD] = (new DateTimeImmutable())->format('c');
 		$case['startDate'] = null;
-		$case['deadline'] = null;
+		// `deadline` is a read-only calculation over startDate (the register
+		// refuses a save that writes it: "Cannot modify readOnly property"),
+		// so it is left out and the register empties it with the start date.
+		// The startDate calculation leaves a draft's date empty instead of
+		// falling back to today.
+		unset($case['deadline']);
 		$case['plannedEndDate'] = null;
 		if (trim((string)($case['assignee'] ?? '')) === '') {
 			// A draft with no assignee is a draft nobody owns, which is a

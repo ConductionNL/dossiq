@@ -718,6 +718,34 @@ export async function removeTeams(api: APIRequestContext): Promise<void> {
 let documentTypeForRun = ''
 
 /**
+ * Put a small PDF in a user's Files root and answer its file id, so a document
+ * fixture carries real bytes (a document whose file cannot be read refuses a
+ * Woo publish with `documents_unreadable`).
+ *
+ * @param api   The request context, signed in as that user.
+ * @param token The request token of that session.
+ * @param name  The file name.
+ * @param user  The user whose Files root holds it.
+ * @return The Nextcloud file id.
+ */
+export async function uploadFixtureFile(
+	api: APIRequestContext,
+	token: string,
+	name: string,
+	user = process.env.NC_USER ?? 'admin',
+): Promise<number> {
+	const put = await api.put(`/remote.php/dav/files/${encodeURIComponent(user)}/${encodeURIComponent(name)}`, {
+		headers: { requesttoken: token, 'Content-Type': 'application/pdf' },
+		data: Buffer.from(`%PDF-1.4\n% ${name} fixture\n%%EOF\n`),
+	})
+	expect(put.ok(), `upload ${name} -> ${put.status()}`).toBeTruthy()
+	// Nextcloud answers the file id of a PUT in OC-FileId: the id, zero-padded, then the instance id.
+	const id = Number(put.headers()['oc-fileid']?.replace(/^0+/, '').replace(/oc.*$/, '') ?? 0)
+	expect(id, `the fixture file ${name} has an id`).toBeGreaterThan(0)
+	return id
+}
+
+/**
  * File an informatieobject that satisfies its schema.
  *
  * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding

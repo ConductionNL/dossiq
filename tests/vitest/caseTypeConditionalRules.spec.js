@@ -8,7 +8,7 @@
  * above the calculated fields, "Regel toevoegen" opening a form over this
  * type's own fields, and the form writing the stored rule shape.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

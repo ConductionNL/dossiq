@@ -7,7 +7,7 @@
  * the status, target, recipient and value controls appear for the event and
  * action that need them, and Save emits the rule the controls describe.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { mount } from '@vue/test-utils'

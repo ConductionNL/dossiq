@@ -16,8 +16,6 @@
  * case here is seeded with `assignee: admin`.
  */
 
-import type { APIRequestContext } from '@playwright/test'
-
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -29,6 +27,7 @@ import {
 	seedCase,
 	seedDocument,
 	showObject,
+	uploadFixtureFile,
 } from './helpers/fixtures.ts'
 import { openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
 
@@ -49,26 +48,6 @@ const attachmentName = `${RUN_PREFIX}-woo-besluit-bijlage.pdf`
  */
 function davPath(name: string): string {
 	return `/remote.php/dav/files/${encodeURIComponent(ADMIN_USER)}/${encodeURIComponent(name)}`
-}
-
-/**
- * Put a small PDF in the admin's Files and answer its file id.
- *
- * @param api The request context, signed in as the admin.
- * @param token The request token of that session.
- * @param name The file name.
- * @return The Nextcloud file id.
- */
-async function uploadFixtureFile(api: APIRequestContext, token: string, name: string): Promise<number> {
-	const put = await api.put(davPath(name), {
-		headers: { requesttoken: token, 'Content-Type': 'application/pdf' },
-		data: Buffer.from('%PDF-1.4\n% woo-publish-from-the-case fixture\n%%EOF\n'),
-	})
-	expect(put.ok(), `upload -> ${put.status()}`).toBeTruthy()
-	// Nextcloud answers the file id of a PUT in OC-FileId: the id, zero-padded, then the instance id.
-	const id = Number(put.headers()['oc-fileid']?.replace(/^0+/, '').replace(/oc.*$/, '') ?? 0)
-	expect(id, 'the fixture file has an id').toBeGreaterThan(0)
-	return id
 }
 
 /**

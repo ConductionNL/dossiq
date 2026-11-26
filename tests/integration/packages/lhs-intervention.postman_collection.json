@@ -31,6 +31,14 @@
     {
       "key": "adminPass",
       "value": "admin"
+    },
+    {
+      "key": "lhsCaseId",
+      "value": ""
+    },
+    {
+      "key": "lhsAdviceId",
+      "value": ""
     }
   ],
   "item": [
@@ -182,6 +190,266 @@
               "    pm.expect(records[0].set).to.eql('lhs-intervention');",
               "    pm.expect(records[0].setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: a handhavingszaak",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Newman LHS advice\", \"caseType\": \"9e4fe525-6aac-525c-978e-c3d74bc0213d\", \"identifier\": \"NEWMAN-LHS-{{$timestamp}}\", \"impact\": \"medium\", \"urgency\": \"medium\", \"intakeChannel\": \"manual\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('case is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('case has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('lhsCaseId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: the form names the intervention table",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/decision-advice/case/{{lhsCaseId}}/form"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the form (200)', () => pm.response.to.have.status(200));",
+              "const form = pm.response.json();",
+              "pm.test('advice is available', () => pm.expect(form.available).to.eql(true));",
+              "pm.test('the case type names the intervention table', () => pm.expect(form.decisionTable).to.eql('dossiq.lhs-intervention'));",
+              "pm.test('the table asks behaviour and consequence', () => pm.expect(form.inputs.map(i => i.name)).to.eql(['behaviour', 'consequence']));",
+              "pm.test('Waarschuwen is an outcome', () => pm.expect(form.outcomes).to.include('Waarschuwen'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: recommend",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/decision-advice/recommend",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"caseId\": \"{{lhsCaseId}}\", \"inputs\": {\"behaviour\": \"A\", \"consequence\": \"2\"}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('advice is stored (200)', () => pm.response.to.have.status(200));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const advice = unwrap(pm.response.json());",
+              "pm.test('cell A:2 advises Waarschuwen', () => pm.expect(advice.recommendation).to.eql('Waarschuwen'));",
+              "pm.test('the advice is on the case', () => pm.expect(advice.case).to.eql(pm.collectionVariables.get('lhsCaseId')));",
+              "pm.test('nothing is decided yet', () => pm.expect(advice.outcome || '').to.eql(''));",
+              "const id = idOf(advice);",
+              "pm.test('advice has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('lhsAdviceId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: another outcome without a reason is refused",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/decision-advice/override",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"adviceId\": \"{{lhsAdviceId}}\", \"outcome\": \"Aanspreken / informeren\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('refused (400)', () => pm.response.to.have.status(400));",
+              "pm.test('the refusal asks for a reason', () => pm.expect(pm.response.json().error).to.eql('Geef een reden voor de afwijking'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: override with a reason",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/decision-advice/override",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"adviceId\": \"{{lhsAdviceId}}\", \"outcome\": \"Aanspreken / informeren\", \"reason\": \"Eerste overtreding, direct hersteld.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the choice is stored (200)', () => pm.response.to.have.status(200));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const advice = unwrap(pm.response.json());",
+              "pm.test('the chosen outcome', () => pm.expect(advice.outcome).to.eql('Aanspreken / informeren'));",
+              "pm.test('it deviates from the advice', () => pm.expect(advice.accepted).to.eql(false));",
+              "pm.test('the reason is kept', () => pm.expect(advice.reason).to.eql('Eerste overtreding, direct hersteld.'));",
+              "pm.test('the advice itself is unchanged', () => pm.expect(advice.recommendation).to.eql('Waarschuwen'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "advice on a case: a decided advice is not decided again",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/decision-advice/override",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"adviceId\": \"{{lhsAdviceId}}\", \"outcome\": \"Waarschuwen\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('refused (409)', () => pm.response.to.have.status(409));"
             ]
           }
         }
