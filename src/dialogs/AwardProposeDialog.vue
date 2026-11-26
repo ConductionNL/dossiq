@@ -69,52 +69,18 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
 import { showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import HandshakeOutline from 'vue-material-design-icons/HandshakeOutline.vue'
+import { readScoringSheet, refusalOf, walkBidTransition } from '../services/bidAwardApi.js'
 
 /**
  * The state of the bid proposed for the award of its lot.
  */
 const PROPOSED = 'proposed-award'
-
-/**
- * The URL of one of a case's routes.
- *
- * @param {string} caseId The case uuid.
- * @param {string} path The route under the case.
- * @return {string}
- */
-function caseUrl(caseId, path) {
-	return generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(caseId)}/${path}`)
-}
-
-/**
- * Walk one transition of a bid's declared lifecycle.
- *
- * @param {string} bidId The bid uuid.
- * @param {string} action The transition.
- * @return {Promise<object>}
- */
-function transition(bidId, action) {
-	return axios.post(generateUrl(`/apps/openregister/api/objects/${encodeURIComponent(bidId)}/transition`), { action })
-}
-
-/**
- * The message a refused call carries, else the fallback.
- *
- * @param {Error} e The axios error.
- * @param {string} fallback What to say when the server said nothing.
- * @return {string}
- */
-function refusalOf(e, fallback) {
-	return e?.response?.data?.message || e?.response?.data?.error || fallback
-}
 
 /**
  * A total as the reader writes numbers.
@@ -228,9 +194,9 @@ export default {
 			this.loading = true
 			this.error = ''
 			try {
-				const { data } = await axios.get(caseUrl(this.caseId, 'scoring'))
-				this.submissions = Array.isArray(data?.submissions) ? data.submissions : []
-				this.refusal = data?.refusal || ''
+				const sheet = await readScoringSheet(this.caseId)
+				this.submissions = sheet.submissions
+				this.refusal = sheet.refusal
 				// The best scored bid, unless its lot already has a proposal: then that one.
 				const best = this.ranked.find((row) => row.total !== null && row.total !== undefined) ?? null
 				const proposed = this.submissions.find((row) => row.state === PROPOSED && (best === null || (row.lot ?? '') === (best.lot ?? ''))) ?? null
@@ -260,9 +226,9 @@ export default {
 			const chosen = this.bidId
 			try {
 				if (this.proposedNow !== null) {
-					await transition(this.proposedNow.id, 'releaseAward')
+					await walkBidTransition(this.proposedNow.id, 'releaseAward')
 				}
-				await transition(chosen, 'proposeAward')
+				await walkBidTransition(chosen, 'proposeAward')
 				showSuccess(t('dossiq', 'Award proposed.'))
 				this.$emit('done', { proposed: chosen })
 				this.$emit('close')
