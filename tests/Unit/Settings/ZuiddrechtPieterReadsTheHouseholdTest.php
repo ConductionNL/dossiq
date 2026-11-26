@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-pieter-reads-the-household/specs/zuiddrecht-example-set/spec.md#requirement-pieter-works-with-the-social-domains-sensitive-data
+ * @spec openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household/specs/zuiddrecht-example-set/spec.md#requirement-pieter-works-with-the-social-domains-sensitive-data
  */
 
 declare(strict_types=1);
@@ -70,7 +70,7 @@ class ZuiddrechtPieterReadsTheHouseholdTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-pieter-reads-the-household/specs/zuiddrecht-example-set/spec.md
+	 * @spec openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household/specs/zuiddrecht-example-set/spec.md
 	 */
 	public function testPieterIsInTheJeugdwetHandlingTeam(): void {
 		$caseType = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/packages/jeugdwet/case-type.json'), true)['caseType'];
@@ -91,7 +91,7 @@ class ZuiddrechtPieterReadsTheHouseholdTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-pieter-reads-the-household/tasks.md
+	 * @spec openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household/tasks.md
 	 */
 	public function testEveryDossiqGroupMemberIsDossiqStaff(): void {
 		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
