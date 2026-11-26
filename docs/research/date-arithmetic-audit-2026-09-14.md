@@ -106,7 +106,7 @@ consults for the day a date lands on, after this change.
 | `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
 | `lib/BackgroundJob/ReportGroupingJob.php` | 93 | neither | | requeues the report grouping of a case through `IJobList::add()` when no service account is set, the same unanchored match. No date is computed here |
 | `lib/Listener/ReportGroupingOnCreateListener.php` | 88 | neither | | queues the report grouping of a created case through `IJobList::add()`, the same unanchored match. No date is computed here |
-| `lib/Listener/CaseInheritedDeadlineListener.php` | 181 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
+| `lib/Listener/Support/InheritedCaseDeadline.php` | 118 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
 | `lib/Service/Actions/ScheduleReminderHandler.php` | 162, 167 | neither | | when a reminder background job runs |
 | `lib/Service/Archival/ArchivalNominationDeriver.php` | 259 | neither | | a retention period counted in years, where a weekend cannot move the answer |
 | `lib/Service/Beschikking/BezwaarTermijnScheduler.php` | 76, 77, 114 | statutory | engine calendar | Awb 6:7, the six week bezwaartermijn and its reminder; line 114 is the archive trigger the day after and follows the rolled end |

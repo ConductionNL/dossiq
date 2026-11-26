@@ -17,8 +17,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+const { initializeStores } = vi.hoisted(() => ({ initializeStores: vi.fn(async () => ({})) }))
+
 vi.mock('../../src/store/store.js', () => ({
-	initializeStores: async () => ({}),
+	initializeStores,
+	storesReady: Promise.resolve(),
 }))
 
 /** The object store the component sees. Replaced per test. */
@@ -69,6 +72,12 @@ async function mountProjection({
 }
 
 describe('RequesterProjection', () => {
+	it('waits for the store start-up of the app instead of starting a second one', async () => {
+		initializeStores.mockClear()
+		await mountProjection({ fetchObject: vi.fn(async () => ({ id: 'case-1' })), saveObject: vi.fn() })
+		expect(initializeStores).not.toHaveBeenCalled()
+	})
+
 	it('renders nothing a reader can see', async () => {
 		const wrapper = await mountProjection({
 			fetchObject: vi.fn().mockResolvedValue({ id: 'case-1' }),

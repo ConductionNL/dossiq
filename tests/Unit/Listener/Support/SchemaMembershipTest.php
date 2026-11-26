@@ -52,6 +52,7 @@ use ReflectionMethod;
  * @uses \OCA\Dossiq\Listener\ApplicantTermNoteListener
  * @uses \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
  * @uses \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
+ * @uses \OCA\Dossiq\Listener\Support\InheritedCaseDeadline
  * @uses \OCA\Dossiq\Listener\CasePriorityDerivationListener
  * @uses \OCA\Dossiq\Listener\DerivedStatusListener
  *

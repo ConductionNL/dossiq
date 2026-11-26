@@ -45,6 +45,7 @@ use stdClass;
  * Every copy reads the same id from the same reference.
  *
  * @covers \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
+ * @covers \OCA\Dossiq\Listener\Support\InheritedCaseDeadline
  * @covers \OCA\Dossiq\Listener\CaseTypeParentCycleListener
  * @covers \OCA\Dossiq\Listener\RequesterRegistrySubscriptionListener
  * @covers \OCA\Dossiq\Service\CaseAttentionMarkerService

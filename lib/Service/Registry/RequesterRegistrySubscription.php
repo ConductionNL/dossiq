@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Service\Registry;
 
 use OCA\Dossiq\Kernel\Contracts\RequesterRegistrySubscriptionInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -149,7 +150,7 @@ class RequesterRegistrySubscription implements RequesterRegistrySubscriptionInte
 	 * @return array{requested: bool, reason: string} The outcome.
 	 */
 	private function requestFor(SubscriptionRun $run): array {
-		$object = $run->objects->find(id: $run->objectUuid);
+		$object = $run->objects->find(id: $run->objectUuid, options: new ObjectFindOptions(render: false));
 		if (is_object($object) === false) {
 			return ['requested' => false, 'reason' => 'the requester could not be read'];
 		}

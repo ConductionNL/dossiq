@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
@@ -108,6 +109,9 @@ class CaseStatusStore {
 	/**
 	 * Persist the (mutated) case via ObjectService.
 	 *
+	 * The case's JSON-encoded string properties are written encoded, whatever
+	 * shape the loaded case carried them in.
+	 *
 	 * @param array<string, mixed> $case Case payload.
 	 *
 	 * @return array<string, mixed> The saved case.
@@ -127,6 +131,13 @@ class CaseStatusStore {
 		if ($register === '' || $caseSchema === '') {
 			throw new RuntimeException('case_schema_not_configured');
 		}
+
+		// A case loaded from OpenRegister carries its JSON-encoded string
+		// properties DECODED (skippedPhases, statusHistory, ...), and this is a
+		// whole-object write, so they go back in their declared string shape;
+		// otherwise every act that saves a case after an early ending is
+		// refused with "skippedPhases should be type 'string or null'".
+		$case = (new JsonEncodedStringProperties())->reencode(object: $case, schemaSlug: 'case');
 
 		return $this->toArray(
 			value: $objectService->saveObject(

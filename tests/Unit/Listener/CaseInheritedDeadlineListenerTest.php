@@ -39,6 +39,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
+ * @covers \OCA\Dossiq\Listener\Support\InheritedCaseDeadline
  * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore

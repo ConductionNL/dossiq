@@ -36,6 +36,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
  * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
+ * @covers \OCA\Dossiq\Listener\Support\PublicationDeliveryProjection
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */

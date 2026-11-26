@@ -457,7 +457,11 @@ test.describe('An archived case is read-only and says so', () => {
 	test('a write reaching the server anyway is refused, naming the archive', async () => {
 		const id = cases['Gearchiveerd B']
 
-		const res = await api.put(
+		// A PATCH of one field. A PUT replaces the object, so a body of only
+		// the title is refused by schema validation (the required caseType is
+		// missing) before the archive is ever consulted, and the refusal then
+		// names the wrong reason.
+		const res = await api.patch(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case/${id}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },

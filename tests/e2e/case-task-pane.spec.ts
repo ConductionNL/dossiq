@@ -44,7 +44,7 @@
  * or on data this spec seeded.
  */
 
-import type { APIRequestContext, Page } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import { openCaseTab } from './helpers/case-panels.ts'
@@ -78,6 +78,20 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  */
 /** The task page's root: the TaskDetail manifest detail page. */
 const TASK_PAGE = '[data-testid="cn-detail-page"]'
+
+/**
+ * The task page's Case card: the side column's facts widget that reads the
+ * case (`side-case` in the TaskDetail manifest page), told apart from the
+ * Task card beside it by the case title it carries.
+ *
+ * @param page The page, on a task.
+ * @return The card.
+ */
+function caseCard(page: Page): Locator {
+	return page
+		.getByTestId('cn-facts-widget')
+		.filter({ has: page.getByTestId('cn-fact-case-title') })
+}
 
 const COMPLETE_BUTTON = '[data-testid="cn-tasks-widget-work-complete"]'
 const CANCEL_BUTTON = '[data-testid="cn-tasks-widget-work-cancel"]'
@@ -225,9 +239,13 @@ test.describe('Case detail — the task pane', () => {
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {
 		const context = await browser.newContext()
+		// The case type's title is translated ({nl, en}) and OpenRegister
+		// answers in the language asked for; ask in the browser's, so the
+		// title read here is the one the page shows.
 		api = await playwright.request.newContext({
 			baseURL,
 			storageState: await context.storageState(),
+			extraHTTPHeaders: { 'Accept-Language': 'en-US,en' },
 		})
 		await context.close()
 		token = await getRequestToken(api)
@@ -500,14 +518,17 @@ test.describe('Case detail — the task pane', () => {
 			timeout: 30_000,
 		})
 
-		// The case's TITLE, not its uuid: `caseTask.case` is a $ref and the
-		// platform renders a $ref raw, which is why a data widget over the
-		// field could not answer this.
-		const link = page.locator('[data-testid="task-case-link-link"]')
-		await expect(link).toBeVisible({ timeout: 20_000 })
-		await expect(link).toHaveText(linkCaseTitle)
+		// The case's TITLE, not its uuid. The TaskDetail page names its case in
+		// the side column's Case card (manifest `sideColumn` `side-case`, a
+		// facts widget reading the case by the task's objectUuid), with its
+		// title on top and the "To the case" link below.
+		const card = caseCard(page)
+		await expect(card.getByTestId('cn-fact-case-title')).toHaveText(
+			linkCaseTitle,
+			{ timeout: 20_000 },
+		)
 
-		await link.click()
+		await card.getByTestId('cn-facts-link').click()
 		await expect
 			.poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
 			.toContain(`/cases/${linkCaseId}`)
@@ -540,25 +561,28 @@ test.describe('Case detail — the task pane', () => {
 			timeout: 30_000,
 		})
 
-		const card = page.locator('[data-testid="task-case-card"]')
+		const card = caseCard(page)
 		await expect(card).toBeVisible({ timeout: 20_000 })
 
 		// The case's own reference, and its handler, both read off the CASE
 		// rather than the task: the two have separate owners and separate
 		// clocks, which is the whole reason for carrying them here.
-		await expect(
-			card.locator('[data-testid="task-case-card-identifier"]'),
-		).toContainText(RUN_PREFIX)
-		await expect(
-			card.locator('[data-testid="task-case-card-handler"]'),
-		).toHaveText(LINK_CASE_HANDLER)
+		// The card's meta line reads the case number and its type; the owner
+		// line reads the handler and the case's term.
+		await expect(card.getByTestId('cn-fact-case-meta')).toContainText(
+			RUN_PREFIX,
+			{ timeout: 20_000 },
+		)
+		await expect(card.getByTestId('cn-fact-case-owner')).toContainText(
+			`Case handler ${LINK_CASE_HANDLER}`,
+		)
 
 		// `case.caseType` is a $ref. A uuid here is the defect the card
 		// exists to prevent, so assert the resolved TITLE.
 		if (linkCaseTypeTitle !== '') {
-			await expect(
-				card.locator('[data-testid="task-case-card-type"]'),
-			).toHaveText(linkCaseTypeTitle)
+			await expect(card.getByTestId('cn-fact-case-meta')).toContainText(
+				linkCaseTypeTitle,
+			)
 		}
 
 		// The deadline is the CASE's, formatted by the browser's locale, and
@@ -570,9 +594,12 @@ test.describe('Case detail — the task pane', () => {
 		const seenCase = await showObject(api, 'case', linkCaseId)
 		const actualDeadline = String(seenCase?.deadline ?? '').trim()
 		if (actualDeadline !== '') {
-			await expect(
-				card.locator('[data-testid="task-case-card-deadline"]'),
-			).toHaveText(new Date(actualDeadline).toLocaleDateString())
+			// The facts widget's `date` format: the medium date style.
+			await expect(card.getByTestId('cn-fact-case-owner')).toContainText(
+				new Date(actualDeadline).toLocaleDateString('en-US', {
+					dateStyle: 'medium',
+				}),
+			)
 		}
 
 		// And the fact list below must NOT restate it. One relationship shown
@@ -583,10 +610,10 @@ test.describe('Case detail — the task pane', () => {
 		// fail. What CAN still go wrong is the fact list growing a case row,
 		// so that is what is asserted: the case uuid appears nowhere in the
 		// body, and the card is the only place the case is named.
-		const facts = page.locator('[data-testid="task-detail-body"]')
+		const facts = page.locator(TASK_PAGE)
 		await expect(facts).toBeVisible({ timeout: 20_000 })
 		await expect(facts).not.toContainText(linkCaseId)
-		await expect(page.locator('[data-testid="task-case-card"]')).toHaveCount(1)
+		await expect(caseCard(page)).toHaveCount(1)
 	})
 
 	// No citation, on purpose. This test used to carry
