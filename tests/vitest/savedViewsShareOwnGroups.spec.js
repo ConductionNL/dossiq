@@ -7,7 +7,7 @@
  * is in (nextcloud-vue `savedViewsShareGroups: 'mine'`), so a team lead cannot
  * share a view with a team they are not part of.
  *
- * @spec openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-share-targets-are-the-readers-own-teams
+ * @spec openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-share-targets-are-the-readers-own-teams
  */
 
 import { readdirSync, readFileSync } from 'node:fs'

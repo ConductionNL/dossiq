@@ -171,7 +171,7 @@ test.describe('A saved case view shared with a team', () => {
 		await admin?.dispose()
 	})
 
-	// @e2e openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
+	// @e2e openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
 	test('a member reads the shared view with the owner\'s columns', async () => {
 		const listed = await member.get(`${VIEWS_API}?_limit=500`)
 		expect(listed.ok(), `the member lists their views: ${listed.status()}`).toBeTruthy()
@@ -187,7 +187,7 @@ test.describe('A saved case view shared with a team', () => {
 		}
 	})
 
-	// @e2e openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
+	// @e2e openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
 	test('the member sees it in the side panel as a view they may only use', async ({ browser, baseURL }) => {
 		const { context, page } = await loggedInPage(browser, String(baseURL), MEMBER)
 		try {
@@ -210,7 +210,7 @@ test.describe('A saved case view shared with a team', () => {
 		}
 	})
 
-	// @e2e openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
+	// @e2e openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-a-team-lead-shares-a-view-with-the-handling-desk
 	test('a member cannot overwrite or delete the view', async () => {
 		const before: any = (await (await lead.get(`${VIEWS_API}/${viewId}`)).json()).view
 
@@ -232,7 +232,7 @@ test.describe('A saved case view shared with a team', () => {
 		expect(after.query.search).toBe(before.query.search)
 	})
 
-	// @e2e openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-share-targets-are-the-readers-own-teams
+	// @e2e openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#scenario-share-targets-are-the-readers-own-teams
 	test('the share picker offers the lead\'s own two teams and no other group', async ({ browser, baseURL }) => {
 		const { context, page } = await loggedInPage(browser, String(baseURL), LEAD)
 		try {
