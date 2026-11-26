@@ -130,6 +130,8 @@ class OneDateWritePathTest extends TestCase {
 		],
 		'PayoutCallbackController' => [
 			'Controller/PayoutCallbackController.php',
+			// The payment date parse moved here in method-decomposition slice 8.
+			'Controller/PayoutCallbackFields.php',
 			'Service/Money/PayoutService.php',
 		],
 	];
