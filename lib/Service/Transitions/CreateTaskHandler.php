@@ -276,7 +276,7 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 	 *
 	 * @return string The key.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	private function onceKeyFor(array $actionConfig, string $caseId): string {
 		$once = trim((string)($actionConfig['onceKey'] ?? ''));
@@ -297,7 +297,7 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 	 *
 	 * @return ActionResult|null The result, or null when the task is to be added.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	private function addedBefore(string $onceKey): ?ActionResult {
 		if ($onceKey === '') {
@@ -326,7 +326,7 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 	 *
 	 * @return ActionResult|null
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
 	private function takenResult(mixed $taken, string $onceKey): ActionResult|null {
 		if ($taken === false) {

@@ -11,7 +11,8 @@
 
 - [x] 2.1 Saved view of the Cases list: `complaints` in `lib/Settings/case-type-views.json` (case type identifier `klacht-behandeling`) already exists. No menu entry: there are no case-type-specific menu entries (Ruben, 20 Oct, `src/menu-layout.json`).
 - [x] 2.2 Hearing: the case type declares the generic session `hoorgesprek` in `sessions[]` (invitees Klager, Betrokken medewerker, Klachtencoördinator; waivable, Awb 9:10 lid 2; minutes required). No complaint code.
-- [ ] 2.3 CaseDetail offers a declared session as an action. Waits on `case-session-with-parties-and-minutes`: `SessionService` has no route or case-page action yet.
+- [x] 2.3 CaseDetail offers a declared session as an action. Waits on `case-session-with-parties-and-minutes`: `SessionService` has no route or case-page action yet.
+  - `GET`/`POST /api/cases/{caseId}/sessions` (`CaseSessionController` over `SessionServiceInterface`): the declared sessions and the ones the case holds, and plan one, chaired by the caller; the floor and invitee-role rules answer 400 in their own words. CaseDetail header action `session-schedule` ("Plan a session", group Case in the simple profile) opens `src/dialogs/SessionScheduleDialog.vue` on any case type whose `sessions` is not empty, so the complaint's `hoorgesprek` is planned from the case page with no complaint code. Tests: `tests/Unit/Controller/CaseSessionControllerTest.php`, `tests/vitest/sessionScheduleDialog.spec.js`. Waiving, attendance and minutes from the case page are not built yet (the service has them).
 
 ## 3. Carry-over and retirement
 

@@ -75,7 +75,7 @@ class HouseholdCases implements HouseholdCasesInterface {
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function householdBsns(array $case): array {
-		$plan = $this->store->read(schema: 'gezinsplan', id: (string)($case['gezinsplanId'] ?? ''));
+		$plan = $this->planOf(case: $case);
 		if ($plan === null) {
 			return [];
 		}
@@ -95,6 +95,40 @@ class HouseholdCases implements HouseholdCasesInterface {
 		// A numeric BSN comes back from array_keys() as an int; a BSN is a string.
 		return array_map('strval', array_keys($bsns));
 	}//end householdBsns()
+
+	/**
+	 * The case's family plan: the one it names, else the newest plan that names
+	 * the case, as the plan card finds it (family-plan-by-case).
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, mixed>|null The plan, or null without one.
+	 *
+	 * @spec openspec/changes/archive/2026-11-26-family-plan-by-case/tasks.md
+	 */
+	private function planOf(array $case): ?array {
+		$named = trim((string)($case['gezinsplanId'] ?? ''));
+		if ($named !== '') {
+			return $this->store->read(schema: 'gezinsplan', id: $named);
+		}
+
+		$caseId = trim((string)($case['id'] ?? ''));
+		if ($caseId === '') {
+			return null;
+		}
+
+		$plans = $this->store->rows(schema: 'gezinsplan', filters: ['caseId' => $caseId]);
+		if ($plans === []) {
+			return null;
+		}
+
+		usort(
+			$plans,
+			static fn (array $one, array $two): int => strcmp((string)($two['preparedDate'] ?? ''), (string)($one['preparedDate'] ?? ''))
+		);
+
+		return $plans[0];
+	}//end planOf()
 
 	/**
 	 * The domain a case type category belongs to, or '' when it is none of the three.

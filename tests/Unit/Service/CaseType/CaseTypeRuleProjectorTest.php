@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Plan, flow shape, condition semantics and the replace-on-publish.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class CaseTypeRuleProjectorTest extends TestCase {
 
@@ -258,7 +258,7 @@ class CaseTypeRuleProjectorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function testPublishReplacesOnlyThisCaseTypesFlows(): void {
 		$projector = $this->projector(

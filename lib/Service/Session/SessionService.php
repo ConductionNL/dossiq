@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\SessionServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-planning-a-session-keeps-the-inspection-floor-and-the-invitee-roles-req-css-2
  */
-class SessionService {
+class SessionService implements SessionServiceInterface {
 
 	use SearchesObjects;
 	use OpensInTheInitialState;

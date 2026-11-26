@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
  * entry into the status sends once). The claim goes through the send-once
  * ledger term notices use, whose unique key refuses a second claim.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplateMessageHandlerInterface {
 
@@ -76,7 +76,7 @@ class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplate
 	 *
 	 * @return ActionResult The result: the addresses written to, or why none.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		$template = trim((string)($actionConfig['emailTemplate'] ?? ''));

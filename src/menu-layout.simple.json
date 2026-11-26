@@ -2166,6 +2166,9 @@
 					"grant-settle": {
 						"group": "Case"
 					},
+					"session-schedule": {
+						"group": "Case"
+					},
 					"case-acknowledgement-met": {
 						"group": "Case"
 					},
@@ -7285,6 +7288,7 @@
 					"interim-report-record",
 					"interim-report-assess",
 					"grant-settle",
+					"session-schedule",
 					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
