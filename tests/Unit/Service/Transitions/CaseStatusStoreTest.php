@@ -148,6 +148,23 @@ class CaseStatusStoreTest extends TestCase {
 		$this->assertSame([['saveObject', ['id' => 'case-1'], '5', '7']], $this->objects->calls);
 	}
 
+	/**
+	 * A loaded case carries its JSON-encoded properties decoded; the save
+	 * writes them back as the strings the schema declares.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 *
+	 * @return void
+	 */
+	public function testSaveCaseWritesJsonEncodedPropertiesAsStrings(): void {
+		$this->store()->saveCase(['id' => 'case-1', 'skippedPhases' => ['In behandeling'], 'statusHistory' => '[]', 'title' => 'T']);
+
+		$this->assertSame(
+			expected: [['saveObject', ['id' => 'case-1', 'skippedPhases' => '["In behandeling"]', 'statusHistory' => '[]', 'title' => 'T'], '5', '7']],
+			actual: $this->objects->calls
+		);
+	}
+
 	public function testSaveCaseRefusesWithoutConfiguration(): void {
 		$this->config['register'] = '';
 		$this->expectException(RuntimeException::class);
