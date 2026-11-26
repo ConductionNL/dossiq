@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 51 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 52 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -300,10 +300,11 @@ describe('the actions', () => {
 		// 50: Record interim report, Assess interim report and Settle grant
 		// joined Case beside Score bid (grant-cases-from-application-to-settlement 1.2).
 		// 51: Plan a session joined Case beside Settle grant (complaints-are-a-case-type 2.3).
-		expect(placed).toHaveLength(51)
+		// 52: Propose award joined Case beside Score bid (tenders-run-on-the-tender-case-type 3.2).
+		expect(placed).toHaveLength(52)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(36)
+		expect(count('Case')).toBe(37)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -520,7 +521,9 @@ describe('the tabs', () => {
 			completeAny: true,
 			cancel: true,
 			rowRoute: 'TaskDetail',
-			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+			// `objectUuid` is the key the tasks source forwards (its allowlist);
+			// a `case` key is dropped and the list opens on the default month.
+			viewAllRoute: { name: 'Tasks', query: { objectUuid: '@objectId' } },
 		})
 		// Status tones as DqZaakTaken draws them: in progress purple, open amber,
 		// done grey (nextcloud-vue tasks-state-variants).

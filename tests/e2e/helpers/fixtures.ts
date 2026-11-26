@@ -884,6 +884,41 @@ export async function seedCase(
 	token: string,
 	fields: Record<string, unknown> & { title: string; caseType: string },
 ): Promise<any> {
+	// A case is BORN IN ITS LIFECYCLE'S INITIAL STATUS. OpenRegister refuses a
+	// create that names any other status (422 lifecycle-invalid-initial), so a
+	// fixture that wants a case further along creates it in the initial status
+	// and then moves it with a PATCH of the status alone. A PATCH, not
+	// updateObject's whole-object PUT: the stored case carries its JSON-encoded
+	// properties decoded, and a PUT of them back is refused by validation.
+	const { status, ...atCreate } = fields
+	const created = await createCase(api, token, atCreate)
+	if (status === undefined || status === null || status === '' || created.status === status) {
+		return created
+	}
+	const id = objectId(created)
+	const moved = await api.patch(`${API_BASE}/${REGISTER}/case/${id}`, {
+		headers: writeHeaders(token),
+		data: { status },
+	})
+	expect(
+		moved.ok(),
+		`move seeded case ${id} to status ${String(status)} -> ${moved.status()} ${await moved.text()}`,
+	).toBeTruthy()
+	return unwrapObject(await moved.json())
+}
+
+/**
+ * Create a case with the fixture's defaults beside the given fields.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields Case fields, without a status the lifecycle would refuse at create.
+ */
+async function createCase(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown>,
+): Promise<any> {
 	return createObject(api, token, 'case', {
 		identifier: `${RUN_PREFIX}-${randomInt(1e4)}`,
 		// THE TWO FACTS, NOT THE DERIVED VALUE. `case.priority` is derived from

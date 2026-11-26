@@ -1792,3 +1792,27 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (`CaseDeadlineFollowsTermListenerTest`, `ApplicantTermNoteListenerTest`, `CaseInheritedDeadlineListenerTest`).
         Dropping the new registrar's call turns `CaseTypeListenerRegistrarTest` red (checked).
         Own test: `CaseTermListenerRegistrarTest` (2).
+  - [x] 8ct `Listener/DeliveryConcludedListener` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Loading the
+        delivery's case, finding the publication whose delivery carries the correlation id, recording the terminal outcome
+        and saving the case moved to `Listener/Support/PublicationDeliveryProjection` (`project()`, with the case lookup,
+        the idempotent match and the save in the configured register and schema; bodies and log lines moved unchanged).
+        The listener keeps the provenance and terminal-status filters, the service account and the catch that keeps a
+        failure out of integriq's bookkeeping; it builds the projection in its constructor, so its constructor and its
+        registration are unchanged. Coupling 14 to 10; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `DeliveryConcludedListenerTest`, `DeliveryConcludedListenerGoldenTest`
+        and `DeliveryConcludedListenerServiceAccountTest` (10), unchanged but for one `@covers` line each, and
+        `CrossAppListenerRegistrarTest`. Own test: `tests/Unit/Listener/Support/PublicationDeliveryProjectionTest` (5);
+        dropping the correlation-id match turns 4 tests red (checked).
+  - [x] 8cu `Listener/CaseInheritedDeadlineListener` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The term a
+        child case type inherits and the deadline it implies (the start date plus the term, rolled by the administered
+        calendar) moved to `Listener/Support/InheritedCaseDeadline` (`inheritedTerm()`, `deadlineFrom()`; bodies and the
+        warning moved unchanged). The listener keeps the pre-save check, the case-schema test and the write of `deadline`
+        and `statutoryTerm`; it builds the helper in its constructor, so its constructor and its registration are
+        unchanged. Coupling 14 to 9; phpmd: the coupling finding gone and nothing new under both rulesets (the
+        `ReferenceId` StaticAccess development reports stays).
+        Characterisation, green before and after: `CaseInheritedDeadlineListenerTest` (9), `ReferenceIdCopiesTest`,
+        `SchemaMembershipTest` and `CaseTypeListenerRegistrarTest`, unchanged but for one `@covers`/`@uses` line each.
+        Own test: `tests/Unit/Listener/Support/InheritedCaseDeadlineTest` (4, including the calendar roll, which the
+        listener suite does not reach); dropping the own-term check turns 2 tests red (checked). The statutory row of
+        the date-arithmetic audit (`docs/research/date-arithmetic-audit-2026-09-14.md`) moved with the arithmetic to the
+        new file, so `EveryTermOnTheCalendarTest` keeps holding it to the engine calendar.

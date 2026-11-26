@@ -34,6 +34,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -101,8 +102,11 @@ async function relatedCases(page: Page, caseId: string) {
 	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: 'Related', exact: true }).click()
-	return strip.locator('.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-related"]')
+	// Related is folded into the strip's overflow menu on a narrow strip;
+	// openCaseTab reaches it either way.
+	await openCaseTab(page, /^Related$/)
+	// The related-cases block is the "Related cases" region of the open Related panel.
+	return strip.getByRole('tabpanel', { name: 'Related' }).getByRole('region', { name: 'Related cases' })
 }
 
 /**
@@ -281,7 +285,10 @@ test.describe('An objection against a Woo decision', () => {
 
 		await navToRoute(page, '/cases')
 		await dismissSupportDialog(page)
-		await page.getByRole('button', { name: String(caseType.title ?? 'Bezwaar'), exact: true }).click()
-		await expect(page.getByText(bezwaarTitle, { exact: true }).first()).toBeVisible(PAGE_LOAD)
+		// The list has no case-type quick filters any more (All, My cases,
+		// Deadline this week); "under Bezwaar" is the Type column of its row.
+		const row = page.getByRole('row').filter({ hasText: bezwaarTitle }).first()
+		await expect(row).toBeVisible(PAGE_LOAD)
+		await expect(row.getByRole('cell', { name: String(caseType.title ?? 'Bezwaar'), exact: true })).toBeVisible()
 	})
 })

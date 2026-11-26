@@ -134,6 +134,7 @@ const InterimReportRecordDialog = lazyComponent(() => import('./dialogs/InterimR
 const InterimReportAssessDialog = lazyComponent(() => import('./dialogs/InterimReportAssessDialog.vue'), 'InterimReportAssessDialog')
 const GrantSettleDialog = lazyComponent(() => import('./dialogs/GrantSettleDialog.vue'), 'GrantSettleDialog')
 const SessionScheduleDialog = lazyComponent(() => import('./dialogs/SessionScheduleDialog.vue'), 'SessionScheduleDialog')
+const AwardProposeDialog = lazyComponent(() => import('./dialogs/AwardProposeDialog.vue'), 'AwardProposeDialog')
 const AssessmentDecisionDialog = lazyComponent(() => import('./dialogs/AssessmentDecisionDialog.vue'), 'AssessmentDecisionDialog')
 const BerichtenboxComposeDialog = lazyComponent(() => import('./dialogs/BerichtenboxComposeDialog.vue'), 'BerichtenboxComposeDialog')
 const CaseCopyDialog = lazyComponent(() => import('./dialogs/CaseCopyDialog.vue'), 'CaseCopyDialog')
@@ -490,6 +491,14 @@ const registry = {
 		propsSchema: {},
 		_note: "CaseDetail `session-schedule` header action (complaints-are-a-case-type 2.3, REQ-CSS-2). Reads the sessions the case type declares (GET /api/cases/{caseId}/sessions, from caseType.sessions[]), takes when, where and one name per invitee role, and posts the plan to POST /api/cases/{caseId}/sessions; the server keeps the inspection floor and the invitee roles and the caller chairs the session.",
 	},
+	// @spec openspec/changes/tenders-run-on-the-tender-case-type/tasks.md#3.2
+	AwardProposeDialog: {
+		kind: 'modal',
+		component: AwardProposeDialog,
+		propsSchema: {},
+		_note: "CaseDetail `award-propose` header action (REQ-TND-CASE-01). Lists the case's admissible bids from its scoring sheet (GET /api/cases/{caseId}/scoring), highest total first with the bid proposed now marked, and walks the bid lifecycle through OpenRegister's transition endpoint (releaseAward on the lot's earlier proposal, then proposeAward); the bid holds the proposal (state proposed-award, one per lot) and the flow makes the award final after the standstill term.",
+	},
+
 
 
 	// @spec openspec/changes/archive/2026-11-25-notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01

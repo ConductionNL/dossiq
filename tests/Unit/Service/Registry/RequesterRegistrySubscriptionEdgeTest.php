@@ -87,11 +87,12 @@ class RequesterRegistrySubscriptionEdgeTest extends TestCase {
 			/**
 			 * Find one object.
 			 *
-			 * @param string $id The id.
+			 * @param string      $id      The id.
+			 * @param object|null $options The find options (the service reads unrendered).
 			 *
 			 * @return mixed The answer.
 			 */
-			public function find(string $id): mixed {
+			public function find(string $id, ?object $options = null): mixed {
 				$this->ids[] = $id;
 				if ($this->found instanceof \Throwable) {
 					throw $this->found;

@@ -27,7 +27,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { openCasePanel } from './helpers/case-panels.ts'
+import { openCasePanel, openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
@@ -103,6 +103,8 @@ let handlerTypeId = ''
 let advisorTypeId = ''
 let teamId = ''
 let teamName = ''
+/** The handler role on the parties case, which the representative acts for. */
+let handlerRoleId = ''
 
 /** The case the Parties tab is read on: a handler and an advisor. */
 let partiesCaseId = ''
@@ -271,9 +273,9 @@ test.describe('Case detail — the Parties tab', () => {
 		handlerTypeId = objectId(handlerType)
 		advisorTypeId = objectId(advisorType)
 		teamId = team.id
-		// The Team column shows the group id itself, so that is the text the
-		// row is asserted to carry.
-		teamName = team.id
+		// The Team column shows the group's display name, so that is the text
+		// the row is asserted to carry.
+		teamName = team.name
 
 		const seeded = await Promise.all([
 			seedCase(api, token, {
@@ -316,7 +318,7 @@ test.describe('Case detail — the Parties tab', () => {
 			.slice(0, 5)
 			.map(objectId)
 
-		await seedRole(
+		handlerRoleId = await seedRole(
 			partiesCaseId,
 			HANDLER_ROLE_NAME,
 			handlerTypeId,
@@ -402,9 +404,13 @@ test.describe('Case detail — the Parties tab', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		// Parties is a section of the People tab now, not a tab.
+		// Parties is a tab again (it was People), folded under the strip's
+		// overflow menu; opening it shows the case's party list.
+		await openCaseTab(page, /^(Parties|Betrokkenen)\b/)
 		await expect(
-			strip.getByRole('tab', { name: 'People', exact: true }),
+			strip.locator(
+				'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="cn-section-case-party-roles"]',
+			),
 		).toBeVisible({ timeout: 15_000 })
 		// The tab the Parties tab replaced: the Nextcloud contacts integration
 		// leaf, which showed the address book and never the people on this
@@ -617,8 +623,7 @@ test.describe('Case detail — the Parties tab', () => {
 			timeout: 30_000,
 		})
 
-		const strip = page.locator('.cn-tabs-widget')
-		await strip.getByRole('tab', { name: 'People', exact: true }).click()
+		await openCaseTab(page, /^(Parties|Betrokkenen)\b/)
 
 		const roles = page.locator('[data-testid="cn-object-parties"]')
 		await expect(roles).toBeVisible({ timeout: 20_000 })
@@ -751,14 +756,16 @@ test.describe('Case detail — the Parties tab', () => {
 			roleType: advisorTypeId,
 			case: partiesCaseId,
 			participant: `${RUN_PREFIX}-representative`,
-			representedParty: HANDLER_PARTICIPANT,
+			// A uuid (`format: uuid` on the role schema): the party acted for,
+			// here the handler's role on the same case.
+			representedParty: handlerRoleId,
 		})
 
 		const stored = await showObject(api, 'role', objectId(created))
 		expect(
 			String(stored.representedParty ?? ''),
 			'OpenRegister must have kept representedParty. An empty value here means the role schema version did not move and the property was dropped without a word.',
-		).toBe(HANDLER_PARTICIPANT)
+		).toBe(handlerRoleId)
 		// The delegation window is untouched: it is a date, and it is what this
 		// change deliberately did NOT reuse.
 		expect(String(stored.delegateFrom ?? '')).toBe('')
@@ -1078,7 +1085,7 @@ test.describe('Case detail — the Parties tab', () => {
 
 			const chips = page.locator('.cn-quick-filter-bar')
 			await expect(chips).toBeVisible({ timeout: 20_000 })
-			await chooseLens(page, /^(Mine|Van mij)$/)
+			await chooseLens(page, /^(My cases|Mijn zaken)$/)
 
 			await expect(colleague).toHaveCount(0, { timeout: 30_000 })
 			await expect(mine).toHaveCount(1)

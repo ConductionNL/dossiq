@@ -29,7 +29,33 @@ import { expect } from '@playwright/test'
  * @param label The lens label, in either language.
  */
 function inlineTab(scope: Page | Locator, label: RegExp): Locator {
-	return scope.getByRole('tab', { name: label })
+	// The bar draws its lenses as a tablist, or, in the board look, as a
+	// "Quick filters" group of toggle buttons (aria-pressed, no tab role).
+	// Both are the same lens strip.
+	return scope
+		.getByRole('tab', { name: label })
+		.or(boardChips(scope).getByRole('button', { name: label }))
+}
+
+/**
+ * The board look's lens group: the bar's chips as toggle buttons.
+ *
+ * @param scope The page, or the element that holds the filter bar.
+ */
+function boardChips(scope: Page | Locator): Locator {
+	return scope.locator('.cn-quick-filter-bar__tabs[role="group"]')
+}
+
+/**
+ * Every lens in the strip that reads as active, in either look.
+ *
+ * @param scope The page, or the element that holds the filter bar.
+ */
+function activeInline(scope: Page | Locator): Locator {
+	return scope
+		.getByRole('tab')
+		.and(scope.locator('[aria-selected="true"]'))
+		.or(boardChips(scope).locator('[aria-pressed="true"]'))
 }
 
 /**
@@ -113,10 +139,12 @@ export async function expectLensActive(
 	scope: Page | Locator = page,
 ): Promise<void> {
 	if (await isInline(page, label, scope)) {
-		await expect(inlineTab(scope, label)).toHaveAttribute(
-			'aria-selected',
-			'true',
-		)
+		await expect(
+			activeInline(scope).filter({
+				has: scope.locator('.cn-quick-filter-bar__label', { hasText: label }),
+			}),
+			`the lens ${label} is in the strip but not active`,
+		).toHaveCount(1)
 		return
 	}
 	await expect(
@@ -140,9 +168,7 @@ export async function expectOnlyLensActive(
 	label: RegExp,
 ): Promise<void> {
 	await expectLensActive(page, label)
-	const selected = page
-		.getByRole('tab')
-		.and(page.locator('[aria-selected="true"]'))
+	const selected = activeInline(page)
 	if (await isInline(page, label, page)) {
 		await expect(selected).toHaveCount(1)
 		await expect(

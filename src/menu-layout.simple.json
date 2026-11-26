@@ -2157,6 +2157,9 @@
 					"bid-score": {
 						"group": "Case"
 					},
+					"award-propose": {
+						"group": "Case"
+					},
 					"interim-report-record": {
 						"group": "Case"
 					},
@@ -4064,7 +4067,7 @@
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
-									"case": "@objectId"
+									"objectUuid": "@objectId"
 								}
 							},
 							"viewAllLabel": "All tasks of this case in Tasks",
@@ -7286,6 +7289,7 @@
 					"tender-answer-publish",
 					"bid-register",
 					"bid-score",
+					"award-propose",
 					"interim-report-record",
 					"interim-report-assess",
 					"grant-settle",

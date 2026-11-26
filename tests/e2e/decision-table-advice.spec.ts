@@ -197,7 +197,11 @@ test.describe("Advice from the case type's decision table", () => {
 		// Probe the table once on a throwaway case: an OpenRegister without the
 		// decision-tables register refuses the lhs-intervention package, and the
 		// form then answers 409 naming the table it could not find.
-		const probe = await api.get(`${ADVICE}/case/${await enforcementCase('probe')}/form`)
+		// The advice routes keep Nextcloud's CSRF check, so a read sends the
+		// request token like a write does; without it the answer is a 412.
+		const probe = await api.get(`${ADVICE}/case/${await enforcementCase('probe')}/form`, {
+			headers: { requesttoken: token },
+		})
 		const form: any = await probe.json().catch(() => ({}))
 		if (probe.status() === 409) {
 			skipReason = `the decision table is not on this instance: ${form.error ?? probe.status()}`
@@ -311,7 +315,9 @@ test.describe("Advice from the case type's decision table", () => {
 			await seedCase(api, token, { title: `${RUN_PREFIX} geen advies`, caseType: objectId(caseType) }),
 		)
 
-		const form = await api.get(`${ADVICE}/case/${caseId}/form`)
+		const form = await api.get(`${ADVICE}/case/${caseId}/form`, {
+			headers: { requesttoken: token },
+		})
 		expect(form.status()).toBe(200)
 		expect((await form.json()).available, 'the server says there is nothing to ask').toBe(false)
 

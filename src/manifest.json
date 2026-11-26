@@ -4905,7 +4905,7 @@
 											"viewAllRoute": {
 												"name": "Tasks",
 												"query": {
-													"case": "@objectId"
+													"objectUuid": "@objectId"
 												}
 											},
 											"viewAllLabel": "View all",
@@ -6721,6 +6721,29 @@
 						"label": "Score bid",
 						"icon": "ScaleBalance",
 						"target": "BidScoreDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@context.caseType.tenderChain",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
+						"id": "award-propose",
+						"type": "open-modal",
+						"label": "Propose award",
+						"icon": "HandshakeOutline",
+						"target": "AwardProposeDialog",
 						"props": {
 							"caseId": "@objectId"
 						},
