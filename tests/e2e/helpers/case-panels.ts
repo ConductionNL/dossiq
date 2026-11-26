@@ -107,6 +107,11 @@ export function caseStrip(page: Page): Locator {
  */
 export async function openCaseTab(page: Page, name: RegExp): Promise<void> {
 	const strip = caseStrip(page)
+	// The strip must have drawn its tabs before they are counted: a count
+	// taken while the page is still loading reads 0 for a tab that is on the
+	// strip, and the helper then looks for it in the overflow menu, where it
+	// never is.
+	await expect(strip.getByRole('tab').first()).toBeVisible({ timeout: 30_000 })
 	const tab = strip.getByRole('tab', { name })
 	if ((await tab.count()) > 0) {
 		await tab.first().click()
