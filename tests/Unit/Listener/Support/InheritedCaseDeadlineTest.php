@@ -57,26 +57,36 @@ class InheritedCaseDeadlineTest extends TestCase {
 	}//end resolver()
 
 	/**
-	 * A silent child takes the effective term, trimmed; a child with its own term, a type without a parent or no type takes none.
+	 * A silent child takes the effective term, trimmed; a child with its own term,
+	 * a type without a parent or no type takes none.
 	 *
 	 * @return void
 	 */
 	public function testTheInheritedTermIsTheEffectiveOneOfASilentChildOnly(): void {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$silent = new InheritedCaseDeadline(
-			resolver: $this->resolver(chain: [['id' => 'child'], ['id' => 'parent', 'processingDeadline' => 'P6W']], effective: ['processingDeadline' => ' P6W ']),
+			resolver: $this->resolver(
+				chain: [['id' => 'child'], ['id' => 'parent', 'processingDeadline' => 'P6W']],
+				effective: ['processingDeadline' => ' P6W ']
+			),
 			logger: $logger
 		);
 		$this->assertSame(expected: 'P6W', actual: $silent->inheritedTerm(caseTypeId: 'child'));
 		$this->assertSame(expected: '', actual: $silent->inheritedTerm(caseTypeId: ''));
 
 		$own = new InheritedCaseDeadline(
-			resolver: $this->resolver(chain: [['id' => 'child', 'processingDeadline' => 'P2W'], ['id' => 'parent']], effective: ['processingDeadline' => 'P2W']),
+			resolver: $this->resolver(
+				chain: [['id' => 'child', 'processingDeadline' => 'P2W'], ['id' => 'parent']],
+				effective: ['processingDeadline' => 'P2W']
+			),
 			logger: $logger
 		);
 		$this->assertSame(expected: '', actual: $own->inheritedTerm(caseTypeId: 'child'));
 
-		$orphan = new InheritedCaseDeadline(resolver: $this->resolver(chain: [['id' => 'only']], effective: ['processingDeadline' => 'P8W']), logger: $logger);
+		$orphan = new InheritedCaseDeadline(
+			resolver: $this->resolver(chain: [['id' => 'only']], effective: ['processingDeadline' => 'P8W']),
+			logger: $logger
+		);
 		$this->assertSame(expected: '', actual: $orphan->inheritedTerm(caseTypeId: 'only'));
 	}//end testTheInheritedTermIsTheEffectiveOneOfASilentChildOnly()
 
@@ -103,9 +113,13 @@ class InheritedCaseDeadlineTest extends TestCase {
 	public function testTheCalendarRollsTheEnd(): void {
 		$timers = $this->createMock(originalClassName: TermijnTimerServiceInterface::class);
 		$timers->expects($this->once())->method('rollTermEndFor')
-			->with($this->callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d') === '2026-12-26'))
+			->with($this->callback(callback: static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d') === '2026-12-26'))
 			->willReturn(new DateTimeImmutable('2026-12-28'));
-		$deadlines = new InheritedCaseDeadline(resolver: $this->resolver(chain: []), logger: $this->createMock(originalClassName: LoggerInterface::class), timerService: $timers);
+		$deadlines = new InheritedCaseDeadline(
+			resolver: $this->resolver(chain: []),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			timerService: $timers
+		);
 
 		$this->assertSame(expected: '2026-12-28', actual: $deadlines->deadlineFrom(startDate: '2026-11-26', term: 'P30D'));
 	}//end testTheCalendarRollsTheEnd()
@@ -119,7 +133,7 @@ class InheritedCaseDeadlineTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
 			'Dossiq: could not derive an inherited case deadline',
-			$this->callback(static fn (array $c): bool => $c['startDate'] === '2026-11-26' && $c['term'] === 'twelve weeks' && $c['error'] !== '')
+			$this->callback(callback: static fn (array $c): bool => $c['startDate'] === '2026-11-26' && $c['term'] === 'twelve weeks' && $c['error'] !== '')
 		);
 		$deadlines = new InheritedCaseDeadline(resolver: $this->resolver(chain: []), logger: $logger);
 

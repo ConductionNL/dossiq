@@ -88,7 +88,12 @@ class PublicationDeliveryProjectionTest extends TestCase {
 	 * @return PublicationDeliveryProjection
 	 */
 	private function projection(bool $withObjectService = true): PublicationDeliveryProjection {
-		$this->settings->method('getObjectService')->willReturn($withObjectService === true ? $this->objects : null);
+		$objectService = null;
+		if ($withObjectService === true) {
+			$objectService = $this->objects;
+		}
+
+		$this->settings->method('getObjectService')->willReturn($objectService);
 		return new PublicationDeliveryProjection(settingsService: $this->settings, logger: $this->logger);
 	}//end projection()
 
@@ -134,7 +139,7 @@ class PublicationDeliveryProjectionTest extends TestCase {
 	 */
 	public function testRecordsTheOutcomeOnTheMatchingPublication(): void {
 		$this->objects->expects($this->once())->method('find')
-			->with('c1', $this->callback(static fn (ObjectFindOptions $o): bool => $o->register === 'reg-1' && $o->schema === 'case-1'))
+			->with('c1', $this->callback(callback: static fn (ObjectFindOptions $o): bool => $o->register === 'reg-1' && $o->schema === 'case-1'))
 			->willReturn($this->caseWithTwoPublications());
 		$saved = null;
 		$target = null;
@@ -150,7 +155,14 @@ class PublicationDeliveryProjectionTest extends TestCase {
 
 		$this->assertSame(expected: ['status' => 'requested', 'correlationId' => 'corr-1'], actual: $saved['publications'][0]['delivery']);
 		$this->assertSame(
-			expected: ['status' => 'delivered', 'correlationId' => 'corr-2', 'eventId' => 'evt-2', 'attempts' => 2, 'error' => null, 'concludedAt' => '2026-11-26T10:00:00+00:00'],
+			expected: [
+				'status' => 'delivered',
+				'correlationId' => 'corr-2',
+				'eventId' => 'evt-2',
+				'attempts' => 2,
+				'error' => null,
+				'concludedAt' => '2026-11-26T10:00:00+00:00',
+			],
 			actual: $saved['publications'][2]['delivery']
 		);
 		$this->assertSame(expected: 'reg-1', actual: $target->register);

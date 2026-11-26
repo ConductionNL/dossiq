@@ -1813,4 +1813,6 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `CaseInheritedDeadlineListenerTest` (9), `ReferenceIdCopiesTest`,
         `SchemaMembershipTest` and `CaseTypeListenerRegistrarTest`, unchanged but for one `@covers`/`@uses` line each.
         Own test: `tests/Unit/Listener/Support/InheritedCaseDeadlineTest` (4, including the calendar roll, which the
-        listener suite does not reach); dropping the own-term check turns 2 tests red (checked).
+        listener suite does not reach); dropping the own-term check turns 2 tests red (checked). The statutory row of
+        the date-arithmetic audit (`docs/research/date-arithmetic-audit-2026-09-14.md`) moved with the arithmetic to the
+        new file, so `EveryTermOnTheCalendarTest` keeps holding it to the engine calendar.
