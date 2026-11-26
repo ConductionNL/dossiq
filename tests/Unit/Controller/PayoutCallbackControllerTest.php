@@ -130,7 +130,7 @@ class PayoutCallbackControllerTest extends TestCase {
 				private readonly string $body,
 				?PayoutReader $reader = null,
 			) {
-				parent::__construct($appName, $request, $service, $callback, $fields, $logger, $reader);
+				parent::__construct(appName: $appName, request: $request, service: $service, callback: $callback, fields: $fields, logger: $logger, reader: $reader);
 			}
 
 			/**
