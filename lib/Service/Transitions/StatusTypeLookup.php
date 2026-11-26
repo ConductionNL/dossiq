@@ -52,7 +52,22 @@ use Throwable;
  */
 class StatusTypeLookup implements StatusTypeLookupInterface {
 	/**
-	 * The status types read in this request, by schema key, id and render flag.
+	 * The settings key naming the statusType schema.
+	 */
+	private const SCHEMA_KEY = 'status_type_schema';
+
+	/**
+	 * A read that resolves the translatable fields.
+	 */
+	private const VIEW_RENDERED = 'rendered';
+
+	/**
+	 * A read that keeps the translatable fields keyed by language.
+	 */
+	private const VIEW_STORED = 'stored';
+
+	/**
+	 * The status types read in this request, by view and id.
 	 *
 	 * Dropped on any object change ({@see \OCA\Dossiq\Listener\RequestReadsForgetListener}).
 	 *
@@ -163,13 +178,14 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 * @return array<string, mixed> The row, or an empty array when unresolvable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function rowFor(string $statusTypeId): array {
 		if ($statusTypeId === '') {
 			return [];
 		}
 
-		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
+		return $this->read(id: $statusTypeId, view: self::VIEW_RENDERED);
 	}//end rowFor()
 
 	/**
@@ -361,39 +377,45 @@ class StatusTypeLookup implements StatusTypeLookupInterface {
 	 * @return array<string, mixed> The stored row, or an empty array when unresolvable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function storedRowFor(string $statusTypeId): array {
 		if ($statusTypeId === '') {
 			return [];
 		}
 
-		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId, render: false);
+		return $this->read(id: $statusTypeId, view: self::VIEW_STORED);
 	}//end storedRowFor()
 
 	/**
-	 * Read one object from a configured schema.
+	 * Read one statusType in the view asked for.
 	 *
-	 * @param string $schemaKey The settings key naming the schema.
-	 * @param string $id        The object's id.
-	 * @param bool   $render    Whether to render it, which resolves its translations.
+	 * The view is a name, not a boolean flag: a rendered read resolves the
+	 * translatable fields, a stored read keeps them keyed by language, and each
+	 * view is kept apart for the rest of the request.
+	 *
+	 * @param string $id   The statusType's id.
+	 * @param string $view self::VIEW_RENDERED or self::VIEW_STORED.
 	 *
 	 * @return array<string, mixed> The object, or an empty array when unreadable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
-	private function read(string $schemaKey, string $id, bool $render = true): array {
+	private function read(string $id, string $view): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$schema = $this->settingsService->getConfigValue(key: self::SCHEMA_KEY);
 		if ($register === '' || $schema === '') {
 			return [];
 		}
 
-		$key = $schemaKey.'|'.$id.'|'.(int)$render;
+		$render = ($view === self::VIEW_RENDERED);
+		$key = $view.'|'.$id;
 		if (array_key_exists($key, $this->kept) === true) {
 			return $this->kept[$key];
 		}

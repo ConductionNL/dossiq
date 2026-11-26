@@ -1816,3 +1816,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         listener suite does not reach); dropping the own-term check turns 2 tests red (checked). The statutory row of
         the date-arithmetic audit (`docs/research/date-arithmetic-audit-2026-09-14.md`) moved with the arithmetic to the
         new file, so `EveryTermOnTheCalendarTest` keeps holding it to the engine calendar.
+  - [x] 8cv `Transitions/StatusTypeLookup` (1, unsuppressed: BooleanArgumentFlag on the private `read()`, `$render`).
+        A rendered and a stored read of a statusType are two views, not a flag: `read()` takes the view by name
+        (`VIEW_RENDERED`, `VIEW_STORED`), and `rowFor()` and `storedRowFor()` each name theirs. The schema key, the only
+        one ever passed, is the class's `SCHEMA_KEY`. What is kept for the request is keyed by view and id, so a rendered
+        and a stored read of one status stay apart as before; the find options, the catch and the answers are unchanged,
+        and the catch-return-null allowlist entry (`read`) still names the method. phpmd: zero findings on the file
+        under both rulesets.
+        Characterisation, green on the old class first: `StatusTypeLookupReadTest::testTheRenderedAndTheStoredViewAreKeptApart`
+        (each view read once, each with its own render option, both read again after `forget()`), beside the existing
+        read tests (12 in all). Keying the kept reads by id alone turns it red (checked).
+        Whole unit suite: the same failures before and after, none in this class (`StatusEntryRequirementsGuardTest`
+        needs a sibling openregister checkout with its vendor directory and fails without one on development too).
