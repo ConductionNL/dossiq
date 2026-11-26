@@ -252,4 +252,67 @@ class StatusTypeLookupReadTest extends TestCase {
 
 		self::assertSame($rows, $this->lookup(resolver: $resolver)->rowsOf(caseTypeId: 'ct-child'));
 	}//end testRowsOfAreTheResolversRows()
+
+	/**
+	 * The rendered and the stored view of one status are each read from the
+	 * store once in a request, kept apart, and each asked with its own render
+	 * option.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
+	 */
+	public function testTheRenderedAndTheStoredViewAreKeptApart(): void {
+		$objectService = new class {
+			/**
+			 * The render option of every find, in order.
+			 *
+			 * @var list<bool|null>
+			 */
+			public array $renders = [];
+
+			/**
+			 * Answer a rendered or a stored row, recording the render option.
+			 *
+			 * @param string                 $id             The id.
+			 * @param ObjectFindOptions|null $options        The find options.
+			 * @param bool                   $_rbac          Unused.
+			 * @param bool                   $_multitenancy  Unused.
+			 *
+			 * @return mixed
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$this->renders[] = $options?->render;
+				if ($options?->render === true) {
+					return ['id' => $id, 'name' => 'Hoorgesprek', 'schema' => $options->schema];
+				}
+
+				return ['id' => $id, 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing'], 'schema' => $options?->schema];
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => (['register' => 'dossiq', 'status_type_schema' => 'statusType'][$key] ?? '')
+		);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+		$lookup = new StatusTypeLookup(
+			settingsService: $settings,
+			caseTypeResolver: $this->createMock(originalClassName: CaseTypeResolver::class),
+			text: new LanguageMapText(),
+			reader: new TranslatedText(l10n: $l10n),
+		);
+
+		self::assertSame(expected: 'Hearing', actual: $lookup->nameFor(statusTypeId: 's-5'));
+		self::assertSame(expected: ['id' => 's-5', 'name' => 'Hoorgesprek', 'schema' => 'statusType'], actual: $lookup->rowFor(statusTypeId: 's-5'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-5', text: 'Hearing'));
+		self::assertSame(expected: 'Hoorgesprek', actual: $lookup->rowFor(statusTypeId: 's-5')['name']);
+		self::assertSame(expected: [false, true], actual: $objectService->renders);
+
+		$lookup->forget();
+		$lookup->rowFor(statusTypeId: 's-5');
+		self::assertSame(expected: [false, true, true], actual: $objectService->renders);
+	}//end testTheRenderedAndTheStoredViewAreKeptApart()
 }//end class

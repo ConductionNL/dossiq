@@ -390,21 +390,23 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 
 		await openTimelineTab(page, caseId)
 
-		const entries = page.getByTestId('case-timeline-entry')
+		const entries = page.getByTestId('cn-timeline-entry')
 		await expect(entries.first()).toContainText('pin me')
 	})
 
 	test('a read that fails says so rather than showing an empty case', async ({
 		page,
 	}) => {
-		await page.route(`**${OR}/objects/**/timeline*`, (route) =>
+		// Without `/index.php`: an instance with pretty URLs serves the page's
+		// requests without it, so a route that requires it intercepts nothing.
+		await page.route('**/apps/openregister/api/objects/**/timeline*', (route) =>
 			route.fulfill({ status: 500, body: '{"message":"no"}' }),
 		)
 
 		await openTimelineTab(page, caseId)
 
-		await expect(page.getByTestId('case-timeline-error')).toBeVisible()
-		await expect(page.getByTestId('case-timeline-empty')).toHaveCount(0)
+		await expect(page.getByTestId('cn-timeline-error')).toBeVisible()
+		await expect(page.getByTestId('cn-timeline-empty')).toHaveCount(0)
 	})
 
 	test('the kind filter narrows the list to one kind', async ({
@@ -420,13 +422,15 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 
 		await openTimelineTab(page, caseId)
 
-		const before = await page.getByTestId('case-timeline-entry').count()
-		expect(before).toBeGreaterThan(1)
+		// The list fills after the tab mounts, so the count is polled.
+		await expect
+			.poll(() => page.getByTestId('cn-timeline-entry').count(), PAGE_LOAD)
+			.toBeGreaterThan(1)
 
-		await page.getByTestId('case-timeline-kind-filter').click()
-		await page.getByRole('option', { name: 'Ontvangstbevestiging' }).click()
+		// The kind filter is a row of chips, one per kind on the case.
+		await page.getByTestId('cn-timeline-chip-ontvangstbevestiging').click()
 
-		await expect(page.getByTestId('case-timeline-entry')).toHaveCount(1)
+		await expect(page.getByTestId('cn-timeline-entry')).toHaveCount(1)
 	})
 
 	test('a follow-up is closed from the tab', async ({ page, request }) => {
@@ -439,25 +443,26 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 		await openTimelineTab(page, caseId)
 
 		const open = page
-			.getByTestId('case-timeline-entry')
+			.getByTestId('cn-timeline-entry')
 			.filter({ hasText: 'answer me' })
 			.first()
-		await expect(open.getByTestId('case-timeline-followup-open')).toBeVisible()
+		await expect(open.getByTestId('cn-timeline-followup-open')).toBeVisible()
 
-		await open.getByTestId(/^case-timeline-followup-/).click()
+		await open.getByRole('button', { name: 'Mark as answered' }).click()
 
 		await expect(
 			page
-				.getByTestId('case-timeline-entry')
+				.getByTestId('cn-timeline-entry')
 				.filter({ hasText: 'answer me' })
 				.first()
-				.getByTestId('case-timeline-followup-open'),
+				.getByTestId('cn-timeline-followup-open'),
 		).toHaveCount(0)
 	})
 })
 
 /**
- * Open a case's Timeline tab.
+ * Open a case's Timeline tab: the strip's History tab, the library
+ * `timeline` widget in manage mode (CnTimelineManage, `cn-timeline-*` ids).
  *
  * @param page The page.
  * @param id   The case uuid.
@@ -466,8 +471,8 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
  */
 async function openTimelineTab(page: Page, id: string): Promise<void> {
 	await page.goto(`/apps/dossiq/cases/${id}`, PAGE_LOAD)
-	await openCaseTab(page, /^(Case history|Historie)\b/)
-	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
+	await openCaseTab(page, /^(History|Historie)\b/)
+	await expect(page.getByTestId('cn-timeline-manage')).toBeVisible(PAGE_LOAD)
 }
 
 test.describe('REQ-TL-15 every status move records itself on the timeline', () => {

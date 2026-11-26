@@ -15,6 +15,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../src/store/store.js', () => ({
 	initializeStores: async () => ({}),
+	storesReady: Promise.resolve(),
 }))
 
 /** The object store the component sees. Replaced per test. */

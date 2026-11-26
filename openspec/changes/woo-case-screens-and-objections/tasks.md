@@ -132,8 +132,9 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
   land on the Bezwaar case, follow the link back, and find the objection on the Cases page under Bezwaar. Cite
   REQ-WCS-004 and REQ-WCS-006.
   - Written, runs in nightly (`tests/e2e/woo-objection.spec.ts`, #6685); not run here, the live pass owns it.
-- [ ] 6.2 Live check after merge on the dev instance: one Woo case taken from intake to publication
+- [x] 6.2 Live check after merge on the dev instance: one Woo case taken from intake to publication
   through the page only, and one objection against it. Record the case ids in the PR or issue.
+  - Live 25 Nov 2026 (live-dossiq-1; NC 34 + MariaDB, OpenRegister main, dossiq/opencatalogi/decidiq development): `tests/e2e/woo-case-screens.spec.ts` 3/3 (assess all, extend once, decide and publish through the page only; dossiq #6960) and `tests/e2e/woo-objection.spec.ts` assertions 3/3 (objection registered from the decided case, lands on the Bezwaar case, link back under Related, listed with Type Bezwaar on Cases). Bezwaar case f4bb844b-128d-4e14-be5c-81daa4739818 on that sandbox. The spec's teardown cannot remove the Bezwaar case: BezwaarLegalHoldListener puts a legal hold on it while the proceeding is open and no route releases it, so the run reports it as residue.
 
 ## 7. Verify and deliver
 
