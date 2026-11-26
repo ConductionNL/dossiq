@@ -27,6 +27,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	getRequestToken,
@@ -36,7 +37,6 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { openCaseTab } from './helpers/case-panels.ts'
 import { clickHeaderAction, dismissSupportDialog, PAGE_LOAD, PAGE_LOAD_MS } from './helpers/nav.ts'
 import { CasesSavedView } from './helpers/page-components.ts'
 
