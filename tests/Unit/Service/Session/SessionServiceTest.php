@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Session;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\Session\SessionMeeting;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
@@ -220,6 +222,45 @@ class SessionServiceTest extends TestCase {
 		self::assertSame(expected: 'meeting-9', actual: $saved['meeting']);
 		self::assertSame(expected: [], actual: self::$schemas->errors(slug: 'hearingSession', payload: $stored));
 	}//end testAPlannedSessionOpensAsAMeetingAndKeepsItsId()
+
+	/**
+	 * A planned session is recorded on the case's history, with its declared label and date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md
+	 */
+	public function testAPlannedSessionIsRecordedOnTheCaseHistory(): void {
+		$timeline = $this->createMock(originalClassName: CaseTimelineInterface::class);
+		$recorded = [];
+		$timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields = []) use (&$recorded): string {
+				$recorded[] = [$caseId, $kind, $fields['act'] ?? null, $fields['sessionKey'] ?? null, $fields['sessionId'] ?? null, $message];
+				return 'entry-1';
+			}
+		);
+		$service = new SessionService(
+			settingsService: $this->settings,
+			timeFactory: $this->clock,
+			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
+			timeline: $timeline
+		);
+
+		$saved = $service->schedule(
+			caseId: self::CASE_ID,
+			sessionKey: 'hearing',
+			scheduledDate: '2026-10-20T10:00:00+00:00',
+			chairpersonId: self::CHAIR,
+			invitees: [['role' => 'applicant']]
+		);
+
+		self::assertCount(expectedCount: 1, haystack: $recorded);
+		self::assertSame(
+			expected: [self::CASE_ID, TimelineKindsInterface::SESSION, 'planned', 'hearing', $saved['id']],
+			actual: array_slice($recorded[0], 0, 5)
+		);
+		self::assertStringContainsString(needle: '2026-10-20 10:00', haystack: $recorded[0][5]);
+	}//end testAPlannedSessionIsRecordedOnTheCaseHistory()
 
 	/**
 	 * When the decision app holds no meeting, the session is planned without one.

@@ -1063,6 +1063,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::MESSAGE,
 			TimelineKinds::TASK,
 			TimelineKinds::ASSIGNMENT,
+			TimelineKinds::SESSION,
 		];
 
 		foreach ($named as $slug) {

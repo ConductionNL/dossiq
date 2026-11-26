@@ -4299,7 +4299,8 @@
 								"document": "Documents",
 								"bericht": "Messages",
 								"taak": "Tasks",
-								"toewijzing": "Assignment"
+								"toewijzing": "Assignment",
+								"sessie": "Session"
 							},
 							"auditTrailLink": true,
 							"auditTrailTab": "audit",

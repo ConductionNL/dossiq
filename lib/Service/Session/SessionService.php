@@ -36,7 +36,9 @@ namespace OCA\Dossiq\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\SessionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
@@ -63,6 +65,7 @@ class SessionService implements SessionServiceInterface {
 	 * @param ITimeFactory       $timeFactory     The clock.
 	 * @param CaseDateNormaliser $caseDates       The one reader of a date.
 	 * @param SessionMeeting|null $meetings       Opens a planned session as a meeting in the decision app.
+	 * @param CaseTimelineInterface|null $timeline Records the planned session on the case's history.
 	 *
 	 * @return void
 	 */
@@ -71,6 +74,7 @@ class SessionService implements SessionServiceInterface {
 		private readonly ITimeFactory $timeFactory,
 		private readonly CaseDateNormaliser $caseDates,
 		private readonly ?SessionMeeting $meetings = null,
+		private readonly ?CaseTimelineInterface $timeline = null,
 	) {
 	}//end __construct()
 
@@ -135,8 +139,40 @@ class SessionService implements SessionServiceInterface {
 		$write->payload = $payload;
 		$write->invitees = $invitees;
 
-		return $this->plan(write: $write, scheduledDate: $scheduledDate);
+		$session = $this->plan(write: $write, scheduledDate: $scheduledDate);
+		$this->recordPlanned(write: $write, session: $session);
+
+		return $session;
 	}//end schedule()
+
+	/**
+	 * Put the planned session on the case's history, so the case shows it beside its other events.
+	 *
+	 * @param SessionWrite         $write   The planned session.
+	 * @param array<string, mixed> $session The stored session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md
+	 */
+	private function recordPlanned(SessionWrite $write, array $session): void {
+		if ($this->timeline === null) {
+			return;
+		}
+
+		$label = $write->definition->label !== '' ? $write->definition->label : $write->definition->key;
+		$this->timeline->record(
+			caseId: $write->caseId,
+			kind: TimelineKindsInterface::SESSION,
+			message: $label . ' planned for ' . $write->scheduled->format('Y-m-d H:i'),
+			fields: [
+				'act' => 'planned',
+				'sessionId' => (string)($session['id'] ?? ($session['@self']['id'] ?? '')),
+				'sessionKey' => $write->definition->key,
+				'scheduledDate' => $write->scheduled->format(DATE_ATOM),
+			],
+		);
+	}//end recordPlanned()
 
 	/**
 	 * Plan the session at its start, when the plan keeps the inspection floor and the invitee roles.
