@@ -104,7 +104,7 @@ class HouseholdCases implements HouseholdCasesInterface {
 	 *
 	 * @return array<string, mixed>|null The plan, or null without one.
 	 *
-	 * @spec openspec/changes/family-plan-by-case/tasks.md
+	 * @spec openspec/changes/archive/2026-11-26-family-plan-by-case/tasks.md
 	 */
 	private function planOf(array $case): ?array {
 		$named = trim((string)($case['gezinsplanId'] ?? ''));

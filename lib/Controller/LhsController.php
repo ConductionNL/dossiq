@@ -92,11 +92,16 @@ class LhsController extends Controller {
 	 *   - lhsVersion (int, optional)
 	 *   - inspection (string, optional)
 	 *
+	 * Deprecated: removed in the release after this one; the case page asks
+	 * `POST /api/decision-advice/{recommend,override}` instead. Kept answering
+	 * unchanged, not forwarded: see CHANGELOG.md (Deprecated).
+	 *
 	 * @return JSONResponse The persisted lhsRecommendation row
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/enforcement-intervention-from-the-case/tasks.md#2-backend
 	 */
 	public function recommend(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -316,11 +321,16 @@ class LhsController extends Controller {
 	 * Manager role is auto-detected from the Nextcloud admin group; UI may
 	 * additionally pass `userRole` for explicit selection.
 	 *
+	 * Deprecated: removed in the release after this one; the case page asks
+	 * `POST /api/decision-advice/{recommend,override}` instead. Kept answering
+	 * unchanged, not forwarded: see CHANGELOG.md (Deprecated).
+	 *
 	 * @return JSONResponse The updated lhsRecommendation row
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/enforcement-intervention-from-the-case/tasks.md#2-backend
 	 */
 	public function override(): JSONResponse {
 		$user = $this->userSession->getUser();
