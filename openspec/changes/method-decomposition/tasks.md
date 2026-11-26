@@ -1840,3 +1840,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         unreachable file, the size cap, unreadable storage, the hand-off and a kept answer), which builds the controller
         over the same doubles through `SavedMailFiles`. Own test: `tests/Unit/Controller/SavedMailFilesTest` (3);
         answering a folder as a file turns it red (checked).
+  - [x] 8cx `Controller/TaskChecklistController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The answer to a
+        checklist run the store did not take (OpenRegister's two validation refusals a 400 logged at info, this app's own
+        refusal a 422, anything else a 500 logged as an error) moved to `Controller/ChecklistRunFailure` (`answer()`, with
+        `rejectedPayload()` and `serverFault()`; bodies, comments and log lines moved unchanged). The controller keeps the
+        guards and the hand-off to the run service, and builds the answer in its constructor, so its constructor and the
+        container are unchanged (the logger is now passed through rather than held). Coupling 14 to 12; phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `TaskChecklistControllerTest` (11, including the 400 for both
+        OpenRegister refusals, the 500 for a genuine fault and the 422), unchanged but for one `@covers` line. Own test:
+        `tests/Unit/Controller/ChecklistRunFailureTest` (3, with the log level and wording of each answer, which the
+        controller suite does not assert); dropping the custom-validation arm turns 2 tests red (checked).
