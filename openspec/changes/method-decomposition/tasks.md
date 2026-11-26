@@ -1862,3 +1862,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (11), building the controller over the same reader and dates through `PayoutCallbackFields`, and
         `OneDateWritePathTest`. Own test: `tests/Unit/Controller/PayoutCallbackFieldsTest` (3); parsing an absent date
         turns it red (checked).
+  - [x] 8cz `Review/RecallSamples` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Where a case's Recall samples
+        are kept (the case's stored samples read through OpenRegister, a sample written back without its derived
+        progress, and the refusal when the register will not store it) moved to `Review/RecallSampleStore` (`rows()`,
+        `save()`, with `savedRow()` and `unstored()`; bodies, the log line and the refusal moved unchanged). The service
+        keeps the draw, the judgement, the progress and the estimate, and builds the store in its constructor, so its
+        constructor, interface and container alias are unchanged (the settings service and the logger are now passed
+        through rather than held). Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `RecallSamplesTest` (9, including the refused save and the missing
+        schema), `RecallControllerTest` and `ReviewContractRegistrarTest`, unchanged but for one `@covers`/`@uses` line.
+        Own test: `tests/Unit/Review/RecallSampleStoreTest` (4); keeping the derived progress on a save turns it red
+        (checked).

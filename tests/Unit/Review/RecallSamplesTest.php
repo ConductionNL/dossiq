@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * Drawing from the null set with a seed, judging apart from the marking, and estimating once complete.
  *
  * @covers \OCA\Dossiq\Review\RecallSamples
+ * @covers \OCA\Dossiq\Review\RecallSampleStore
  * @covers \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\StoppingRules
