@@ -173,7 +173,9 @@ describe('the case-tasks widget on the library task widget', () => {
 			objectUuid: '@objectId',
 			cancel: true,
 			rowRoute: 'TaskDetail',
-			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+			// `objectUuid` is the key the tasks source forwards (its allowlist);
+			// a `case` key is dropped and the list opens on the default month.
+			viewAllRoute: { name: 'Tasks', query: { objectUuid: '@objectId' } },
 			emptyText: 'No open tasks on this case',
 		})
 		// Every task on the case, not the reader's: the library reads `scope:

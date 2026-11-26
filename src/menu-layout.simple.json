@@ -4066,7 +4066,7 @@
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
-									"case": "@objectId"
+									"objectUuid": "@objectId"
 								}
 							},
 							"viewAllLabel": "All tasks of this case in Tasks",
