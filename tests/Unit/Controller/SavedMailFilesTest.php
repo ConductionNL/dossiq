@@ -8,7 +8,7 @@
  * naming the case and the file, when storage will not give them up).
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Email
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,9 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Email;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Service\Email\SavedMailFiles;
+use OCA\Dossiq\Controller\SavedMailFiles;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -37,7 +37,7 @@ use RuntimeException;
 /**
  * Unit tests for SavedMailFiles.
  *
- * @covers \OCA\Dossiq\Service\Email\SavedMailFiles
+ * @covers \OCA\Dossiq\Controller\SavedMailFiles
  */
 final class SavedMailFilesTest extends TestCase {
 

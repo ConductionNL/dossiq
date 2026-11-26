@@ -1818,7 +1818,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         new file, so `EveryTermOnTheCalendarTest` keeps holding it to the engine calendar.
   - [x] 8cv `Controller/SavedMailController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The storage side of
         reading a saved mail file (the file as the caller reaches it by id, and its bytes, a storage failure logged and
-        answered as absent) moved to `Service/Email/SavedMailFiles` (`nodeFor()`, `contentOf()`; bodies and the log line
+        answered as absent) moved to `Controller/SavedMailFiles` (beside `SavedMailRead`: a swallowing catch under `lib/Service` counts against the `ServiceCatchReturnsNullTest` ceiling) (`nodeFor()`, `contentOf()`; bodies and the log line
         moved unchanged, `contentOf()` takes the file, the case and the file id instead of the controller's
         `SavedMailRead`). The controller keeps the authentication, the case guard, the size cap and the hand-off to the
         reader. Its constructor takes `SavedMailFiles` in place of `IRootFolder` and `LoggerInterface`; the container
@@ -1826,5 +1826,5 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         findings on both files under both rulesets.
         Characterisation, green before and after: `SavedMailControllerTest` (8: anonymous, refused case, no case,
         unreachable file, the size cap, unreadable storage, the hand-off and a kept answer), which builds the controller
-        over the same doubles through `SavedMailFiles`. Own test: `tests/Unit/Service/Email/SavedMailFilesTest` (3);
+        over the same doubles through `SavedMailFiles`. Own test: `tests/Unit/Controller/SavedMailFilesTest` (3);
         answering a folder as a file turns it red (checked).

@@ -42,7 +42,6 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
-use OCA\Dossiq\Service\Email\SavedMailFiles;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

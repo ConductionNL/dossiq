@@ -8,8 +8,8 @@
  * is logged and answered as absent, so the route can say "Not found" instead
  * of failing.
  *
- * @category Service
- * @package  OCA\Dossiq\Service\Email
+ * @category Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Email;
+namespace OCA\Dossiq\Controller;
 
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
