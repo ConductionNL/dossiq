@@ -336,3 +336,20 @@ so a manifest URL token can address the plan. Without a plan, `planId` SHALL be 
 - **GIVEN** a case whose gezinsplan has id `plan-new`
 - **THEN** the family plan answer carries `planId: "plan-new"`
 - **AND** Doel toevoegen posts to `/api/family-plans/plan-new/goals`
+
+### Requirement: A case finds its family plan by the plan's case
+
+A case page SHALL find the family plan through the plan's `caseId`, show the plan's status in the report card, and
+draw the plan card from that plan. A case without a plan SHALL show a plan without goals; an unreadable register
+SHALL show an error, not an empty plan.
+
+#### Scenario: DqSociaalDomein
+
+- **GIVEN** the Jeugdwet example case and a gezinsplan with `caseId` that case and status `in_opbouw`
+- **THEN** De melding reads "Gezinsplan: In opbouw"
+- **AND** the Gezinsplan card reads "Dit plan heeft nog geen doelen"
+
+#### Scenario: No plan
+
+- **GIVEN** a case no gezinsplan points at
+- **THEN** `/api/cases/{caseId}/family-plan` answers `{ plan: null, goals: [], interventions: [], dueForReview: false }`
